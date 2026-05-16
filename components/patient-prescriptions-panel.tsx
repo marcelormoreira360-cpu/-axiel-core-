@@ -1,0 +1,236 @@
+"use client";
+
+import { useState } from "react";
+import { Plus, Pill, Leaf, X, StopCircle } from "lucide-react";
+import type { Prescription } from "@/services/exams-service";
+import {
+  addPrescriptionAction,
+  deactivatePrescriptionAction,
+  deletePrescriptionAction,
+} from "@/app/patients/[id]/prescriptions/actions";
+
+function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: string }) {
+  const isMed = item.type === "medication";
+  const since = item.start_date
+    ? new Date(item.start_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
+    : null;
+
+  return (
+    <div className={[
+      "flex items-start gap-[10px] rounded-[10px] px-[12px] py-[10px] border transition",
+      item.is_active
+        ? "bg-white border-black/[.07]"
+        : "bg-[#FAFAF8] border-black/[.05] opacity-50",
+    ].join(" ")}>
+      <div className={[
+        "w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0 mt-[1px]",
+        isMed ? "bg-[#FFF3E0] text-[#E8A100]" : "bg-[#E1F5EE] text-[#0F6E56]",
+      ].join(" ")}>
+        {isMed ? <Pill className="h-3.5 w-3.5" /> : <Leaf className="h-3.5 w-3.5" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{item.name}</p>
+        <p className="text-[11px] text-[#A09E98] mt-[1px]">
+          {[item.dosage, item.frequency, since ? `desde ${since}` : null]
+            .filter(Boolean)
+            .join(" · ")}
+        </p>
+        {item.notes && <p className="text-[11px] text-[#6B6A66] mt-[3px]">{item.notes}</p>}
+      </div>
+      {item.is_active && (
+        <div className="flex items-center gap-[4px] shrink-0">
+          <form action={deactivatePrescriptionAction.bind(null, item.id, patientId)}>
+            <button
+              type="submit"
+              title="Encerrar"
+              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-amber-500 transition"
+            >
+              <StopCircle className="h-3.5 w-3.5" />
+            </button>
+          </form>
+          <form action={deletePrescriptionAction.bind(null, item.id, patientId)}>
+            <button
+              type="submit"
+              title="Remover"
+              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const [type, setType] = useState<"medication" | "supplement">("supplement");
+
+  async function submit(formData: FormData) {
+    await addPrescriptionAction(formData);
+    onClose();
+  }
+
+  return (
+    <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
+      <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
+        <p className="text-[12px] font-medium text-[#0F1A2E]">Novo item</p>
+        <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E]">
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+
+      <form action={submit} className="px-[14px] py-[14px] space-y-[10px]">
+        <input type="hidden" name="patient_id" value={patientId} />
+        <input type="hidden" name="type" value={type} />
+
+        {/* Type toggle */}
+        <div className="flex gap-[6px]">
+          {(["supplement", "medication"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setType(t)}
+              className={[
+                "flex items-center gap-[5px] text-[11px] font-medium rounded-[7px] px-[10px] py-[6px] border transition",
+                type === t
+                  ? t === "supplement"
+                    ? "bg-[#E1F5EE] border-[#0F6E56]/30 text-[#085041]"
+                    : "bg-[#FFF3E0] border-amber-300 text-amber-700"
+                  : "bg-[#FAFAF8] border-black/[.08] text-[#A09E98]",
+              ].join(" ")}
+            >
+              {t === "supplement" ? <Leaf className="h-3 w-3" /> : <Pill className="h-3 w-3" />}
+              {t === "supplement" ? "Suplemento" : "Medicamento"}
+            </button>
+          ))}
+        </div>
+
+        <div>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Nome *</label>
+          <input
+            type="text"
+            name="name"
+            required
+            placeholder={type === "supplement" ? "Ex: Vitamina D3, Magnésio..." : "Ex: Levotiroxina, Metformina..."}
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-[8px]">
+          <div>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Dosagem</label>
+            <input
+              type="text"
+              name="dosage"
+              placeholder="Ex: 2000 UI, 500mg..."
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Frequência</label>
+            <input
+              type="text"
+              name="frequency"
+              placeholder="Ex: 1x ao dia, 2x..."
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-[8px]">
+          <div>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Início</label>
+            <input
+              type="date"
+              name="start_date"
+              defaultValue={new Date().toISOString().split("T")[0]}
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            />
+          </div>
+          <div>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Observações</label>
+            <input
+              type="text"
+              name="notes"
+              placeholder="Com alimentação..."
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
+          >
+            Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+export function PatientPrescriptionsPanel({
+  prescriptions,
+  patientId,
+}: {
+  prescriptions: Prescription[];
+  patientId: string;
+}) {
+  const [adding, setAdding] = useState(false);
+
+  const active = prescriptions.filter((p) => p.is_active);
+  const inactive = prescriptions.filter((p) => !p.is_active);
+  const meds = active.filter((p) => p.type === "medication");
+  const supps = active.filter((p) => p.type === "supplement");
+
+  return (
+    <div className="space-y-[8px]">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-medium text-[#6B6A66]">
+          Medicamentos e suplementos · {active.length} ativos
+        </p>
+        {!adding && (
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+          >
+            <Plus className="h-3 w-3" /> Adicionar
+          </button>
+        )}
+      </div>
+
+      {adding && <AddPrescriptionForm patientId={patientId} onClose={() => setAdding(false)} />}
+
+      {active.length === 0 && !adding ? (
+        <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
+          <p className="text-[12px] text-[#D3D1C7]">Nenhum item prescrito ainda.</p>
+        </div>
+      ) : (
+        <div className="space-y-[4px]">
+          {meds.length > 0 && (
+            <div className="space-y-[4px]">
+              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">Medicamentos</p>
+              {meds.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
+            </div>
+          )}
+          {supps.length > 0 && (
+            <div className="space-y-[4px] mt-[8px]">
+              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">Suplementos</p>
+              {supps.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
+            </div>
+          )}
+          {inactive.length > 0 && (
+            <div className="space-y-[4px] mt-[8px]">
+              <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">Encerrados</p>
+              {inactive.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

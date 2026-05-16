@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FAFAF8;
+  --foreground: #0F1A2E;
+  --font-sans: "Inter", sans-serif;
+  --color-border-secondary: rgba(0,0,0,0.08);
+  --color-border-tertiary: rgba(0,0,0,0.06);
+  --color-text-tertiary: #A09E98;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+* {
+  box-sizing: border-box;
+}
