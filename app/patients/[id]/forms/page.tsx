@@ -8,8 +8,9 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
 }
 
-export default async function PatientFormsPage({ params }: { params: { id: string } }) {
-  const submissions = await listPatientFormSubmissions(params.id);
+export default async function PatientFormsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const submissions = await listPatientFormSubmissions(id);
 
   return (
     <Shell>
@@ -38,7 +39,7 @@ export default async function PatientFormsPage({ params }: { params: { id: strin
             <p className="mt-3 text-sm text-axiel-text-secondary">Older forms and full answers stay hidden until needed.</p>
           </details>
 
-          <Link href={`/patients/${params.id}`} className="text-sm font-medium text-axiel-primary">Back to patient</Link>
+          <Link href={`/patients/${id}`} className="text-sm font-medium text-axiel-primary">Back to patient</Link>
         </div>
       </div>
     </Shell>

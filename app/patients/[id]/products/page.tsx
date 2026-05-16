@@ -15,7 +15,8 @@ const patientProducts = [
   },
 ];
 
-export default function PatientProductsPage({ params }: { params: { id: string } }) {
+export default async function PatientProductsPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <div className="bg-axiel-background min-h-screen p-4 md:p-8 space-y-8">
       <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -24,7 +25,7 @@ export default function PatientProductsPage({ params }: { params: { id: string }
           <p className="mt-2 text-axiel-text-secondary">Support items connected to this patient journey.</p>
         </div>
         <div className="flex gap-3">
-          <Link href={`/patients/${params.id}`}>
+          <Link href={`/patients/${id}`}>
             <ButtonSecondary type="button">Back</ButtonSecondary>
           </Link>
           <ButtonPrimary type="button">Add Product</ButtonPrimary>
