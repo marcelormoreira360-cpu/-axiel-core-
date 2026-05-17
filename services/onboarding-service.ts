@@ -195,7 +195,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   }
 
   const { error: settingsError } = await supabase.from("clinic_settings").upsert({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     display_name: clinicName,
     timezone: input.timezone || "America/Sao_Paulo",
     settings: {
@@ -209,7 +209,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   if (settingsError) throw settingsError;
 
   const { error: clinicUserError } = await supabase.from("clinic_users").upsert({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     user_id: profile.id,
     role: "clinic_owner",
     status: "active",
@@ -218,7 +218,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   if (clinicUserError) throw clinicUserError;
 
   const sessionRows = sessionTypes.map((item) => ({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     name: item.name,
     duration_minutes: item.duration_minutes,
     is_active: true,
@@ -229,7 +229,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   }
 
   const hourRows = workingHours.map((item) => ({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     day_of_week: item.day_of_week,
     opens_at: item.opens_at,
     closes_at: item.closes_at,
@@ -239,7 +239,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   await supabase.from("working_hours").upsert(hourRows, { onConflict: "clinic_id,day_of_week" });
 
   await createIntakeFormWithQuestions({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     name: getIntakeFormName(clinicProfile),
     description: "Formulário de anamnese criado automaticamente no onboarding.",
     questions: intakeQuestions.map((question) => ({
@@ -251,7 +251,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
   if (input.staffEmail.trim()) {
     await supabase.from("invites").insert({
-      clinic_id: clinicId,
+      clinic_id: clinicId!,
       email: input.staffEmail.trim().toLowerCase(),
       role: "front_desk",
       token_hash: randomUUID(),
@@ -261,7 +261,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   }
 
   const patient = await createPatient({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     full_name: getSamplePatientName(clinicProfile),
     email: "paciente-demo@exemplo.com",
     phone: "(11) 99999-0000",
@@ -269,7 +269,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   });
 
   await createLead({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     full_name: "Lead Demonstração",
     email: "lead-demo@exemplo.com",
     phone: "(11) 99999-0001",
@@ -284,7 +284,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   tomorrow.setHours(10, 0, 0, 0);
 
   await createAppointment({
-    clinic_id: clinicId,
+    clinic_id: clinicId!,
     patient_id: patient.id,
     starts_at: tomorrow.toISOString(),
     duration_minutes: sessionTypes[0]?.duration_minutes || 60,

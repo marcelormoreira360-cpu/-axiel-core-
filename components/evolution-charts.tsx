@@ -82,7 +82,7 @@ function BiomarkerChart({ series }: { series: BiomarkerSeries }) {
               fontSize: 11,
               color: "#0F1A2E",
             }}
-            formatter={(val: number) => [`${val} ${series.unit ?? ""}`, series.name]}
+            formatter={(val) => [`${val ?? ""} ${series.unit ?? ""}`.trim(), series.name]}
           />
           {hasRef && refMin != null && refMax != null && (
             <ReferenceArea
@@ -172,8 +172,8 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
               fontSize: 11,
               color: "#0F1A2E",
             }}
-            formatter={(val: number, _: string, props: any) => [
-              `${val}% (${props.payload.total}/${props.payload.max} pts)`,
+            formatter={(val, _name, props) => [
+              `${val ?? ""}% (${(props as any).payload?.total ?? ""}/${(props as any).payload?.max ?? ""} pts)`,
               series.name,
             ]}
           />

@@ -153,14 +153,14 @@ export async function POST(req: NextRequest) {
       const ctx = await buildPatientContext(patient.id, supabase);
       replyText = await generateAIReply(incomingMessage, ctx, wantsVoice, apiKey);
 
-      // Log the interaction
-      await supabase.from("whatsapp_interactions").insert({
+      // Log the interaction (non-blocking, table may not exist yet)
+      void supabase.from("whatsapp_interactions").insert({
         patient_id: patient.id,
         direction: "inbound",
         message: incomingMessage,
         reply: replyText,
         media_type: mediaType || null,
-      }).catch(() => {}); // Non-blocking, table may not exist yet
+      }).then(null, () => {});
     }
 
     const toNumber = fromNumber;
