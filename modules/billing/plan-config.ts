@@ -78,7 +78,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     slug: "starter",
     name: "Starter",
     description: "For one clinic getting organized.",
-    priceCents: 4900,
+    priceCents: 7800,
     billingInterval: "month",
     limits: {
       users: 3,
@@ -93,7 +93,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     slug: "professional",
     name: "Professional",
     description: "For clinics ready to run the full AXIEL workflow.",
-    priceCents: 14900,
+    priceCents: 11800,
     billingInterval: "month",
     recommended: true,
     limits: {
@@ -109,8 +109,8 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     slug: "enterprise",
     name: "Enterprise",
     description: "For multi-location clinics and advanced operations.",
-    priceCents: null,
-    billingInterval: "custom",
+    priceCents: 45000,
+    billingInterval: "month",
     limits: {
       users: null,
       patients: null,
