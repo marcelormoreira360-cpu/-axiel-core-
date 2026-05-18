@@ -5,6 +5,7 @@ import { ViewDetails } from "@/components/view-details";
 
 const settings = [
   { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
+  { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure the AI assistant: name, program, pricing and language." },
   { href: "/intake", title: "Intake forms", text: "Questions patients answer before care." },
   { href: "/monetization", title: "Packages", text: "Session packages and memberships." },
   { href: "/follow-ups", title: "Follow-ups", text: "Manual reminders and message placeholders." },
