@@ -5,8 +5,8 @@ import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
 import { saveWhatsAppBotConfig } from "./actions";
-import type { PricingLocation, PricingPlan } from "@/services/whatsapp-bot-service";
-import { IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import type { PricingLocation, PricingPlan } from "@/lib/whatsapp-bot-defaults";
+import { IFWC_DEFAULT_CONFIG } from "@/lib/whatsapp-bot-defaults";
 
 const LANGUAGE_OPTIONS = [
   { value: "pt-BR", label: "Português (Brasil)" },
