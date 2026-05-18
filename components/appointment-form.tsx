@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
-import type { Patient, SessionType } from "@/lib/types";
+import type { Patient, SessionType, AppointmentSource } from "@/lib/types";
 
 type Props = {
   patients: Patient[];
@@ -15,7 +15,19 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
   const [query, setQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? null);
+  const [source, setSource] = useState<AppointmentSource>("direct");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const SOURCE_LABELS: Record<AppointmentSource, string> = {
+    direct:    "Direto / presencial",
+    referral:  "Indicação",
+    instagram: "Instagram",
+    facebook:  "Facebook",
+    google:    "Google",
+    website:   "Site",
+    package:   "Pacote ativo",
+    other:     "Outro",
+  };
 
   const filtered =
     query.trim().length > 0
@@ -36,7 +48,9 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
   function submit(formData: FormData) {
     if (!selectedPatient || !selectedType) return;
     formData.set("patient_id", selectedPatient.id);
+    formData.set("session_type_id", selectedType.id);
     formData.set("duration_minutes", String(selectedType.duration_minutes));
+    formData.set("source", source);
     startTransition(async () => {
       await action(formData);
     });
@@ -138,9 +152,16 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
                   <span className={`text-[12px] font-medium ${isSelected ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
                     {type.name}
                   </span>
-                  <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
-                    {type.duration_minutes} min
-                  </span>
+                  <div className="flex items-center gap-[8px]">
+                    {type.price_cents > 0 && (
+                      <span className={`text-[11px] font-medium ${isSelected ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
+                        {(type.price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    )}
+                    <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
+                      {type.duration_minutes} min
+                    </span>
+                  </div>
                 </button>
               );
             })}
@@ -171,6 +192,28 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
               className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Origin */}
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">Origem do agendamento</label>
+        <div className="grid grid-cols-2 gap-[5px]">
+          {(Object.keys(SOURCE_LABELS) as AppointmentSource[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSource(key)}
+              className={[
+                "text-left px-[10px] py-[7px] rounded-[7px] border text-[12px] transition",
+                source === key
+                  ? "border-[#0F6E56] bg-[#F0FAF6] text-[#0F6E56] font-medium"
+                  : "border-black/[.08] text-[#6B6A66] hover:border-black/[.16]",
+              ].join(" ")}
+            >
+              {SOURCE_LABELS[key]}
+            </button>
+          ))}
         </div>
       </div>
 

@@ -7,6 +7,7 @@ import { getAppointments } from "@/services/appointment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getTodaySchedulePreview } from "@/modules/dashboard/dashboard-data";
+import { getDashboardKPIs, formatBRL, sessionsDelta, revenueDelta } from "@/modules/dashboard/dashboard-kpis";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
 
 function getGreeting() {
@@ -34,9 +35,10 @@ export default async function Dashboard() {
 
   const clinic = currentClinic ?? clinics[0] ?? null;
 
-  const [pendingReviews, alerts] = await Promise.all([
+  const [pendingReviews, alerts, kpis] = await Promise.all([
     getPendingAiInsightReviewCount(clinic?.id),
     clinic ? getDashboardAlerts(clinic.id) : Promise.resolve({ packageAlerts: [], biomarkerAlerts: [] }),
+    clinic ? getDashboardKPIs(clinic.id) : Promise.resolve({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }),
   ]);
 
   const today = new Date().toDateString();
@@ -97,6 +99,37 @@ export default async function Dashboard() {
             <p className={`text-[10px] mt-[3px] ${m.green && m.value > 0 ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>{m.sub}</p>
           </div>
         ))}
+      </div>
+
+      {/* ── KPIs Financeiros ── */}
+      <div className="grid grid-cols-3 gap-[10px] mb-[18px]">
+        <div className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">RECEITA DO MÊS</p>
+          <p className="text-[22px] font-medium tracking-[-0.03em] text-[#0F1A2E] leading-none">
+            {formatBRL(kpis.revenueThisMonth)}
+          </p>
+          <p className="text-[10px] mt-[3px] text-[#A09E98]">
+            {revenueDelta(kpis.revenueThisMonth, kpis.revenueLastMonth)}
+          </p>
+        </div>
+        <div className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">SESSÕES DO MÊS</p>
+          <p className="text-[22px] font-medium tracking-[-0.03em] text-[#0F1A2E] leading-none">
+            {kpis.sessionsThisMonth}
+          </p>
+          <p className="text-[10px] mt-[3px] text-[#A09E98]">
+            {sessionsDelta(kpis.sessionsThisMonth, kpis.sessionsLastMonth)}
+          </p>
+        </div>
+        <div className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">TAXA DE RETORNO</p>
+          <p className={`text-[22px] font-medium tracking-[-0.03em] leading-none ${kpis.returnRate >= 60 ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
+            {kpis.returnRate}%
+          </p>
+          <p className="text-[10px] mt-[3px] text-[#A09E98]">
+            {kpis.returnRateBase > 0 ? `de ${kpis.returnRateBase} paciente${kpis.returnRateBase !== 1 ? "s" : ""} este mês` : "sem sessões este mês"}
+          </p>
+        </div>
       </div>
 
       {/* ── Body ── */}

@@ -63,17 +63,23 @@ export type Lead = {
 };
 
 
+export type AppointmentSource = "website" | "instagram" | "facebook" | "google" | "referral" | "direct" | "package" | "other";
+
 export type Appointment = {
   id: string;
   clinic_id: string;
   patient_id: string;
   created_by: string | null;
+  session_type_id: string | null;
+  patient_offer_id: string | null;
+  source: AppointmentSource | null;
   starts_at: string;
   duration_minutes: number;
   notes: string | null;
   created_at: string;
   updated_at: string;
   patients?: Pick<Patient, "id" | "full_name" | "email" | "phone" | "status"> | null;
+  session_types?: Pick<SessionType, "id" | "name" | "duration_minutes" | "price_cents"> | null;
 };
 
 export type IntakeQuestionType = "short_text" | "long_text" | "number" | "date" | "yes_no";
@@ -237,9 +243,27 @@ export type SessionType = {
   clinic_id: string;
   name: string;
   duration_minutes: number;
+  price_cents: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type PaymentMethod = "pix" | "credit_card" | "debit_card" | "cash" | "transfer" | "insurance" | "other";
+
+export type PatientPayment = {
+  id: string;
+  clinic_id: string;
+  patient_id: string;
+  appointment_id: string | null;
+  patient_offer_id: string | null;
+  amount_cents: number;
+  currency: string;
+  payment_method: PaymentMethod | null;
+  paid_at: string;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
 };
 
 export type WorkingHour = {

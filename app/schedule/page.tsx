@@ -5,6 +5,7 @@ import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
 import { getAppointments, getAppointmentsByPatient, createAppointment, getSessionTypes } from "@/services/appointment-service";
+import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { getLatestAiInsight, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -61,16 +62,40 @@ export default async function SchedulePage() {
     const patientId = String(formData.get("patient_id") ?? "");
     const startsAt = String(formData.get("starts_at") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
+    const sessionTypeId = String(formData.get("session_type_id") ?? "") || null;
+    const source = (String(formData.get("source") ?? "") || null) as import("@/lib/types").AppointmentSource | null;
 
     if (!patientId || !startsAt) throw new Error("Patient and time are required.");
 
-    await createAppointment({
+    const appointment = await createAppointment({
       clinic_id: profile.clinic_id,
       patient_id: patientId,
       starts_at: startsAt,
       duration_minutes: duration,
+      session_type_id: sessionTypeId,
+      source,
       notes: null,
     });
+
+    const patient = appointment.patients;
+    if (patient?.phone) {
+      try {
+        const date = new Date(startsAt);
+        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const firstName = patient.full_name.split(" ")[0];
+        const body =
+          `Olá, ${firstName}! ✅\n\n` +
+          `Sua sessão foi confirmada:\n` +
+          `📅 ${dateStr}\n` +
+          `🕐 ${timeStr}\n` +
+          `⏱ ${duration} minutos\n\n` +
+          `Até lá!`;
+        await sendWhatsAppText(patient.phone, body);
+      } catch {
+        // WhatsApp failure does not block appointment creation
+      }
+    }
 
     revalidatePath("/schedule");
   }

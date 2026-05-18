@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import type { Appointment, SessionType } from "@/lib/types";
+import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 
 export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
   const supabase = await createSupabaseServerClient();
@@ -34,6 +34,9 @@ export async function createAppointment(input: {
   patient_id: string;
   starts_at: string;
   duration_minutes: number;
+  session_type_id?: string | null;
+  source?: AppointmentSource | null;
+  patient_offer_id?: string | null;
   notes?: string | null;
 }) {
   const supabase = await createSupabaseServerClient();
@@ -44,7 +47,7 @@ export async function createAppointment(input: {
   const { data, error } = await supabase
     .from("appointments")
     .insert({ ...input, created_by: user?.id ?? null })
-    .select("*, patients(id, full_name, email, phone, status)")
+    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes, price_cents)")
     .single();
 
   if (error) throw error;
