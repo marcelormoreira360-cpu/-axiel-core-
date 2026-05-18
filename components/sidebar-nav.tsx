@@ -9,6 +9,7 @@ import {
   Calendar,
   Sparkles,
   FileText,
+  MessageCircle,
 } from "lucide-react";
 
 const mainNav = [
@@ -126,6 +127,19 @@ export function SidebarNavigation() {
             <QuietItem key={item.href} {...item} />
           ))}
         </nav>
+      </div>
+
+      {/* Support */}
+      <div className="px-[10px] mt-auto pb-4">
+        <a
+          href="https://wa.me/16892803705"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-2 py-[7px] rounded-lg text-[12px] text-[#6B6A66] hover:bg-white/60 hover:text-[#0F1A2E] transition-colors"
+        >
+          <MessageCircle className="h-[15px] w-[15px] shrink-0 text-[#A09E98]" aria-hidden="true" />
+          <span>Support</span>
+        </a>
       </div>
     </>
   );
