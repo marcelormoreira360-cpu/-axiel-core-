@@ -1,14 +1,31 @@
 import { Building2, Users } from "lucide-react";
+import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { LimitedList } from "@/components/limited-list";
-import { getClinicsForUser } from "@/services/clinic-service";
+import { ClinicEditForm } from "@/components/clinic-edit-form";
+import { getClinicsForUser, updateClinic, getCurrentClinic } from "@/services/clinic-service";
 import { getUsersForCurrentScope } from "@/services/user-service";
 import { roleLabels } from "@/modules/auth/roles";
 
 export default async function ClinicsPage() {
-  const [clinics, users] = await Promise.all([getClinicsForUser(), getUsersForCurrentScope()]);
+  const [clinics, users, myClinic] = await Promise.all([
+    getClinicsForUser(),
+    getUsersForCurrentScope(),
+    getCurrentClinic(),
+  ]);
+
+  async function updateClinicAction(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const slug = String(formData.get("slug") ?? "").trim();
+    if (!id || !name || !slug) throw new Error("Campos obrigatórios.");
+    await updateClinic(id, { name, slug });
+    revalidatePath("/clinics");
+    revalidatePath("/settings");
+  }
 
   return (
     <Shell>
@@ -17,8 +34,26 @@ export default async function ClinicsPage() {
         <h1 className="mt-3 text-4xl font-semibold tracking-tight">Clinics</h1>
         <p className="mt-3 max-w-2xl text-black/55">Admins see every clinic. Clinic Owners and Staff only see their own clinic.</p>
       </header>
+
+      {/* My clinic — editable */}
+      {myClinic && (
+        <div className="mb-6">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[10px]">
+            Minha clínica
+          </h2>
+          <Card className="p-[16px]">
+            <ClinicEditForm
+              id={myClinic.id}
+              name={myClinic.name}
+              slug={myClinic.slug}
+              updateAction={updateClinicAction}
+            />
+          </Card>
+        </div>
+      )}
+
       <div className="grid gap-3">
-        {clinics.slice(0, 5).map((clinic) => (
+        {clinics.filter((c) => c.id !== myClinic?.id).slice(0, 5).map((clinic) => (
           <Card key={clinic.id}>
             <h2 className="font-semibold">{clinic.name}</h2>
             <p className="mt-1 text-sm text-black/50">/{clinic.slug} · {clinic.status}</p>
@@ -42,6 +77,7 @@ export default async function ClinicsPage() {
           />
         )}
       </div>
+
       <h2 className="mb-3 mt-10 text-xl font-semibold">Team</h2>
       <div className="grid gap-3">
         {users.slice(0, 5).map((user) => (
