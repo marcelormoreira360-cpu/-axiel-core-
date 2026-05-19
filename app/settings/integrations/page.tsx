@@ -21,12 +21,13 @@ export default async function IntegrationsPage({
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const [profile, clinic] = await Promise.all([getCurrentUserProfile(), getCurrentClinic()]);
-  if (!profile?.clinic_id) redirect("/dashboard");
+  const clinicId = profile?.clinic_id ?? clinic?.id;
+  if (!clinicId) redirect("/dashboard");
 
   const zoomStatus = getZoomIntegrationStatus();
   const [googleStatus, icalSecret] = await Promise.all([
-    getGoogleIntegrationStatus(profile.clinic_id),
-    getIcalSecret(profile.clinic_id),
+    getGoogleIntegrationStatus(clinicId),
+    getIcalSecret(clinicId),
   ]);
 
   const sp = await searchParams;
