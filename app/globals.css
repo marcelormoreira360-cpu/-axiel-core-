@@ -11,6 +11,14 @@
   --color-text-tertiary: #A09E98;
 }
 
+.dark {
+  --background: #0E1117;
+  --foreground: #E8E6E2;
+  --color-border-secondary: rgba(255,255,255,0.09);
+  --color-border-tertiary: rgba(255,255,255,0.07);
+  --color-text-tertiary: #6B6A66;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -22,4 +30,52 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* ── Dark mode overrides ─────────────────────────────────────────
+   These flip the most common hardcoded Tailwind arbitrary values
+   so we don't have to touch every individual page/component file.
+──────────────────────────────────────────────────────────────── */
+
+/* Text */
+.dark .text-\[\#0F1A2E\]  { color: #E8E6E2; }
+.dark .text-\[\#6B6A66\]  { color: #9E9C97; }
+.dark .text-\[\#A09E98\]  { color: #6B6A66; }
+
+/* Backgrounds */
+.dark .bg-white           { background-color: #161B26; }
+.dark .bg-\[\#FAFAF8\]    { background-color: #0E1117; }
+.dark .bg-\[\#F4F3EF\]    { background-color: #0B0F17; }
+.dark .bg-\[\#0F1A2E\]    { background-color: #1C2333; }
+.dark .bg-\[\#0F6E56\]    { background-color: #0F6E56; } /* keep green */
+.dark .bg-\[\#0F6E56\]\/\[\.07\] { background-color: rgba(15,110,86,0.12); }
+
+/* Hover backgrounds that use white */
+.dark .hover\:bg-white\/60:hover          { background-color: rgba(255,255,255,0.06); }
+.dark .hover\:bg-\[\#0F6E56\]\/\[\.08\]:hover { background-color: rgba(15,110,86,0.15); }
+.dark .hover\:bg-black\/\[\.04\]:hover    { background-color: rgba(255,255,255,0.05); }
+
+/* Borders */
+.dark .border-black\/\[\.06\]  { border-color: rgba(255,255,255,0.07); }
+.dark .border-black\/\[\.07\]  { border-color: rgba(255,255,255,0.08); }
+.dark .border-black\/\[\.08\]  { border-color: rgba(255,255,255,0.09); }
+.dark .border-black\/\[\.1\]   { border-color: rgba(255,255,255,0.10); }
+.dark .border-black\/\[\.12\]  { border-color: rgba(255,255,255,0.12); }
+
+/* Tailwind opacity text utilities */
+.dark .text-black\/55  { color: rgba(232,230,226,0.60); }
+.dark .text-black\/50  { color: rgba(232,230,226,0.55); }
+.dark .text-black\/35  { color: rgba(232,230,226,0.40); }
+
+/* Input fields */
+.dark input, .dark textarea, .dark select {
+  background-color: #1C2333;
+  color: #E8E6E2;
+  border-color: rgba(255,255,255,0.12);
+}
+.dark input::placeholder, .dark textarea::placeholder {
+  color: #6B6A66;
+}
+.dark input:focus, .dark textarea:focus {
+  border-color: #0F6E56;
 }
