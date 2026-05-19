@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { ViewDetails } from "@/components/view-details";
+import { BookingLinkCard } from "@/components/booking-link-card";
+import { getCurrentClinic } from "@/services/clinic-service";
 
 const settings = [
   { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
@@ -13,7 +15,10 @@ const settings = [
   { href: "/billing", title: "Billing", text: "Subscription, trial, upgrades, and invoices." },
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const clinic = await getCurrentClinic();
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
   return (
     <Shell>
       <div className="mb-8">
@@ -21,6 +26,11 @@ export default function SettingsPage() {
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">Keep advanced tools here</h1>
         <p className="mt-3 text-lg text-black/55">Daily users should not need this page often.</p>
       </div>
+
+      {clinic?.slug && (
+        <BookingLinkCard slug={clinic.slug} baseUrl={baseUrl} />
+      )}
+
       <div className="grid gap-4 md:grid-cols-2">
         {settings.slice(0, 5).map((item) => (
           <Link key={item.href} href={item.href}>
