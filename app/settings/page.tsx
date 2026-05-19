@@ -9,6 +9,7 @@ import { canManageClinicUsers } from "@/modules/auth/roles";
 
 const settings = [
   { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
+  { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
   { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure the AI assistant: name, program, pricing and language." },
   { href: "/intake", title: "Intake forms", text: "Questions patients answer before care." },
   { href: "/monetization", title: "Packages", text: "Session packages and memberships." },

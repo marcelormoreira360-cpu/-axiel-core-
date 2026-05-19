@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 
 export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
@@ -51,7 +52,50 @@ export async function createAppointment(input: {
     .single();
 
   if (error) throw error;
-  return data as Appointment;
+  const appt = data as Appointment;
+
+  // Fire-and-forget: create Zoom meeting + Google Calendar event
+  createIntegrationsSideEffects(appt).catch(() => {});
+
+  return appt;
+}
+
+async function createIntegrationsSideEffects(appt: Appointment) {
+  const { createZoomMeeting } = await import("@/services/zoom-service");
+  const { createGoogleCalendarEvent } = await import("@/services/google-calendar-service");
+
+  const patient = Array.isArray(appt.patients) ? appt.patients[0] : appt.patients;
+  const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
+  const summary = `${sessionType?.name ?? "Consulta"} — ${patient?.full_name ?? "Paciente"}`;
+
+  const [zoom, googleEventId] = await Promise.allSettled([
+    createZoomMeeting(appt.clinic_id, {
+      topic:           summary,
+      startIso:        appt.starts_at,
+      durationMinutes: appt.duration_minutes,
+    }),
+    createGoogleCalendarEvent(appt.clinic_id, {
+      summary,
+      startIso:        appt.starts_at,
+      durationMinutes: appt.duration_minutes,
+      attendeeEmail:   patient?.email ?? null,
+    }),
+  ]);
+
+  const updates: Record<string, string | null> = {};
+  if (zoom.status === "fulfilled" && zoom.value) {
+    updates.zoom_meeting_id = zoom.value.meeting_id;
+    updates.zoom_join_url   = zoom.value.join_url;
+    updates.zoom_start_url  = zoom.value.start_url;
+  }
+  if (googleEventId.status === "fulfilled" && googleEventId.value) {
+    updates.google_event_id = googleEventId.value;
+  }
+
+  if (Object.keys(updates).length > 0) {
+    const supabase = createSupabaseAdminClient();
+    await supabase.from("appointments").update(updates).eq("id", appt.id);
+  }
 }
 
 export async function getAppointmentsByPatient(patientId: string): Promise<Appointment[]> {
