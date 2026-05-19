@@ -68,28 +68,50 @@ async function createIntegrationsSideEffects(appt: Appointment) {
   const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
   const summary = `${sessionType?.name ?? "Consulta"} — ${patient?.full_name ?? "Paciente"}`;
 
-  const [zoom, googleEventId] = await Promise.allSettled([
-    createZoomMeeting(appt.clinic_id, {
-      topic:           summary,
-      startIso:        appt.starts_at,
-      durationMinutes: appt.duration_minutes,
-    }),
+  // Fetch is_online flag for this session type (not included in appointment select)
+  let isOnlineSession = false;
+  if (appt.session_type_id) {
+    const supabaseAdmin = createSupabaseAdminClient();
+    const { data: st } = await supabaseAdmin
+      .from("session_types")
+      .select("is_online")
+      .eq("id", appt.session_type_id)
+      .single();
+    isOnlineSession = st?.is_online ?? false;
+  }
+
+  const tasks: Promise<unknown>[] = [
     createGoogleCalendarEvent(appt.clinic_id, {
       summary,
       startIso:        appt.starts_at,
       durationMinutes: appt.duration_minutes,
       attendeeEmail:   patient?.email ?? null,
     }),
-  ]);
+  ];
+
+  if (isOnlineSession) {
+    tasks.push(
+      createZoomMeeting(appt.clinic_id, {
+        topic:           summary,
+        startIso:        appt.starts_at,
+        durationMinutes: appt.duration_minutes,
+      })
+    );
+  }
+
+  const results = await Promise.allSettled(tasks);
+  const googleEventId = results[0];
+  const zoom = isOnlineSession ? results[1] : null;
 
   const updates: Record<string, string | null> = {};
-  if (zoom.status === "fulfilled" && zoom.value) {
-    updates.zoom_meeting_id = zoom.value.meeting_id;
-    updates.zoom_join_url   = zoom.value.join_url;
-    updates.zoom_start_url  = zoom.value.start_url;
+  if (zoom?.status === "fulfilled" && zoom.value) {
+    const zv = zoom.value as { meeting_id: string; join_url: string; start_url: string };
+    updates.zoom_meeting_id = zv.meeting_id;
+    updates.zoom_join_url   = zv.join_url;
+    updates.zoom_start_url  = zv.start_url;
   }
   if (googleEventId.status === "fulfilled" && googleEventId.value) {
-    updates.google_event_id = googleEventId.value;
+    updates.google_event_id = googleEventId.value as string;
   }
 
   if (Object.keys(updates).length > 0) {

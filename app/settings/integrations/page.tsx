@@ -23,9 +23,9 @@ export default async function IntegrationsPage({
   const [profile, clinic] = await Promise.all([getCurrentUserProfile(), getCurrentClinic()]);
   if (!profile?.clinic_id) redirect("/dashboard");
 
-  const [googleStatus, zoomStatus, icalSecret] = await Promise.all([
+  const zoomStatus = getZoomIntegrationStatus();
+  const [googleStatus, icalSecret] = await Promise.all([
     getGoogleIntegrationStatus(profile.clinic_id),
-    getZoomIntegrationStatus(profile.clinic_id),
     getIcalSecret(profile.clinic_id),
   ]);
 
@@ -138,32 +138,21 @@ export default async function IntegrationsPage({
             <StatusBadge connected={zoomStatus.connected} />
           </div>
 
-          {zoomStatus.connected && zoomStatus.email && (
+          {zoomStatus.connected ? (
             <div className="mt-3 flex items-center gap-2 bg-[#F4F3EF] dark:bg-white/[.04] rounded-[8px] px-[12px] py-[8px]">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="4" r="2.5" stroke="#2D8CFF" strokeWidth="1.2"/><path d="M1.5 11c0-2.485 2.015-4.5 4.5-4.5s4.5 2.015 4.5 4.5" stroke="#2D8CFF" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l2.5 2.5L10 3" stroke="#0F6E56" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
               <span className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97]">
-                Conta: <strong className="text-[#0F1A2E] dark:text-[#E8E6E2]">{zoomStatus.email}</strong>
+                Configurado via variáveis de ambiente — reuniões criadas automaticamente para sessões online.
+              </span>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center gap-2 bg-[#FFF8E1] dark:bg-yellow-500/[.08] rounded-[8px] px-[12px] py-[8px]">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1L1 10h10L6 1z" stroke="#D97706" strokeWidth="1.2" strokeLinejoin="round"/><path d="M6 5v2.5M6 9v.5" stroke="#D97706" strokeWidth="1.2" strokeLinecap="round"/></svg>
+              <span className="text-[12px] text-[#92400E] dark:text-yellow-400">
+                Configure <code className="bg-white dark:bg-[#1C2333] px-1 rounded text-[11px]">ZOOM_ACCOUNT_ID</code>, <code className="bg-white dark:bg-[#1C2333] px-1 rounded text-[11px]">ZOOM_CLIENT_ID</code> e <code className="bg-white dark:bg-[#1C2333] px-1 rounded text-[11px]">ZOOM_CLIENT_SECRET</code> no Vercel.
               </span>
             </div>
           )}
-
-          <div className="flex gap-2 mt-4">
-            {!zoomStatus.connected ? (
-              <a
-                href="/api/integrations/zoom"
-                className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#2D8CFF] hover:bg-[#1A7AEF] transition px-[14px] py-[8px] rounded-[8px]"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="3" fill="white" fillOpacity=".2"/><path d="M4 8.5a2 2 0 012-2h7a2 2 0 012 2v7a2 2 0 01-2 2H6a2 2 0 01-2-2v-7z" fill="white"/><path d="M15 10.5l4-2v7l-4-2v-3z" fill="white"/></svg>
-                Conectar Zoom
-              </a>
-            ) : (
-              <form action="/api/integrations/zoom/disconnect" method="POST">
-                <button type="submit" className="text-[12px] font-medium text-[#DC2626] border border-[#DC2626]/20 hover:bg-[#DC2626]/[.06] transition px-[14px] py-[8px] rounded-[8px]">
-                  Desconectar
-                </button>
-              </form>
-            )}
-          </div>
         </div>
 
         {/* ── iCal / Apple Calendar ── */}

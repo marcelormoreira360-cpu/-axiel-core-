@@ -245,6 +245,7 @@ export type SessionType = {
   duration_minutes: number;
   price_cents: number;
   is_active: boolean;
+  is_online: boolean;
   created_at: string;
   updated_at: string;
 };

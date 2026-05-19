@@ -51,45 +51,47 @@ CREATE INDEX IF NOT EXISTS zoom_integrations_clinic_id_idx     ON public.zoom_in
 -- calendar_integrations
 ALTER TABLE public.calendar_integrations ENABLE ROW LEVEL SECURITY;
 
--- All active clinic members may read their clinic's integration row
-CREATE POLICY IF NOT EXISTS "calendar_integrations_select" ON public.calendar_integrations
+DROP POLICY IF EXISTS "calendar_integrations_select" ON public.calendar_integrations;
+DROP POLICY IF EXISTS "calendar_integrations_insert" ON public.calendar_integrations;
+DROP POLICY IF EXISTS "calendar_integrations_update" ON public.calendar_integrations;
+DROP POLICY IF EXISTS "calendar_integrations_delete" ON public.calendar_integrations;
+
+CREATE POLICY "calendar_integrations_select" ON public.calendar_integrations
   FOR SELECT
   USING (public.can_access_clinic(clinic_id));
 
--- Only clinic owners / managers may connect (insert) a calendar integration
-CREATE POLICY IF NOT EXISTS "calendar_integrations_insert" ON public.calendar_integrations
+CREATE POLICY "calendar_integrations_insert" ON public.calendar_integrations
   FOR INSERT
   WITH CHECK (public.can_manage_clinic(clinic_id));
 
--- Only clinic owners / managers may update the integration (e.g. token refresh)
-CREATE POLICY IF NOT EXISTS "calendar_integrations_update" ON public.calendar_integrations
+CREATE POLICY "calendar_integrations_update" ON public.calendar_integrations
   FOR UPDATE
   USING (public.can_manage_clinic(clinic_id));
 
--- Only clinic owners / managers may disconnect (delete) a calendar integration
-CREATE POLICY IF NOT EXISTS "calendar_integrations_delete" ON public.calendar_integrations
+CREATE POLICY "calendar_integrations_delete" ON public.calendar_integrations
   FOR DELETE
   USING (public.can_manage_clinic(clinic_id));
 
 -- zoom_integrations
 ALTER TABLE public.zoom_integrations ENABLE ROW LEVEL SECURITY;
 
--- All active clinic members may read their clinic's Zoom integration row
-CREATE POLICY IF NOT EXISTS "zoom_integrations_select" ON public.zoom_integrations
+DROP POLICY IF EXISTS "zoom_integrations_select" ON public.zoom_integrations;
+DROP POLICY IF EXISTS "zoom_integrations_insert" ON public.zoom_integrations;
+DROP POLICY IF EXISTS "zoom_integrations_update" ON public.zoom_integrations;
+DROP POLICY IF EXISTS "zoom_integrations_delete" ON public.zoom_integrations;
+
+CREATE POLICY "zoom_integrations_select" ON public.zoom_integrations
   FOR SELECT
   USING (public.can_access_clinic(clinic_id));
 
--- Only clinic owners / managers may connect a Zoom account
-CREATE POLICY IF NOT EXISTS "zoom_integrations_insert" ON public.zoom_integrations
+CREATE POLICY "zoom_integrations_insert" ON public.zoom_integrations
   FOR INSERT
   WITH CHECK (public.can_manage_clinic(clinic_id));
 
--- Only clinic owners / managers may update Zoom credentials
-CREATE POLICY IF NOT EXISTS "zoom_integrations_update" ON public.zoom_integrations
+CREATE POLICY "zoom_integrations_update" ON public.zoom_integrations
   FOR UPDATE
   USING (public.can_manage_clinic(clinic_id));
 
--- Only clinic owners / managers may disconnect Zoom
-CREATE POLICY IF NOT EXISTS "zoom_integrations_delete" ON public.zoom_integrations
+CREATE POLICY "zoom_integrations_delete" ON public.zoom_integrations
   FOR DELETE
   USING (public.can_manage_clinic(clinic_id));
