@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Package, X, StopCircle, Trash2 } from "lucide-react";
+import { Plus, Package, X, StopCircle, Trash2, RefreshCw } from "lucide-react";
 import type { PatientPackage } from "@/services/package-service";
 import {
   addPackageAction,
@@ -66,7 +66,14 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
             <Package className="h-3.5 w-3.5 text-[#0F6E56]" />
           </div>
           <div>
-            <p className="text-[13px] font-medium text-[#0F1A2E]">{pkg.name}</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] flex items-center gap-[6px]">
+              {pkg.name}
+              {pkg.auto_renew && (
+                <span className="inline-flex items-center gap-[3px] text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-full px-[6px] py-[2px]">
+                  <RefreshCw className="h-2 w-2" /> auto
+                </span>
+              )}
+            </p>
             <p className="text-[11px] text-[#A09E98]">Início: {since}</p>
           </div>
         </div>
@@ -119,6 +126,8 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
 }
 
 function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const [autoRenew, setAutoRenew] = useState(false);
+
   async function submit(formData: FormData) {
     await addPackageAction(formData);
     onClose();
@@ -135,6 +144,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
 
       <form action={submit} className="px-[14px] py-[14px] space-y-[10px]">
         <input type="hidden" name="patient_id" value={patientId} />
+        <input type="hidden" name="auto_renew" value={autoRenew ? "true" : "false"} />
 
         <div>
           <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Nome do pacote *</label>
@@ -179,6 +189,25 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
             placeholder="Ex: Pago, validade 6 meses..."
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
+        </div>
+
+        <div
+          onClick={() => setAutoRenew((v) => !v)}
+          className="flex items-center justify-between rounded-[8px] border border-black/[.08] px-[10px] py-[8px] cursor-pointer hover:bg-[#FAFAF8] transition select-none"
+        >
+          <div className="flex items-center gap-[7px]">
+            <RefreshCw className="h-3 w-3 text-[#0F6E56]" />
+            <span className="text-[12px] text-[#0F1A2E]">Renovar automaticamente</span>
+          </div>
+          <div className={[
+            "w-8 h-4 rounded-full transition-colors duration-200 relative",
+            autoRenew ? "bg-[#0F6E56]" : "bg-[#D3D1C7]",
+          ].join(" ")}>
+            <div className={[
+              "absolute top-[2px] w-3 h-3 bg-white rounded-full shadow transition-transform duration-200",
+              autoRenew ? "translate-x-[18px]" : "translate-x-[2px]",
+            ].join(" ")} />
+          </div>
         </div>
 
         <div className="flex justify-end">

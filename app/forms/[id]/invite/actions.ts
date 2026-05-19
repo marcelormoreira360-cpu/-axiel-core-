@@ -17,10 +17,17 @@ export async function createInvitationAction(
     clinic_id: profile.clinic_id,
   });
 
-  const headerStore = await headers();
-  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-  const host = headerStore.get("host") ?? "localhost:3001";
-  const url = `${protocol}://${host}/f/${token}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  let baseUrl: string;
+  if (appUrl) {
+    baseUrl = appUrl.replace(/\/$/, "");
+  } else {
+    const headerStore = await headers();
+    const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+    const host = headerStore.get("host") ?? "localhost:3000";
+    baseUrl = `${protocol}://${host}`;
+  }
+  const url = `${baseUrl}/f/${token}`;
 
   return { url };
 }

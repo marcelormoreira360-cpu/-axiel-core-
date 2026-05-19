@@ -13,6 +13,7 @@ export async function addPackageAction(formData: FormData) {
   const sessionsTotal = parseInt(String(formData.get("sessions_total") ?? "0"), 10);
   const startDate = String(formData.get("start_date") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim() || undefined;
+  const autoRenew = formData.get("auto_renew") === "true";
 
   if (!name || !sessionsTotal || !startDate) return;
 
@@ -23,6 +24,7 @@ export async function addPackageAction(formData: FormData) {
     sessions_total: sessionsTotal,
     start_date: startDate,
     notes,
+    auto_renew: autoRenew,
   });
 
   revalidatePath(`/patients/${patientId}`);

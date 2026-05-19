@@ -1,6 +1,7 @@
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { getRlsStatus, summarizeRlsStatus } from "@/services/security-service";
+import { MfaSettings } from "@/components/mfa-settings";
 
 export default async function SecuritySettingsPage() {
   const rows = await getRlsStatus();
@@ -8,6 +9,8 @@ export default async function SecuritySettingsPage() {
 
   return (
     <div className="space-y-6">
+      <MfaSettings />
+
       <SimplePageHeader
         eyebrow="Security"
         title="Data protection"

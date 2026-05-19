@@ -54,8 +54,11 @@ export async function createAppointment(input: {
   if (error) throw error;
   const appt = data as Appointment;
 
-  // Fire-and-forget: create Zoom meeting + Google Calendar event
+  // Fire-and-forget: integrations + package auto-renewal
   createIntegrationsSideEffects(appt).catch(() => {});
+  import("@/services/package-service").then(({ checkAndAutoRenewPackages }) =>
+    checkAndAutoRenewPackages(appt.patient_id, appt.clinic_id, appt.starts_at).catch(() => {})
+  );
 
   return appt;
 }

@@ -27,7 +27,12 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
+      router.push("/auth/mfa");
+    } else {
+      router.push("/dashboard");
+    }
     router.refresh();
   }
 

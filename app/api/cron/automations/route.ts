@@ -15,7 +15,6 @@ export async function GET(request: Request) {
 
   try {
     const result = await processAutomations();
-    console.log("[cron/automations]", result);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     console.error("[cron/automations] error:", error);

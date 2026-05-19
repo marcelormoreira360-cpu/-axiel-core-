@@ -5,6 +5,7 @@ const publicRoutes = ["/", "/auth/login"];
 const publicPrefixes = ["/auth", "/api/public", "/api/whatsapp"];
 
 function isPublicPath(pathname: string) {
+  if (pathname === "/auth/mfa") return false; // requires authentication
   return publicRoutes.includes(pathname) || pathname.startsWith("/p/") || publicPrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
@@ -42,24 +43,44 @@ export async function middleware(request: NextRequest) {
     return redirectToLogin(request);
   }
 
-  if (user && pathname.startsWith("/auth")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
-  }
+  if (user) {
+    const isMfaPage = pathname === "/auth/mfa";
 
-  // Platform-only pages. Keep this lightweight; database RLS remains the main security layer.
-  if (user && pathname.startsWith("/admin")) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+    // Check MFA requirement (only when user is authenticated)
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    const mfaRequired = aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2";
 
-    if (!profile || !["admin", "platform_admin"].includes(profile.role)) {
+    if (mfaRequired && !isMfaPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/auth/mfa";
+      return NextResponse.redirect(url);
+    }
+
+    if (!mfaRequired && isMfaPage) {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);
+    }
+
+    if (!mfaRequired && pathname.startsWith("/auth") && !isMfaPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
+
+    // Platform-only pages. Keep this lightweight; database RLS remains the main security layer.
+    if (pathname.startsWith("/admin")) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile || !["admin", "platform_admin"].includes(profile.role)) {
+        const url = request.nextUrl.clone();
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
     }
   }
 
