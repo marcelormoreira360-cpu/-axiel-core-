@@ -109,9 +109,10 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 async function sendReminderEmail(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   fu: { id: string; clinic_id: string; appointment_id: string | null },
-  patient: { id: string; full_name: string; email: string },
+  patient: { id: string; full_name: string; email: string | null },
   appt: { id: string; starts_at: string } | null,
 ) {
+  if (!patient.email) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const first = patient.full_name.split(" ")[0];
   const dateStr = appt?.starts_at
