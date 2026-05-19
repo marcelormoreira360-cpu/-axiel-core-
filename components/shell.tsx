@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { ClinicSwitcher } from "@/components/clinic-switcher";
+import { getClinicsForUser, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 
-export function Shell({
+export async function Shell({
   children,
   userName,
   userRole,
@@ -18,14 +21,25 @@ export function Shell({
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "U";
 
+  const [clinics, cookieStore] = await Promise.all([
+    getClinicsForUser().catch(() => []),
+    cookies(),
+  ]);
+  const activeClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
+
   return (
     <div className="flex min-h-screen bg-[#FAFAF8] dark:bg-[#0E1117]">
       {/* ── Desktop sidebar ── */}
       <aside className="hidden lg:flex flex-col w-[176px] shrink-0 bg-[#F4F3EF] dark:bg-[#0B0F17] border-r border-black/[.06] dark:border-white/[.07] sticky top-0 h-screen overflow-y-auto py-5">
         {/* Logo */}
-        <div className="px-[18px] pb-[22px] text-[17px] font-medium tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2] select-none">
+        <div className="px-[18px] pb-[14px] text-[17px] font-medium tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2] select-none">
           AXI<span className="text-[#0F6E56]">EL</span>
         </div>
+
+        {/* Clinic switcher */}
+        {clinics.length > 0 && (
+          <ClinicSwitcher clinics={clinics} activeClinicId={activeClinicId} />
+        )}
 
         <SidebarNavigation />
 

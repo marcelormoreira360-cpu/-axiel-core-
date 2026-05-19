@@ -1,144 +1,178 @@
 import Link from "next/link";
-import { CalmMessage } from "@/components/ui/calm-message";
-import { Card } from "@/components/ui/card";
-import { ButtonPrimary } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { type PatientPortalData } from "@/services/patient-portal-service";
-import { getTerm } from "@/modules/ui/terminology";
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return "Not yet";
-  return new Date(value).toLocaleDateString([], { month: "short", day: "numeric" });
+  if (!value) return "—";
+  return new Date(value).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
 }
 
-function shortText(value: string, maxLength = 180) {
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return `${d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" })} às ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`;
+}
+
+function shortText(value: string | null | undefined, max = 180) {
   const clean = value?.trim();
-  if (!clean) return "Your clinic will add an update here when it is ready.";
-  return clean.length > maxLength ? `${clean.slice(0, maxLength - 3)}...` : clean;
+  if (!clean) return "Sua clínica adicionará uma atualização em breve.";
+  return clean.length > max ? `${clean.slice(0, max - 3)}…` : clean;
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">{title}</p>
+      {children}
+    </div>
+  );
 }
 
 export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
-  const firstName = data.patient.full_name.split(" ")[0] ?? data.patient.full_name;
+  const firstName = data.patient.full_name.split(" ")[0];
+  const nextSession = data.upcomingAppointments[0];
+  const pkg = data.activePackage;
+  const pkgPercent = pkg ? Math.round((pkg.sessions_used / pkg.sessions_total) * 100) : 0;
 
   return (
-    <div className="bg-axiel-background min-h-screen p-4 md:p-8 space-y-6">
-      <div className="mx-auto w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-[#F8FAF9] px-4 py-8 md:py-12">
+      <div className="mx-auto w-full max-w-md space-y-4">
+
         {/* Header */}
-        <div>
-          <h1 className="text-lg font-semibold text-axiel-text-primary">
-            Your Progress
+        <div className="pb-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/35">{data.clinic.name}</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#0F1A2E]">
+            Olá, {firstName} 👋
           </h1>
-          <p className="text-sm text-axiel-text-secondary">
-            {firstName}
-          </p>
+          <p className="mt-1 text-sm text-black/50">Acompanhe seu progresso e suas sessões.</p>
         </div>
 
-        {/* Calm message */}
-        <CalmMessage>
-          You are on the right path. This is part of your progress.
-        </CalmMessage>
-
-
-
-        {/* Simple Snapshot */}
-        <Card>
-          <h2 className="text-sm font-semibold text-axiel-text-primary">
-            Patient Snapshot
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-axiel-text-secondary">
-            {data.latestInsight
-              ? shortText(data.latestInsight.summary, 140)
-              : "Your clinic is reviewing your information."}
-          </p>
-          <div className="mt-4 rounded-2xl bg-axiel-background p-4">
-            <p className="text-xs font-medium uppercase tracking-[0.14em] text-axiel-text-secondary">
-              {getTerm("nextStep")}
-            </p>
-            <p className="mt-1 text-sm leading-6 text-axiel-text-primary">
-              {shortText(data.nextStep, 120)}
-            </p>
-          </div>
-        </Card>
-
-        {/* Latest Insight */}
-        <Card>
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-sm font-semibold text-axiel-text-primary">
-              Latest {getTerm("insight")}
-            </h2>
-            {data.latestInsight ? (
-              <Badge status={data.latestInsight.status} />
-            ) : (
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-xs text-gray-600">
-                Coming soon
-              </span>
+        {/* Próxima sessão */}
+        {nextSession ? (
+          <div className="bg-[#0B1F3A] rounded-2xl p-5 text-white">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50 mb-2">Próxima sessão</p>
+            <p className="text-lg font-semibold">{formatDateTime(nextSession.starts_at)}</p>
+            {nextSession.duration_minutes && (
+              <p className="text-sm text-white/60 mt-1">{nextSession.duration_minutes} minutos</p>
+            )}
+            {data.whatsappUrl && (
+              <Link
+                href={data.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 inline-block text-xs font-medium text-white/70 hover:text-white underline underline-offset-2 transition"
+              >
+                Solicitar reagendamento via WhatsApp →
+              </Link>
             )}
           </div>
-
-          <h3 className="mt-3 text-base font-semibold text-axiel-text-primary">
-            {data.latestInsight?.title ?? "No insight yet"}
-          </h3>
-
-          <p className="mt-2 text-sm leading-relaxed text-axiel-text-secondary">
-            {data.latestInsight
-              ? shortText(data.latestInsight.summary)
-              : "Your clinic will share a simple update here when it is ready."}
-          </p>
-        </Card>
-
-        {/* Timeline */}
-        <Card>
-          <h2 className="mb-3 text-sm font-semibold text-axiel-text-primary">
-            Your {getTerm("session", "plural")}
-          </h2>
-
-          <div className="space-y-2">
-            {data.sessions.length ? (
-              data.sessions.slice(0, 5).map((session, index) => (
-                <div
-                  key={session.id ?? index}
-                  className="flex justify-between gap-4 text-sm text-axiel-text-secondary"
-                >
-                  <span>{getTerm("session")} {index + 1}</span>
-                  <span>{formatDate(session.starts_at)}</span>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-axiel-text-secondary">
-                Your sessions will appear here after your first visit.
-              </p>
-            )}
-          </div>
-        </Card>
-
-        {/* Next Step */}
-        <Card>
-          <h2 className="mb-2 text-sm font-semibold text-axiel-text-primary">
-            {getTerm("nextStep")}
-          </h2>
-
-          <p className="text-sm leading-relaxed text-axiel-text-secondary">
-            {shortText(data.nextStep, 160)}
-          </p>
-        </Card>
-
-        {/* WhatsApp */}
-        {data.whatsappUrl ? (
-          <Link href={data.whatsappUrl} target="_blank" rel="noreferrer" className="block">
-            <ButtonPrimary className="w-full">
-              Talk to your practitioner
-            </ButtonPrimary>
-          </Link>
         ) : (
-          <Card>
-            <p className="text-center text-sm text-axiel-text-secondary">
-              Contact your clinic if you have a question.
-            </p>
-          </Card>
+          <div className="bg-white rounded-2xl border border-black/[.07] p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40 mb-2">Próxima sessão</p>
+            <p className="text-sm text-black/50">Nenhuma sessão agendada no momento.</p>
+            {data.whatsappUrl && (
+              <Link
+                href={data.whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-3 inline-block text-sm font-medium text-[#0F6E56] hover:underline"
+              >
+                Agendar pelo WhatsApp →
+              </Link>
+            )}
+          </div>
         )}
 
-        <p className="pb-2 text-center text-xs leading-5 text-axiel-text-secondary">
-          This page is private. Please do not share this link.
+        {/* Pacote ativo */}
+        {pkg && (
+          <Section title="Seu pacote">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-[#0F1A2E]">{pkg.name}</p>
+                <p className="text-sm font-medium text-[#0F6E56]">
+                  {pkg.sessions_remaining} sessão(ões) restante(s)
+                </p>
+              </div>
+              <div className="h-2 bg-black/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-[#0F6E56] rounded-full transition-all"
+                  style={{ width: `${pkgPercent}%` }}
+                />
+              </div>
+              <p className="mt-1.5 text-xs text-black/40">
+                {pkg.sessions_used} de {pkg.sessions_total} sessões utilizadas
+              </p>
+            </div>
+          </Section>
+        )}
+
+        {/* Insight */}
+        {data.latestInsight && (
+          <Section title="Seu progresso">
+            <div>
+              <p className="text-base font-semibold text-[#0F1A2E]">{data.latestInsight.title}</p>
+              <p className="mt-2 text-sm leading-relaxed text-black/60">
+                {shortText(data.latestInsight.summary, 200)}
+              </p>
+            </div>
+            <div className="bg-[#F0FAF5] rounded-xl p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#0F6E56]/70 mb-1">Próximo passo</p>
+              <p className="text-sm leading-relaxed text-[#0F1A2E]">
+                {shortText(data.nextStep, 160)}
+              </p>
+            </div>
+          </Section>
+        )}
+
+        {/* Histórico de sessões */}
+        {data.sessions.length > 0 && (
+          <Section title="Histórico de sessões">
+            <div className="space-y-2">
+              {data.sessions.slice(0, 5).map((session, index) => (
+                <div
+                  key={session.id ?? index}
+                  className="flex items-center justify-between py-2 border-b border-black/[.05] last:border-0"
+                >
+                  <span className="text-sm text-black/70">Sessão {data.sessions.length - index}</span>
+                  <span className="text-sm text-black/50">{formatDate(session.starts_at)}</span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Próximas sessões (list) */}
+        {data.upcomingAppointments.length > 1 && (
+          <Section title="Agendamentos futuros">
+            <div className="space-y-2">
+              {data.upcomingAppointments.map((appt, index) => (
+                <div
+                  key={appt.id ?? index}
+                  className="flex items-center justify-between py-2 border-b border-black/[.05] last:border-0"
+                >
+                  <span className="text-sm text-[#0F1A2E]">{formatDateTime(appt.starts_at)}</span>
+                  {appt.duration_minutes && (
+                    <span className="text-xs text-black/40">{appt.duration_minutes} min</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* WhatsApp CTA */}
+        {data.whatsappUrl && (
+          <Link
+            href={data.whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full rounded-2xl bg-[#25D366] text-white text-center py-3.5 text-sm font-semibold hover:bg-[#22c55e] transition"
+          >
+            Falar com sua clínica pelo WhatsApp
+          </Link>
+        )}
+
+        <p className="pb-4 text-center text-xs text-black/30">
+          Esta página é privada. Não compartilhe este link.
         </p>
       </div>
     </div>

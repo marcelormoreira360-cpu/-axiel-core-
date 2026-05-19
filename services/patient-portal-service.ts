@@ -34,12 +34,21 @@ export type PatientPortalInsight = {
   next_step: string;
 };
 
+export type PatientPortalPackage = {
+  name: string;
+  sessions_total: number;
+  sessions_used: number;
+  sessions_remaining: number;
+};
+
 export type PatientPortalData = {
   link: PatientPortalLink;
   patient: Pick<Patient, "id" | "full_name" | "status">;
   clinic: { id: string; name: string };
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
+  upcomingAppointments: PatientPortalSessionItem[];
+  activePackage: PatientPortalPackage | null;
   nextStep: string;
   whatsappUrl: string | null;
 };
@@ -240,7 +249,8 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     return null;
   }
 
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: sessionRecords }, { data: settings }] = await Promise.all([
+  const now = new Date().toISOString();
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name").eq("id", link.clinic_id).maybeSingle(),
     supabase
@@ -258,8 +268,17 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .select("*")
       .eq("patient_id", link.patient_id)
       .eq("clinic_id", link.clinic_id)
+      .lt("starts_at", now)
       .order("starts_at", { ascending: false })
       .limit(5),
+    supabase
+      .from("appointments")
+      .select("*")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .gte("starts_at", now)
+      .order("starts_at", { ascending: true })
+      .limit(3),
     supabase
       .from("session_records")
       .select("*")
@@ -268,6 +287,15 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .order("updated_at", { ascending: false })
       .limit(5),
     supabase.from("clinic_settings").select("settings").eq("clinic_id", link.clinic_id).maybeSingle(),
+    supabase
+      .from("patient_packages")
+      .select("name, sessions_total, sessions_used")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (!patient || !clinic) return null;
@@ -288,6 +316,19 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   const recordsByAppointment = new Map<string, SessionRecord>();
   ((sessionRecords ?? []) as SessionRecord[]).forEach((record) => recordsByAppointment.set(record.appointment_id, record));
 
+  function mapAppointment(appointment: Appointment): PatientPortalSessionItem {
+    const record = recordsByAppointment.get(appointment.id);
+    return {
+      id: appointment.id,
+      starts_at: appointment.starts_at,
+      duration_minutes: appointment.duration_minutes,
+      notes: appointment.notes,
+      observations: record?.key_observations?.slice(0, 3) ?? [],
+    };
+  }
+
+  const upcomingMapped = ((upcoming ?? []) as Appointment[]).map(mapAppointment);
+
   const sessions = ((appointments ?? []) as Appointment[]).map((appointment) => {
     const record = recordsByAppointment.get(appointment.id);
     return {
@@ -303,13 +344,24 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   const settingsObject = (settings?.settings ?? {}) as Record<string, unknown>;
   const whatsappNumber = typeof settingsObject.whatsapp_number === "string" ? settingsObject.whatsapp_number : null;
 
+  const pkg = activePackage
+    ? {
+        name: activePackage.name,
+        sessions_total: activePackage.sessions_total ?? 0,
+        sessions_used: activePackage.sessions_used ?? 0,
+        sessions_remaining: Math.max(0, (activePackage.sessions_total ?? 0) - (activePackage.sessions_used ?? 0)),
+      }
+    : null;
+
   return {
     link: link as PatientPortalLink,
     patient,
     clinic,
     latestInsight: insight,
     sessions,
-    nextStep: insight?.next_step ?? "Please contact your clinic to ask about your next step.",
+    upcomingAppointments: upcomingMapped,
+    activePackage: pkg,
+    nextStep: insight?.next_step ?? "Entre em contato com sua clínica para saber sobre o próximo passo.",
     whatsappUrl: createWhatsAppUrl(whatsappNumber),
   };
 }
