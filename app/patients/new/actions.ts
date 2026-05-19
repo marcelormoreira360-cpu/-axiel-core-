@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { getClinicsForUser } from "@/services/clinic-service";
 import { createPatient } from "@/services/patient-service";
+import { createPatientPortalLink } from "@/services/patient-portal-service";
+import { sendPatientWelcome } from "@/services/patient-welcome-service";
 
 export async function createPatientAction(formData: FormData) {
   const clinics = await getClinicsForUser();
@@ -16,6 +18,14 @@ export async function createPatientAction(formData: FormData) {
     phone: String(formData.get("phone") ?? "").trim() || null,
     notes: String(formData.get("notes") ?? "").trim() || null,
   });
+
+  // Fire-and-forget: create portal link and send welcome message
+  if (patient.email || patient.phone) {
+    createPatientPortalLink(patient.id)
+      .then(({ token }) => sendPatientWelcome(patient, token))
+      .catch(() => sendPatientWelcome(patient))
+      .catch(() => {});
+  }
 
   redirect(`/patients/${patient.id}`);
 }
