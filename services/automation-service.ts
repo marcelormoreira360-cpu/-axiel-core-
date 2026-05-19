@@ -186,7 +186,7 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
   const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
 
   for (const pkg of lowPackages) {
-    const patient = pkg.patients as { id: string; full_name: string; email: string | null; phone: string | null } | null;
+    const patient = (pkg.patients as unknown) as { id: string; full_name: string; email: string | null; phone: string | null } | null;
     if (!patient) { skipped++; continue; }
 
     // Dedup: skip if already notified in the last 7 days for this patient+use_case
