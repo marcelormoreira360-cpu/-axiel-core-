@@ -142,7 +142,7 @@ export type SessionRecord = {
 
 
 export type FollowUpStatus = "pending" | "completed" | "canceled";
-export type FollowUpChannel = "none" | "email" | "sms";
+export type FollowUpChannel = "none" | "email" | "sms" | "whatsapp";
 
 export type FollowUp = {
   id: string;

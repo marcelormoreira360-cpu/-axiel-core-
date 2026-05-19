@@ -6,6 +6,7 @@ import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
 import { getAppointments, getAppointmentsByPatient, createAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
+import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsight, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -76,6 +77,14 @@ export default async function SchedulePage() {
       source,
       notes: null,
     });
+
+    // Schedule D-1, D+3, D+30 automations (fire-and-forget)
+    scheduleAutomations({
+      id: appointment.id,
+      clinic_id: appointment.clinic_id,
+      patient_id: appointment.patient_id,
+      starts_at: appointment.starts_at,
+    }).catch(() => {});
 
     const patient = appointment.patients;
     if (patient?.phone) {
