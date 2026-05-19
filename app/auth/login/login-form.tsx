@@ -58,6 +58,11 @@ export function LoginForm() {
         {loading ? "Signing in..." : "Continue"}
       </Button>
       {message && <p className="text-sm text-red-600">{message}</p>}
+      <p className="text-center text-sm text-black/40">
+        <a href="/auth/reset-password" className="text-axiel-ink hover:underline">
+          Esqueceu sua senha?
+        </a>
+      </p>
     </form>
   );
 }
