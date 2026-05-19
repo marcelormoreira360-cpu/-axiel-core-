@@ -4,6 +4,8 @@ import { Card } from "@/components/card";
 import { ViewDetails } from "@/components/view-details";
 import { BookingLinkCard } from "@/components/booking-link-card";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentUserProfile } from "@/services/user-service";
+import { canManageClinicUsers } from "@/modules/auth/roles";
 
 const settings = [
   { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
@@ -16,8 +18,12 @@ const settings = [
 ];
 
 export default async function SettingsPage() {
-  const clinic = await getCurrentClinic();
+  const [clinic, profile] = await Promise.all([
+    getCurrentClinic(),
+    getCurrentUserProfile(),
+  ]);
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const isAdmin = canManageClinicUsers(profile?.role);
 
   return (
     <Shell>
@@ -41,22 +47,34 @@ export default async function SettingsPage() {
           </Link>
         ))}
       </div>
-      {settings.length > 5 ? (
-        <div className="mt-4">
-          <ViewDetails label="View details">
-            <div className="grid gap-4 md:grid-cols-2">
-              {settings.slice(5).map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <Card className="p-6 transition hover:-translate-y-0.5 hover:shadow-sm">
-                    <h2 className="text-xl font-semibold">{item.title}</h2>
-                    <p className="mt-2 text-sm text-black/55">{item.text}</p>
-                  </Card>
-                </Link>
-              ))}
-            </div>
-          </ViewDetails>
-        </div>
-      ) : null}
+
+      <div className="mt-4">
+        <ViewDetails label="View details">
+          <div className="grid gap-4 md:grid-cols-2">
+            {settings.slice(5).map((item) => (
+              <Link key={item.href} href={item.href}>
+                <Card className="p-6 transition hover:-translate-y-0.5 hover:shadow-sm">
+                  <h2 className="text-xl font-semibold">{item.title}</h2>
+                  <p className="mt-2 text-sm text-black/55">{item.text}</p>
+                </Card>
+              </Link>
+            ))}
+
+            {/* Admin-only: Audit log */}
+            {isAdmin && (
+              <Link href="/admin/audit">
+                <Card className="p-6 transition hover:-translate-y-0.5 hover:shadow-sm border-[#0F6E56]/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h2 className="text-xl font-semibold">Log de Auditoria</h2>
+                    <span className="text-[10px] font-medium text-[#0F6E56] bg-[#E1F5EE] px-[7px] py-[2px] rounded-full">Admin</span>
+                  </div>
+                  <p className="text-sm text-black/55">Histórico completo de ações do sistema e comunicações enviadas.</p>
+                </Card>
+              </Link>
+            )}
+          </div>
+        </ViewDetails>
+      </div>
     </Shell>
   );
 }
