@@ -9,16 +9,18 @@ import {
   Calendar,
   Sparkles,
   FileText,
+  Banknote,
   MessageCircle,
 } from "lucide-react";
 
 const mainNav = [
-  { href: "/dashboard",  label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/patients",   label: "Patients",    icon: Users },
-  { href: "/leads",      label: "Leads",       icon: Megaphone, dot: true },
-  { href: "/schedule",   label: "Schedule",    icon: Calendar },
-  { href: "/actions",    label: "AI Insights", icon: Sparkles },
-  { href: "/forms",      label: "Formulários", icon: FileText },
+  { href: "/dashboard",   label: "Dashboard",   icon: LayoutDashboard },
+  { href: "/patients",    label: "Pacientes",   icon: Users },
+  { href: "/leads",       label: "Leads",       icon: Megaphone, dot: true },
+  { href: "/schedule",    label: "Agenda",      icon: Calendar },
+  { href: "/financeiro",  label: "Financeiro",  icon: Banknote },
+  { href: "/actions",     label: "AI Insights", icon: Sparkles },
+  { href: "/forms",       label: "Formulários", icon: FileText },
 ];
 
 const clinicNav = [
