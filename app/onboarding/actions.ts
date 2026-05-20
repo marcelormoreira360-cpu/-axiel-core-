@@ -1,9 +1,11 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { completeGuidedOnboarding, normalizeClinicSlug } from "@/services/onboarding-service";
 
-export type OnboardingActionState = { error: string } | null;
+export type OnboardingActionState =
+  | { success: true }
+  | { error: string }
+  | null;
 
 export async function completeOnboardingAction(
   _prev: OnboardingActionState,
@@ -23,13 +25,13 @@ export async function completeOnboardingAction(
       clinicProfile,
       staffEmail,
     });
+
+    return { success: true };
   } catch (err) {
-    console.error("[onboarding] completeGuidedOnboarding error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[onboarding] completeGuidedOnboarding error:", msg);
     return {
-      error:
-        "Não foi possível concluir a configuração. Tente novamente ou entre em contato com o suporte.",
+      error: `Não foi possível criar a clínica: ${msg}`,
     };
   }
-
-  redirect("/onboarding/ready");
 }

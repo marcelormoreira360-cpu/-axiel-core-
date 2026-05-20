@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
   Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle,
@@ -52,6 +53,7 @@ const HOURS_OPTIONS = [
 
 // ── Component ─────────────────────────────────────────────────────
 export function OnboardingFlow() {
+  const router = useRouter();
   const [actionState, formAction, isPending] = useActionState(completeOnboardingAction, null);
 
   const [step,          setStep]          = useState(0);
@@ -62,7 +64,13 @@ export function OnboardingFlow() {
 
   const progress        = ((step + 1) / STEPS.length) * 100;
   const selectedProfile = PROFILES.find((p) => p.id === clinicProfile)!;
-  const error           = actionState?.error ?? null;
+  const error           = actionState && "error" in actionState ? actionState.error : null;
+  const success         = actionState && "success" in actionState;
+
+  // Navigate client-side on success (more reliable than server redirect with useActionState)
+  useEffect(() => {
+    if (success) router.push("/onboarding/ready");
+  }, [success, router]);
 
   return (
     <div className="max-w-[640px] mx-auto space-y-[16px]">
@@ -92,14 +100,6 @@ export function OnboardingFlow() {
           ))}
         </div>
       </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="flex items-start gap-3 rounded-[12px] border border-red-200 bg-red-50 px-[16px] py-[14px]">
-          <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-[1px]" />
-          <p className="text-[13px] text-red-700">{error}</p>
-        </div>
-      )}
 
       <form action={formAction}>
         {/* Hidden inputs mirror state so server action receives them */}
@@ -289,12 +289,28 @@ export function OnboardingFlow() {
           </div>
         )}
 
+        {/* ── Error banner — near the button so it's always visible ── */}
+        {error && (
+          <div className="mt-[12px] flex items-start gap-3 rounded-[12px] border border-red-200 bg-red-50 px-[16px] py-[14px]">
+            <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-[1px]" />
+            <p className="text-[13px] text-red-700 break-words">{error}</p>
+          </div>
+        )}
+
+        {/* ── Success state ──────────────────────────── */}
+        {success && (
+          <div className="mt-[12px] flex items-center gap-3 rounded-[12px] border border-green-200 bg-green-50 px-[16px] py-[14px]">
+            <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
+            <p className="text-[13px] text-green-700">Clínica criada! Redirecionando…</p>
+          </div>
+        )}
+
         {/* ── Navigation ──────────────────────────── */}
-        <div className="mt-[16px] flex items-center justify-between bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[14px]">
+        <div className="mt-[12px] flex items-center justify-between bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[14px]">
           <button
             type="button"
             onClick={() => setStep((s) => Math.max(0, s - 1))}
-            disabled={step === 0 || isPending}
+            disabled={step === 0 || isPending || !!success}
             className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] disabled:opacity-30 transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Voltar
@@ -312,13 +328,13 @@ export function OnboardingFlow() {
           ) : (
             <button
               type="submit"
-              disabled={isPending}
+              disabled={isPending || !!success}
               className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-60"
             >
-              {isPending ? (
+              {isPending || !!success ? (
                 <>
                   <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  Criando clínica…
+                  {success ? "Redirecionando…" : "Criando clínica…"}
                 </>
               ) : (
                 <>Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" /></>
