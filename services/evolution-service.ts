@@ -1,5 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
 export type BiomarkerPoint = {
   date: string;       // ISO date string
   value: number;
@@ -34,6 +32,8 @@ export type EvolutionData = {
 };
 
 export async function getPatientEvolution(patientId: string): Promise<EvolutionData> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const [{ data: exams }, { data: assessments }] = await Promise.all([

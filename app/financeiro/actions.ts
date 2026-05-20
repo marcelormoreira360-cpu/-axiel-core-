@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createPaymentAdmin } from "@/services/finance-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import {
@@ -15,6 +14,9 @@ export async function registerPaymentAction(
 ): Promise<{ error?: string }> {
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
+
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -76,6 +78,9 @@ export async function deletePaymentAction(
 ): Promise<{ error?: string }> {
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
+
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase

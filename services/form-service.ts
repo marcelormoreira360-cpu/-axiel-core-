@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { FORM_TEMPLATES } from "@/modules/forms/form-templates";
 import type { AxielForm, FormQuestion, FormSubmissionSummary } from "@/modules/forms/question-types";
 
@@ -34,6 +33,8 @@ const demoForms: AxielForm[] = [
 
 export async function listForms(clinicId?: string | null): Promise<AxielForm[]> {
   try {
+    const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
     const supabase = await createSupabaseServerClient();
     let query = supabase
       .from("intake_forms")
@@ -95,6 +96,8 @@ export async function createForm(input: {
   is_active?: boolean;
   questions: Array<{ label: string; question_type: string; is_required: boolean; options?: string[] }>;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const {

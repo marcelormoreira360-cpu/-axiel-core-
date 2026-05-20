@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export type PatientPackage = {
@@ -16,6 +15,8 @@ export type PatientPackage = {
 };
 
 export async function getPatientPackages(patientId: string): Promise<PatientPackage[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const { data: packages, error } = await supabase
@@ -48,16 +49,22 @@ export async function createPatientPackage(data: {
   notes?: string;
   auto_renew?: boolean;
 }): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase.from("patient_packages").insert(data);
 }
 
 export async function deactivatePatientPackage(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase.from("patient_packages").update({ is_active: false }).eq("id", id);
 }
 
 export async function deletePatientPackage(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase.from("patient_packages").delete().eq("id", id);
 }

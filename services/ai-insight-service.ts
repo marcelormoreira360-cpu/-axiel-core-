@@ -1,5 +1,4 @@
 import OpenAI from "openai";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { toAppError } from "@/lib/errors";
 import type { AiInsight, AiInsightOutput } from "@/lib/types";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
@@ -91,6 +90,8 @@ export async function createAiRequest(input: {
   model: string;
   input_summary: Record<string, unknown>;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -120,6 +121,8 @@ export async function completeAiRequest(input: {
   tokens_used?: number | null;
   fallback_used?: boolean;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("ai_requests")
@@ -182,6 +185,8 @@ export async function saveAiInsight(input: {
   input_snapshot: AiInsightInputSnapshot;
   output: AiInsightOutput;
 }): Promise<AiInsight> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -219,6 +224,8 @@ export async function saveAiInsight(input: {
 
 
 export async function getPendingAiInsightReviewCount(clinicId?: string | null): Promise<number> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("ai_insights")
@@ -236,6 +243,8 @@ export async function getPendingAiInsightReviewCount(clinicId?: string | null): 
 
 
 export async function getAiInsightsByPatient(patientId: string, limit = 6): Promise<AiInsight[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("ai_insights")
@@ -250,6 +259,8 @@ export async function getAiInsightsByPatient(patientId: string, limit = 6): Prom
 }
 
 export async function getLatestFinalAiInsight(patientId: string): Promise<AiInsight | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("ai_insights")
@@ -265,6 +276,8 @@ export async function getLatestFinalAiInsight(patientId: string): Promise<AiInsi
 }
 
 export async function getLatestAiInsight(patientId: string): Promise<AiInsight | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("ai_insights")
@@ -363,6 +376,8 @@ export type AiValidationEvent = {
 };
 
 export async function getAiValidationEvents(aiInsightId: string): Promise<AiValidationEvent[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("ai_validation_events")
@@ -379,6 +394,8 @@ export async function approveAiInsightAsFinal(input: {
   reviewerNotes?: string | null;
   changesMade?: string | null;
 }): Promise<AiInsight> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("You must be signed in to approve AI insights.");
@@ -445,6 +462,8 @@ export async function requestAiInsightChanges(input: {
   reviewerNotes?: string | null;
   changesMade?: string | null;
 }): Promise<AiInsight> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("You must be signed in to review AI insights.");
@@ -509,6 +528,8 @@ export async function getPendingAiInsightReviewsForActions(clinicId?: string | n
   review_status: "pending_review" | "needs_changes";
   created_at: string;
 }>> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("ai_insights")

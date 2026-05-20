@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { PatientPayment, PaymentMethod } from "@/lib/types";
 
@@ -54,6 +53,8 @@ export type FinanceKPIs = {
 };
 
 export async function getFinanceKPIs(clinicId: string): Promise<FinanceKPIs> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { from, to } = currentMonthRange();
   const { from: prevFrom, to: prevTo } = prevMonthRange();
@@ -125,6 +126,8 @@ export async function getPaymentsWithPatients(
   clinicId: string,
   opts: { from?: string; to?: string; limit?: number } = {},
 ): Promise<PaymentWithPatient[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let q = supabase
     .from("patient_payments")
@@ -165,6 +168,8 @@ export type UnpaidSession = {
 };
 
 export async function getUnpaidSessions(clinicId: string): Promise<UnpaidSession[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   // Get past appointments
@@ -209,6 +214,8 @@ export async function getUnpaidSessions(clinicId: string): Promise<UnpaidSession
 export type MonthlyRevenue = { month: string; label: string; cents: number };
 
 export async function getMonthlyRevenue(clinicId: string): Promise<MonthlyRevenue[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const results: MonthlyRevenue[] = [];
 

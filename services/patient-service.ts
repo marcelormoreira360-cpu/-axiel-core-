@@ -1,7 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Patient } from "@/lib/types";
 
 export async function getPatients(clinicId?: string, practitionerId?: string): Promise<Patient[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("patients").select("*").order("created_at", { ascending: false });
 
@@ -14,6 +15,8 @@ export async function getPatients(clinicId?: string, practitionerId?: string): P
 }
 
 export async function createPatient(input: Pick<Patient, "clinic_id" | "full_name" | "email" | "phone" | "notes">) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -33,12 +36,16 @@ export async function updatePatient(
   patientId: string,
   input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "date_of_birth" | "notes" | "status">>
 ): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("patients").update(input).eq("id", patientId);
   if (error) throw error;
 }
 
 export async function getPatientById(patientId: string): Promise<Patient | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("patients").select("*").eq("id", patientId).single();
   if (error) {

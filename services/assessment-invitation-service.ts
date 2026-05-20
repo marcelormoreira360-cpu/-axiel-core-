@@ -1,6 +1,5 @@
 import crypto from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { TemplateWithStructure } from "@/lib/types";
 
 function hashToken(token: string) {
@@ -28,6 +27,8 @@ export async function createAssessmentInvitation(input: {
   patient_id: string;
   clinic_id: string;
 }): Promise<{ token: string; invitation: AssessmentInvitation }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const token = generateToken();
   const token_hash = hashToken(token);
@@ -98,6 +99,8 @@ export async function getPatientInvitations(
   patientId: string,
   templateId?: string
 ): Promise<AssessmentInvitation[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let q = supabase
     .from("assessment_invitations")

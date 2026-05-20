@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getResendClient, getDefaultEmailFrom } from "@/lib/resend";
 import { getTwilioClient, getTwilioFromNumber } from "@/lib/twilio";
 import { SimpleMessageEmail } from "@/components/email/simple-message-email";
@@ -20,6 +19,8 @@ export type CommunicationTemplate = {
 };
 
 export async function ensureDefaultCommunicationTemplates(clinicId: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const rows = defaultCommunicationTemplates.map((template) => ({
@@ -36,6 +37,8 @@ export async function ensureDefaultCommunicationTemplates(clinicId: string) {
 }
 
 export async function getCommunicationTemplates(clinicId?: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("communication_templates")
@@ -51,6 +54,8 @@ export async function getCommunicationTemplates(clinicId?: string) {
 }
 
 export async function getTemplateByUseCase(clinicId: string, useCase: CommunicationUseCase, channel: CommunicationChannel) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("communication_templates")
@@ -71,6 +76,8 @@ export async function updateCommunicationTemplate(input: {
   body: string;
   is_active?: boolean;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("communication_templates")
@@ -100,6 +107,8 @@ async function createLog(input: {
   provider_message_id?: string | null;
   error_message?: string | null;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   const { data, error } = await supabase
@@ -113,6 +122,8 @@ async function createLog(input: {
 }
 
 export async function getCommunicationLogs(clinicId?: string, limit = 25) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("communication_logs")

@@ -1,9 +1,10 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Lead, LeadStage, Patient } from "@/lib/types";
 import { writeAuditLog } from "@/services/audit-service";
 import { auditEvents } from "@/modules/security/audit-events";
 
 export async function getLeads(clinicId?: string): Promise<Lead[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("leads").select("*").order("created_at", { ascending: false });
 
@@ -15,6 +16,8 @@ export async function getLeads(clinicId?: string): Promise<Lead[]> {
 }
 
 export async function getLeadById(id: string): Promise<Lead | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("leads").select("*").eq("id", id).single();
 
@@ -27,6 +30,8 @@ export async function getLeadById(id: string): Promise<Lead | null> {
 }
 
 export async function createLead(input: Pick<Lead, "clinic_id" | "full_name" | "email" | "phone" | "source" | "stage" | "main_complaint" | "notes">) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -43,6 +48,8 @@ export async function createLead(input: Pick<Lead, "clinic_id" | "full_name" | "
 }
 
 export async function updateLeadStage(leadId: string, stage: LeadStage) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.from("leads").update({ stage }).eq("id", leadId).select("*").single();
 
@@ -63,6 +70,8 @@ function buildConvertedLeadNotes(lead: Lead) {
 }
 
 export async function convertLeadToPatient(leadId: string): Promise<Patient> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

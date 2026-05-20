@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import OpenAI from "openai";
 
 export interface ServiceBreakdown {
@@ -49,6 +48,8 @@ export async function getBusinessAnalytics(
   clinicId: string,
   months = 3
 ): Promise<BusinessAnalytics> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const now = new Date();

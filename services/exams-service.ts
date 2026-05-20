@@ -1,5 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
 export type ExamResult = {
   id: string;
   exam_id: string;
@@ -38,6 +36,8 @@ export type Prescription = {
 };
 
 export async function getPatientExams(patientId: string): Promise<PatientExam[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("patient_exams")
@@ -55,6 +55,8 @@ export async function createPatientExam(input: {
   notes?: string | null;
   results: { biomarker: string; value: number; unit?: string; ref_min?: number | null; ref_max?: number | null }[];
 }): Promise<PatientExam> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const { data: exam, error: eErr } = await supabase
@@ -89,11 +91,15 @@ export async function createPatientExam(input: {
 }
 
 export async function deletePatientExam(examId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase.from("patient_exams").delete().eq("id", examId);
 }
 
 export async function getPatientPrescriptions(patientId: string): Promise<Prescription[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("patient_prescriptions")
@@ -114,6 +120,8 @@ export async function createPrescription(input: {
   start_date?: string | null;
   notes?: string | null;
 }): Promise<Prescription> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("patient_prescriptions")
@@ -125,6 +133,8 @@ export async function createPrescription(input: {
 }
 
 export async function deactivatePrescription(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase
     .from("patient_prescriptions")
@@ -133,6 +143,8 @@ export async function deactivatePrescription(id: string): Promise<void> {
 }
 
 export async function deletePrescription(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase.from("patient_prescriptions").delete().eq("id", id);
 }

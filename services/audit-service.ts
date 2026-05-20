@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { toAppError } from "@/lib/errors";
 import type { AuditEvent } from "@/modules/security/audit-events";
 
@@ -38,6 +37,8 @@ export async function getAuditLogs(options: {
   limit?: number;
   offset?: number;
 }): Promise<{ rows: AuditLogRow[]; total: number }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const limit = options.limit ?? 50;
   const offset = options.offset ?? 0;
@@ -65,6 +66,8 @@ export async function getCommunicationLogs(options: {
   limit?: number;
   offset?: number;
 }): Promise<{ rows: CommunicationLogRow[]; total: number }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const limit = options.limit ?? 50;
   const offset = options.offset ?? 0;
@@ -91,6 +94,8 @@ export async function writeAuditLog(input: {
   entityId?: string | null;
   metadata?: Record<string, unknown>;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   try {

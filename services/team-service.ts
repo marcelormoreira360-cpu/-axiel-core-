@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { Resend } from "resend";
 import { randomUUID } from "crypto";
@@ -57,6 +56,8 @@ export function isPractitioner(role: AppRole): boolean {
 // ── Team members ──────────────────────────────────────────────────
 
 export async function getTeamMembers(clinicId: string): Promise<TeamMember[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")
@@ -92,6 +93,8 @@ export async function removeTeamMember(userId: string): Promise<void> {
 // ── Invites ───────────────────────────────────────────────────────
 
 export async function getPendingInvites(clinicId: string): Promise<TeamInvite[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("invites")
@@ -111,6 +114,8 @@ export async function inviteTeamMember(
   role: AppRole,
   invitedById: string,
 ): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const token = randomUUID();
 
@@ -170,6 +175,8 @@ export async function inviteTeamMember(
 }
 
 export async function revokeInvite(inviteId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("invites")

@@ -1,8 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { ResultsMetric } from "@/modules/results/analytics-types";
 import { buildResultsSummary } from "@/modules/results/results-summary";
 
 async function safeCount(table: string, clinicId: string, filters?: (query: any) => any) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase.from(table).select("id", { count: "exact", head: true }).eq("clinic_id", clinicId);
   if (filters) query = filters(query);
@@ -13,6 +14,8 @@ async function safeCount(table: string, clinicId: string, filters?: (query: any)
 }
 
 async function safeOrderRevenue(clinicId: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("product_orders")

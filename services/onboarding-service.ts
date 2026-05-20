@@ -1,5 +1,4 @@
 import { randomUUID } from "node:crypto";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { LeadSource } from "@/lib/types";
 import { createAppointment } from "@/services/appointment-service";
 import { createIntakeFormWithQuestions } from "@/services/intake-service";
@@ -156,6 +155,8 @@ function getIntakeFormName(profile: string) {
 }
 
 export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const profile = await getCurrentUserProfile();
 

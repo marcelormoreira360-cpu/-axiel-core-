@@ -1,7 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { IntakeForm, IntakeFormWithQuestions, IntakeQuestion, IntakeQuestionType, IntakeResponse } from "@/lib/types";
 
 export async function getIntakeForms(clinicId?: string): Promise<IntakeForm[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("intake_forms").select("*").order("created_at", { ascending: false });
   if (clinicId) query = query.eq("clinic_id", clinicId);
@@ -11,6 +12,8 @@ export async function getIntakeForms(clinicId?: string): Promise<IntakeForm[]> {
 }
 
 export async function getActiveIntakeForm(clinicId?: string): Promise<IntakeFormWithQuestions | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("intake_forms")
@@ -38,6 +41,8 @@ export async function createIntakeFormWithQuestions(input: {
   description?: string | null;
   questions: Array<{ label: string; question_type: IntakeQuestionType; is_required: boolean; placeholder?: string | null }>;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -83,6 +88,8 @@ export async function savePatientIntakeResponses(input: {
   form_id: string;
   responses: Array<{ question_id: string; answer: string | null }>;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -109,6 +116,8 @@ export async function savePatientIntakeResponses(input: {
 }
 
 export async function getPatientIntakeResponses(patientId: string): Promise<IntakeResponse[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("intake_responses")

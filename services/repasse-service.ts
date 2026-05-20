@@ -1,6 +1,4 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
 // ── Types ─────────────────────────────────────────────────────────
 
 export type RepasseRule = {
@@ -32,6 +30,8 @@ export type RepasseEntry = {
 // ── Rules CRUD ────────────────────────────────────────────────────
 
 export async function getRepasseRules(clinicId: string): Promise<RepasseRule[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("repasse_rules")
@@ -55,6 +55,8 @@ export async function upsertRepasseRule(
   userId: string,
   percentage: number,
 ): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("repasse_rules")
@@ -66,6 +68,8 @@ export async function upsertRepasseRule(
 }
 
 export async function deleteRepasseRule(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("repasse_rules").delete().eq("id", id);
   if (error) throw error;
@@ -74,6 +78,8 @@ export async function deleteRepasseRule(id: string): Promise<void> {
 // ── Ledger ────────────────────────────────────────────────────────
 
 export async function getRepasseHistory(clinicId: string): Promise<RepasseEntry[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("repasse_ledger")
@@ -96,6 +102,8 @@ export async function markRepasseAsPaid(
   ledgerId: string,
   notes?: string,
 ): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("repasse_ledger")
@@ -180,6 +188,8 @@ export type ClinicProfessional = {
 };
 
 export async function getClinicProfessionals(clinicId: string): Promise<ClinicProfessional[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")

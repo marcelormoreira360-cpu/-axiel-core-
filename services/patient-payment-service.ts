@@ -1,7 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { PatientPayment, PaymentMethod } from "@/lib/types";
 
 export async function getPatientPayments(patientId: string): Promise<PatientPayment[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("patient_payments")
@@ -13,6 +14,8 @@ export async function getPatientPayments(patientId: string): Promise<PatientPaym
 }
 
 export async function getClinicPayments(clinicId: string, from?: string, to?: string): Promise<PatientPayment[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("patient_payments")
@@ -37,6 +40,8 @@ export async function createPatientPayment(input: {
   paid_at?: string;
   notes?: string | null;
 }): Promise<PatientPayment> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 

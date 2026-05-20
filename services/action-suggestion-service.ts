@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { ActionSuggestion, ActionSuggestionStatus } from "@/lib/types";
 import type { ActionSuggestionDraft } from "@/modules/action-suggestions/action-rules";
 
@@ -11,6 +10,8 @@ export async function getActionSuggestions(options?: {
   entityType?: string;
   entityId?: string;
 }): Promise<ActionSuggestion[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase.from("action_suggestions").select(SELECT).order("created_at", { ascending: false });
 
@@ -39,6 +40,9 @@ export async function getActionSuggestions(options?: {
 export async function syncActionSuggestions(drafts: ActionSuggestionDraft[]) {
   if (drafts.length === 0) return [];
 
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -61,6 +65,8 @@ export async function syncActionSuggestions(drafts: ActionSuggestionDraft[]) {
 }
 
 export async function updateActionSuggestionStatus(id: string, status: ActionSuggestionStatus) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },

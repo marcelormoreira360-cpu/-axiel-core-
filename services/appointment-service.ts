@@ -1,8 +1,9 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 
 export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("session_types")
@@ -17,6 +18,8 @@ export async function getSessionTypes(clinicId?: string): Promise<SessionType[]>
 }
 
 export async function getAppointments(clinicId?: string, practitionerId?: string): Promise<Appointment[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("appointments")
@@ -41,6 +44,8 @@ export async function createAppointment(input: {
   patient_offer_id?: string | null;
   notes?: string | null;
 }) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -126,6 +131,8 @@ async function createIntegrationsSideEffects(appt: Appointment) {
 }
 
 export async function getAppointmentsByPatient(patientId: string): Promise<Appointment[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")
@@ -138,6 +145,8 @@ export async function getAppointmentsByPatient(patientId: string): Promise<Appoi
 }
 
 export async function getAppointmentById(appointmentId: string): Promise<Appointment | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("appointments")

@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { toAppError } from "@/lib/errors";
 
 export type RlsStatus = {
@@ -9,6 +8,8 @@ export type RlsStatus = {
 };
 
 export async function getRlsStatus(): Promise<RlsStatus[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase

@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { PricingLocation, WhatsAppBotConfigFields } from "@/lib/whatsapp-bot-defaults";
 
 export type { PricingLocation, PricingPlan } from "@/lib/whatsapp-bot-defaults";
@@ -11,6 +10,8 @@ export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
 };
 
 export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBotConfig | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
@@ -22,6 +23,8 @@ export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBo
 }
 
 export async function getWhatsAppBotConfigByNumber(twilioNumber: string): Promise<WhatsAppBotConfig | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
@@ -37,6 +40,8 @@ export async function upsertWhatsAppBotConfig(
   clinicId: string,
   input: Partial<Omit<WhatsAppBotConfig, "id" | "clinic_id">>
 ): Promise<WhatsAppBotConfig> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")

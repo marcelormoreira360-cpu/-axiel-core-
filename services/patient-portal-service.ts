@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
 
 export type PatientPortalLink = {
@@ -71,6 +70,8 @@ export const PATIENT_PORTAL_WHATSAPP_MESSAGE = "Hi, I have a question about my s
 
 
 async function revokeExistingPatientPortalLinks(patientId: string, clinicId: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("patient_portal_links")
@@ -122,6 +123,8 @@ function asInsightSummary(insight: AiInsight): PatientPortalInsight {
 }
 
 export async function createPatientPortalLink(patientId: string, expiresInDays = PATIENT_PORTAL_LINK_EXPIRATION_DAYS): Promise<{ token: string; link: PatientPortalLink }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -161,6 +164,8 @@ export async function createPatientPortalLink(patientId: string, expiresInDays =
 }
 
 export async function regeneratePatientPortalLink(patientId: string): Promise<{ token: string; link: PatientPortalLink }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -200,6 +205,8 @@ export async function regeneratePatientPortalLink(patientId: string): Promise<{ 
 }
 
 export async function revokePatientPortalLink(linkId: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("patient_portal_links")
@@ -211,6 +218,8 @@ export async function revokePatientPortalLink(linkId: string) {
 }
 
 export async function getRecentPatientPortalLinks(patientId: string): Promise<PatientPortalLink[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("patient_portal_links")

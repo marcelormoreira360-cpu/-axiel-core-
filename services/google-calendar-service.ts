@@ -1,6 +1,4 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
 const GOOGLE_AUTH_URL    = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL   = "https://oauth2.googleapis.com/token";
 const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
@@ -111,6 +109,8 @@ export async function disconnectGoogle(clinicId: string) {
 }
 
 export async function getGoogleIntegrationStatus(clinicId: string): Promise<{ connected: boolean; calendar_id: string | null }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase.from("calendar_integrations")
     .select("calendar_id").eq("clinic_id", clinicId).eq("provider", "google").maybeSingle();

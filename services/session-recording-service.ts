@@ -1,10 +1,11 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { SessionRecord } from "@/lib/types";
 
 const SESSION_SELECT =
   "*, appointments(id, starts_at, duration_minutes, notes), patients(id, full_name, email, phone, status)";
 
 export async function getSessionRecordByAppointment(appointmentId: string): Promise<SessionRecord | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("session_records")
@@ -28,6 +29,8 @@ export async function upsertSessionRecord(input: {
   assessment_note?: string | null;
   plan?: string | null;
 }): Promise<SessionRecord> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -64,6 +67,8 @@ export async function upsertSessionRecord(input: {
 }
 
 export async function getSessionRecordsByPatient(patientId: string): Promise<SessionRecord[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("session_records")

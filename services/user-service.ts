@@ -1,7 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { AppUser } from "@/lib/types";
 
 export async function getCurrentAuthUser() {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -16,6 +17,9 @@ export async function getCurrentUserProfile(): Promise<AppUser | null> {
   const authUser = await getCurrentAuthUser();
   if (!authUser) return null;
 
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")
@@ -28,6 +32,8 @@ export async function getCurrentUserProfile(): Promise<AppUser | null> {
 }
 
 export async function getUsersForCurrentScope(): Promise<AppUser[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")

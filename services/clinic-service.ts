@@ -1,10 +1,11 @@
 import { cookies } from "next/headers";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { Clinic } from "@/lib/types";
 
 export const ACTIVE_CLINIC_COOKIE = "axiel_active_clinic_id";
 
 export async function getClinicsForUser(): Promise<Clinic[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clinics")
@@ -16,6 +17,8 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
 }
 
 export async function updateClinic(id: string, fields: { name?: string; slug?: string; logo_url?: string | null; primary_color?: string | null }): Promise<Clinic> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("clinics")
@@ -28,6 +31,8 @@ export async function updateClinic(id: string, fields: { name?: string; slug?: s
 }
 
 export async function getCurrentClinic(): Promise<Clinic | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
@@ -53,6 +58,8 @@ export async function getCurrentClinic(): Promise<Clinic | null> {
 }
 
 export async function createClinic(name: string): Promise<Clinic> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Usuário não autenticado.");

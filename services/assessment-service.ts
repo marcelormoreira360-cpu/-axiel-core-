@@ -1,4 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type {
   AssessmentTemplate,
   AssessmentSection,
@@ -9,6 +8,8 @@ import type {
 } from "@/lib/types";
 
 export async function getAssessmentTemplates(clinicId?: string): Promise<AssessmentTemplate[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   let q = supabase
     .from("assessment_templates")
@@ -23,6 +24,8 @@ export async function getAssessmentTemplates(clinicId?: string): Promise<Assessm
 export async function getTemplateWithStructure(
   templateId: string
 ): Promise<TemplateWithStructure | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("assessment_templates")
@@ -41,6 +44,8 @@ export async function getTemplateWithStructure(
 export async function getPatientAssessmentResponses(
   patientId: string
 ): Promise<AssessmentResponse[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("assessment_responses")
@@ -53,6 +58,8 @@ export async function getPatientAssessmentResponses(
 export async function getAssessmentResponse(
   responseId: string
 ): Promise<AssessmentResponse | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("assessment_responses")
@@ -63,6 +70,8 @@ export async function getAssessmentResponse(
 }
 
 export async function getAssessmentAnswers(responseId: string): Promise<AssessmentAnswer[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("assessment_answers")
@@ -78,6 +87,8 @@ export async function createAssessmentTemplate(input: {
   instructions?: string | null;
   scale_labels?: string[] | null;
 }): Promise<AssessmentTemplate> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("assessment_templates")
@@ -93,6 +104,8 @@ export async function createAssessmentSection(input: {
   title: string;
   order_index: number;
 }): Promise<AssessmentSection> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("assessment_sections")
@@ -113,6 +126,8 @@ export async function createAssessmentQuestion(input: {
   options?: { label: string; value: number }[] | null;
   order_index: number;
 }): Promise<AssessmentQuestion> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("assessment_questions")
@@ -138,6 +153,8 @@ export async function submitAssessmentResponse(input: {
   max_possible_score: number;
   notes?: string | null;
 }): Promise<AssessmentResponse> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const score_percentage =
     input.max_possible_score > 0
@@ -176,6 +193,8 @@ export async function submitAssessmentResponse(input: {
 }
 
 export async function deleteAssessmentTemplate(templateId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   await supabase
     .from("assessment_templates")

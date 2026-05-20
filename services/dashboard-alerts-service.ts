@@ -1,5 +1,3 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-
 export type PackageAlert = {
   patientId: string;
   patientName: string;
@@ -25,6 +23,8 @@ export type DashboardAlerts = {
 };
 
 export async function getDashboardAlerts(clinicId: string): Promise<DashboardAlerts> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
 
   const [{ data: packages }, { data: appointments }, { data: recentExams }] = await Promise.all([

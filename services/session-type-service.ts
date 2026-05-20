@@ -1,7 +1,8 @@
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import type { SessionType } from "@/lib/types";
 
 export async function getSessionTypesForClinic(clinicId: string): Promise<SessionType[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("session_types")
@@ -19,6 +20,8 @@ export async function createSessionType(input: {
   price_cents: number;
   is_online: boolean;
 }): Promise<SessionType> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("session_types")
@@ -33,6 +36,8 @@ export async function updateSessionType(
   id: string,
   fields: Partial<Pick<SessionType, "name" | "duration_minutes" | "price_cents" | "is_active" | "is_online">>,
 ): Promise<SessionType> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("session_types")
@@ -45,6 +50,8 @@ export async function updateSessionType(
 }
 
 export async function deleteSessionType(id: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("session_types").delete().eq("id", id);
   if (error) throw error;
