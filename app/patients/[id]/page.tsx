@@ -16,6 +16,9 @@ import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { HealthAgentPanel } from "@/components/health-agent-panel";
+import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
+import { getPatientDocuments } from "@/services/patient-document-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -41,7 +44,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const patient = await getPatientById(id);
   if (!patient) notFound();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, clinic] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
@@ -50,7 +53,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     getPatientExams(id),
     getPatientPrescriptions(id),
     getPatientPackages(id),
+    getPatientDocuments(id),
+    getCurrentClinic(),
   ]);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
 
   const lastSession = appointments[0] ?? null;
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
@@ -415,6 +423,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Medicamentos e suplementos */}
       <div className="mt-[18px]">
         <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
+      </div>
+
+      {/* Documentos do paciente */}
+      <div className="mt-[18px]">
+        <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />
       </div>
 
       {/* Agente de saúde */}

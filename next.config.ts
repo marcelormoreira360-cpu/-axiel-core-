@@ -3,6 +3,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pdfkit", "fontkit", "restructure", "iconv-lite"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "16mb",
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {

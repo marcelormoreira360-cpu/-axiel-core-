@@ -63,3 +63,14 @@ export async function createClinic(name: string): Promise<Clinic> {
   if (error) throw error;
   return data;
 }
+
+export async function getClinicBySlug(slug: string): Promise<Pick<import("@/lib/types").Clinic, "id" | "name" | "logo_url" | "primary_color" | "slug"> | null> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("clinics")
+    .select("id, name, logo_url, primary_color, slug")
+    .eq("slug", slug)
+    .maybeSingle();
+  return data ?? null;
+}
