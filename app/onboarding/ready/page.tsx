@@ -1,22 +1,14 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, LayoutDashboard, UserRound, ArrowRight } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { AutoRedirect } from "./auto-redirect";
 
 export default function OnboardingReadyPage() {
-  const router = useRouter();
-
-  // Redireciona automaticamente ao dashboard após 6 segundos
-  useEffect(() => {
-    const timer = setTimeout(() => router.push("/dashboard"), 6000);
-    return () => clearTimeout(timer);
-  }, [router]);
-
   return (
     <Shell>
+      {/* Redirect automático após 6s — componente client isolado */}
+      <AutoRedirect delayMs={6000} />
+
       <section className="mx-auto flex min-h-[70vh] max-w-3xl items-center justify-center px-4 py-10">
         <div className="w-full rounded-[3rem] bg-axiel-ink p-10 text-center text-white shadow-sm md:p-16">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white/10">
