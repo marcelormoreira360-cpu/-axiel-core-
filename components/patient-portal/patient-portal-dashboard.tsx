@@ -32,6 +32,7 @@ export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
   const nextSession = data.upcomingAppointments[0];
   const pkg = data.activePackage;
   const pkgPercent = pkg ? Math.round((pkg.sessions_used / pkg.sessions_total) * 100) : 0;
+  const brandColor = data.clinic.primary_color ?? "#0B1F3A";
 
   return (
     <div className="min-h-screen bg-[#F8FAF9] px-4 py-8 md:py-12">
@@ -39,7 +40,15 @@ export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
 
         {/* Header */}
         <div className="pb-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/35">{data.clinic.name}</p>
+          {data.clinic.logo_url ? (
+            <img
+              src={data.clinic.logo_url}
+              alt={data.clinic.name}
+              className="mb-3 h-8 max-w-[140px] object-contain"
+            />
+          ) : (
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/35">{data.clinic.name}</p>
+          )}
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-[#0F1A2E]">
             Olá, {firstName} 👋
           </h1>
@@ -48,7 +57,7 @@ export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
 
         {/* Próxima sessão */}
         {nextSession ? (
-          <div className="bg-[#0B1F3A] rounded-2xl p-5 text-white">
+          <div className="rounded-2xl p-5 text-white" style={{ backgroundColor: brandColor }}>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50 mb-2">Próxima sessão</p>
             <p className="text-lg font-semibold">{formatDateTime(nextSession.starts_at)}</p>
             {nextSession.duration_minutes && (

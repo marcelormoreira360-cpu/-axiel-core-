@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 interface SessionType { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour  { day_of_week: number; is_open: boolean; }
 interface Slot         { time: string; iso: string; }
-interface ClinicInfo   { id: string; name: string; slug: string; }
+interface ClinicInfo   { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; }
 
 type Step = "service" | "date" | "slot" | "info" | "done";
 
@@ -139,7 +139,11 @@ export default function BookingPage() {
 
         {/* Header */}
         <div className="text-center mb-8">
-          <p className="text-[11px] font-medium tracking-[.12em] uppercase text-[#A09E98]">Agendamento online</p>
+          {clinic.logo_url ? (
+            <img src={clinic.logo_url} alt={clinic.name} className="mx-auto mb-2 h-10 max-w-[160px] object-contain" />
+          ) : (
+            <p className="text-[11px] font-medium tracking-[.12em] uppercase text-[#A09E98]">Agendamento online</p>
+          )}
           <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-[#0F1A2E]">{clinic.name}</h1>
         </div>
 

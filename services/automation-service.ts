@@ -278,6 +278,84 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
   return { notified, skipped };
 }
 
+// Called immediately after appointment creation — confirms the booking via WhatsApp + email.
+export async function sendAppointmentConfirmation(params: {
+  clinicId: string;
+  patientId: string;
+  appointmentId: string;
+  patientName: string;
+  patientPhone: string | null;
+  patientEmail: string | null;
+  clinicName: string;
+  startsAt: string;
+  durationMinutes: number;
+}): Promise<void> {
+  const { clinicId, patientId, appointmentId, patientName, patientPhone, patientEmail, clinicName, startsAt, durationMinutes } = params;
+  const first = patientName.split(" ")[0];
+  const dateStr = new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+  const timeStr = new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const supabase = createSupabaseAdminClient();
+  const useCase = "appointment_confirmation" as const;
+
+  if (patientPhone) {
+    const body =
+      `Olá, ${first}! ✅\n\n` +
+      `Sua sessão foi confirmada:\n` +
+      `📅 *${dateStr}* às *${timeStr}*\n` +
+      `⏱ ${durationMinutes} minutos\n\n` +
+      `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`;
+
+    try {
+      await sendWhatsAppText(patientPhone, body);
+      await supabase.from("communication_logs").insert({
+        clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
+        channel: "whatsapp", use_case: useCase, recipient: patientPhone,
+        body, status: "sent", provider: "twilio",
+      });
+    } catch (e) {
+      await supabase.from("communication_logs").insert({
+        clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
+        channel: "whatsapp", use_case: useCase, recipient: patientPhone,
+        body, status: "failed", provider: "twilio",
+        error_message: e instanceof Error ? e.message : "Unknown error",
+      });
+    }
+  }
+
+  if (patientEmail) {
+    const resend = new Resend(process.env.RESEND_API_KEY);
+    const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+    const subject = `Sessão confirmada — ${dateStr} às ${timeStr}`;
+    const html = `
+      <p>Olá, ${first}!</p>
+      <p>Sua sessão na <strong>${clinicName}</strong> foi confirmada com sucesso:</p>
+      <ul>
+        <li><strong>Data:</strong> ${dateStr}</li>
+        <li><strong>Horário:</strong> ${timeStr}</li>
+        <li><strong>Duração:</strong> ${durationMinutes} minutos</li>
+      </ul>
+      <p>Em caso de imprevisto, entre em contato com a clínica.</p>
+      <p>Até lá!</p>
+    `.trim();
+
+    try {
+      await resend.emails.send({ from: fromAddress, to: patientEmail, subject, html });
+      await supabase.from("communication_logs").insert({
+        clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
+        channel: "email", use_case: useCase, recipient: patientEmail,
+        body: html, status: "sent", provider: "resend",
+      });
+    } catch (e) {
+      await supabase.from("communication_logs").insert({
+        clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
+        channel: "email", use_case: useCase, recipient: patientEmail,
+        body: html, status: "failed", provider: "resend",
+        error_message: e instanceof Error ? e.message : "Unknown error",
+      });
+    }
+  }
+}
+
 function buildMessage(tag: string, fullName: string, startsAt: string | null): string {
   const first = fullName.split(" ")[0];
 

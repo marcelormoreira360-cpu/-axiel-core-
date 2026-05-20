@@ -14,6 +14,8 @@ export type Clinic = {
   name: string;
   slug: string;
   status: "active" | "inactive";
+  logo_url: string | null;
+  primary_color: string | null;
   created_at: string;
   updated_at: string;
 };

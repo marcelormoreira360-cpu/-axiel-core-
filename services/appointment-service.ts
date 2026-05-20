@@ -54,11 +54,12 @@ export async function createAppointment(input: {
   if (error) throw error;
   const appt = data as Appointment;
 
-  // Fire-and-forget: integrations + package auto-renewal
+  // Fire-and-forget: integrations + package auto-renewal + booking confirmation
   createIntegrationsSideEffects(appt).catch(() => {});
   import("@/services/package-service").then(({ checkAndAutoRenewPackages }) =>
     checkAndAutoRenewPackages(appt.patient_id, appt.clinic_id, appt.starts_at).catch(() => {})
   );
+  sendConfirmationSideEffect(appt).catch(() => {});
 
   return appt;
 }
@@ -145,4 +146,24 @@ export async function getAppointmentById(appointmentId: string): Promise<Appoint
 
   if (error) throw error;
   return (data ?? null) as Appointment | null;
+}
+
+async function sendConfirmationSideEffect(appt: Appointment) {
+  const { sendAppointmentConfirmation } = await import("@/services/automation-service");
+  const { data: clinic } = await createSupabaseAdminClient()
+    .from("clinics").select("name").eq("id", appt.clinic_id).single();
+  const patient = Array.isArray(appt.patients) ? appt.patients[0] : appt.patients;
+  const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
+  if (!patient?.full_name) return;
+  await sendAppointmentConfirmation({
+    clinicId: appt.clinic_id,
+    patientId: appt.patient_id,
+    appointmentId: appt.id,
+    patientName: patient.full_name,
+    patientPhone: patient.phone ?? null,
+    patientEmail: patient.email ?? null,
+    clinicName: clinic?.name ?? "nossa clínica",
+    startsAt: appt.starts_at,
+    durationMinutes: appt.duration_minutes,
+  });
 }

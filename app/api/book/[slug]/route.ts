@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, name, slug")
+    .select("id, name, slug, logo_url, primary_color")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();

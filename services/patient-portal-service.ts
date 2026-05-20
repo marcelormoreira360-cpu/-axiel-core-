@@ -44,7 +44,7 @@ export type PatientPortalPackage = {
 export type PatientPortalData = {
   link: PatientPortalLink;
   patient: Pick<Patient, "id" | "full_name" | "status">;
-  clinic: { id: string; name: string };
+  clinic: { id: string; name: string; logo_url: string | null; primary_color: string | null };
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
   upcomingAppointments: PatientPortalSessionItem[];
@@ -252,7 +252,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   const now = new Date().toISOString();
   const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
-    supabase.from("clinics").select("id, name").eq("id", link.clinic_id).maybeSingle(),
+    supabase.from("clinics").select("id, name, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
       .from("ai_insights")
       .select("*")

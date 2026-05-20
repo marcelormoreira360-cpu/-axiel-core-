@@ -1,13 +1,14 @@
 import type { Appointment, FollowUp, Lead, Patient } from "@/lib/types";
 
 export type CommunicationChannel = "email" | "sms";
-export type CommunicationUseCase = "appointment_reminder" | "follow_up" | "lead_nurturing" | "package_low";
+export type CommunicationUseCase = "appointment_reminder" | "appointment_confirmation" | "follow_up" | "lead_nurturing" | "package_low";
 
 export const communicationUseCaseLabels: Record<CommunicationUseCase, string> = {
-  appointment_reminder: "Appointment reminder",
-  follow_up: "Follow-up",
-  lead_nurturing: "Lead nurturing",
-  package_low: "Package running low",
+  appointment_reminder: "Lembrete de sessão",
+  appointment_confirmation: "Confirmação de agendamento",
+  follow_up: "Acompanhamento",
+  lead_nurturing: "Nutrição de lead",
+  package_low: "Pacote encerrando",
 };
 
 export const defaultCommunicationTemplates: Array<{

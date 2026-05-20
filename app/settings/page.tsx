@@ -9,6 +9,7 @@ import { canManageClinicUsers } from "@/modules/auth/roles";
 
 const settings = [
   { href: "/settings/profile", title: "Meu perfil", text: "Atualize seu nome, email e senha de acesso." },
+  { href: "/settings/branding", title: "Identidade visual", text: "Logo e cor primária da sua clínica no portal e agendamento." },
   { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
   { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
   { href: "/settings/session-types", title: "Tipos de sessão", text: "Modalidades, durações, preços e configuração de Zoom por tipo." },
