@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { formatBRL } from "@/services/finance-service";
+import { formatBRL } from "@/lib/finance-utils";
 import type { RepasseRule, RepasseEntry, ClinicProfessional } from "@/services/repasse-service";
 import {
   saveRepasseRuleAction,

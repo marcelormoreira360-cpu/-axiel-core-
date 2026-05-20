@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, RefreshCw, X, ExternalLink, Plus } from "lucide-react";
-import { formatBRL } from "@/services/finance-service";
+import { formatBRL } from "@/lib/finance-utils";
 import type { NfseInvoice } from "@/services/nfse-service";
 import { emitNfseAction, syncNfseAction, cancelNfseAction } from "./actions";
 

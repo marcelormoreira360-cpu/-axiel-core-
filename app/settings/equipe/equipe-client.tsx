@@ -3,13 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Mail, X } from "lucide-react";
-import {
-  ROLE_LABELS,
-  INVITABLE_ROLES,
-  isManager,
-  type TeamMember,
-  type TeamInvite,
-} from "@/services/team-service";
+import { ROLE_LABELS, INVITABLE_ROLES, isManager } from "@/lib/team-utils";
+import type { TeamMember, TeamInvite } from "@/services/team-service";
 import {
   inviteMemberAction,
   updateRoleAction,
