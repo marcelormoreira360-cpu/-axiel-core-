@@ -239,58 +239,76 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
   await supabase.from("working_hours").upsert(hourRows, { onConflict: "clinic_id,day_of_week" });
 
-  await createIntakeFormWithQuestions({
-    clinic_id: clinicId!,
-    name: getIntakeFormName(clinicProfile),
-    description: "Formulário de anamnese criado automaticamente no onboarding.",
-    questions: intakeQuestions.map((question) => ({
-      label: question,
-      question_type: "long_text",
-      is_required: false,
-    })),
-  });
-
-  if (input.staffEmail.trim()) {
-    await supabase.from("invites").insert({
+  // Non-critical: create intake form — swallow errors (e.g. duplicate name on re-run)
+  try {
+    await createIntakeFormWithQuestions({
       clinic_id: clinicId!,
-      email: input.staffEmail.trim().toLowerCase(),
-      role: "front_desk",
-      token_hash: randomUUID(),
-      invited_by: profile.id,
-      status: "pending",
+      name: getIntakeFormName(clinicProfile),
+      description: "Formulário de anamnese criado automaticamente no onboarding.",
+      questions: intakeQuestions.map((question) => ({
+        label: question,
+        question_type: "long_text",
+        is_required: false,
+      })),
     });
+  } catch { /* already exists or non-critical */ }
+
+  // Non-critical: invite staff member
+  if (input.staffEmail.trim()) {
+    try {
+      await supabase.from("invites").insert({
+        clinic_id: clinicId!,
+        email: input.staffEmail.trim().toLowerCase(),
+        role: "front_desk",
+        token_hash: randomUUID(),
+        invited_by: profile.id,
+        status: "pending",
+      });
+    } catch { /* already invited */ }
   }
 
-  const patient = await createPatient({
-    clinic_id: clinicId!,
-    full_name: getSamplePatientName(clinicProfile),
-    email: "paciente-demo@exemplo.com",
-    phone: "(11) 99999-0000",
-    notes: "Paciente de demonstração criado automaticamente para você explorar o sistema.",
-  });
+  // Non-critical: demo patient, lead and appointment — swallow errors so a
+  // re-run (unique constraint on email) never blocks the onboarding from completing.
+  let demoPatientId: string | null = null;
+  try {
+    const patient = await createPatient({
+      clinic_id: clinicId!,
+      full_name: getSamplePatientName(clinicProfile),
+      email: "paciente-demo@exemplo.com",
+      phone: "(11) 99999-0000",
+      notes: "Paciente de demonstração criado automaticamente para você explorar o sistema.",
+    });
+    demoPatientId = patient.id;
+  } catch { /* duplicate on re-run — ignore */ }
 
-  await createLead({
-    clinic_id: clinicId!,
-    full_name: "Lead Demonstração",
-    email: "lead-demo@exemplo.com",
-    phone: "(11) 99999-0001",
-    source: "instagram" as LeadSource,
-    stage: "new_lead",
-    main_complaint: "Interesse em iniciar tratamento",
-    notes: "Lead de demonstração criado automaticamente durante o onboarding.",
-  });
+  try {
+    await createLead({
+      clinic_id: clinicId!,
+      full_name: "Lead Demonstração",
+      email: "lead-demo@exemplo.com",
+      phone: "(11) 99999-0001",
+      source: "instagram" as LeadSource,
+      stage: "new_lead",
+      main_complaint: "Interesse em iniciar tratamento",
+      notes: "Lead de demonstração criado automaticamente durante o onboarding.",
+    });
+  } catch { /* duplicate on re-run — ignore */ }
 
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(10, 0, 0, 0);
+  if (demoPatientId) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(10, 0, 0, 0);
 
-  await createAppointment({
-    clinic_id: clinicId!,
-    patient_id: patient.id,
-    starts_at: tomorrow.toISOString(),
-    duration_minutes: sessionTypes[0]?.duration_minutes || 60,
-    notes: "Sessão de demonstração criada durante o onboarding.",
-  });
+    try {
+      await createAppointment({
+        clinic_id:        clinicId!,
+        patient_id:       demoPatientId,
+        starts_at:        tomorrow.toISOString(),
+        duration_minutes: sessionTypes[0]?.duration_minutes || 60,
+        notes:            "Sessão de demonstração criada durante o onboarding.",
+      });
+    } catch { /* ignore */ }
+  }
 
   return { clinicId };
 }

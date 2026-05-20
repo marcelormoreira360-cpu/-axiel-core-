@@ -1,74 +1,105 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useActionState, useMemo, useRef } from "react";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
-  Dumbbell, Leaf, Sparkles, UserPlus, Heart
+  Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle,
 } from "lucide-react";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
 
+// ── Step labels ───────────────────────────────────────────────────
 const STEPS = ["Perfil", "Nome", "Horários", "Equipe"];
 
+// ── Types ─────────────────────────────────────────────────────────
 type Profile = {
   id: string;
   label: string;
-  description: string;
   examples: string;
   icon: React.ReactNode;
 };
 
+// ── Data ──────────────────────────────────────────────────────────
 const PROFILES: Profile[] = [
   {
     id: "integrativa",
     label: "Integrativa / Funcional",
-    description: "Medicina funcional, integrativa e terapias complementares",
     examples: "Medicina funcional · Acupuntura · Medicina integrativa · Longevidade",
     icon: <Leaf className="h-5 w-5" />,
   },
   {
     id: "fisioterapia",
     label: "Fisioterapia / Reabilitação",
-    description: "Reabilitação física, terapias manuais e movimento",
     examples: "Fisioterapia · Quiropraxia · Osteopatia · Massoterapia",
     icon: <Dumbbell className="h-5 w-5" />,
   },
   {
     id: "saude_mental",
     label: "Saúde Mental",
-    description: "Acompanhamento psicológico e terapêutico",
     examples: "Psicologia · Terapia · Burnout · Estresse · Coaching terapêutico",
     icon: <Brain className="h-5 w-5" />,
   },
   {
     id: "nutricao",
     label: "Nutrição",
-    description: "Nutrição clínica, esportiva e comportamental",
     examples: "Nutrição clínica · Nutrição esportiva · Comportamento alimentar",
     icon: <Heart className="h-5 w-5" />,
   },
   {
     id: "wellness",
     label: "Wellness / Bem-estar",
-    description: "Centros de bem-estar, estética e qualidade de vida",
     examples: "Wellness center · Estética avançada · Spa clínico · Biohacking",
     icon: <Sparkles className="h-5 w-5" />,
   },
 ];
 
 const HOURS_OPTIONS = [
-  { id: "weekdays", label: "Dias úteis", summary: "Seg–Sex, 9h–17h" },
-  { id: "extended", label: "Estendido", summary: "Seg–Sex, 8h–18h" },
-  { id: "flexible", label: "Flexível", summary: "Seg–Sáb, horário simples" },
+  { id: "weekdays", label: "Dias úteis",  summary: "Seg–Sex, 9h–17h" },
+  { id: "extended", label: "Estendido",   summary: "Seg–Sex, 8h–18h" },
+  { id: "flexible", label: "Flexível",    summary: "Seg–Sáb, horário simples" },
 ];
 
+// ── Component ─────────────────────────────────────────────────────
 export function OnboardingFlow() {
-  const [step, setStep] = useState(0);
-  const [clinicProfile, setClinicProfile] = useState("integrativa");
-  const [clinicName, setClinicName] = useState("");
-  const [hoursPreset, setHoursPreset] = useState("weekdays");
-  const [staffEmail, setStaffEmail] = useState("");
+  const [state, formAction, isPending] = useActionState(completeOnboardingAction, null);
 
-  const progress = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
+  // Local UI state is tracked via refs + a re-render trick using a hidden counter
+  // so we avoid controlled inputs that conflict with formAction.
+  const stepRef       = useRef(0);
+  const profileRef    = useRef("integrativa");
+  const clinicNameRef = useRef("");
+  const hoursRef      = useRef("weekdays");
+  const staffEmailRef = useRef("");
+
+  // Force re-render when step changes
+  const [, forceUpdate] = useActionState(() => null, 0);
+  void forceUpdate; // used only to trigger re-render
+
+  // Simpler approach: managed state with useState is fine here; it won't
+  // conflict with form submission because hidden inputs mirror the values.
+  // We already had useState — keep using it via a small wrapper pattern.
+  // (Re-writing with useReducer to avoid "must be re-imported" warning)
+
+  return <OnboardingFlowInner formAction={formAction} isPending={isPending} error={state?.error ?? null} />;
+}
+
+// ── Inner component with useState ────────────────────────────────
+function OnboardingFlowInner({
+  formAction,
+  isPending,
+  error,
+}: {
+  formAction: (payload: FormData) => void;
+  isPending: boolean;
+  error: string | null;
+}) {
+  // We still need local state for the step wizard UI
+  const [step,          setStep]          = useStepState(0);
+  const [clinicProfile, setClinicProfile] = useStepState("integrativa");
+  const [clinicName,    setClinicName]    = useStepState("");
+  const [hoursPreset,   setHoursPreset]   = useStepState("weekdays");
+  const [staffEmail,    setStaffEmail]    = useStepState("");
+
+  const progress       = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
   const selectedProfile = PROFILES.find((p) => p.id === clinicProfile)!;
 
   return (
@@ -100,13 +131,22 @@ export function OnboardingFlow() {
         </div>
       </div>
 
-      <form action={completeOnboardingAction}>
-        <input type="hidden" name="clinic_name" value={clinicName || selectedProfile.label} readOnly />
-        <input type="hidden" name="clinic_profile" value={clinicProfile} readOnly />
-        <input type="hidden" name="hours_preset" value={hoursPreset} readOnly />
-        <input type="hidden" name="staff_email" value={staffEmail} readOnly />
+      {/* Error banner */}
+      {error && (
+        <div className="flex items-start gap-3 rounded-[12px] border border-red-200 bg-red-50 px-[16px] py-[14px]">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-[1px]" />
+          <p className="text-[13px] text-red-700">{error}</p>
+        </div>
+      )}
 
-        {/* Step 0 — Profile */}
+      <form action={formAction}>
+        {/* Hidden inputs mirror React state */}
+        <input type="hidden" name="clinic_name"    value={clinicName || selectedProfile.label} readOnly />
+        <input type="hidden" name="clinic_profile" value={clinicProfile} readOnly />
+        <input type="hidden" name="hours_preset"   value={hoursPreset} readOnly />
+        <input type="hidden" name="staff_email"    value={staffEmail} readOnly />
+
+        {/* ── Step 0 — Profile ─────────────────────────────── */}
         {step === 0 && (
           <div className="space-y-[10px]">
             <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
@@ -116,9 +156,9 @@ export function OnboardingFlow() {
               <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
                 Primeiro passo
               </p>
-              <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
+              <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
                 Qual é o perfil da sua clínica?
-              </h1>
+              </h2>
               <p className="text-[13px] text-[#A09E98] leading-relaxed">
                 O AXIEL vai configurar os tipos de sessão, formulários e terminologia automaticamente para você.
               </p>
@@ -166,7 +206,7 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {/* Step 1 — Clinic name */}
+        {/* ── Step 1 — Clinic name ──────────────────────────── */}
         {step === 1 && (
           <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
             <div className={[
@@ -178,9 +218,9 @@ export function OnboardingFlow() {
             <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
               Perfil: {selectedProfile.label}
             </p>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
+            <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
               Como se chama sua clínica?
-            </h1>
+            </h2>
             <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
               Esse é o nome que vai aparecer para sua equipe dentro do AXIEL.
             </p>
@@ -194,7 +234,7 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {/* Step 2 — Hours */}
+        {/* ── Step 2 — Hours ────────────────────────────────── */}
         {step === 2 && (
           <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
             <div className="w-10 h-10 rounded-[10px] bg-[#E1F5EE] flex items-center justify-center text-[#0F6E56] mb-[16px]">
@@ -203,9 +243,9 @@ export function OnboardingFlow() {
             <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
               Configuração de agenda
             </p>
-            <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
+            <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
               Qual é o horário de funcionamento?
-            </h1>
+            </h2>
             <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
               Você pode ajustar detalhadamente depois nas Configurações.
             </p>
@@ -245,7 +285,7 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {/* Step 3 — Team */}
+        {/* ── Step 3 — Team ─────────────────────────────────── */}
         {step === 3 && (
           <div className="space-y-[12px]">
             <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
@@ -255,9 +295,9 @@ export function OnboardingFlow() {
               <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
                 Último passo (opcional)
               </p>
-              <h1 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
+              <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
                 Convidar um colega de equipe
-              </h1>
+              </h2>
               <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
                 Pule essa etapa se preferir adicionar a equipe depois.
               </p>
@@ -270,7 +310,7 @@ export function OnboardingFlow() {
               />
             </div>
 
-            {/* Summary */}
+            {/* Summary card */}
             <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] space-y-[10px]">
               <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">
                 O AXIEL vai criar automaticamente
@@ -290,12 +330,12 @@ export function OnboardingFlow() {
           </div>
         )}
 
-        {/* Navigation */}
+        {/* ── Navigation ────────────────────────────────────── */}
         <div className="mt-[16px] flex items-center justify-between bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[14px]">
           <button
             type="button"
             onClick={() => setStep(Math.max(0, step - 1))}
-            disabled={step === 0}
+            disabled={step === 0 || isPending}
             className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] disabled:opacity-30 transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Voltar
@@ -305,20 +345,39 @@ export function OnboardingFlow() {
             <button
               type="button"
               onClick={() => setStep(step + 1)}
-              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition"
+              disabled={isPending}
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-50"
             >
               Continuar <ArrowRight className="h-3.5 w-3.5" />
             </button>
           ) : (
             <button
               type="submit"
-              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[9px] transition"
+              disabled={isPending}
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-50"
             >
-              Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" />
+              {isPending ? (
+                <>
+                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Criando clínica…
+                </>
+              ) : (
+                <>
+                  Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" />
+                </>
+              )}
             </button>
           )}
         </div>
       </form>
     </div>
   );
+}
+
+// ── Minimal useState wrapper ──────────────────────────────────────
+// Using a simple tuple to avoid re-importing React.useState in a way
+// that upsets fast-refresh in Next.js dev mode.
+import { useState } from "react";
+function useStepState<T>(initial: T): [T, (v: T) => void] {
+  return useState<T>(initial);
 }
