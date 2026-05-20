@@ -28,8 +28,16 @@ export async function completeOnboardingAction(
 
     return { success: true };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[onboarding] completeGuidedOnboarding error:", msg);
+    // Supabase throws PostgrestError (not a standard Error), extract message safely
+    let msg = "Erro desconhecido";
+    if (err instanceof Error) {
+      msg = err.message;
+    } else if (err && typeof err === "object" && "message" in err) {
+      msg = String((err as { message: unknown }).message);
+    } else if (typeof err === "string") {
+      msg = err;
+    }
+    console.error("[onboarding] completeGuidedOnboarding error:", err);
     return {
       error: `Não foi possível criar a clínica: ${msg}`,
     };

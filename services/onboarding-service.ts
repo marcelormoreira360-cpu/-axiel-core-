@@ -172,21 +172,34 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   let clinicId = profile.clinic_id;
 
   if (!clinicId) {
-    const { data: clinic, error: clinicError } = await supabase
+    // Try to find an existing clinic by slug (handles partial-failure re-runs)
+    const { data: existing } = await supabase
       .from("clinics")
-      .insert({ name: clinicName, slug: clinicSlug, status: "active", clinic_profile: clinicProfile })
-      .select("*")
-      .single();
+      .select("id")
+      .eq("slug", clinicSlug)
+      .maybeSingle();
 
-    if (clinicError) throw clinicError;
-    clinicId = clinic.id;
+    if (existing?.id) {
+      // Clinic was created in a previous attempt — just recover
+      clinicId = existing.id;
+    } else {
+      const { data: clinic, error: clinicError } = await supabase
+        .from("clinics")
+        .insert({ name: clinicName, slug: clinicSlug, status: "active", clinic_profile: clinicProfile })
+        .select("*")
+        .single();
 
+      if (clinicError) throw new Error(clinicError.message ?? JSON.stringify(clinicError));
+      clinicId = clinic.id;
+    }
+
+    // Always ensure the user profile is linked (idempotent)
     const { error: profileError } = await supabase
       .from("users")
       .update({ clinic_id: clinicId, role: "clinic_owner", full_name: profile.full_name || "Proprietário" })
       .eq("id", profile.id);
 
-    if (profileError) throw profileError;
+    if (profileError) throw new Error(profileError.message ?? JSON.stringify(profileError));
   } else {
     // Update profile on existing clinic
     await supabase
@@ -207,7 +220,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
     },
   }, { onConflict: "clinic_id" });
 
-  if (settingsError) throw settingsError;
+  if (settingsError) throw new Error(settingsError.message ?? JSON.stringify(settingsError));
 
   const { error: clinicUserError } = await supabase.from("clinic_users").upsert({
     clinic_id: clinicId!,
@@ -216,7 +229,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
     status: "active",
   }, { onConflict: "clinic_id,user_id" });
 
-  if (clinicUserError) throw clinicUserError;
+  if (clinicUserError) throw new Error(clinicUserError.message ?? JSON.stringify(clinicUserError));
 
   const sessionRows = sessionTypes.map((item) => ({
     clinic_id: clinicId!,
