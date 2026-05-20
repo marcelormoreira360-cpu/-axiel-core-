@@ -12,23 +12,40 @@ type AppointmentRef = {
 // Called right after appointment creation — schedules D-1, D+3 and D+30 follow-ups.
 export async function scheduleAutomations(appointment: AppointmentRef): Promise<void> {
   const supabase = createSupabaseAdminClient();
+
+  // Read clinic reminder settings (default all to enabled)
+  const { data: cs } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", appointment.clinic_id)
+    .maybeSingle();
+
+  const reminderSettings = (cs?.settings as Record<string, unknown> | null)?.reminders as Record<string, boolean> | undefined;
+  const isEnabled = (key: string) => reminderSettings ? (reminderSettings[key] !== false) : true;
+
   const t = new Date(appointment.starts_at).getTime();
   const day = 24 * 60 * 60 * 1000;
 
-  const rows = [
-    { tag: "d-1",  due_at: new Date(t - day).toISOString(),      title: "Lembrete D-1" },
-    { tag: "d+3",  due_at: new Date(t + 3 * day).toISOString(),  title: "Acompanhamento D+3" },
-    { tag: "d+30", due_at: new Date(t + 30 * day).toISOString(), title: "Fidelização D+30" },
-  ].map(({ tag, due_at, title }) => ({
-    clinic_id:      appointment.clinic_id,
-    patient_id:     appointment.patient_id,
-    appointment_id: appointment.id,
-    title,
-    due_at,
-    channel:        "whatsapp",
-    notes:          tag,
-    status:         "pending",
-  }));
+  const allRows = [
+    { tag: "d-1",  due_at: new Date(t - day).toISOString(),      title: "Lembrete D-1",        settingKey: "d_minus_1" },
+    { tag: "d+3",  due_at: new Date(t + 3 * day).toISOString(),  title: "Acompanhamento D+3",  settingKey: "d_plus_3" },
+    { tag: "d+30", due_at: new Date(t + 30 * day).toISOString(), title: "Fidelização D+30",    settingKey: "d_plus_30" },
+  ];
+
+  const rows = allRows
+    .filter(({ settingKey }) => isEnabled(settingKey))
+    .map(({ tag, due_at, title }) => ({
+      clinic_id:      appointment.clinic_id,
+      patient_id:     appointment.patient_id,
+      appointment_id: appointment.id,
+      title,
+      due_at,
+      channel:        "whatsapp",
+      notes:          tag,
+      status:         "pending",
+    }));
+
+  if (rows.length === 0) return;
 
   const { error } = await supabase.from("follow_ups").insert(rows);
   if (error) console.error("[automation] schedule failed:", error.message);

@@ -66,6 +66,9 @@ export async function createAppointment(input: {
     checkAndAutoRenewPackages(appt.patient_id, appt.clinic_id, appt.starts_at).catch(() => {})
   );
   sendConfirmationSideEffect(appt).catch(() => {});
+  import("@/services/automation-service").then(({ scheduleAutomations }) =>
+    scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {})
+  );
 
   return appt;
 }
