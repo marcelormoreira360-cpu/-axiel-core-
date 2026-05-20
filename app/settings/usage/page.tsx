@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { UsageLimitCard } from "@/components/usage-limit-card";
 import { AXIEL_PLANS } from "@/modules/billing/plan-config";
 
@@ -15,10 +17,13 @@ export default function UsageSettingsPage() {
   return (
     <main className="min-h-screen bg-axiel-background p-4 md:p-8 space-y-8">
       <section>
-        <p className="text-sm text-axiel-text-secondary">Settings</p>
-        <h1 className="text-3xl font-semibold text-axiel-text-primary">Usage</h1>
-        <p className="mt-2 text-axiel-text-secondary">
-          Review your clinic limits and current usage.
+        <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+        </Link>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 mt-2">Configurações</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Uso e limites</h1>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">
+          Acompanhe os limites do plano e o uso atual da clínica.
         </p>
       </section>
 

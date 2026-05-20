@@ -77,15 +77,23 @@ export default async function ProntuarioPrintPage({ params }: Props) {
           .obs-tag { font-size: 9pt; background: #f4f3ef; padding: 2px 8px; border-radius: 10px; }
           .session-divider { border: none; border-top: 1px dashed #e0e0e0; margin: 20px 0; }
           .footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid #e0e0e0; font-size: 8pt; color: #aaa; display: flex; justify-content: space-between; }
+          .no-print { display: flex; align-items: center; gap: 6px; padding: 10px 0 0 0; font-size: 11pt; color: #555; text-decoration: none; cursor: pointer; background: none; border: none; }
+          .no-print:hover { color: #0F1A2E; }
           @media print {
             body { font-size: 10pt; }
             .page { padding: 20px 24px; }
             @page { margin: 1.5cm; }
+            .no-print { display: none !important; }
           }
         `}</style>
       </head>
       <body>
         <div className="page">
+          {/* Back button — hidden when printing */}
+          <a href={`/patients/${id}`} className="no-print">
+            ← Voltar ao prontuário
+          </a>
+
           {/* Header */}
           <div className="header">
             <div>

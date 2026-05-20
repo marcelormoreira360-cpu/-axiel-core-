@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { getRlsStatus, summarizeRlsStatus } from "@/services/security-service";
@@ -9,12 +11,16 @@ export default async function SecuritySettingsPage() {
 
   return (
     <div className="space-y-6">
+      <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+        <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+      </Link>
+
       <MfaSettings />
 
       <SimplePageHeader
-        eyebrow="Security"
-        title="Data protection"
-        helper="Quick view of Row Level Security coverage across AXIEL Core."
+        eyebrow="Configurações"
+        title="Segurança"
+        helper="Status de Row Level Security e autenticação em dois fatores."
       />
 
       <div className="grid gap-4 md:grid-cols-3">
