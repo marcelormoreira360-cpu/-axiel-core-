@@ -13,11 +13,19 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicPatientDashboardPage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = await params;
+export default async function PublicPatientDashboardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const [{ token }, resolvedSearch] = await Promise.all([params, searchParams]);
   const data = await getPatientPortalDataByToken(token);
 
   if (!data) notFound();
 
-  return <PatientPortalDashboard data={data} />;
+  const purchaseSuccess = resolvedSearch.compra === "sucesso";
+
+  return <PatientPortalDashboard data={data} rawToken={token} purchaseSuccess={purchaseSuccess} />;
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { type PatientPortalData } from "@/services/patient-portal-service";
+import { PackagesSection } from "./packages-section";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
@@ -27,7 +28,15 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
+export function PatientPortalDashboard({
+  data,
+  rawToken,
+  purchaseSuccess = false,
+}: {
+  data: PatientPortalData;
+  rawToken: string;
+  purchaseSuccess?: boolean;
+}) {
   const firstName = data.patient.full_name.split(" ")[0];
   const nextSession = data.upcomingAppointments[0];
   const pkg = data.activePackage;
@@ -54,6 +63,21 @@ export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
           </h1>
           <p className="mt-1 text-sm text-black/50">Acompanhe seu progresso e suas sessões.</p>
         </div>
+
+        {/* Banner de compra confirmada */}
+        {purchaseSuccess && (
+          <div className="rounded-2xl bg-[#F0FAF5] border border-[#0F6E56]/20 p-4 flex items-start gap-3">
+            <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0F6E56]">
+              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-[#0F1A2E]">Compra realizada com sucesso!</p>
+              <p className="text-xs text-black/50 mt-0.5">Seu pacote foi ativado e estará disponível em breve.</p>
+            </div>
+          </div>
+        )}
 
         {/* Próxima sessão */}
         {nextSession ? (
@@ -167,6 +191,9 @@ export function PatientPortalDashboard({ data }: { data: PatientPortalData }) {
             </div>
           </Section>
         )}
+
+        {/* Pacotes disponíveis */}
+        <PackagesSection offers={data.availableOffers} rawToken={rawToken} />
 
         {/* WhatsApp CTA */}
         {data.whatsappUrl && (

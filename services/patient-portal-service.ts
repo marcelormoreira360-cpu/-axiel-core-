@@ -40,6 +40,16 @@ export type PatientPortalPackage = {
   sessions_remaining: number;
 };
 
+export type PatientPortalOffer = {
+  id: string;
+  name: string;
+  description: string | null;
+  offer_type: string;
+  price_cents: number;
+  currency: string;
+  number_of_sessions: number | null;
+};
+
 export type PatientPortalData = {
   link: PatientPortalLink;
   patient: Pick<Patient, "id" | "full_name" | "status">;
@@ -50,6 +60,7 @@ export type PatientPortalData = {
   activePackage: PatientPortalPackage | null;
   nextStep: string;
   whatsappUrl: string | null;
+  availableOffers: PatientPortalOffer[];
 };
 
 function hashToken(token: string) {
@@ -259,7 +270,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   }
 
   const now = new Date().toISOString();
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }] = await Promise.all([
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
@@ -305,6 +316,12 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("monetization_offers")
+      .select("id, name, description, offer_type, price_cents, currency, number_of_sessions")
+      .eq("clinic_id", link.clinic_id)
+      .eq("is_active", true)
+      .order("price_cents", { ascending: true }),
   ]);
 
   if (!patient || !clinic) return null;
@@ -362,6 +379,16 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       }
     : null;
 
+  const availableOffers: PatientPortalOffer[] = (offersData ?? []).map((o) => ({
+    id: o.id as string,
+    name: o.name as string,
+    description: (o.description as string | null) ?? null,
+    offer_type: o.offer_type as string,
+    price_cents: o.price_cents as number,
+    currency: o.currency as string,
+    number_of_sessions: (o.number_of_sessions as number | null) ?? null,
+  }));
+
   return {
     link: link as PatientPortalLink,
     patient,
@@ -372,5 +399,6 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     activePackage: pkg,
     nextStep: insight?.next_step ?? "Entre em contato com sua clínica para saber sobre o próximo passo.",
     whatsappUrl: createWhatsAppUrl(whatsappNumber),
+    availableOffers,
   };
 }

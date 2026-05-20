@@ -73,6 +73,34 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
+
+    // Handle patient package purchase
+    if (session.metadata?.type === "patient_purchase") {
+      const { patient_id, clinic_id, offer_id } = session.metadata;
+
+      const supabaseAdmin = createSupabaseAdminClient();
+      const { data: offer } = await supabaseAdmin
+        .from("monetization_offers")
+        .select("name, number_of_sessions")
+        .eq("id", offer_id)
+        .single();
+
+      if (offer) {
+        await supabaseAdmin.from("patient_packages").insert({
+          patient_id,
+          clinic_id,
+          name: offer.name,
+          sessions_total: (offer.number_of_sessions as number | null) ?? 1,
+          start_date: new Date().toISOString().slice(0, 10),
+          is_active: true,
+          auto_renew: false,
+          notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
+        });
+      }
+
+      return NextResponse.json({ received: true });
+    }
+
     if (session.subscription) {
       const subscription = await stripe.subscriptions.retrieve(String(session.subscription));
       await syncSubscription(subscription as StripeSubscriptionWithPeriod);
