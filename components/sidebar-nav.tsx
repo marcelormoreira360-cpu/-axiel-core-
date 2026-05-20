@@ -25,7 +25,7 @@ const mainNav = [
 
 const clinicNav = [
   { href: "/monetization", label: "Membership" },
-  { href: "/results",      label: "Reports" },
+  { href: "/relatorios",   label: "Relatórios" },
   { href: "/settings",     label: "Settings" },
 ];
 
