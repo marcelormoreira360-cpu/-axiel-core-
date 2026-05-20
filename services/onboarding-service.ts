@@ -155,9 +155,12 @@ function getIntakeFormName(profile: string) {
 }
 
 export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  // Use admin client for all setup writes — the user has no clinic yet so RLS
+  // policies on clinic_settings, clinic_users, session_types etc. would block
+  // a server-session client (chicken-and-egg problem on first insert).
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
   const profile = await getCurrentUserProfile();
 
   if (!profile) throw new Error("Você precisa estar autenticado para concluir o onboarding.");
