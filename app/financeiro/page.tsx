@@ -12,6 +12,8 @@ import {
   paymentMethodLabel,
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
+import { FinanceAIPanel } from "./finance-ai-panel";
+import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
 
 function delta(current: number, previous: number) {
   if (previous === 0) return current > 0 ? "+100%" : "—";
@@ -23,12 +25,13 @@ export default async function FinanceiroPage() {
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
 
-  const [kpis, payments, unpaid, monthly, patients] = await Promise.all([
+  const [kpis, payments, unpaid, monthly, patients, cachedInsight] = await Promise.all([
     getFinanceKPIs(clinic.id),
     getPaymentsWithPatients(clinic.id, { limit: 30 }),
     getUnpaidSessions(clinic.id),
     getMonthlyRevenue(clinic.id),
     getPatients(),
+    getLatestFinanceInsight(clinic.id),
   ]);
 
   const maxMonthly = Math.max(...monthly.map((m) => m.cents), 1);
@@ -144,6 +147,9 @@ export default async function FinanceiroPage() {
 
         {/* Right column */}
         <div className="space-y-4">
+
+          {/* Análise IA */}
+          <FinanceAIPanel initial={cachedInsight} />
 
           {/* Por forma de pagamento */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-4">

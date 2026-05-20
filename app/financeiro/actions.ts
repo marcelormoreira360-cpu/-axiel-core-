@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createPaymentAdmin } from "@/services/finance-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import {
+  generateFinanceInsight,
+  type FinanceAIInsight,
+} from "@/services/ai-finance-insight-service";
 import type { PaymentMethod } from "@/lib/types";
 
 export async function registerPaymentAction(
@@ -49,6 +53,21 @@ export async function registerPaymentAction(
     return {};
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erro ao registrar pagamento." };
+  }
+}
+
+export async function generateFinanceInsightAction(): Promise<{
+  insight?: FinanceAIInsight;
+  error?: string;
+}> {
+  const clinic = await getCurrentClinic();
+  if (!clinic) return { error: "Clínica não encontrada." };
+
+  try {
+    const insight = await generateFinanceInsight(clinic.id);
+    return { insight };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erro ao gerar análise." };
   }
 }
 
