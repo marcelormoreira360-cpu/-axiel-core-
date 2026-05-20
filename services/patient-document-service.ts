@@ -1,5 +1,4 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { randomUUID } from "crypto";
 
 export type PatientDocument = {
@@ -18,6 +17,8 @@ export type PatientDocument = {
 const BUCKET = "patient-docs";
 
 export async function getPatientDocuments(patientId: string): Promise<PatientDocument[]> {
+  // Lazy import to avoid pulling next/headers into the client bundle
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("patient_documents")
