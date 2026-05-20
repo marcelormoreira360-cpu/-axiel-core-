@@ -16,7 +16,7 @@ export async function getSessionTypes(clinicId?: string): Promise<SessionType[]>
   return data ?? [];
 }
 
-export async function getAppointments(clinicId?: string): Promise<Appointment[]> {
+export async function getAppointments(clinicId?: string, practitionerId?: string): Promise<Appointment[]> {
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("appointments")
@@ -24,6 +24,7 @@ export async function getAppointments(clinicId?: string): Promise<Appointment[]>
     .order("starts_at", { ascending: true });
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
+  if (practitionerId) query = query.eq("created_by", practitionerId);
 
   const { data, error } = await query;
   if (error) throw error;

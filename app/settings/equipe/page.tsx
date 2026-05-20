@@ -1,0 +1,40 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { Shell } from "@/components/shell";
+import { redirect } from "next/navigation";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentUserProfile } from "@/services/user-service";
+import { getTeamMembers, getPendingInvites, isManager } from "@/services/team-service";
+import { EquipeClient } from "./equipe-client";
+
+export default async function EquipePage() {
+  const [clinic, profile] = await Promise.all([getCurrentClinic(), getCurrentUserProfile()]);
+  if (!clinic || !profile) redirect("/dashboard");
+
+  const [members, invites] = await Promise.all([
+    getTeamMembers(clinic.id),
+    isManager(profile.role) ? getPendingInvites(clinic.id) : Promise.resolve([]),
+  ]);
+
+  return (
+    <Shell>
+      <div className="mb-7">
+        <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+        </Link>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Configurações</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Equipe</h1>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">
+          Gerencie os membros da clínica, cargos e convites.
+        </p>
+      </div>
+
+      <EquipeClient
+        members={members}
+        invites={invites}
+        currentUserId={profile.id}
+        currentUserRole={profile.role}
+      />
+    </Shell>
+  );
+}

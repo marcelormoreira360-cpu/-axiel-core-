@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { EmptyState } from "@/components/empty-state";
 import { getPatients } from "@/services/patient-service";
+import { getCurrentUserProfile } from "@/services/user-service";
+import { isPractitioner } from "@/services/team-service";
 import { UserPlus } from "lucide-react";
 
 function initials(name: string) {
@@ -9,9 +11,9 @@ function initials(name: string) {
 }
 
 function statusBadge(status: string) {
-  if (status === "active") return { label: "Active", classes: "bg-[#E1F5EE] text-[#085041]" };
-  if (status === "archived") return { label: "Archived", classes: "bg-[#F4F3EF] text-[#A09E98]" };
-  return { label: "Inactive", classes: "bg-[#FAEEDA] text-[#633806]" };
+  if (status === "active") return { label: "Ativo", classes: "bg-[#E1F5EE] text-[#085041]" };
+  if (status === "archived") return { label: "Arquivado", classes: "bg-[#F4F3EF] text-[#A09E98]" };
+  return { label: "Inativo", classes: "bg-[#FAEEDA] text-[#633806]" };
 }
 
 function avatarColor(name: string) {
@@ -26,33 +28,38 @@ function avatarColor(name: string) {
 }
 
 export default async function PatientsPage() {
-  const patients = await getPatients();
+  const profile = await getCurrentUserProfile();
+  const clinicId = profile?.clinic_id ?? undefined;
+  const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
+  const patients = await getPatients(clinicId, practitionerId);
 
   return (
     <Shell>
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Patients</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Pacientes</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {patients.length > 0 ? `${patients.length} patient${patients.length !== 1 ? "s" : ""} in your clinic` : "No patients yet"}
+            {patients.length > 0
+              ? `${patients.length} paciente${patients.length !== 1 ? "s" : ""}${practitionerId ? " atendidos por você" : " na clínica"}`
+              : "Nenhum paciente ainda"}
           </p>
         </div>
         <Link
           href="/patients/new"
           className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
         >
-          + Add patient
+          + Novo paciente
         </Link>
       </div>
 
       {patients.length === 0 ? (
         <EmptyState
           icon={<UserPlus className="h-7 w-7" />}
-          title="No patients yet"
-          text="Add your first patient to start managing care records."
+          title="Nenhum paciente ainda"
+          text="Cadastre seu primeiro paciente para começar a gerenciar atendimentos."
           href="/patients/new"
-          action="Add first patient"
+          action="Cadastrar paciente"
         />
       ) : (
         <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">

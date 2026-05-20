@@ -10,16 +10,18 @@ import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsight, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { isPractitioner } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
 import { formatTime } from "@/modules/schedule/date-utils";
 
 export default async function SchedulePage() {
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
+  const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
 
   const [appointments, patients, openReviews, sessionTypes] = await Promise.all([
-    getAppointments(clinicId),
-    getPatients(clinicId),
+    getAppointments(clinicId, practitionerId),
+    getPatients(clinicId, practitionerId),
     getPendingAiInsightReviewCount(clinicId),
     getSessionTypes(clinicId),
   ]);
