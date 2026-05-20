@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -210,6 +211,27 @@ export default async function IntegrationsPage({
             </>
           )}
         </div>
+
+        {/* ── Hotmart ── */}
+        <Link href="/settings/integrations/hotmart">
+          <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[14px] p-[20px] hover:border-black/15 transition cursor-pointer">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[10px] border border-black/[.07] flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #FF4D2E 0%, #FF6B35 100%)" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 3C7.03 3 3 7.03 3 12s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7z" fill="white" opacity="0.6"/>
+                    <path d="M12 7v5l3.5 3.5-1.5 1.5L10 13.5V7h2z" fill="white"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[14px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">Hotmart</p>
+                  <p className="text-[12px] text-[#A09E98] mt-[1px]">Sincroniza compras de cursos e infoprodutos com pacientes da clínica.</p>
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/30 mt-1 shrink-0"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+        </Link>
 
         {/* Setup instructions */}
         <div className="bg-[#F4F3EF] dark:bg-white/[.03] border border-black/[.06] dark:border-white/[.06] rounded-[12px] p-[16px]">
