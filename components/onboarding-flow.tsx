@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useRef } from "react";
+import { useState, useActionState } from "react";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
   Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle,
@@ -10,16 +10,8 @@ import { completeOnboardingAction } from "@/app/onboarding/actions";
 // ── Step labels ───────────────────────────────────────────────────
 const STEPS = ["Perfil", "Nome", "Horários", "Equipe"];
 
-// ── Types ─────────────────────────────────────────────────────────
-type Profile = {
-  id: string;
-  label: string;
-  examples: string;
-  icon: React.ReactNode;
-};
-
 // ── Data ──────────────────────────────────────────────────────────
-const PROFILES: Profile[] = [
+const PROFILES = [
   {
     id: "integrativa",
     label: "Integrativa / Funcional",
@@ -50,57 +42,27 @@ const PROFILES: Profile[] = [
     examples: "Wellness center · Estética avançada · Spa clínico · Biohacking",
     icon: <Sparkles className="h-5 w-5" />,
   },
-];
+] as const;
 
 const HOURS_OPTIONS = [
   { id: "weekdays", label: "Dias úteis",  summary: "Seg–Sex, 9h–17h" },
   { id: "extended", label: "Estendido",   summary: "Seg–Sex, 8h–18h" },
   { id: "flexible", label: "Flexível",    summary: "Seg–Sáb, horário simples" },
-];
+] as const;
 
 // ── Component ─────────────────────────────────────────────────────
 export function OnboardingFlow() {
-  const [state, formAction, isPending] = useActionState(completeOnboardingAction, null);
+  const [actionState, formAction, isPending] = useActionState(completeOnboardingAction, null);
 
-  // Local UI state is tracked via refs + a re-render trick using a hidden counter
-  // so we avoid controlled inputs that conflict with formAction.
-  const stepRef       = useRef(0);
-  const profileRef    = useRef("integrativa");
-  const clinicNameRef = useRef("");
-  const hoursRef      = useRef("weekdays");
-  const staffEmailRef = useRef("");
+  const [step,          setStep]          = useState(0);
+  const [clinicProfile, setClinicProfile] = useState("integrativa");
+  const [clinicName,    setClinicName]    = useState("");
+  const [hoursPreset,   setHoursPreset]   = useState("weekdays");
+  const [staffEmail,    setStaffEmail]    = useState("");
 
-  // Force re-render when step changes
-  const [, forceUpdate] = useActionState(() => null, 0);
-  void forceUpdate; // used only to trigger re-render
-
-  // Simpler approach: managed state with useState is fine here; it won't
-  // conflict with form submission because hidden inputs mirror the values.
-  // We already had useState — keep using it via a small wrapper pattern.
-  // (Re-writing with useReducer to avoid "must be re-imported" warning)
-
-  return <OnboardingFlowInner formAction={formAction} isPending={isPending} error={state?.error ?? null} />;
-}
-
-// ── Inner component with useState ────────────────────────────────
-function OnboardingFlowInner({
-  formAction,
-  isPending,
-  error,
-}: {
-  formAction: (payload: FormData) => void;
-  isPending: boolean;
-  error: string | null;
-}) {
-  // We still need local state for the step wizard UI
-  const [step,          setStep]          = useStepState(0);
-  const [clinicProfile, setClinicProfile] = useStepState("integrativa");
-  const [clinicName,    setClinicName]    = useStepState("");
-  const [hoursPreset,   setHoursPreset]   = useStepState("weekdays");
-  const [staffEmail,    setStaffEmail]    = useStepState("");
-
-  const progress       = useMemo(() => ((step + 1) / STEPS.length) * 100, [step]);
+  const progress        = ((step + 1) / STEPS.length) * 100;
   const selectedProfile = PROFILES.find((p) => p.id === clinicProfile)!;
+  const error           = actionState?.error ?? null;
 
   return (
     <div className="max-w-[640px] mx-auto space-y-[16px]">
@@ -140,13 +102,13 @@ function OnboardingFlowInner({
       )}
 
       <form action={formAction}>
-        {/* Hidden inputs mirror React state */}
+        {/* Hidden inputs mirror state so server action receives them */}
         <input type="hidden" name="clinic_name"    value={clinicName || selectedProfile.label} readOnly />
         <input type="hidden" name="clinic_profile" value={clinicProfile} readOnly />
         <input type="hidden" name="hours_preset"   value={hoursPreset} readOnly />
         <input type="hidden" name="staff_email"    value={staffEmail} readOnly />
 
-        {/* ── Step 0 — Profile ─────────────────────────────── */}
+        {/* ── Step 0 — Profile ─────────────────────────── */}
         {step === 0 && (
           <div className="space-y-[10px]">
             <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
@@ -206,13 +168,10 @@ function OnboardingFlowInner({
           </div>
         )}
 
-        {/* ── Step 1 — Clinic name ──────────────────────────── */}
+        {/* ── Step 1 — Clinic name ──────────────────── */}
         {step === 1 && (
           <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
-            <div className={[
-              "w-10 h-10 rounded-[10px] flex items-center justify-center mb-[16px]",
-              "bg-[#E1F5EE] text-[#0F6E56]",
-            ].join(" ")}>
+            <div className="w-10 h-10 rounded-[10px] bg-[#E1F5EE] flex items-center justify-center text-[#0F6E56] mb-[16px]">
               {selectedProfile.icon}
             </div>
             <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
@@ -234,7 +193,7 @@ function OnboardingFlowInner({
           </div>
         )}
 
-        {/* ── Step 2 — Hours ────────────────────────────────── */}
+        {/* ── Step 2 — Hours ───────────────────────── */}
         {step === 2 && (
           <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
             <div className="w-10 h-10 rounded-[10px] bg-[#E1F5EE] flex items-center justify-center text-[#0F6E56] mb-[16px]">
@@ -285,7 +244,7 @@ function OnboardingFlowInner({
           </div>
         )}
 
-        {/* ── Step 3 — Team ─────────────────────────────────── */}
+        {/* ── Step 3 — Team ────────────────────────── */}
         {step === 3 && (
           <div className="space-y-[12px]">
             <div className="bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[28px]">
@@ -330,11 +289,11 @@ function OnboardingFlowInner({
           </div>
         )}
 
-        {/* ── Navigation ────────────────────────────────────── */}
+        {/* ── Navigation ──────────────────────────── */}
         <div className="mt-[16px] flex items-center justify-between bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[14px]">
           <button
             type="button"
-            onClick={() => setStep(Math.max(0, step - 1))}
+            onClick={() => setStep((s) => Math.max(0, s - 1))}
             disabled={step === 0 || isPending}
             className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] disabled:opacity-30 transition"
           >
@@ -344,9 +303,9 @@ function OnboardingFlowInner({
           {step < STEPS.length - 1 ? (
             <button
               type="button"
-              onClick={() => setStep(step + 1)}
+              onClick={() => setStep((s) => s + 1)}
               disabled={isPending}
-              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-50"
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition"
             >
               Continuar <ArrowRight className="h-3.5 w-3.5" />
             </button>
@@ -354,17 +313,15 @@ function OnboardingFlowInner({
             <button
               type="submit"
               disabled={isPending}
-              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-50"
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-60"
             >
               {isPending ? (
                 <>
-                  <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                   Criando clínica…
                 </>
               ) : (
-                <>
-                  Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" />
-                </>
+                <>Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" /></>
               )}
             </button>
           )}
@@ -372,12 +329,4 @@ function OnboardingFlowInner({
       </form>
     </div>
   );
-}
-
-// ── Minimal useState wrapper ──────────────────────────────────────
-// Using a simple tuple to avoid re-importing React.useState in a way
-// that upsets fast-refresh in Next.js dev mode.
-import { useState } from "react";
-function useStepState<T>(initial: T): [T, (v: T) => void] {
-  return useState<T>(initial);
 }
