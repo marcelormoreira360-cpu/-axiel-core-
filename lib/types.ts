@@ -135,6 +135,12 @@ export type SessionRecord = {
   created_by: string | null;
   notes: string | null;
   key_observations: string[];
+  // SOAP fields
+  soap_mode: boolean;
+  subjective: string | null;
+  objective: string | null;
+  assessment_note: string | null;
+  plan: string | null;
   created_at: string;
   updated_at: string;
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;

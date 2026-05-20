@@ -7,6 +7,7 @@ import { saveSessionRecord } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
 
 type RecordingState = "idle" | "recording" | "transcribing";
+type NoteMode = "livre" | "soap";
 
 type Props = {
   appointment: Appointment;
@@ -14,18 +15,56 @@ type Props = {
   saved?: boolean;
 };
 
+const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan"; label: string; short: string; placeholder: string }[] = [
+  {
+    key: "subjective",
+    label: "S — Subjetivo",
+    short: "S",
+    placeholder: "Queixas, sintomas e percepções relatadas pelo paciente...",
+  },
+  {
+    key: "objective",
+    label: "O — Objetivo",
+    short: "O",
+    placeholder: "Achados clínicos: exame físico, sinais vitais, testes aplicados...",
+  },
+  {
+    key: "assessment_note",
+    label: "A — Avaliação",
+    short: "A",
+    placeholder: "Hipótese diagnóstica, análise clínica, evolução do quadro...",
+  },
+  {
+    key: "plan",
+    label: "P — Plano",
+    short: "P",
+    placeholder: "Conduta terapêutica, prescrições, orientações, próximos passos...",
+  },
+];
+
 export function SessionRecordingPanel({ appointment, record, saved }: Props) {
+  const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
+
+  const [mode, setMode] = useState<NoteMode>(initialMode);
   const [notes, setNotes] = useState(record?.notes ?? "");
+  const [soap, setSoap] = useState({
+    subjective:      record?.subjective ?? "",
+    objective:       record?.objective ?? "",
+    assessment_note: record?.assessment_note ?? "",
+    plan:            record?.plan ?? "",
+  });
   const [draft, setDraft] = useState("");
   const [observations, setObservations] = useState<string[]>(record?.key_observations ?? []);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [activeSOAPField, setActiveSOAPField] = useState<"subjective" | "objective" | "assessment_note" | "plan">("subjective");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const soapRefs = useRef<Partial<Record<string, HTMLTextAreaElement | null>>>({});
 
   const patientName = appointment.patients?.full_name ?? "Paciente";
   const observationsValue = useMemo(() => JSON.stringify(observations), [observations]);
@@ -100,17 +139,30 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       if (!res.ok) throw new Error(data.error ?? "Erro na transcrição");
 
       const transcribed: string = data.text ?? "";
-      setNotes((prev) => {
-        const separator = prev.trim() ? "\n\n" : "";
-        return prev + separator + transcribed;
-      });
-      // Move cursor to end
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(9999, 9999);
-        }
-      }, 50);
+
+      if (mode === "soap") {
+        // Append to the active SOAP field
+        setSoap((prev) => {
+          const current = prev[activeSOAPField];
+          const separator = current.trim() ? "\n\n" : "";
+          return { ...prev, [activeSOAPField]: current + separator + transcribed };
+        });
+        setTimeout(() => {
+          const ref = soapRefs.current[activeSOAPField];
+          if (ref) { ref.focus(); ref.setSelectionRange(9999, 9999); }
+        }, 50);
+      } else {
+        setNotes((prev) => {
+          const separator = prev.trim() ? "\n\n" : "";
+          return prev + separator + transcribed;
+        });
+        setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            textareaRef.current.setSelectionRange(9999, 9999);
+          }
+        }, 50);
+      }
     } catch (err: unknown) {
       setRecordingError(err instanceof Error ? err.message : "Erro na transcrição");
     } finally {
@@ -124,6 +176,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       <input type="hidden" name="patient_id" value={appointment.patient_id} />
       <input type="hidden" name="clinic_id" value={appointment.clinic_id} />
       <input type="hidden" name="key_observations" value={observationsValue} />
+      <input type="hidden" name="soap_mode" value={mode === "soap" ? "1" : "0"} />
 
       {/* Header */}
       <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] flex items-center justify-between">
@@ -156,20 +209,107 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       <div className="grid gap-[18px] xl:grid-cols-[1.2fr_0.8fr]">
         {/* Notes + audio */}
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <div className="flex items-center justify-between mb-[10px]">
-            <label className="text-[11px] font-medium text-[#6B6A66]">Notas da sessão</label>
-            <span className="text-[10px] text-[#D3D1C7]">{notes.length} car.</span>
+          {/* Mode switcher */}
+          <div className="flex items-center justify-between mb-[12px]">
+            <div className="flex rounded-[8px] border border-black/[.08] overflow-hidden text-[11px]">
+              <button
+                type="button"
+                onClick={() => setMode("livre")}
+                className={`px-3 py-1.5 transition font-medium ${
+                  mode === "livre"
+                    ? "bg-[#0F1A2E] text-white"
+                    : "text-[#6B6A66] hover:bg-[#F4F3EF]"
+                }`}
+              >
+                Livre
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("soap")}
+                className={`px-3 py-1.5 transition font-medium ${
+                  mode === "soap"
+                    ? "bg-[#0F1A2E] text-white"
+                    : "text-[#6B6A66] hover:bg-[#F4F3EF]"
+                }`}
+              >
+                SOAP
+              </button>
+            </div>
+            {mode === "livre" && (
+              <span className="text-[10px] text-[#D3D1C7]">{notes.length} car.</span>
+            )}
           </div>
 
-          <textarea
-            ref={textareaRef}
-            name="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Escreva ou grave as notas da sessão..."
-            rows={18}
-            className="w-full resize-none rounded-[8px] bg-[#FAFAF8] border border-transparent px-[12px] py-[10px] text-[13px] text-[#0F1A2E] leading-relaxed placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]/30 focus:bg-white transition"
-          />
+          {/* Livre mode */}
+          {mode === "livre" && (
+            <textarea
+              ref={textareaRef}
+              name="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Escreva ou grave as notas da sessão..."
+              rows={18}
+              className="w-full resize-none rounded-[8px] bg-[#FAFAF8] border border-transparent px-[12px] py-[10px] text-[13px] text-[#0F1A2E] leading-relaxed placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]/30 focus:bg-white transition"
+            />
+          )}
+
+          {/* SOAP mode */}
+          {mode === "soap" && (
+            <div className="space-y-[10px]">
+              {/* SOAP tab selector for audio target */}
+              <div className="flex gap-1.5 flex-wrap">
+                {SOAP_FIELDS.map((f) => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    onClick={() => setActiveSOAPField(f.key)}
+                    className={`text-[10px] font-semibold px-2.5 py-1 rounded-md transition ${
+                      activeSOAPField === f.key
+                        ? "bg-[#0F1A2E] text-white"
+                        : "bg-[#F4F3EF] text-[#6B6A66] hover:bg-[#E8E6E2]"
+                    }`}
+                  >
+                    {f.short}
+                  </button>
+                ))}
+                <span className="text-[10px] text-[#A09E98] self-center ml-1">
+                  · áudio vai para <strong>{SOAP_FIELDS.find(f => f.key === activeSOAPField)?.short}</strong>
+                </span>
+              </div>
+
+              {SOAP_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label className="text-[10px] font-semibold text-[#6B6A66] uppercase tracking-[.05em] mb-1 block">
+                    {f.label}
+                  </label>
+                  <textarea
+                    ref={(el) => { soapRefs.current[f.key] = el; }}
+                    name={f.key}
+                    value={soap[f.key]}
+                    onChange={(e) => setSoap((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                    onFocus={() => setActiveSOAPField(f.key)}
+                    placeholder={f.placeholder}
+                    rows={4}
+                    className="w-full resize-none rounded-[8px] bg-[#FAFAF8] border border-transparent px-[12px] py-[10px] text-[13px] text-[#0F1A2E] leading-relaxed placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]/30 focus:bg-white transition"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Hidden fields for SOAP when in livre mode (preserve values) */}
+          {mode === "livre" && (
+            <>
+              <input type="hidden" name="subjective" value={soap.subjective} />
+              <input type="hidden" name="objective" value={soap.objective} />
+              <input type="hidden" name="assessment_note" value={soap.assessment_note} />
+              <input type="hidden" name="plan" value={soap.plan} />
+            </>
+          )}
+          {/* Hidden notes field when in SOAP mode */}
+          {mode === "soap" && (
+            <input type="hidden" name="notes" value={notes} />
+          )}
 
           {/* Audio recorder bar */}
           <div className="mt-[10px] flex items-center gap-[8px]">
