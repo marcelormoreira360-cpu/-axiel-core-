@@ -6,7 +6,13 @@ const publicPrefixes = ["/auth", "/api/public", "/api/whatsapp"];
 
 function isPublicPath(pathname: string) {
   if (pathname === "/auth/mfa") return false; // requires authentication
-  return publicRoutes.includes(pathname) || pathname.startsWith("/p/") || publicPrefixes.some((prefix) => pathname.startsWith(prefix));
+  return (
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/p/") ||       // patient portal (magic link)
+    pathname.startsWith("/envio/") ||   // public patient intake/upload
+    pathname.startsWith("/join/") ||    // team invite accept
+    publicPrefixes.some((prefix) => pathname.startsWith(prefix))
+  );
 }
 
 function redirectToLogin(request: NextRequest) {

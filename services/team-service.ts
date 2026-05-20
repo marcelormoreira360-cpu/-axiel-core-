@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { Resend } from "resend";
 import { randomUUID } from "crypto";
 import type { AppRole } from "@/lib/types";
+import { ROLE_LABELS } from "@/lib/team-utils";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -25,33 +26,10 @@ export interface TeamInvite {
 }
 
 // ── Role helpers ──────────────────────────────────────────────────
+// Re-exported from lib/team-utils so client components can import from there
+// without pulling in any server-side dependencies.
 
-export const ROLE_LABELS: Record<AppRole, string> = {
-  admin:              "Admin",
-  platform_admin:     "Admin da plataforma",
-  platform_support:   "Suporte",
-  clinic_owner:       "Proprietário",
-  clinic_manager:     "Gestor",
-  practitioner:       "Profissional de saúde",
-  front_desk:         "Recepção",
-  read_only_staff:    "Visualizador",
-  staff:              "Equipe",
-};
-
-export const INVITABLE_ROLES: AppRole[] = [
-  "clinic_manager",
-  "practitioner",
-  "front_desk",
-  "read_only_staff",
-];
-
-export function isManager(role: AppRole): boolean {
-  return role === "clinic_owner" || role === "clinic_manager" || role === "admin";
-}
-
-export function isPractitioner(role: AppRole): boolean {
-  return role === "practitioner";
-}
+export { ROLE_LABELS, INVITABLE_ROLES, isManager, isPractitioner } from "@/lib/team-utils";
 
 // ── Team members ──────────────────────────────────────────────────
 

@@ -1,44 +1,12 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { PatientPayment, PaymentMethod } from "@/lib/types";
+import { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, monthKey } from "@/lib/finance-utils";
 
-// ── Formatters ────────────────────────────────────────────────────
+// ── Formatters & period helpers ───────────────────────────────────
+// Re-exported from lib/finance-utils so client components can import from there
+// without pulling in any server-side dependencies.
 
-export function formatBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-export function paymentMethodLabel(method: PaymentMethod | null) {
-  const map: Record<PaymentMethod, string> = {
-    pix:         "PIX",
-    credit_card: "Cartão de crédito",
-    debit_card:  "Cartão de débito",
-    cash:        "Dinheiro",
-    transfer:    "Transferência",
-    insurance:   "Plano de saúde",
-    other:       "Outro",
-  };
-  return method ? (map[method] ?? method) : "—";
-}
-
-// ── Period helpers ────────────────────────────────────────────────
-
-export function currentMonthRange() {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-  return { from, to };
-}
-
-export function prevMonthRange() {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-  const to   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
-  return { from, to };
-}
-
-export function monthKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-}
+export { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, monthKey } from "@/lib/finance-utils";
 
 // ── KPIs ─────────────────────────────────────────────────────────
 
