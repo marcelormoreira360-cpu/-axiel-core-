@@ -46,6 +46,12 @@ export default async function FinanceiroPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/financeiro/nfse"
+            className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
+          >
+            NFS-e →
+          </Link>
+          <Link
             href="/financeiro/repasse"
             className="text-[12px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] px-3 py-1.5 rounded-lg transition"
           >

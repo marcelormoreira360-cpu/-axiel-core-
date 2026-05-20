@@ -212,6 +212,27 @@ export default async function IntegrationsPage({
           )}
         </div>
 
+        {/* ── NFS-e ── */}
+        <Link href="/settings/integrations/nfse">
+          <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[14px] p-[20px] hover:border-black/15 transition cursor-pointer">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-[10px] border border-black/[.07] flex items-center justify-center shrink-0" style={{ background: "linear-gradient(135deg, #1a6b3a 0%, #0F6E56 100%)" }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+                    <path d="M14 2v6h6M8 13h8M8 17h5" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-[14px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">NFS-e · NFe.io</p>
+                  <p className="text-[12px] text-[#A09E98] mt-[1px]">Emita notas fiscais de serviço diretamente pelo AXIEL.</p>
+                </div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-black/30 mt-1 shrink-0"><path d="m9 18 6-6-6-6"/></svg>
+            </div>
+          </div>
+        </Link>
+
         {/* ── Hotmart ── */}
         <Link href="/settings/integrations/hotmart">
           <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[14px] p-[20px] hover:border-black/15 transition cursor-pointer">
