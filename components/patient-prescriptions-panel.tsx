@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pill, Leaf, X, StopCircle } from "lucide-react";
+import Link from "next/link";
+import { Plus, Pill, Leaf, X, StopCircle, Printer } from "lucide-react";
 import type { Prescription } from "@/services/exams-service";
 import {
   addPrescriptionAction,
@@ -192,15 +193,26 @@ export function PatientPrescriptionsPanel({
         <p className="text-[11px] font-medium text-[#6B6A66]">
           Medicamentos e suplementos · {active.length} ativos
         </p>
-        {!adding && (
-          <button
-            type="button"
-            onClick={() => setAdding(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
-          >
-            <Plus className="h-3 w-3" /> Adicionar
-          </button>
-        )}
+        <div className="flex items-center gap-[10px]">
+          {active.length > 0 && (
+            <Link
+              href={`/patients/${patientId}/prescriptions/print`}
+              target="_blank"
+              className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
+            >
+              <Printer className="h-3 w-3" /> Imprimir
+            </Link>
+          )}
+          {!adding && (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            >
+              <Plus className="h-3 w-3" /> Adicionar
+            </button>
+          )}
+        </div>
       </div>
 
       {adding && <AddPrescriptionForm patientId={patientId} onClose={() => setAdding(false)} />}
