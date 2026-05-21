@@ -18,7 +18,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
 
   if (!patient) notFound();
 
-  const hasData = evolution.biomarkers.length > 0 || evolution.assessments.length > 0;
+  const hasData = evolution.biomarkers.length > 0 || evolution.assessments.length > 0 || evolution.vitals.length > 0;
 
   return (
     <Shell>
@@ -60,7 +60,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
           </div>
         </div>
       ) : (
-        <EvolutionCharts biomarkers={evolution.biomarkers} assessments={evolution.assessments} />
+        <EvolutionCharts biomarkers={evolution.biomarkers} assessments={evolution.assessments} vitals={evolution.vitals} />
       )}
     </Shell>
   );

@@ -127,6 +127,13 @@ export type IntakeFormWithQuestions = IntakeForm & {
   intake_questions: IntakeQuestion[];
 };
 
+export type SessionVitals = {
+  dor?: number | null;      // 1–5 (1=sem dor, 5=dor máxima)
+  energia?: number | null;  // 1–5 (1=exausto, 5=cheio de energia)
+  humor?: number | null;    // 1–5 (1=muito ruim, 5=excelente)
+  sono?: number | null;     // 1–5 (1=péssimo, 5=ótimo)
+};
+
 export type SessionRecord = {
   id: string;
   clinic_id: string;
@@ -141,6 +148,8 @@ export type SessionRecord = {
   objective: string | null;
   assessment_note: string | null;
   plan: string | null;
+  // Patient-reported vitals
+  vitals: SessionVitals | null;
   created_at: string;
   updated_at: string;
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;

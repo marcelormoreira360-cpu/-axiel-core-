@@ -5,7 +5,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, ReferenceArea, Legend,
 } from "recharts";
-import type { BiomarkerSeries, AssessmentSeries } from "@/services/evolution-service";
+import type { BiomarkerSeries, AssessmentSeries, VitalPoint } from "@/services/evolution-service";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -202,18 +202,128 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
   );
 }
 
+// ── Vitals chart ──────────────────────────────────────────────────────────────
+
+const VITAL_LINES = [
+  { key: "dor",     label: "Dor",     color: "#E05252" },
+  { key: "energia", label: "Energia", color: "#0F6E56" },
+  { key: "humor",   label: "Humor",   color: "#7B5EA7" },
+  { key: "sono",    label: "Sono",    color: "#2A7BC1" },
+] as const;
+
+function VitalsChart({ points }: { points: VitalPoint[] }) {
+  const [visible, setVisible] = useState<Set<string>>(new Set(["dor", "energia", "humor", "sono"]));
+
+  const data = points.map((p) => ({
+    date: fmtDate(p.date),
+    dor: p.dor,
+    energia: p.energia,
+    humor: p.humor,
+    sono: p.sono,
+  }));
+
+  function toggleLine(key: string) {
+    setVisible((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) { next.delete(key); } else { next.add(key); }
+      return next;
+    });
+  }
+
+  return (
+    <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px]">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <p className="text-[13px] font-medium text-[#0F1A2E]">Vitais por sessão</p>
+          <p className="text-[11px] text-[#A09E98]">Relatados pelo paciente · Escala 1–5</p>
+        </div>
+        <span className="text-[10px] text-[#A09E98]">{points.length} sessões</span>
+      </div>
+
+      {/* Legend / toggle */}
+      <div className="flex flex-wrap gap-[8px] mb-[10px]">
+        {VITAL_LINES.map(({ key, label, color }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => toggleLine(key)}
+            className="flex items-center gap-[5px] text-[11px] transition"
+            style={{ opacity: visible.has(key) ? 1 : 0.35 }}
+          >
+            <span className="inline-block w-3 h-[2px] rounded-full" style={{ backgroundColor: color }} />
+            <span style={{ color: visible.has(key) ? "#0F1A2E" : "#A09E98" }}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      <ResponsiveContainer width="100%" height={180}>
+        <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -20 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#F4F3EF" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: "#A09E98" }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 10, fill: "#A09E98" }}
+            axisLine={false}
+            tickLine={false}
+            domain={[0, 6]}
+            ticks={[1, 2, 3, 4, 5]}
+          />
+          <Tooltip
+            contentStyle={{
+              background: "#fff",
+              border: "1px solid rgba(0,0,0,0.08)",
+              borderRadius: 8,
+              fontSize: 11,
+              color: "#0F1A2E",
+            }}
+            formatter={(val, name) => [
+              val != null ? `${val}/5` : "—",
+              VITAL_LINES.find((l) => l.key === (name as string))?.label ?? (name as string),
+            ]}
+          />
+          {VITAL_LINES.map(({ key, color }) =>
+            visible.has(key) ? (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                stroke={color}
+                strokeWidth={2}
+                dot={{ r: 3.5, fill: color, stroke: "#fff", strokeWidth: 1.5 }}
+                activeDot={{ r: 5 }}
+                connectNulls
+              />
+            ) : null
+          )}
+        </LineChart>
+      </ResponsiveContainer>
+
+      <p className="text-[10px] text-[#A09E98] mt-2">
+        Clique nas legendas para mostrar/ocultar métricas. Dor: 1=sem dor, 5=intensa. Demais: 1=ruim, 5=ótimo.
+      </p>
+    </div>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
-type Tab = "biomarkers" | "assessments";
+type Tab = "biomarkers" | "assessments" | "vitals";
 
 export function EvolutionCharts({
   biomarkers,
   assessments,
+  vitals = [],
 }: {
   biomarkers: BiomarkerSeries[];
   assessments: AssessmentSeries[];
+  vitals?: VitalPoint[];
 }) {
-  const [tab, setTab] = useState<Tab>(biomarkers.length > 0 ? "biomarkers" : "assessments");
+  const defaultTab: Tab = vitals.length > 0 ? "vitals" : biomarkers.length > 0 ? "biomarkers" : "assessments";
+  const [tab, setTab] = useState<Tab>(defaultTab);
   const [selectedBiomarker, setSelectedBiomarker] = useState<string | null>(null);
 
   const visibleBiomarkers = selectedBiomarker
@@ -223,7 +333,21 @@ export function EvolutionCharts({
   return (
     <div className="space-y-[16px]">
       {/* Tabs */}
-      <div className="flex gap-[6px]">
+      <div className="flex gap-[6px] flex-wrap">
+        {vitals.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setTab("vitals")}
+            className={[
+              "text-[12px] font-medium px-[14px] py-[7px] rounded-[8px] border transition",
+              tab === "vitals"
+                ? "bg-[#0F1A2E] border-[#0F1A2E] text-white"
+                : "bg-white border-black/[.08] text-[#6B6A66] hover:bg-[#F4F3EF]",
+            ].join(" ")}
+          >
+            Vitais · {vitals.length}
+          </button>
+        )}
         {biomarkers.length > 0 && (
           <button
             type="button"
@@ -293,6 +417,9 @@ export function EvolutionCharts({
           })}
         </div>
       )}
+
+      {/* Vitals chart */}
+      {tab === "vitals" && <VitalsChart points={vitals} />}
 
       {/* Charts grid */}
       {tab === "biomarkers" && (

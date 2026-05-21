@@ -15,6 +15,15 @@ type Props = {
   saved?: boolean;
 };
 
+type VitalKey = "dor" | "energia" | "humor" | "sono";
+
+const VITALS_CONFIG: { key: VitalKey; label: string; lowLabel: string; highLabel: string; color: string }[] = [
+  { key: "dor",    label: "Dor",     lowLabel: "Sem dor",  highLabel: "Intensa",  color: "#E05252" },
+  { key: "energia",label: "Energia", lowLabel: "Exausto",  highLabel: "Plena",    color: "#0F6E56" },
+  { key: "humor",  label: "Humor",   lowLabel: "Ruim",     highLabel: "Ótimo",    color: "#7B5EA7" },
+  { key: "sono",   label: "Sono",    lowLabel: "Péssimo",  highLabel: "Ótimo",    color: "#2A7BC1" },
+];
+
 const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan"; label: string; short: string; placeholder: string }[] = [
   {
     key: "subjective",
@@ -59,6 +68,12 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeSOAPField, setActiveSOAPField] = useState<"subjective" | "objective" | "assessment_note" | "plan">("subjective");
+  const [vitals, setVitals] = useState<Record<VitalKey, number | null>>({
+    dor:     (record?.vitals?.dor    ?? null) as number | null,
+    energia: (record?.vitals?.energia ?? null) as number | null,
+    humor:   (record?.vitals?.humor  ?? null) as number | null,
+    sono:    (record?.vitals?.sono   ?? null) as number | null,
+  });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -177,6 +192,10 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       <input type="hidden" name="clinic_id" value={appointment.clinic_id} />
       <input type="hidden" name="key_observations" value={observationsValue} />
       <input type="hidden" name="soap_mode" value={mode === "soap" ? "1" : "0"} />
+      {/* Vitals hidden inputs */}
+      {VITALS_CONFIG.map(({ key }) => (
+        <input key={key} type="hidden" name={`vitals_${key}`} value={vitals[key] ?? ""} />
+      ))}
 
       {/* Header */}
       <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] flex items-center justify-between">
@@ -401,6 +420,53 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             {observations.length > 0 && (
               <p className="text-[10px] text-[#D3D1C7] mt-[8px]">{observations.length}/12 observações</p>
             )}
+          </div>
+
+          {/* Vitais relatados pelo paciente */}
+          <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+            <div className="flex items-center justify-between mb-[12px]">
+              <label className="text-[11px] font-medium text-[#6B6A66]">
+                Vitais relatados pelo paciente
+              </label>
+              <span className="text-[10px] text-[#D3D1C7]">Escala 1–5</span>
+            </div>
+            <div className="space-y-[10px]">
+              {VITALS_CONFIG.map(({ key, label, lowLabel, highLabel, color }) => (
+                <div key={key}>
+                  <div className="flex items-center justify-between mb-[5px]">
+                    <span className="text-[11px] font-medium text-[#0F1A2E]">{label}</span>
+                    <div className="flex items-center gap-[4px] text-[9px] text-[#A09E98]">
+                      <span>{lowLabel}</span>
+                      <span className="mx-[2px]">·</span>
+                      <span>{highLabel}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-[5px]">
+                    {[1, 2, 3, 4, 5].map((val) => {
+                      const selected = vitals[key] === val;
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setVitals((prev) => ({
+                            ...prev,
+                            [key]: prev[key] === val ? null : val,
+                          }))}
+                          className="flex-1 h-[30px] rounded-[6px] text-[12px] font-semibold transition border"
+                          style={{
+                            backgroundColor: selected ? color : "#F4F3EF",
+                            color: selected ? "#fff" : "#6B6A66",
+                            borderColor: selected ? color : "transparent",
+                          }}
+                        >
+                          {val}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* AI insight placeholder */}

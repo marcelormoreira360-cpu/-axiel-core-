@@ -34,9 +34,9 @@ function formatDateTime(value: string) {
 }
 
 function statusBadge(status: string) {
-  if (status === "active") return { label: "Active", classes: "bg-[#E1F5EE] text-[#085041]" };
-  if (status === "archived") return { label: "Archived", classes: "bg-[#F4F3EF] text-[#A09E98]" };
-  return { label: "Inactive", classes: "bg-[#FAEEDA] text-[#633806]" };
+  if (status === "active") return { label: "Ativo", classes: "bg-[#E1F5EE] text-[#085041]" };
+  if (status === "archived") return { label: "Arquivado", classes: "bg-[#F4F3EF] text-[#A09E98]" };
+  return { label: "Inativo", classes: "bg-[#FAEEDA] text-[#633806]" };
 }
 
 export default async function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -86,12 +86,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <div className="flex-1 min-w-0">
           <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E] truncate">{patient.full_name}</p>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            Patient since {since}
-            {patient.date_of_birth ? ` · ${Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365))}y` : ""}
+            Paciente desde {since}
+            {patient.date_of_birth ? ` · ${Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365))} anos` : ""}
           </p>
           <div className="flex gap-[6px] mt-[6px]">
             <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${badge.classes}`}>{badge.label}</span>
-            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">Integrative</span>
+            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">Integrativo</span>
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
@@ -143,33 +143,33 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <div className="p-[20px] lg:border-r border-black/[.05]">
           {/* Sessions count */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[13px] mb-3">
-            <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">SESSIONS</p>
+            <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">SESSÕES</p>
             <p className="text-[30px] font-medium tracking-[-0.04em] text-[#0F1A2E] leading-none">{appointments.length}</p>
             <p className="text-[11px] text-[#0F6E56] mt-[4px]">
-              {lastSession ? `Last: ${formatDate(lastSession.starts_at)}` : "No sessions yet"}
+              {lastSession ? `Última: ${formatDate(lastSession.starts_at)}` : "Nenhuma sessão ainda"}
             </p>
           </div>
 
           {/* Mini stats */}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">INTAKE</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">ANAMNESE</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">
-                {responses.length}<span className="text-[10px] text-[#A09E98] font-normal"> forms</span>
+                {responses.length}<span className="text-[10px] text-[#A09E98] font-normal"> forms.</span>
               </p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">INSIGHTS</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">INSIGHTS IA</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">{aiInsights.length}</p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">NOTES</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">EVOLUÇÕES</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">{sessionRecords.length}</p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">REVIEWS</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">REVISÕES</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">
-                {pendingReviews}<span className="text-[10px] text-[#A09E98] font-normal"> pending</span>
+                {pendingReviews}<span className="text-[10px] text-[#A09E98] font-normal"> pend.</span>
               </p>
             </div>
           </div>
@@ -180,7 +180,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               href={`/patients/${patient.id}/intake`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Intake forms</span>
+              <span>Formulários de anamnese</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
@@ -208,7 +208,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               href={`/patients/${patient.id}/portal-link`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Patient portal</span>
+              <span>Portal do paciente</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
           </div>
@@ -217,18 +217,18 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         {/* Col 2 — session timeline */}
         <div className="p-[20px] lg:border-r border-black/[.05]">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[12px] font-medium text-[#0F1A2E]">Session timeline</p>
-            <Link href="/schedule" className="text-[11px] text-[#0F6E56] hover:underline">all</Link>
+            <p className="text-[12px] font-medium text-[#0F1A2E]">Histórico de sessões</p>
+            <Link href="/schedule" className="text-[11px] text-[#0F6E56] hover:underline">ver todas</Link>
           </div>
 
           {appointments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-[12px] text-[#6B6A66]">No sessions yet.</p>
+              <p className="text-[12px] text-[#6B6A66]">Nenhuma sessão ainda.</p>
               <Link
                 href="/schedule/new"
                 className="mt-3 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-3 py-1.5 rounded-lg transition"
               >
-                Book first session
+                Agendar primeira sessão
               </Link>
             </div>
           ) : (
@@ -302,10 +302,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <div className="bg-[#F4F3EF] rounded-[12px] p-[14px] h-full flex flex-col">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <svg className="w-[14px] h-[14px] text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span className="text-[10px] font-medium text-[#A09E98] tracking-[.06em] uppercase">No insights yet</span>
+                <span className="text-[10px] font-medium text-[#A09E98] tracking-[.06em] uppercase">Nenhum insight ainda</span>
               </div>
               <p className="text-[11px] text-[#6B6A66] leading-relaxed mb-4">
-                Complete intake and at least one session to generate the first AI insight.
+                Complete a anamnese e ao menos uma sessão para gerar o primeiro insight de IA.
               </p>
               <form action={generateAction}>
                 <button

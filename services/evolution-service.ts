@@ -26,9 +26,18 @@ export type AssessmentSeries = {
   points: AssessmentPoint[];
 };
 
+export type VitalPoint = {
+  date: string;  // ISO date string of the session starts_at
+  dor: number | null;
+  energia: number | null;
+  humor: number | null;
+  sono: number | null;
+};
+
 export type EvolutionData = {
   biomarkers: BiomarkerSeries[];
   assessments: AssessmentSeries[];
+  vitals: VitalPoint[];
 };
 
 export async function getPatientEvolution(patientId: string): Promise<EvolutionData> {
@@ -36,7 +45,7 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: exams }, { data: assessments }] = await Promise.all([
+  const [{ data: exams }, { data: assessments }, { data: sessionRecords }] = await Promise.all([
     supabase
       .from("patient_exams")
       .select("exam_date, lab_name, exam_results(biomarker, value, unit, ref_min, ref_max, status)")
@@ -47,6 +56,12 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
       .select("filled_at, score_percentage, total_score, max_possible_score, assessment_templates(id, name)")
       .eq("patient_id", patientId)
       .order("filled_at", { ascending: true }),
+    supabase
+      .from("session_records")
+      .select("vitals, appointments(starts_at)")
+      .eq("patient_id", patientId)
+      .not("vitals", "is", null)
+      .order("created_at", { ascending: true }),
   ]);
 
   // Group exam results by biomarker name
@@ -104,5 +119,16 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
     (s) => s.points.length >= 1
   );
 
-  return { biomarkers, assessments: assessmentSeries };
+  // Build vitals time series from session records
+  const vitals: VitalPoint[] = (sessionRecords ?? [])
+    .filter((r: any) => r.vitals && r.appointments?.starts_at)
+    .map((r: any) => ({
+      date:    r.appointments.starts_at,
+      dor:     r.vitals?.dor    != null ? Number(r.vitals.dor)    : null,
+      energia: r.vitals?.energia != null ? Number(r.vitals.energia) : null,
+      humor:   r.vitals?.humor   != null ? Number(r.vitals.humor)  : null,
+      sono:    r.vitals?.sono    != null ? Number(r.vitals.sono)   : null,
+    }));
+
+  return { biomarkers, assessments: assessmentSeries, vitals };
 }
