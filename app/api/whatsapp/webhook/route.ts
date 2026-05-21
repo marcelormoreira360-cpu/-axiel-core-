@@ -107,23 +107,22 @@ export async function POST(req: NextRequest) {
     // Generate reply using clinic config
     const reply = await generateReply(incomingMessage, history, systemPrompt, apiKey);
 
-    if (!reply) {
-      await sendWhatsAppText(fromNumber, "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊");
-      return new NextResponse("", { status: 200 });
-    }
+    const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
     // Save updated history (non-blocking)
     const updatedMessages: ChatMessage[] = [
       ...history,
       { role: "user", content: incomingMessage },
-      { role: "assistant", content: reply },
+      { role: "assistant", content: finalReply },
     ];
     void saveHistory(supabase, fromNumber, convId, updatedMessages);
 
-    // Send reply
-    await sendWhatsAppText(fromNumber, reply);
-
-    return new NextResponse("", { status: 200 });
+    // Respond via TwiML (works for both sandbox and production)
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${finalReply.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message></Response>`;
+    return new NextResponse(twiml, {
+      status: 200,
+      headers: { "Content-Type": "text/xml" },
+    });
   } catch (err) {
     console.error("WhatsApp webhook error:", err);
     return new NextResponse("", { status: 200 });
