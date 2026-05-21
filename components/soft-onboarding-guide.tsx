@@ -9,24 +9,24 @@ const STORAGE_KEY = "axiel-soft-onboarding-dismissed";
 
 const steps = [
   {
-    label: "Step 1",
-    title: "Review your first lead",
+    label: "Passo 1",
+    title: "Revise seu primeiro lead",
     href: "/leads",
-    action: "Open leads",
+    action: "Ver leads",
     icon: UsersRound,
   },
   {
-    label: "Step 2",
-    title: "Create your first patient",
+    label: "Passo 2",
+    title: "Cadastre o primeiro paciente",
     href: "/patients/new",
-    action: "Add patient",
+    action: "Adicionar",
     icon: UserPlus,
   },
   {
-    label: "Step 3",
-    title: "Schedule your first session",
+    label: "Passo 3",
+    title: "Agende a primeira sessão",
     href: "/schedule/new",
-    action: "Book session",
+    action: "Agendar",
     icon: CalendarPlus,
   },
 ];
@@ -48,42 +48,46 @@ export function SoftOnboardingGuide() {
   if (!isVisible || pathname.startsWith("/onboarding")) return null;
 
   return (
-    <aside className="fixed bottom-5 right-5 z-50 w-[calc(100vw-40px)] max-w-sm rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
+    <aside className="fixed bottom-5 right-5 z-50 w-[calc(100vw-40px)] max-w-[340px] rounded-[14px] border border-black/[.08] bg-white p-[20px] shadow-lg">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-[14px]">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-axiel-soft px-3 py-1 text-xs font-semibold text-black/55">
-            <CheckCircle2 className="h-3.5 w-3.5 text-axiel-gold" /> Quick start
+          <div className="inline-flex items-center gap-[5px] rounded-full bg-[#E1F5EE] px-[10px] py-[4px] text-[10px] font-semibold text-[#085041] mb-[8px]">
+            <CheckCircle2 className="h-3 w-3" /> Início rápido
           </div>
-          <h2 className="mt-3 text-xl font-semibold tracking-tight text-axiel-ink">Start with 3 simple steps</h2>
-          <p className="mt-1 text-sm leading-5 text-black/45">A calm guide for your first day.</p>
+          <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-[#0F1A2E]">
+            3 passos para começar
+          </h2>
+          <p className="text-[11px] text-[#A09E98] mt-[2px]">Um guia calmo para o seu primeiro dia.</p>
         </div>
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-full p-2 text-black/35 transition hover:bg-axiel-soft hover:text-black"
-          aria-label="Dismiss onboarding guide"
+          className="rounded-full w-7 h-7 flex items-center justify-center text-[#A09E98] hover:bg-[#F4F3EF] hover:text-[#0F1A2E] transition"
+          aria-label="Fechar guia"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="mt-4 grid gap-2">
+      {/* Steps */}
+      <div className="space-y-[6px]">
         {steps.map((step) => (
           <Link
-            key={step.title}
+            key={step.href}
             href={step.href}
-            className="group flex items-center justify-between gap-3 rounded-[1.35rem] border border-transparent bg-axiel-soft/70 p-3 transition hover:border-axiel-line hover:bg-white"
+            className="group flex items-center justify-between gap-[10px] rounded-[10px] border border-transparent bg-[#F4F3EF] px-[12px] py-[10px] transition hover:border-black/[.08] hover:bg-white"
           >
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-axiel-gold shadow-sm">
-                <step.icon className="h-5 w-5" />
-              </span>
+            <div className="flex items-center gap-[10px] min-w-0">
+              <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-[9px] bg-white text-[#0F6E56] shadow-sm">
+                <step.icon className="h-4 w-4" />
+              </div>
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-black/35">{step.label}</p>
-                <p className="truncate text-sm font-semibold text-axiel-ink">{step.title}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[.12em] text-[#A09E98]">{step.label}</p>
+                <p className="text-[12px] font-semibold text-[#0F1A2E] truncate">{step.title}</p>
               </div>
             </div>
-            <span className="shrink-0 rounded-full bg-white px-3 py-2 text-xs font-semibold text-black/55 transition group-hover:bg-axiel-ink group-hover:text-white">
+            <span className="shrink-0 rounded-full bg-white px-[10px] py-[5px] text-[10px] font-semibold text-[#6B6A66] transition group-hover:bg-[#0F1A2E] group-hover:text-white">
               {step.action}
             </span>
           </Link>
@@ -93,9 +97,9 @@ export function SoftOnboardingGuide() {
       <button
         type="button"
         onClick={dismiss}
-        className="mt-3 w-full rounded-full px-4 py-3 text-sm font-semibold text-black/45 transition hover:bg-axiel-soft hover:text-black"
+        className="mt-[12px] w-full rounded-[8px] py-[8px] text-[11px] font-medium text-[#A09E98] hover:bg-[#F4F3EF] hover:text-[#0F1A2E] transition"
       >
-        Dismiss guide
+        Dispensar guia
       </button>
     </aside>
   );

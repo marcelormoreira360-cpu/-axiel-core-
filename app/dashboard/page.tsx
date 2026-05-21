@@ -11,6 +11,26 @@ import { getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getTodaySchedulePreview } from "@/modules/dashboard/dashboard-data";
 import { getDashboardKPIs, formatBRL, sessionsDelta, revenueDelta } from "@/modules/dashboard/dashboard-kpis";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { SetupProgressBanner } from "@/components/setup-progress-banner";
+import type { SetupTask } from "@/components/setup-progress-banner";
+
+async function getSetupTasks(clinic: { id: string; logo_url: string | null; primary_color: string | null }): Promise<SetupTask[]> {
+  const supabase = await createSupabaseServerClient();
+  const [patients, sessions, leads, forms] = await Promise.all([
+    supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id).not("email", "eq", "paciente-demo@exemplo.com"),
+    supabase.from("appointments").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id),
+    supabase.from("leads").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id).not("email", "eq", "lead-demo@exemplo.com"),
+    supabase.from("intake_forms").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id),
+  ]);
+  return [
+    { key: "patient",  title: "Primeiro paciente",    href: "/patients/new",      done: (patients.count ?? 0) > 0 },
+    { key: "lead",     title: "Primeiro lead",         href: "/leads/new",         done: (leads.count ?? 0) > 0 },
+    { key: "session",  title: "Primeira sessão",       href: "/schedule/new",      done: (sessions.count ?? 0) > 0 },
+    { key: "intake",   title: "Formulário de intake",  href: "/forms/new",         done: (forms.count ?? 0) > 0 },
+    { key: "branding", title: "Logo e cor da clínica", href: "/settings/branding", done: !!(clinic.logo_url || clinic.primary_color) },
+  ];
+}
 
 function firstName(fullName?: string | null, email?: string | null) {
   if (fullName?.trim()) return fullName.trim().split(/\s+/)[0];
@@ -35,10 +55,11 @@ export default async function Dashboard() {
     redirect("/onboarding");
   }
 
-  const [pendingReviews, alerts, kpis] = await Promise.all([
+  const [pendingReviews, alerts, kpis, setupTasks] = await Promise.all([
     getPendingAiInsightReviewCount(clinic?.id),
     clinic ? getDashboardAlerts(clinic.id) : Promise.resolve({ packageAlerts: [], biomarkerAlerts: [] }),
     clinic ? getDashboardKPIs(clinic.id) : Promise.resolve({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }),
+    clinic ? getSetupTasks(clinic) : Promise.resolve([]),
   ]);
 
   const today = new Date().toDateString();
@@ -82,6 +103,9 @@ export default async function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Setup progress ── */}
+      {setupTasks.length > 0 && <SetupProgressBanner tasks={setupTasks} />}
 
       {/* ── Métricas ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] mb-[18px]">
