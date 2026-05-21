@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     if (!fromNumber || !incomingMessage) return new NextResponse("", { status: 200 });
 
-    const supabase = await createSupabaseServerClient();
+    const supabase = createSupabaseAdminClient();
 
     // Load clinic-specific bot config or fall back to IFWC default
     let systemPrompt: string;
