@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { X, User, FileText, CalendarDays } from "lucide-react";
+import { X, User, FileText, CalendarDays, Video } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
 
@@ -109,6 +109,29 @@ export function SessionDrawer({
 
         {/* Actions */}
         <div className="px-[20px] pb-[20px] pt-[4px] space-y-[8px] border-t border-black/[.07]">
+          {/* Teleconsulta — generic video_url or Daily.co room */}
+          {session.video_url || session.zoom_join_url ? (
+            <a
+              href={session.video_url ?? session.zoom_join_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-white bg-[#2A7BC1] hover:bg-[#1e6aad] transition px-[14px] py-[10px] rounded-[8px]"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Entrar na teleconsulta
+            </a>
+          ) : (
+            <Link
+              href={`/schedule/${session.id}/telehealth`}
+              onClick={onClose}
+              className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#2A7BC1] border border-[#2A7BC1]/30 hover:bg-[#EAF3FB] transition px-[14px] py-[10px] rounded-[8px]"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Iniciar teleconsulta (Daily.co)
+            </Link>
+          )}
+
           <Link
             href={`/schedule/${session.id}/session`}
             onClick={onClose}
