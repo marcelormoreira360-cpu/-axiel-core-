@@ -3,6 +3,7 @@
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 import type { PatientSnapshotData } from "@/components/patient-snapshot";
+import { Video } from "lucide-react";
 
 export type ScheduleSession = Appointment & {
   latestInsightStatus: "review" | "final";
@@ -21,7 +22,7 @@ export function SessionCard({
   session: ScheduleSession;
   onOpen: (session: ScheduleSession) => void;
 }) {
-  const patientName = session.patients?.full_name ?? "Patient";
+  const patientName = session.patients?.full_name ?? "Paciente";
   const sessionCount = session.previousSessions.length + 1;
   const hasFinalInsight = session.latestInsightStatus === "final";
 
@@ -54,8 +55,24 @@ export function SessionCard({
           </span>
         </div>
 
+        {/* Video link badge */}
+        {(session.video_url || session.zoom_join_url) && (
+          <div className="mt-[7px] pl-[38px]">
+            <a
+              href={session.video_url ?? session.zoom_join_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-[4px] text-[10px] font-medium text-[#2A7BC1] bg-[#EAF3FB] hover:bg-[#d6eaf8] rounded-full px-[8px] py-[3px] transition"
+            >
+              <Video className="h-2.5 w-2.5" />
+              Teleconsulta
+            </a>
+          </div>
+        )}
+
         {session.notes && (
-          <p className="text-[11px] text-[#6B6A66] mt-[8px] line-clamp-1 pl-[38px]">{session.notes}</p>
+          <p className="text-[11px] text-[#6B6A66] mt-[6px] line-clamp-1 pl-[38px]">{session.notes}</p>
         )}
       </div>
     </button>

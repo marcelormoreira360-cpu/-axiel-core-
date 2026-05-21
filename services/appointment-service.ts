@@ -43,6 +43,7 @@ export async function createAppointment(input: {
   source?: AppointmentSource | null;
   patient_offer_id?: string | null;
   notes?: string | null;
+  video_url?: string | null;
 }) {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

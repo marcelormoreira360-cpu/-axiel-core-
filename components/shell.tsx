@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
@@ -6,7 +7,7 @@ import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
-import { getClinicsForUser, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
+import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 
 export async function Shell({
   children,
@@ -21,20 +22,39 @@ export async function Shell({
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "U";
 
-  const [clinics, cookieStore] = await Promise.all([
+  const [clinics, cookieStore, clinic] = await Promise.all([
     getClinicsForUser().catch(() => []),
     cookies(),
+    getCurrentClinic().catch(() => null),
   ]);
   const activeClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
+
+  const logoUrl = clinic?.logo_url ?? null;
+  const primaryColor = clinic?.primary_color ?? "#0F6E56";
+  const clinicName = clinic?.name ?? "AXIEL";
 
   return (
     <div className="flex min-h-screen bg-[#FAFAF8] dark:bg-[#0E1117]">
       {/* ── Desktop sidebar ── */}
       <aside className="hidden lg:flex flex-col w-[176px] shrink-0 bg-[#F4F3EF] dark:bg-[#0B0F17] border-r border-black/[.06] dark:border-white/[.07] sticky top-0 h-screen overflow-y-auto py-5">
-        {/* Logo */}
-        <div className="px-[18px] pb-[14px] text-[17px] font-medium tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2] select-none">
-          AXI<span className="text-[#0F6E56]">EL</span>
-        </div>
+        {/* Logo / Clinic identity */}
+        <Link href="/dashboard" className="px-[18px] pb-[14px] block select-none">
+          {logoUrl ? (
+            <Image
+              src={logoUrl}
+              alt={clinicName}
+              width={140}
+              height={36}
+              className="h-9 w-auto max-w-[140px] object-contain"
+              unoptimized
+            />
+          ) : (
+            <div className="text-[17px] font-semibold tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2]">
+              <span style={{ color: primaryColor }}>●</span>{" "}
+              <span className="text-[14px]">{clinicName}</span>
+            </div>
+          )}
+        </Link>
 
         {/* Clinic switcher */}
         {clinics.length > 0 && (
@@ -66,11 +86,22 @@ export async function Shell({
       {/* ── Mobile topbar ── */}
       <div className="lg:hidden fixed top-0 inset-x-0 z-20 bg-[#F4F3EF]/95 dark:bg-[#0B0F17]/95 backdrop-blur border-b border-black/[.06] dark:border-white/[.07] px-4 py-3">
         <div className="flex items-center justify-between gap-3">
-          <Link
-            href="/dashboard"
-            className="text-[17px] font-medium tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2]"
-          >
-            AXI<span className="text-[#0F6E56]">EL</span>
+          <Link href="/dashboard" className="flex items-center">
+            {logoUrl ? (
+              <Image
+                src={logoUrl}
+                alt={clinicName}
+                width={100}
+                height={28}
+                className="h-7 w-auto max-w-[100px] object-contain"
+                unoptimized
+              />
+            ) : (
+              <span className="text-[17px] font-semibold tracking-[-0.035em] text-[#0F1A2E] dark:text-[#E8E6E2]">
+                <span style={{ color: primaryColor }}>●</span>{" "}
+                <span className="text-[14px]">{clinicName}</span>
+              </span>
+            )}
           </Link>
           <div className="flex items-center gap-2">
             <DarkModeToggle />

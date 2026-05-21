@@ -24,17 +24,17 @@ const mainNav = [
 ];
 
 const clinicNav = [
-  { href: "/monetization", label: "Membership" },
+  { href: "/monetization", label: "Planos e pacotes" },
   { href: "/relatorios",   label: "Relatórios" },
-  { href: "/settings",     label: "Settings" },
+  { href: "/settings",     label: "Configurações" },
 ];
 
 const moreNav = [
   { href: "/follow-ups",     label: "Follow-ups" },
-  { href: "/communications", label: "Messages" },
-  { href: "/products",       label: "Products" },
-  { href: "/billing",        label: "Billing" },
-  { href: "/onboarding",     label: "Guided setup" },
+  { href: "/communications", label: "Mensagens" },
+  { href: "/products",       label: "Produtos" },
+  { href: "/billing",        label: "Faturamento" },
+  { href: "/onboarding",     label: "Configuração inicial" },
 ];
 
 function NavItem({
@@ -119,10 +119,10 @@ export function SidebarNavigation() {
         </nav>
       </div>
 
-      {/* More */}
+      {/* Mais */}
       <div className="px-[10px] mb-4">
         <p className="px-2 mb-[5px] text-[9px] font-medium tracking-[.1em] uppercase text-[#A09E98] dark:text-[#6B6A66]">
-          More
+          Mais
         </p>
         <nav className="flex flex-col gap-[2px]">
           {moreNav.map((item) => (
@@ -140,7 +140,7 @@ export function SidebarNavigation() {
           className="flex items-center gap-2 px-2 py-[7px] rounded-lg text-[12px] text-[#6B6A66] dark:text-[#9E9C97] hover:bg-white/60 dark:hover:bg-white/[.06] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition-colors"
         >
           <MessageCircle className="h-[15px] w-[15px] shrink-0 text-[#A09E98] dark:text-[#6B6A66]" aria-hidden="true" />
-          <span>Support</span>
+          <span>Suporte</span>
         </a>
       </div>
     </>

@@ -217,6 +217,18 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
         </div>
       </div>
 
+      {/* Teleconsulta */}
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[2px] block">Link de teleconsulta</label>
+        <p className="text-[10px] text-[#A09E98] mb-[8px]">Google Meet, Zoom, Whereby, Teams… (opcional)</p>
+        <input
+          name="video_url"
+          type="url"
+          placeholder="https://meet.google.com/xxx-yyyy-zzz"
+          className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+        />
+      </div>
+
       {/* Notes */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
         <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Observações</label>

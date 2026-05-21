@@ -25,7 +25,10 @@ export default async function NewAppointmentPage() {
     const date = String(formData.get("date") ?? "");
     const time = String(formData.get("time") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
-    const notes = String(formData.get("notes") ?? "").trim() || null;
+    const notes     = String(formData.get("notes")     ?? "").trim() || null;
+    const videoUrl  = String(formData.get("video_url") ?? "").trim() || null;
+    const sessionTypeId = String(formData.get("session_type_id") ?? "").trim() || null;
+    const source = (String(formData.get("source") ?? "direct").trim() || "direct") as import("@/lib/types").AppointmentSource;
 
     if (!patientId || !date || !time) throw new Error("Paciente, data e horário são obrigatórios.");
 
@@ -34,7 +37,10 @@ export default async function NewAppointmentPage() {
       patient_id: patientId,
       starts_at: new Date(`${date}T${time}:00`).toISOString(),
       duration_minutes: duration,
+      session_type_id: sessionTypeId,
+      source,
       notes,
+      video_url: videoUrl,
     });
 
     redirect("/schedule");

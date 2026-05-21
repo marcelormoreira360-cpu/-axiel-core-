@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Check, Mic, MicOff, Plus, Sparkles, X } from "lucide-react";
+import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord } from "@/lib/types";
 import { saveSessionRecord } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
@@ -210,13 +210,26 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             {sessionDate} · {formatTime(appointment.starts_at)} · {appointment.duration_minutes} min
           </p>
         </div>
-        <button
-          type="submit"
-          className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[16px] py-[9px] rounded-[8px] border border-white/[.10] shrink-0"
-        >
-          <Check className="h-3.5 w-3.5" />
-          Salvar sessão
-        </button>
+        <div className="flex items-center gap-[8px] shrink-0">
+          {(appointment.video_url || appointment.zoom_join_url) && (
+            <a
+              href={appointment.video_url ?? appointment.zoom_join_url ?? "#"}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#2A7BC1] hover:bg-[#1e6aad] transition px-[14px] py-[9px] rounded-[8px] border border-white/[.10]"
+            >
+              <Video className="h-3.5 w-3.5" />
+              Entrar
+            </a>
+          )}
+          <button
+            type="submit"
+            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[16px] py-[9px] rounded-[8px] border border-white/[.10]"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Salvar sessão
+          </button>
+        </div>
       </div>
 
       {saved && (
