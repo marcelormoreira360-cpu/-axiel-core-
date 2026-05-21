@@ -10,10 +10,12 @@ import { getAiInsightsByPatient } from "@/services/ai-insight-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
 import { getPatientPackages } from "@/services/package-service";
+import { getPatientTreatmentPlans } from "@/services/treatment-plan-service";
 import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
 import { getTerm } from "@/modules/ui/terminology";
 import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
+import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
@@ -44,7 +46,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const patient = await getPatientById(id);
   if (!patient) notFound();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, clinic] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, clinic, treatmentPlans] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
@@ -55,6 +57,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     getPatientPackages(id),
     getPatientDocuments(id),
     getCurrentClinic(),
+    getPatientTreatmentPlans(id),
   ]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
@@ -408,6 +411,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             })}
           </div>
         )}
+      </div>
+
+      {/* Plano de tratamento */}
+      <div className="mt-[18px]">
+        <PatientTreatmentPlanPanel plans={treatmentPlans} patientId={id} />
       </div>
 
       {/* Pacotes de sessão */}
