@@ -310,7 +310,7 @@ export function ScheduleContainer({
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
 }) {
-  const [view, setView] = useState<View>("dia");
+  const [view, setView] = useState<View>("semana");
   const [navDate, setNavDate] = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);

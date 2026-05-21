@@ -42,7 +42,7 @@ export default async function FinanceiroPage() {
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Módulo</p>
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Financeiro</h1>
-          <p className="text-[12px] text-[#A09E98] mt-[2px]">Faturamento, pagamentos e repasse médico.</p>
+          <p className="text-[12px] text-[#A09E98] mt-[2px]">Faturamento, pagamentos e repasse de colaboradores.</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
@@ -55,7 +55,7 @@ export default async function FinanceiroPage() {
             href="/financeiro/repasse"
             className="text-[12px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] px-3 py-1.5 rounded-lg transition"
           >
-            Repasse médico →
+            Repasse →
           </Link>
           <FinanceiroDashboardClient
             patients={patients.map((p) => ({ id: p.id, full_name: p.full_name }))}

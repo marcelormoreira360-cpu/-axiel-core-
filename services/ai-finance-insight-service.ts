@@ -103,7 +103,7 @@ ${methodBreakdown || "Nenhum pagamento registrado."}
 ## Histórico dos últimos 6 meses
 ${monthlyText}
 
-## Repasse médico recente
+## Repasse de colaboradores (recente)
 ${repasseText}
 
 ## Instruções de resposta

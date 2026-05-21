@@ -30,7 +30,7 @@ export default async function RepassePage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Financeiro
         </Link>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Financeiro</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Repasse médico</h1>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Repasse de colaboradores</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px] max-w-xl">
           Configure o percentual de repasse para cada profissional. O cálculo mensal é feito com base nos pagamentos recebidos no mês.
         </p>

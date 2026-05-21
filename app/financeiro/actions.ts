@@ -68,8 +68,23 @@ export async function generateFinanceInsightAction(): Promise<{
   try {
     const insight = await generateFinanceInsight(clinic.id);
     return { insight };
-  } catch (e) {
-    return { error: e instanceof Error ? e.message : "Erro ao gerar análise." };
+  } catch (e: unknown) {
+    let msg = "Erro ao gerar análise.";
+    if (e instanceof Error) {
+      msg = e.message;
+    } else if (e && typeof e === "object") {
+      const obj = e as Record<string, unknown>;
+      if (typeof obj.message === "string") msg = obj.message;
+      else if (typeof obj.error === "string") msg = obj.error;
+      else msg = JSON.stringify(e);
+    } else if (typeof e === "string") {
+      msg = e;
+    }
+    // Surface clearly that OPENAI_API_KEY may be missing
+    if (!process.env.OPENAI_API_KEY) {
+      msg = "OPENAI_API_KEY não configurada. Adicione a chave nas variáveis de ambiente do projeto.";
+    }
+    return { error: msg };
   }
 }
 

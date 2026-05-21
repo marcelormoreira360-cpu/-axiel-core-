@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Shell } from "@/components/shell";
+import { DashboardGreeting } from "./greeting";
 import { getClinicsForUser, getCurrentClinic } from "@/services/clinic-service";
 import { getPatients } from "@/services/patient-service";
 import { getLeads } from "@/services/lead-service";
@@ -9,13 +10,6 @@ import { getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getTodaySchedulePreview } from "@/modules/dashboard/dashboard-data";
 import { getDashboardKPIs, formatBRL, sessionsDelta, revenueDelta } from "@/modules/dashboard/dashboard-kpis";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
-
-function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Bom dia";
-  if (h < 18) return "Boa tarde";
-  return "Boa noite";
-}
 
 function firstName(fullName?: string | null, email?: string | null) {
   if (fullName?.trim()) return fullName.trim().split(/\s+/)[0];
@@ -59,9 +53,7 @@ export default async function Dashboard() {
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
-            {getGreeting()}{name ? `, ${name}` : ""}.
-          </h1>
+          <DashboardGreeting name={name} />
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {totalAlerts > 0
               ? `${totalAlerts} item${totalAlerts > 1 ? "s" : ""} precisam da sua atenção hoje.`
