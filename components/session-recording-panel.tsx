@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
+import { Check, Mic, MicOff, Plus, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord } from "@/lib/types";
 import { saveSessionRecord } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
+import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
 type RecordingState = "idle" | "recording" | "transcribing";
 type NoteMode = "livre" | "soap";
@@ -482,21 +483,11 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             </div>
           </div>
 
-          {/* AI insight placeholder */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <div className="flex items-center gap-[8px] mb-[10px]">
-              <div className="w-7 h-7 rounded-[8px] bg-[#F4F3EF] flex items-center justify-center shrink-0">
-                <Sparkles className="h-3.5 w-3.5 text-[#A09E98]" />
-              </div>
-              <div>
-                <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight</p>
-                <p className="text-[10px] text-[#A09E98]">Em breve</p>
-              </div>
-            </div>
-            <p className="text-[12px] text-[#A09E98] leading-relaxed bg-[#FAFAF8] rounded-[8px] px-[10px] py-[9px]">
-              Após salvar, a IA vai resumir a sessão, identificar padrões e sugerir a próxima ação.
-            </p>
-          </div>
+          {/* AI Insight generator */}
+          <SessionInsightGenerator
+            patientId={appointment.patient_id}
+            saved={!!saved}
+          />
 
           {/* Session info */}
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">

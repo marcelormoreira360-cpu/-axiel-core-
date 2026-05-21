@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { upsertSessionRecord } from "@/services/session-recording-service";
+import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
+import type { AiInsight } from "@/lib/types";
 
 export async function saveSessionRecord(formData: FormData) {
   const appointmentId = String(formData.get("appointment_id") ?? "");
@@ -63,4 +65,17 @@ export async function saveSessionRecord(formData: FormData) {
   revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/patients/${patientId}/prontuario`);
   redirect(`/schedule/${appointmentId}/session?saved=1`);
+}
+
+export async function generateSessionInsightAction(
+  patientId: string,
+): Promise<{ insight: AiInsight | null; error: string | null }> {
+  try {
+    const insight = await generateAndSaveAiInsight(patientId);
+    revalidatePath(`/patients/${patientId}/insights`);
+    return { insight, error: null };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erro ao gerar insight.";
+    return { insight: null, error: msg };
+  }
 }
