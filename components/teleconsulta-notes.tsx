@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
+import { Mic, MicOff } from "lucide-react";
+
+type RecordingState = "idle" | "recording" | "transcribing";
 
 interface TeleconsultaNotesProps {
   appointmentId: string;
@@ -23,8 +26,15 @@ export function TeleconsultaNotes({
   const [observations, setObservations] = useState<string[]>(initialObservations);
   const [newObs, setNewObs] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle");
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   function triggerSave(nextNotes: string, nextObs: string[]) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -58,6 +68,71 @@ export function TeleconsultaNotes({
     triggerSave(notes, next);
   }
 
+  function formatElapsed(secs: number) {
+    const m = Math.floor(secs / 60).toString().padStart(2, "0");
+    const s = (secs % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  async function startRecording() {
+    setRecordingError(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+        await transcribeAudio(blob);
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setRecordingState("recording");
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
+    } catch {
+      setRecordingError("Microfone não disponível. Verifique as permissões.");
+    }
+  }
+
+  function stopRecording() {
+    if (timerRef.current) clearInterval(timerRef.current);
+    mediaRecorderRef.current?.stop();
+    setRecordingState("transcribing");
+  }
+
+  async function transcribeAudio(blob: Blob) {
+    try {
+      const fd = new FormData();
+      fd.append("file", blob, "audio.webm");
+      const res = await fetch("/api/transcribe", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro na transcrição");
+      const transcribed: string = data.text ?? "";
+      const nextNotes = notes.trim()
+        ? notes + "\n\n" + transcribed
+        : transcribed;
+      setNotes(nextNotes);
+      triggerSave(nextNotes, observations);
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.setSelectionRange(9999, 9999);
+        }
+      }, 50);
+    } catch (err: unknown) {
+      setRecordingError(err instanceof Error ? err.message : "Erro na transcrição");
+    } finally {
+      setRecordingState("idle");
+    }
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Notes textarea */}
@@ -74,12 +149,49 @@ export function TeleconsultaNotes({
           </span>
         </div>
         <textarea
+          ref={textareaRef}
           value={notes}
           onChange={(e) => handleNotesChange(e.target.value)}
           placeholder="Observe e anote durante a consulta…"
           rows={7}
           className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[10px] px-[13px] py-[10px] resize-none outline-none focus:border-[#0F6E56] transition placeholder:text-[#C5C3BC] dark:placeholder:text-[#6B6A66] leading-relaxed"
         />
+
+        {/* Audio recorder */}
+        <div className="mt-[8px] flex items-center gap-[8px]">
+          {recordingState === "idle" && (
+            <button
+              type="button"
+              onClick={startRecording}
+              className="flex items-center gap-[5px] text-[11px] font-medium text-white/50 border border-white/[.12] hover:border-white/25 hover:text-white/80 rounded-[7px] px-[10px] py-[6px] transition"
+            >
+              <Mic className="h-3 w-3" />
+              Gravar voz
+            </button>
+          )}
+
+          {recordingState === "recording" && (
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-red-500/80 hover:bg-red-500 rounded-[7px] px-[10px] py-[6px] transition animate-pulse"
+            >
+              <MicOff className="h-3 w-3" />
+              Parar · {formatElapsed(elapsedSeconds)}
+            </button>
+          )}
+
+          {recordingState === "transcribing" && (
+            <div className="flex items-center gap-[6px] text-[11px] text-white/40 border border-white/[.08] rounded-[7px] px-[10px] py-[6px]">
+              <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
+              Transcrevendo…
+            </div>
+          )}
+
+          {recordingError && (
+            <p className="text-[11px] text-red-400 flex-1">{recordingError}</p>
+          )}
+        </div>
       </div>
 
       {/* Key observations */}
