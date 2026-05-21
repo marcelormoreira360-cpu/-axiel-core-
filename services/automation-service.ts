@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
+import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
+import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 
 type AppointmentRef = {
   id: string;
@@ -139,17 +141,33 @@ async function sendReminderEmail(
     ? new Date(appt.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     : "horário agendado";
 
-  const subject = `Lembrete: sua sessão é amanhã`;
-  const html = `
-    <p>Olá, ${first}!</p>
-    <p>Este é um lembrete de que sua sessão está agendada para <strong>${dateStr}</strong> às <strong>${timeStr}</strong>.</p>
-    <p>Caso precise remarcar ou tenha alguma dúvida, entre em contato conosco.</p>
-    <p>Até lá!</p>
-  `.trim();
+  const subject = `Lembrete: sua sessão é amanhã — ${timeStr}`;
+  const bodyText = `Lembrete: sessão amanhã, ${dateStr} às ${timeStr}`;
+  const { data: clinicRow } = await supabase.from("clinics").select("name, whatsapp_number").eq("id", fu.clinic_id).maybeSingle();
+  const clinicName = (clinicRow?.name as string | null) ?? "sua clínica";
+  const whatsappUrl = clinicRow?.whatsapp_number
+    ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
+    : null;
+  const durationMinutes = appt
+    ? (() => { try { return (appt as { duration_minutes?: number }).duration_minutes ?? 60; } catch { return 60; } })()
+    : 60;
 
   try {
     const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
-    await resend.emails.send({ from: fromAddress, to: patient.email, subject, html });
+    await resend.emails.send({
+      from: fromAddress,
+      to: patient.email,
+      subject,
+      react: AppointmentReminderEmail({
+        clinicName,
+        patientFirstName: first,
+        dateStr,
+        timeStr,
+        durationMinutes,
+        daysUntil: 1,
+        whatsappUrl,
+      }),
+    });
     await supabase.from("communication_logs").insert({
       clinic_id:      fu.clinic_id,
       patient_id:     patient.id,
@@ -158,7 +176,7 @@ async function sendReminderEmail(
       channel:        "email",
       use_case:       "appointment_reminder",
       recipient:      patient.email,
-      body:           html,
+      body:           bodyText,
       status:         "sent",
       provider:       "resend",
     });
@@ -171,7 +189,7 @@ async function sendReminderEmail(
       channel:        "email",
       use_case:       "appointment_reminder",
       recipient:      patient.email,
-      body:           html,
+      body:           bodyText,
       status:         "failed",
       provider:       "resend",
       error_message:  e instanceof Error ? e.message : "Unknown error",
@@ -343,30 +361,36 @@ export async function sendAppointmentConfirmation(params: {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
     const subject = `Sessão confirmada — ${dateStr} às ${timeStr}`;
-    const html = `
-      <p>Olá, ${first}!</p>
-      <p>Sua sessão na <strong>${clinicName}</strong> foi confirmada com sucesso:</p>
-      <ul>
-        <li><strong>Data:</strong> ${dateStr}</li>
-        <li><strong>Horário:</strong> ${timeStr}</li>
-        <li><strong>Duração:</strong> ${durationMinutes} minutos</li>
-      </ul>
-      <p>Em caso de imprevisto, entre em contato com a clínica.</p>
-      <p>Até lá!</p>
-    `.trim();
+    const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
+    const whatsappUrl = clinicRow?.whatsapp_number
+      ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
+      : null;
+    const bodyText = `Sessão confirmada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`;
 
     try {
-      await resend.emails.send({ from: fromAddress, to: patientEmail, subject, html });
+      await resend.emails.send({
+        from: fromAddress,
+        to: patientEmail,
+        subject,
+        react: AppointmentConfirmationEmail({
+          clinicName,
+          patientFirstName: first,
+          dateStr,
+          timeStr,
+          durationMinutes,
+          whatsappUrl,
+        }),
+      });
       await supabase.from("communication_logs").insert({
         clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
         channel: "email", use_case: useCase, recipient: patientEmail,
-        body: html, status: "sent", provider: "resend",
+        body: bodyText, status: "sent", provider: "resend",
       });
     } catch (e) {
       await supabase.from("communication_logs").insert({
         clinic_id: clinicId, patient_id: patientId, appointment_id: appointmentId,
         channel: "email", use_case: useCase, recipient: patientEmail,
-        body: html, status: "failed", provider: "resend",
+        body: bodyText, status: "failed", provider: "resend",
         error_message: e instanceof Error ? e.message : "Unknown error",
       });
     }
