@@ -3,8 +3,10 @@ import { getFinanceKPIs, formatBRL } from "@/services/finance-service";
 import { getLeads } from "@/services/lead-service";
 import { getPatients } from "@/services/patient-service";
 import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
+import { getReportTimeSeries } from "@/services/report-service";
 import { Shell } from "@/components/shell";
 import { RelatoriosClient } from "./relatorios-client";
+import { RelatoriosCharts } from "@/components/relatorios-charts";
 
 function deltaLabel(current: number, prev: number): { text: string; up: boolean | null } {
   if (prev === 0 && current === 0) return { text: "sem dados", up: null };
@@ -17,11 +19,12 @@ function deltaLabel(current: number, prev: number): { text: string; up: boolean 
 export default async function RelatoriosPage() {
   const clinic = await getCurrentClinic();
 
-  const [financeKPIs, dashKPIs, leads, patients] = await Promise.all([
+  const [financeKPIs, dashKPIs, leads, patients, timeSeries] = await Promise.all([
     clinic ? getFinanceKPIs(clinic.id) : null,
     clinic ? getDashboardKPIs(clinic.id) : null,
     getLeads(),
     getPatients(),
+    clinic ? getReportTimeSeries(clinic.id, 12) : null,
   ]);
 
   // ── Leads funnel ──
@@ -133,6 +136,14 @@ export default async function RelatoriosPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Evolução histórica ── */}
+      {timeSeries && (
+        <div className="mb-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">Evolução histórica</p>
+          <RelatoriosCharts data={timeSeries} />
         </div>
       )}
 
