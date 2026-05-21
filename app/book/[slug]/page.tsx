@@ -276,20 +276,27 @@ export default function BookingPage() {
             </button>
             <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha a data</p>
             <div className="bg-white border border-black/[.07] rounded-[12px] p-5">
-              <input
-                type="date"
-                min={toDateStr(addDays(new Date(), 1))}
-                value={selectedDate}
-                onChange={(e) => {
-                  if (!isDateDisabled(e.target.value)) {
-                    setSelectedDate(e.target.value);
-                  }
-                }}
-                className="w-full px-4 py-3 rounded-[8px] border border-black/[.10] text-[14px] text-[#0F1A2E] outline-none transition"
-                style={{ outlineColor: accent }}
-                onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
-                onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
-              />
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A09E98]">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                </span>
+                <input
+                  type="date"
+                  min={toDateStr(addDays(new Date(), 1))}
+                  value={selectedDate}
+                  onChange={(e) => {
+                    if (!isDateDisabled(e.target.value)) {
+                      setSelectedDate(e.target.value);
+                    }
+                  }}
+                  className="w-full pl-9 pr-4 py-3 rounded-[8px] border border-black/[.10] text-[14px] text-[#0F1A2E] outline-none transition"
+                  style={{ outlineColor: accent }}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
+                />
+              </div>
               {selectedDate && isDateDisabled(selectedDate) && (
                 <p className="text-[12px] text-red-500 mt-2">A clínica não atende neste dia.</p>
               )}
