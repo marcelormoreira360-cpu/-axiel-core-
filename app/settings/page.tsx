@@ -10,17 +10,18 @@ import { canManageClinicUsers } from "@/modules/auth/roles";
 const settings = [
   { href: "/settings/profile", title: "Meu perfil", text: "Atualize seu nome, email e senha de acesso." },
   { href: "/settings/equipe", title: "Equipe", text: "Convide profissionais, gerencie cargos e acesso à clínica." },
+  { href: "/settings/practitioners", title: "Profissionais", text: "Perfil público, especialidade e agenda de cada profissional." },
   { href: "/settings/branding", title: "Identidade visual", text: "Logo e cor primária da sua clínica no portal e agendamento." },
-  { href: "/clinics", title: "Clinic setup", text: "Clinic profile and basic configuration." },
+  { href: "/clinics", title: "Configuração da clínica", text: "Perfil e configurações básicas da clínica." },
   { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
   { href: "/settings/session-types", title: "Tipos de sessão", text: "Modalidades, durações, preços e configuração de Zoom por tipo." },
   { href: "/settings/lembretes", title: "Lembretes automáticos", text: "Configure envio de lembretes de consulta por WhatsApp e e-mail." },
-  { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure the AI assistant: name, program, pricing and language." },
-  { href: "/intake", title: "Intake forms", text: "Questions patients answer before care." },
-  { href: "/monetization", title: "Packages", text: "Session packages and memberships." },
-  { href: "/follow-ups", title: "Follow-ups", text: "Manual reminders and message placeholders." },
-  { href: "/get-started", title: "Setup checklist", text: "Simple onboarding flow." },
-  { href: "/billing", title: "Billing", text: "Subscription, trial, upgrades, and invoices." },
+  { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure o assistente de IA: nome, programa, preços e idioma." },
+  { href: "/intake", title: "Formulários de intake", text: "Perguntas que pacientes respondem antes do atendimento." },
+  { href: "/monetization", title: "Pacotes", text: "Pacotes de sessões e planos de adesão." },
+  { href: "/follow-ups", title: "Acompanhamentos", text: "Lembretes manuais e mensagens de acompanhamento." },
+  { href: "/get-started", title: "Checklist de configuração", text: "Fluxo de onboarding simplificado." },
+  { href: "/billing", title: "Cobrança", text: "Assinatura, período de teste, upgrades e faturas." },
 ];
 
 export default async function SettingsPage() {
@@ -34,9 +35,9 @@ export default async function SettingsPage() {
   return (
     <Shell>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Settings</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Keep advanced tools here</h1>
-        <p className="mt-3 text-lg text-black/55">Daily users should not need this page often.</p>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Configurações</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Ferramentas avançadas</h1>
+        <p className="mt-3 text-lg text-black/55">Você raramente precisará acessar esta página no dia a dia.</p>
       </div>
 
       {clinic?.slug && (
@@ -55,7 +56,7 @@ export default async function SettingsPage() {
       </div>
 
       <div className="mt-4">
-        <ViewDetails label="View details">
+        <ViewDetails label="Ver todas">
           <div className="grid gap-4 md:grid-cols-2">
             {settings.slice(5).map((item) => (
               <Link key={item.href} href={item.href}>

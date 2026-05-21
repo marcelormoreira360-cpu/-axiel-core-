@@ -18,34 +18,34 @@ export default async function BillingPage() {
     <Shell>
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Billing</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Choose how AXIEL grows with you</h1>
-          <p className="mt-3 max-w-2xl text-lg text-black/55">Simple subscription plans. Upgrade, downgrade, or manage billing from one place.</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Cobrança</p>
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Como o AXIEL cresce com você</h1>
+          <p className="mt-3 max-w-2xl text-lg text-black/55">Planos simples de assinatura. Faça upgrade, downgrade ou gerencie tudo em um só lugar.</p>
         </div>
         {subscription?.external_customer_id ? (
           <form action="/api/stripe/portal" method="POST">
-            <Button type="submit">Manage subscription</Button>
+            <Button type="submit">Gerenciar assinatura</Button>
           </form>
         ) : null}
       </div>
 
       <Card className="mb-6 grid gap-3 bg-axiel-ink p-6 text-white md:grid-cols-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Current status</p>
-          <p className="mt-2 text-2xl font-semibold capitalize">{subscription?.status ?? "No plan"}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Status atual</p>
+          <p className="mt-2 text-2xl font-semibold capitalize">{subscription?.status ?? "Sem plano"}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Plan</p>
-          <p className="mt-2 text-2xl font-semibold">{subscription?.plans?.name ?? "Not selected"}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Plano</p>
+          <p className="mt-2 text-2xl font-semibold">{subscription?.plans?.name ?? "Não selecionado"}</p>
         </div>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Trial / period</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Período / trial</p>
           <p className="mt-2 text-sm text-white/70">
             {subscription?.trial_ends_at
-              ? `Trial ends ${new Date(subscription.trial_ends_at).toLocaleDateString()}`
+              ? `Trial encerra em ${new Date(subscription.trial_ends_at).toLocaleDateString("pt-BR")}`
               : subscription?.current_period_ends_at
-                ? `Renews ${new Date(subscription.current_period_ends_at).toLocaleDateString()}`
-                : "Start with a trial when available"}
+                ? `Renova em ${new Date(subscription.current_period_ends_at).toLocaleDateString("pt-BR")}`
+                : "Inicie com um período de teste quando disponível"}
           </p>
         </div>
       </Card>
@@ -56,7 +56,7 @@ export default async function BillingPage() {
         ))}
       </div>
 
-      <p className="mt-6 text-sm text-black/45">Payments and subscription changes are handled by Stripe Checkout and the Stripe customer portal.</p>
+      <p className="mt-6 text-sm text-black/45">Pagamentos e alterações de assinatura são processados pelo Stripe Checkout e portal do cliente Stripe.</p>
     </Shell>
   );
 }

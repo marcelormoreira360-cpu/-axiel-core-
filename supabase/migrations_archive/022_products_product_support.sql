@@ -249,17 +249,17 @@ end;
 $$;
 
 drop trigger if exists validate_patient_products_clinic on public.patient_products;
-create trigger validate_patient_products_clinic
+create or replace trigger validate_patient_products_clinic
 before insert or update on public.patient_products
 for each row execute function public.validate_product_support_clinic();
 
 drop trigger if exists validate_product_order_items_clinic on public.product_order_items;
-create trigger validate_product_order_items_clinic
+create or replace trigger validate_product_order_items_clinic
 before insert or update on public.product_order_items
 for each row execute function public.validate_product_support_clinic();
 
 drop trigger if exists validate_product_refill_reminders_clinic on public.product_refill_reminders;
-create trigger validate_product_refill_reminders_clinic
+create or replace trigger validate_product_refill_reminders_clinic
 before insert or update on public.product_refill_reminders
 for each row execute function public.validate_product_support_clinic();
 

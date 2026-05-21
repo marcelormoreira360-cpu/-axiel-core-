@@ -2,18 +2,40 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { AppointmentForm } from "@/components/appointment-form";
+import { AppointmentForm, type ClinicUserOption } from "@/components/appointment-form";
 import { EmptyState } from "@/components/empty-state";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { createAppointment, getSessionTypes } from "@/services/appointment-service";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export default async function NewAppointmentPage() {
-  const [profile, patients, sessionTypes] = await Promise.all([
+  const [profile, patients, sessionTypes, clinic] = await Promise.all([
     getCurrentUserProfile(),
     getPatients(),
     getSessionTypes(),
+    getCurrentClinic(),
   ]);
+
+  let clinicUsers: ClinicUserOption[] = [];
+  if (clinic) {
+    const supabase = await createSupabaseServerClient();
+    const { data: cuRaw } = await supabase
+      .from("clinic_users")
+      .select("user_id, display_name, specialty, users(full_name)")
+      .eq("clinic_id", clinic.id)
+      .eq("status", "active");
+    clinicUsers = (cuRaw ?? []).map((cu) => {
+      const usersData = cu.users as unknown as { full_name: string | null } | null;
+      return {
+        user_id: cu.user_id,
+        display_name: cu.display_name ?? null,
+        full_name: usersData?.full_name ?? null,
+        specialty: cu.specialty ?? null,
+      };
+    });
+  }
 
   async function createSessionAction(formData: FormData) {
     "use server";
@@ -25,9 +47,10 @@ export default async function NewAppointmentPage() {
     const date = String(formData.get("date") ?? "");
     const time = String(formData.get("time") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
-    const notes     = String(formData.get("notes")     ?? "").trim() || null;
-    const videoUrl  = String(formData.get("video_url") ?? "").trim() || null;
-    const sessionTypeId = String(formData.get("session_type_id") ?? "").trim() || null;
+    const notes           = String(formData.get("notes")           ?? "").trim() || null;
+    const videoUrl        = String(formData.get("video_url")       ?? "").trim() || null;
+    const sessionTypeId   = String(formData.get("session_type_id") ?? "").trim() || null;
+    const practitionerId  = String(formData.get("practitioner_id") ?? "").trim() || null;
     const source = (String(formData.get("source") ?? "direct").trim() || "direct") as import("@/lib/types").AppointmentSource;
 
     if (!patientId || !date || !time) throw new Error("Paciente, data e horário são obrigatórios.");
@@ -41,6 +64,7 @@ export default async function NewAppointmentPage() {
       source,
       notes,
       video_url: videoUrl,
+      practitioner_id: practitionerId,
     });
 
     redirect("/schedule");
@@ -75,7 +99,7 @@ export default async function NewAppointmentPage() {
           action="Cadastrar paciente"
         />
       ) : (
-        <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} />
+        <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} clinicUsers={clinicUsers} />
       )}
     </Shell>
   );

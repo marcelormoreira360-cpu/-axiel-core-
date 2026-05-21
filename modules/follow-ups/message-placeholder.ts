@@ -8,14 +8,14 @@ export function buildFollowUpMessagePlaceholder(patient: Pick<Patient, "full_nam
   if (channel === "sms") {
     return {
       subject: null,
-      body: `Hi ${patient.full_name}, checking in after your visit. Reply if you would like help with your next step.`,
+      body: `Olá, ${patient.full_name}! Como você está depois da última sessão? Responda aqui se quiser ajuda para agendar o próximo passo.`,
     };
   }
 
   return {
-    subject: "Checking in",
-    body: `Hi ${patient.full_name}, just checking in after your visit. Let us know if you would like help scheduling your next step.`,
+    subject: "Como você está?",
+    body: `Olá, ${patient.full_name}! Estamos passando para saber como você está após a sua última visita. Se quiser agendar o próximo passo, é só responder este e-mail.`,
   };
 }
 
-export const MESSAGE_AUTOMATION_STATUS = "Ready to send manually. Automation rules can be added later.";
+export const MESSAGE_AUTOMATION_STATUS = "Pronto para envio manual. Regras de automação podem ser adicionadas depois.";

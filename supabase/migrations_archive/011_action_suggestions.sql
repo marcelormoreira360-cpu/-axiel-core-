@@ -1,11 +1,11 @@
 -- AXIEL Core - Action Suggestions
 -- Track suggested operational actions that can be accepted, ignored, or completed.
 
-create type public.action_suggestion_status as enum ('pending', 'accepted', 'ignored', 'completed');
-create type public.action_suggestion_priority as enum ('high', 'medium', 'low');
-create type public.action_suggestion_category as enum ('patient', 'lead', 'schedule', 'follow_up', 'system');
-create type public.action_suggestion_source as enum ('system_rule', 'ai_placeholder', 'manual');
-create type public.action_suggestion_entity_type as enum ('patient', 'lead', 'appointment', 'follow_up', 'clinic');
+do $$ begin create type public.action_suggestion_status as enum ('pending', 'accepted', 'ignored', 'completed'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.action_suggestion_priority as enum ('high', 'medium', 'low'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.action_suggestion_category as enum ('patient', 'lead', 'schedule', 'follow_up', 'system'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.action_suggestion_source as enum ('system_rule', 'ai_placeholder', 'manual'); exception when duplicate_object then null; end $$;
+do $$ begin create type public.action_suggestion_entity_type as enum ('patient', 'lead', 'appointment', 'follow_up', 'clinic'); exception when duplicate_object then null; end $$;
 
 create table if not exists public.action_suggestions (
   id uuid primary key default gen_random_uuid(),
@@ -36,7 +36,7 @@ create index if not exists action_suggestions_entity_idx on public.action_sugges
 create index if not exists action_suggestions_priority_idx on public.action_suggestions(priority);
 
 drop trigger if exists set_action_suggestions_updated_at on public.action_suggestions;
-create trigger set_action_suggestions_updated_at
+create or replace trigger set_action_suggestions_updated_at
 before update on public.action_suggestions
 for each row execute function public.set_updated_at();
 

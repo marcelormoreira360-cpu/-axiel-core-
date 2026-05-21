@@ -78,7 +78,7 @@ end;
 $$;
 
 drop trigger if exists validate_clinic_relationship_patient_portal_links on public.patient_portal_links;
-create trigger validate_clinic_relationship_patient_portal_links
+create or replace trigger validate_clinic_relationship_patient_portal_links
 before insert or update on public.patient_portal_links
 for each row execute function public.validate_patient_portal_link_same_clinic();
 
@@ -106,13 +106,13 @@ end;
 $$;
 
 drop trigger if exists validate_clinic_relationship_patient_portal_access_logs on public.patient_portal_access_logs;
-create trigger validate_clinic_relationship_patient_portal_access_logs
+create or replace trigger validate_clinic_relationship_patient_portal_access_logs
 before insert
 on public.patient_portal_access_logs
 for each row execute function public.validate_patient_portal_access_log_same_clinic();
 
 drop trigger if exists set_patient_portal_links_updated_at on public.patient_portal_links;
-create trigger set_patient_portal_links_updated_at
+create or replace trigger set_patient_portal_links_updated_at
 before update on public.patient_portal_links
 for each row execute function public.set_updated_at();
 
@@ -126,11 +126,11 @@ end;
 $$;
 
 drop trigger if exists prevent_patient_portal_access_log_update on public.patient_portal_access_logs;
-create trigger prevent_patient_portal_access_log_update
+create or replace trigger prevent_patient_portal_access_log_update
 before update on public.patient_portal_access_logs
 for each row execute function public.prevent_patient_portal_access_log_mutation();
 
 drop trigger if exists prevent_patient_portal_access_log_delete on public.patient_portal_access_logs;
-create trigger prevent_patient_portal_access_log_delete
+create or replace trigger prevent_patient_portal_access_log_delete
 before delete on public.patient_portal_access_logs
 for each row execute function public.prevent_patient_portal_access_log_mutation();

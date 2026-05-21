@@ -29,23 +29,23 @@ export function CommunicationTemplateCard({
           </div>
           <h3 className="text-xl font-semibold tracking-tight">{template.name}</h3>
         </div>
-        <Button variant="secondary" className="min-h-11">Save</Button>
+        <Button variant="secondary" className="min-h-11">Salvar</Button>
       </div>
 
       {template.channel === "email" && (
         <label className="mb-3 block text-sm font-medium text-black/55">
-          Subject
+          Assunto
           <input
             name="subject"
             defaultValue={template.subject ?? ""}
             className="mt-2 w-full rounded-2xl border border-axiel-line bg-axiel-soft px-4 py-3 text-sm outline-none focus:border-black/25"
-            placeholder="Simple subject"
+            placeholder="Assunto do e-mail"
           />
         </label>
       )}
 
       <label className="block text-sm font-medium text-black/55">
-        Message
+        Mensagem
         <textarea
           name="body"
           defaultValue={template.body}
@@ -55,7 +55,7 @@ export function CommunicationTemplateCard({
       </label>
 
       <p className="mt-3 text-xs leading-5 text-black/40">
-        Available variables: {"{{name}}"}, {"{{date}}"}, {"{{time}}"}, {"{{duration}}"}, {"{{source}}"}.
+        Variáveis disponíveis: {"{{name}}"}, {"{{date}}"}, {"{{time}}"}, {"{{duration}}"}, {"{{source}}"}.
       </p>
     </form>
   );

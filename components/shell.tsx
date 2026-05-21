@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
+import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
@@ -60,6 +61,11 @@ export async function Shell({
         {clinics.length > 0 && (
           <ClinicSwitcher clinics={clinics} activeClinicId={activeClinicId} />
         )}
+
+        {/* Search trigger */}
+        <div className="px-[10px] pb-[6px]">
+          <SearchTriggerButton />
+        </div>
 
         <SidebarNavigation />
 
@@ -119,6 +125,7 @@ export async function Shell({
       </main>
 
       <SoftOnboardingGuide />
+      <GlobalSearch key="global-search-modal" />
     </div>
   );
 }

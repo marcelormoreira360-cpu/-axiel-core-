@@ -19,7 +19,7 @@ create index if not exists session_records_appointment_id_idx on public.session_
 create index if not exists session_records_patient_id_idx on public.session_records(patient_id);
 
 drop trigger if exists set_session_records_updated_at on public.session_records;
-create trigger set_session_records_updated_at
+create or replace trigger set_session_records_updated_at
 before update on public.session_records
 for each row execute function public.set_updated_at();
 

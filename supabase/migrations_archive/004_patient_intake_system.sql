@@ -51,15 +51,15 @@ create index if not exists intake_responses_patient_id_idx on public.intake_resp
 create index if not exists intake_responses_form_id_idx on public.intake_responses(form_id);
 
 -- updated_at triggers
-create trigger set_intake_forms_updated_at
+create or replace trigger set_intake_forms_updated_at
 before update on public.intake_forms
 for each row execute function public.set_updated_at();
 
-create trigger set_intake_questions_updated_at
+create or replace trigger set_intake_questions_updated_at
 before update on public.intake_questions
 for each row execute function public.set_updated_at();
 
-create trigger set_intake_responses_updated_at
+create or replace trigger set_intake_responses_updated_at
 before update on public.intake_responses
 for each row execute function public.set_updated_at();
 

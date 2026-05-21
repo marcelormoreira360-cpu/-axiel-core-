@@ -1,6 +1,6 @@
 import type { Appointment, FollowUp, Patient } from "@/lib/types";
 
-export const FOLLOW_UP_AI_LABEL = "AI placeholder: next follow-up timing";
+export const FOLLOW_UP_AI_LABEL = "Sugestão de IA: próximo acompanhamento";
 
 export function getSuggestedFollowUpTimingPlaceholder(input: {
   patient: Patient;
@@ -11,20 +11,20 @@ export function getSuggestedFollowUpTimingPlaceholder(input: {
   const pendingFollowUp = input.followUps?.find((item) => item.status === "pending");
 
   if (pendingFollowUp) {
-    return "A follow-up is already pending. Review it before creating another reminder.";
+    return "Já existe um acompanhamento pendente. Revise-o antes de criar outro lembrete.";
   }
 
   if (lastAppointment) {
-    return "Next Step timing placeholder: review this patient within 7–14 days after the last session.";
+    return "Sugestão de timing: revise este paciente entre 7 e 14 dias após a última sessão.";
   }
 
-  return "Next Step timing placeholder: schedule the first follow-up after the initial session is created.";
+  return "Sugestão de timing: agende o primeiro acompanhamento após a criação da sessão inicial.";
 }
 
 export function getFollowUpReviewPrompts() {
   return [
-    "Confirm whether the patient needs a next session reminder.",
-    "Choose email or SMS placeholder if a message should be drafted later.",
-    "Review timing manually before sending anything.",
+    "Confirme se o paciente precisa de um lembrete para a próxima sessão.",
+    "Escolha e-mail ou SMS se uma mensagem precisar ser redigida depois.",
+    "Revise o timing manualmente antes de enviar qualquer coisa.",
   ];
 }

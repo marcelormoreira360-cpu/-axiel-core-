@@ -51,7 +51,7 @@ end;
 $$;
 
 drop trigger if exists prevent_patient_portal_link_sensitive_update on public.patient_portal_links;
-create trigger prevent_patient_portal_link_sensitive_update
+create or replace trigger prevent_patient_portal_link_sensitive_update
 before update on public.patient_portal_links
 for each row execute function public.prevent_patient_portal_link_sensitive_update();
 
@@ -65,7 +65,7 @@ end;
 $$;
 
 drop trigger if exists prevent_patient_portal_link_delete on public.patient_portal_links;
-create trigger prevent_patient_portal_link_delete
+create or replace trigger prevent_patient_portal_link_delete
 before delete on public.patient_portal_links
 for each row execute function public.prevent_patient_portal_link_delete();
 
@@ -97,7 +97,7 @@ end;
 $$;
 
 drop trigger if exists log_patient_portal_link_revoked on public.patient_portal_links;
-create trigger log_patient_portal_link_revoked
+create or replace trigger log_patient_portal_link_revoked
 after update of revoked_at on public.patient_portal_links
 for each row execute function public.log_patient_portal_link_revoked();
 
@@ -134,11 +134,11 @@ end;
 $$;
 
 drop trigger if exists prevent_patient_portal_security_event_update on public.patient_portal_security_events;
-create trigger prevent_patient_portal_security_event_update
+create or replace trigger prevent_patient_portal_security_event_update
 before update on public.patient_portal_security_events
 for each row execute function public.prevent_patient_portal_security_event_mutation();
 
 drop trigger if exists prevent_patient_portal_security_event_delete on public.patient_portal_security_events;
-create trigger prevent_patient_portal_security_event_delete
+create or replace trigger prevent_patient_portal_security_event_delete
 before delete on public.patient_portal_security_events
 for each row execute function public.prevent_patient_portal_security_event_mutation();

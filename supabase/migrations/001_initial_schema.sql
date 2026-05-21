@@ -93,6 +93,7 @@ create table if not exists public.appointments (
   clinic_id uuid not null references public.clinics(id) on delete cascade,
   patient_id uuid not null references public.patients(id) on delete cascade,
   created_by uuid references public.users(id) on delete set null,
+  practitioner_id uuid references public.users(id) on delete set null,
   starts_at timestamptz not null,
   duration_minutes integer not null default 60 check (duration_minutes > 0 and duration_minutes <= 480),
   notes text,
@@ -231,6 +232,12 @@ create policy "Clinic users can view their clinic"
 on public.clinics for select
 to authenticated
 using (public.can_access_clinic(id));
+
+create policy "Clinic owners can update their clinic"
+on public.clinics for update
+to authenticated
+using (public.can_manage_clinic(id))
+with check (public.can_manage_clinic(id));
 
 -- Users
 create policy "Users can view their own profile"
@@ -847,6 +854,10 @@ create table if not exists public.clinic_users (
   role public.app_role not null default 'staff',
   status public.clinic_user_status not null default 'active',
   invited_by uuid references public.users(id) on delete set null,
+  display_name text,
+  specialty text,
+  bio text,
+  is_bookable boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (clinic_id, user_id)
@@ -1339,6 +1350,8 @@ create table if not exists public.session_types (
   clinic_id uuid not null references public.clinics(id) on delete cascade,
   name text not null,
   duration_minutes integer not null default 60 check (duration_minutes > 0 and duration_minutes <= 480),
+  price_cents integer not null default 0 check (price_cents >= 0),
+  is_online boolean not null default false,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

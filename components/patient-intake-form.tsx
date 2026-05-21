@@ -14,7 +14,7 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-8">
       <div className="mb-8">
-        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">INTAKE FORM</p>
+        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">FORMULÁRIO DE INTAKE</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight">{form.name}</h2>
         {form.description && <p className="mt-2 text-black/55">{form.description}</p>}
       </div>
@@ -37,9 +37,9 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
                 <textarea name={`answer_${question.id}`} rows={5} defaultValue={value} required={question.is_required} className={`${baseClass} resize-none`} />
               ) : question.question_type === "yes_no" ? (
                 <select name={`answer_${question.id}`} defaultValue={value} required={question.is_required} className={baseClass}>
-                  <option value="">Choose</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
+                  <option value="">Selecione</option>
+                  <option value="Sim">Sim</option>
+                  <option value="Não">Não</option>
                 </select>
               ) : (
                 <input
@@ -56,7 +56,7 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
       </div>
 
       <button type="submit" className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
-        Save intake responses
+        Salvar respostas
       </button>
     </form>
   );

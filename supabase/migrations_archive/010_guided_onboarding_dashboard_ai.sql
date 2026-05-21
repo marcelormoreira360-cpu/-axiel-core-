@@ -27,12 +27,12 @@ create index if not exists session_types_clinic_id_idx on public.session_types(c
 create index if not exists working_hours_clinic_id_idx on public.working_hours(clinic_id);
 
 drop trigger if exists set_session_types_updated_at on public.session_types;
-create trigger set_session_types_updated_at
+create or replace trigger set_session_types_updated_at
 before update on public.session_types
 for each row execute function public.set_updated_at();
 
 drop trigger if exists set_working_hours_updated_at on public.working_hours;
-create trigger set_working_hours_updated_at
+create or replace trigger set_working_hours_updated_at
 before update on public.working_hours
 for each row execute function public.set_updated_at();
 

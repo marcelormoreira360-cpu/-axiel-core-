@@ -10,6 +10,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date");
   const sessionTypeId = searchParams.get("session_type_id");
+  const practitionerId = searchParams.get("practitioner_id");
 
   if (!date || !sessionTypeId) {
     return NextResponse.json({ error: "date and session_type_id required" }, { status: 400 });
@@ -26,10 +27,21 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
   if (!clinic) return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
 
+  let bookedQuery = supabase
+    .from("appointments")
+    .select("starts_at")
+    .eq("clinic_id", clinic.id)
+    .gte("starts_at", `${date}T00:00:00`)
+    .lte("starts_at", `${date}T23:59:59`);
+
+  if (practitionerId) {
+    bookedQuery = bookedQuery.eq("practitioner_id", practitionerId);
+  }
+
   const [{ data: sessionType }, { data: wh }, { data: booked }] = await Promise.all([
     supabase.from("session_types").select("duration_minutes").eq("id", sessionTypeId).eq("clinic_id", clinic.id).maybeSingle(),
     supabase.from("working_hours").select("opens_at, closes_at, is_open").eq("clinic_id", clinic.id).eq("day_of_week", dayOfWeekFromDate(date)).maybeSingle(),
-    supabase.from("appointments").select("starts_at").eq("clinic_id", clinic.id).gte("starts_at", `${date}T00:00:00`).lte("starts_at", `${date}T23:59:59`),
+    bookedQuery,
   ]);
 
   if (!sessionType) return NextResponse.json({ error: "Session type not found" }, { status: 404 });

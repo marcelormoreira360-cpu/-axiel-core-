@@ -46,7 +46,7 @@ create index if not exists communication_logs_created_at_idx on public.communica
 
 -- Keep templates updated cleanly.
 drop trigger if exists set_communication_templates_updated_at on public.communication_templates;
-create trigger set_communication_templates_updated_at
+create or replace trigger set_communication_templates_updated_at
 before update on public.communication_templates
 for each row execute function public.set_updated_at();
 
@@ -93,7 +93,7 @@ end;
 $$;
 
 drop trigger if exists validate_communication_log_clinic_trigger on public.communication_logs;
-create trigger validate_communication_log_clinic_trigger
+create or replace trigger validate_communication_log_clinic_trigger
 before insert or update on public.communication_logs
 for each row execute function public.validate_communication_log_clinic();
 

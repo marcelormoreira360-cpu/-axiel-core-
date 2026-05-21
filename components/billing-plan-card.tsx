@@ -22,7 +22,7 @@ export function BillingPlanCard({ plan, current = false }: BillingPlanCardProps)
         </div>
         {plan.recommended ? (
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-axiel-secondary">
-            Recommended
+            Recomendado
           </span>
         ) : null}
       </div>
@@ -41,10 +41,10 @@ export function BillingPlanCard({ plan, current = false }: BillingPlanCardProps)
 
       {current ? (
         <ButtonSecondary className="w-full" disabled>
-          Current plan
+          Plano atual
         </ButtonSecondary>
       ) : (
-        <ButtonPrimary className="w-full">Select plan</ButtonPrimary>
+        <ButtonPrimary className="w-full">Selecionar plano</ButtonPrimary>
       )}
     </Card>
   );

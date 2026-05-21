@@ -21,62 +21,62 @@ export const defaultCommunicationTemplates: Array<{
 }> = [
   {
     key: "appointment_reminder_email",
-    name: "Appointment reminder email",
+    name: "Lembrete de sessão — e-mail",
     channel: "email",
     use_case: "appointment_reminder",
-    subject: "Your upcoming appointment",
-    body: "Hi {{name}}, this is a friendly reminder for your appointment on {{date}} at {{time}}. Reply if you need help.",
+    subject: "Lembrete da sua sessão",
+    body: "Olá, {{name}}! Este é um lembrete da sua sessão agendada para {{date}} às {{time}}. Qualquer dúvida, é só responder este e-mail.",
   },
   {
     key: "appointment_reminder_sms",
-    name: "Appointment reminder SMS",
+    name: "Lembrete de sessão — SMS",
     channel: "sms",
     use_case: "appointment_reminder",
     subject: null,
-    body: "Hi {{name}}, reminder: your appointment is on {{date}} at {{time}}. Reply if you need help.",
+    body: "Olá, {{name}}! Lembrete: sua sessão está marcada para {{date}} às {{time}}. Responda se precisar de ajuda.",
   },
   {
     key: "follow_up_email",
-    name: "Follow-up email",
+    name: "Acompanhamento pós-sessão — e-mail",
     channel: "email",
     use_case: "follow_up",
-    subject: "Checking in",
-    body: "Hi {{name}}, just checking in after your visit. Let us know if you would like help scheduling your next step.",
+    subject: "Como você está?",
+    body: "Olá, {{name}}! Estamos passando para saber como você está após a sua última visita. Se quiser agendar o próximo passo, é só responder este e-mail.",
   },
   {
     key: "follow_up_sms",
-    name: "Follow-up SMS",
+    name: "Acompanhamento pós-sessão — SMS",
     channel: "sms",
     use_case: "follow_up",
     subject: null,
-    body: "Hi {{name}}, checking in after your visit. Reply if you would like help with your next step.",
+    body: "Olá, {{name}}! Como você está depois da última sessão? Responda aqui se quiser ajuda para agendar o próximo passo.",
   },
   {
     key: "lead_nurturing_email",
-    name: "Lead nurturing email",
+    name: "Nutrição de lead — e-mail",
     channel: "email",
     use_case: "lead_nurturing",
-    subject: "How can we help?",
-    body: "Hi {{name}}, thank you for reaching out. We would be happy to help you choose the next simple step.",
+    subject: "Como podemos ajudar?",
+    body: "Olá, {{name}}! Obrigado pelo seu contato. Será um prazer ajudá-lo(a) a dar o próximo passo. Responda este e-mail e conversamos.",
   },
   {
     key: "lead_nurturing_sms",
-    name: "Lead nurturing SMS",
+    name: "Nutrição de lead — SMS",
     channel: "sms",
     use_case: "lead_nurturing",
     subject: null,
-    body: "Hi {{name}}, thank you for reaching out. Reply here and we can help you choose the next simple step.",
+    body: "Olá, {{name}}! Obrigado pelo contato. Responda aqui e podemos ajudá-lo(a) a escolher o próximo passo simples.",
   },
 ];
 
 function formatDate(value?: string | null) {
-  if (!value) return "your scheduled time";
-  return new Date(value).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  if (!value) return "horário agendado";
+  return new Date(value).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 function formatTime(value?: string | null) {
   if (!value) return "";
-  return new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return new Date(value).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
 export function renderCommunicationTemplate(template: string, variables: Record<string, string | null | undefined>) {
@@ -85,18 +85,18 @@ export function renderCommunicationTemplate(template: string, variables: Record<
 
 export function buildPatientVariables(patient?: Pick<Patient, "full_name" | "email" | "phone"> | null, appointment?: Pick<Appointment, "starts_at" | "duration_minutes"> | null) {
   return {
-    name: patient?.full_name ?? "there",
+    name: patient?.full_name ?? "você",
     email: patient?.email ?? "",
     phone: patient?.phone ?? "",
     date: formatDate(appointment?.starts_at),
     time: formatTime(appointment?.starts_at),
-    duration: appointment?.duration_minutes ? `${appointment.duration_minutes} minutes` : "",
+    duration: appointment?.duration_minutes ? `${appointment.duration_minutes} minutos` : "",
   };
 }
 
 export function buildLeadVariables(lead?: Pick<Lead, "full_name" | "email" | "phone" | "source"> | null) {
   return {
-    name: lead?.full_name ?? "there",
+    name: lead?.full_name ?? "você",
     email: lead?.email ?? "",
     phone: lead?.phone ?? "",
     source: lead?.source ?? "",
@@ -108,7 +108,7 @@ export function getRecipientForChannel(channel: CommunicationChannel, contact: {
 }
 
 export const SIMPLE_MESSAGE_RULES = [
-  "Use short, friendly language.",
-  "Do not include medical advice, diagnosis, or session instructions.",
-  "Always let the person reply or contact the clinic.",
+  "Use linguagem curta e amigável.",
+  "Não inclua orientações médicas, diagnósticos ou instruções clínicas.",
+  "Sempre permita que a pessoa responda ou entre em contato com a clínica.",
 ];

@@ -79,44 +79,44 @@ export default async function FollowUpsPage() {
     <Shell>
       <header className="mb-8 flex flex-col gap-5 pt-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">FOLLOW-UP</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Next steps, simplified.</h1>
-          <p className="mt-3 max-w-2xl text-black/55">Reminders for the next session and message placeholders. Send real email or SMS manually from each reminder. Automation can be added later.</p>
+          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">ACOMPANHAMENTO</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Próximos passos, simplificados.</h1>
+          <p className="mt-3 max-w-2xl text-black/55">Lembretes para a próxima sessão e modelos de mensagem. Envie e-mail ou SMS manualmente a partir de cada lembrete. A automação pode ser adicionada depois.</p>
         </div>
       </header>
 
       <section className="mb-5 grid gap-3 md:grid-cols-3">
         <Card className="bg-axiel-ink p-6 text-white">
           <Bell className="h-5 w-5 text-white/45" />
-          <p className="mt-3 text-sm text-white/55">Pending reminders</p>
+          <p className="mt-3 text-sm text-white/55">Lembretes pendentes</p>
           <p className="mt-2 text-4xl font-semibold">{pending.length}</p>
         </Card>
         <Card className="p-6">
           <CalendarClock className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Completed</p>
+          <p className="mt-3 text-sm text-black/45">Concluídos</p>
           <p className="mt-2 text-4xl font-semibold">{completed.length}</p>
         </Card>
         <Card className="p-6">
           <Sparkles className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">AI placeholder</p>
-          <p className="mt-2 text-2xl font-semibold">Timing only</p>
+          <p className="mt-3 text-sm text-black/45">Sugestão de IA</p>
+          <p className="mt-2 text-2xl font-semibold">Timing</p>
         </Card>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Reminders</h2>
-            <p className="text-sm text-black/40">Manual review required</p>
+            <h2 className="text-2xl font-semibold tracking-tight">Lembretes</h2>
+            <p className="text-sm text-black/40">Revisão manual necessária</p>
           </div>
           <FollowUpList followUps={followUps} completeAction={completeFollowUpAction} cancelAction={cancelFollowUpAction} sendAction={sendManualCommunicationAction} />
         </div>
 
         <div className="space-y-5">
           {!profile?.clinic_id ? (
-            <Card>This user needs to be assigned to a clinic before creating follow-ups.</Card>
+            <Card>Este usuário precisa estar vinculado a uma clínica antes de criar acompanhamentos.</Card>
           ) : patients.length === 0 ? (
-            <Card>Add a patient first. Then return here to create a follow-up.</Card>
+            <Card>Cadastre um paciente primeiro e volte aqui para criar um acompanhamento.</Card>
           ) : (
             <FollowUpForm patients={patients} action={createFollowUpAction} />
           )}
@@ -128,7 +128,7 @@ export default async function FollowUpsPage() {
               </div>
               <div>
                 <h2 className="font-semibold">{FOLLOW_UP_AI_LABEL}</h2>
-                <p className="text-xs text-black/45">No AI logic implemented yet</p>
+                <p className="text-xs text-black/45">Sugestões de timing automático</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">

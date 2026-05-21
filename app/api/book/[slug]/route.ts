@@ -19,19 +19,30 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
   if (!clinic) return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
 
-  const [{ data: sessionTypes }, { data: workingHours }] = await Promise.all([
+  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }] = await Promise.all([
     supabase.from("session_types").select("id, name, duration_minutes, price_cents").eq("clinic_id", clinic.id).eq("is_active", true).order("name"),
     supabase.from("working_hours").select("day_of_week, opens_at, closes_at, is_open").eq("clinic_id", clinic.id),
+    supabase.from("clinic_users").select("user_id, display_name, specialty, bio, users(full_name)").eq("clinic_id", clinic.id).eq("status", "active").eq("is_bookable", true),
   ]);
 
-  return NextResponse.json({ clinic, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [] });
+  const practitioners = (practitionersRaw ?? []).map((p) => {
+    const usersData = p.users as unknown as { full_name: string } | null;
+    return {
+      id: p.user_id,
+      display_name: p.display_name ?? usersData?.full_name ?? "Profissional",
+      specialty: p.specialty ?? null,
+      bio: p.bio ?? null,
+    };
+  });
+
+  return NextResponse.json({ clinic, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
 }
 
 // POST /api/book/[slug] — create appointment (public)
 export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const body = await req.json();
-  const { session_type_id, starts_at, full_name, email, phone, notes } = body;
+  const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id } = body;
 
   if (!session_type_id || !starts_at || !full_name || !phone) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -92,6 +103,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ slug: s
       duration_minutes: sessionType.duration_minutes,
       source: "website",
       notes: notes || null,
+      practitioner_id: practitioner_id || null,
     })
     .select("id, clinic_id, patient_id, starts_at")
     .single();

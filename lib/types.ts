@@ -72,6 +72,7 @@ export type Appointment = {
   clinic_id: string;
   patient_id: string;
   created_by: string | null;
+  practitioner_id: string | null;
   session_type_id: string | null;
   patient_offer_id: string | null;
   source: AppointmentSource | null;

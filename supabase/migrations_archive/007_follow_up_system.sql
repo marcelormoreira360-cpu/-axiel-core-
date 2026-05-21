@@ -36,7 +36,7 @@ create index if not exists follow_ups_due_at_idx on public.follow_ups(due_at);
 create index if not exists follow_ups_status_idx on public.follow_ups(status);
 
 drop trigger if exists set_follow_ups_updated_at on public.follow_ups;
-create trigger set_follow_ups_updated_at
+create or replace trigger set_follow_ups_updated_at
 before update on public.follow_ups
 for each row execute function public.set_updated_at();
 

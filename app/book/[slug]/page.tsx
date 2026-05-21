@@ -3,21 +3,22 @@
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 
-interface SessionType { id: string; name: string; duration_minutes: number; price_cents: number; }
-interface WorkingHour  { day_of_week: number; is_open: boolean; }
-interface Slot         { time: string; iso: string; }
-interface ClinicInfo   { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; }
+interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
+interface WorkingHour   { day_of_week: number; is_open: boolean; }
+interface Slot          { time: string; iso: string; }
+interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; }
+interface Practitioner  { id: string; display_name: string; specialty: string | null; bio: string | null; }
 
-type Step = "service" | "date" | "slot" | "info" | "done";
+type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
 
-const STEP_LABELS: Record<Step, string> = {
-  service: "Serviço",
-  date:    "Data",
-  slot:    "Horário",
-  info:    "Seus dados",
-  done:    "Confirmado",
+const STEP_LABELS: Record<Exclude<Step, "done">, string> = {
+  profissional: "Profissional",
+  service:      "Serviço",
+  date:         "Data",
+  slot:         "Horário",
+  info:         "Seus dados",
 };
-const STEPS: Step[] = ["service", "date", "slot", "info", "done"];
+const ALL_STEPS: Step[] = ["profissional", "service", "date", "slot", "info", "done"];
 
 function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -34,24 +35,29 @@ function toDateStr(d: Date) {
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
 
-  const [clinic, setClinic]           = useState<ClinicInfo | null>(null);
-  const [sessionTypes, setSessionTypes] = useState<SessionType[]>([]);
-  const [openDays, setOpenDays]       = useState<Set<number>>(new Set([1,2,3,4,5]));
-  const [step, setStep]               = useState<Step>("service");
+  const [clinic, setClinic]               = useState<ClinicInfo | null>(null);
+  const [sessionTypes, setSessionTypes]   = useState<SessionType[]>([]);
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  const [openDays, setOpenDays]           = useState<Set<number>>(new Set([1,2,3,4,5]));
+  const [step, setStep]                   = useState<Step>("profissional");
+  const [activeSteps, setActiveSteps]     = useState<Step[]>(ALL_STEPS);
 
-  const [selectedType, setSelectedType] = useState<SessionType | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>("");
-  const [slots, setSlots]             = useState<Slot[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
+  const [selectedPractitioner, setSelectedPractitioner] = useState<Practitioner | null>(null);
+  const [selectedType, setSelectedType]   = useState<SessionType | null>(null);
+  const [selectedDate, setSelectedDate]   = useState<string>("");
+  const [slots, setSlots]                 = useState<Slot[]>([]);
+  const [loadingSlots, setLoadingSlots]   = useState(false);
+  const [selectedSlot, setSelectedSlot]   = useState<Slot | null>(null);
 
-  const [fullName, setFullName]       = useState("");
-  const [email, setEmail]             = useState("");
-  const [phone, setPhone]             = useState("");
-  const [notes, setNotes]             = useState("");
-  const [error, setError]             = useState("");
-  const [isPending, startTransition]  = useTransition();
+  const [fullName, setFullName]           = useState("");
+  const [email, setEmail]                 = useState("");
+  const [phone, setPhone]                 = useState("");
+  const [notes, setNotes]                 = useState("");
+  const [error, setError]                 = useState("");
+  const [isPending, startTransition]      = useTransition();
   const [appointmentDate, setAppointmentDate] = useState("");
+
+  const accent = clinic?.primary_color ?? "#0F6E56";
 
   // Load clinic info
   useEffect(() => {
@@ -61,10 +67,25 @@ export default function BookingPage() {
         if (d.error) { setError(d.error); return; }
         setClinic(d.clinic);
         setSessionTypes(d.sessionTypes);
+        const ps: Practitioner[] = d.practitioners ?? [];
+        setPractitioners(ps);
         const open = new Set<number>(
-          d.workingHours.filter((w: WorkingHour) => w.is_open).map((w: WorkingHour) => w.day_of_week)
+          (d.workingHours as WorkingHour[]).filter((w) => w.is_open).map((w) => w.day_of_week)
         );
         if (open.size > 0) setOpenDays(open);
+
+        // Determine effective step order
+        if (ps.length === 0) {
+          setActiveSteps(["service", "date", "slot", "info", "done"]);
+          setStep("service");
+        } else if (ps.length === 1) {
+          setSelectedPractitioner(ps[0]);
+          setActiveSteps(["profissional", "service", "date", "slot", "info", "done"]);
+          setStep("service");
+        } else {
+          setActiveSteps(ALL_STEPS);
+          setStep("profissional");
+        }
       })
       .catch(() => setError("Não foi possível carregar as informações da clínica."));
   }, [slug]);
@@ -75,12 +96,13 @@ export default function BookingPage() {
     setLoadingSlots(true);
     setSlots([]);
     setSelectedSlot(null);
-    fetch(`/api/book/${slug}/slots?date=${selectedDate}&session_type_id=${selectedType.id}`)
+    const practId = selectedPractitioner ? `&practitioner_id=${selectedPractitioner.id}` : "";
+    fetch(`/api/book/${slug}/slots?date=${selectedDate}&session_type_id=${selectedType.id}${practId}`)
       .then((r) => r.json())
       .then((d) => { setSlots(d.slots ?? []); })
       .catch(() => setSlots([]))
       .finally(() => setLoadingSlots(false));
-  }, [selectedDate, selectedType, slug]);
+  }, [selectedDate, selectedType, selectedPractitioner, slug]);
 
   function isDateDisabled(dateStr: string) {
     const dow = new Date(`${dateStr}T12:00:00`).getDay();
@@ -101,6 +123,7 @@ export default function BookingPage() {
           email,
           phone,
           notes,
+          practitioner_id: selectedPractitioner?.id ?? null,
         }),
       });
       const data = await res.json();
@@ -115,6 +138,9 @@ export default function BookingPage() {
     });
   }
 
+  // Visible steps for indicator (exclude "done")
+  const visibleSteps = activeSteps.filter((s) => s !== "done") as Exclude<Step, "done">[];
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (error && !clinic) {
@@ -128,7 +154,7 @@ export default function BookingPage() {
   if (!clinic) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#F9F8F5]">
-        <div className="w-6 h-6 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
+        <div className="w-6 h-6 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${accent} transparent ${accent} ${accent}` }} />
       </div>
     );
   }
@@ -150,17 +176,24 @@ export default function BookingPage() {
         {/* Step indicator */}
         {step !== "done" && (
           <div className="flex items-center justify-center gap-2 mb-8">
-            {STEPS.filter((s) => s !== "done").map((s, i) => {
-              const idx = STEPS.indexOf(s);
-              const cur = STEPS.indexOf(step);
-              const done = idx < cur;
+            {visibleSteps.map((s, i) => {
+              const cur = visibleSteps.indexOf(step as Exclude<Step, "done">);
+              const done = i < cur;
               const active = s === step;
               return (
                 <div key={s} className="flex items-center gap-2">
-                  {i > 0 && <div className={`h-px w-6 ${done ? "bg-[#0F6E56]" : "bg-black/10"}`} />}
-                  <div className={`flex items-center gap-1.5`}>
-                    <div className={`w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center transition-all
-                      ${active ? "bg-[#0F6E56] text-white" : done ? "bg-[#E1F5EE] text-[#0F6E56]" : "bg-white border border-black/10 text-[#A09E98]"}`}>
+                  {i > 0 && <div className="h-px w-6" style={{ background: done ? accent : "rgba(0,0,0,0.1)" }} />}
+                  <div className="flex items-center gap-1.5">
+                    <div
+                      className="w-5 h-5 rounded-full text-[10px] font-semibold flex items-center justify-center transition-all"
+                      style={
+                        active
+                          ? { background: accent, color: "white" }
+                          : done
+                          ? { background: `${accent}22`, color: accent }
+                          : { background: "white", border: "1px solid rgba(0,0,0,0.1)", color: "#A09E98" }
+                      }
+                    >
                       {done ? "✓" : i + 1}
                     </div>
                     <span className={`text-[11px] hidden sm:block ${active ? "text-[#0F1A2E] font-medium" : "text-[#A09E98]"}`}>
@@ -173,9 +206,43 @@ export default function BookingPage() {
           </div>
         )}
 
+        {/* ── Step: profissional ── */}
+        {step === "profissional" && (
+          <div className="space-y-3">
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha o profissional</p>
+            {practitioners.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => { setSelectedPractitioner(p); setStep("service"); }}
+                className="w-full bg-white border border-black/[.07] rounded-[12px] px-5 py-4 text-left hover:border-[#0F6E56] hover:bg-[#F0FAF6] transition group"
+                style={{ ["--accent" as string]: accent }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center text-[15px] font-semibold shrink-0 text-white"
+                    style={{ background: accent }}
+                  >
+                    {p.display_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[14px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] transition truncate">{p.display_name}</p>
+                    {p.specialty && <p className="text-[12px] text-[#A09E98] truncate">{p.specialty}</p>}
+                    {p.bio && <p className="text-[11px] text-[#6B6A66] mt-1 line-clamp-2">{p.bio}</p>}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* ── Step: service ── */}
         {step === "service" && (
           <div className="space-y-3">
+            {activeSteps.includes("profissional") && (
+              <button onClick={() => setStep("profissional")} className="text-[12px] text-[#A09E98] hover:text-[#0F1A2E] mb-4 flex items-center gap-1">
+                ← Voltar
+              </button>
+            )}
             <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha o serviço</p>
             {sessionTypes.length === 0 && (
               <p className="text-[12px] text-[#A09E98]">Nenhum serviço disponível no momento.</p>
@@ -184,12 +251,15 @@ export default function BookingPage() {
               <button
                 key={st.id}
                 onClick={() => { setSelectedType(st); setStep("date"); }}
-                className="w-full bg-white border border-black/[.07] rounded-[12px] px-5 py-4 text-left hover:border-[#0F6E56] hover:bg-[#F0FAF6] transition group"
+                className="w-full bg-white border border-black/[.07] rounded-[12px] px-5 py-4 text-left transition group"
+                style={{ borderColor: undefined }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = accent; (e.currentTarget as HTMLButtonElement).style.background = `${accent}11`; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = ""; (e.currentTarget as HTMLButtonElement).style.background = ""; }}
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[14px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] transition">{st.name}</p>
+                  <p className="text-[14px] font-medium text-[#0F1A2E] transition">{st.name}</p>
                   {st.price_cents > 0 && (
-                    <p className="text-[13px] font-semibold text-[#0F6E56]">{fmt(st.price_cents)}</p>
+                    <p className="text-[13px] font-semibold" style={{ color: accent }}>{fmt(st.price_cents)}</p>
                   )}
                 </div>
                 <p className="text-[12px] text-[#A09E98] mt-[2px]">{st.duration_minutes} minutos</p>
@@ -215,7 +285,10 @@ export default function BookingPage() {
                     setSelectedDate(e.target.value);
                   }
                 }}
-                className="w-full px-4 py-3 rounded-[8px] border border-black/[.10] text-[14px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-4 py-3 rounded-[8px] border border-black/[.10] text-[14px] text-[#0F1A2E] outline-none transition"
+                style={{ outlineColor: accent }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
               />
               {selectedDate && isDateDisabled(selectedDate) && (
                 <p className="text-[12px] text-red-500 mt-2">A clínica não atende neste dia.</p>
@@ -224,7 +297,8 @@ export default function BookingPage() {
             <button
               onClick={() => setStep("slot")}
               disabled={!selectedDate || isDateDisabled(selectedDate)}
-              className="mt-4 w-full bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+              className="mt-4 w-full disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+              style={{ background: accent }}
             >
               Ver horários disponíveis
             </button>
@@ -243,12 +317,12 @@ export default function BookingPage() {
             </p>
             {loadingSlots ? (
               <div className="flex justify-center py-8">
-                <div className="w-5 h-5 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
+                <div className="w-5 h-5 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: `${accent} transparent ${accent} ${accent}` }} />
               </div>
             ) : slots.length === 0 ? (
               <div className="bg-white border border-black/[.07] rounded-[12px] p-5 text-center">
                 <p className="text-[13px] text-[#A09E98]">Sem horários disponíveis neste dia.</p>
-                <button onClick={() => setStep("date")} className="mt-3 text-[12px] text-[#0F6E56] hover:underline">
+                <button onClick={() => setStep("date")} className="mt-3 text-[12px] hover:underline" style={{ color: accent }}>
                   Escolher outra data
                 </button>
               </div>
@@ -258,12 +332,24 @@ export default function BookingPage() {
                   <button
                     key={s.iso}
                     onClick={() => setSelectedSlot(s)}
-                    className={[
-                      "py-3 rounded-[9px] border text-[13px] font-medium transition",
+                    className="py-3 rounded-[9px] border text-[13px] font-medium transition"
+                    style={
                       selectedSlot?.iso === s.iso
-                        ? "border-[#0F6E56] bg-[#0F6E56] text-white"
-                        : "border-black/[.08] bg-white text-[#0F1A2E] hover:border-[#0F6E56] hover:text-[#0F6E56]",
-                    ].join(" ")}
+                        ? { borderColor: accent, background: accent, color: "white" }
+                        : { borderColor: "rgba(0,0,0,0.08)", background: "white", color: "#0F1A2E" }
+                    }
+                    onMouseEnter={(e) => {
+                      if (selectedSlot?.iso !== s.iso) {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = accent;
+                        (e.currentTarget as HTMLButtonElement).style.color = accent;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedSlot?.iso !== s.iso) {
+                        (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(0,0,0,0.08)";
+                        (e.currentTarget as HTMLButtonElement).style.color = "#0F1A2E";
+                      }
+                    }}
                   >
                     {s.time}
                   </button>
@@ -273,7 +359,8 @@ export default function BookingPage() {
             {selectedSlot && (
               <button
                 onClick={() => setStep("info")}
-                className="mt-5 w-full bg-[#0F6E56] hover:bg-[#085041] text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+                className="mt-5 w-full text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+                style={{ background: accent }}
               >
                 Continuar com {selectedSlot.time}
               </button>
@@ -289,15 +376,18 @@ export default function BookingPage() {
             </button>
 
             {/* Summary bar */}
-            <div className="bg-[#E1F5EE] rounded-[10px] px-4 py-3 mb-5 flex items-center justify-between">
+            <div className="rounded-[10px] px-4 py-3 mb-5 flex items-center justify-between" style={{ background: `${accent}22` }}>
               <div>
-                <p className="text-[12px] font-medium text-[#085041]">{selectedType.name}</p>
-                <p className="text-[11px] text-[#0F6E56]">
+                <p className="text-[12px] font-medium" style={{ color: accent }}>{selectedType.name}</p>
+                {selectedPractitioner && (
+                  <p className="text-[11px]" style={{ color: accent, opacity: 0.8 }}>{selectedPractitioner.display_name}</p>
+                )}
+                <p className="text-[11px]" style={{ color: accent, opacity: 0.7 }}>
                   {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} · {selectedSlot.time}
                 </p>
               </div>
               {selectedType.price_cents > 0 && (
-                <p className="text-[14px] font-semibold text-[#085041]">{fmt(selectedType.price_cents)}</p>
+                <p className="text-[14px] font-semibold" style={{ color: accent }}>{fmt(selectedType.price_cents)}</p>
               )}
             </div>
 
@@ -308,7 +398,9 @@ export default function BookingPage() {
                 <input
                   value={fullName} onChange={(e) => setFullName(e.target.value)}
                   placeholder="Seu nome"
-                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition"
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
                 />
               </div>
               <div>
@@ -317,7 +409,9 @@ export default function BookingPage() {
                   value={phone} onChange={(e) => setPhone(e.target.value)}
                   placeholder="+55 11 99999-9999"
                   type="tel"
-                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition"
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
                 />
               </div>
               <div>
@@ -326,7 +420,9 @@ export default function BookingPage() {
                   value={email} onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
                   type="email"
-                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition"
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
                 />
               </div>
               <div>
@@ -335,7 +431,9 @@ export default function BookingPage() {
                   value={notes} onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   placeholder="Informe sintomas, preferências ou qualquer informação relevante."
-                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] transition resize-none"
+                  className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition resize-none"
+                  onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
                 />
               </div>
             </div>
@@ -345,7 +443,8 @@ export default function BookingPage() {
             <button
               onClick={handleSubmit}
               disabled={!fullName || !phone || isPending}
-              className="mt-5 w-full bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+              className="mt-5 w-full disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
+              style={{ background: accent }}
             >
               {isPending ? "Confirmando…" : "Confirmar agendamento"}
             </button>
@@ -359,17 +458,20 @@ export default function BookingPage() {
         {/* ── Step: done ── */}
         {step === "done" && (
           <div className="text-center">
-            <div className="w-16 h-16 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-5">
-              <svg className="w-8 h-8 text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: `${accent}22` }}>
+              <svg className="w-8 h-8" style={{ color: accent }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
             <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-2">Agendamento confirmado!</h2>
             <p className="text-[13px] text-[#6B6A66] mb-1">{selectedType?.name}</p>
+            {selectedPractitioner && (
+              <p className="text-[12px] text-[#A09E98] mb-1">com {selectedPractitioner.display_name}</p>
+            )}
             <p className="text-[13px] font-medium text-[#0F1A2E] mb-6 capitalize">{appointmentDate}</p>
             <p className="text-[12px] text-[#A09E98]">
               Uma confirmação foi enviada para o seu WhatsApp.<br />
-              Até lá! 🌿
+              Até lá!
             </p>
           </div>
         )}

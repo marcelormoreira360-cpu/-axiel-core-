@@ -85,7 +85,7 @@ end;
 $$;
 
 drop trigger if exists trg_assessment_templates_updated_at on public.assessment_templates;
-create trigger trg_assessment_templates_updated_at
+create or replace trigger trg_assessment_templates_updated_at
   before update on public.assessment_templates
   for each row execute function public.set_updated_at();
 

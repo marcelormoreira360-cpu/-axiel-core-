@@ -51,7 +51,7 @@ export default async function IntegrationsPage({
   return (
     <Shell>
       <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[4px]">Settings</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[4px]">Configurações</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
           Integrações
         </h1>

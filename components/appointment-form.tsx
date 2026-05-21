@@ -4,18 +4,27 @@ import { useRef, useState, useTransition } from "react";
 import { Search, X } from "lucide-react";
 import type { Patient, SessionType, AppointmentSource } from "@/lib/types";
 
+export interface ClinicUserOption {
+  user_id: string;
+  display_name: string | null;
+  full_name: string | null;
+  specialty: string | null;
+}
+
 type Props = {
   patients: Patient[];
   sessionTypes: SessionType[];
   action: (formData: FormData) => Promise<void>;
+  clinicUsers?: ClinicUserOption[];
 };
 
-export function AppointmentForm({ patients, sessionTypes, action }: Props) {
+export function AppointmentForm({ patients, sessionTypes, action, clinicUsers }: Props) {
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? null);
   const [source, setSource] = useState<AppointmentSource>("direct");
+  const [selectedPractitionerId, setSelectedPractitionerId] = useState<string>("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const SOURCE_LABELS: Record<AppointmentSource, string> = {
@@ -51,6 +60,9 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
     formData.set("session_type_id", selectedType.id);
     formData.set("duration_minutes", String(selectedType.duration_minutes));
     formData.set("source", source);
+    if (selectedPractitionerId) {
+      formData.set("practitioner_id", selectedPractitionerId);
+    }
     startTransition(async () => {
       await action(formData);
     });
@@ -166,6 +178,28 @@ export function AppointmentForm({ patients, sessionTypes, action }: Props) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Practitioner */}
+      {clinicUsers && clinicUsers.length > 0 && (
+        <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">Profissional responsável</label>
+          <select
+            value={selectedPractitionerId}
+            onChange={(e) => setSelectedPractitionerId(e.target.value)}
+            className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+          >
+            <option value="">— Nenhum (sem responsável definido) —</option>
+            {clinicUsers.map((cu) => {
+              const label = cu.display_name ?? cu.full_name ?? cu.user_id;
+              return (
+                <option key={cu.user_id} value={cu.user_id}>
+                  {label}{cu.specialty ? ` — ${cu.specialty}` : ""}
+                </option>
+              );
+            })}
+          </select>
         </div>
       )}
 

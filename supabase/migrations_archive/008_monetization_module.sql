@@ -51,12 +51,12 @@ create index if not exists patient_offers_offer_id_idx on public.patient_offers(
 create index if not exists patient_offers_status_idx on public.patient_offers(status);
 
 drop trigger if exists set_monetization_offers_updated_at on public.monetization_offers;
-create trigger set_monetization_offers_updated_at
+create or replace trigger set_monetization_offers_updated_at
 before update on public.monetization_offers
 for each row execute function public.set_updated_at();
 
 drop trigger if exists set_patient_offers_updated_at on public.patient_offers;
-create trigger set_patient_offers_updated_at
+create or replace trigger set_patient_offers_updated_at
 before update on public.patient_offers
 for each row execute function public.set_updated_at();
 

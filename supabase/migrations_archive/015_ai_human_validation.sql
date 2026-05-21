@@ -93,12 +93,12 @@ end;
 $$;
 
 drop trigger if exists prevent_ai_validation_event_update on public.ai_validation_events;
-create trigger prevent_ai_validation_event_update
+create or replace trigger prevent_ai_validation_event_update
 before update on public.ai_validation_events
 for each row execute function public.prevent_ai_validation_event_mutation();
 
 drop trigger if exists prevent_ai_validation_event_delete on public.ai_validation_events;
-create trigger prevent_ai_validation_event_delete
+create or replace trigger prevent_ai_validation_event_delete
 before delete on public.ai_validation_events
 for each row execute function public.prevent_ai_validation_event_mutation();
 
@@ -138,7 +138,7 @@ end;
 $$;
 
 drop trigger if exists create_ai_generated_pending_review_event on public.ai_insights;
-create trigger create_ai_generated_pending_review_event
+create or replace trigger create_ai_generated_pending_review_event
 after insert on public.ai_insights
 for each row execute function public.create_ai_generated_pending_review_event();
 
@@ -169,7 +169,7 @@ end;
 $$;
 
 drop trigger if exists validate_clinic_relationship_ai_validation_events on public.ai_validation_events;
-create trigger validate_clinic_relationship_ai_validation_events
+create or replace trigger validate_clinic_relationship_ai_validation_events
 before insert or update on public.ai_validation_events
 for each row execute function public.validate_ai_validation_event_same_clinic();
 
@@ -198,7 +198,7 @@ end;
 $$;
 
 drop trigger if exists validate_ai_final_approval on public.ai_insights;
-create trigger validate_ai_final_approval
+create or replace trigger validate_ai_final_approval
 before update on public.ai_insights
 for each row execute function public.validate_ai_final_approval();
 

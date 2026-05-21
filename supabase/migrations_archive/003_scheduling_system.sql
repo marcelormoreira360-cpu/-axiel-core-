@@ -18,7 +18,7 @@ create index if not exists appointments_patient_id_idx on public.appointments(pa
 create index if not exists appointments_starts_at_idx on public.appointments(starts_at);
 
 drop trigger if exists set_appointments_updated_at on public.appointments;
-create trigger set_appointments_updated_at
+create or replace trigger set_appointments_updated_at
 before update on public.appointments
 for each row execute function public.set_updated_at();
 
