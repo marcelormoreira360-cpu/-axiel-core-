@@ -2,6 +2,7 @@
 
 import { useState, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { createBrowserClient } from "@supabase/ssr";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
   Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle,
@@ -61,11 +62,29 @@ export function OnboardingFlow() {
   const [clinicName,    setClinicName]    = useState("");
   const [hoursPreset,   setHoursPreset]   = useState("weekdays");
   const [staffEmail,    setStaffEmail]    = useState("");
+  const [userEmail,     setUserEmail]     = useState<string | null>(null);
+
+  // Fetch current user email for self-invite guard
+  useEffect(() => {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    supabase.auth.getUser().then(({ data }) => {
+      setUserEmail(data.user?.email ?? null);
+    });
+  }, []);
 
   const progress        = ((step + 1) / STEPS.length) * 100;
   const selectedProfile = PROFILES.find((p) => p.id === clinicProfile)!;
   const error           = actionState && "error" in actionState ? actionState.error : null;
   const success         = actionState && "success" in actionState;
+
+  // Per-step validation
+  const isSelfInvite = !!(staffEmail.trim() && userEmail && staffEmail.trim().toLowerCase() === userEmail.toLowerCase());
+  const canAdvance = step === 1
+    ? clinicName.trim().length >= 2   // name must have at least 2 chars
+    : true;
 
   // Navigate client-side on success (more reliable than server redirect with useActionState)
   useEffect(() => {
@@ -188,8 +207,12 @@ export function OnboardingFlow() {
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
               placeholder={`Ex: ${selectedProfile.label} Centro Clínico`}
+              maxLength={80}
               className="w-full px-[16px] py-[14px] rounded-[10px] border border-black/[.10] text-[18px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
+            {clinicName.trim().length > 0 && clinicName.trim().length < 2 && (
+              <p className="mt-2 text-[12px] text-red-500">Nome muito curto — mínimo 2 caracteres.</p>
+            )}
           </div>
         )}
 
@@ -265,8 +288,20 @@ export function OnboardingFlow() {
                 value={staffEmail}
                 onChange={(e) => setStaffEmail(e.target.value)}
                 placeholder="colega@suaclinica.com.br"
-                className="w-full px-[16px] py-[14px] rounded-[10px] border border-black/[.10] text-[16px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className={[
+                  "w-full px-[16px] py-[14px] rounded-[10px] border text-[16px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none transition",
+                  isSelfInvite ? "border-amber-400 focus:border-amber-500" : "border-black/[.10] focus:border-[#0F6E56]",
+                ].join(" ")}
               />
+              {isSelfInvite && (
+                <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+                  <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  <p className="text-[12px] text-amber-700">
+                    Esse é o seu próprio e-mail. O convite será enviado para um colega diferente.
+                    Você já é o proprietário da clínica.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Summary card */}
@@ -320,8 +355,9 @@ export function OnboardingFlow() {
             <button
               type="button"
               onClick={() => setStep((s) => s + 1)}
-              disabled={isPending}
-              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition"
+              disabled={isPending || !canAdvance}
+              title={!canAdvance ? "Preencha o nome da clínica para continuar" : undefined}
+              className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Continuar <ArrowRight className="h-3.5 w-3.5" />
             </button>

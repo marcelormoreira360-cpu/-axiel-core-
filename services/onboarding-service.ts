@@ -175,16 +175,16 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   let clinicId = profile.clinic_id;
 
   if (!clinicId) {
-    // Try to find an existing clinic by slug (handles partial-failure re-runs)
-    const { data: existing } = await supabase
-      .from("clinics")
-      .select("id")
-      .eq("slug", clinicSlug)
+    // Try to find a clinic already owned by this user (handles partial-failure re-runs).
+    // We look in clinic_users first — safer than slug matching which could hit another clinic.
+    const { data: existingMembership } = await supabase
+      .from("clinic_users")
+      .select("clinic_id")
+      .eq("user_id", profile.id)
       .maybeSingle();
 
-    if (existing?.id) {
-      // Clinic was created in a previous attempt — just recover
-      clinicId = existing.id;
+    if (existingMembership?.clinic_id) {
+      clinicId = existingMembership.clinic_id;
     } else {
       const { data: clinic, error: clinicError } = await supabase
         .from("clinics")

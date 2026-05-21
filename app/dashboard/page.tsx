@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Shell } from "@/components/shell";
 import { DashboardGreeting } from "./greeting";
 import { getClinicsForUser, getCurrentClinic } from "@/services/clinic-service";
@@ -28,6 +29,11 @@ export default async function Dashboard() {
   ]);
 
   const clinic = currentClinic ?? clinics[0] ?? null;
+
+  // New users with no clinic → send to onboarding
+  if (!clinic && !profile?.clinic_id) {
+    redirect("/onboarding");
+  }
 
   const [pendingReviews, alerts, kpis] = await Promise.all([
     getPendingAiInsightReviewCount(clinic?.id),

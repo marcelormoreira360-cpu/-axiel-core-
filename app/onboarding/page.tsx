@@ -1,6 +1,15 @@
+import { redirect } from "next/navigation";
+import { getCurrentUserProfile } from "@/services/user-service";
 import { OnboardingFlow } from "@/components/onboarding-flow";
 
-export default function OnboardingPage() {
+export default async function OnboardingPage() {
+  const profile = await getCurrentUserProfile();
+
+  // User already belongs to a clinic — skip onboarding
+  if (profile?.clinic_id) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] py-[40px] px-[16px]">
       <div className="max-w-[640px] mx-auto mb-[32px] text-center">
