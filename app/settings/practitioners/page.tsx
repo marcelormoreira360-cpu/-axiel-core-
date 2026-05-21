@@ -17,23 +17,35 @@ export default async function PractitionersPage() {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data: raw } = await supabase
+
+  // Two separate queries to avoid PostgREST join naming issues
+  const { data: cuRows } = await supabase
     .from("clinic_users")
-    .select("user_id, display_name, specialty, bio, is_bookable, users(full_name, email)")
+    .select("user_id, display_name, specialty, bio, is_bookable")
     .eq("clinic_id", clinic.id)
     .eq("status", "active")
     .order("created_at");
 
-  const practitioners: PractitionerRow[] = (raw ?? []).map((r) => {
-    const usersData = r.users as unknown as { full_name: string | null; email: string | null } | null;
+  const userIds = (cuRows ?? []).map((r) => r.user_id);
+  const { data: userRows } = userIds.length
+    ? await supabase
+        .from("users")
+        .select("id, full_name, email")
+        .in("id", userIds)
+    : { data: [] };
+
+  const userMap = new Map((userRows ?? []).map((u) => [u.id, u]));
+
+  const practitioners: PractitionerRow[] = (cuRows ?? []).map((r) => {
+    const u = userMap.get(r.user_id);
     return {
       user_id: r.user_id,
       display_name: r.display_name ?? null,
       specialty: r.specialty ?? null,
       bio: r.bio ?? null,
       is_bookable: r.is_bookable,
-      full_name: usersData?.full_name ?? null,
-      email: usersData?.email ?? null,
+      full_name: u?.full_name ?? null,
+      email: u?.email ?? null,
     };
   });
 
