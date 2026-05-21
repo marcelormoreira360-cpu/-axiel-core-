@@ -5,11 +5,14 @@ import { useState } from "react";
 interface TeleconsultaVideoProps {
   roomName: string;
   patientName: string;
+  displayName?: string;
 }
 
-export function TeleconsultaVideo({ roomName, patientName }: TeleconsultaVideoProps) {
+export function TeleconsultaVideo({ roomName, patientName, displayName }: TeleconsultaVideoProps) {
   const [showIframe, setShowIframe] = useState(false);
-  const jitsiUrl = `https://meet.jit.si/${roomName}`;
+  // Embed display name and disable prejoin page via URL fragment
+  const nameParam = displayName ? `&userInfo.displayName=${encodeURIComponent(displayName)}` : "";
+  const jitsiUrl = `https://meet.jit.si/${roomName}#config.prejoinPageEnabled=false${nameParam}`;
 
   if (!showIframe) {
     return (
@@ -40,7 +43,7 @@ export function TeleconsultaVideo({ roomName, patientName }: TeleconsultaVideoPr
           </button>
 
           <a
-            href={jitsiUrl}
+            href={`https://meet.jit.si/${roomName}`}
             target="_blank"
             rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2 text-[12px] font-medium text-white/60 border border-white/[.12] hover:border-white/25 hover:text-white/80 transition px-4 py-2.5 rounded-xl"
@@ -54,7 +57,8 @@ export function TeleconsultaVideo({ roomName, patientName }: TeleconsultaVideoPr
         </div>
 
         <p className="text-white/25 text-[11px] text-center max-w-xs">
-          Compartilhe o link da sala com o paciente: {jitsiUrl}
+          Compartilhe o link da sala com o paciente:{" "}
+          <span className="text-white/40 break-all">https://meet.jit.si/{roomName}</span>
         </p>
       </div>
     );
