@@ -63,6 +63,10 @@ async function generateReply(
   });
 
   const data = await res.json();
+  if (!res.ok) {
+    console.error("OpenAI error:", res.status, JSON.stringify(data));
+    return "";
+  }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
