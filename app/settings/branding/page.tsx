@@ -22,6 +22,7 @@ export default async function BrandingSettingsPage() {
       <BrandingForm
         currentLogoUrl={clinic?.logo_url ?? null}
         currentPrimaryColor={clinic?.primary_color ?? null}
+        clinicId={clinic?.id ?? ""}
       />
     </Shell>
   );

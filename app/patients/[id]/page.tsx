@@ -70,6 +70,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const badge = statusBadge(patient.status);
   const since = new Date(patient.created_at).toLocaleDateString([], { month: "short", year: "numeric" });
 
+  // Pacote ativo
+  const activePackage = packages.find((p) => p.is_active) ?? null;
+  const activePackageIdx = activePackage ? packages.findIndex((p) => p.is_active) : -1;
+  const packageNumber = activePackage ? packages.length - activePackageIdx : null;
+  const sessionInPackage = activePackage ? activePackage.sessions_used + 1 : null;
+
   return (
     <Shell>
       {/* Back */}
@@ -78,7 +84,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Patients
+        Pacientes
       </Link>
 
       {/* ── Patient header ── */}
@@ -98,6 +104,16 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           </div>
         </div>
         <div className="flex gap-2 shrink-0">
+          {/* Exportar PDF */}
+          <a
+            href={`/api/reports/paciente/${patient.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title="Exportar resumo PDF"
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
           <Link
             href={`/patients/${patient.id}/edit`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
@@ -122,7 +138,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <Link
             href="/schedule/new"
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Schedule session"
+            title="Agendar sessão"
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
           </Link>
@@ -151,6 +167,25 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <p className="text-[11px] text-[#0F6E56] mt-[4px]">
               {lastSession ? `Última: ${formatDate(lastSession.starts_at)}` : "Nenhuma sessão ainda"}
             </p>
+            {activePackage && packageNumber !== null && sessionInPackage !== null && (
+              <div className="mt-[8px] pt-[8px] border-t border-black/[.06]">
+                <div className="flex items-center gap-[5px] flex-wrap">
+                  <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">
+                    Sessão {sessionInPackage} · Pacote {packageNumber}
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#A09E98] mt-[3px] truncate">{activePackage.name}</p>
+                <div className="mt-[5px] h-[3px] bg-[#E1F5EE] rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-[#0F6E56] rounded-full"
+                    style={{ width: `${Math.min(100, Math.round((activePackage.sessions_used / activePackage.sessions_total) * 100))}%` }}
+                  />
+                </div>
+                <p className="text-[9px] text-[#A09E98] mt-[3px]">
+                  {activePackage.sessions_used} de {activePackage.sessions_total} sessões usadas
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Mini stats */}
@@ -275,10 +310,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <div className="bg-[#F0FAF6] border border-[#9FE1CB] rounded-[12px] p-[14px]">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <svg className="w-[14px] h-[14px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span className="text-[10px] font-medium text-[#0F6E56] tracking-[.06em] uppercase">Latest insight</span>
+                <span className="text-[10px] font-medium text-[#0F6E56] tracking-[.06em] uppercase">Último insight</span>
               </div>
               <span className={`text-[10px] px-2 py-[2px] rounded-full inline-block mb-[10px] ${latestInsight.review_status === "final" ? "bg-[#E1F5EE] text-[#085041]" : "bg-[#FAEEDA] text-[#633806]"}`}>
-                {latestInsight.review_status === "final" ? "Final" : "In review"}
+                {latestInsight.review_status === "final" ? "Final" : "Em revisão"}
               </span>
               {latestInsight.output?.structured_summary?.overview && (
                 <div className="flex gap-[7px] items-start mb-[7px]">
@@ -298,7 +333,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               )}
               <div className="mt-3 pt-[10px] border-t border-[#9FE1CB] flex items-center gap-[5px]">
                 <svg className="w-[13px] h-[13px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span className="text-[10px] text-[#0F6E56]">AI-generated insight · not medical advice</span>
+                <span className="text-[10px] text-[#0F6E56]">Gerado por IA · não é conselho médico</span>
               </div>
             </div>
           ) : (
@@ -315,7 +350,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                   type="submit"
                   className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-3 py-1.5 rounded-lg"
                 >
-                  Generate first insight
+                  Gerar primeiro Insight
                 </button>
               </form>
             </div>
@@ -325,9 +360,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           {aiInsights.length > 0 && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-medium text-[#0F1A2E]">All insights</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E]">Todos os insights</p>
                 <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
-                  view all
+                  ver todos
                 </Link>
               </div>
               <div className="space-y-2">
@@ -343,7 +378,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Notes */}
       {patient.notes && (
         <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-          <p className="text-[11px] font-medium text-[#A09E98] uppercase tracking-[.06em] mb-2">Notes</p>
+          <p className="text-[11px] font-medium text-[#A09E98] uppercase tracking-[.06em] mb-2">Observações</p>
           <p className="text-[13px] text-[#6B6A66] leading-relaxed">{patient.notes}</p>
         </div>
       )}

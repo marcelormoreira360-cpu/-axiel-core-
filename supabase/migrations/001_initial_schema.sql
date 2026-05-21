@@ -1561,7 +1561,7 @@ set
   sort_order = 3
 where code = 'enterprise';
 
-insert into public.feature_flags (clinic_id, key, enabled, description)
+insert into public.feature_flags (clinic_id, flag_key, is_enabled, description)
 select s.clinic_id, 'billing_enabled', true, 'Stripe Billing is available for this clinic.'
 from public.subscriptions s
 on conflict do nothing;

@@ -77,7 +77,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
   starter: {
     slug: "starter",
     name: "Starter",
-    description: "For one clinic getting organized.",
+    description: "Para uma clínica que quer se organizar.",
     priceCents: 7800,
     billingInterval: "month",
     limits: {
@@ -92,7 +92,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
   professional: {
     slug: "professional",
     name: "Professional",
-    description: "For clinics ready to run the full AXIEL workflow.",
+    description: "Para clínicas prontas para o fluxo completo AXIEL.",
     priceCents: 11800,
     billingInterval: "month",
     recommended: true,
@@ -108,7 +108,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
   enterprise: {
     slug: "enterprise",
     name: "Enterprise",
-    description: "For multi-location clinics and advanced operations.",
+    description: "Para clínicas com múltiplas unidades e operações avançadas.",
     priceCents: 45000,
     billingInterval: "month",
     limits: {
@@ -131,6 +131,6 @@ export function getPlanConfig(slug: string | null | undefined): PlanConfig {
 }
 
 export function formatPlanPrice(priceCents: number | null) {
-  if (priceCents === null) return "Custom";
-  return `$${Math.round(priceCents / 100)}/mo`;
+  if (priceCents === null) return "Sob consulta";
+  return `R$ ${Math.round(priceCents / 100)}/mês`;
 }

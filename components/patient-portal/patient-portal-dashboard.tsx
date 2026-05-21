@@ -192,6 +192,20 @@ export function PatientPortalDashboard({
           </Section>
         )}
 
+        {/* Informações de saúde (intake) */}
+        {data.intakeResponses.length > 0 && (
+          <Section title="Suas informações de saúde">
+            <div className="space-y-3">
+              {data.intakeResponses.map((item, idx) => (
+                <div key={idx} className="border-b border-black/[.05] pb-3 last:border-0 last:pb-0">
+                  <p className="text-xs font-semibold text-black/40 mb-0.5">{item.label}</p>
+                  <p className="text-sm text-[#0F1A2E]">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* Pacotes disponíveis */}
         <PackagesSection offers={data.availableOffers} rawToken={rawToken} />
 
@@ -207,8 +221,14 @@ export function PatientPortalDashboard({
           </Link>
         )}
 
-        <p className="pb-4 text-center text-xs text-black/30">
+        <p className="text-center text-xs text-black/30">
           Esta página é privada. Não compartilhe este link.
+        </p>
+        <p className="pb-4 text-center text-[11px] text-black/25 leading-relaxed">
+          Seus dados são tratados conforme a LGPD (Lei 13.709/2018).{" "}
+          <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-black/40 transition">
+            Política de Privacidade
+          </a>
         </p>
       </div>
     </div>

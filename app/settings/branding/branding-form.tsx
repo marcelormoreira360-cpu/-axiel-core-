@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
 import { saveBrandingAction } from "./actions";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const PRESET_COLORS = [
   { label: "Azul noite", value: "#0B1F3A" },
@@ -17,18 +18,70 @@ const PRESET_COLORS = [
 interface Props {
   currentLogoUrl: string | null;
   currentPrimaryColor: string | null;
+  clinicId: string;
 }
 
-export function BrandingForm({ currentLogoUrl, currentPrimaryColor }: Props) {
+export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: Props) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [color, setColor] = useState(currentPrimaryColor ?? "#0B1F3A");
+  const [logoUrl, setLogoUrl] = useState(currentLogoUrl ?? "");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentLogoUrl);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!["image/png", "image/svg+xml", "image/jpeg", "image/webp"].includes(file.type)) {
+      setError("Formato inválido. Use PNG, SVG, JPEG ou WebP.");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Arquivo muito grande. Máximo 2 MB.");
+      return;
+    }
+
+    setError(null);
+    setUploading(true);
+
+    // Preview local imediato
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
+
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const ext = file.name.split(".").pop();
+      const path = `${clinicId}/logo.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("clinic-assets")
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("clinic-assets").getPublicUrl(path);
+      // Adiciona cache-buster para forçar reload do browser
+      const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+      setLogoUrl(publicUrl);
+      setPreviewUrl(publicUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao fazer upload.");
+      setPreviewUrl(currentLogoUrl);
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (uploading) return;
     setError(null);
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.set("logo_url", logoUrl);
     formData.set("primary_color", color);
     startTransition(async () => {
       const result = await saveBrandingAction(formData);
@@ -44,26 +97,51 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor }: Props) {
       <Card className="p-6">
         <h2 className="mb-1 text-lg font-semibold">Logo da clínica</h2>
         <p className="mb-4 text-sm text-black/50">
-          Cole a URL pública da sua logo (PNG ou SVG, fundo transparente recomendado).
+          PNG, SVG, JPEG ou WebP — fundo transparente recomendado. Máximo 2 MB.
           Aparece no portal do paciente e na página de agendamento.
         </p>
-        <input
-          name="logo_url"
-          type="url"
-          defaultValue={currentLogoUrl ?? ""}
-          placeholder="https://exemplo.com/logo.png"
-          className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20"
-        />
-        {currentLogoUrl && (
-          <div className="mt-3 flex items-center gap-3">
+
+        {/* Preview */}
+        {previewUrl && (
+          <div className="mb-4 flex items-center gap-3">
             <img
-              src={currentLogoUrl}
-              alt="Logo atual"
-              className="h-10 max-w-[160px] object-contain rounded border border-black/10 p-1"
+              src={previewUrl}
+              alt="Logo da clínica"
+              className="h-12 max-w-[180px] object-contain rounded border border-black/10 bg-white p-1.5"
             />
-            <span className="text-xs text-black/40">Logo atual</span>
+            <span className="text-xs text-black/40">
+              {uploading ? "Enviando..." : "Logo atual"}
+            </span>
           </div>
         )}
+
+        {/* Botão de upload */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,image/svg+xml,image/jpeg,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="rounded-lg border border-black/20 bg-white px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-50 transition"
+          >
+            {uploading ? "Enviando…" : previewUrl ? "Trocar logo" : "Selecionar arquivo"}
+          </button>
+          {previewUrl && !uploading && (
+            <button
+              type="button"
+              onClick={() => { setLogoUrl(""); setPreviewUrl(null); }}
+              className="text-xs text-red-500 hover:underline"
+            >
+              Remover
+            </button>
+          )}
+        </div>
       </Card>
 
       {/* Cor primária */}
@@ -120,7 +198,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor }: Props) {
       </Card>
 
       <div className="flex items-center gap-4">
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending || uploading}>
           {isPending ? "Salvando..." : "Salvar identidade visual"}
         </Button>
         {saved && <span className="text-sm text-green-600">Salvo com sucesso.</span>}

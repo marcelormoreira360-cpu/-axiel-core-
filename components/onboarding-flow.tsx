@@ -63,6 +63,7 @@ export function OnboardingFlow() {
   const [hoursPreset,   setHoursPreset]   = useState("weekdays");
   const [staffEmail,    setStaffEmail]    = useState("");
   const [userEmail,     setUserEmail]     = useState<string | null>(null);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Fetch current user email for self-invite guard
   useEffect(() => {
@@ -84,6 +85,8 @@ export function OnboardingFlow() {
   const isSelfInvite = !!(staffEmail.trim() && userEmail && staffEmail.trim().toLowerCase() === userEmail.toLowerCase());
   const canAdvance = step === 1
     ? clinicName.trim().length >= 2   // name must have at least 2 chars
+    : step === 3
+    ? acceptedTerms                   // must accept terms on last step
     : true;
 
   // Navigate client-side on success (more reliable than server redirect with useActionState)
@@ -320,6 +323,40 @@ export function OnboardingFlow() {
                   <span className="text-[12px] text-white/70">{item}</span>
                 </div>
               ))}
+            </div>
+
+            {/* LGPD consent */}
+            <div className="bg-white border border-black/[.07] rounded-[12px] px-[18px] py-[14px]">
+              <label className="flex items-start gap-[10px] cursor-pointer group">
+                <div className="mt-[1px] shrink-0">
+                  <div
+                    onClick={() => setAcceptedTerms((v) => !v)}
+                    className={[
+                      "w-[16px] h-[16px] rounded-[4px] border-2 flex items-center justify-center transition",
+                      acceptedTerms
+                        ? "bg-[#0F6E56] border-[#0F6E56]"
+                        : "border-black/[.20] group-hover:border-[#0F6E56]",
+                    ].join(" ")}
+                  >
+                    {acceptedTerms && (
+                      <svg className="w-[9px] h-[9px] text-white" viewBox="0 0 12 12" fill="none">
+                        <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <p className="text-[12px] text-[#6B6A66] leading-relaxed">
+                  Li e aceito os{" "}
+                  <a href="/termos" target="_blank" className="text-[#0F6E56] hover:underline font-medium">
+                    Termos de Uso
+                  </a>{" "}
+                  e a{" "}
+                  <a href="/privacidade" target="_blank" className="text-[#0F6E56] hover:underline font-medium">
+                    Política de Privacidade
+                  </a>
+                  {" "}do AXIEL Core, incluindo o tratamento de dados de saúde conforme a LGPD (Lei 13.709/2018).
+                </p>
+              </label>
             </div>
           </div>
         )}

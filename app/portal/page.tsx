@@ -31,6 +31,17 @@ export default function PatientPortalLoginPage() {
         <p className="text-center text-xs text-black/35">
           Não tem cadastro? Entre em contato com sua clínica.
         </p>
+
+        <p className="text-center text-[11px] text-black/30 leading-relaxed">
+          Seus dados são protegidos conforme a{" "}
+          <a href="/privacidade" className="underline hover:text-black/50 transition" target="_blank" rel="noopener noreferrer">
+            LGPD
+          </a>
+          {" "}e nossa{" "}
+          <a href="/privacidade" className="underline hover:text-black/50 transition" target="_blank" rel="noopener noreferrer">
+            Política de Privacidade
+          </a>.
+        </p>
       </div>
     </main>
   );

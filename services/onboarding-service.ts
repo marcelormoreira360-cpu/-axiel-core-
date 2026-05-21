@@ -75,8 +75,11 @@ function getIntakeQuestions(profile: string) {
       return [
         "Qual é a sua principal queixa ou motivo da consulta?",
         "Há quanto tempo sente essa dor ou limitação?",
-        "Já realizou algum tratamento anteriormente? Se sim, qual?",
-        "Tem algum exame de imagem recente (raio-x, ressonância)?",
+        "A dor é constante ou aparece em determinados movimentos ou posições?",
+        "Já realizou algum tratamento anteriormente? Se sim, qual foi o resultado?",
+        "Tem algum exame de imagem recente (raio-x, ressonância, ultrassom)?",
+        "Pratica alguma atividade física? Qual e com que frequência?",
+        "Tem histórico de cirurgias, fraturas ou lesões relevantes?",
         "Alguma informação importante que o terapeuta deve saber?",
       ];
     case "saude_mental":
@@ -84,30 +87,42 @@ function getIntakeQuestions(profile: string) {
         "O que te trouxe até aqui hoje?",
         "Como está se sentindo nas últimas semanas?",
         "Está passando por alguma situação específica de estresse ou dificuldade?",
+        "Como está sua qualidade de sono?",
+        "Tem sentido impacto nas atividades do dia a dia, trabalho ou relacionamentos?",
         "Já fez acompanhamento psicológico ou psiquiátrico anteriormente?",
+        "Faz uso de algum medicamento prescrito por psiquiatra ou clínico?",
         "Há algo que gostaria que eu soubesse antes da nossa conversa?",
       ];
     case "nutricao":
       return [
         "Qual é o seu principal objetivo com o acompanhamento nutricional?",
-        "Tem alguma restrição alimentar, intolerância ou alergia?",
+        "Tem alguma restrição alimentar, intolerância ou alergia diagnosticada?",
         "Como você descreveria seus hábitos alimentares atuais?",
+        "Quantas refeições faz por dia e em quais horários?",
         "Pratica alguma atividade física? Se sim, qual e com que frequência?",
+        "Tem histórico de alguma condição relacionada à alimentação (diabetes, dislipidemia, etc.)?",
         "Faz uso de algum suplemento ou medicamento?",
+        "Como está sua digestão, trânsito intestinal e hidratação?",
       ];
     case "wellness":
       return [
-        "O que te motivou a buscar um cuidado de bem-estar?",
-        "Como está sua qualidade de sono, energia e disposição?",
+        "O que te motivou a buscar um cuidado de bem-estar agora?",
+        "Como está sua qualidade de sono, energia e disposição no dia a dia?",
+        "Qual é o seu nível de estresse atualmente (baixo, moderado, alto)?",
         "Tem algum objetivo específico de saúde ou qualidade de vida?",
-        "Alguma informação relevante sobre sua saúde geral?",
+        "Pratica alguma atividade física ou prática de movimento?",
+        "Como está sua alimentação e hidratação em geral?",
+        "Alguma condição de saúde relevante que deva ser considerada?",
       ];
     default: // integrativa
       return [
         "Qual é o seu principal motivo de consulta?",
         "Quais sintomas ou questões são mais importantes no momento?",
+        "Há quanto tempo está experienciando esses sintomas?",
+        "Já realizou outros tratamentos ou acompanhamentos? Se sim, quais?",
         "O que você gostaria de melhorar na sua saúde e qualidade de vida?",
-        "Tem feito uso de algum medicamento ou suplemento?",
+        "Como está seu sono, energia e nível de estresse?",
+        "Tem feito uso de algum medicamento, fitoterápico ou suplemento?",
         "Alguma informação importante que o terapeuta deve saber antes da sessão?",
       ];
   }
@@ -140,8 +155,74 @@ function getWorkingHours(preset: string) {
   return rows;
 }
 
-function getSamplePatientName(profile: string) {
-  return "Paciente Demonstração";
+function getSamplePatientData(profile: string): { full_name: string; notes: string } {
+  switch (profile) {
+    case "fisioterapia":
+      return {
+        full_name: "Ana Figueiredo (Demo)",
+        notes: "Paciente de demonstração. Dor lombar crônica há 6 meses, piora com posição sentada prolongada. Trabalha em home office.",
+      };
+    case "saude_mental":
+      return {
+        full_name: "Lucas Mendes (Demo)",
+        notes: "Paciente de demonstração. Relata ansiedade generalizada e dificuldade de concentração. Busca ferramentas de autorregulação emocional.",
+      };
+    case "nutricao":
+      return {
+        full_name: "Carla Torres (Demo)",
+        notes: "Paciente de demonstração. Objetivo de reeducação alimentar e perda de peso moderada. Intolerante à lactose.",
+      };
+    case "wellness":
+      return {
+        full_name: "Rafael Costa (Demo)",
+        notes: "Paciente de demonstração. Busca melhorar qualidade de sono e energia. Pratica caminhada 3x por semana.",
+      };
+    default: // integrativa
+      return {
+        full_name: "Marina Alves (Demo)",
+        notes: "Paciente de demonstração. Queixas de fadiga crônica, insônia e estresse. Interesse em abordagem integrativa para melhorar qualidade de vida.",
+      };
+  }
+}
+
+function getSampleLeadComplaint(profile: string): string {
+  switch (profile) {
+    case "fisioterapia": return "Dor nas costas e interesse em tratamento fisioterapêutico";
+    case "saude_mental": return "Interesse em psicoterapia para ansiedade e bem-estar emocional";
+    case "nutricao": return "Quer orientação nutricional para emagrecimento saudável";
+    case "wellness": return "Busca programa de bem-estar e qualidade de vida";
+    default: return "Interesse em consulta integrativa e cuidados de saúde";
+  }
+}
+
+function getDemoSessionNotes(profile: string): string {
+  switch (profile) {
+    case "fisioterapia":
+      return "Paciente relata dor lombar (EVA 6/10) com irradiação para glúteo direito. Testes de SLR e FABER positivos à direita. Realizada avaliação postural — hiperlordose lombar e anteriorização do quadril. Conduta: mobilização articular L4-L5, ativação do core e alongamento de psoas. Paciente tolerou bem os exercícios. Evoluindo com exercícios para próxima sessão.";
+    case "saude_mental":
+      return "Paciente relata semana com nível de ansiedade moderado (6/10). Identificados gatilhos: reuniões de trabalho e incerteza sobre carreira. Trabalhamos técnica de respiração diafragmática e reestruturação cognitiva de pensamentos automáticos catastróficos. Paciente demonstrou boa adesão. Para a próxima sessão: registrar pensamentos automáticos no diário proposto.";
+    case "nutricao":
+      return "Paciente apresentou registro alimentar da semana. Identificado padrão de beliscadas noturnas relacionado a estresse. Calculado TDEE: 1.950 kcal. Proposto plano com déficit de 300 kcal, priorizando proteínas (1,8g/kg). Orientada sobre importância da hidratação. Paciente motivada. Retorno em 15 dias para ajuste do plano.";
+    case "wellness":
+      return "Paciente relata melhora parcial do sono após as orientações de higiene do sono (dorme ~6h, meta 7-8h). Ainda com dificuldade de desligar à noite. Trabalhamos rotina pré-sono e técnica de relaxamento progressivo. Medimos biometria: FC repouso 68 bpm. Próximo passo: adicionar prática de 10 min de meditação guiada antes de dormir.";
+    default: // integrativa
+      return "Paciente relata fadiga persistente (7/10) e insônia de manutenção. Revimos hábitos de sono e identificamos uso excessivo de tela antes de dormir. Realizada análise de biomarcadores: ferritina baixa (18 ng/mL), vitamina D insuficiente. Solicitados exames complementares. Orientações sobre higiene do sono e suplementação a avaliar com resultado dos exames. Próxima sessão: revisar resultados e iniciar protocolo de suporte adrenal.";
+  }
+}
+
+function getDemoObservations(profile: string): string[] {
+  switch (profile) {
+    case "fisioterapia":
+      return ["Dor lombar EVA 6/10 com irradiação glútea direita", "SLR e FABER positivos à direita", "Hiperlordose lombar identificada na avaliação postural"];
+    case "saude_mental":
+      return ["Nível de ansiedade 6/10 esta semana", "Gatilhos: reuniões de trabalho e incerteza profissional", "Boa adesão à técnica de respiração diafragmática"];
+    case "nutricao":
+      return ["Padrão de beliscadas noturnas — gatilho: estresse", "TDEE calculado: 1.950 kcal", "Intolerância à lactose confirmada — substituições orientadas"];
+    case "wellness":
+      return ["Sono: 6h/noite, meta 7-8h", "FC repouso: 68 bpm", "Dificuldade de desligar à noite — padrão identificado"];
+    default:
+      return ["Fadiga persistente 7/10", "Ferritina baixa: 18 ng/mL — exames solicitados", "Insônia de manutenção — higiene do sono iniciada"];
+  }
 }
 
 function getIntakeFormName(profile: string) {
@@ -285,14 +366,17 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
   // Non-critical: demo patient, lead and appointment — swallow errors so a
   // re-run (unique constraint on email) never blocks the onboarding from completing.
+  const demoPatient = getSamplePatientData(clinicProfile);
   let demoPatientId: string | null = null;
+  let demoAppointmentId: string | null = null;
+
   try {
     const patient = await createPatient({
       clinic_id: clinicId!,
-      full_name: getSamplePatientName(clinicProfile),
+      full_name: demoPatient.full_name,
       email: "paciente-demo@exemplo.com",
       phone: "(11) 99999-0000",
-      notes: "Paciente de demonstração criado automaticamente para você explorar o sistema.",
+      notes: demoPatient.notes,
     });
     demoPatientId = patient.id;
   } catch { /* duplicate on re-run — ignore */ }
@@ -300,28 +384,97 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   try {
     await createLead({
       clinic_id: clinicId!,
-      full_name: "Lead Demonstração",
+      full_name: "Maria Oliveira (Demo)",
       email: "lead-demo@exemplo.com",
       phone: "(11) 99999-0001",
       source: "instagram" as LeadSource,
       stage: "new_lead",
-      main_complaint: "Interesse em iniciar tratamento",
+      main_complaint: getSampleLeadComplaint(clinicProfile),
       notes: "Lead de demonstração criado automaticamente durante o onboarding.",
     });
   } catch { /* duplicate on re-run — ignore */ }
 
   if (demoPatientId) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 3);
+    yesterday.setHours(10, 0, 0, 0);
+
     const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setDate(tomorrow.getDate() + 7);
     tomorrow.setHours(10, 0, 0, 0);
 
+    // Past session (for demo session record + insight)
+    try {
+      const pastAppt = await createAppointment({
+        clinic_id:        clinicId!,
+        patient_id:       demoPatientId,
+        starts_at:        yesterday.toISOString(),
+        duration_minutes: sessionTypes[0]?.duration_minutes || 60,
+        notes:            "Sessão de demonstração — veja como funciona o registro de evolução.",
+      });
+      demoAppointmentId = pastAppt.id;
+    } catch { /* ignore */ }
+
+    // Upcoming session
     try {
       await createAppointment({
         clinic_id:        clinicId!,
         patient_id:       demoPatientId,
         starts_at:        tomorrow.toISOString(),
         duration_minutes: sessionTypes[0]?.duration_minutes || 60,
-        notes:            "Sessão de demonstração criada durante o onboarding.",
+        notes:            "Próxima sessão de acompanhamento — demo.",
+      });
+    } catch { /* ignore */ }
+  }
+
+  // Non-critical: demo session record with pre-filled notes
+  if (demoPatientId && demoAppointmentId) {
+    try {
+      await supabase.from("session_records").insert({
+        clinic_id: clinicId!,
+        appointment_id: demoAppointmentId,
+        patient_id: demoPatientId,
+        created_by: profile.id,
+        notes: getDemoSessionNotes(clinicProfile),
+        key_observations: getDemoObservations(clinicProfile),
+        soap_mode: false,
+      });
+    } catch { /* ignore */ }
+
+    // Non-critical: demo AI insight
+    try {
+      const insightTitle = {
+        fisioterapia: "Avaliação inicial — lombalgia com componente postural",
+        saude_mental: "Mapeamento inicial — ansiedade e padrões cognitivos",
+        nutricao: "Perfil nutricional — reeducação alimentar",
+        wellness: "Perfil de bem-estar — sono e energia",
+        integrativa: "Avaliação integrativa — fadiga e biomarcadores",
+      }[clinicProfile as string] ?? "Primeiro insight clínico";
+
+      await supabase.from("ai_insights").insert({
+        clinic_id: clinicId!,
+        patient_id: demoPatientId,
+        appointment_id: demoAppointmentId,
+        created_by: profile.id,
+        title: insightTitle,
+        review_status: "final",
+        approved_at: new Date().toISOString(),
+        output: {
+          structured_summary: {
+            overview: getDemoSessionNotes(clinicProfile).slice(0, 220) + "…",
+            current_status: "Paciente em início de acompanhamento. Boa adesão e motivação observadas na primeira sessão.",
+          },
+          patterns_and_correlations: [
+            {
+              title: insightTitle,
+              insight: getDemoObservations(clinicProfile).join(". ") + ".",
+            },
+          ],
+          practitioner_review_points: [
+            "Avaliar evolução dos sintomas na próxima sessão.",
+            "Reforçar orientações de autocuidado entre as sessões.",
+          ],
+        },
       });
     } catch { /* ignore */ }
   }

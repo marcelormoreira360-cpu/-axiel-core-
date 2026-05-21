@@ -1,16 +1,17 @@
 import type { MonetizationOffer, MonetizationOfferType, PatientOffer } from "@/lib/types";
 
 export const OFFER_TYPE_LABELS: Record<MonetizationOfferType, string> = {
-  session_package: "Session package",
-  membership: "Membership",
+  session_package: "Pacote de sessões",
+  membership: "Assinatura",
 };
 
-export function formatPrice(cents: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+export function formatPrice(cents: number, currency = "BRL") {
+  const locale = currency === "BRL" ? "pt-BR" : "en-US";
+  return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
 }
 
 export function getOfferSubtitle(offer: Pick<MonetizationOffer, "offer_type" | "number_of_sessions" | "price_cents" | "currency">) {
-  return `${OFFER_TYPE_LABELS[offer.offer_type]} • ${offer.number_of_sessions} sessions • ${formatPrice(offer.price_cents, offer.currency)}`;
+  return `${OFFER_TYPE_LABELS[offer.offer_type]} · ${offer.number_of_sessions} sessões · ${formatPrice(offer.price_cents, offer.currency)}`;
 }
 
 export function getPatientOfferProgress(offer: Pick<PatientOffer, "sessions_total" | "sessions_used">) {

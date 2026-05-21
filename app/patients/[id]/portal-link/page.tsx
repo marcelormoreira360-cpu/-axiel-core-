@@ -40,7 +40,7 @@ export default async function PatientPortalLinkPage({
   return (
     <Shell>
       <Link href={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft">
-        <ArrowLeft className="h-4 w-4" /> Back to patient
+        <ArrowLeft className="h-4 w-4" /> Voltar ao paciente
       </Link>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -48,25 +48,25 @@ export default async function PatientPortalLinkPage({
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-axiel-ink text-white">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Patient dashboard link</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Link do portal do paciente</h1>
           <p className="mt-3 text-sm leading-6 text-black/50">
-            Create a private mobile link for {patient.full_name}. No login is required. The link expires automatically in 7 days.
+            Crie um link privado para {patient.full_name} acessar pelo celular. Não é necessário login. O link expira automaticamente em 7 dias.
           </p>
 
           <div className="mt-6 grid gap-3">
             <form action={createAction}>
               <button className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-axiel-blue px-6 text-base font-semibold text-white shadow-md transition hover:bg-axiel-blueDark">
-                <Link2 className="h-5 w-5" /> Create secure link
+                <Link2 className="h-5 w-5" /> Criar link seguro
               </button>
             </form>
             <form action={regenerateAction}>
               <button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-axiel-line bg-white px-6 text-sm font-semibold text-black/65 shadow-sm transition hover:border border-axiel-line bg-white">
-                Regenerate link
+                Gerar novo link
               </button>
             </form>
           </div>
           <p className="mt-4 text-xs leading-5 text-black/40">
-            Regenerating turns off older active links and creates a new 7-day link.
+            Gerar novo link desativa os links ativos anteriores e cria um novo link válido por 7 dias.
           </p>
         </Card>
 
@@ -74,7 +74,7 @@ export default async function PatientPortalLinkPage({
           {portalUrl ? <CopyPortalLinkCard url={portalUrl} /> : null}
 
           <Card className="p-6">
-            <p className="text-sm font-semibold text-black/40">Recent links</p>
+            <p className="text-sm font-semibold text-black/40">Links recentes</p>
             <div className="mt-4 grid gap-3">
               {recentLinks.length ? (
                 recentLinks.map((link) => {
@@ -85,9 +85,9 @@ export default async function PatientPortalLinkPage({
                     <div key={link.id} className="rounded-[1.5rem] bg-axiel-soft p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-black/75">Expires {formatDate(link.expires_at)}</p>
+                          <p className="text-sm font-semibold text-black/75">Expira em {formatDate(link.expires_at)}</p>
                           <p className="mt-1 text-xs text-black/40">
-                            {link.revoked_at ? "Revoked" : link.last_viewed_at ? `Viewed ${formatDate(link.last_viewed_at)}` : "Not viewed yet"}
+                            {link.revoked_at ? "Revogado" : link.last_viewed_at ? `Visualizado em ${formatDate(link.last_viewed_at)}` : "Ainda não visualizado"}
                           </p>
                         </div>
                         <ExternalLink className="h-4 w-4 text-black/25" />
@@ -95,7 +95,7 @@ export default async function PatientPortalLinkPage({
                       {isActive ? (
                         <form action={revokeAction} className="mt-3">
                           <button className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black/55 transition hover:bg-black/5">
-                            Revoke link
+                            Revogar link
                           </button>
                         </form>
                       ) : null}
@@ -103,7 +103,7 @@ export default async function PatientPortalLinkPage({
                   );
                 })
               ) : (
-                <p className="rounded-[1.5rem] bg-axiel-soft p-4 text-sm text-black/45">No patient links yet.</p>
+                <p className="rounded-[1.5rem] bg-axiel-soft p-4 text-sm text-black/45">Nenhum link gerado ainda.</p>
               )}
             </div>
           </Card>

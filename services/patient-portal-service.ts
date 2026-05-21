@@ -2,6 +2,11 @@ import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
 
+export type PatientPortalIntakeItem = {
+  label: string;
+  answer: string;
+};
+
 export type PatientPortalLink = {
   id: string;
   clinic_id: string;
@@ -61,6 +66,7 @@ export type PatientPortalData = {
   nextStep: string;
   whatsappUrl: string | null;
   availableOffers: PatientPortalOffer[];
+  intakeResponses: PatientPortalIntakeItem[];
 };
 
 function hashToken(token: string) {
@@ -77,7 +83,7 @@ function cleanPhoneForWhatsApp(value?: string | null) {
 }
 
 export const PATIENT_PORTAL_LINK_EXPIRATION_DAYS = 7;
-export const PATIENT_PORTAL_WHATSAPP_MESSAGE = "Hi, I have a question about my session.";
+export const PATIENT_PORTAL_WHATSAPP_MESSAGE = "Olá, tenho uma dúvida sobre minha sessão.";
 
 
 async function revokeExistingPatientPortalLinks(patientId: string, clinicId: string) {
@@ -118,9 +124,9 @@ function createWhatsAppUrl(phone?: string | null) {
 function asInsightSummary(insight: AiInsight): PatientPortalInsight {
   const output = insight.final_output ?? insight.output;
   const firstPattern = output?.patterns_and_correlations?.[0];
-  const title = firstPattern?.title ?? "Latest Insight";
-  const summary = output?.structured_summary?.overview ?? firstPattern?.insight ?? "Your latest insight is ready.";
-  const nextStep = output?.practitioner_review_points?.[0] ?? "Please contact your clinic to ask about your next step.";
+  const title = firstPattern?.title ?? "Análise recente";
+  const summary = output?.structured_summary?.overview ?? firstPattern?.insight ?? "Sua análise mais recente está disponível.";
+  const nextStep = output?.practitioner_review_points?.[0] ?? "Entre em contato com sua clínica para saber sobre o próximo passo.";
 
   return {
     id: insight.id,
@@ -270,7 +276,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   }
 
   const now = new Date().toISOString();
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }] = await Promise.all([
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
@@ -322,6 +328,13 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .eq("clinic_id", link.clinic_id)
       .eq("is_active", true)
       .order("price_cents", { ascending: true }),
+    supabase
+      .from("intake_responses")
+      .select("answer, intake_questions(label, display_order)")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .not("answer", "is", null)
+      .order("created_at", { ascending: true }),
   ]);
 
   if (!patient || !clinic) return null;
@@ -389,6 +402,19 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     number_of_sessions: (o.number_of_sessions as number | null) ?? null,
   }));
 
+  const intakeResponses: PatientPortalIntakeItem[] = (intakeData ?? [])
+    .filter((r) => r.answer && r.answer.trim() !== "")
+    .sort((a, b) => {
+      const aOrder = (a.intake_questions as { display_order?: number } | null)?.display_order ?? 999;
+      const bOrder = (b.intake_questions as { display_order?: number } | null)?.display_order ?? 999;
+      return aOrder - bOrder;
+    })
+    .map((r) => ({
+      label: (r.intake_questions as { label?: string } | null)?.label ?? "",
+      answer: r.answer as string,
+    }))
+    .filter((r) => r.label !== "");
+
   return {
     link: link as PatientPortalLink,
     patient,
@@ -400,5 +426,6 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     nextStep: insight?.next_step ?? "Entre em contato com sua clínica para saber sobre o próximo passo.",
     whatsappUrl: createWhatsAppUrl(whatsappNumber),
     availableOffers,
+    intakeResponses,
   };
 }
