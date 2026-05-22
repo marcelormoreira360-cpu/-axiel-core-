@@ -1,9 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { X, User, FileText, CalendarDays, Video } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
+
+const STATUS_OPTS = [
+  { value: "confirmed",  label: "Confirmar",       cls: "border-[#2D8CFF]/30 text-[#2563EB] hover:bg-[#EFF6FF]" },
+  { value: "completed",  label: "Marcar realizada", cls: "border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE]" },
+  { value: "cancelled",  label: "Cancelar",         cls: "border-red-200 text-red-500 hover:bg-red-50" },
+] as const;
+
+const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  scheduled: { label: "Agendado",   cls: "bg-[#F4F3EF] text-[#6B6A66]" },
+  confirmed: { label: "Confirmado", cls: "bg-[#EFF6FF] text-[#2563EB]" },
+  completed: { label: "Realizado",  cls: "bg-[#E1F5EE] text-[#0F6E56]" },
+  cancelled: { label: "Cancelado",  cls: "bg-red-50 text-red-500" },
+  no_show:   { label: "Faltou",     cls: "bg-amber-50 text-amber-600" },
+};
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -12,14 +28,31 @@ function initials(name: string) {
 export function SessionDrawer({
   session,
   onClose,
+  updateStatusAction,
 }: {
   session: ScheduleSession | null;
   onClose: () => void;
+  updateStatusAction?: (id: string, status: string) => Promise<void>;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+
   if (!session) return null;
 
   const patientName = session.patients?.full_name ?? "Paciente";
   const sessionCount = session.previousSessions.length + 1;
+  const currentStatus = optimisticStatus ?? session.status ?? "scheduled";
+  const badge = STATUS_BADGE[currentStatus] ?? STATUS_BADGE.scheduled;
+
+  function handleStatusChange(newStatus: string) {
+    if (!updateStatusAction) return;
+    setOptimisticStatus(newStatus);
+    startTransition(async () => {
+      await updateStatusAction(session!.id, newStatus);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -51,8 +84,13 @@ export function SessionDrawer({
             <div className="w-11 h-11 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[14px] font-medium text-[#0F6E56] shrink-0">
               {initials(patientName)}
             </div>
-            <div>
-              <p className="text-[16px] font-semibold text-[#0F1A2E] tracking-[-0.02em]">{patientName}</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-[16px] font-semibold text-[#0F1A2E] tracking-[-0.02em]">{patientName}</p>
+                <span className={`text-[10px] font-medium px-[7px] py-[2px] rounded-full ${badge.cls}`}>
+                  {badge.label}
+                </span>
+              </div>
               <p className="text-[12px] text-[#A09E98] mt-[1px]">
                 Sessão {sessionCount} · {formatTime(session.starts_at)} · {session.duration_minutes} min
               </p>
@@ -109,6 +147,32 @@ export function SessionDrawer({
 
         {/* Actions */}
         <div className="px-[20px] pb-[20px] pt-[4px] space-y-[8px] border-t border-black/[.07]">
+
+          {/* Status change buttons */}
+          {updateStatusAction && currentStatus !== "completed" && (
+            <div className="flex gap-[6px] flex-wrap">
+              {STATUS_OPTS.filter((o) => o.value !== currentStatus).map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handleStatusChange(opt.value)}
+                  disabled={isPending}
+                  className={`flex-1 min-w-[80px] text-[11px] font-medium border rounded-[7px] px-[8px] py-[7px] transition disabled:opacity-50 ${opt.cls}`}
+                >
+                  {isPending ? "…" : opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {currentStatus === "completed" && (
+            <div className="flex items-center justify-center gap-[6px] bg-[#E1F5EE] rounded-[8px] py-[8px]">
+              <svg className="w-3.5 h-3.5 text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              <span className="text-[12px] font-medium text-[#0F6E56]">Sessão realizada</span>
+            </div>
+          )}
+
           {/* Teleconsulta — generic video_url or Daily.co room */}
           {session.video_url || session.zoom_join_url ? (
             <a

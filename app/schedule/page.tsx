@@ -2,14 +2,16 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
+import { BookingLinkCard } from "@/components/booking-link-card";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatient, createAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatient, createAppointment, updateAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsight, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { isPractitioner } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
 import { formatTime } from "@/modules/schedule/date-utils";
@@ -19,11 +21,12 @@ export default async function SchedulePage() {
   const clinicId = profile?.clinic_id ?? undefined;
   const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
 
-  const [appointments, patients, openReviews, sessionTypes] = await Promise.all([
+  const [appointments, patients, openReviews, sessionTypes, clinic] = await Promise.all([
     getAppointments(clinicId, practitionerId),
     getPatients(clinicId, practitionerId),
     getPendingAiInsightReviewCount(clinicId),
     getSessionTypes(clinicId),
+    getCurrentClinic(),
   ]);
 
   const todayAppointments = getAppointmentsForDay(appointments, new Date());
@@ -111,6 +114,12 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  async function updateStatusAction(id: string, status: string) {
+    "use server";
+    await updateAppointment(id, { status });
+    revalidatePath("/schedule");
+  }
+
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
@@ -166,13 +175,24 @@ export default async function SchedulePage() {
           <p className="text-[13px] text-[#A09E98]">Usuário precisa estar vinculado a uma clínica.</p>
         </div>
       ) : (
-        <ScheduleContainer
-          sessions={sessions}
-          allAppointments={appointments}
-          patients={patients}
-          sessionTypes={sessionTypes}
-          createSessionAction={createSessionAction}
-        />
+        <>
+          {/* Booking link card */}
+          {clinic?.slug && (
+            <BookingLinkCard
+              slug={clinic.slug}
+              baseUrl={process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}
+            />
+          )}
+
+          <ScheduleContainer
+            sessions={sessions}
+            allAppointments={appointments}
+            patients={patients}
+            sessionTypes={sessionTypes}
+            createSessionAction={createSessionAction}
+            updateStatusAction={updateStatusAction}
+          />
+        </>
       )}
     </Shell>
   );

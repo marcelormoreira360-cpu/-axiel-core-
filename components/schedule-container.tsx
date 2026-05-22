@@ -303,12 +303,14 @@ export function ScheduleContainer({
   patients,
   sessionTypes,
   createSessionAction,
+  updateStatusAction,
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
+  updateStatusAction?: (id: string, status: string) => Promise<void>;
 }) {
   const [view, setView] = useState<View>("semana");
   const [navDate, setNavDate] = useState(new Date());
@@ -440,7 +442,11 @@ export function ScheduleContainer({
         />
       )}
 
-      <SessionDrawer session={selectedSession} onClose={() => setSelectedSession(null)} />
+      <SessionDrawer
+        session={selectedSession}
+        onClose={() => setSelectedSession(null)}
+        updateStatusAction={updateStatusAction}
+      />
     </div>
   );
 }
