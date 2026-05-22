@@ -135,6 +135,56 @@ async function createIntegrationsSideEffects(appt: Appointment) {
   }
 }
 
+// ── Update appointment ────────────────────────────────────────────────────────
+
+export async function updateAppointment(
+  appointmentId: string,
+  updates: {
+    starts_at?: string;
+    duration_minutes?: number;
+    notes?: string | null;
+    status?: string;
+    video_url?: string | null;
+    practitioner_id?: string | null;
+  }
+): Promise<Appointment> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .update(updates)
+    .eq("id", appointmentId)
+    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes)")
+    .single();
+
+  if (error) throw error;
+  const appt = data as Appointment;
+
+  // Sync time changes to Google Calendar (non-blocking)
+  if ((updates.starts_at || updates.duration_minutes) && appt.google_event_id) {
+    const { updateGoogleCalendarEvent } = await import("@/services/google-calendar-service");
+    const patient = Array.isArray(appt.patients) ? appt.patients[0] : appt.patients;
+    const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
+    updateGoogleCalendarEvent(appt.clinic_id, appt.google_event_id, {
+      summary: `${sessionType?.name ?? "Consulta"} — ${patient?.full_name ?? "Paciente"}`,
+      startIso: appt.starts_at,
+      durationMinutes: appt.duration_minutes,
+      attendeeEmail: patient?.email ?? null,
+    }).catch((err: unknown) => console.error("Google Calendar update failed:", err));
+  }
+
+  // Cancel Google Calendar event if appointment is cancelled
+  if (updates.status === "cancelled" && appt.google_event_id) {
+    const { deleteGoogleCalendarEvent } = await import("@/services/google-calendar-service");
+    deleteGoogleCalendarEvent(appt.clinic_id, appt.google_event_id).catch(
+      (err: unknown) => console.error("Google Calendar delete failed:", err)
+    );
+  }
+
+  return appt;
+}
+
 export async function getAppointmentsByPatient(patientId: string): Promise<Appointment[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

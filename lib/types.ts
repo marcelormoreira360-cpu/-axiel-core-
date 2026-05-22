@@ -80,8 +80,10 @@ export type Appointment = {
   duration_minutes: number;
   notes: string | null;
   video_url: string | null;
+  zoom_meeting_id: string | null;
   zoom_join_url: string | null;
   zoom_start_url: string | null;
+  google_event_id: string | null;
   created_at: string;
   updated_at: string;
   patients?: Pick<Patient, "id" | "full_name" | "email" | "phone" | "status"> | null;

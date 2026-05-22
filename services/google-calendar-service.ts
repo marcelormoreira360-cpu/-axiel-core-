@@ -175,3 +175,220 @@ export async function deleteGoogleCalendarEvent(clinicId: string, eventId: strin
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export async function updateGoogleCalendarEvent(
+  clinicId: string,
+  eventId: string,
+  event: {
+    summary: string;
+    description?: string;
+    startIso: string;
+    durationMinutes: number;
+    attendeeEmail?: string | null;
+    location?: string;
+    meetLink?: string;
+  }
+): Promise<void> {
+  const token = await getGoogleAccessToken(clinicId);
+  if (!token) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { data: integration } = await supabase
+    .from("calendar_integrations")
+    .select("calendar_id")
+    .eq("clinic_id", clinicId)
+    .eq("provider", "google")
+    .maybeSingle();
+  const calendarId = integration?.calendar_id ?? "primary";
+
+  const startDt = new Date(event.startIso);
+  const endDt = new Date(startDt.getTime() + event.durationMinutes * 60 * 1000);
+
+  const body: Record<string, unknown> = {
+    summary: event.summary,
+    description: event.description ?? "",
+    start: { dateTime: startDt.toISOString() },
+    end: { dateTime: endDt.toISOString() },
+  };
+  if (event.attendeeEmail) body.attendees = [{ email: event.attendeeEmail }];
+  if (event.location) body.location = event.location;
+  if (event.meetLink) {
+    body.description = `${body.description}\n\nLink: ${event.meetLink}`.trim();
+  }
+
+  const res = await fetch(
+    `${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }
+  );
+  if (!res.ok) {
+    console.error("Google Calendar event update failed", await res.text());
+  }
+}
+
+// ── Bidirectional sync (Google → AXIEL) ──────────────────────────────────────
+
+interface GoogleCalendarEvent {
+  id: string;
+  status: "confirmed" | "tentative" | "cancelled";
+  summary?: string;
+  start?: { dateTime?: string; date?: string };
+  end?: { dateTime?: string; date?: string };
+  updated?: string;
+}
+
+interface GoogleEventListResponse {
+  items?: GoogleCalendarEvent[];
+  nextSyncToken?: string;
+  nextPageToken?: string;
+}
+
+/**
+ * Syncs Google Calendar changes → AXIEL appointments.
+ *
+ * Uses Google's incremental sync (syncToken) so only changed events are fetched.
+ * On the first run (no stored syncToken), fetches events for the next 60 days.
+ *
+ * Returns a summary of what was processed.
+ */
+export async function syncGoogleCalendarToAxiel(clinicId: string): Promise<{
+  updated: number;
+  cancelled: number;
+  errors: number;
+}> {
+  const token = await getGoogleAccessToken(clinicId);
+  if (!token) return { updated: 0, cancelled: 0, errors: 0 };
+
+  const supabase = createSupabaseAdminClient();
+  const { data: integration } = await supabase
+    .from("calendar_integrations")
+    .select("calendar_id, sync_token")
+    .eq("clinic_id", clinicId)
+    .eq("provider", "google")
+    .maybeSingle();
+
+  if (!integration) return { updated: 0, cancelled: 0, errors: 0 };
+
+  const calendarId = integration.calendar_id ?? "primary";
+  const existingSyncToken = (integration as { sync_token?: string | null }).sync_token ?? null;
+
+  // Build the list URL — incremental if we have a syncToken, full if not
+  const params = new URLSearchParams({ maxResults: "250", singleEvents: "true" });
+  if (existingSyncToken) {
+    params.set("syncToken", existingSyncToken);
+  } else {
+    // First sync: fetch next 60 days
+    params.set("timeMin", new Date().toISOString());
+    params.set(
+      "timeMax",
+      new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString()
+    );
+    params.set("orderBy", "startTime");
+  }
+
+  let updated = 0;
+  let cancelled = 0;
+  let errors = 0;
+  let nextSyncToken: string | null = null;
+  let pageToken: string | undefined;
+
+  try {
+    // Paginate through all changed events
+    do {
+      if (pageToken) params.set("pageToken", pageToken);
+
+      const res = await fetch(
+        `${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // 410 Gone = syncToken expired, reset to full sync
+      if (res.status === 410) {
+        await supabase
+          .from("calendar_integrations")
+          .update({ sync_token: null })
+          .eq("clinic_id", clinicId)
+          .eq("provider", "google");
+        return syncGoogleCalendarToAxiel(clinicId); // retry without syncToken
+      }
+
+      if (!res.ok) {
+        console.error("Google Calendar list failed:", res.status, await res.text());
+        break;
+      }
+
+      const data = (await res.json()) as GoogleEventListResponse;
+      nextSyncToken = data.nextSyncToken ?? null;
+      pageToken = data.nextPageToken;
+
+      for (const event of data.items ?? []) {
+        try {
+          // Find the matching AXIEL appointment by google_event_id
+          const { data: appointment } = await supabase
+            .from("appointments")
+            .select("id, starts_at, duration_minutes, status")
+            .eq("google_event_id", event.id)
+            .eq("clinic_id", clinicId)
+            .maybeSingle();
+
+          if (!appointment) continue; // Event not linked to an AXIEL appointment
+
+          if (event.status === "cancelled") {
+            // Cancel the appointment if not already cancelled
+            if (appointment.status !== "cancelled" && appointment.status !== "no_show") {
+              await supabase
+                .from("appointments")
+                .update({ status: "cancelled", notes: "Cancelado via Google Calendar" })
+                .eq("id", appointment.id);
+              cancelled++;
+            }
+          } else if (event.start?.dateTime) {
+            // Check if the time changed
+            const googleStart = new Date(event.start.dateTime);
+            const axielStart = new Date(appointment.starts_at as string);
+
+            if (Math.abs(googleStart.getTime() - axielStart.getTime()) > 60_000) {
+              // Time changed by more than 1 minute — update appointment
+              const googleEnd = event.end?.dateTime ? new Date(event.end.dateTime) : null;
+              const durationMinutes = googleEnd
+                ? Math.round((googleEnd.getTime() - googleStart.getTime()) / 60_000)
+                : (appointment.duration_minutes as number);
+
+              await supabase
+                .from("appointments")
+                .update({
+                  starts_at: googleStart.toISOString(),
+                  duration_minutes: durationMinutes,
+                })
+                .eq("id", appointment.id);
+              updated++;
+            }
+          }
+        } catch (eventErr) {
+          console.error("Error processing Google event", event.id, eventErr);
+          errors++;
+        }
+      }
+    } while (pageToken);
+
+    // Persist the new syncToken for next incremental sync
+    if (nextSyncToken) {
+      await supabase
+        .from("calendar_integrations")
+        .update({
+          sync_token: nextSyncToken,
+          last_synced_at: new Date().toISOString(),
+        })
+        .eq("clinic_id", clinicId)
+        .eq("provider", "google");
+    }
+  } catch (err) {
+    console.error("Google Calendar sync error:", err);
+    errors++;
+  }
+
+  return { updated, cancelled, errors };
+}
