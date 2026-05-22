@@ -1,52 +1,96 @@
-import { Button } from "@/components/button";
-import { MONETIZATION_NOTE } from "@/modules/monetization/offer-defaults";
+"use client";
+
+import { useRef } from "react";
 
 export function MonetizationOfferForm({ action }: { action: (formData: FormData) => Promise<void> }) {
+  const formRef = useRef<HTMLFormElement>(null);
+
   return (
-    <form action={action} className="space-y-4 rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <form
+      ref={formRef}
+      action={action}
+      className="space-y-[14px] bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[18px]"
+    >
+      <div className="mb-[4px]">
+        <p className="text-[14px] font-medium text-[#0F1A2E]">Nova oferta</p>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">Pacotes de sessões e assinaturas.</p>
+      </div>
+
       <div>
-        <p className="text-sm font-semibold text-black/75">Create offer</p>
-        <p className="mt-1 text-xs leading-5 text-black/45">Packages and memberships. Keep it simple.</p>
+        <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Nome da oferta</label>
+        <input
+          name="name"
+          required
+          placeholder="Ex: Pacote 4 sessões"
+          className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+        />
       </div>
 
-      <label className="block text-sm font-semibold text-black/65">
-        Name
-        <input name="name" required placeholder="Example: 4 Session Package" className="mt-2 h-14 w-full rounded-2xl border border-axiel-line bg-white px-4 text-sm outline-none focus:border-black/25" />
-      </label>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <label className="block text-sm font-semibold text-black/65">
-          Type
-          <select name="offer_type" className="mt-2 h-14 w-full rounded-2xl border border-axiel-line bg-white px-4 text-sm outline-none focus:border-black/25">
-            <option value="session_package">Session package</option>
-            <option value="membership">Membership</option>
+      <div className="grid gap-3 grid-cols-2">
+        <div>
+          <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Tipo</label>
+          <select
+            name="offer_type"
+            className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+          >
+            <option value="session_package">Pacote de sessões</option>
+            <option value="membership">Assinatura mensal</option>
           </select>
-        </label>
-        <label className="block text-sm font-semibold text-black/65">
-          Sessions
-          <input name="number_of_sessions" type="number" min="1" max="500" required defaultValue="4" className="mt-2 h-14 w-full rounded-2xl border border-axiel-line bg-white px-4 text-sm outline-none focus:border-black/25" />
-        </label>
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Sessões</label>
+          <input
+            name="number_of_sessions"
+            type="number"
+            min="1"
+            max="500"
+            required
+            defaultValue="4"
+            className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+          />
+        </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-[1fr_110px]">
-        <label className="block text-sm font-semibold text-black/65">
-          Price
-          <input name="price" type="number" min="0" step="0.01" required placeholder="0.00" className="mt-2 h-14 w-full rounded-2xl border border-axiel-line bg-white px-4 text-sm outline-none focus:border-black/25" />
-        </label>
-        <label className="block text-sm font-semibold text-black/65">
-          Currency
-          <input name="currency" defaultValue="USD" maxLength={3} className="mt-2 h-14 w-full rounded-2xl border border-axiel-line bg-white px-4 text-sm uppercase outline-none focus:border-black/25" />
-        </label>
+      <div className="grid gap-3 grid-cols-[1fr_90px]">
+        <div>
+          <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Valor (R$)</label>
+          <input
+            name="price"
+            type="number"
+            min="0"
+            step="0.01"
+            required
+            placeholder="0,00"
+            className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+          />
+        </div>
+        <div>
+          <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Moeda</label>
+          <input
+            name="currency"
+            defaultValue="BRL"
+            maxLength={3}
+            className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] uppercase outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+          />
+        </div>
       </div>
 
-      <label className="block text-sm font-semibold text-black/65">
-        Description
-        <textarea name="description" rows={3} placeholder="Optional internal description" className="mt-2 w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 text-sm outline-none focus:border-black/25" />
-      </label>
+      <div>
+        <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Descrição (opcional)</label>
+        <textarea
+          name="description"
+          rows={2}
+          placeholder="Descrição interna da oferta"
+          className="w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 py-2.5 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition resize-none"
+        />
+      </div>
 
-      <div className="rounded-3xl bg-axiel-soft p-4 text-xs leading-5 text-black/50">{MONETIZATION_NOTE}</div>
-
-      <Button className="min-h-14 w-full text-base">Save offer</Button>
+      <button
+        type="submit"
+        className="w-full h-10 flex items-center justify-center text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] transition"
+      >
+        Salvar oferta
+      </button>
     </form>
   );
 }

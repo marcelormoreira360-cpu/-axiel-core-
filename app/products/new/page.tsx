@@ -1,21 +1,25 @@
 import Link from "next/link";
-import { ButtonSecondary } from "@/components/button";
+import { ArrowLeft } from "lucide-react";
+import { Shell } from "@/components/shell";
 import { ProductForm } from "@/components/product-form";
 
 export default function NewProductPage() {
   return (
-    <div className="bg-axiel-background min-h-screen p-4 md:p-8 space-y-8">
-      <header className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-axiel-text-primary">New Product</h1>
-          <p className="mt-2 text-axiel-text-secondary">Create a support item for your clinic catalog.</p>
-        </div>
-        <Link href="/products">
-          <ButtonSecondary type="button">Back</ButtonSecondary>
+    <Shell>
+      <div className="flex items-center gap-[10px] mb-[20px]">
+        <Link
+          href="/products"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
         </Link>
-      </header>
+        <div>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Novo produto</h1>
+          <p className="text-[12px] text-[#A09E98] mt-[1px]">Adicionar item ao catálogo da clínica</p>
+        </div>
+      </div>
 
       <ProductForm />
-    </div>
+    </Shell>
   );
 }

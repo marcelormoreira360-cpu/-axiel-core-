@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHmac } from "crypto";
 import { exchangeGoogleCode, saveGoogleIntegration } from "@/services/google-calendar-service";
 
 export const runtime = "nodejs";
@@ -9,17 +10,32 @@ export async function GET(req: Request) {
   const state = searchParams.get("state");
   const error = searchParams.get("error");
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
   if (error || !code || !state) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=google_denied`);
+    return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_denied`);
   }
 
   try {
-    const { clinicId } = JSON.parse(Buffer.from(state, "base64url").toString());
+    const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "axiel-oauth-secret";
+    const { payload, sig } = JSON.parse(Buffer.from(state, "base64url").toString()) as {
+      payload: string;
+      sig: string;
+    };
+
+    // ── CSRF: verify HMAC signature ─────────────────────────────────────────
+    const expected = createHmac("sha256", secret).update(payload).digest("hex");
+    if (sig !== expected) {
+      console.error("Google OAuth callback: invalid state signature — possible CSRF");
+      return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_invalid_state`);
+    }
+
+    const { clinicId } = JSON.parse(payload) as { clinicId: string };
     const tokens = await exchangeGoogleCode(code);
     await saveGoogleIntegration(clinicId, tokens);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?success=google`);
+    return NextResponse.redirect(`${appUrl}/settings/integrations?success=google`);
   } catch (e) {
     console.error("Google OAuth callback error", e);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_APP_URL}/settings/integrations?error=google_failed`);
+    return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_failed`);
   }
 }

@@ -5,7 +5,7 @@ import { useState, useTransition, useRef } from "react";
 import { X, Search } from "lucide-react";
 import type { Patient, SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
-import { buildStartsAtForToday } from "@/modules/schedule/time-slots";
+import { buildStartsAtForToday, buildStartsAtForDate } from "@/modules/schedule/time-slots";
 
 export function CreateSessionModal({
   slot,
@@ -68,13 +68,28 @@ export function CreateSessionModal({
         action={submit}
         className="relative w-full max-w-[420px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-6"
       >
-        <input type="hidden" name="starts_at" value={buildStartsAtForToday(slot.hour, slot.minute)} />
+        <input
+          type="hidden"
+          name="starts_at"
+          value={
+            slot.date
+              ? buildStartsAtForDate(slot.date, slot.hour, slot.minute)
+              : buildStartsAtForToday(slot.hour, slot.minute)
+          }
+        />
 
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Nova sessão</p>
-            <h2 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] mt-[2px]">{slot.label}</h2>
+            <h2 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] mt-[2px]">
+              {slot.label}
+              {slot.date && (
+                <span className="ml-2 text-[13px] font-normal text-[#A09E98]">
+                  {slot.date.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" })}
+                </span>
+              )}
+            </h2>
           </div>
           <button
             type="button"

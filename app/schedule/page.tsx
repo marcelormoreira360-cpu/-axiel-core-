@@ -2,7 +2,6 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
-import { BookingLinkCard } from "@/components/booking-link-card";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
 import { getAppointments, getAppointmentsByPatient, createAppointment, updateAppointment, getSessionTypes } from "@/services/appointment-service";
@@ -176,14 +175,6 @@ export default async function SchedulePage() {
         </div>
       ) : (
         <>
-          {/* Booking link card */}
-          {clinic?.slug && (
-            <BookingLinkCard
-              slug={clinic.slug}
-              baseUrl={process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}
-            />
-          )}
-
           <ScheduleContainer
             sessions={sessions}
             allAppointments={appointments}

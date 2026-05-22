@@ -3,6 +3,8 @@ export type TimeSlot = {
   hour: number;
   minute: number;
   isBusinessHour: boolean;
+  /** Quando definida, o slot é para esta data específica (ex: semana view) */
+  date?: Date;
 };
 
 export function buildDayTimeSlots(startHour = 6, endHour = 22): TimeSlot[] {
@@ -25,6 +27,13 @@ export function buildStartsAtForToday(hour: number, minute = 0) {
   const date = new Date();
   date.setHours(hour, minute, 0, 0);
   return date.toISOString();
+}
+
+/** Gera starts_at para uma data específica (usado na semana view) */
+export function buildStartsAtForDate(date: Date, hour: number, minute = 0) {
+  const d = new Date(date);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
 }
 
 export function getSlotKeyFromStartsAt(value: string) {

@@ -238,10 +238,16 @@ function WeekView({
   appointments,
   navDate,
   onDayClick,
+  patients,
+  sessionTypes,
+  createSessionAction,
 }: {
   appointments: Appointment[];
   navDate: Date;
   onDayClick: (date: Date) => void;
+  patients: Patient[];
+  sessionTypes: SessionType[];
+  createSessionAction: (formData: FormData) => Promise<void>;
 }) {
   const today    = new Date();
   const weekDays = getWeekDays(navDate);
@@ -265,7 +271,20 @@ function WeekView({
   const isCurrentWeek = weekDays.some((d) => isSameDay(d, today));
   const todayColIdx   = isCurrentWeek ? weekDays.findIndex((d) => isSameDay(d, today)) : -1;
 
+  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+
+  function handleCellClick(date: Date, hour: number) {
+    const slotDate = new Date(date);
+    slotDate.setHours(hour, 0, 0, 0);
+    const slot = buildDayTimeSlots().find((s) => s.hour === hour);
+    if (slot) {
+      const adjusted: TimeSlot = { ...slot, date: slotDate };
+      setSelectedSlot(adjusted);
+    }
+  }
+
   return (
+    <>
     <div
       style={{
         background: "#fff",
@@ -404,31 +423,26 @@ function WeekView({
                   borderRight: "1px solid rgba(0,0,0,0.05)",
                 }}
               >
-                {/* Linhas de hora */}
-                {HOUR_LABELS.map((h, i) => (
-                  <div
-                    key={`hr-${h}`}
+                {/* Células clicáveis por hora */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
+                  <button
+                    key={`cell-${h}`}
+                    type="button"
+                    onClick={() => handleCellClick(date, h)}
                     style={{
                       position: "absolute",
                       left: 0,
                       right: 0,
                       top: i * HOUR_HEIGHT,
+                      height: HOUR_HEIGHT,
+                      background: "transparent",
+                      border: "none",
                       borderTop: "1px solid rgba(0,0,0,0.07)",
+                      cursor: "pointer",
+                      zIndex: 1,
                     }}
-                  />
-                ))}
-
-                {/* Linhas 30 min */}
-                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
-                  <div
-                    key={`hh-${h}`}
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
-                      borderTop: "1px dashed rgba(0,0,0,0.04)",
-                    }}
+                    className="hover:bg-[#F0FAF6]/60 transition-colors"
+                    title={`Agendar às ${String(h).padStart(2,"0")}:00`}
                   />
                 ))}
 
@@ -458,6 +472,22 @@ function WeekView({
                     <div style={{ flex: 1, borderTop: "1.5px solid #0F6E56" }} />
                   </div>
                 )}
+
+                {/* Linhas 30 min (over the cells) */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
+                  <div
+                    key={`hh-${h}`}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
+                      borderTop: "1px dashed rgba(0,0,0,0.04)",
+                      pointerEvents: "none",
+                      zIndex: 2,
+                    }}
+                  />
+                ))}
 
                 {/* Agendamentos */}
                 {appts.map((appt) => {
@@ -536,6 +566,15 @@ function WeekView({
         </div>
       </div>
     </div>
+
+    <CreateSessionModal
+      slot={selectedSlot}
+      patients={patients}
+      sessionTypes={sessionTypes}
+      onClose={() => setSelectedSlot(null)}
+      action={createSessionAction}
+    />
+    </>
   );
 }
 
@@ -742,6 +781,9 @@ export function ScheduleContainer({
           appointments={allAppointments}
           navDate={navDate}
           onDayClick={onDayClick}
+          patients={patients}
+          sessionTypes={sessionTypes}
+          createSessionAction={createSessionAction}
         />
       )}
       {view === "mes" && (
