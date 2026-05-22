@@ -80,6 +80,50 @@ async function parseBody(req: NextRequest): Promise<Record<string, string>> {
   return obj;
 }
 
+// ─── Audio transcription via Whisper ─────────────────────────────────────────
+
+async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string> {
+  try {
+    // Fetch the audio file from Twilio (requires Basic Auth)
+    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+    const authHeader = "Basic " + Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
+
+    const audioRes = await fetch(mediaUrl, { headers: { Authorization: authHeader } });
+    if (!audioRes.ok) {
+      console.error("Failed to fetch audio from Twilio:", audioRes.status);
+      return "";
+    }
+
+    const audioBuffer = await audioRes.arrayBuffer();
+    const audioBlob = new Blob([audioBuffer], { type: "audio/ogg" });
+
+    // Send to Whisper
+    const formData = new FormData();
+    formData.append("file", audioBlob, "audio.ogg");
+    formData.append("model", "whisper-1");
+    formData.append("language", "pt");
+
+    const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: formData,
+    });
+
+    if (!whisperRes.ok) {
+      const err = await whisperRes.json();
+      console.error("Whisper error:", JSON.stringify(err));
+      return "";
+    }
+
+    const data = await whisperRes.json();
+    return data.text?.trim() ?? "";
+  } catch (err) {
+    console.error("Audio transcription error:", err);
+    return "";
+  }
+}
+
 // ─── Webhook ─────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -90,9 +134,27 @@ export async function POST(req: NextRequest) {
     const body = await parseBody(req);
     const fromNumber = body["From"]?.replace("whatsapp:", "") ?? "";
     const toNumber = body["To"]?.replace("whatsapp:", "") ?? "";
-    const incomingMessage = body["Body"]?.trim() ?? "";
+    let incomingMessage = body["Body"]?.trim() ?? "";
 
-    if (!fromNumber || !incomingMessage) return new NextResponse("", { status: 200 });
+    // Handle audio messages
+    const mediaUrl = body["MediaUrl0"] ?? "";
+    const mediaType = body["MediaContentType0"] ?? "";
+    const isAudio = mediaType.startsWith("audio/");
+
+    if (!fromNumber) return new NextResponse("", { status: 200 });
+
+    // If audio, transcribe it
+    if (isAudio && mediaUrl) {
+      const transcribed = await transcribeAudio(mediaUrl, apiKey);
+      if (transcribed) {
+        incomingMessage = transcribed;
+      } else {
+        const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊</Message></Response>`;
+        return new NextResponse(twiml, { status: 200, headers: { "Content-Type": "text/xml" } });
+      }
+    }
+
+    if (!incomingMessage) return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
 
