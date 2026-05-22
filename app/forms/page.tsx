@@ -2,8 +2,9 @@ import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { FileText, Plus, Pencil, ClipboardList, Download, Trash2 } from "lucide-react";
+import { FileText, Plus, Pencil, ClipboardList, Download } from "lucide-react";
 import { importQSNAAction, deleteTemplateAction } from "@/app/forms/actions";
+import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
 
 export default async function FormsPage() {
   const profile = await getCurrentUserProfile();
@@ -71,15 +72,10 @@ export default async function FormsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-[6px]">
-                <form action={deleteTemplateAction.bind(null, t.id)}>
-                  <button
-                    type="submit"
-                    className="flex items-center gap-[5px] text-[11px] text-[#A09E98] border border-black/[.08] hover:bg-red-50 hover:text-red-500 hover:border-red-200 rounded-[6px] px-[8px] py-[5px] transition"
-                    onClick={(e) => { if (!confirm(`Remover "${t.name}"?`)) e.preventDefault(); }}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </form>
+                <DeleteTemplateButton
+                  action={deleteTemplateAction.bind(null, t.id)}
+                  templateName={t.name}
+                />
                 <Link
                   href={`/forms/${t.id}/edit`}
                   className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[10px] py-[5px] transition"
