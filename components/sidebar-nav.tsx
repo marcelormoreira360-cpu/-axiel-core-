@@ -30,6 +30,7 @@ const clinicNav = [
 ];
 
 const moreNav = [
+  { href: "/whatsapp",       label: "WhatsApp Bot" },
   { href: "/follow-ups",     label: "Follow-ups" },
   { href: "/communications", label: "Mensagens" },
   { href: "/products",       label: "Produtos" },

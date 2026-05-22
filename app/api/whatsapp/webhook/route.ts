@@ -12,21 +12,50 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 
 // ─── Conversation History ────────────────────────────────────────────────────
 
-async function getHistory(supabase: any, phone: string): Promise<{ id: string | null; messages: ChatMessage[] }> {
+async function getHistory(supabase: any, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages")
+      .select("id, messages, bot_disabled, clinic_id")
       .eq("phone", phone)
       .maybeSingle();
-    return { id: data?.id ?? null, messages: (data?.messages as ChatMessage[]) ?? [] };
+    return {
+      id: data?.id ?? null,
+      messages: (data?.messages as ChatMessage[]) ?? [],
+      botDisabled: data?.bot_disabled ?? false,
+      clinicId: data?.clinic_id ?? null,
+    };
   } catch {
-    return { id: null, messages: [] };
+    return { id: null, messages: [], botDisabled: false, clinicId: null };
   }
 }
 
-async function saveHistory(supabase: any, phone: string, id: string | null, messages: ChatMessage[]) {
-  const payload = { phone, messages: messages.slice(-20), updated_at: new Date().toISOString() };
+// Auto-create lead when unknown number contacts
+async function autoCreateLead(supabase: any, phone: string, clinicId: string, firstMessage: string) {
+  try {
+    // Check if already a patient or lead with this phone
+    const [{ count: patientCount }, { count: leadCount }] = await Promise.all([
+      supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("phone", phone),
+      supabase.from("leads").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("phone", phone),
+    ]);
+    if ((patientCount ?? 0) > 0 || (leadCount ?? 0) > 0) return; // already known
+
+    await supabase.from("leads").insert({
+      clinic_id: clinicId,
+      full_name: `WhatsApp ${phone.slice(-4)}`,
+      phone,
+      source: "other",
+      stage: "new_lead",
+      notes: `Lead criado automaticamente via WhatsApp.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
+    });
+  } catch (e) {
+    console.error("auto-create lead failed:", e);
+  }
+}
+
+async function saveHistory(supabase: any, phone: string, id: string | null, messages: ChatMessage[], clinicId?: string | null) {
+  const payload: Record<string, unknown> = { phone, messages: messages.slice(-20), updated_at: new Date().toISOString() };
+  if (!id && clinicId) payload.clinic_id = clinicId;
   try {
     if (id) {
       await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
@@ -169,15 +198,33 @@ export async function POST(req: NextRequest) {
 
     // Load clinic-specific bot config or fall back to IFWC default
     let systemPrompt: string;
+    let clinicIdFromConfig: string | null = null;
     try {
       const config = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;
+      clinicIdFromConfig = (config as any)?.clinic_id ?? null;
       systemPrompt = buildSystemPrompt(config ?? IFWC_DEFAULT_CONFIG);
     } catch {
       systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
     }
 
-    // Get conversation history
-    const { id: convId, messages: history } = await getHistory(supabase, fromNumber);
+    // Get conversation history + check bot_disabled
+    const { id: convId, messages: history, botDisabled, clinicId: convClinicId } = await getHistory(supabase, fromNumber);
+
+    // If human has taken over, save the user message but don't reply
+    if (botDisabled) {
+      const updatedMessages: ChatMessage[] = [
+        ...history,
+        { role: "user", content: incomingMessage },
+      ];
+      void saveHistory(supabase, fromNumber, convId, updatedMessages, convClinicId ?? clinicIdFromConfig);
+      return new NextResponse("", { status: 200 }); // silent — human is handling
+    }
+
+    // Auto-create lead for new unknown contacts
+    const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
+    if (effectiveClinicId && !convId) {
+      void autoCreateLead(supabase, fromNumber, effectiveClinicId, incomingMessage);
+    }
 
     // Generate reply using clinic config
     const reply = await generateReply(incomingMessage, history, systemPrompt, apiKey);
@@ -190,7 +237,7 @@ export async function POST(req: NextRequest) {
       { role: "user", content: incomingMessage },
       { role: "assistant", content: finalReply },
     ];
-    void saveHistory(supabase, fromNumber, convId, updatedMessages);
+    void saveHistory(supabase, fromNumber, convId, updatedMessages, effectiveClinicId);
 
     // Respond via TwiML (works for both sandbox and production)
     const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${finalReply.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message></Response>`;
