@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { validateMetaSignature, checkRateLimit } from "@/lib/webhook-guard";
 
 export const runtime = "nodejs";
 
@@ -164,7 +165,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
+    // ── Security: Meta signature validation ────────────────────────────────
+    const rawBody = Buffer.from(await req.arrayBuffer());
+    const signature = req.headers.get("x-hub-signature-256");
+
+    if (!validateMetaSignature(signature, rawBody)) {
+      console.warn("Meta webhook: invalid signature — rejected");
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    const body = JSON.parse(rawBody.toString("utf-8"));
 
     // Determine platform
     const platform: MetaPlatform =
@@ -196,6 +206,12 @@ export async function POST(req: NextRequest) {
 
         // Skip messages sent by the page itself
         if (event.message?.is_echo) continue;
+
+        // Rate limiting per sender
+        if (!checkRateLimit(`meta:${senderId}`)) {
+          console.warn(`Meta webhook: rate limit hit for sender ${senderId}`);
+          continue;
+        }
 
         const supabase = createSupabaseAdminClient();
 

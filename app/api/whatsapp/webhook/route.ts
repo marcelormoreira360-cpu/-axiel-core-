@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
+import { validateTwilioSignature, checkRateLimit } from "@/lib/webhook-guard";
 
 export const runtime = "nodejs";
 
@@ -70,16 +71,6 @@ async function generateReply(
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
-// ─── Twilio body parser ──────────────────────────────────────────────────────
-
-async function parseBody(req: NextRequest): Promise<Record<string, string>> {
-  const text = await req.text();
-  const params = new URLSearchParams(text);
-  const obj: Record<string, string> = {};
-  params.forEach((v, k) => { obj[k] = v; });
-  return obj;
-}
-
 // ─── Audio transcription via Whisper ─────────────────────────────────────────
 
 async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string> {
@@ -131,14 +122,32 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return new NextResponse("", { status: 200 });
 
   try {
-    const body = await parseBody(req);
-    const fromNumber = body["From"]?.replace("whatsapp:", "") ?? "";
-    const toNumber = body["To"]?.replace("whatsapp:", "") ?? "";
-    let incomingMessage = body["Body"]?.trim() ?? "";
+    // ── Security: Twilio signature validation ──────────────────────────────
+    const rawBody = await req.text();
+    const signature = req.headers.get("x-twilio-signature");
+    const url = `https://${req.headers.get("host")}${req.nextUrl.pathname}`;
+    const params: Record<string, string> = {};
+    new URLSearchParams(rawBody).forEach((v, k) => { params[k] = v; });
+
+    if (!validateTwilioSignature(signature, url, params)) {
+      console.warn("WhatsApp webhook: invalid Twilio signature — rejected");
+      return new NextResponse("Forbidden", { status: 403 });
+    }
+
+    // ── Rate limiting (best-effort per instance) ───────────────────────────
+    const fromRaw = params["From"] ?? "";
+    if (!checkRateLimit(`wa:${fromRaw}`)) {
+      console.warn(`WhatsApp webhook: rate limit hit for ${fromRaw}`);
+      return new NextResponse("", { status: 200 }); // silent 200 to Twilio
+    }
+
+    const fromNumber = params["From"]?.replace("whatsapp:", "") ?? "";
+    const toNumber = params["To"]?.replace("whatsapp:", "") ?? "";
+    let incomingMessage = params["Body"]?.trim() ?? "";
 
     // Handle audio messages
-    const mediaUrl = body["MediaUrl0"] ?? "";
-    const mediaType = body["MediaContentType0"] ?? "";
+    const mediaUrl = params["MediaUrl0"] ?? "";
+    const mediaType = params["MediaContentType0"] ?? "";
     const isAudio = mediaType.startsWith("audio/");
 
     if (!fromNumber) return new NextResponse("", { status: 200 });
