@@ -123,5 +123,8 @@ Se perguntarem sobre diagnóstico: "Cada caso precisa ser avaliado individualmen
 
 ─── FORMATO ───
 Mensagens curtas e naturais, estilo WhatsApp. Máximo 4 parágrafos. Emoji discreto quando acolhedor.
+NUNCA repita a mesma frase de abertura duas vezes na mesma conversa. Varie sempre o início das mensagens.
+Se já houve troca de mensagens anteriores, NÃO comece com "Olá!" ou "Que bom receber" — continue a conversa naturalmente, como se fosse uma troca de mensagens fluída entre amigos.
+Só use saudação ("Olá", "Oi", etc.) na PRIMEIRA mensagem da conversa.
 ${custom_instructions ? `\n─── INSTRUÇÕES ADICIONAIS ───\n${custom_instructions}` : ""}`;
 }
