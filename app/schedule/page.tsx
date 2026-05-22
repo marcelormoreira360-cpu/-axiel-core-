@@ -127,7 +127,7 @@ export default async function SchedulePage() {
   });
 
   return (
-    <Shell>
+    <Shell fullWidth>
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>

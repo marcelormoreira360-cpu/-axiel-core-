@@ -14,10 +14,13 @@ export async function Shell({
   children,
   userName,
   userRole,
+  fullWidth = false,
 }: {
   children: ReactNode;
   userName?: string | null;
   userRole?: string | null;
+  /** Remove max-w-5xl e reduz padding — ideal para páginas de agenda/tabela */
+  fullWidth?: boolean;
 }) {
   const initials = userName
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -119,7 +122,7 @@ export async function Shell({
 
       {/* ── Page content ── */}
       <main className="flex-1 min-w-0 pt-[84px] lg:pt-0">
-        <div className="mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8">
+        <div className={fullWidth ? "px-4 py-4 lg:px-6 lg:py-5" : "mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8"}>
           {children}
         </div>
       </main>
