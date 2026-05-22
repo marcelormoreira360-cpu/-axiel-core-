@@ -83,16 +83,23 @@ create table if not exists public.assessment_answers (
 
 create index if not exists assessment_answers_response_id_idx on public.assessment_answers(response_id);
 
--- ── updated_at triggers ──────────────────────────────────────────────────────
+-- ── updated_at trigger function (inline) ─────────────────────────────────────
+create or replace function public.set_updated_at_assessment()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end $$;
+
 drop trigger if exists set_assessment_templates_updated_at on public.assessment_templates;
 create trigger set_assessment_templates_updated_at
   before update on public.assessment_templates
-  for each row execute function public.handle_updated_at();
+  for each row execute function public.set_updated_at_assessment();
 
 drop trigger if exists set_assessment_responses_updated_at on public.assessment_responses;
 create trigger set_assessment_responses_updated_at
   before update on public.assessment_responses
-  for each row execute function public.handle_updated_at();
+  for each row execute function public.set_updated_at_assessment();
 
 -- ── Row Level Security ───────────────────────────────────────────────────────
 alter table public.assessment_templates  enable row level security;
