@@ -24,7 +24,13 @@ export function CreateSessionModal({
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? null);
+  // If no session types are configured, fall back to a default 60-min slot
+  const DEFAULT_TYPE: SessionType = {
+    id: "", clinic_id: "", name: "Sessão padrão", duration_minutes: 60,
+    price_cents: 0, is_active: true, is_online: false, is_recorded: false,
+    created_at: "", updated_at: "",
+  };
+  const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? DEFAULT_TYPE);
   const inputRef = useRef<HTMLInputElement>(null);
 
   if (!slot) return null;
@@ -165,7 +171,12 @@ export function CreateSessionModal({
         <div className="mb-5">
           <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Tipo de tratamento</label>
           <div className="space-y-[5px]">
-            {sessionTypes.map((type) => {
+            {sessionTypes.length === 0 ? (
+              <div className="px-[12px] py-[9px] rounded-[8px] border border-[#0F6E56] bg-[#F0FAF6] flex items-center justify-between">
+                <span className="text-[12px] font-medium text-[#0F6E56]">Sessão padrão</span>
+                <span className="text-[11px] text-[#0F6E56]">60 min</span>
+              </div>
+            ) : sessionTypes.map((type) => {
               const isSelected = selectedType?.id === type.id;
               return (
                 <button

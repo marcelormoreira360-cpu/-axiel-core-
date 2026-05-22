@@ -11,6 +11,7 @@ import {
   FileText,
   Banknote,
   MessageCircle,
+  Link2,
 } from "lucide-react";
 
 const mainNav = [
@@ -21,6 +22,7 @@ const mainNav = [
   { href: "/financeiro",  label: "Financeiro",  icon: Banknote },
   { href: "/actions",     label: "AI Insights", icon: Sparkles },
   { href: "/forms",       label: "Formulários", icon: FileText },
+  { href: "/links",       label: "Links",       icon: Link2 },
 ];
 
 const clinicNav = [

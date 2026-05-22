@@ -51,7 +51,7 @@ export async function getPatientAssessmentResponses(
     .from("assessment_responses")
     .select("*, assessment_templates(name)")
     .eq("patient_id", patientId)
-    .order("filled_at", { ascending: false });
+    .order("created_at", { ascending: false });
   return (data ?? []) as AssessmentResponse[];
 }
 
@@ -180,9 +180,8 @@ export async function submitAssessmentResponse(input: {
   const answersToInsert = input.answers.map((a) => ({
     response_id: response.id,
     question_id: a.question_id,
-    section_id: a.section_id,
-    value_number: a.value_number ?? null,
-    value_text: a.value_text ?? null,
+    score: a.value_number ?? null,
+    text_answer: a.value_text ?? null,
   }));
   const { error: aErr } = await supabase
     .from("assessment_answers")
