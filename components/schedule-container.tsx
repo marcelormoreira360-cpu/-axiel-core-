@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, Fragment } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { CreateSessionModal } from "@/components/create-session-modal";
@@ -32,23 +32,29 @@ type View = "dia" | "semana" | "mes";
 const WEEKDAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 // ─── Time grid constants ──────────────────────────────────────────────────────
-const HOUR_HEIGHT = 64; // px per hour
-const START_HOUR = 6;
-const END_HOUR = 22;
-const TOTAL_HOURS = END_HOUR - START_HOUR;
-const GRID_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT; // 1024px
-const HOURS_RANGE = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => START_HOUR + i);
+const HOUR_HEIGHT = 64;       // px por hora
+const START_HOUR  = 6;
+const END_HOUR    = 22;
+const TOTAL_HOURS = END_HOUR - START_HOUR;       // 16
+const GRID_HEIGHT = TOTAL_HOURS * HOUR_HEIGHT;   // 1024px
+const TIME_COL_W  = 56;                          // px — coluna de horários
+// Horas a exibir: 06, 07, … 22
+const HOUR_LABELS = Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => START_HOUR + i);
 
-function apptStyle(startsAt: string, duration: number): { top: number; height: number } {
+function apptStyle(
+  startsAt: string,
+  duration: number
+): { top: number; height: number } {
   const d = new Date(startsAt);
   const startMins = d.getHours() * 60 + d.getMinutes() - START_HOUR * 60;
-  const top = Math.max(0, (startMins / 60) * HOUR_HEIGHT);
-  const height = Math.max((duration / 60) * HOUR_HEIGHT, 24);
-  return { top, height };
+  return {
+    top: Math.max(0, (startMins / 60) * HOUR_HEIGHT),
+    height: Math.max((duration / 60) * HOUR_HEIGHT, 24),
+  };
 }
 
 function getNowOffset(): number | null {
-  const now = new Date();
+  const now  = new Date();
   const mins = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
   if (mins < 0 || mins > TOTAL_HOURS * 60) return null;
   return (mins / 60) * HOUR_HEIGHT;
@@ -74,98 +80,114 @@ function DayView({
   selectedSlot: TimeSlot | null;
 }) {
   const slots = useMemo(() => buildDayTimeSlots(), []);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to business hours on mount
   useEffect(() => {
-    if (containerRef.current) {
-      const scrollTarget = (8 - START_HOUR) * HOUR_HEIGHT - 16;
-      containerRef.current.scrollTop = Math.max(0, scrollTarget);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = Math.max(0, (8 - START_HOUR) * HOUR_HEIGHT - 16);
     }
   }, []);
 
   const [nowOffset, setNowOffset] = useState<number | null>(getNowOffset);
-
   useEffect(() => {
     const id = setInterval(() => setNowOffset(getNowOffset()), 60_000);
     return () => clearInterval(id);
   }, []);
 
   const sessionsBySlot = useMemo(() => {
-    return sessions.reduce<Record<string, ScheduleSession[]>>((acc, session) => {
-      const key = getSlotKeyFromStartsAt(session.starts_at);
-      acc[key] = [...(acc[key] ?? []), session];
+    return sessions.reduce<Record<string, ScheduleSession[]>>((acc, s) => {
+      const key = getSlotKeyFromStartsAt(s.starts_at);
+      acc[key] = [...(acc[key] ?? []), s];
       return acc;
     }, {});
   }, [sessions]);
 
   return (
     <>
+      {/* ── Cabeçalho da coluna de horários ── */}
       <div
-        ref={containerRef}
-        className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden overflow-y-auto max-h-[calc(100vh-220px)]"
+        className="bg-white border border-black/[.07] rounded-t-[12px] border-b-0"
+        style={{ paddingLeft: TIME_COL_W }}
       >
-        <div className="relative" style={{ minHeight: GRID_HEIGHT }}>
-          {/* "Now" indicator */}
+        <div className="border-b border-black/[.07] py-[8px] px-[12px]">
+          <span className="text-[10px] font-medium tracking-[.06em] uppercase text-[#A09E98]">
+            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "short" })}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Grid scrollável ── */}
+      <div
+        ref={scrollRef}
+        className="bg-white border border-black/[.07] rounded-b-[12px] flex overflow-y-auto"
+        style={{ maxHeight: "calc(100vh - 280px)", minHeight: 420 }}
+      >
+        {/* Coluna de horários */}
+        <div
+          className="shrink-0 relative border-r border-black/[.07] bg-[#FAFAF8]"
+          style={{ width: TIME_COL_W, height: GRID_HEIGHT }}
+        >
+          {HOUR_LABELS.map((h) => (
+            <div
+              key={h}
+              className="absolute w-full flex justify-end pr-[10px]"
+              style={{ top: (h - START_HOUR) * HOUR_HEIGHT - 9 }}
+            >
+              <span className="text-[10px] font-medium text-[#6B6A66] leading-none">
+                {String(h).padStart(2, "0")}:00
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Coluna de sessões */}
+        <div className="flex-1 relative" style={{ height: GRID_HEIGHT }}>
+          {/* Indicador "agora" */}
           {nowOffset !== null && (
             <div
-              className="pointer-events-none absolute left-[64px] right-0 z-20 flex items-center"
+              className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
               style={{ top: nowOffset }}
             >
-              <span className="w-[8px] h-[8px] rounded-full bg-[#0F6E56] shrink-0 -ml-[4px]" />
-              <div className="flex-1 border-t border-[#0F6E56]/50" />
+              <span className="w-[8px] h-[8px] rounded-full bg-[#0F6E56] shrink-0" />
+              <div className="flex-1 border-t-[1.5px] border-[#0F6E56]" />
             </div>
           )}
 
+          {/* Slots */}
           {slots.map((slot, i) => {
             const items = sessionsBySlot[getSlotKey(slot.hour)] ?? [];
-            const isEmpty = items.length === 0;
             const isLast = i === slots.length - 1;
-
             return (
               <div
                 key={slot.label}
                 className={[
-                  "grid",
+                  "absolute left-0 right-0",
                   !isLast ? "border-b border-black/[.05]" : "",
                   slot.isBusinessHour ? "bg-white" : "bg-[#FAFAF8]",
                 ].join(" ")}
-                style={{ gridTemplateColumns: "64px 1fr", height: HOUR_HEIGHT }}
+                style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}
               >
-                {/* Time label */}
-                <div className="flex items-start pt-[10px] pl-[10px] shrink-0 border-r border-black/[.05]">
-                  <span className={`text-[10px] font-medium ${slot.isBusinessHour ? "text-[#A09E98]" : "text-[#D3D1C7]"}`}>
-                    {slot.label}
-                  </span>
-                </div>
-
-                {/* Slot content */}
-                <div className="relative">
-                  {/* 30-min line */}
-                  <div
-                    className="absolute left-0 right-0 border-t border-dashed border-black/[.04]"
-                    style={{ top: HOUR_HEIGHT / 2 }}
-                  />
-
-                  <div className="p-[6px] h-full">
-                    {isEmpty ? (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSlot(slot)}
-                        className="w-full h-full flex items-center justify-center rounded-[6px] border border-dashed border-transparent text-[10px] text-transparent hover:border-[#0F6E56]/20 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition group"
-                      >
-                        <span className="opacity-0 group-hover:opacity-100 transition">
-                          {slot.isBusinessHour ? "+ Agendar" : ""}
-                        </span>
-                      </button>
-                    ) : (
-                      <div className="space-y-[4px]">
-                        {items.map((session) => (
-                          <SessionCard key={session.id} session={session} onOpen={onOpenSession} />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                {/* Linha 30min */}
+                <div
+                  className="absolute left-0 right-0 border-t border-dashed border-black/[.04]"
+                  style={{ top: HOUR_HEIGHT / 2 }}
+                />
+                <div className="p-[6px] h-full">
+                  {items.length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSlot(slot)}
+                      className="w-full h-full flex items-center justify-center rounded-[6px] text-[10px] text-transparent hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition"
+                    >
+                      {slot.isBusinessHour ? "+ Agendar" : ""}
+                    </button>
+                  ) : (
+                    <div className="space-y-[4px]">
+                      {items.map((s) => (
+                        <SessionCard key={s.id} session={s} onOpen={onOpenSession} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -195,41 +217,42 @@ function WeekView({
   navDate: Date;
   onDayClick: (date: Date) => void;
 }) {
-  const today = new Date();
+  const today    = new Date();
   const weekDays = getWeekDays(navDate);
-  const groups = weekDays.map((day) => ({
+  const groups   = weekDays.map((day) => ({
     date: day,
     appointments: getAppointmentsForDay(appointments, day),
   }));
 
   const [nowOffset, setNowOffset] = useState<number | null>(getNowOffset);
-
   useEffect(() => {
     const id = setInterval(() => setNowOffset(getNowOffset()), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to ~8am on mount
+  const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = Math.max(0, (8 - START_HOUR) * HOUR_HEIGHT - 16);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = Math.max(0, (8 - START_HOUR) * HOUR_HEIGHT - 16);
     }
   }, []);
 
   const isCurrentWeek = weekDays.some((d) => isSameDay(d, today));
-  const todayColIdx = isCurrentWeek ? weekDays.findIndex((d) => isSameDay(d, today)) : -1;
+  const todayColIdx   = isCurrentWeek
+    ? weekDays.findIndex((d) => isSameDay(d, today))
+    : -1;
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden flex flex-col">
-      {/* ── Day header row ── */}
-      <div
-        className="grid border-b border-black/[.07] shrink-0"
-        style={{ gridTemplateColumns: `56px repeat(7, 1fr)` }}
-      >
-        {/* Corner */}
-        <div className="border-r border-black/[.07]" />
+
+      {/* ── Cabeçalho dos dias ── */}
+      <div className="flex shrink-0 border-b border-black/[.07]">
+        {/* Célula de canto */}
+        <div
+          className="shrink-0 border-r border-black/[.07] bg-[#FAFAF8]"
+          style={{ width: TIME_COL_W }}
+        />
+        {/* Dias */}
         {groups.map(({ date, appointments: appts }) => {
           const isToday = isSameDay(date, today);
           return (
@@ -238,7 +261,7 @@ function WeekView({
               type="button"
               onClick={() => onDayClick(date)}
               className={[
-                "flex flex-col items-center py-[10px] border-r border-black/[.05] last:border-r-0 transition hover:bg-[#F4F3EF]",
+                "flex-1 flex flex-col items-center py-[10px] border-r border-black/[.05] last:border-r-0 transition hover:bg-[#F4F3EF]",
                 isToday ? "bg-[#F0FAF6]" : "",
               ].join(" ")}
             >
@@ -247,7 +270,7 @@ function WeekView({
               </span>
               <span
                 className={[
-                  "text-[15px] font-semibold mt-[2px] w-7 h-7 flex items-center justify-center rounded-full",
+                  "text-[15px] font-semibold mt-[2px] w-[28px] h-[28px] flex items-center justify-center rounded-full",
                   isToday ? "bg-[#0F6E56] text-white" : "text-[#0F1A2E]",
                 ].join(" ")}
               >
@@ -263,61 +286,62 @@ function WeekView({
         })}
       </div>
 
-      {/* ── Scrollable time grid ── */}
+      {/* ── Body scrollável ── */}
       <div
-        ref={containerRef}
-        className="overflow-y-auto"
-        style={{ maxHeight: "calc(100vh - 260px)", minHeight: 400 }}
+        ref={scrollRef}
+        className="flex overflow-y-auto"
+        style={{ maxHeight: "calc(100vh - 280px)", minHeight: 420 }}
       >
+        {/* ── Coluna de horários ── */}
         <div
-          className="relative grid"
-          style={{ height: GRID_HEIGHT, gridTemplateColumns: `56px repeat(7, 1fr)` }}
+          className="shrink-0 relative border-r border-black/[.07] bg-[#FAFAF8]"
+          style={{ width: TIME_COL_W, height: GRID_HEIGHT }}
         >
-          {/* ── Time labels column ── */}
-          <div className="relative border-r border-black/[.07] bg-white z-10">
-            {HOURS_RANGE.map((h) => (
-              <div
-                key={h}
-                className="absolute w-full flex justify-end pr-[8px]"
-                style={{ top: (h - START_HOUR) * HOUR_HEIGHT - 8 }}
-              >
-                <span className="text-[10px] text-[#D3D1C7] font-medium select-none">
-                  {String(h).padStart(2, "0")}:00
-                </span>
-              </div>
-            ))}
-          </div>
+          {HOUR_LABELS.map((h) => (
+            <div
+              key={h}
+              className="absolute w-full flex justify-end pr-[10px]"
+              style={{ top: (h - START_HOUR) * HOUR_HEIGHT - 9 }}
+            >
+              <span className="text-[10px] font-medium text-[#6B6A66] leading-none select-none">
+                {String(h).padStart(2, "0")}:00
+              </span>
+            </div>
+          ))}
+        </div>
 
-          {/* ── Day columns ── */}
+        {/* ── Colunas dos dias ── */}
+        <div className="flex flex-1" style={{ height: GRID_HEIGHT }}>
           {groups.map(({ date, appointments: appts }, colIdx) => {
             const isToday = isSameDay(date, today);
             return (
               <div
                 key={date.toISOString()}
                 className={[
-                  "relative border-r border-black/[.05] last:border-r-0",
-                  isToday ? "bg-[#F8FFFE]" : "",
+                  "flex-1 relative border-r border-black/[.05] last:border-r-0",
+                  isToday ? "bg-[#F8FFFE]" : "bg-white",
                 ].join(" ")}
+                style={{ height: GRID_HEIGHT }}
               >
-                {/* ── Grid lines ── */}
-                {HOURS_RANGE.map((h, i) => (
-                  <div key={h}>
-                    {/* Hour line */}
-                    <div
-                      className="absolute left-0 right-0 border-t border-black/[.05]"
-                      style={{ top: i * HOUR_HEIGHT }}
-                    />
-                    {/* 30-min line */}
-                    {i < TOTAL_HOURS && (
-                      <div
-                        className="absolute left-0 right-0 border-t border-black/[.03] border-dashed"
-                        style={{ top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
-                      />
-                    )}
-                  </div>
+                {/* Linhas de hora */}
+                {HOUR_LABELS.map((h, i) => (
+                  <div
+                    key={`hr-${h}`}
+                    className="absolute left-0 right-0 border-t border-black/[.06]"
+                    style={{ top: i * HOUR_HEIGHT }}
+                  />
                 ))}
 
-                {/* ── "Now" line — only on today's column ── */}
+                {/* Linhas de 30 min */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
+                  <div
+                    key={`hh-${h}`}
+                    className="absolute left-0 right-0 border-t border-dashed border-black/[.03]"
+                    style={{ top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2 }}
+                  />
+                ))}
+
+                {/* Linha "agora" — só na coluna de hoje */}
                 {isCurrentWeek && colIdx === todayColIdx && nowOffset !== null && (
                   <div
                     className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
@@ -328,16 +352,19 @@ function WeekView({
                   </div>
                 )}
 
-                {/* ── Appointments ── */}
+                {/* Agendamentos */}
                 {appts.map((appt) => {
-                  const { top, height } = apptStyle(appt.starts_at, appt.duration_minutes ?? 60);
-                  const name = appt.patients?.full_name ?? "Paciente";
+                  const { top, height } = apptStyle(
+                    appt.starts_at,
+                    appt.duration_minutes ?? 60
+                  );
+                  const name      = appt.patients?.full_name ?? "Paciente";
                   const firstName = name.split(" ")[0];
                   return (
                     <Link
                       key={appt.id}
                       href={`/patients/${appt.patient_id}`}
-                      className="absolute left-[3px] right-[3px] z-10 rounded-[6px] bg-[#E1F5EE] border border-[#0F6E56]/20 px-[6px] py-[4px] hover:bg-[#C8EEE2] hover:border-[#0F6E56]/40 transition overflow-hidden group"
+                      className="absolute left-[3px] right-[3px] z-10 rounded-[6px] bg-[#E1F5EE] border border-[#0F6E56]/25 px-[6px] py-[4px] hover:bg-[#C8EEE2] hover:border-[#0F6E56]/50 transition overflow-hidden"
                       style={{ top: top + 1, height: height - 2 }}
                     >
                       <p className="text-[10px] font-semibold text-[#0F6E56] leading-tight truncate">
@@ -347,7 +374,7 @@ function WeekView({
                         {firstName}
                       </p>
                       {height >= 48 && (
-                        <p className="text-[9px] text-[#6B6A66] leading-tight truncate">
+                        <p className="text-[9px] text-[#6B6A66] leading-tight">
                           {appt.duration_minutes} min
                         </p>
                       )}
@@ -374,13 +401,12 @@ function MonthView({
   navDate: Date;
   onDayClick: (date: Date) => void;
 }) {
-  const today = new Date();
-  const cells = useMemo(() => getMonthGrid(navDate), [navDate]);
+  const today        = new Date();
+  const cells        = useMemo(() => getMonthGrid(navDate), [navDate]);
   const currentMonth = navDate.getMonth();
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-      {/* Weekday headers */}
       <div className="grid grid-cols-7 border-b border-black/[.07]">
         {WEEKDAY_LABELS.map((label) => (
           <div
@@ -392,13 +418,12 @@ function MonthView({
         ))}
       </div>
 
-      {/* Day cells */}
       <div className="grid grid-cols-7">
         {cells.map((date, i) => {
-          const dayAppts = getAppointmentsForDay(appointments, date);
-          const isToday = isSameDay(date, today);
+          const dayAppts       = getAppointmentsForDay(appointments, date);
+          const isToday        = isSameDay(date, today);
           const isCurrentMonth = date.getMonth() === currentMonth;
-          const isLastRow = i >= cells.length - 7;
+          const isLastRow      = i >= cells.length - 7;
 
           return (
             <button
@@ -461,8 +486,8 @@ export function ScheduleContainer({
   createSessionAction: (formData: FormData) => Promise<void>;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
 }) {
-  const [view, setView] = useState<View>("semana");
-  const [navDate, setNavDate] = useState(new Date());
+  const [view, setView]                 = useState<View>("semana");
+  const [navDate, setNavDate]           = useState(new Date());
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);
 
@@ -470,35 +495,23 @@ export function ScheduleContainer({
     if (view === "semana") setNavDate((d) => addDays(d, -7));
     else if (view === "mes") setNavDate((d) => addMonths(d, -1));
   }
-
   function navigateNext() {
     if (view === "semana") setNavDate((d) => addDays(d, 7));
     else if (view === "mes") setNavDate((d) => addMonths(d, 1));
   }
-
-  function goToday() {
-    setNavDate(new Date());
-  }
-
-  function onDayClick(date: Date) {
-    setNavDate(date);
-    setView("dia");
-  }
+  function goToday() { setNavDate(new Date()); }
+  function onDayClick(date: Date) { setNavDate(date); setView("dia"); }
 
   const navLabel = useMemo(() => {
     if (view === "dia") {
-      const today = new Date();
-      return isSameDay(navDate, today)
+      const t = new Date();
+      return isSameDay(navDate, t)
         ? "Hoje"
-        : navDate.toLocaleDateString("pt-BR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          });
+        : navDate.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
     }
     if (view === "semana") {
       const start = startOfWeek(navDate);
-      const end = addDays(start, 6);
+      const end   = addDays(start, 6);
       return `${formatShortDate(start)} – ${formatShortDate(end)}`;
     }
     return formatMonthYear(navDate);
@@ -533,7 +546,7 @@ export function ScheduleContainer({
               <button
                 type="button"
                 onClick={goToday}
-                className="ml-[4px] text-[11px] font-medium text-[#0F6E56] hover:underline transition"
+                className="ml-[4px] text-[11px] font-medium text-[#0F6E56] hover:underline"
               >
                 Hoje
               </button>
@@ -546,7 +559,6 @@ export function ScheduleContainer({
           )}
         </div>
 
-        {/* View tabs */}
         <div className="flex items-center gap-[2px] bg-[#F4F3EF] rounded-[8px] p-[3px]">
           {(["dia", "semana", "mes"] as View[]).map((v) => (
             <button
@@ -578,7 +590,6 @@ export function ScheduleContainer({
           selectedSlot={selectedSlot}
         />
       )}
-
       {view === "semana" && (
         <WeekView
           appointments={allAppointments}
@@ -586,7 +597,6 @@ export function ScheduleContainer({
           onDayClick={onDayClick}
         />
       )}
-
       {view === "mes" && (
         <MonthView
           appointments={allAppointments}
