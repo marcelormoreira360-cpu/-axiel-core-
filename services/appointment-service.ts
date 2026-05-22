@@ -83,16 +83,18 @@ async function createIntegrationsSideEffects(appt: Appointment) {
   const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
   const summary = `${sessionType?.name ?? "Consulta"} — ${patient?.full_name ?? "Paciente"}`;
 
-  // Fetch is_online flag for this session type (not included in appointment select)
+  // Fetch is_online + is_recorded flags for this session type
   let isOnlineSession = false;
+  let isRecordedSession = true; // default: record if online
   if (appt.session_type_id) {
     const supabaseAdmin = createSupabaseAdminClient();
     const { data: st } = await supabaseAdmin
       .from("session_types")
-      .select("is_online")
+      .select("is_online, is_recorded")
       .eq("id", appt.session_type_id)
       .single();
-    isOnlineSession = st?.is_online ?? false;
+    isOnlineSession   = st?.is_online   ?? false;
+    isRecordedSession = st?.is_recorded ?? true;
   }
 
   const tasks: Promise<unknown>[] = [
@@ -110,6 +112,7 @@ async function createIntegrationsSideEffects(appt: Appointment) {
         topic:           summary,
         startIso:        appt.starts_at,
         durationMinutes: appt.duration_minutes,
+        autoRecord:      isRecordedSession,
       })
     );
   }

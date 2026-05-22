@@ -269,6 +269,7 @@ export type SessionType = {
   price_cents: number;
   is_active: boolean;
   is_online: boolean;
+  is_recorded: boolean;
   created_at: string;
   updated_at: string;
 };

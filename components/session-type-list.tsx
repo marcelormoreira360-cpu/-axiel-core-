@@ -11,6 +11,7 @@ interface Props {
   sessionTypes: SessionType[];
   createAction: (fd: FormData) => Promise<void>;
   toggleOnlineAction: (id: string, isOnline: boolean) => Promise<void>;
+  toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<void>;
   toggleActiveAction: (id: string, isActive: boolean) => Promise<void>;
   deleteAction: (id: string) => Promise<void>;
 }
@@ -33,7 +34,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction, toggleActiveAction, deleteAction }: Props) {
+export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction, toggleRecordingAction, toggleActiveAction, deleteAction }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -42,6 +43,14 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
     setPendingId(id + "-online");
     startTransition(async () => {
       await toggleOnlineAction(id, !current);
+      setPendingId(null);
+    });
+  }
+
+  function handleToggleRecording(id: string, current: boolean) {
+    setPendingId(id + "-recording");
+    startTransition(async () => {
+      await toggleRecordingAction(id, !current);
       setPendingId(null);
     });
   }
@@ -168,14 +177,14 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
         ) : (
           <div className="divide-y divide-black/[.04] dark:divide-white/[.04]">
             {/* Column headers */}
-            <div className="hidden sm:grid grid-cols-[1fr_80px_90px_80px_80px_40px] gap-4 px-5 py-2 bg-[#FAFAF8] dark:bg-white/[.02]">
-              {["Nome", "Duração", "Preço", "Online", "Ativo", ""].map((h) => (
+            <div className="hidden sm:grid grid-cols-[1fr_80px_90px_80px_90px_80px_40px] gap-4 px-5 py-2 bg-[#FAFAF8] dark:bg-white/[.02]">
+              {["Nome", "Duração", "Preço", "Online", "Gravar", "Ativo", ""].map((h) => (
                 <p key={h} className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98]">{h}</p>
               ))}
             </div>
 
             {sessionTypes.map((st) => (
-              <div key={st.id} className={`grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_80px_90px_80px_80px_40px] gap-4 items-center px-5 py-[13px] transition ${!st.is_active ? "opacity-50" : ""}`}>
+              <div key={st.id} className={`grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_80px_90px_80px_90px_80px_40px] gap-4 items-center px-5 py-[13px] transition ${!st.is_active ? "opacity-50" : ""}`}>
                 {/* Name */}
                 <div>
                   <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{st.name}</p>
@@ -202,6 +211,24 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                   )}
                 </div>
 
+                {/* Recording toggle — only visible when online */}
+                <div className="hidden sm:flex items-center gap-2">
+                  {st.is_online ? (
+                    <>
+                      <Toggle
+                        checked={st.is_recorded ?? true}
+                        onChange={() => handleToggleRecording(st.id, st.is_recorded ?? true)}
+                        label="Gravar"
+                      />
+                      {(st.is_recorded ?? true) && (
+                        <span className="text-[10px] font-medium text-[#7C3AED] bg-[#7C3AED]/[.10] px-[6px] py-[2px] rounded-full">REC</span>
+                      )}
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-[#D3D1C7]">—</span>
+                  )}
+                </div>
+
                 {/* Active toggle */}
                 <div className="hidden sm:block">
                   <Toggle
@@ -213,12 +240,18 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
 
                 {/* Delete */}
                 <div className="flex items-center gap-2 sm:justify-end">
-                  {/* Mobile: show both toggles inline */}
+                  {/* Mobile: show toggles inline */}
                   <div className="flex items-center gap-3 sm:hidden mr-2">
                     <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
                       <Toggle checked={st.is_online} onChange={() => handleToggleOnline(st.id, st.is_online)} label="Online" />
                       Online
                     </label>
+                    {st.is_online && (
+                      <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
+                        <Toggle checked={st.is_recorded ?? true} onChange={() => handleToggleRecording(st.id, st.is_recorded ?? true)} label="Gravar" />
+                        Gravar
+                      </label>
+                    )}
                     <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
                       <Toggle checked={st.is_active} onChange={() => handleToggleActive(st.id, st.is_active)} label="Ativo" />
                       Ativo

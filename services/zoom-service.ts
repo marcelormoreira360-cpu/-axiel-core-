@@ -40,6 +40,7 @@ export async function createZoomMeeting(_clinicId: string, meeting: {
   startIso: string;
   durationMinutes: number;
   agenda?: string;
+  autoRecord?: boolean; // defaults to true; false = no cloud recording
 }): Promise<{ meeting_id: string; join_url: string; start_url: string } | null> {
   const token = await getZoomAccessToken();
   if (!token) return null;
@@ -58,7 +59,7 @@ export async function createZoomMeeting(_clinicId: string, meeting: {
         participant_video: true,
         waiting_room:     false,
         join_before_host: true,
-        auto_recording:   "cloud", // store recording in Zoom cloud for later sync
+        auto_recording:   meeting.autoRecord === false ? "none" : "cloud",
       },
     }),
   });

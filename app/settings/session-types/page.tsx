@@ -33,6 +33,12 @@ export default async function SessionTypesPage() {
     revalidatePath("/settings/session-types");
   }
 
+  async function toggleRecordingAction(id: string, isRecorded: boolean) {
+    "use server";
+    await updateSessionType(id, { is_recorded: isRecorded });
+    revalidatePath("/settings/session-types");
+  }
+
   async function toggleActiveAction(id: string, isActive: boolean) {
     "use server";
     await updateSessionType(id, { is_active: isActive });
@@ -62,6 +68,7 @@ export default async function SessionTypesPage() {
         sessionTypes={sessionTypes}
         createAction={createAction}
         toggleOnlineAction={toggleOnlineAction}
+        toggleRecordingAction={toggleRecordingAction}
         toggleActiveAction={toggleActiveAction}
         deleteAction={deleteAction}
       />
