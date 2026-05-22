@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/shell";
-import { Card } from "@/components/card";
-import { Button } from "@/components/button";
 import { BillingPlanCard } from "@/components/billing-plan-card";
+import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { getBillingOverview } from "@/services/billing-service";
 import { AXIEL_PLANS } from "@/modules/billing/plan-config";
 
@@ -11,52 +10,67 @@ export default async function BillingPage() {
 
   if (!clinic) redirect("/onboarding");
 
-  const currentPlanSlug = subscription?.plans?.slug ?? null;
+  const currentPlanSlug = (subscription as any)?.plans?.slug ?? null;
+  const cancelAtPeriodEnd = (subscription as any)?.metadata?.cancel_at_period_end === true
+    || (subscription as any)?.cancel_at_period_end === true;
+
   const plans = Object.values(AXIEL_PLANS);
 
   return (
     <Shell>
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Cobrança</p>
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight">Como o AXIEL cresce com você</h1>
-          <p className="mt-3 max-w-2xl text-lg text-black/55">Planos simples de assinatura. Faça upgrade, downgrade ou gerencie tudo em um só lugar.</p>
-        </div>
-        {subscription?.external_customer_id ? (
-          <form action="/api/stripe/portal" method="POST">
-            <Button type="submit">Gerenciar assinatura</Button>
-          </form>
-        ) : null}
+      {/* Header */}
+      <div className="mb-[20px]">
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[2px]">
+          Conta
+        </p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
+          Plano &amp; Faturamento
+        </h1>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">
+          Gerencie seu plano AXIEL e assinatura Stripe
+        </p>
       </div>
 
-      <Card className="mb-6 grid gap-3 bg-axiel-ink p-6 text-white md:grid-cols-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Status atual</p>
-          <p className="mt-2 text-2xl font-semibold capitalize">{subscription?.status ?? "Sem plano"}</p>
+      {/* Status card */}
+      <div className="mb-[20px]">
+        <SubscriptionStatusCard
+          planName={(subscription as any)?.plans?.name ?? null}
+          status={subscription?.status ?? null}
+          trialEndsAt={subscription?.trial_ends_at ?? null}
+          renewsAt={subscription?.current_period_ends_at ?? null}
+          cancelAtPeriodEnd={cancelAtPeriodEnd}
+          hasCustomer={!!(subscription as any)?.external_customer_id}
+        />
+      </div>
+
+      {/* Plans */}
+      <div id="planos">
+        <p className="text-[13px] font-medium text-[#0F1A2E] mb-[12px]">Escolha seu plano</p>
+        <div className="grid gap-[12px] lg:grid-cols-3">
+          {plans.map(plan => (
+            <BillingPlanCard
+              key={plan.slug}
+              plan={plan}
+              current={plan.slug === currentPlanSlug}
+            />
+          ))}
         </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Plano</p>
-          <p className="mt-2 text-2xl font-semibold">{subscription?.plans?.name ?? "Não selecionado"}</p>
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/40">Período / trial</p>
-          <p className="mt-2 text-sm text-white/70">
-            {subscription?.trial_ends_at
-              ? `Trial encerra em ${new Date(subscription.trial_ends_at).toLocaleDateString("pt-BR")}`
-              : subscription?.current_period_ends_at
-                ? `Renova em ${new Date(subscription.current_period_ends_at).toLocaleDateString("pt-BR")}`
-                : "Inicie com um período de teste quando disponível"}
+      </div>
+
+      {/* Trial info */}
+      {!subscription && (
+        <div className="mt-[16px] bg-[#F0FAF6] border border-[#0F6E56]/20 rounded-[12px] px-[16px] py-[12px]">
+          <p className="text-[12px] font-semibold text-[#0F6E56] mb-[2px]">14 dias grátis em qualquer plano</p>
+          <p className="text-[11px] text-[#085041]">
+            Sem cartão necessário para iniciar o trial. Cancele a qualquer momento.
           </p>
         </div>
-      </Card>
+      )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {plans.map((plan) => (
-          <BillingPlanCard key={plan.slug} plan={plan} current={plan.slug === currentPlanSlug} />
-        ))}
-      </div>
-
-      <p className="mt-6 text-sm text-black/45">Pagamentos e alterações de assinatura são processados pelo Stripe Checkout e portal do cliente Stripe.</p>
+      {/* Footer note */}
+      <p className="text-[10px] text-[#D3D1C7] mt-[16px]">
+        Pagamentos processados com segurança pelo Stripe. Upgrade, downgrade e cancelamento disponíveis a qualquer momento via portal Stripe.
+      </p>
     </Shell>
   );
 }
