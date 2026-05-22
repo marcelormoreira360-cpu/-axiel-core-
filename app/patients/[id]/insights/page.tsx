@@ -22,10 +22,17 @@ export default async function PatientInsightsPage({ params, searchParams }: Prop
 
   return (
     <Shell>
-      <div className="mb-5 pt-4">
-        <Link href={`/patients/${patient.id}`} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
-          <ArrowLeft className="h-4 w-4" /> Back to patient
+      <div className="flex items-center gap-[10px] mb-[20px]">
+        <Link
+          href={`/patients/${patient.id}`}
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
         </Link>
+        <div>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">AI Insights</h1>
+          <p className="text-[12px] text-[#A09E98] mt-[1px]">{patient.full_name}</p>
+        </div>
       </div>
       <AiInsightPanel patient={patient} insight={insight} validationEvents={validationEvents} error={error ? decodeURIComponent(error) : undefined} />
     </Shell>
