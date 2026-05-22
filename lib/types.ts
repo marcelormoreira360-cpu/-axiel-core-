@@ -273,6 +273,8 @@ export type SessionType = {
 
 export type PaymentMethod = "pix" | "credit_card" | "debit_card" | "cash" | "transfer" | "insurance" | "other";
 
+export type PatientPaymentStatus = "paid" | "refunded" | "partially_refunded" | "failed";
+
 export type PatientPayment = {
   id: string;
   clinic_id: string;
@@ -286,6 +288,11 @@ export type PatientPayment = {
   notes: string | null;
   created_by: string | null;
   created_at: string;
+  // Stripe refund tracking (added in migration 046)
+  stripe_payment_intent_id: string | null;
+  status: PatientPaymentStatus;
+  refunded_at: string | null;
+  refund_amount_cents: number | null;
 };
 
 export type WorkingHour = {

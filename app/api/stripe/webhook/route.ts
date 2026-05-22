@@ -81,11 +81,18 @@ export async function POST(request: Request) {
       const supabaseAdmin = createSupabaseAdminClient();
       const { data: offer } = await supabaseAdmin
         .from("monetization_offers")
-        .select("name, number_of_sessions")
+        .select("name, number_of_sessions, price_cents")
         .eq("id", offer_id)
         .single();
 
       if (offer) {
+        // Retrieve payment intent ID from the session for future refunds
+        const paymentIntentId =
+          typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : (session.payment_intent?.id ?? null);
+
+        // Create patient package
         await supabaseAdmin.from("patient_packages").insert({
           patient_id,
           clinic_id,
@@ -95,6 +102,20 @@ export async function POST(request: Request) {
           is_active: true,
           auto_renew: false,
           notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
+        });
+
+        // Create patient_payment record linked to this Stripe payment
+        await supabaseAdmin.from("patient_payments").insert({
+          clinic_id,
+          patient_id,
+          patient_offer_id: offer_id,
+          amount_cents: (offer.price_cents as number) ?? session.amount_total ?? 0,
+          currency: (session.currency?.toUpperCase() ?? "BRL"),
+          payment_method: "credit_card",
+          paid_at: new Date().toISOString(),
+          status: "paid",
+          stripe_payment_intent_id: paymentIntentId,
+          notes: `Stripe checkout ${session.id}`,
         });
       }
 
@@ -135,6 +156,29 @@ export async function POST(request: Request) {
         event_type: event.type,
         payload: invoice as unknown as Record<string, unknown>,
       });
+    }
+  }
+
+  // ── Refund tracking ────────────────────────────────────────────────────────
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as Stripe.Charge;
+    const paymentIntentId =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent?.id ?? null);
+
+    if (paymentIntentId) {
+      const supabase = createSupabaseAdminClient();
+      const isFullRefund = charge.amount_refunded >= charge.amount;
+
+      await supabase
+        .from("patient_payments")
+        .update({
+          status: isFullRefund ? "refunded" : "partially_refunded",
+          refunded_at: new Date().toISOString(),
+          refund_amount_cents: charge.amount_refunded,
+        })
+        .eq("stripe_payment_intent_id", paymentIntentId);
     }
   }
 

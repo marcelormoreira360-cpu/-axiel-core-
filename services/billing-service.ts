@@ -80,3 +80,83 @@ export async function seedDefaultPlans() {
     console.error("seedDefaultPlans error", error);
   }
 }
+
+// ─── Subscription Cancellation ────────────────────────────────────────────────
+
+/**
+ * Cancels a clinic subscription at the end of the current billing period.
+ * The subscription remains active until `current_period_ends_at`.
+ * Pass `immediately = true` to cancel right now (no proration refund issued here).
+ */
+export async function cancelClinicSubscription(
+  clinicId: string,
+  options: { immediately?: boolean } = {}
+): Promise<{ cancelledAt: string | null; endsAt: string | null }> {
+  const { stripe } = await import("@/lib/stripe");
+  const supabase = await createClient();
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("external_subscription_id, current_period_ends_at")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  if (!sub?.external_subscription_id) {
+    throw new Error("Subscrição Stripe não encontrada para esta clínica.");
+  }
+
+  let cancelled: import("stripe").Stripe.Subscription;
+
+  if (options.immediately) {
+    cancelled = await stripe.subscriptions.cancel(sub.external_subscription_id);
+  } else {
+    cancelled = await stripe.subscriptions.update(sub.external_subscription_id, {
+      cancel_at_period_end: true,
+    });
+  }
+
+  // Reflect in DB immediately (webhook will also update)
+  await supabase
+    .from("subscriptions")
+    .update({
+      metadata: {
+        stripe_status: cancelled.status,
+        cancel_at_period_end: cancelled.cancel_at_period_end,
+      },
+    })
+    .eq("clinic_id", clinicId);
+
+  return {
+    cancelledAt: options.immediately ? new Date().toISOString() : null,
+    endsAt: sub.current_period_ends_at ?? null,
+  };
+}
+
+/**
+ * Reactivates a subscription that was set to cancel_at_period_end.
+ */
+export async function reactivateClinicSubscription(clinicId: string): Promise<void> {
+  const { stripe } = await import("@/lib/stripe");
+  const supabase = await createClient();
+
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("external_subscription_id")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  if (!sub?.external_subscription_id) {
+    throw new Error("Subscrição Stripe não encontrada para esta clínica.");
+  }
+
+  await stripe.subscriptions.update(sub.external_subscription_id, {
+    cancel_at_period_end: false,
+  });
+
+  await supabase
+    .from("subscriptions")
+    .update({
+      metadata: { cancel_at_period_end: false },
+    })
+    .eq("clinic_id", clinicId);
+}
