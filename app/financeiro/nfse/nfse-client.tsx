@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { FileText, RefreshCw, X, ExternalLink, Plus } from "lucide-react";
 import { formatBRL } from "@/lib/finance-utils";
+import { formatCpf, validateCpf } from "@/lib/utils";
 import type { NfseInvoice } from "@/services/nfse-service";
 import { emitNfseAction, syncNfseAction, cancelNfseAction } from "./actions";
 
@@ -27,19 +28,38 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
   const [success, setSuccess] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState("");
+  const [cpfValue, setCpfValue] = useState("");
+  const [cpfError, setCpfError] = useState<string | null>(null);
 
   function flash(msg: string) { setSuccess(msg); setTimeout(() => setSuccess(null), 4000); }
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId);
 
+  function handleCpfChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const formatted = formatCpf(e.target.value);
+    setCpfValue(formatted);
+    const digits = formatted.replace(/\D/g, "");
+    if (digits.length === 11) {
+      setCpfError(validateCpf(digits) ? null : "CPF inválido");
+    } else {
+      setCpfError(null);
+    }
+  }
+
   function handleEmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    const digits = cpfValue.replace(/\D/g, "");
+    if (digits.length > 0 && !validateCpf(digits)) {
+      setError("CPF inválido. Verifique os dígitos informados.");
+      return;
+    }
     const fd = new FormData(e.currentTarget);
     startTransition(async () => {
       const r = await emitNfseAction(fd);
       if (r.error) { setError(r.error); return; }
       setShowModal(false);
+      setCpfValue("");
       flash("Nota fiscal enviada para emissão.");
       router.refresh();
     });
@@ -74,7 +94,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
       {/* Emit button */}
       <div className="flex justify-end">
         <button
-          onClick={() => { setShowModal(true); setError(null); }}
+          onClick={() => { setShowModal(true); setError(null); setCpfValue(""); setCpfError(null); }}
           className="flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-4 py-2 text-[12px] font-medium text-white hover:bg-black transition"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -178,7 +198,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.07]">
               <p className="text-[14px] font-semibold text-[#0F1A2E]">Emitir NFS-e</p>
-              <button onClick={() => setShowModal(false)} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+              <button onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -223,9 +243,13 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                   <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">CPF (opcional)</label>
                   <input
                     name="borrower_cpf"
+                    value={cpfValue}
+                    onChange={handleCpfChange}
                     placeholder="000.000.000-00"
-                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                    inputMode="numeric"
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${cpfError ? "border-red-400" : "border-black/15"}`}
                   />
+                  {cpfError && <p className="text-[10px] text-red-500 mt-1">{cpfError}</p>}
                 </div>
                 {/* Email */}
                 <div>
@@ -244,16 +268,19 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
               {/* Amount */}
               <div>
                 <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">Valor (R$) <span className="text-red-400">*</span></label>
-                <input
-                  name="amount_cents"
-                  required
-                  type="number"
-                  min="1"
-                  step="1"
-                  placeholder="Valor em centavos (ex: 20000 = R$200)"
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
-                />
-                <p className="text-[10px] text-[#A09E98] mt-1">Informe em centavos: R$200,00 = 20000</p>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#6B6A66]">R$</span>
+                  <input
+                    name="amount_reais"
+                    required
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    placeholder="0,00"
+                    className="w-full rounded-lg border border-black/15 pl-9 pr-3 py-2 text-sm focus:outline-none"
+                  />
+                </div>
+                <p className="text-[10px] text-[#A09E98] mt-1">Ex: 200,00 para R$200,00</p>
               </div>
 
               {/* Service description */}
@@ -269,7 +296,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
               <div className="flex gap-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
+                  onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }}
                   className="flex-1 rounded-lg border border-black/15 py-2 text-[12px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
                 >
                   Cancelar
