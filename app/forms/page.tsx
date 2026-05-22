@@ -3,7 +3,7 @@ import { Shell } from "@/components/shell";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { FileText, Plus, Pencil, ClipboardList, Download } from "lucide-react";
-import { importQSNAAction, deleteTemplateAction } from "@/app/forms/actions";
+import { importQSNAAction, importQRMAction, deleteTemplateAction } from "@/app/forms/actions";
 import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
 
 export default async function FormsPage() {
@@ -13,6 +13,10 @@ export default async function FormsPage() {
 
   const hasQSNA = templates.some((t) =>
     t.name.toLowerCase().includes("q-sna") || t.name.toLowerCase().includes("nervoso autônomo")
+  );
+
+  const hasQRM = templates.some((t) =>
+    t.name.toLowerCase().includes("q.r.m") || t.name.toLowerCase().includes("rastreamento metabólico")
   );
 
   return (
@@ -26,6 +30,16 @@ export default async function FormsPage() {
         </div>
         {profile?.clinic_id && (
           <div className="flex items-center gap-[8px]">
+            {!hasQRM && (
+              <form action={importQRMAction}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition"
+                >
+                  <Download className="h-3 w-3" /> Importar Q.R.M.
+                </button>
+              </form>
+            )}
             {!hasQSNA && (
               <form action={importQSNAAction}>
                 <button
