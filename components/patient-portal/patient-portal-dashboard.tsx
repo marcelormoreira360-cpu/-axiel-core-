@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useState, useTransition, useRef } from "react";
+import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus } from "lucide-react";
 import { type PatientPortalData } from "@/services/patient-portal-service";
 import { PackagesSection } from "./packages-section";
+import { uploadPortalDocumentAction, updatePatientContactAction } from "@/app/p/[token]/actions";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
@@ -28,6 +33,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+const FILE_TYPE_ICON: Record<string, React.ReactNode> = {
+  pdf:   <FileText className="h-4 w-4 text-red-400" />,
+  image: <Image className="h-4 w-4 text-blue-400" />,
+};
+
 export function PatientPortalDashboard({
   data,
   rawToken,
@@ -42,6 +52,56 @@ export function PatientPortalDashboard({
   const pkg = data.activePackage;
   const pkgPercent = pkg ? Math.round((pkg.sessions_used / pkg.sessions_total) * 100) : 0;
   const brandColor = data.clinic.primary_color ?? "#0B1F3A";
+
+  // Contact edit state
+  const [editingContact, setEditingContact] = useState(false);
+  const [phone, setPhone]   = useState(data.patient.phone ?? "");
+  const [email, setEmail]   = useState(data.patient.email ?? "");
+  const [contactMsg, setContactMsg] = useState<string | null>(null);
+  const [, startContactTransition] = useTransition();
+
+  // Document upload state
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [documents, setDocuments] = useState(data.documents ?? []);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const bookingUrl = data.clinic.slug ? `${appUrl}/book/${data.clinic.slug}` : null;
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    setUploadMsg(null);
+    const fd = new FormData();
+    fd.append("file", file);
+    const result = await uploadPortalDocumentAction(rawToken, fd);
+    setUploading(false);
+    if (result.ok) {
+      setUploadMsg("Arquivo enviado com sucesso!");
+      setDocuments((prev) => [
+        { id: crypto.randomUUID(), file_name: file.name, file_type: file.type.startsWith("image") ? "image" : file.type === "application/pdf" ? "pdf" : "other", source: "portal", created_at: new Date().toISOString() },
+        ...prev,
+      ]);
+    } else {
+      setUploadMsg(result.error ?? "Erro ao enviar.");
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function handleSaveContact() {
+    startContactTransition(async () => {
+      setContactMsg(null);
+      const result = await updatePatientContactAction(rawToken, { phone, email });
+      if (result.ok) {
+        setContactMsg("Dados atualizados!");
+        setEditingContact(false);
+      } else {
+        setContactMsg(result.error ?? "Erro ao salvar.");
+      }
+    });
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAF9] px-4 py-8 md:py-12">
@@ -208,6 +268,107 @@ export function PatientPortalDashboard({
 
         {/* Pacotes disponíveis */}
         <PackagesSection offers={data.availableOffers} rawToken={rawToken} />
+
+        {/* Agendar nova consulta */}
+        {bookingUrl && (
+          <a
+            href={bookingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full rounded-2xl border-2 py-3.5 text-sm font-semibold transition"
+            style={{ borderColor: brandColor, color: brandColor }}
+          >
+            <CalendarPlus className="h-4 w-4" />
+            Agendar nova consulta
+          </a>
+        )}
+
+        {/* Documentos */}
+        <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Documentos</p>
+            <label className="flex items-center gap-1.5 cursor-pointer rounded-xl border border-black/[.10] px-3 py-1.5 text-xs font-medium text-black/60 hover:bg-black/[.04] transition">
+              <FileUp className="h-3.5 w-3.5" />
+              {uploading ? "Enviando..." : "Enviar arquivo"}
+              <input ref={fileRef} type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp,.txt" onChange={handleUpload} disabled={uploading} />
+            </label>
+          </div>
+          {uploadMsg && (
+            <p className={`text-xs ${uploadMsg.startsWith("Erro") || uploadMsg.includes("Tipo") || uploadMsg.includes("grande") ? "text-red-500" : "text-[#0F6E56]"}`}>
+              {uploadMsg}
+            </p>
+          )}
+          {documents.length === 0 ? (
+            <p className="text-sm text-black/40">Nenhum documento enviado ainda.</p>
+          ) : (
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div key={doc.id} className="flex items-center gap-2 py-1.5 border-b border-black/[.05] last:border-0">
+                  {FILE_TYPE_ICON[doc.file_type] ?? <FileText className="h-4 w-4 text-black/30" />}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#0F1A2E] truncate">{doc.file_name}</p>
+                    <p className="text-xs text-black/30">{new Date(doc.created_at).toLocaleDateString("pt-BR")}</p>
+                  </div>
+                  {doc.source === "portal" && (
+                    <span className="text-[10px] text-black/30">Você</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Meu contato */}
+        <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Meu contato</p>
+            {!editingContact && (
+              <button onClick={() => setEditingContact(true)} className="flex items-center gap-1 text-xs text-black/40 hover:text-black/70 transition">
+                <Pencil className="h-3 w-3" /> Editar
+              </button>
+            )}
+          </div>
+          {contactMsg && (
+            <p className={`text-xs ${contactMsg.startsWith("Erro") ? "text-red-500" : "text-[#0F6E56]"}`}>{contactMsg}</p>
+          )}
+          {editingContact ? (
+            <div className="space-y-2">
+              <div>
+                <label className="text-xs text-black/40 block mb-1">Telefone</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+55 11 99999-9999"
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-black/40 block mb-1">E-mail</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
+                />
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={handleSaveContact} className="flex items-center gap-1 rounded-xl bg-[#0F1A2E] text-white px-4 py-2 text-sm font-medium hover:bg-black transition">
+                  <Check className="h-3.5 w-3.5" /> Salvar
+                </button>
+                <button onClick={() => { setEditingContact(false); setContactMsg(null); }} className="flex items-center gap-1 rounded-xl border border-black/[.10] px-4 py-2 text-sm text-black/50 hover:bg-black/[.04] transition">
+                  <X className="h-3.5 w-3.5" /> Cancelar
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <p className="text-sm text-[#0F1A2E]">{data.patient.phone || <span className="text-black/30 italic">Telefone não informado</span>}</p>
+              <p className="text-sm text-[#0F1A2E]">{data.patient.email || <span className="text-black/30 italic">E-mail não informado</span>}</p>
+            </div>
+          )}
+        </div>
 
         {/* WhatsApp CTA */}
         {data.whatsappUrl && (

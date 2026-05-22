@@ -55,10 +55,18 @@ export type PatientPortalOffer = {
   number_of_sessions: number | null;
 };
 
+export type PatientPortalDocument = {
+  id: string;
+  file_name: string;
+  file_type: string;
+  source: string;
+  created_at: string;
+};
+
 export type PatientPortalData = {
   link: PatientPortalLink;
-  patient: Pick<Patient, "id" | "full_name" | "status">;
-  clinic: { id: string; name: string; logo_url: string | null; primary_color: string | null };
+  patient: Pick<Patient, "id" | "full_name" | "status"> & { email: string | null; phone: string | null };
+  clinic: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null };
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
   upcomingAppointments: PatientPortalSessionItem[];
@@ -67,6 +75,7 @@ export type PatientPortalData = {
   whatsappUrl: string | null;
   availableOffers: PatientPortalOffer[];
   intakeResponses: PatientPortalIntakeItem[];
+  documents: PatientPortalDocument[];
 };
 
 function hashToken(token: string) {
@@ -276,9 +285,9 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   }
 
   const now = new Date().toISOString();
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }] = await Promise.all([
-    supabase.from("patients").select("id, full_name, status").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
-    supabase.from("clinics").select("id, name, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }] = await Promise.all([
+    supabase.from("patients").select("id, full_name, status, email, phone").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
+    supabase.from("clinics").select("id, name, slug, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
       .from("ai_insights")
       .select("*")
@@ -335,6 +344,13 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .eq("clinic_id", link.clinic_id)
       .not("answer", "is", null)
       .order("created_at", { ascending: true }),
+    supabase
+      .from("patient_documents")
+      .select("id, file_name, file_type, source, created_at")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .order("created_at", { ascending: false })
+      .limit(20),
   ]);
 
   if (!patient || !clinic) return null;
@@ -415,10 +431,18 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     }))
     .filter((r) => r.label !== "");
 
+  const documents: PatientPortalDocument[] = (docsData ?? []).map((d) => ({
+    id: d.id as string,
+    file_name: d.file_name as string,
+    file_type: d.file_type as string,
+    source: d.source as string,
+    created_at: d.created_at as string,
+  }));
+
   return {
     link: link as PatientPortalLink,
-    patient,
-    clinic,
+    patient: patient as PatientPortalData["patient"],
+    clinic: clinic as PatientPortalData["clinic"],
     latestInsight: insight,
     sessions,
     upcomingAppointments: upcomingMapped,
@@ -427,5 +451,6 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     whatsappUrl: createWhatsAppUrl(whatsappNumber),
     availableOffers,
     intakeResponses,
+    documents,
   };
 }
