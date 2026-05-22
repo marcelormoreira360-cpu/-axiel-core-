@@ -1,47 +1,112 @@
 import Link from "next/link";
+import { ArrowLeft, ClipboardList, Plus } from "lucide-react";
 import { Shell } from "@/components/shell";
-import { Card } from "@/components/card";
-import { ButtonSecondary } from "@/components/button";
-import { listPatientFormSubmissions } from "@/services/form-service";
+import { getPatientAssessmentResponses } from "@/services/assessment-service";
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "hoje";
+  if (days === 1) return "ontem";
+  if (days < 30) return `${days}d atrás`;
+  const months = Math.floor(days / 30);
+  return `${months} ${months === 1 ? "mês" : "meses"} atrás`;
+}
+
+function ScoreBadge({ pct }: { pct: number }) {
+  const color = pct >= 70 ? "bg-red-50 text-red-500" : pct >= 40 ? "bg-amber-50 text-amber-600" : "bg-[#E1F5EE] text-[#0F6E56]";
+  return (
+    <span className={`text-[10px] font-semibold px-[8px] py-[3px] rounded-full ${color}`}>
+      {Math.round(pct)}%
+    </span>
+  );
 }
 
 export default async function PatientFormsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const submissions = await listPatientFormSubmissions(id);
+  const responses = await getPatientAssessmentResponses(id);
 
   return (
     <Shell>
-      <div className="min-h-screen bg-axiel-background p-4 md:p-8">
-        <div className="mx-auto max-w-5xl space-y-8">
-          <header>
-            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">PATIENT FORMS</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-axiel-text-primary">Forms</h1>
-            <p className="mt-3 text-axiel-text-secondary">Simple answers and short summaries for this patient.</p>
-          </header>
-
-          <section className="space-y-4">
-            {submissions.slice(0, 5).map((submission) => (
-              <Card key={submission.id} className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-                <div>
-                  <h2 className="text-lg font-semibold text-axiel-text-primary">{submission.form_name}</h2>
-                  <p className="mt-1 text-sm text-axiel-text-secondary">{formatDate(submission.completed_at)} · {submission.summary}</p>
-                </div>
-                <ButtonSecondary>View answers</ButtonSecondary>
-              </Card>
-            ))}
-          </section>
-
-          <details className="rounded-2xl border border-axiel-line bg-white p-5">
-            <summary className="cursor-pointer text-sm font-medium text-axiel-text-primary">View details</summary>
-            <p className="mt-3 text-sm text-axiel-text-secondary">Older forms and full answers stay hidden until needed.</p>
-          </details>
-
-          <Link href={`/patients/${id}`} className="text-sm font-medium text-axiel-primary">Back to patient</Link>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-[20px]">
+        <div className="flex items-center gap-[10px]">
+          <Link
+            href={`/patients/${id}`}
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+          </Link>
+          <div>
+            <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Formulários</h1>
+            <p className="text-[12px] text-[#A09E98] mt-[1px]">
+              {responses.length} {responses.length === 1 ? "resposta" : "respostas"} registradas
+            </p>
+          </div>
         </div>
+        <Link
+          href={`/patients/${id}/forms/new`}
+          className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[12px] py-[7px] rounded-[8px]"
+        >
+          <Plus className="h-3.5 w-3.5" /> Novo formulário
+        </Link>
       </div>
+
+      {/* Responses list */}
+      {responses.length === 0 ? (
+        <div className="bg-white border border-black/[.07] rounded-[14px] flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
+          <div className="w-12 h-12 rounded-full bg-[#F4F3EF] flex items-center justify-center mb-3">
+            <ClipboardList className="h-5 w-5 text-[#A09E98]" />
+          </div>
+          <p className="text-[13px] text-[#A09E98] mb-[4px]">Nenhum formulário preenchido ainda.</p>
+          <p className="text-[11px] text-[#D3D1C7]">Clique em "Novo formulário" para aplicar um questionário.</p>
+        </div>
+      ) : (
+        <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
+          <div className="divide-y divide-black/[.04]">
+            {responses.map((r) => {
+              const templateName = (r as any).assessment_templates?.name ?? "Formulário";
+              const pct = r.score_percentage ?? 0;
+              return (
+                <Link
+                  key={r.id}
+                  href={`/patients/${id}/forms/${r.id}`}
+                  className="flex items-center gap-[12px] px-[16px] py-[13px] hover:bg-[#FAFAF8] transition group"
+                >
+                  {/* Icon */}
+                  <div className="w-8 h-8 rounded-[8px] bg-[#F4F3EF] flex items-center justify-center shrink-0">
+                    <ClipboardList className="h-4 w-4 text-[#A09E98]" />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{templateName}</p>
+                    <div className="flex items-center gap-[6px] mt-[2px]">
+                      <span className="text-[10px] text-[#A09E98]">{timeAgo(r.filled_at)}</span>
+                      {r.total_score !== null && (
+                        <>
+                          <span className="text-[#D3D1C7]">·</span>
+                          <span className="text-[10px] text-[#A09E98]">
+                            {r.total_score}/{r.max_possible_score} pts
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Score badge */}
+                  {r.score_percentage !== null && <ScoreBadge pct={pct} />}
+
+                  {/* Arrow */}
+                  <svg className="w-3 h-3 text-[#D3D1C7] group-hover:text-[#A09E98] transition shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }

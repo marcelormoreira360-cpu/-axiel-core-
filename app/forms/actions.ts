@@ -3,6 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { deleteAssessmentTemplate } from "@/services/assessment-service";
+
+export async function deleteTemplateAction(templateId: string): Promise<void> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+  await deleteAssessmentTemplate(templateId);
+  revalidatePath("/forms");
+}
 
 const QSNA_TEMPLATE = {
   name: "Q-SNA — Sistema Nervoso Autônomo",
