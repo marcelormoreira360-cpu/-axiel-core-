@@ -80,6 +80,7 @@ export type Appointment = {
   duration_minutes: number;
   notes: string | null;
   video_url: string | null;
+  status: "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show" | null;
   zoom_meeting_id: string | null;
   zoom_join_url: string | null;
   zoom_start_url: string | null;
