@@ -1,5 +1,6 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPaymentsWithPatients, paymentMethodLabel } from "@/services/finance-service";
+import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 import type { PaymentMethod } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -16,12 +17,39 @@ export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
 
-  const url  = new URL(req.url);
-  const from = url.searchParams.get("from") ?? undefined;
-  const to   = url.searchParams.get("to")   ?? undefined;
+  const url    = new URL(req.url);
+  const from   = url.searchParams.get("from")   ?? undefined;
+  const to     = url.searchParams.get("to")     ?? undefined;
+  const format = url.searchParams.get("format") ?? "csv";
 
   const payments = await getPaymentsWithPatients(clinic.id, { from, to, limit: 10000 });
+  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  if (format === "xlsx") {
+    const rows = payments.map((p) => ({
+      data:    new Date(p.paid_at).toLocaleDateString("pt-BR"),
+      paciente: p.patient_name ?? "",
+      tipo:    p.session_type_name ?? "",
+      metodo:  paymentMethodLabel(p.payment_method as PaymentMethod),
+      valor:   (p.amount_cents / 100),
+      notas:   p.notes ?? "",
+    }));
+    const buf = buildExcelBuffer([{
+      name: "Pagamentos",
+      columns: [
+        { header: "Data",              key: "data",     width: 14 },
+        { header: "Paciente",          key: "paciente", width: 30 },
+        { header: "Tipo de sessão",    key: "tipo",     width: 24 },
+        { header: "Forma de pagamento",key: "metodo",   width: 22 },
+        { header: "Valor (R$)",        key: "valor",    width: 14 },
+        { header: "Notas",             key: "notas",    width: 36 },
+      ],
+      rows,
+    }]);
+    return excelResponse(buf, `pagamentos-${slug}.xlsx`);
+  }
+
+  // CSV (default)
   const headers = ["Data", "Paciente", "Tipo de sessão", "Forma de pagamento", "Valor (R$)", "Notas"];
   const rows = payments.map((p) => [
     new Date(p.paid_at).toLocaleDateString("pt-BR"),
@@ -33,12 +61,11 @@ export async function GET(req: Request) {
   ]);
 
   const csv = [
-    "﻿", // UTF-8 BOM for Excel
+    "﻿",
     headers.map(escCsv).join(","),
     ...rows.map((r) => r.map(escCsv).join(",")),
   ].join("\r\n");
 
-  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",

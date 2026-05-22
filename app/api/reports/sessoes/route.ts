@@ -1,5 +1,6 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 
 export const runtime = "nodejs";
 
@@ -25,9 +26,10 @@ export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
 
-  const url  = new URL(req.url);
-  const from = url.searchParams.get("from") ?? undefined;
-  const to   = url.searchParams.get("to")   ?? undefined;
+  const url    = new URL(req.url);
+  const from   = url.searchParams.get("from")   ?? undefined;
+  const to     = url.searchParams.get("to")     ?? undefined;
+  const format = url.searchParams.get("format") ?? "csv";
 
   const supabase = await createSupabaseServerClient();
   let q = supabase
@@ -64,13 +66,53 @@ export async function GET(req: Request) {
     ];
   });
 
+  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  if (format === "xlsx") {
+    const xlsxRows = appts.map((a) => {
+      const patient = Array.isArray(a.patients) ? a.patients[0] : a.patients;
+      const st      = Array.isArray(a.session_types) ? a.session_types[0] : a.session_types;
+      const d       = new Date(a.starts_at);
+      return {
+        data:     d.toLocaleDateString("pt-BR"),
+        hora:     d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        paciente: (patient as { full_name?: string } | null)?.full_name ?? "",
+        email:    (patient as { email?: string }    | null)?.email ?? "",
+        telefone: (patient as { phone?: string }    | null)?.phone ?? "",
+        tipo:     (st as { name?: string }          | null)?.name ?? "",
+        duracao:  a.duration_minutes ?? "",
+        status:   statusLabel(a.status ?? ""),
+        valor:    (st as { price_cents?: number }   | null)?.price_cents
+          ? (st as { price_cents: number }).price_cents / 100
+          : "",
+        notas:    a.notes ?? "",
+      };
+    });
+    const buf = buildExcelBuffer([{
+      name: "Sessões",
+      columns: [
+        { header: "Data",          key: "data",     width: 14 },
+        { header: "Hora",          key: "hora",     width: 10 },
+        { header: "Paciente",      key: "paciente", width: 30 },
+        { header: "E-mail",        key: "email",    width: 28 },
+        { header: "Telefone",      key: "telefone", width: 18 },
+        { header: "Tipo de sessão",key: "tipo",     width: 24 },
+        { header: "Duração (min)", key: "duracao",  width: 14 },
+        { header: "Status",        key: "status",   width: 16 },
+        { header: "Valor (R$)",    key: "valor",    width: 14 },
+        { header: "Notas",         key: "notas",    width: 36 },
+      ],
+      rows: xlsxRows,
+    }]);
+    return excelResponse(buf, `sessoes-${slug}.xlsx`);
+  }
+
   const csv = [
     "﻿",
     headers.map(escCsv).join(","),
     ...rows.map((r) => r.map(escCsv).join(",")),
   ].join("\r\n");
 
-  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
