@@ -85,10 +85,18 @@ export default async function WhatsAppMonitorPage() {
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
 
-  const [convs, stats] = await Promise.all([
-    listConversations(clinicId),
-    getWaStats(clinicId),
-  ]);
+  let convs: WaConversation[] = [];
+  let stats = { total: 0, newToday: 0, messagesToday: 0, botActive: false };
+  let serviceError: string | null = null;
+
+  try {
+    [convs, stats] = await Promise.all([
+      listConversations(clinicId),
+      getWaStats(clinicId),
+    ]);
+  } catch (err) {
+    serviceError = err instanceof Error ? err.message : "Erro ao carregar conversas";
+  }
 
   const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}/api/whatsapp/webhook`;
   const fromNumber = process.env.TWILIO_FROM_NUMBER ?? "—";
@@ -176,6 +184,16 @@ export default async function WhatsAppMonitorPage() {
           </div>
         </div>
       </div>
+
+      {/* Service error notice */}
+      {serviceError && (
+        <div className="bg-amber-50 border border-amber-200 rounded-[12px] px-[16px] py-[13px] mb-[16px]">
+          <p className="text-[12px] font-medium text-amber-700 mb-[2px]">⚠️ Serviço não configurado</p>
+          <p className="text-[11px] text-amber-600">
+            Verifique se as variáveis de ambiente <code className="font-mono bg-amber-100 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> estão configuradas no Vercel.
+          </p>
+        </div>
+      )}
 
       {/* Conversations list */}
       <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">

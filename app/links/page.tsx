@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -32,14 +33,13 @@ export default async function LinksPage() {
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const baseUrl = `${protocol}://${host}`;
 
-  // Load bookable practitioners
+  // Load all clinic_users (bookable or not) with zoom_personal_url
   const supabase = await createSupabaseServerClient();
   const { data: cuRows } = await supabase
     .from("clinic_users")
-    .select("user_id, display_name, specialty, is_bookable")
+    .select("user_id, display_name, specialty, is_bookable, zoom_personal_url")
     .eq("clinic_id", clinic.id)
     .eq("status", "active")
-    .eq("is_bookable", true)
     .order("created_at");
 
   const userIds = (cuRows ?? []).map((r) => r.user_id);
@@ -52,8 +52,30 @@ export default async function LinksPage() {
     user_id: r.user_id,
     display_name: r.display_name as string | null,
     specialty: r.specialty as string | null,
-    full_name: userMap.get(r.user_id)?.full_name as string | null ?? null,
+    is_bookable: r.is_bookable as boolean,
+    zoom_personal_url: (r.zoom_personal_url as string | null) ?? null,
+    full_name: (userMap.get(r.user_id)?.full_name as string | null) ?? null,
   }));
+
+  // Find current user's own zoom URL
+  const myRow = profile ? practitioners.find((p) => p.user_id === profile.id) : null;
+  const myZoomUrl = myRow?.zoom_personal_url ?? null;
+
+  async function saveZoomUrlAction(formData: FormData) {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) return;
+
+    const url = String(formData.get("zoom_url") ?? "").trim() || null;
+    const supabase = await createSupabaseServerClient();
+    await supabase
+      .from("clinic_users")
+      .update({ zoom_personal_url: url })
+      .eq("clinic_id", profile.clinic_id)
+      .eq("user_id", profile.id);
+
+    revalidatePath("/links");
+  }
 
   return (
     <Shell>
@@ -70,7 +92,9 @@ export default async function LinksPage() {
         baseUrl={baseUrl}
         clinicSlug={clinic.slug}
         clinicName={clinic.name}
-        practitioners={practitioners}
+        practitioners={practitioners.filter((p) => p.is_bookable)}
+        myZoomUrl={myZoomUrl}
+        saveZoomUrlAction={saveZoomUrlAction}
       />
     </Shell>
   );
