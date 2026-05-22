@@ -1,43 +1,90 @@
-import { CheckCircle2, Mail, MessageSquare, Send, XCircle } from "lucide-react";
-import { EmptyState } from "@/components/empty-state";
-import { LimitedList } from "@/components/limited-list";
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
+}
 
-export function CommunicationLogList({ logs }: { logs: Array<Record<string, any>> }) {
+const USE_CASE_LABELS: Record<string, string> = {
+  appointment_reminder:    "Lembrete",
+  appointment_confirmation: "Confirmação",
+  follow_up:               "Follow-up",
+  lead_nurturing:          "Lead",
+  package_low:             "Pacote",
+};
+
+export function CommunicationLogList({ logs }: { logs: Array<Record<string, unknown>> }) {
   if (logs.length === 0) {
     return (
-      <EmptyState
-        icon={<Send className="h-7 w-7" />}
-        title="No messages sent yet"
-        text="Message history will appear here after you send your first email or SMS."
-        href="/communications"
-        action="Prepare messages"
-      />
+      <div className="bg-white border border-black/[.07] rounded-[14px] flex flex-col items-center justify-center py-[40px] px-[16px] text-center">
+        <div className="w-10 h-10 rounded-full bg-[#F4F3EF] flex items-center justify-center mb-3">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A09E98" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </div>
+        <p className="text-[12px] text-[#A09E98]">Nenhuma mensagem enviada.</p>
+      </div>
     );
   }
 
   return (
-    <LimitedList
-      items={logs}
-      detailsLabel={`View ${Math.max(logs.length - 5, 0)} more messages`}
-      renderItem={(log) => (
-        <div key={log.id} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-black/45">
-                {log.channel === "email" ? <Mail className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
-                <span>{String(log.use_case).replaceAll("_", " ")}</span>
+    <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
+      <div className="divide-y divide-black/[.04]">
+        {logs.map((log) => {
+          const isSent   = log.status === "sent";
+          const isFailed = log.status === "failed";
+          const isEmail  = log.channel === "email";
+          const useCase  = USE_CASE_LABELS[String(log.use_case ?? "")] ?? String(log.use_case ?? "");
+          const body     = String(log.body ?? "");
+
+          return (
+            <div key={String(log.id)} className="px-[14px] py-[11px]">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  {/* Channel + use case */}
+                  <div className="flex items-center gap-[6px] mb-[3px]">
+                    <span className={`text-[9px] font-semibold uppercase tracking-wider px-[6px] py-[1px] rounded-full ${isEmail ? "bg-blue-50 text-blue-600" : "bg-purple-50 text-purple-600"}`}>
+                      {isEmail ? "Email" : "SMS"}
+                    </span>
+                    <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#F4F3EF] text-[#6B6A66] px-[6px] py-[1px] rounded-full">
+                      {useCase}
+                    </span>
+                  </div>
+                  {/* Recipient */}
+                  <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{String(log.recipient ?? "")}</p>
+                  {/* Body preview */}
+                  <p className="text-[11px] text-[#A09E98] truncate mt-[1px]">{body}</p>
+                </div>
+                {/* Status + time */}
+                <div className="text-right shrink-0">
+                  <span className={[
+                    "inline-flex items-center gap-[3px] text-[9px] font-semibold uppercase tracking-wider px-[6px] py-[2px] rounded-full",
+                    isSent   ? "bg-[#E1F5EE] text-[#0F6E56]" :
+                    isFailed ? "bg-red-50 text-red-500" :
+                    "bg-[#F4F3EF] text-[#6B6A66]",
+                  ].join(" ")}>
+                    {isSent   && (
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                    {isFailed && (
+                      <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    )}
+                    {isSent ? "Enviado" : isFailed ? "Falhou" : "Fila"}
+                  </span>
+                  <p className="text-[10px] text-[#D3D1C7] mt-[3px]">{timeAgo(String(log.created_at))}</p>
+                </div>
               </div>
-              <p className="text-sm font-semibold">{log.recipient}</p>
-              <p className="mt-1 line-clamp-2 text-xs leading-5 text-black/45">{log.body}</p>
             </div>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-axiel-soft px-3 py-1 text-xs font-semibold text-black/55">
-              {log.status === "sent" ? <CheckCircle2 className="h-3.5 w-3.5" /> : <XCircle className="h-3.5 w-3.5" />}
-              {log.status}
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-black/35">{new Date(log.created_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</p>
-        </div>
-      )}
-    />
+          );
+        })}
+      </div>
+    </div>
   );
 }
