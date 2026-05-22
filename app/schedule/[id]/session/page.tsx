@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Video } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SessionRecordingPanel } from "@/components/session-recording-panel";
+import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { getAppointmentById } from "@/services/appointment-service";
 import { getSessionRecordByAppointment } from "@/services/session-recording-service";
+import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -17,7 +19,10 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const appointment = await getAppointmentById(id);
   if (!appointment) notFound();
 
-  const record = await getSessionRecordByAppointment(id);
+  const [record, recordings] = await Promise.all([
+    getSessionRecordByAppointment(id),
+    getZoomRecordingsByAppointment(id),
+  ]);
 
   return (
     <Shell>
@@ -47,6 +52,19 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         record={record}
         saved={saved === "1"}
       />
+
+      {/* Zoom recordings — shown only if meeting was created */}
+      {appointment.zoom_meeting_id && (
+        <div className="mt-6">
+          <ZoomRecordingsPanel
+            appointmentId={id}
+            zoomMeetingId={appointment.zoom_meeting_id}
+            clinicId={appointment.clinic_id}
+            patientId={appointment.patient_id}
+            recordings={recordings}
+          />
+        </div>
+      )}
     </Shell>
   );
 }

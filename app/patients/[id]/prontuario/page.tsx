@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Printer, FileText } from "lucide-react";
+import { ArrowLeft, Printer, FileText, Video, ExternalLink } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
+import { getZoomRecordingsByAppointments } from "@/services/zoom-service";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -42,6 +43,16 @@ export default async function ProntuarioPage({ params }: Props) {
   ]);
 
   if (!patient) notFound();
+
+  // Zoom recordings keyed by appointment_id
+  const apptIds = sessionRecords.map((r) => r.appointment_id);
+  const zoomRecordings = await getZoomRecordingsByAppointments(apptIds);
+  const recordingsByAppt = new Map<string, typeof zoomRecordings>();
+  for (const rec of zoomRecordings) {
+    if (!rec.appointment_id) continue;
+    if (!recordingsByAppt.has(rec.appointment_id)) recordingsByAppt.set(rec.appointment_id, []);
+    recordingsByAppt.get(rec.appointment_id)!.push(rec);
+  }
 
   // Map appointment data by id for quick lookup
   const apptMap = new Map(appointments.map((a) => [a.id, a]));
@@ -216,6 +227,37 @@ export default async function ProntuarioPage({ params }: Props) {
                       {/* Empty record */}
                       {!hasSoap && !rec.notes && rec.key_observations?.length === 0 && (
                         <p className="text-[12px] text-[#D3D1C7] italic">Sessão sem anotações.</p>
+                      )}
+
+                      {/* Zoom recordings */}
+                      {(recordingsByAppt.get(rec.appointment_id) ?? []).length > 0 && (
+                        <div className="pt-2 border-t border-black/[.05]">
+                          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-2">
+                            Gravações
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {(recordingsByAppt.get(rec.appointment_id) ?? []).map((zr) => (
+                              <div key={zr.id} className="flex items-center gap-1.5">
+                                <Video className="h-3 w-3 text-[#0F6E56]" />
+                                {zr.play_url ? (
+                                  <a
+                                    href={zr.play_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:underline"
+                                  >
+                                    {zr.file_type === "MP4" ? "Vídeo" : zr.file_type === "M4A" ? "Áudio" : zr.file_type ?? "Arquivo"}
+                                    <ExternalLink className="h-2.5 w-2.5" />
+                                  </a>
+                                ) : (
+                                  <span className="text-[11px] text-[#A09E98]">
+                                    {zr.file_type ?? "Arquivo"}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>

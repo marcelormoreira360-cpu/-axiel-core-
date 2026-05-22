@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { upsertSessionRecord } from "@/services/session-recording-service";
 import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
+import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
 import type { AiInsight } from "@/lib/types";
 
 export async function saveSessionRecord(formData: FormData) {
@@ -65,6 +66,17 @@ export async function saveSessionRecord(formData: FormData) {
   revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/patients/${patientId}/prontuario`);
   redirect(`/schedule/${appointmentId}/session?saved=1`);
+}
+
+export async function syncZoomRecordingsAction(
+  appointmentId: string,
+  zoomMeetingId: string,
+  clinicId: string,
+  patientId: string | null,
+): Promise<{ synced: number; error: string | null }> {
+  const result = await syncZoomRecordingsForMeeting(zoomMeetingId, appointmentId, clinicId, patientId);
+  if (result.synced > 0) revalidatePath(`/schedule/${appointmentId}/session`);
+  return result;
 }
 
 export async function generateSessionInsightAction(
