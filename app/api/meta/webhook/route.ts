@@ -144,12 +144,22 @@ export async function GET(req: NextRequest) {
 
 // ─── Webhook Handler (POST) ───────────────────────────────────────────────────
 
+// ─── Token resolver ───────────────────────────────────────────────────────────
+
+function resolvePageToken(pageId: string): string {
+  // Map page IDs to their respective tokens
+  const tokenMap: Record<string, string> = {
+    [process.env.META_PAGE_ID_1 ?? ""]: process.env.META_PAGE_ACCESS_TOKEN ?? "",
+    [process.env.META_PAGE_ID_2 ?? ""]: process.env.META_PAGE_ACCESS_TOKEN_2 ?? "",
+  };
+  return tokenMap[pageId] ?? process.env.META_PAGE_ACCESS_TOKEN ?? "";
+}
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
-  const pageAccessToken = process.env.META_PAGE_ACCESS_TOKEN;
 
-  if (!apiKey || !pageAccessToken) {
-    console.error("Missing OPENAI_API_KEY or META_PAGE_ACCESS_TOKEN");
+  if (!apiKey) {
+    console.error("Missing OPENAI_API_KEY");
     return new NextResponse("OK", { status: 200 });
   }
 
@@ -163,6 +173,10 @@ export async function POST(req: NextRequest) {
     const entries = body.entry ?? [];
 
     for (const entry of entries) {
+      // entry.id is the page ID that received the message
+      const pageId = entry.id ?? "";
+      const pageAccessToken = resolvePageToken(pageId);
+
       const messagingEvents =
         entry.messaging ?? entry.changes?.flatMap((c: any) => c.value?.messages ?? []) ?? [];
 
