@@ -43,6 +43,7 @@ const config: Config = {
           secondary:  "#0F6E56",
           ink:        "#0F1A2E",
           soft:       "#FAFAF8",
+          cream:      "#F4F3EF",
           line:       "#E8E6E2",
           blue:       "#0F1A2E",
           blueDark:   "#071529",
