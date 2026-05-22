@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const publicRoutes = ["/", "/auth/login"];
-const publicPrefixes = ["/auth", "/api/public", "/api/whatsapp"];
+const publicPrefixes = ["/auth", "/api/public", "/api/whatsapp", "/api/meta"];
 
 function isPublicPath(pathname: string) {
   if (pathname === "/auth/mfa") return false; // requires authentication
