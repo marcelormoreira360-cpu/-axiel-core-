@@ -84,6 +84,13 @@ function buildEmailHtml(patientName: string, report: any): string {
 }
 
 export async function POST(req: NextRequest) {
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
 

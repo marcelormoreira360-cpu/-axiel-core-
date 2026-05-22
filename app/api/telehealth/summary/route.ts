@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
+  // ── Auth guard ──────────────────────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "OPENAI_API_KEY não configurada" }, { status: 500 });
@@ -42,7 +50,12 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    const summary = JSON.parse(data.choices[0].message.content);
+    let summary: unknown;
+    try {
+      summary = JSON.parse(data.choices[0].message.content);
+    } catch {
+      throw new Error("OpenAI retornou JSON inválido");
+    }
     return NextResponse.json(summary);
   } catch (err: unknown) {
     console.error("Summary error:", err);

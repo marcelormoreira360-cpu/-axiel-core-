@@ -12,8 +12,8 @@ export function validateTwilioSignature(
 ): boolean {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (!authToken) {
-    console.error("webhook-guard: TWILIO_AUTH_TOKEN not set — skipping validation");
-    return true; // non-blocking in misconfiguration; log is the signal
+    console.error("webhook-guard: TWILIO_AUTH_TOKEN not set — rejecting request (fail closed)");
+    return false;
   }
   if (!signature) return false;
 
@@ -34,8 +34,8 @@ export function validateMetaSignature(
 ): boolean {
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {
-    console.error("webhook-guard: META_APP_SECRET not set — skipping validation");
-    return true; // non-blocking in misconfiguration; log is the signal
+    console.error("webhook-guard: META_APP_SECRET not set — rejecting request (fail closed)");
+    return false;
   }
   if (!signature) return false;
 

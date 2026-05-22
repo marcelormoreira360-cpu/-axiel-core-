@@ -33,15 +33,17 @@ export async function POST(req: Request) {
   }
 
   // ── 2. Validate webhook signature ──────────────────────────────────────────
-  const secret = process.env.ZOOM_WEBHOOK_SECRET_TOKEN ?? "";
-  if (secret) {
-    const ts        = req.headers.get("x-zm-request-timestamp") ?? "";
-    const signature = req.headers.get("x-zm-signature") ?? "";
-    const message   = `v0:${ts}:${rawBody}`;
-    const expected  = "v0=" + createHmac("sha256", secret).update(message).digest("hex");
-    if (signature !== expected) {
-      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
-    }
+  const secret = process.env.ZOOM_WEBHOOK_SECRET_TOKEN;
+  if (!secret) {
+    console.error("zoom-webhook: ZOOM_WEBHOOK_SECRET_TOKEN not set — rejecting (fail closed)");
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const ts        = req.headers.get("x-zm-request-timestamp") ?? "";
+  const signature = req.headers.get("x-zm-signature") ?? "";
+  const message   = `v0:${ts}:${rawBody}`;
+  const expected  = "v0=" + createHmac("sha256", secret).update(message).digest("hex");
+  if (signature !== expected) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
   // ── 3. Handle recording.completed ──────────────────────────────────────────
