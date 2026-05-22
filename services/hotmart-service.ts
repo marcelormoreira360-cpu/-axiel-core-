@@ -252,3 +252,80 @@ export async function listRecentHotmartPurchases(
     .limit(limit);
   return (data ?? []) as HotmartPurchaseSummary[];
 }
+
+// ── Extended purchase type for management page ────────────────────
+
+export type HotmartPurchaseFull = HotmartPurchaseSummary & {
+  patient_id: string | null;
+  buyer_phone: string | null;
+  product_id: string | null;
+  event_type: string | null;
+  patients: { full_name: string } | null;
+};
+
+export type HotmartKPIs = {
+  total_revenue_cents: number;
+  total_purchases: number;
+  completed: number;
+  cancelled: number;
+  refunded: number;
+  chargeback: number;
+};
+
+export async function listHotmartPurchases(
+  clinicId: string,
+  opts: {
+    status?: string;
+    from?: string;
+    to?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<{ purchases: HotmartPurchaseFull[]; total: number }> {
+  const supabase = createSupabaseAdminClient();
+  const limit  = opts.limit  ?? 50;
+  const offset = opts.offset ?? 0;
+
+  let q = supabase
+    .from("hotmart_purchases")
+    .select(
+      "id, transaction_id, product_name, product_id, buyer_name, buyer_email, buyer_phone, patient_id, status, price_cents, currency, event_type, created_at, patients(full_name)",
+      { count: "exact" },
+    )
+    .eq("clinic_id", clinicId)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (opts.status && opts.status !== "all") q = q.eq("status", opts.status);
+  if (opts.from) q = q.gte("created_at", opts.from);
+  if (opts.to)   q = q.lte("created_at", opts.to + "T23:59:59");
+  if (opts.search) {
+    const s = `%${opts.search}%`;
+    q = q.or(`buyer_name.ilike.${s},buyer_email.ilike.${s},product_name.ilike.${s}`);
+  }
+
+  const { data, count } = await q;
+  return {
+    purchases: (data ?? []) as unknown as HotmartPurchaseFull[],
+    total: count ?? 0,
+  };
+}
+
+export async function getHotmartKPIs(clinicId: string): Promise<HotmartKPIs> {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("hotmart_purchases")
+    .select("status, price_cents")
+    .eq("clinic_id", clinicId);
+
+  const rows = data ?? [];
+  return {
+    total_revenue_cents: rows.filter((r) => r.status === "completed").reduce((s, r) => s + (r.price_cents ?? 0), 0),
+    total_purchases: rows.length,
+    completed:  rows.filter((r) => r.status === "completed").length,
+    cancelled:  rows.filter((r) => r.status === "cancelled").length,
+    refunded:   rows.filter((r) => r.status === "refunded").length,
+    chargeback: rows.filter((r) => r.status === "chargeback").length,
+  };
+}

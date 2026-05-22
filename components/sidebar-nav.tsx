@@ -33,6 +33,7 @@ const moreNav = [
   { href: "/follow-ups",     label: "Follow-ups" },
   { href: "/communications", label: "Mensagens" },
   { href: "/products",       label: "Produtos" },
+  { href: "/hotmart",        label: "Hotmart" },
   { href: "/billing",        label: "Faturamento" },
   { href: "/onboarding",     label: "Configuração inicial" },
 ];
