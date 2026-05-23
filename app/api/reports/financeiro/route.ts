@@ -1,6 +1,8 @@
 import PDFDocument from "pdfkit";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPaymentsWithPatients, formatBRL, paymentMethodLabel } from "@/services/finance-service";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 import type { PaymentMethod } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -24,6 +26,15 @@ function divider(doc: PDFKit.PDFDocument) {
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
+
+  // ── QA-05: feature gate advanced_reports ──────────────────────────────────
+  const billingCtx = await getBillingContext(clinic.id);
+  if (!canUseFeature(billingCtx, "advanced_reports")) {
+    return new Response(
+      JSON.stringify({ error: "Relatórios avançados disponíveis no plano Professional ou superior." }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
 
   const url = new URL(req.url);
   const from = url.searchParams.get("from") ?? undefined;

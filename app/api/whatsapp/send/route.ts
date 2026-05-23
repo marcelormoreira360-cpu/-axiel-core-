@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendWhatsAppText, formatReportForWhatsApp } from "@/services/whatsapp-service";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
@@ -16,6 +18,15 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.clinic_id) {
     return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
+  }
+
+  // ── BILL-06: feature gate whatsapp_automation ──────────────────────────────
+  const billingCtx = await getBillingContext(profile.clinic_id);
+  if (!canUseFeature(billingCtx, "whatsapp_automation")) {
+    return NextResponse.json(
+      { error: "Envio via WhatsApp disponível no plano Professional ou superior." },
+      { status: 403 }
+    );
   }
 
   try {
