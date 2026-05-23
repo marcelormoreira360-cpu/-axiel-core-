@@ -14,6 +14,26 @@
 --   3. Backfill existing packages with the correct count
 -- ============================================================
 
+-- ── 0. Add columns to patient_packages if not present ──────────────
+alter table public.patient_packages
+  add column if not exists sessions_used integer not null default 0;
+alter table public.patient_packages
+  add column if not exists updated_at timestamptz;
+
+-- Add check constraint idempotently
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'patient_packages_sessions_used_check'
+      and conrelid = 'public.patient_packages'::regclass
+  ) then
+    alter table public.patient_packages
+      add constraint patient_packages_sessions_used_check
+      check (sessions_used >= 0);
+  end if;
+end $$;
+
 -- ── 1. Add status column to appointments if not already present ──
 alter table public.appointments
   add column if not exists status text default 'scheduled';
