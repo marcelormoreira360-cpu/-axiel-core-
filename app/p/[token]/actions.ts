@@ -26,7 +26,17 @@ async function getLinkByToken(rawToken: string) {
 
 export async function updatePatientContactAction(
   rawToken: string,
-  updates: { full_name?: string; phone?: string; email?: string },
+  updates: {
+    full_name?: string;
+    phone?: string;
+    email?: string;
+    date_of_birth?: string;
+    address_line?: string;
+    city?: string;
+    state?: string;
+    zip_code?: string;
+    country?: string;
+  },
 ): Promise<{ ok: boolean; error: string | null }> {
   const link = await getLinkByToken(rawToken);
   if (!link) return { ok: false, error: "Link inválido ou expirado." };
@@ -36,6 +46,12 @@ export async function updatePatientContactAction(
   if (updates.full_name?.trim()) cleanUpdates.full_name = updates.full_name.trim();
   if (updates.phone?.trim()) cleanUpdates.phone = updates.phone.trim();
   if (updates.email?.trim()) cleanUpdates.email = updates.email.trim().toLowerCase();
+  if (updates.date_of_birth?.trim()) cleanUpdates.date_of_birth = updates.date_of_birth.trim();
+  if (updates.address_line !== undefined) cleanUpdates.address_line = updates.address_line.trim();
+  if (updates.city !== undefined) cleanUpdates.city = updates.city.trim();
+  if (updates.state !== undefined) cleanUpdates.state = updates.state.trim();
+  if (updates.zip_code !== undefined) cleanUpdates.zip_code = updates.zip_code.trim();
+  if (updates.country !== undefined) cleanUpdates.country = updates.country.trim();
 
   if (Object.keys(cleanUpdates).length === 0) return { ok: true, error: null };
 

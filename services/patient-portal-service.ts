@@ -65,7 +65,16 @@ export type PatientPortalDocument = {
 
 export type PatientPortalData = {
   link: PatientPortalLink;
-  patient: Pick<Patient, "id" | "full_name" | "status"> & { email: string | null; phone: string | null };
+  patient: Pick<Patient, "id" | "full_name" | "status"> & {
+    email: string | null;
+    phone: string | null;
+    date_of_birth: string | null;
+    address_line: string | null;
+    city: string | null;
+    state: string | null;
+    zip_code: string | null;
+    country: string | null;
+  };
   clinic: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null };
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
@@ -286,7 +295,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   const now = new Date().toISOString();
   const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }] = await Promise.all([
-    supabase.from("patients").select("id, full_name, status, email, phone").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
+    supabase.from("patients").select("id, full_name, status, email, phone, date_of_birth, address_line, city, state, zip_code, country").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, slug, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
       .from("ai_insights")

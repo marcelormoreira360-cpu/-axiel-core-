@@ -57,7 +57,13 @@ export function PatientPortalDashboard({
   const [editingContact, setEditingContact] = useState(false);
   const [fullName, setFullName] = useState(data.patient.full_name ?? "");
   const [phone, setPhone]   = useState(data.patient.phone ?? "");
-  const [email, setEmail]   = useState(data.patient.email ?? "");
+  const [email, setEmail]         = useState(data.patient.email ?? "");
+  const [dob, setDob]             = useState(data.patient.date_of_birth ?? "");
+  const [addressLine, setAddress] = useState(data.patient.address_line ?? "");
+  const [city, setCity]           = useState(data.patient.city ?? "");
+  const [state, setState]         = useState(data.patient.state ?? "");
+  const [zipCode, setZipCode]     = useState(data.patient.zip_code ?? "");
+  const [country, setCountry]     = useState(data.patient.country ?? "Brasil");
   const [contactMsg, setContactMsg] = useState<string | null>(null);
   const [, startContactTransition] = useTransition();
 
@@ -94,7 +100,17 @@ export function PatientPortalDashboard({
   function handleSaveContact() {
     startContactTransition(async () => {
       setContactMsg(null);
-      const result = await updatePatientContactAction(rawToken, { full_name: fullName, phone, email });
+      const result = await updatePatientContactAction(rawToken, {
+        full_name: fullName,
+        phone,
+        email,
+        date_of_birth: dob,
+        address_line: addressLine,
+        city,
+        state,
+        zip_code: zipCode,
+        country,
+      });
       if (result.ok) {
         setContactMsg("Dados atualizados!");
         setEditingContact(false);
@@ -334,37 +350,64 @@ export function PatientPortalDashboard({
           )}
           {editingContact ? (
             <div className="space-y-2">
+              {/* Contato */}
+              <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-black/30 pt-1">Contato</p>
               <div>
                 <label className="text-xs text-black/40 block mb-1">Nome completo</label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Seu nome completo"
-                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
-                />
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Seu nome completo"
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">Telefone / WhatsApp</label>
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+55 11 99999-9999"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">E-mail</label>
+                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seu@email.com"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-black/40 block mb-1">Telefone / WhatsApp</label>
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+55 11 99999-9999"
-                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
-                />
+                <label className="text-xs text-black/40 block mb-1">Data de nascimento</label>
+                <input type="date" value={dob} onChange={(e) => setDob(e.target.value)}
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
               </div>
+
+              {/* Endereço */}
+              <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-black/30 pt-2">Endereço</p>
               <div>
-                <label className="text-xs text-black/40 block mb-1">E-mail</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
-                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
-                />
+                <label className="text-xs text-black/40 block mb-1">Logradouro</label>
+                <input type="text" value={addressLine} onChange={(e) => setAddress(e.target.value)} placeholder="Rua, número, complemento"
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
               </div>
-              <div className="flex gap-2 pt-1">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">Cidade</label>
+                  <input type="text" value={city} onChange={(e) => setCity(e.target.value)} placeholder="São Paulo"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">Estado</label>
+                  <input type="text" value={state} onChange={(e) => setState(e.target.value)} placeholder="SP"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">CEP</label>
+                  <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} placeholder="00000-000"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
+                <div>
+                  <label className="text-xs text-black/40 block mb-1">País</label>
+                  <input type="text" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Brasil"
+                    className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30" />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
                 <button onClick={handleSaveContact} className="flex items-center gap-1 rounded-xl bg-[#0F1A2E] text-white px-4 py-2 text-sm font-medium hover:bg-black transition">
                   <Check className="h-3.5 w-3.5" /> Salvar
                 </button>
@@ -378,6 +421,16 @@ export function PatientPortalDashboard({
               <p className="text-sm font-medium text-[#0F1A2E]">{data.patient.full_name}</p>
               <p className="text-sm text-[#0F1A2E]">{data.patient.phone || <span className="text-black/30 italic">Telefone não informado</span>}</p>
               <p className="text-sm text-[#0F1A2E]">{data.patient.email || <span className="text-black/30 italic">E-mail não informado</span>}</p>
+              {data.patient.date_of_birth && (
+                <p className="text-sm text-[#0F1A2E]">
+                  {new Date(data.patient.date_of_birth + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              )}
+              {(data.patient.address_line || data.patient.city) && (
+                <p className="text-sm text-black/60">
+                  {[data.patient.address_line, data.patient.city, data.patient.state, data.patient.zip_code].filter(Boolean).join(", ")}
+                </p>
+              )}
             </div>
           )}
         </div>
