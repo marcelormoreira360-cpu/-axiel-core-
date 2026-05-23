@@ -16,6 +16,13 @@ type RoomState =
 
 export function TeleconsultaVideo({ appointmentId, patientName, displayName }: TeleconsultaVideoProps) {
   const [room, setRoom] = useState<RoomState>({ status: "idle" });
+  const [copied, setCopied] = useState(false);
+
+  async function copyLink(url: string) {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   async function startRoom() {
     setRoom({ status: "loading" });
@@ -48,15 +55,44 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
           className="w-full h-full border-0"
           title={`Teleconsulta — ${patientName}`}
         />
-        <button
-          onClick={() => setRoom({ status: "idle" })}
-          className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-black/60 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition z-10"
-          title="Encerrar vídeo"
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-          </svg>
-        </button>
+
+        {/* Top-right controls */}
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
+          {/* Copy patient link */}
+          <button
+            onClick={() => copyLink(room.url)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur text-[11px] font-medium text-white/70 hover:text-white hover:bg-black/80 transition"
+            title="Copiar link para o paciente"
+          >
+            {copied ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M2 6.5l3.5 3.5 5.5-6" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="text-green-400">Copiado!</span>
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <rect x="4.5" y="4.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+                  <path d="M4.5 8.5H3a1 1 0 01-1-1V3a1 1 0 011-1h4.5a1 1 0 011 1v1.5" stroke="currentColor" strokeWidth="1.2"/>
+                </svg>
+                Link do paciente
+              </>
+            )}
+          </button>
+
+          {/* Close */}
+          <button
+            onClick={() => setRoom({ status: "idle" })}
+            className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition"
+            title="Encerrar vídeo"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
     );
   }
