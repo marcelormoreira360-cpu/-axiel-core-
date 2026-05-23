@@ -3,6 +3,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { approveAiInsightAsFinal, generateAndSaveAiInsight, requestAiInsightChanges } from "@/services/ai-insight-service";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 function fieldValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -10,6 +13,15 @@ function fieldValue(formData: FormData, key: string) {
 }
 
 export async function generateAiInsightAction(patientId: string) {
+  // ── Feature gate: ai_insights ─────────────────────────────────────────────
+  const clinic = await getCurrentClinic();
+  if (clinic) {
+    const billingCtx = await getBillingContext(clinic.id);
+    if (!canUseFeature(billingCtx, "ai_insights")) {
+      redirect(`/patients/${patientId}/insights?error=${encodeURIComponent("Insights com IA disponíveis no plano Professional ou superior.")}`);
+    }
+  }
+
   try {
     await generateAndSaveAiInsight(patientId);
   } catch (error) {

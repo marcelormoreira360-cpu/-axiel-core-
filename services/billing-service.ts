@@ -1,5 +1,6 @@
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
 import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
+import type { ClinicBillingContext } from "@/modules/billing/feature-access";
 
 export async function getClinicSubscription(clinicId: string) {
   const supabase = await createClient();
@@ -27,6 +28,18 @@ export async function getClinicPlanContext(clinicId: string) {
     subscription,
     plan: getPlanConfig(planSlug),
   };
+}
+
+/**
+ * Returns a ClinicBillingContext for use with canUseFeature / checkUsageLimit.
+ * Pass optional usage counts when you need to enforce numeric limits.
+ */
+export async function getBillingContext(
+  clinicId: string,
+  usage?: ClinicBillingContext["usage"],
+): Promise<ClinicBillingContext> {
+  const { plan } = await getClinicPlanContext(clinicId);
+  return { planSlug: plan.slug, usage };
 }
 
 export async function getCurrentUserForBilling() {

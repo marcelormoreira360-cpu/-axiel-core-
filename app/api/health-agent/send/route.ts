@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 import type { HealthAgentReport } from "../route";
 
 function buildEmailHtml(patientName: string, report: HealthAgentReport): string {
@@ -100,6 +102,15 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.clinic_id) {
     return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
+  }
+
+  // ── Feature gate: ai_insights ───────────────────────────────────────────────
+  const billingCtx = await getBillingContext(profile.clinic_id);
+  if (!canUseFeature(billingCtx, "ai_insights")) {
+    return NextResponse.json(
+      { error: "Insights com IA disponíveis no plano Professional ou superior." },
+      { status: 403 }
+    );
   }
 
   const apiKey = process.env.RESEND_API_KEY;

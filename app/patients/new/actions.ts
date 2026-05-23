@@ -5,10 +5,25 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { createPatient } from "@/services/patient-service";
 import { createPatientPortalLink } from "@/services/patient-portal-service";
 import { sendPatientWelcome } from "@/services/patient-welcome-service";
+import { getBillingContext } from "@/services/billing-service";
+import { checkUsageLimit } from "@/modules/billing/feature-access";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function createPatientAction(formData: FormData) {
   const clinic = await getCurrentClinic();
   if (!clinic) throw new Error("No clinic available for this user.");
+
+  // ── Usage gate: patients limit ────────────────────────────────────────────
+  const supabase = await createSupabaseServerClient();
+  const { count } = await supabase
+    .from("patients")
+    .select("id", { count: "exact", head: true })
+    .eq("clinic_id", clinic.id);
+  const billingCtx = await getBillingContext(clinic.id, { patients: count ?? 0 });
+  const patientsCheck = checkUsageLimit(billingCtx, "patients");
+  if (patientsCheck.isAtLimit) {
+    redirect(`/patients/new?error=${encodeURIComponent(`Limite de ${patientsCheck.limit} pacientes atingido. Faça upgrade para adicionar mais.`)}`);
+  }
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName  = String(formData.get("last_name")  ?? "").trim();

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 export async function POST(req: NextRequest) {
   // ── Auth guard ──────────────────────────────────────────────────────────────
@@ -7,6 +9,23 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // ── Clinic resolution + feature gate: audio_transcription ──────────────────
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.clinic_id) {
+    const billingCtx = await getBillingContext(profile.clinic_id);
+    if (!canUseFeature(billingCtx, "audio_transcription")) {
+      return NextResponse.json(
+        { error: "Transcrição por voz disponível no plano Professional ou superior." },
+        { status: 403 }
+      );
+    }
   }
 
   const apiKey = process.env.OPENAI_API_KEY;

@@ -3,6 +3,8 @@ import { Resend } from "resend";
 import { randomUUID } from "crypto";
 import type { AppRole } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/team-utils";
+import { getBillingContext } from "@/services/billing-service";
+import { checkUsageLimit } from "@/modules/billing/feature-access";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -95,6 +97,18 @@ export async function inviteTeamMember(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+
+  // ── Usage gate: users (team members) limit ────────────────────────────────
+  const { count } = await supabase
+    .from("users")
+    .select("id", { count: "exact", head: true })
+    .eq("clinic_id", clinicId);
+  const billingCtx = await getBillingContext(clinicId, { users: count ?? 0 });
+  const usersCheck = checkUsageLimit(billingCtx, "users");
+  if (usersCheck.isAtLimit) {
+    throw new Error(`Limite de ${usersCheck.limit} usuários atingido no plano atual. Faça upgrade para convidar mais membros.`);
+  }
+
   const token = randomUUID();
 
   // Cancel any existing pending invite for this email+clinic
