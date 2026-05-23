@@ -76,7 +76,7 @@ export async function getPendingInvites(clinicId: string): Promise<TeamInvite[]>
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("invites")
-    .select("*")
+    .select("id, clinic_id, email, role, status, token_hash, invited_by, created_at, expires_at")
     .eq("clinic_id", clinicId)
     .eq("status", "pending")
     .order("created_at", { ascending: false });

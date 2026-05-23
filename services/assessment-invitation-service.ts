@@ -75,10 +75,11 @@ export async function getInvitationByToken(token: string): Promise<{
 
   if (!template) return null;
 
-  // Sort sections and questions
-  template.assessment_sections.sort((a: any, b: any) => a.order_index - b.order_index);
-  template.assessment_sections.forEach((s: any) =>
-    s.assessment_questions.sort((a: any, b: any) => a.order_index - b.order_index)
+  // Sort sections and questions using the strongly-typed cast
+  const structured = template as unknown as TemplateWithStructure;
+  structured.assessment_sections.sort((a, b) => a.order_index - b.order_index);
+  structured.assessment_sections.forEach((s) =>
+    s.assessment_questions.sort((a, b) => a.order_index - b.order_index)
   );
 
   // Get patient name
@@ -90,7 +91,7 @@ export async function getInvitationByToken(token: string): Promise<{
 
   return {
     invitation: inv as AssessmentInvitation,
-    template: template as TemplateWithStructure,
+    template: structured,
     patientName: patient?.full_name ?? "Paciente",
   };
 }

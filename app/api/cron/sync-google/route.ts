@@ -51,9 +51,7 @@ export async function GET(request: Request) {
   const totalCancelled = Object.values(results).reduce((s, r) => s + r.cancelled, 0);
   const totalErrors = Object.values(results).reduce((s, r) => s + r.errors, 0);
 
-  console.log(
-    `sync-google: ${clinicIds.length} clinics — ${totalUpdated} updated, ${totalCancelled} cancelled, ${totalErrors} errors`
-  );
+  // Result is returned in the JSON response — no need for console.log here
 
   return NextResponse.json({
     clinics: clinicIds.length,

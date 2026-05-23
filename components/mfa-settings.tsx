@@ -89,6 +89,7 @@ export function MfaSettings() {
         </div>
         {!isEnabled && !enrolling && (
           <button
+            type="button"
             onClick={startEnrollment}
             className="text-xs font-medium text-white bg-axiel-ink hover:bg-black rounded-xl px-4 py-2 transition"
           >
@@ -105,6 +106,7 @@ export function MfaSettings() {
             <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">ativo</span>
           </div>
           <button
+            type="button"
             onClick={() => unenroll(f.id)}
             className="text-xs text-red-500 hover:text-red-700 transition"
           >
@@ -117,7 +119,7 @@ export function MfaSettings() {
         <div className="rounded-xl border border-axiel-line p-5 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-axiel-ink">Configure seu app autenticador</p>
-            <button onClick={cancelEnrollment} className="text-black/30 hover:text-black transition">
+            <button type="button" onClick={cancelEnrollment} className="text-black/30 hover:text-black transition">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -143,6 +145,7 @@ export function MfaSettings() {
             />
             {error && <p className="text-xs text-red-600">{error}</p>}
             <button
+              type="button"
               onClick={confirmEnrollment}
               disabled={saving || code.length < 6}
               className="w-full text-sm font-medium text-white bg-axiel-ink hover:bg-black disabled:opacity-40 rounded-xl py-2.5 transition"

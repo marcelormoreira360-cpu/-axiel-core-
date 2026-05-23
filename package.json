@@ -16,9 +16,10 @@
     "@supabase/supabase-js": "^2.49.4",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "iconv-lite": "^0.7.2",
     "lucide-react": "^0.468.0",
-    "next": "^15.3.8",
+    "next": "^16.2.6",
     "openai": "^4.104.0",
     "pdfkit": "^0.15.2",
     "react": "19.0.0",
@@ -28,7 +29,6 @@
     "stripe": "^16.12.0",
     "tailwind-merge": "^2.5.5",
     "twilio": "^5.3.7",
-    "xlsx": "^0.18.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {

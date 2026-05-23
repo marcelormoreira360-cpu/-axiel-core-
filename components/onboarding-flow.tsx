@@ -347,11 +347,11 @@ export function OnboardingFlow() {
                 </div>
                 <p className="text-[12px] text-[#6B6A66] leading-relaxed">
                   Li e aceito os{" "}
-                  <a href="/termos" target="_blank" className="text-[#0F6E56] hover:underline font-medium">
+                  <a href="/termos" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
                     Termos de Uso
                   </a>{" "}
                   e a{" "}
-                  <a href="/privacidade" target="_blank" className="text-[#0F6E56] hover:underline font-medium">
+                  <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
                     Política de Privacidade
                   </a>
                   {" "}do AXIEL Core, incluindo o tratamento de dados de saúde conforme a LGPD (Lei 13.709/2018).

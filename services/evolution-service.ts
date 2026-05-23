@@ -67,8 +67,10 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
   // Group exam results by biomarker name
   const biomarkerMap = new Map<string, BiomarkerSeries>();
 
+  type ExamResult = { biomarker: string; value: string | number; unit: string | null; ref_min: string | number | null; ref_max: string | number | null; status: string };
+
   for (const exam of exams ?? []) {
-    for (const result of (exam.exam_results as any[]) ?? []) {
+    for (const result of (exam.exam_results as ExamResult[]) ?? []) {
       const key = result.biomarker.toLowerCase().trim();
       if (!biomarkerMap.has(key)) {
         biomarkerMap.set(key, {
@@ -97,7 +99,9 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
   const assessmentMap = new Map<string, AssessmentSeries>();
 
   for (const resp of assessments ?? []) {
-    const template = (resp as any).assessment_templates;
+    const raw = resp as unknown as { assessment_templates?: { id: string; name: string } | { id: string; name: string }[] | null };
+    const tmpl = raw.assessment_templates;
+    const template = Array.isArray(tmpl) ? tmpl[0] ?? null : (tmpl ?? null);
     if (!template) continue;
     const key = template.id;
     if (!assessmentMap.has(key)) {
@@ -120,10 +124,22 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
   );
 
   // Build vitals time series from session records
+  type SessionVitalsRow = {
+    vitals: Record<string, number | null> | null;
+    appointments: { starts_at: string } | { starts_at: string }[] | null;
+  };
+
   const vitals: VitalPoint[] = (sessionRecords ?? [])
-    .filter((r: any) => r.vitals && r.appointments?.starts_at)
-    .map((r: any) => ({
-      date:    r.appointments.starts_at,
+    .map((r) => {
+      const row = r as unknown as SessionVitalsRow;
+      const appt = Array.isArray(row.appointments) ? row.appointments[0] ?? null : row.appointments;
+      return { vitals: row.vitals, starts_at: appt?.starts_at ?? null };
+    })
+    .filter((r): r is { vitals: Record<string, number | null>; starts_at: string } =>
+      Boolean(r.vitals && r.starts_at)
+    )
+    .map((r) => ({
+      date:    r.starts_at,
       dor:     r.vitals?.dor    != null ? Number(r.vitals.dor)    : null,
       energia: r.vitals?.energia != null ? Number(r.vitals.energia) : null,
       humor:   r.vitals?.humor   != null ? Number(r.vitals.humor)  : null,

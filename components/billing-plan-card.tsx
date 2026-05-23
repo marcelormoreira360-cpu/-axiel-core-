@@ -1,30 +1,37 @@
-import { formatPlanPrice, type PlanConfig } from "@/modules/billing/plan-config";
+import { formatPlanPrice, type CurrencyCode, type PlanConfig } from "@/modules/billing/plan-config";
 
 const FEATURE_LABELS: Record<string, string> = {
   leads:                "CRM de leads",
   schedule:             "Agenda completa",
   forms:                "Formulários de anamnese",
-  ai_insights:          "Insights com IA",
   patient_snapshot:     "Snapshot do paciente",
+  ai_insights:          "Insights com IA",
   patient_portal:       "Portal do paciente",
   product_support:      "Venda de produtos",
   membership:           "Pacotes e assinaturas",
+  stripe_checkout:      "Checkout Stripe p/ pacientes",
+  follow_up_automation: "Automação de follow-up",
+  whatsapp_automation:  "WhatsApp automático",
+  audio_transcription:  "Transcrição por voz (IA)",
+  advanced_reports:     "Relatórios avançados",
   multi_clinic:         "Múltiplas unidades",
   advanced_permissions: "Permissões avançadas",
-  stripe_checkout:      "Checkout Stripe p/ pacientes",
+  white_label:          "White-label",
 };
 
 type Props = {
   plan: PlanConfig;
   current?: boolean;
+  currency?: CurrencyCode;
 };
 
-export function BillingPlanCard({ plan, current = false }: Props) {
+export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Props) {
   const enabledFeatures = Object.entries(plan.features)
     .filter(([, enabled]) => enabled)
     .map(([key]) => FEATURE_LABELS[key] ?? key.replaceAll("_", " "));
 
   const isEnterprise = plan.slug === "enterprise";
+  const priceLabel = formatPlanPrice(plan, currency);
 
   return (
     <div
@@ -38,7 +45,7 @@ export function BillingPlanCard({ plan, current = false }: Props) {
       {/* Recommended badge */}
       {plan.recommended && (
         <div className="absolute -top-[10px] left-1/2 -translate-x-1/2">
-          <span className="bg-[#0F6E56] text-white text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full">
+          <span className="bg-[#0F6E56] text-white text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full whitespace-nowrap">
             Recomendado
           </span>
         </div>
@@ -47,7 +54,7 @@ export function BillingPlanCard({ plan, current = false }: Props) {
       {/* Current badge */}
       {current && (
         <div className="absolute -top-[10px] right-[14px]">
-          <span className="bg-[#E1F5EE] text-[#0F6E56] text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full border border-[#0F6E56]/20">
+          <span className="bg-[#E1F5EE] text-[#0F6E56] text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full border border-[#0F6E56]/20 whitespace-nowrap">
             Plano atual
           </span>
         </div>
@@ -62,7 +69,7 @@ export function BillingPlanCard({ plan, current = false }: Props) {
       {/* Price */}
       <div className="mb-[16px]">
         <p className="text-[26px] font-bold tracking-[-0.03em] text-[#0F1A2E] leading-none">
-          {isEnterprise ? "Sob consulta" : `R$ ${Math.round((plan.priceCents ?? 0) / 100)}`}
+          {priceLabel}
         </p>
         {!isEnterprise && (
           <p className="text-[10px] text-[#A09E98] mt-[3px]">/mês · cobrado mensalmente</p>
@@ -73,7 +80,15 @@ export function BillingPlanCard({ plan, current = false }: Props) {
       <ul className="flex flex-col gap-[6px] mb-[18px] flex-1">
         {enabledFeatures.map(f => (
           <li key={f} className="flex items-center gap-[7px] text-[11px] text-[#4A4A44]">
-            <svg className="w-[13px] h-[13px] text-[#0F6E56] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              className="w-[13px] h-[13px] text-[#0F6E56] shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <polyline points="20 6 9 17 4 12"/>
             </svg>
             {f}
@@ -81,21 +96,29 @@ export function BillingPlanCard({ plan, current = false }: Props) {
         ))}
       </ul>
 
-      {/* Limits */}
+      {/* Limits badges */}
       <div className="mb-[16px] flex flex-wrap gap-[6px]">
-        {plan.limits.patients !== null && (
+        {plan.limits.patients !== null ? (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
             até {plan.limits.patients.toLocaleString("pt-BR")} pacientes
           </span>
+        ) : (
+          <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
+            pacientes ilimitados
+          </span>
         )}
-        {plan.limits.users !== null && (
+        {plan.limits.users !== null ? (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
             {plan.limits.users} usuários
           </span>
-        )}
-        {plan.limits.patients === null && (
+        ) : (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            ilimitado
+            usuários ilimitados
+          </span>
+        )}
+        {plan.limits.locations !== null && (
+          <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
+            {plan.limits.locations === 1 ? "1 unidade" : `${plan.limits.locations} unidades`}
           </span>
         )}
       </div>

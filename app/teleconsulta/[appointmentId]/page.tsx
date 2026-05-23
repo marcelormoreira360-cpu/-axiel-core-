@@ -112,7 +112,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
           {/* Patient profile link */}
           <Link
             href={`/patients/${patient.id}`}
-            target="_blank"
+            target="_blank" rel="noopener noreferrer"
             className="text-[11px] text-white/50 hover:text-white/80 border border-white/[.08] hover:border-white/20 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -250,7 +250,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
                   <Link
                     key={item.href}
                     href={item.href}
-                    target="_blank"
+                    target="_blank" rel="noopener noreferrer"
                     className="text-[11px] text-white/50 hover:text-white/80 border border-white/[.07] hover:border-white/20 rounded-[8px] px-[10px] py-[7px] text-center transition"
                   >
                     {item.label}

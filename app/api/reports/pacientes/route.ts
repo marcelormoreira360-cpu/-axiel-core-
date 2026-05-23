@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       cadastrado:   new Date(p.created_at).toLocaleDateString("pt-BR"),
       observacoes:  p.notes ?? "",
     }));
-    const buf = buildExcelBuffer([{
+    const buf = await buildExcelBuffer([{
       name: "Pacientes",
       columns: [
         { header: "Nome",              key: "nome",        width: 30 },

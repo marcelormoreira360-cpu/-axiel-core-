@@ -22,8 +22,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Arquivo de áudio obrigatório" }, { status: 400 });
     }
 
+    // ── Mime type validation ────────────────────────────────────────────────
+    const ALLOWED_MIME_TYPES = new Set([
+      "audio/webm",
+      "audio/webm;codecs=opus",
+      "audio/ogg",
+      "audio/ogg;codecs=opus",
+      "audio/mp4",
+      "audio/mpeg",
+      "audio/mp3",
+      "audio/wav",
+      "audio/x-wav",
+      "audio/m4a",
+    ]);
+    const mimeType = (file as File).type ?? "";
+    if (mimeType && !ALLOWED_MIME_TYPES.has(mimeType.toLowerCase())) {
+      return NextResponse.json(
+        { error: `Tipo de arquivo não suportado: ${mimeType}` },
+        { status: 415 }
+      );
+    }
+
+    // ── Size limit: 25 MB (Whisper's hard limit) ────────────────────────────
+    const MAX_BYTES = 25 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json(
+        { error: "Arquivo muito grande. Máximo permitido: 25 MB." },
+        { status: 413 }
+      );
+    }
+
     const whisperForm = new FormData();
-    whisperForm.append("file", file, "audio.webm");
+    const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") || mimeType.includes("m4a") ? "mp4" : mimeType.includes("wav") ? "wav" : mimeType.includes("mpeg") || mimeType.includes("mp3") ? "mp3" : "webm";
+    whisperForm.append("file", file, `audio.${ext}`);
     whisperForm.append("model", "whisper-1");
     whisperForm.append("language", "pt");
 

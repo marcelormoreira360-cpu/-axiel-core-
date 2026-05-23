@@ -61,15 +61,17 @@ export function validateMetaSignature(
 // Not a substitute for an edge-level rate limiter (e.g. Vercel Firewall / Upstash).
 
 const rateLimitWindows = new Map<string, number[]>();
-const WINDOW_MS = 60_000; // 1 minute
-const MAX_REQUESTS = 30;  // 30 requests per minute per key
 
-export function checkRateLimit(key: string): boolean {
+export function checkRateLimit(
+  key: string,
+  maxRequests = 30,
+  windowMs = 60_000
+): boolean {
   const now = Date.now();
   const timestamps = (rateLimitWindows.get(key) ?? []).filter(
-    (t) => now - t < WINDOW_MS
+    (t) => now - t < windowMs
   );
-  if (timestamps.length >= MAX_REQUESTS) return false;
+  if (timestamps.length >= maxRequests) return false;
   timestamps.push(now);
   rateLimitWindows.set(key, timestamps);
   return true;

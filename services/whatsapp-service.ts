@@ -1,5 +1,21 @@
 import twilio from "twilio";
 
+// ─── Shared report type (used by health-agent, WhatsApp send, voice send) ────
+
+export type HealthReportPatient = {
+  greeting?: string | null;
+  overall_message?: string | null;
+  positive_points?: string[];
+  attention_areas?: { area: string; explanation: string; action: string }[];
+  next_steps?: string[];
+  encouragement?: string | null;
+};
+
+export type HealthReport = {
+  patient: HealthReportPatient;
+  [key: string]: unknown;
+};
+
 function getClient() {
   const sid = process.env.TWILIO_ACCOUNT_SID;
   const token = process.env.TWILIO_AUTH_TOKEN;
@@ -25,7 +41,7 @@ export async function sendWhatsAppMedia(to: string, body: string, mediaUrl: stri
   await client.messages.create({ from: getFrom(), to: toNumber, body, mediaUrl: [mediaUrl] });
 }
 
-export function formatReportForWhatsApp(patientName: string, report: any): string {
+export function formatReportForWhatsApp(patientName: string, report: HealthReport): string {
   const p = report.patient;
   const firstName = patientName.split(" ")[0];
   const lines: string[] = [];
@@ -67,7 +83,7 @@ export function formatReportForWhatsApp(patientName: string, report: any): strin
   return lines.join("\n");
 }
 
-export function formatReportForTTS(report: any): string {
+export function formatReportForTTS(report: HealthReport): string {
   const p = report.patient;
   const parts: string[] = [];
 

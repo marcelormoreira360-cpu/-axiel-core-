@@ -1,10 +1,19 @@
 import type { Patient } from "@/lib/types";
 
-export async function getPatients(clinicId?: string, practitionerId?: string): Promise<Patient[]> {
+export async function getPatients(
+  clinicId?: string,
+  practitionerId?: string,
+  limit = 500,
+  offset = 0,
+): Promise<Patient[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  let query = supabase.from("patients").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("patients")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
   if (practitionerId) query = query.eq("created_by", practitionerId);

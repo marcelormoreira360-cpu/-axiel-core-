@@ -68,16 +68,15 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
   if (error) throw error;
 
-  let sent = 0, failed = 0, skipped = 0;
+  type FollowUpRow = (typeof followUps extends (infer T)[] | null | undefined ? T : never);
 
-  for (const fu of followUps ?? []) {
+  async function processFollowUp(fu: FollowUpRow): Promise<"sent" | "failed" | "skipped"> {
     const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null } | null;
     const appt    = fu.appointments as { id: string; starts_at: string } | null;
 
     if (!patient?.phone) {
       await supabase.from("follow_ups").update({ status: "canceled" }).eq("id", fu.id);
-      skipped++;
-      continue;
+      return "skipped";
     }
 
     const body = buildMessage(fu.notes as string, patient.full_name, appt?.starts_at ?? null);
@@ -98,7 +97,11 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
         status:         "sent",
         provider:       "twilio",
       });
-      sent++;
+      // For D-1: also send email if patient has one (non-blocking per follow-up)
+      if (fu.notes === "d-1" && patient.email) {
+        await sendReminderEmail(supabase, fu, patient, appt);
+      }
+      return "sent";
     } catch (e) {
       await supabase.from("communication_logs").insert({
         clinic_id:      fu.clinic_id,
@@ -113,12 +116,21 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
         provider:       "twilio",
         error_message:  e instanceof Error ? e.message : "Unknown error",
       });
-      failed++;
+      return "failed";
     }
+  }
 
-    // For D-1: also send email if patient has one
-    if (fu.notes === "d-1" && patient.email) {
-      await sendReminderEmail(supabase, fu, patient, appt);
+  // Process all follow-ups in parallel — one failure won't block others
+  const results = await Promise.allSettled((followUps ?? []).map(processFollowUp));
+
+  let sent = 0, failed = 0, skipped = 0;
+  for (const r of results) {
+    if (r.status === "fulfilled") {
+      if (r.value === "sent") sent++;
+      else if (r.value === "skipped") skipped++;
+      else failed++;
+    } else {
+      failed++;
     }
   }
 
@@ -220,21 +232,29 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
   const resend = new Resend(process.env.RESEND_API_KEY);
   const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
 
+  // Batch dedup check: one query for all patient IDs instead of N queries
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const allPatientIds = lowPackages
+    .map((pkg) => ((pkg.patients as unknown) as { id?: string } | null)?.id)
+    .filter((id): id is string => Boolean(id));
+
+  const alreadyNotified = new Set<string>();
+  if (allPatientIds.length > 0) {
+    const { data: recentLogs } = await supabase
+      .from("communication_logs")
+      .select("patient_id")
+      .in("patient_id", allPatientIds)
+      .eq("use_case", "package_low")
+      .gte("created_at", since);
+    (recentLogs ?? []).forEach((r) => alreadyNotified.add(r.patient_id as string));
+  }
+
   for (const pkg of lowPackages) {
     const patient = (pkg.patients as unknown) as { id: string; full_name: string; email: string | null; phone: string | null } | null;
     if (!patient) { skipped++; continue; }
 
-    // Dedup: skip if already notified in the last 7 days for this patient+use_case
-    const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { data: recent } = await supabase
-      .from("communication_logs")
-      .select("id")
-      .eq("patient_id", patient.id)
-      .eq("use_case", "package_low")
-      .gte("created_at", since)
-      .limit(1);
-
-    if (recent && recent.length > 0) { skipped++; continue; }
+    // Dedup: skip if already notified in the last 7 days (checked in batch above)
+    if (alreadyNotified.has(patient.id)) { skipped++; continue; }
 
     const remaining = (pkg.sessions_total ?? 0) - (pkg.sessions_used ?? 0);
     const first = patient.full_name.split(" ")[0];

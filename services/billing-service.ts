@@ -64,14 +64,17 @@ export async function seedDefaultPlans() {
   const supabase = await createClient();
 
   const rows = Object.values(AXIEL_PLANS).map((plan) => ({
-    name: plan.name,
-    slug: plan.slug,
-    description: plan.description,
-    price_cents: plan.priceCents,
+    name:             plan.name,
+    slug:             plan.slug,
+    description:      plan.description,
+    price_cents:      plan.priceCents,
+    price_usd_cents:  plan.priceUsdCents,
+    price_eur_cents:  plan.priceEurCents,
     billing_interval: plan.billingInterval,
-    features: plan.features,
-    limits: plan.limits,
-    is_active: true,
+    recommended:      plan.recommended ?? false,
+    features:         plan.features,
+    limits:           plan.limits,
+    is_active:        true,
   }));
 
   const { error } = await supabase.from("plans").upsert(rows, { onConflict: "slug" });

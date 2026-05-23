@@ -56,7 +56,7 @@ export async function getDashboardAlerts(clinicId: string): Promise<DashboardAle
     if (remaining <= 2) {
       packageAlerts.push({
         patientId: pkg.patient_id,
-        patientName: (pkg.patients as any)?.full_name ?? "Paciente",
+        patientName: (pkg.patients as { full_name?: string } | null)?.full_name ?? "Paciente",
         packageName: pkg.name,
         sessionsTotal: pkg.sessions_total,
         sessionsUsed: used,
@@ -70,14 +70,15 @@ export async function getDashboardAlerts(clinicId: string): Promise<DashboardAle
   const seen = new Set<string>();
 
   for (const exam of recentExams ?? []) {
-    for (const result of (exam.exam_results as any[]) ?? []) {
+    type ExamResult = { biomarker: string; value: string | number; unit: string | null; status: string };
+    for (const result of (exam.exam_results as ExamResult[]) ?? []) {
       if (result.status !== "high" && result.status !== "low") continue;
       const key = `${exam.patient_id}-${result.biomarker}`;
       if (seen.has(key)) continue;
       seen.add(key);
       biomarkerAlerts.push({
         patientId: exam.patient_id,
-        patientName: (exam.patients as any)?.full_name ?? "Paciente",
+        patientName: (exam.patients as { full_name?: string } | null)?.full_name ?? "Paciente",
         biomarker: result.biomarker,
         value: Number(result.value),
         unit: result.unit ?? null,

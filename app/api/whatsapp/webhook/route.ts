@@ -9,10 +9,12 @@ export const runtime = "nodejs";
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
+type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
+type BotConfig = { clinic_id?: string | null; [key: string]: unknown };
 
 // ─── Conversation History ────────────────────────────────────────────────────
 
-async function getHistory(supabase: any, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
+async function getHistory(supabase: SupabaseAdmin, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
@@ -31,7 +33,7 @@ async function getHistory(supabase: any, phone: string): Promise<{ id: string | 
 }
 
 // Auto-create lead when unknown number contacts
-async function autoCreateLead(supabase: any, phone: string, clinicId: string, firstMessage: string) {
+async function autoCreateLead(supabase: SupabaseAdmin, phone: string, clinicId: string, firstMessage: string) {
   try {
     // Check if already a patient or lead with this phone
     const [{ count: patientCount }, { count: leadCount }] = await Promise.all([
@@ -53,7 +55,7 @@ async function autoCreateLead(supabase: any, phone: string, clinicId: string, fi
   }
 }
 
-async function saveHistory(supabase: any, phone: string, id: string | null, messages: ChatMessage[], clinicId?: string | null) {
+async function saveHistory(supabase: SupabaseAdmin, phone: string, id: string | null, messages: ChatMessage[], clinicId?: string | null) {
   const payload: Record<string, unknown> = { phone, messages: messages.slice(-20), updated_at: new Date().toISOString() };
   if (!id && clinicId) payload.clinic_id = clinicId;
   try {
@@ -201,7 +203,7 @@ export async function POST(req: NextRequest) {
     let clinicIdFromConfig: string | null = null;
     try {
       const config = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;
-      clinicIdFromConfig = (config as any)?.clinic_id ?? null;
+      clinicIdFromConfig = (config as BotConfig)?.clinic_id ?? null;
       systemPrompt = buildSystemPrompt(config ?? IFWC_DEFAULT_CONFIG);
     } catch {
       systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);

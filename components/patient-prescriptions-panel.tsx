@@ -197,7 +197,7 @@ export function PatientPrescriptionsPanel({
           {active.length > 0 && (
             <Link
               href={`/patients/${patientId}/prescriptions/print`}
-              target="_blank"
+              target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
             >
               <Printer className="h-3 w-3" /> Imprimir

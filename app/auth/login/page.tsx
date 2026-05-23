@@ -13,9 +13,9 @@ export default function LoginPage() {
         </Card>
         <p className="text-center text-xs text-black/30">
           Ao acessar, você concorda com nossos{" "}
-          <a href="/termos" className="underline hover:text-black/50 transition" target="_blank">Termos de Uso</a>
+          <a href="/termos" className="underline hover:text-black/50 transition" target="_blank" rel="noopener noreferrer">Termos de Uso</a>
           {" "}e{" "}
-          <a href="/privacidade" className="underline hover:text-black/50 transition" target="_blank">Política de Privacidade</a>.
+          <a href="/privacidade" className="underline hover:text-black/50 transition" target="_blank" rel="noopener noreferrer">Política de Privacidade</a>.
         </p>
       </div>
     </main>

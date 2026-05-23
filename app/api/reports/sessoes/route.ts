@@ -88,7 +88,7 @@ export async function GET(req: Request) {
         notas:    a.notes ?? "",
       };
     });
-    const buf = buildExcelBuffer([{
+    const buf = await buildExcelBuffer([{
       name: "Sessões",
       columns: [
         { header: "Data",          key: "data",     width: 14 },

@@ -150,7 +150,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
         </div>
         <Link
           href={`/patients/${patientId}/insights`}
-          target="_blank"
+          target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-[4px] text-[10px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
         >
           Ver completo

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
+import { checkRateLimit } from "@/lib/webhook-guard";
 
 export const runtime = "nodejs";
 
@@ -39,13 +41,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 }
 
 // POST /api/book/[slug] — create appointment (public)
-export async function POST(req: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  // ── Rate limiting: 10 bookings per IP per 15-minute window ─────────────────
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(`book:${ip}`, 10, 15 * 60_000)) {
+    return NextResponse.json({ error: "Muitas tentativas. Tente novamente em alguns minutos." }, { status: 429 });
+  }
+
   const { slug } = await params;
   const body = await req.json();
   const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id } = body;
 
   if (!session_type_id || !starts_at || !full_name || !phone) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  // ── Field length validation ─────────────────────────────────────────────────
+  if (typeof full_name !== "string" || full_name.trim().length > 120) {
+    return NextResponse.json({ error: "Nome inválido (máximo 120 caracteres)." }, { status: 400 });
+  }
+  if (email && (typeof email !== "string" || email.length > 254)) {
+    return NextResponse.json({ error: "E-mail inválido." }, { status: 400 });
+  }
+  if (typeof phone !== "string" || phone.length > 30) {
+    return NextResponse.json({ error: "Telefone inválido." }, { status: 400 });
+  }
+  if (notes && (typeof notes !== "string" || notes.length > 1000)) {
+    return NextResponse.json({ error: "Observações muito longas (máximo 1000 caracteres)." }, { status: 400 });
+  }
+
+  // ── Date validation: must be in the future, within 1 year ──────────────────
+  const startsAtDate = new Date(starts_at);
+  const now = new Date();
+  const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  if (isNaN(startsAtDate.getTime()) || startsAtDate <= now || startsAtDate > oneYearFromNow) {
+    return NextResponse.json({ error: "Data de agendamento inválida." }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();

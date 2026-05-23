@@ -5,6 +5,10 @@ import { sendWhatsAppMedia, formatReportForTTS } from "@/services/whatsapp-servi
 // Generates TTS audio via OpenAI and uploads to a public URL via Supabase Storage,
 // then sends as WhatsApp voice message via Twilio.
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "OPENAI_API_KEY não configurada" }, { status: 500 });
@@ -16,7 +20,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "patientId e report são obrigatórios" }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
     const { data: patient } = await supabase
       .from("patients")
       .select("full_name, phone")

@@ -1,17 +1,17 @@
 /**
  * excel-report.ts
  *
- * Thin helper around the `xlsx` package to generate formatted .xlsx files
- * for AXIEL reports. Keeps column widths, header styling, and BOM handling
- * in one place so each route just passes rows + column definitions.
+ * Thin helper around `exceljs` to generate formatted .xlsx files
+ * for AXIEL reports. Keeps column widths, header styling, and response
+ * handling in one place so each route just passes rows + column definitions.
  */
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export interface ExcelColumn {
   header: string;
   /** key in each row object */
   key: string;
-  /** column width in characters (default 18) */
+  /** column width in characters (default 20) */
   width?: number;
 }
 
@@ -23,29 +23,37 @@ export interface ExcelSheetInput {
 
 /**
  * Build a single-sheet or multi-sheet Excel workbook and return it as a Buffer.
+ * This function is async because exceljs uses Promises internally.
  */
-export function buildExcelBuffer(sheets: ExcelSheetInput[]): Buffer {
-  const wb = XLSX.utils.book_new();
+export async function buildExcelBuffer(sheets: ExcelSheetInput[]): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
 
   for (const sheet of sheets) {
-    // Build AOA (array of arrays): header row + data rows
-    const headerRow = sheet.columns.map((c) => c.header);
-    const dataRows  = sheet.rows.map((row) =>
-      sheet.columns.map((c) => row[c.key] ?? "")
-    );
+    const ws = wb.addWorksheet(sheet.name.slice(0, 31)); // Excel sheet name max 31 chars
 
-    const aoa = [headerRow, ...dataRows];
-    const ws  = XLSX.utils.aoa_to_sheet(aoa);
+    // Define columns (sets header row + column widths in one step)
+    ws.columns = sheet.columns.map((c) => ({
+      header: c.header,
+      key: c.key,
+      width: c.width ?? 20,
+    }));
 
-    // Column widths
-    ws["!cols"] = sheet.columns.map((c) => ({ wch: c.width ?? 20 }));
+    // Style the header row
+    const headerRow = ws.getRow(1);
+    headerRow.font = { bold: true };
+    headerRow.commit();
 
-    XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31)); // Excel sheet name max 31 chars
+    // Add data rows
+    for (const row of sheet.rows) {
+      const values: Record<string, string | number> = {};
+      for (const col of sheet.columns) {
+        values[col.key] = row[col.key] ?? "";
+      }
+      ws.addRow(values).commit();
+    }
   }
 
-  // Write to buffer (type "buffer" returns Buffer in Node)
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" }) as Buffer;
-  return buf;
+  return Buffer.from(await wb.xlsx.writeBuffer());
 }
 
 /**

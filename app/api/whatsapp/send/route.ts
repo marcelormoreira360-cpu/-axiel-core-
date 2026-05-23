@@ -3,13 +3,16 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendWhatsAppText, formatReportForWhatsApp } from "@/services/whatsapp-service";
 
 export async function POST(req: NextRequest) {
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     const { patientId, report, patientName } = await req.json();
     if (!patientId || !report) {
       return NextResponse.json({ error: "patientId e report são obrigatórios" }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
     const { data: patient } = await supabase
       .from("patients")
       .select("full_name, phone")

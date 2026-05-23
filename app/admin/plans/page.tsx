@@ -20,7 +20,7 @@ export default function AdminPlansPage() {
               <p className="text-sm text-axiel-text-secondary">{plan.description}</p>
             </div>
             <p className="text-sm font-medium text-axiel-text-primary">
-              {formatPlanPrice(plan.priceCents)}
+              {formatPlanPrice(plan)}
             </p>
           </Card>
         ))}

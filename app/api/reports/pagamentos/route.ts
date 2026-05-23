@@ -34,7 +34,7 @@ export async function GET(req: Request) {
       valor:   (p.amount_cents / 100),
       notas:   p.notes ?? "",
     }));
-    const buf = buildExcelBuffer([{
+    const buf = await buildExcelBuffer([{
       name: "Pagamentos",
       columns: [
         { header: "Data",              key: "data",     width: 14 },

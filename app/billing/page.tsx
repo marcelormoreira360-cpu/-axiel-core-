@@ -46,7 +46,7 @@ export default async function BillingPage() {
       {/* Plans */}
       <div id="planos">
         <p className="text-[13px] font-medium text-[#0F1A2E] mb-[12px]">Escolha seu plano</p>
-        <div className="grid gap-[12px] lg:grid-cols-3">
+        <div className="grid gap-[12px] sm:grid-cols-2 xl:grid-cols-4">
           {plans.map(plan => (
             <BillingPlanCard
               key={plan.slug}

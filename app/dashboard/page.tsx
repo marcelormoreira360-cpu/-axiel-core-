@@ -87,11 +87,24 @@ export default async function Dashboard() {
       <div className="flex items-start justify-between mb-[20px]">
         <div>
           <DashboardGreeting name={name} />
-          <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {totalAlerts > 0
-              ? `${totalAlerts} item${totalAlerts > 1 ? "s" : ""} precisam da sua atenção.`
-              : "Tudo em ordem por hoje."}
-          </p>
+          <div className="flex items-center gap-[8px] mt-[4px] flex-wrap">
+            {clinic?.clinic_profile && (
+              <span className="text-[10px] font-medium px-[8px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">
+                {{
+                  integrativa:  "Integrativa",
+                  fisioterapia: "Fisioterapia",
+                  saude_mental: "Saúde Mental",
+                  nutricao:     "Nutrição",
+                  wellness:     "Wellness",
+                }[clinic.clinic_profile] ?? clinic.clinic_profile}
+              </span>
+            )}
+            <p className="text-[12px] text-[#A09E98]">
+              {totalAlerts > 0
+                ? `${totalAlerts} item${totalAlerts > 1 ? "s" : ""} precisam da sua atenção.`
+                : "Tudo em ordem por hoje."}
+            </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {totalAlerts > 0 && (

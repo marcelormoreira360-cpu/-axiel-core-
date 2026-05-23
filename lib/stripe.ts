@@ -7,9 +7,10 @@ if (!process.env.STRIPE_SECRET_KEY) {
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_missing");
 
 export const stripePriceByPlanCode = {
-  starter: process.env.STRIPE_PRICE_STARTER,
+  starter:      process.env.STRIPE_PRICE_STARTER,
   professional: process.env.STRIPE_PRICE_PROFESSIONAL,
-  enterprise: process.env.STRIPE_PRICE_ENTERPRISE,
+  scale:        process.env.STRIPE_PRICE_SCALE,
+  enterprise:   process.env.STRIPE_PRICE_ENTERPRISE,
 } as const;
 
 export type StripePlanCode = keyof typeof stripePriceByPlanCode;

@@ -16,7 +16,7 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
   return data ?? [];
 }
 
-export async function updateClinic(id: string, fields: { name?: string; slug?: string; logo_url?: string | null; primary_color?: string | null }): Promise<Clinic> {
+export async function updateClinic(id: string, fields: { name?: string; slug?: string; logo_url?: string | null; primary_color?: string | null; clinic_profile?: string }): Promise<Clinic> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();

@@ -48,7 +48,7 @@ export async function GET(req: Request) {
       notas:     l.notes ?? "",
       cadastro:  new Date(l.created_at).toLocaleDateString("pt-BR"),
     }));
-    const buf = buildExcelBuffer([{
+    const buf = await buildExcelBuffer([{
       name: "Leads",
       columns: [
         { header: "Nome",            key: "nome",     width: 30 },

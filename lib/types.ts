@@ -9,11 +9,19 @@ export type AppRole =
   | "read_only_staff"
   | "staff";
 
+export type ClinicProfile =
+  | "integrativa"
+  | "fisioterapia"
+  | "saude_mental"
+  | "nutricao"
+  | "wellness";
+
 export type Clinic = {
   id: string;
   name: string;
   slug: string;
   status: "active" | "inactive";
+  clinic_profile: ClinicProfile;
   logo_url: string | null;
   primary_color: string | null;
   created_at: string;
