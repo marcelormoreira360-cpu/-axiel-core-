@@ -43,10 +43,13 @@ function statusBadge(status: string) {
 
 export default async function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const patient = await getPatientById(id);
+
+  // Resolve clinic first so we can scope the patient read to the caller's clinic
+  const clinic = await getCurrentClinic();
+  const patient = await getPatientById(id, clinic?.id ?? undefined);
   if (!patient) notFound();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, clinic, treatmentPlans] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
@@ -56,7 +59,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     getPatientPrescriptions(id),
     getPatientPackages(id),
     getPatientDocuments(id),
-    getCurrentClinic(),
     getPatientTreatmentPlans(id),
   ]);
 

@@ -56,18 +56,49 @@ export async function updatePatient(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("patients").update(input).eq("id", patientId);
+
+  // Resolve the caller's clinic so the UPDATE is always scoped —
+  // prevents any authenticated user from editing patients of other clinics.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) throw new Error("Usuário sem clínica associada.");
+
+  const { error } = await supabase
+    .from("patients")
+    .update({ ...input, updated_at: new Date().toISOString() })
+    .eq("id", patientId)
+    .eq("clinic_id", profile.clinic_id); // ← scope: only own clinic
+
   if (error) throw error;
 }
 
-export async function getPatientById(patientId: string): Promise<Patient | null> {
+export async function getPatientById(
+  patientId: string,
+  clinicId?: string,
+): Promise<Patient | null> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("patients").select("*").eq("id", patientId).single();
-  if (error) {
-    if (error.code === "PGRST116") return null;
-    throw error;
+
+  let query = supabase
+    .from("patients")
+    .select("*")
+    .eq("id", patientId);
+
+  // When clinicId is supplied, scope the read explicitly.
+  // Falls back to RLS when clinicId is omitted (service-to-service calls).
+  if (clinicId) {
+    query = query.eq("clinic_id", clinicId);
   }
-  return data as Patient;
+
+  const { data, error } = await query.maybeSingle();
+  if (error) throw error;
+  return data as Patient | null;
 }
