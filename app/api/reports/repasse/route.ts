@@ -2,6 +2,7 @@ import PDFDocument from "pdfkit";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getRepasseHistory } from "@/services/repasse-service";
 import { formatBRL } from "@/services/finance-service";
+import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 
 export const runtime = "nodejs";
 
@@ -15,16 +16,89 @@ function pdfToBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
   });
 }
 
+function escCsv(val: string | number | null | undefined): string {
+  const s = val == null ? "" : String(val);
+  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
 
-  const url   = new URL(req.url);
-  const month = url.searchParams.get("month") ?? undefined; // e.g. "2025-06"
+  const url    = new URL(req.url);
+  const month  = url.searchParams.get("month")  ?? undefined; // e.g. "2025-06"
+  const format = url.searchParams.get("format") ?? "pdf";
 
   const allHistory = await getRepasseHistory(clinic.id);
   const history    = month ? allHistory.filter((r) => r.period_month === month) : allHistory;
+  const slug       = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  // ── CSV ──────────────────────────────────────────────────────────────────
+  if (format === "csv") {
+    const headers = ["Período", "Profissional", "Sessões", "Receita bruta (R$)", "% Repasse", "Repasse (R$)", "Status"];
+    const rows = history.map((r) => {
+      const pct = r.gross_revenue_cents > 0
+        ? Math.round((r.repasse_cents / r.gross_revenue_cents) * 100)
+        : 0;
+      return [
+        r.period_month,
+        r.professional_name ?? "",
+        r.sessions_count,
+        (r.gross_revenue_cents / 100).toFixed(2).replace(".", ","),
+        `${pct}%`,
+        (r.repasse_cents / 100).toFixed(2).replace(".", ","),
+        r.status === "paid" ? "Pago" : "Pendente",
+      ];
+    });
+    const csv = [
+      "﻿",
+      headers.map(escCsv).join(","),
+      ...rows.map((r) => r.map(escCsv).join(",")),
+    ].join("\r\n");
+    return new Response(csv, {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="repasse-${slug}${month ? "-" + month : ""}.csv"`,
+      },
+    });
+  }
+
+  // ── Excel ─────────────────────────────────────────────────────────────────
+  if (format === "xlsx") {
+    const xlsxRows = history.map((r) => {
+      const pct = r.gross_revenue_cents > 0
+        ? Math.round((r.repasse_cents / r.gross_revenue_cents) * 100)
+        : 0;
+      return {
+        periodo:      r.period_month,
+        profissional: r.professional_name ?? "",
+        sessoes:      r.sessions_count,
+        receita:      r.gross_revenue_cents / 100,
+        pct:          `${pct}%`,
+        repasse:      r.repasse_cents / 100,
+        status:       r.status === "paid" ? "Pago" : "Pendente",
+      };
+    });
+    const buf = await buildExcelBuffer([{
+      name: "Repasse",
+      columns: [
+        { header: "Período",          key: "periodo",      width: 14 },
+        { header: "Profissional",     key: "profissional", width: 30 },
+        { header: "Sessões",          key: "sessoes",      width: 10 },
+        { header: "Receita bruta (R$)", key: "receita",   width: 18 },
+        { header: "% Repasse",        key: "pct",          width: 12 },
+        { header: "Repasse (R$)",     key: "repasse",      width: 16 },
+        { header: "Status",           key: "status",       width: 12 },
+      ],
+      rows: xlsxRows,
+    }]);
+    return excelResponse(buf, `repasse-${slug}${month ? "-" + month : ""}.xlsx`);
+  }
+
+  // ── PDF (default) ─────────────────────────────────────────────────────────
   const doc = new PDFDocument({ margin: 56, size: "A4", info: { Title: "Relatório de Repasse", Author: clinic.name } });
 
   // Header
@@ -103,7 +177,6 @@ export async function GET(req: Request) {
      .text(`${clinic.name} · Relatório gerado pelo AXIEL Core`, { align: "center" });
 
   const buffer = await pdfToBuffer(doc);
-  const slug   = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   return new Response(new Uint8Array(buffer), {
     headers: {

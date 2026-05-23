@@ -45,6 +45,33 @@ export async function GET(req: Request) {
   const { data } = await q;
   const appts = data ?? [];
 
+  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  if (format === "pdf") {
+    const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
+    const periodLabel = from && to
+      ? `${new Date(from).toLocaleDateString("pt-BR")} a ${new Date(to).toLocaleDateString("pt-BR")}`
+      : "Todos os períodos";
+    const headers = ["Data", "Hora", "Paciente", "Tipo de sessão", "Status", "Valor (R$)"];
+    const pdfRows = appts.map((a) => {
+      const patient = Array.isArray(a.patients) ? a.patients[0] : a.patients;
+      const st      = Array.isArray(a.session_types) ? a.session_types[0] : a.session_types;
+      const d       = new Date(a.starts_at);
+      return [
+        d.toLocaleDateString("pt-BR"),
+        d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        (patient as { full_name?: string } | null)?.full_name ?? "",
+        (st as { name?: string } | null)?.name ?? "",
+        statusLabel(a.status ?? ""),
+        (st as { price_cents?: number } | null)?.price_cents
+          ? ((st as { price_cents: number }).price_cents / 100).toFixed(2).replace(".", ",")
+          : "",
+      ];
+    });
+    const buf = await buildTablePdf({ title: "Histórico de Sessões", periodLabel, headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56" });
+    return pdfResponse(buf, `sessoes-${slug}.pdf`);
+  }
+
   const headers = ["Data", "Hora", "Paciente", "E-mail", "Telefone", "Tipo de sessão", "Duração (min)", "Status", "Valor (R$)", "Notas"];
   const rows = appts.map((a) => {
     const patient = Array.isArray(a.patients) ? a.patients[0] : a.patients;
@@ -65,8 +92,6 @@ export async function GET(req: Request) {
       a.notes ?? "",
     ];
   });
-
-  const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
   if (format === "xlsx") {
     const xlsxRows = appts.map((a) => {

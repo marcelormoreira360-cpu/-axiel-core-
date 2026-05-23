@@ -37,6 +37,22 @@ export async function GET(req: Request) {
   const leads  = await getLeads(clinic.id);
   const slug   = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  if (format === "pdf") {
+    const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
+    const headers = ["Nome", "E-mail", "Telefone", "Etapa", "Origem", "Queixa", "Cadastrado"];
+    const pdfRows = leads.map((l) => [
+      l.full_name ?? "",
+      l.email ?? "",
+      l.phone ?? "",
+      STAGE_LABELS[l.stage as LeadStage] ?? l.stage ?? "",
+      SOURCE_LABELS[l.source as LeadSource] ?? l.source ?? "",
+      l.main_complaint ?? "",
+      new Date(l.created_at).toLocaleDateString("pt-BR"),
+    ]);
+    const buf = await buildTablePdf({ title: "Pipeline de Leads", headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#1E40AF" });
+    return pdfResponse(buf, `leads-${slug}.pdf`);
+  }
+
   if (format === "xlsx") {
     const rows = leads.map((l) => ({
       nome:      l.full_name ?? "",
@@ -65,6 +81,7 @@ export async function GET(req: Request) {
     return excelResponse(buf, `leads-${slug}.xlsx`);
   }
 
+  // CSV (default)
   const headers = ["Nome", "E-mail", "Telefone", "Etapa", "Origem", "Queixa principal", "Notas", "Cadastrado em"];
   const rows = leads.map((l) => [
     l.full_name ?? "",

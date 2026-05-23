@@ -25,6 +25,23 @@ export async function GET(req: Request) {
   const payments = await getPaymentsWithPatients(clinic.id, { from, to, limit: 10000 });
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
+  if (format === "pdf") {
+    const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
+    const periodLabel = from && to
+      ? `${new Date(from).toLocaleDateString("pt-BR")} a ${new Date(to).toLocaleDateString("pt-BR")}`
+      : "Todos os períodos";
+    const headers = ["Data", "Paciente", "Tipo de sessão", "Método", "Valor (R$)"];
+    const pdfRows = payments.map((p) => [
+      new Date(p.paid_at).toLocaleDateString("pt-BR"),
+      p.patient_name ?? "",
+      p.session_type_name ?? "",
+      paymentMethodLabel(p.payment_method as PaymentMethod),
+      (p.amount_cents / 100).toFixed(2).replace(".", ","),
+    ]);
+    const buf = await buildTablePdf({ title: "Extrato de Pagamentos", periodLabel, headers, rows: pdfRows, clinicName: clinic.name });
+    return pdfResponse(buf, `pagamentos-${slug}.pdf`);
+  }
+
   if (format === "xlsx") {
     const rows = payments.map((p) => ({
       data:    new Date(p.paid_at).toLocaleDateString("pt-BR"),

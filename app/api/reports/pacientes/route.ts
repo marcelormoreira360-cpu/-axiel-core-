@@ -23,9 +23,24 @@ export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
 
-  const format  = new URL(req.url).searchParams.get("format") ?? "csv";
+  const format   = new URL(req.url).searchParams.get("format") ?? "csv";
   const patients = await getPatients();
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  if (format === "pdf") {
+    const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
+    const headers = ["Nome", "E-mail", "Telefone", "Data de nasc.", "Status", "Cadastrado"];
+    const pdfRows = patients.map((p) => [
+      p.full_name,
+      p.email ?? "",
+      p.phone ?? "",
+      p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("pt-BR") : "",
+      statusLabel(p.status),
+      new Date(p.created_at).toLocaleDateString("pt-BR"),
+    ]);
+    const buf = await buildTablePdf({ title: "Lista de Pacientes", headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56" });
+    return pdfResponse(buf, `pacientes-${slug}.pdf`);
+  }
 
   if (format === "xlsx") {
     const rows = patients.map((p) => ({
@@ -53,6 +68,7 @@ export async function GET(req: Request) {
     return excelResponse(buf, `pacientes-${slug}.xlsx`);
   }
 
+  // CSV (default)
   const headers = ["Nome", "E-mail", "Telefone", "Data de nascimento", "Status", "Cadastrado em", "Observações"];
   const rows = patients.map((p) => [
     p.full_name,

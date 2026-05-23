@@ -7,11 +7,8 @@ type ReportCard = {
   id: string;
   title: string;
   description: string;
-  format: "PDF" | "CSV";
   icon: "pdf" | "csv" | "leads";
   buildUrl: (from: string, to: string, month: string) => string;
-  /** If true, also shows an Excel download button */
-  hasExcel?: boolean;
   needsDateRange?: boolean;
   needsMonth?: boolean;
 };
@@ -21,7 +18,6 @@ const REPORTS: ReportCard[] = [
     id: "financeiro",
     title: "Relatório financeiro",
     description: "Receita total, ticket médio, pagamentos por método e lista detalhada de cobranças.",
-    format: "PDF",
     icon: "pdf",
     buildUrl: (from, to) => `/api/reports/financeiro${from ? `?from=${from}&to=${to}` : ""}`,
     needsDateRange: true,
@@ -30,7 +26,6 @@ const REPORTS: ReportCard[] = [
     id: "repasse",
     title: "Repasse médico",
     description: "Resumo de repasse por profissional, sessões atendidas, receita bruta e valor calculado.",
-    format: "PDF",
     icon: "pdf",
     buildUrl: (_from, _to, month) => `/api/reports/repasse${month ? `?month=${month}` : ""}`,
     needsMonth: true,
@@ -39,9 +34,7 @@ const REPORTS: ReportCard[] = [
     id: "pagamentos",
     title: "Extrato de pagamentos",
     description: "Planilha com todos os pagamentos: paciente, data, método, tipo de sessão e valor.",
-    format: "CSV",
     icon: "csv",
-    hasExcel: true,
     buildUrl: (from, to) => `/api/reports/pagamentos${from ? `?from=${from}&to=${to}` : ""}`,
     needsDateRange: true,
   },
@@ -49,9 +42,7 @@ const REPORTS: ReportCard[] = [
     id: "sessoes",
     title: "Histórico de sessões",
     description: "Todas as consultas com paciente, tipo, status, duração e valor.",
-    format: "CSV",
     icon: "csv",
-    hasExcel: true,
     buildUrl: (from, to) => `/api/reports/sessoes${from ? `?from=${from}&to=${to}` : ""}`,
     needsDateRange: true,
   },
@@ -59,18 +50,14 @@ const REPORTS: ReportCard[] = [
     id: "pacientes",
     title: "Lista de pacientes",
     description: "Todos os pacientes da clínica: nome, e-mail, telefone, status e data de cadastro.",
-    format: "CSV",
     icon: "csv",
-    hasExcel: true,
     buildUrl: () => "/api/reports/pacientes",
   },
   {
     id: "leads",
     title: "Pipeline de leads",
     description: "Todos os leads com etapa, origem, queixa principal e data de cadastro.",
-    format: "CSV",
     icon: "leads",
-    hasExcel: true,
     buildUrl: () => "/api/reports/leads",
   },
 ];
@@ -137,18 +124,14 @@ export function RelatoriosClient() {
       <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98]">Exportações disponíveis</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {REPORTS.map((r) => {
-          const url   = r.buildUrl(from, to, month);
-          const isPdf = r.format === "PDF";
+          const url     = r.buildUrl(from, to, month);
           const isLeads = r.icon === "leads";
+          const isPdf   = r.icon === "pdf";
 
-          const iconBg   = isPdf ? "bg-[#FEF3C7]" : isLeads ? "bg-[#E8F0FE]" : "bg-[#E1F5EE]";
+          const iconBg    = isPdf ? "bg-[#FEF3C7]" : isLeads ? "bg-[#E8F0FE]" : "bg-[#E1F5EE]";
           const iconColor = isPdf ? "text-amber-600" : isLeads ? "text-blue-600" : "text-[#0F6E56]";
-          const badgeBg   = isPdf ? "bg-amber-50 text-amber-600" : isLeads ? "bg-blue-50 text-blue-600" : "bg-[#E1F5EE] text-[#0F6E56]";
-          const btnClass  = isPdf
-            ? "bg-[#0B1F3A] text-white hover:bg-black"
-            : isLeads
-            ? "bg-[#E8F0FE] text-blue-700 hover:bg-blue-100"
-            : "bg-[#E1F5EE] text-[#0F6E56] hover:bg-[#d0f0e6]";
+
+          const sep = url.includes("?") ? "&" : "?";
 
           return (
             <div
@@ -162,11 +145,11 @@ export function RelatoriosClient() {
                               <Table2   className={`h-4 w-4 ${iconColor}`} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="text-[13px] font-semibold text-[#0F1A2E]">{r.title}</p>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${badgeBg}`}>
-                      {r.format}
-                    </span>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{r.title}</p>
+                  <div className="flex items-center gap-1 flex-wrap mt-0.5">
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-50 text-amber-600">PDF</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E1F5EE] text-[#0F6E56]">CSV</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E8F5E9] text-[#2E7D32]">XLS</span>
                   </div>
                   <p className="text-[11px] text-[#A09E98] mt-1 leading-relaxed">{r.description}</p>
                   {r.needsDateRange && (
@@ -178,25 +161,31 @@ export function RelatoriosClient() {
                 </div>
               </div>
 
-              <div className={`flex gap-2 ${r.hasExcel ? "flex-row" : ""}`}>
+              <div className="flex gap-2">
                 <a
-                  href={url}
+                  href={`${url}${sep}format=pdf`}
                   download
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-[8px] py-2 text-[12px] font-medium transition ${btnClass}`}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#0B1F3A] text-white hover:bg-black"
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  {r.hasExcel ? "CSV" : `Baixar ${r.format}`}
+                  <Download className="h-3 w-3" />
+                  PDF
                 </a>
-                {r.hasExcel && (
-                  <a
-                    href={`${url}${url.includes("?") ? "&" : "?"}format=xlsx`}
-                    download
-                    className="flex flex-1 items-center justify-center gap-2 rounded-[8px] py-2 text-[12px] font-medium transition bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    Excel
-                  </a>
-                )}
+                <a
+                  href={`${url}${sep}format=csv`}
+                  download
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#E1F5EE] text-[#0F6E56] hover:bg-[#d0f0e6]"
+                >
+                  <Download className="h-3 w-3" />
+                  CSV
+                </a>
+                <a
+                  href={`${url}${sep}format=xlsx`}
+                  download
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]"
+                >
+                  <Download className="h-3 w-3" />
+                  Excel
+                </a>
               </div>
             </div>
           );
