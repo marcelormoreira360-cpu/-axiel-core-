@@ -32,13 +32,12 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
 
   if (!appointment) notFound();
 
-  const patient = await getPatientById(appointment.patient_id);
-  if (!patient) notFound();
-
-  const [previousAppointments, latestInsight] = await Promise.all([
-    getAppointmentsByPatient(patient.id),
-    getLatestAiInsight(patient.id),
+  const [patient, previousAppointments, latestInsight] = await Promise.all([
+    getPatientById(appointment.patient_id),
+    getAppointmentsByPatient(appointment.patient_id),
+    getLatestAiInsight(appointment.patient_id),
   ]);
+  if (!patient) notFound();
 
   const pastSessions = previousAppointments.filter((a) => a.id !== appointmentId);
 
