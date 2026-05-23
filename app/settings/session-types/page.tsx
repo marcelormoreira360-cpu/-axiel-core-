@@ -45,6 +45,16 @@ export default async function SessionTypesPage() {
     revalidatePath("/settings/session-types");
   }
 
+  async function editAction(id: string, formData: FormData) {
+    "use server";
+    await updateSessionType(id, {
+      name:             String(formData.get("name") ?? "").trim(),
+      duration_minutes: Number(formData.get("duration_minutes") ?? 60),
+      price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
+    });
+    revalidatePath("/settings/session-types");
+  }
+
   async function deleteAction(id: string) {
     "use server";
     await deleteSessionType(id);
@@ -70,6 +80,7 @@ export default async function SessionTypesPage() {
         toggleOnlineAction={toggleOnlineAction}
         toggleRecordingAction={toggleRecordingAction}
         toggleActiveAction={toggleActiveAction}
+        editAction={editAction}
         deleteAction={deleteAction}
       />
     </Shell>
