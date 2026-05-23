@@ -1,13 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getClinicsForUser } from "@/services/clinic-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { createLead } from "@/services/lead-service";
 import type { LeadSource } from "@/lib/types";
 
 export async function createLeadAction(formData: FormData) {
-  const clinics = await getClinicsForUser();
-  const clinic = clinics[0];
+  const clinic = await getCurrentClinic();
   if (!clinic) throw new Error("No clinic available for this user.");
 
   const lead = await createLead({

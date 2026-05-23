@@ -7,27 +7,56 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+
+  // Resolve user's clinic_id explicitly — defense-in-depth on top of RLS.
+  // Without this, the query returns whatever RLS allows, which could expose
+  // all clinics if a policy is misconfigured.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) return [];
+
   const { data, error } = await supabase
     .from("clinics")
-    .select("*")
+    .select("id, name, slug, logo_url, primary_color, clinic_profile, created_at, updated_at")
+    .eq("id", profile.clinic_id)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
-  return data ?? [];
+  return (data ?? []) as Clinic[];
 }
 
 export async function updateClinic(id: string, fields: { name?: string; slug?: string; logo_url?: string | null; primary_color?: string | null; clinic_profile?: string }): Promise<Clinic> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+
+  // Verify the caller owns this clinic before updating.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.clinic_id !== id) throw new Error("Acesso negado.");
+
   const { data, error } = await supabase
     .from("clinics")
     .update(fields)
     .eq("id", id)
-    .select("*")
+    .select("id, name, slug, logo_url, primary_color, clinic_profile, created_at, updated_at")
     .single();
   if (error) throw error;
-  return data;
+  return data as Clinic;
 }
 
 export async function getCurrentClinic(): Promise<Clinic | null> {

@@ -7,6 +7,17 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Resolve caller's clinic so the patient query is scoped correctly.
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) {
+    return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
+  }
+
   try {
     const { patientId, report, patientName } = await req.json();
     if (!patientId || !report) {
@@ -17,7 +28,8 @@ export async function POST(req: NextRequest) {
       .from("patients")
       .select("full_name, phone")
       .eq("id", patientId)
-      .single();
+      .eq("clinic_id", profile.clinic_id) // ← scope to caller's clinic
+      .maybeSingle();
 
     if (!patient?.phone) {
       return NextResponse.json({ error: "Paciente não possui telefone cadastrado" }, { status: 400 });

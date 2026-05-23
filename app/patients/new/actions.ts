@@ -1,14 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getClinicsForUser } from "@/services/clinic-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { createPatient } from "@/services/patient-service";
 import { createPatientPortalLink } from "@/services/patient-portal-service";
 import { sendPatientWelcome } from "@/services/patient-welcome-service";
 
 export async function createPatientAction(formData: FormData) {
-  const clinics = await getClinicsForUser();
-  const clinic = clinics[0];
+  const clinic = await getCurrentClinic();
   if (!clinic) throw new Error("No clinic available for this user.");
 
   const firstName = String(formData.get("first_name") ?? "").trim();
