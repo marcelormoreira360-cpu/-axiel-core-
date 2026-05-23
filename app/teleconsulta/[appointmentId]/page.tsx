@@ -41,19 +41,6 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
 
   const pastSessions = previousAppointments.filter((a) => a.id !== appointmentId);
 
-  // Room name: axiel + patient first name (slugified) + date — no hyphens so Jitsi
-  // doesn't split into separate words ("Axiel Maria 20260521")
-  function slugName(str: string) {
-    return str.toLowerCase()
-      .normalize("NFD").replace(/[̀-ͯ]/g, "")  // strip accents
-      .replace(/[^a-z0-9]/g, "")                          // only alphanumeric
-      .slice(0, 12);
-  }
-  const dateCompact = new Date(appointment.starts_at).toISOString().slice(0, 10).replace(/-/g, "");
-  const patientSlug = slugName(patient.full_name.split(" ")[0]);
-  const roomName = `axiel${patientSlug}${dateCompact}`;
-
-  // Practitioner display name for Jitsi pre-fill
   const practitionerName = profile?.full_name ?? "Praticante";
 
   async function saveNotesAction(apptId: string, notes: string, observations: string[]) {
@@ -136,7 +123,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
         {/* ── LEFT: Video ── */}
         <div className="flex-1 min-w-0 p-4">
           <TeleconsultaVideo
-            roomName={roomName}
+            appointmentId={appointmentId}
             patientName={patient.full_name.split(" ")[0]}
             displayName={practitionerName}
           />
