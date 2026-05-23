@@ -5,6 +5,7 @@ const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade"];
 const publicPrefixes = [
   "/auth",
   "/api/public",
+  "/api/auth",         // accept-invite (called right after signup, no session yet)
   "/api/whatsapp",
   "/api/meta",
   "/api/book",       // public booking slots API

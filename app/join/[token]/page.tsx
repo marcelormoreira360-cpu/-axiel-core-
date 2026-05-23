@@ -48,8 +48,8 @@ export default async function JoinPage({ params }: Props) {
 
   // Not logged in — show a page directing them to sign up/login
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const loginUrl = `${appUrl}/login?invite=${token}&email=${encodeURIComponent(invite.email)}`;
-  const signupUrl = `${appUrl}/signup?invite=${token}&email=${encodeURIComponent(invite.email)}`;
+  const loginUrl = `${appUrl}/auth/login?invite=${token}&email=${encodeURIComponent(invite.email)}`;
+  const signupUrl = `${appUrl}/auth/signup?invite=${token}&email=${encodeURIComponent(invite.email)}`;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#F7F6F2] px-4">

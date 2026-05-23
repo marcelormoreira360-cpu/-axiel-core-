@@ -5,56 +5,64 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-interface LoginFormProps {
+interface SignupFormProps {
   inviteToken?: string;
   prefillEmail?: string;
-  redirectTo?: string;
 }
 
-export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormProps) {
+export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
+
+  const [name, setName] = useState("");
   const [email, setEmail] = useState(prefillEmail ?? "");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     setLoading(true);
     setMessage("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    setLoading(false);
-
-    if (error) {
-      setMessage(error.message);
+    if (password.length < 8) {
+      setMessage("A senha deve ter pelo menos 8 caracteres.");
+      setLoading(false);
       return;
     }
 
-    // Accept team invite if present
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name.trim() },
+      },
+    });
+
+    if (error) {
+      setMessage(error.message);
+      setLoading(false);
+      return;
+    }
+
+    // If there is an invite token, accept it via server action
     if (inviteToken && data.user) {
       try {
-        await fetch("/api/auth/accept-invite", {
+        const res = await fetch("/api/auth/accept-invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token: inviteToken, userId: data.user.id }),
         });
+        if (res.ok) {
+          router.push("/dashboard?joined=1");
+          return;
+        }
       } catch {
-        // Non-fatal — continue to dashboard
+        // Invite acceptance failed — still continue to onboarding
       }
-      router.push("/dashboard?joined=1");
-      router.refresh();
-      return;
     }
 
-    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-    if (aal?.nextLevel === "aal2" && aal.currentLevel !== "aal2") {
-      router.push("/auth/mfa");
-    } else {
-      router.push(redirectTo ?? "/dashboard");
-    }
+    router.push("/onboarding");
     router.refresh();
   }
 
@@ -62,30 +70,44 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
     <form onSubmit={handleSubmit} className="mt-8 space-y-4">
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
+        placeholder="Nome completo"
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        required
+        autoComplete="name"
+      />
+      <input
+        className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
         placeholder="E-mail"
         type="email"
         value={email}
-        onChange={(event) => setEmail(event.target.value)}
+        onChange={(e) => setEmail(e.target.value)}
         required
         autoComplete="email"
         readOnly={!!prefillEmail}
       />
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="Senha"
+        placeholder="Senha (mín. 8 caracteres)"
         type="password"
         value={password}
-        onChange={(event) => setPassword(event.target.value)}
+        onChange={(e) => setPassword(e.target.value)}
         required
-        autoComplete="current-password"
+        autoComplete="new-password"
+        minLength={8}
       />
       <Button className="w-full" type="submit" disabled={loading}>
-        {loading ? "Entrando..." : "Continuar"}
+        {loading ? "Criando conta..." : "Criar conta"}
       </Button>
       {message && <p className="text-sm text-red-600">{message}</p>}
       <p className="text-center text-sm text-black/40">
-        <a href="/auth/reset-password" className="text-axiel-ink hover:underline">
-          Esqueceu sua senha?
+        Já tem uma conta?{" "}
+        <a
+          href={inviteToken ? `/auth/login?invite=${inviteToken}&email=${encodeURIComponent(email)}` : "/auth/login"}
+          className="text-axiel-ink hover:underline"
+        >
+          Entrar
         </a>
       </p>
     </form>
