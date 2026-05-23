@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { isManager } from "@/lib/team-utils";
 
 export const runtime = "nodejs";
 
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.clinic_id) {
     return NextResponse.json({ error: "Perfil não encontrado." }, { status: 403 });
+  }
+
+  // ── SEC-06: only owners and managers can issue refunds ─────────────────────
+  if (!isManager(profile.role)) {
+    return NextResponse.json({ error: "Sem permissão para emitir reembolsos." }, { status: 403 });
   }
 
   // ── Parse request ───────────────────────────────────────────────────────────

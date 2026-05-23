@@ -100,7 +100,6 @@ export async function POST(request: Request) {
           sessions_total: (offer.number_of_sessions as number | null) ?? 1,
           start_date: new Date().toISOString().slice(0, 10),
           is_active: true,
-          auto_renew: false,
           notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
         });
 
@@ -150,6 +149,14 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (subscription?.clinic_id) {
+      // ── BILL-04: reflect payment status in subscriptions table ──────────────
+      if (event.type === "invoice.payment_failed") {
+        await supabase
+          .from("subscriptions")
+          .update({ status: "past_due", metadata: { stripe_status: "past_due" } })
+          .eq("clinic_id", subscription.clinic_id);
+      }
+
       await supabase.from("billing_events").insert({
         clinic_id: subscription.clinic_id,
         external_subscription_id: subscriptionId,
