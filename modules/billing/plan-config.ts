@@ -35,7 +35,7 @@ export type PlanConfig = {
   priceUsdCents: number | null;
   /** EUR cents */
   priceEurCents: number | null;
-  billingInterval: "month" | "custom";
+  billingInterval: "monthly" | "custom";
   recommended?: boolean;
   limits: Record<PlanLimitKey, number | null>;
   features: Record<FeatureKey, boolean>;
@@ -129,7 +129,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     priceCents:     14700,  // R$ 147
     priceUsdCents:   4900,  // US$ 49
     priceEurCents:   3900,  // € 39
-    billingInterval: "month",
+    billingInterval: "monthly",
     limits: {
       users:       3,
       patients:    150,
@@ -147,7 +147,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     priceCents:     29700,  // R$ 297
     priceUsdCents:  12900,  // US$ 129
     priceEurCents:   9900,  // € 99
-    billingInterval: "month",
+    billingInterval: "monthly",
     recommended: true,
     limits: {
       users:       10,
@@ -166,7 +166,7 @@ export const AXIEL_PLANS: Record<AxielPlanSlug, PlanConfig> = {
     priceCents:     69700,  // R$ 697
     priceUsdCents:  29900,  // US$ 299
     priceEurCents:  22900,  // € 229
-    billingInterval: "month",
+    billingInterval: "monthly",
     limits: {
       users:       null,   // ilimitado
       patients:    null,   // ilimitado

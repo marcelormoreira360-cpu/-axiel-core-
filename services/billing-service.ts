@@ -20,7 +20,8 @@ export async function getClinicSubscription(clinicId: string) {
 
 export async function getClinicPlanContext(clinicId: string) {
   const subscription = await getClinicSubscription(clinicId);
-  const planSlug = subscription?.plans?.slug ?? "starter";
+  const plans = subscription?.plans as { slug?: string | null; code?: string | null } | null;
+  const planSlug = plans?.slug ?? plans?.code ?? "starter";
 
   return {
     subscription,
@@ -64,10 +65,12 @@ export async function seedDefaultPlans() {
   const supabase = await createClient();
 
   const rows = Object.values(AXIEL_PLANS).map((plan) => ({
-    name:             plan.name,
+    code:             plan.slug,   // DB uses "code" as the unique identifier
     slug:             plan.slug,
+    name:             plan.name,
     description:      plan.description,
-    price_cents:      plan.priceCents,
+    price_cents:      plan.priceCents ?? 0,
+    currency:         "BRL",
     price_usd_cents:  plan.priceUsdCents,
     price_eur_cents:  plan.priceEurCents,
     billing_interval: plan.billingInterval,
@@ -77,7 +80,7 @@ export async function seedDefaultPlans() {
     is_active:        true,
   }));
 
-  const { error } = await supabase.from("plans").upsert(rows, { onConflict: "slug" });
+  const { error } = await supabase.from("plans").upsert(rows, { onConflict: "code" });
 
   if (error) {
     console.error("seedDefaultPlans error", error);
