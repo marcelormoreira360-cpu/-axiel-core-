@@ -21,8 +21,11 @@ export async function getClinicSubscription(clinicId: string) {
 
 export async function getClinicPlanContext(clinicId: string) {
   const subscription = await getClinicSubscription(clinicId);
+  // BILL-07: 'code' is the canonical identifier (NOT NULL unique in DB).
+  // 'slug' is an alias added in 007 — prefer 'code' so fresh and migrated DBs
+  // resolve the same value; fall back to 'slug' for older rows, then 'starter'.
   const plans = subscription?.plans as { slug?: string | null; code?: string | null } | null;
-  const planSlug = plans?.slug ?? plans?.code ?? "starter";
+  const planSlug = plans?.code ?? plans?.slug ?? "starter";
 
   return {
     subscription,

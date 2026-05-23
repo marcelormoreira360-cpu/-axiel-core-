@@ -15,8 +15,8 @@ create table if not exists public.plans (
   name             text        not null,
   description      text,
   price_cents      integer,               -- BRL cents; null = custom / enterprise
-  billing_interval text        not null default 'month'
-                               check (billing_interval in ('month', 'year', 'custom')),
+  billing_interval text        not null default 'monthly'
+                               check (billing_interval in ('monthly', 'yearly', 'custom')),
   features         jsonb       not null default '{}',
   limits           jsonb       not null default '{}',
   is_active        boolean     not null default true,
@@ -76,7 +76,7 @@ values
     14700,    -- R$ 147
     4900,     -- US$ 49
     3900,     -- € 39
-    'month',
+    'monthly',
     false,
     '{
       "leads": true,
@@ -107,7 +107,7 @@ values
     29700,    -- R$ 297
     12900,    -- US$ 129
     9900,     -- € 99
-    'month',
+    'monthly',
     true,
     '{
       "leads": true,
@@ -138,7 +138,7 @@ values
     69700,    -- R$ 697
     29900,    -- US$ 299
     22900,    -- € 229
-    'month',
+    'monthly',
     false,
     '{
       "leads": true,

@@ -15,7 +15,9 @@ export async function GET(req: Request) {
   if (!clinic) return new Response("Unauthorized", { status: 401 });
 
   const supabase = await createSupabaseServerClient();
-  const like = `%${q}%`;
+  // SEC-07: escape LIKE wildcards so a query like "%%%" can't force a full table scan
+  const escaped = q.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+  const like = `%${escaped}%`;
 
   const [patientsRes, leadsRes] = await Promise.all([
     // Patients — search by name, email or phone
