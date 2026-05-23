@@ -57,6 +57,22 @@ drop policy if exists "plans_update_service" on public.plans;
 
 create unique index if not exists plans_slug_key on public.plans (slug);
 
+-- ── 5b. Drop NOT NULL on legacy 'code' column if it exists ───────────────────
+-- (column was created manually on remote before this migration; our INSERT
+--  does not provide a value for it, so we make it nullable to avoid errors)
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name   = 'plans'
+      and column_name  = 'code'
+  ) then
+    alter table public.plans alter column code drop not null;
+  end if;
+end $$;
+
 -- ── 6. Upsert canonical plans ─────────────────────────────────────────────────
 
 insert into public.plans (
