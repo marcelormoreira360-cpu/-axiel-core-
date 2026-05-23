@@ -54,11 +54,28 @@ interface IntakeResponse {
 
 // ─── Context builder ──────────────────────────────────────────────────────────
 
-async function buildPatientContext(patientId: string) {
+/**
+ * Builds the clinical context for the AI.
+ * Returns null if the patient doesn't belong to the caller's clinic —
+ * the route handler converts this to a 403.
+ */
+async function buildPatientContext(
+  patientId: string,
+  clinicId: string,
+) {
   const supabase = await createSupabaseServerClient();
 
+  // Verify ownership first: the patient must belong to the caller's clinic.
+  const { data: patient } = await supabase
+    .from("patients")
+    .select("full_name, date_of_birth, notes, clinic_id")
+    .eq("id", patientId)
+    .eq("clinic_id", clinicId) // ← ownership check
+    .maybeSingle();
+
+  if (!patient) return null; // patient not found or belongs to a different clinic
+
   const [
-    { data: patient },
     { data: exams },
     { data: prescriptions },
     { data: sessions },
@@ -66,14 +83,10 @@ async function buildPatientContext(patientId: string) {
     { data: intakeResponses },
   ] = await Promise.all([
     supabase
-      .from("patients")
-      .select("full_name, date_of_birth, notes")
-      .eq("id", patientId)
-      .single(),
-    supabase
       .from("patient_exams")
       .select("exam_date, lab_name, exam_results(biomarker, value, unit, ref_min, ref_max, status)")
       .eq("patient_id", patientId)
+      .eq("clinic_id", clinicId)
       .order("exam_date", { ascending: false })
       .limit(5),
     supabase
@@ -85,6 +98,7 @@ async function buildPatientContext(patientId: string) {
       .from("session_records")
       .select("notes, key_observations, created_at")
       .eq("patient_id", patientId)
+      .eq("clinic_id", clinicId)
       .order("created_at", { ascending: false })
       .limit(6),
     supabase
@@ -93,6 +107,7 @@ async function buildPatientContext(patientId: string) {
         "total_score, max_possible_score, score_percentage, section_scores, notes, assessment_templates(name)"
       )
       .eq("patient_id", patientId)
+      .eq("clinic_id", clinicId)
       .order("filled_at", { ascending: false })
       .limit(3),
     supabase
@@ -234,11 +249,21 @@ export interface HealthAgentReport {
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // ── Auth + clinic resolution ────────────────────────────────────────────────
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) {
+    return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -257,7 +282,12 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
 
-    const ctx = await buildPatientContext(patientId);
+    // buildPatientContext verifies patient.clinic_id === profile.clinic_id
+    // and returns null if the patient doesn't belong to this clinic.
+    const ctx = await buildPatientContext(patientId, profile.clinic_id);
+    if (!ctx) {
+      return NextResponse.json({ error: "Paciente não encontrado." }, { status: 404 });
+    }
 
     const systemPrompt = `Você é um agente clínico especialista em medicina integrativa e funcional.
 Sua função é analisar dados clínicos de pacientes e gerar dois relatórios distintos:

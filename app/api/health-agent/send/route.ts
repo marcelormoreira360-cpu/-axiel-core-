@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import type { HealthAgentReport } from "../route";
 
-function buildEmailHtml(patientName: string, report: any): string {
+function buildEmailHtml(patientName: string, report: HealthAgentReport): string {
   const firstName = patientName.split(" ")[0];
   const p = report.patient;
 
@@ -12,7 +13,7 @@ function buildEmailHtml(patientName: string, report: any): string {
 
   const attentionItems = (p.attention_areas ?? [])
     .map(
-      (a: any) => `
+      (a: { area: string; explanation: string; action: string }) => `
       <div style="background:#FAFAF8;border-radius:8px;padding:12px 14px;margin-bottom:8px;">
         <p style="font-size:13px;font-weight:600;color:#0F1A2E;margin:0 0 4px">${a.area}</p>
         <p style="font-size:12px;color:#6B6A66;margin:0 0 6px">${a.explanation}</p>
@@ -84,11 +85,21 @@ function buildEmailHtml(patientName: string, report: any): string {
 }
 
 export async function POST(req: NextRequest) {
-  // ── Auth guard ──────────────────────────────────────────────────────────────
+  // ── Auth + clinic resolution ────────────────────────────────────────────────
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) {
+    return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -99,17 +110,22 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { patientId, report, patientName } = await req.json();
+    const { patientId, report } = (await req.json()) as {
+      patientId?: string;
+      report?: HealthAgentReport;
+    };
     if (!patientId || !report) {
       return NextResponse.json({ error: "patientId e report são obrigatórios" }, { status: 400 });
     }
 
-    const supabase = await createSupabaseServerClient();
+    // Scope the patient query to the caller's clinic — prevents sending
+    // health reports for patients of other clinics.
     const { data: patient } = await supabase
       .from("patients")
       .select("full_name, email")
       .eq("id", patientId)
-      .single();
+      .eq("clinic_id", profile.clinic_id) // ← ownership check
+      .maybeSingle();
 
     if (!patient?.email) {
       return NextResponse.json({ error: "Paciente não possui email cadastrado" }, { status: 400 });
