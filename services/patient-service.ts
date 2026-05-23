@@ -14,7 +14,15 @@ export async function getPatients(clinicId?: string, practitionerId?: string): P
   return data ?? [];
 }
 
-export async function createPatient(input: Pick<Patient, "clinic_id" | "full_name" | "email" | "phone" | "notes">) {
+export async function createPatient(input: Pick<Patient, "clinic_id" | "full_name" | "email" | "phone" | "notes"> & {
+  first_name?: string | null;
+  last_name?: string | null;
+  address_line?: string | null;
+  city?: string | null;
+  state?: string | null;
+  zip_code?: string | null;
+  country?: string | null;
+}) {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();

@@ -35,11 +35,18 @@ export type Patient = {
   clinic_id: string;
   created_by: string | null;
   full_name: string;
+  first_name: string | null;
+  last_name: string | null;
   email: string | null;
   phone: string | null;
   date_of_birth: string | null;
   status: "active" | "inactive" | "archived";
   notes: string | null;
+  address_line: string | null;
+  city: string | null;
+  state: string | null;
+  zip_code: string | null;
+  country: string | null;
   created_at: string;
   updated_at: string;
 };
