@@ -4,10 +4,10 @@ import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatient, createAppointment, updateAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatients, createAppointment, updateAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
-import { getLatestAiInsight, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
+import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -33,31 +33,35 @@ export default async function SchedulePage() {
     (a) => new Date(a.starts_at).getTime() >= Date.now()
   );
 
-  const sessions: ScheduleSession[] = await Promise.all(
-    todayAppointments.map(async (appointment) => {
-      const [patientAppointments, latestInsight] = await Promise.all([
-        getAppointmentsByPatient(appointment.patient_id),
-        getLatestAiInsight(appointment.patient_id),
-      ]);
+  // PERF-01: batch-fetch appointments + insights for all today's patients in
+  // 2 queries total instead of 2 × N (one per appointment).
+  const todayPatientIds = [...new Set(todayAppointments.map((a) => a.patient_id))];
+  const [appointmentsByPatient, insightsByPatient] = await Promise.all([
+    getAppointmentsByPatients(todayPatientIds),
+    getLatestAiInsightsByPatients(todayPatientIds),
+  ]);
 
-      const insightOutput =
-        latestInsight?.review_status === "final"
-          ? latestInsight.final_output ?? latestInsight.output
-          : latestInsight?.output;
+  const sessions: ScheduleSession[] = todayAppointments.map((appointment) => {
+    const patientAppointments = appointmentsByPatient.get(appointment.patient_id) ?? [];
+    const latestInsight = insightsByPatient.get(appointment.patient_id) ?? null;
 
-      return {
-        ...appointment,
-        latestInsightStatus:
-          latestInsight?.review_status === "final" ? "final" : "review",
-        previousSessions: patientAppointments.filter((a) => a.id !== appointment.id),
-        snapshot: buildPatientSnapshot({
-          appointment,
-          previousSessions: patientAppointments,
-          latestInsightText: insightOutput?.structured_summary?.overview ?? null,
-        }),
-      };
-    })
-  );
+    const insightOutput =
+      latestInsight?.review_status === "final"
+        ? latestInsight.final_output ?? latestInsight.output
+        : latestInsight?.output;
+
+    return {
+      ...appointment,
+      latestInsightStatus:
+        latestInsight?.review_status === "final" ? "final" : "review",
+      previousSessions: patientAppointments.filter((a) => a.id !== appointment.id),
+      snapshot: buildPatientSnapshot({
+        appointment,
+        previousSessions: patientAppointments,
+        latestInsightText: insightOutput?.structured_summary?.overview ?? null,
+      }),
+    };
+  });
 
   async function createSessionAction(formData: FormData) {
     "use server";

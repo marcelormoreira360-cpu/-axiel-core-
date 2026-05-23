@@ -292,6 +292,43 @@ export async function getLatestAiInsight(patientId: string): Promise<AiInsight |
   return (data ?? null) as AiInsight | null;
 }
 
+/**
+ * PERF-01: batch version — fetches the latest non-archived AI insight for
+ * multiple patients in one query. Returns a Map<patientId, AiInsight | null>.
+ * Uses a DISTINCT ON equivalent via a subquery pattern: fetch all non-archived
+ * insights for the given patients ordered by created_at desc, then de-dup in JS
+ * (Supabase JS v2 doesn't expose DISTINCT ON directly).
+ */
+export async function getLatestAiInsightsByPatients(
+  patientIds: string[],
+): Promise<Map<string, AiInsight | null>> {
+  if (patientIds.length === 0) return new Map();
+
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("ai_insights")
+    .select("*")
+    .in("patient_id", patientIds)
+    .neq("review_status", "archived")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  // Keep only the first (latest) insight per patient
+  const map = new Map<string, AiInsight | null>();
+  for (const insight of (data ?? []) as AiInsight[]) {
+    if (!map.has(insight.patient_id)) {
+      map.set(insight.patient_id, insight);
+    }
+  }
+  // Ensure every requested patient has an entry (null if no insight)
+  for (const pid of patientIds) {
+    if (!map.has(pid)) map.set(pid, null);
+  }
+  return map;
+}
+
 export async function generateAndSaveAiInsight(patientId: string): Promise<AiInsight> {
   const snapshot = await buildAiInsightInput(patientId);
   if (!snapshot) throw new Error("Patient not found.");

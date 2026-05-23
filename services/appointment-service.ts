@@ -202,6 +202,34 @@ export async function getAppointmentsByPatient(patientId: string): Promise<Appoi
   return (data ?? []) as Appointment[];
 }
 
+/**
+ * PERF-01: batch version — fetches appointments for multiple patients in one
+ * query and returns a Map<patientId, Appointment[]>.
+ */
+export async function getAppointmentsByPatients(
+  patientIds: string[],
+): Promise<Map<string, Appointment[]>> {
+  if (patientIds.length === 0) return new Map();
+
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("*, patients(id, full_name, email, phone, status)")
+    .in("patient_id", patientIds)
+    .order("starts_at", { ascending: false });
+
+  if (error) throw error;
+
+  const map = new Map<string, Appointment[]>();
+  for (const appt of (data ?? []) as Appointment[]) {
+    const pid = appt.patient_id;
+    if (!map.has(pid)) map.set(pid, []);
+    map.get(pid)!.push(appt);
+  }
+  return map;
+}
+
 export async function getAppointmentById(appointmentId: string): Promise<Appointment | null> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
