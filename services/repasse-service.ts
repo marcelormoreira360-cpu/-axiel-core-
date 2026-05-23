@@ -134,16 +134,17 @@ export async function calculateMonthRepasse(
 
   const entries: RepasseEntry[] = [];
 
-  for (const rule of rules) {
-    // Payments for appointments where this professional was the creator
-    const { data: payments } = await supabase
-      .from("patient_payments")
-      .select("amount_cents, appointments(created_by)")
-      .eq("clinic_id", clinicId)
-      .gte("paid_at", from)
-      .lte("paid_at", to);
+  // PERF: fetch all payments once, then filter per rule in memory (avoids N+1)
+  const { data: allPayments } = await supabase
+    .from("patient_payments")
+    .select("amount_cents, appointments(created_by)")
+    .eq("clinic_id", clinicId)
+    .gte("paid_at", from)
+    .lte("paid_at", to)
+    .limit(10000);
 
-    const filtered = (payments ?? []).filter((p) => {
+  for (const rule of rules) {
+    const filtered = (allPayments ?? []).filter((p) => {
       const appt = Array.isArray(p.appointments) ? p.appointments[0] : p.appointments;
       return (appt as { created_by?: string } | null)?.created_by === rule.user_id;
     });

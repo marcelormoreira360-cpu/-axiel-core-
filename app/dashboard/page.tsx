@@ -54,6 +54,7 @@ function deltaColor(current: number, previous: number) {
 }
 
 export default async function Dashboard() {
+  // PERF: single round-trip — all data fetched in parallel
   const [profile, clinics, currentClinic, appointments] = await Promise.all([
     getCurrentUserProfile().catch(() => null),
     getClinicsForUser().catch(() => []),
@@ -75,6 +76,7 @@ export default async function Dashboard() {
     clinic
       ? getDashboardKPIs(clinic.id).catch(() => ({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }))
       : Promise.resolve({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }),
+    // PERF: chart data and setup tasks run in parallel with KPIs
     clinic ? getRevenueChartData(clinic.id, 6).catch(() => []) : Promise.resolve([]),
     clinic ? getSetupTasks(clinic).catch(() => []) : Promise.resolve([]),
   ]);

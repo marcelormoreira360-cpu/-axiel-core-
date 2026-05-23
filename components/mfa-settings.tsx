@@ -126,8 +126,9 @@ export function MfaSettings() {
           <p className="text-xs text-black/50">
             Escaneie o QR code com Google Authenticator, Authy ou similar. Em seguida, insira o código gerado.
           </p>
+          {/* QR code is a data: URL — explicit dimensions prevent CLS */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrCode} alt="QR Code 2FA" className="w-40 h-40 rounded-xl mx-auto border border-axiel-line" />
+          <img src={qrCode} alt="QR Code 2FA" width={160} height={160} className="w-40 h-40 rounded-xl mx-auto border border-axiel-line" />
           {secret && (
             <p className="text-center text-[10px] text-black/40 font-mono break-all">
               Código manual: {secret}

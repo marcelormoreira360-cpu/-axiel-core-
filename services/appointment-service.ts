@@ -203,7 +203,7 @@ export async function updateAppointment(
   return appt;
 }
 
-export async function getAppointmentsByPatient(patientId: string): Promise<Appointment[]> {
+export async function getAppointmentsByPatient(patientId: string, limit = 100): Promise<Appointment[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
@@ -211,7 +211,8 @@ export async function getAppointmentsByPatient(patientId: string): Promise<Appoi
     .from("appointments")
     .select("*, patients(id, full_name, email, phone, status)")
     .eq("patient_id", patientId)
-    .order("starts_at", { ascending: false });
+    .order("starts_at", { ascending: false })
+    .limit(limit);
 
   if (error) throw error;
   return (data ?? []) as Appointment[];

@@ -71,19 +71,22 @@ export async function getReportTimeSeries(
       .from("patient_payments")
       .select("amount_cents, payment_method, paid_at")
       .eq("clinic_id", clinicId)
-      .gte("paid_at", fromISO),
+      .gte("paid_at", fromISO)
+      .limit(5000),
 
     supabase
       .from("appointments")
       .select("id, starts_at, source, session_types(name, price_cents)")
       .eq("clinic_id", clinicId)
-      .gte("starts_at", fromISO),
+      .gte("starts_at", fromISO)
+      .limit(5000),
 
     supabase
       .from("patients")
       .select("id, created_at")
       .eq("clinic_id", clinicId)
-      .gte("created_at", fromISO),
+      .gte("created_at", fromISO)
+      .limit(5000),
   ]);
 
   // ── Build month buckets (always includes all months even if empty) ──

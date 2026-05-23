@@ -27,10 +27,13 @@ export async function getPatientPackages(patientId: string): Promise<PatientPack
 
   if (error || !packages) return [];
 
+  // PERF: cap at 500 — enough for any realistic package history
   const { data: appointments } = await supabase
     .from("appointments")
     .select("id, starts_at")
-    .eq("patient_id", patientId);
+    .eq("patient_id", patientId)
+    .order("starts_at", { ascending: false })
+    .limit(500);
 
   return packages.map((pkg) => {
     const used = (appointments ?? []).filter(
