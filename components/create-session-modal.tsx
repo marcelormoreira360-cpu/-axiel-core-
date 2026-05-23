@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef } from "react";
-import { X, Search } from "lucide-react";
+import { X, Search, UserPlus, Settings2 } from "lucide-react";
 import type { Patient, SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
 import { buildStartsAtForToday, buildStartsAtForDate } from "@/modules/schedule/time-slots";
@@ -128,7 +128,7 @@ export function CreateSessionModal({
           </div>
 
           {/* Results dropdown */}
-          {filtered.length > 0 && !selectedPatient && (
+          {query.trim().length > 0 && !selectedPatient && (
             <div className="mt-[4px] bg-white border border-black/[.08] rounded-[8px] overflow-hidden shadow-sm">
               {filtered.map((patient, i) => (
                 <button
@@ -137,7 +137,7 @@ export function CreateSessionModal({
                   onClick={() => pickPatient(patient)}
                   className={[
                     "w-full text-left px-[12px] py-[9px] hover:bg-[#F4F3EF] transition flex items-center gap-[8px]",
-                    i !== filtered.length - 1 ? "border-b border-black/[.05]" : "",
+                    "border-b border-black/[.05]",
                   ].join(" ")}
                 >
                   <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[9px] font-medium text-[#0F6E56] shrink-0">
@@ -149,6 +149,19 @@ export function CreateSessionModal({
                   </div>
                 </button>
               ))}
+              {/* Always show "create patient" option when typing */}
+              <button
+                type="button"
+                onClick={() => router.push(`/patients/new?name=${encodeURIComponent(query.trim())}`)}
+                className="w-full text-left px-[12px] py-[9px] hover:bg-[#F0FAF6] transition flex items-center gap-[8px]"
+              >
+                <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center shrink-0">
+                  <UserPlus className="h-3 w-3 text-[#0F6E56]" />
+                </div>
+                <p className="text-[12px] font-medium text-[#0F6E56]">
+                  Criar paciente{query.trim() ? ` "${query.trim()}"` : ""}
+                </p>
+              </button>
             </div>
           )}
 
@@ -169,8 +182,18 @@ export function CreateSessionModal({
 
         {/* Treatment type */}
         <div className="mb-5">
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Tipo de tratamento</label>
-          <div className="space-y-[5px]">
+          <div className="flex items-center justify-between mb-[6px]">
+            <label className="text-[11px] font-medium text-[#6B6A66]">Tipo de atendimento</label>
+            <button
+              type="button"
+              onClick={() => router.push("/settings/session-types")}
+              className="flex items-center gap-[4px] text-[10px] text-[#A09E98] hover:text-[#0F6E56] transition"
+            >
+              <Settings2 className="h-3 w-3" />
+              Editar lista
+            </button>
+          </div>
+          <div className="max-h-[200px] overflow-y-auto space-y-[5px] pr-[2px]">
             {sessionTypes.length === 0 ? (
               <div className="px-[12px] py-[9px] rounded-[8px] border border-[#0F6E56] bg-[#F0FAF6] flex items-center justify-between">
                 <span className="text-[12px] font-medium text-[#0F6E56]">Sessão padrão</span>
