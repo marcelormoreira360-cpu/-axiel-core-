@@ -1,8 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const publicRoutes = ["/", "/auth/login"];
-const publicPrefixes = ["/auth", "/api/public", "/api/whatsapp", "/api/meta"];
+const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade"];
+const publicPrefixes = [
+  "/auth",
+  "/api/public",
+  "/api/whatsapp",
+  "/api/meta",
+  "/api/book",       // public booking slots API
+];
 
 function isPublicPath(pathname: string) {
   if (pathname === "/auth/mfa") return false; // requires authentication
@@ -11,6 +17,9 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/p/") ||       // patient portal (magic link)
     pathname.startsWith("/envio/") ||   // public patient intake/upload
     pathname.startsWith("/join/") ||    // team invite accept
+    pathname.startsWith("/book/") ||    // public online booking page
+    pathname.startsWith("/f/") ||       // public assessment forms (token-based)
+    pathname.startsWith("/portal") ||   // patient portal login & verification
     publicPrefixes.some((prefix) => pathname.startsWith(prefix))
   );
 }
