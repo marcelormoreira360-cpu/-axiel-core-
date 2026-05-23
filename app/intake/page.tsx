@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { ClipboardList, FilePlus2, Sparkles } from "lucide-react";
+import { ClipboardList, FilePlus2 } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
@@ -45,25 +45,14 @@ export default async function IntakePage() {
         <p className="mt-3 max-w-2xl text-black/55">Create simple questions once. Use them for every patient in this clinic.</p>
       </header>
 
-      <section className="mb-6 grid gap-4 md:grid-cols-2">
-        <Card className="bg-axiel-ink text-white">
+      <section className="mb-6">
+        <Card className="bg-axiel-ink text-white max-w-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-white/55">Active form</p>
+            <p className="text-sm text-white/55">Formulário ativo</p>
             <ClipboardList className="h-5 w-5 text-white/40" />
           </div>
-          <p className="mt-3 text-2xl font-semibold">{activeForm?.name ?? "No form yet"}</p>
-          <p className="mt-1 text-sm text-white/45">{activeForm ? `${activeForm.intake_questions.length} questions` : "Create your first intake below"}</p>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-axiel-soft">
-              <Sparkles className="h-5 w-5 text-axiel-gold" />
-            </div>
-            <div>
-              <h2 className="font-semibold">AI insight placeholder</h2>
-              <p className="text-sm text-black/50">Future AI will summarize patient responses and prepare next steps.</p>
-            </div>
-          </div>
+          <p className="mt-3 text-2xl font-semibold">{activeForm?.name ?? "Nenhum formulário ainda"}</p>
+          <p className="mt-1 text-sm text-white/45">{activeForm ? `${activeForm.intake_questions.length} perguntas` : "Crie seu primeiro formulário abaixo"}</p>
         </Card>
       </section>
 

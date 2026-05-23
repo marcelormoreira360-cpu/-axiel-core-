@@ -17,7 +17,11 @@ export async function GET(req: Request) {
   }
 
   try {
-    const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? "axiel-oauth-secret";
+    const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!secret) {
+      console.error("Google OAuth callback: CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
+      return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_config_error`);
+    }
     const { payload, sig } = JSON.parse(Buffer.from(state, "base64url").toString()) as {
       payload: string;
       sig: string;
