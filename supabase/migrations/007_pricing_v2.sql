@@ -53,7 +53,11 @@ create policy "plans_select_public" on public.plans
 drop policy if exists "plans_insert_service" on public.plans;
 drop policy if exists "plans_update_service" on public.plans;
 
--- ── 5. Upsert canonical plans ─────────────────────────────────────────────────
+-- ── 5. Ensure unique constraint on slug (idempotent) ─────────────────────────
+
+create unique index if not exists plans_slug_key on public.plans (slug);
+
+-- ── 6. Upsert canonical plans ─────────────────────────────────────────────────
 
 insert into public.plans (
   slug,
