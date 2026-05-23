@@ -20,7 +20,13 @@ export default async function PublicPatientDashboardPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const [{ token }, resolvedSearch] = await Promise.all([params, searchParams]);
-  const data = await getPatientPortalDataByToken(token);
+
+  let data;
+  try {
+    data = await getPatientPortalDataByToken(token);
+  } catch {
+    data = null;
+  }
 
   // Show a friendly expired-link page instead of generic 404
   if (!data) {
