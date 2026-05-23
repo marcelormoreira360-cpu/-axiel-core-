@@ -9,3 +9,6 @@ export async function register() {
     });
   }
 }
+
+// Captures errors thrown in React Server Components and server actions
+export const onRequestError = Sentry.captureRequestError;

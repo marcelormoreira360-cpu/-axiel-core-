@@ -8,3 +8,6 @@ Sentry.init({
   replaysSessionSampleRate: 0.05,
   integrations: [Sentry.replayIntegration()],
 });
+
+// Tracks client-side navigation between routes
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
