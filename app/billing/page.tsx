@@ -5,14 +5,26 @@ import { SubscriptionStatusCard } from "@/components/subscription-status-card";
 import { getBillingOverview } from "@/services/billing-service";
 import { AXIEL_PLANS } from "@/modules/billing/plan-config";
 
+// QA-03: explicit shape for the joined subscription row returned by getBillingOverview
+type SubscriptionRow = {
+  status: string | null;
+  trial_ends_at: string | null;
+  current_period_ends_at: string | null;
+  external_customer_id: string | null;
+  cancel_at_period_end: boolean | null;
+  metadata: { cancel_at_period_end?: boolean } | null;
+  plans: { slug: string | null; code: string | null; name: string | null } | null;
+};
+
 export default async function BillingPage() {
-  const { clinic, subscription } = await getBillingOverview();
+  const { clinic, subscription: rawSub } = await getBillingOverview();
+  const subscription = rawSub as SubscriptionRow | null;
 
   if (!clinic) redirect("/onboarding");
 
-  const currentPlanSlug = (subscription as any)?.plans?.slug ?? null;
-  const cancelAtPeriodEnd = (subscription as any)?.metadata?.cancel_at_period_end === true
-    || (subscription as any)?.cancel_at_period_end === true;
+  const currentPlanSlug = subscription?.plans?.code ?? subscription?.plans?.slug ?? null;
+  const cancelAtPeriodEnd = subscription?.metadata?.cancel_at_period_end === true
+    || subscription?.cancel_at_period_end === true;
 
   const plans = Object.values(AXIEL_PLANS);
 
@@ -34,12 +46,12 @@ export default async function BillingPage() {
       {/* Status card */}
       <div className="mb-[20px]">
         <SubscriptionStatusCard
-          planName={(subscription as any)?.plans?.name ?? null}
+          planName={subscription?.plans?.name ?? null}
           status={subscription?.status ?? null}
           trialEndsAt={subscription?.trial_ends_at ?? null}
           renewsAt={subscription?.current_period_ends_at ?? null}
           cancelAtPeriodEnd={cancelAtPeriodEnd}
-          hasCustomer={!!(subscription as any)?.external_customer_id}
+          hasCustomer={!!subscription?.external_customer_id}
         />
       </div>
 

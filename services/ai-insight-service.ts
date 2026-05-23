@@ -580,11 +580,25 @@ export async function getPendingAiInsightReviewsForActions(clinicId?: string | n
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data ?? []).map((item: any) => ({
-    id: item.id,
-    patient_id: item.patient_id,
-    patient_name: item.patients?.full_name ?? "this patient",
-    review_status: item.review_status,
-    created_at: item.created_at,
-  }));
+  type PendingRow = {
+    id: string;
+    patient_id: string;
+    review_status: "pending_review" | "needs_changes";
+    created_at: string;
+    patients: { full_name: string } | { full_name: string }[] | null;
+  };
+
+  return (data ?? []).map((item) => {
+    const row = item as unknown as PendingRow;
+    const patientName = Array.isArray(row.patients)
+      ? (row.patients[0]?.full_name ?? "this patient")
+      : (row.patients?.full_name ?? "this patient");
+    return {
+      id: row.id,
+      patient_id: row.patient_id,
+      patient_name: patientName,
+      review_status: row.review_status,
+      created_at: row.created_at,
+    };
+  });
 }

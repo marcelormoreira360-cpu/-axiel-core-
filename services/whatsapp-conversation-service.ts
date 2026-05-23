@@ -136,13 +136,26 @@ export async function linkEntityToConversation(
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function coerce(row: any): WaConversation {
+type WaConversationRow = {
+  id: string;
+  phone: string;
+  clinic_id: string | null;
+  messages: WaMessage[] | null;
+  created_at: string;
+  updated_at: string;
+  bot_disabled: boolean | null;
+  handled_by_human: boolean | null;
+  handled_by_name: string | null;
+  linked_patient_id: string | null;
+  linked_lead_id: string | null;
+};
+
+function coerce(row: WaConversationRow): WaConversation {
   return {
     id: row.id,
     phone: row.phone,
     clinic_id: row.clinic_id ?? null,
-    messages: (row.messages as WaMessage[]) ?? [],
+    messages: row.messages ?? [],
     created_at: row.created_at,
     updated_at: row.updated_at,
     bot_disabled: row.bot_disabled ?? false,
