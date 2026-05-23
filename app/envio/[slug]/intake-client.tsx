@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import Image from "next/image";
 import { submitIntakeAction } from "./actions";
 
 interface Props {
@@ -110,7 +111,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
           {/* Header */}
           <div className="flex flex-col items-center mb-8">
             {logoUrl ? (
-              <img src={logoUrl} alt={clinicName} className="h-14 w-auto object-contain mb-3" />
+              <Image src={logoUrl} alt={clinicName} width={160} height={56} className="h-14 w-auto object-contain mb-3" />
             ) : (
               <div
                 className="h-14 w-14 rounded-2xl flex items-center justify-center mb-3"

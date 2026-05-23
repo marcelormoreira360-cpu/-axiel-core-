@@ -1,6 +1,7 @@
 import type { Appointment, FollowUp, Patient } from "@/lib/types";
 
-export const FOLLOW_UP_AI_LABEL = "Sugestão de IA: próximo acompanhamento";
+/** Rule-based timing suggestion (not AI-generated). */
+export const FOLLOW_UP_AI_LABEL = "Sugestão: próximo acompanhamento";
 
 export function getSuggestedFollowUpTimingPlaceholder(input: {
   patient: Patient;

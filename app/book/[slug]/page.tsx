@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
@@ -166,7 +167,7 @@ export default function BookingPage() {
         {/* Header */}
         <div className="text-center mb-8">
           {clinic.logo_url ? (
-            <img src={clinic.logo_url} alt={clinic.name} className="mx-auto mb-2 h-10 max-w-[160px] object-contain" />
+            <Image src={clinic.logo_url} alt={clinic.name} width={160} height={40} className="mx-auto mb-2 h-10 max-w-[160px] object-contain" />
           ) : (
             <p className="text-[11px] font-medium tracking-[.12em] uppercase text-[#A09E98]">Agendamento online</p>
           )}

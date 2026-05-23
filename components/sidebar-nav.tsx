@@ -38,7 +38,6 @@ const moreNav = [
   { href: "/products",       label: "Produtos" },
   { href: "/hotmart",        label: "Hotmart" },
   { href: "/billing",        label: "Faturamento" },
-  { href: "/settings",       label: "Configuração inicial" },
 ];
 
 function NavItem({

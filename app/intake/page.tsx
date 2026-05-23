@@ -42,7 +42,7 @@ export default async function IntakePage() {
       <header className="mb-8 pt-4">
         <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">PATIENT INTAKE</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Intake forms</h1>
-        <p className="mt-3 max-w-2xl text-black/55">Create simple questions once. Use them for every patient in this clinic.</p>
+        <p className="mt-3 max-w-2xl text-black/55">Crie perguntas simples uma vez. Use-as com todos os pacientes desta clínica.</p>
       </header>
 
       <section className="mb-6">

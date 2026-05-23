@@ -24,17 +24,17 @@ export default async function LeadsPage() {
           href="/leads/new"
           className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
         >
-          + Add lead
+          + Adicionar lead
         </Link>
       </div>
 
       {leads.length === 0 ? (
         <EmptyState
           icon={<Megaphone className="h-7 w-7" />}
-          title="No leads yet"
-          text="Connect your marketing channels to start capturing leads."
+          title="Nenhum lead ainda"
+          text="Conecte seus canais de marketing para começar a capturar leads."
           href="/leads/new"
-          action="Create first lead"
+          action="Criar primeiro lead"
         />
       ) : (
         <>
