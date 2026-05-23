@@ -102,3 +102,47 @@ export async function getPatientById(
   if (error) throw error;
   return data as Patient | null;
 }
+
+// ── LGPD: anonimização de dados do paciente ───────────────────────────────────
+// Ao invés de apagar o prontuário (útil para histórico clínico),
+// substituímos todos os PII por valores genéricos e desativamos o paciente.
+export async function anonymizePatient(patientId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Não autenticado.");
+
+  const { data: profile } = await supabase
+    .from("users")
+    .select("clinic_id, role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.clinic_id) throw new Error("Clínica não encontrada.");
+  // Only admins and owners may delete patient PII
+  if (!["admin", "owner", "platform_admin"].includes(profile.role)) {
+    throw new Error("Permissão insuficiente para anonimizar paciente.");
+  }
+
+  const { error } = await supabase
+    .from("patients")
+    .update({
+      full_name:     "Paciente Anonimizado",
+      email:         null,
+      phone:         null,
+      date_of_birth: null,
+      address_line:  null,
+      city:          null,
+      state:         null,
+      zip_code:      null,
+      country:       null,
+      notes:         null,
+      status:        "inactive",
+      updated_at:    new Date().toISOString(),
+    })
+    .eq("id", patientId)
+    .eq("clinic_id", profile.clinic_id);
+
+  if (error) throw error;
+}

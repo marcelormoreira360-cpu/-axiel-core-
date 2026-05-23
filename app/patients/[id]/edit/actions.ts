@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { updatePatient } from "@/services/patient-service";
+import { updatePatient, anonymizePatient } from "@/services/patient-service";
 
 export async function updatePatientAction(patientId: string, formData: FormData) {
   const full_name = String(formData.get("full_name") ?? "").trim();
@@ -18,4 +18,11 @@ export async function updatePatientAction(patientId: string, formData: FormData)
 
   revalidatePath(`/patients/${patientId}`);
   redirect(`/patients/${patientId}`);
+}
+
+export async function anonymizePatientAction(patientId: string): Promise<void> {
+  "use server";
+  await anonymizePatient(patientId);
+  revalidatePath(`/patients/${patientId}`);
+  redirect(`/patients`);
 }

@@ -110,3 +110,34 @@ export async function getClinicBySlug(slug: string): Promise<Pick<import("@/lib/
     .maybeSingle();
   return data ?? null;
 }
+// ── Clinic settings helpers ────────────────────────────────────────────────────
+
+export async function getClinicSettings(clinicId: string): Promise<{
+  timezone: string;
+  default_currency: string;
+}> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("timezone, default_currency")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  return {
+    timezone:         data?.timezone         ?? "America/Sao_Paulo",
+    default_currency: data?.default_currency ?? "BRL",
+  };
+}
+
+export async function updateClinicSettings(clinicId: string, input: {
+  timezone?: string;
+  default_currency?: string;
+}): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("clinic_settings")
+    .upsert({ clinic_id: clinicId, ...input, updated_at: new Date().toISOString() },
+             { onConflict: "clinic_id" });
+  if (error) throw error;
+}

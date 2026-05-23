@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
-import { updatePatientAction } from "./actions";
+import { updatePatientAction, anonymizePatientAction } from "./actions";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -116,6 +116,37 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </Link>
           </div>
         </form>
+      </div>
+
+      {/* ── Zona de perigo (LGPD) ──────────────────────────────────────────── */}
+      <div className="bg-white border border-red-100 rounded-[12px] overflow-hidden max-w-xl mt-6">
+        <div className="px-[20px] py-[16px] border-b border-red-100 bg-red-50/40">
+          <p className="text-[14px] font-semibold text-red-700">Zona de perigo</p>
+          <p className="text-[11px] text-red-500 mt-[2px]">
+            Ações irreversíveis em conformidade com a LGPD.
+          </p>
+        </div>
+        <div className="px-[20px] py-[16px] flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[13px] font-medium text-[#0F1A2E]">Anonimizar dados do paciente</p>
+            <p className="text-[11px] text-[#A09E98] mt-[2px]">
+              Remove nome, e-mail, telefone e endereço. O histórico clínico é mantido de forma anonimizada. Esta ação não pode ser desfeita.
+            </p>
+          </div>
+          <form action={anonymizePatientAction.bind(null, id)}>
+            <button
+              type="submit"
+              onClick={(e) => {
+                if (!confirm(`Tem certeza? Isso anonimizará permanentemente os dados de ${patient.full_name} (LGPD). Esta ação não pode ser desfeita.`)) {
+                  e.preventDefault();
+                }
+              }}
+              className="shrink-0 text-[12px] font-medium text-red-600 border border-red-200 bg-white hover:bg-red-50 rounded-[8px] px-[14px] py-[7px] transition whitespace-nowrap"
+            >
+              Anonimizar
+            </button>
+          </form>
+        </div>
       </div>
     </Shell>
   );

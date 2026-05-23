@@ -12,6 +12,7 @@ const settings = [
   { href: "/settings/equipe", title: "Equipe", text: "Convide profissionais, gerencie cargos e acesso à clínica." },
   { href: "/settings/practitioners", title: "Profissionais", text: "Perfil público, especialidade e agenda de cada profissional." },
   { href: "/settings/branding", title: "Identidade visual", text: "Logo e cor primária da sua clínica no portal e agendamento." },
+  { href: "/settings/regional", title: "Regional", text: "Fuso horário e moeda padrão usados em toda a plataforma." },
   { href: "/clinics", title: "Configuração da clínica", text: "Perfil e configurações básicas da clínica." },
   { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
   { href: "/settings/session-types", title: "Tipos de sessão", text: "Modalidades, durações, preços e configuração de Zoom por tipo." },

@@ -15,12 +15,13 @@ export async function completeOnboardingAction(
   const clinicProfile = String(formData.get("clinic_profile") ?? "integrativa");
   const hoursPreset   = String(formData.get("hours_preset")   ?? "weekdays");
   const staffEmail    = String(formData.get("staff_email")    ?? "").trim();
+  const timezone      = String(formData.get("timezone")       ?? "").trim() || "America/Sao_Paulo";
 
   try {
     await completeGuidedOnboarding({
       clinicName,
       clinicSlug:  normalizeClinicSlug("", clinicName),
-      timezone:    "America/Sao_Paulo",
+      timezone,
       hoursPreset,
       clinicProfile,
       staffEmail,
