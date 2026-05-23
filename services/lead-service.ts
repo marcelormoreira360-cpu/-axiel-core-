@@ -2,11 +2,11 @@ import type { Lead, LeadStage, Patient } from "@/lib/types";
 import { writeAuditLog } from "@/services/audit-service";
 import { auditEvents } from "@/modules/security/audit-events";
 
-export async function getLeads(clinicId?: string): Promise<Lead[]> {
+export async function getLeads(clinicId?: string, limit = 500): Promise<Lead[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  let query = supabase.from("leads").select("*").order("created_at", { ascending: false });
+  let query = supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(limit);
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
 

@@ -1,7 +1,6 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getFinanceKPIs, formatBRL } from "@/services/finance-service";
-import { getLeads } from "@/services/lead-service";
-import { getPatients } from "@/services/patient-service";
+import { getLeadStageCounts, getPatientCounts } from "@/services/stats-service";
 import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 import { getReportTimeSeries } from "@/services/report-service";
 import { Shell } from "@/components/shell";
@@ -19,31 +18,29 @@ function deltaLabel(current: number, prev: number): { text: string; up: boolean 
 export default async function RelatoriosPage() {
   const clinic = await getCurrentClinic();
 
-  const [financeKPIs, dashKPIs, leads, patients, timeSeries] = await Promise.all([
+  const [financeKPIs, dashKPIs, leadCounts, patientCounts, timeSeries] = await Promise.all([
     clinic ? getFinanceKPIs(clinic.id) : null,
     clinic ? getDashboardKPIs(clinic.id) : null,
-    getLeads(),
-    getPatients(),
+    clinic ? getLeadStageCounts(clinic.id) : Promise.resolve(null),
+    clinic ? getPatientCounts(clinic.id) : Promise.resolve(null),
     clinic ? getReportTimeSeries(clinic.id, 12) : null,
   ]);
 
   // ── Leads funnel ──
   const leadsByStage = {
-    new_lead:              leads.filter((l) => l.stage === "new_lead").length,
-    contacted:             leads.filter((l) => l.stage === "contacted").length,
-    scheduled:             leads.filter((l) => l.stage === "scheduled").length,
-    converted_to_patient:  leads.filter((l) => l.stage === "converted_to_patient").length,
+    new_lead:             leadCounts?.new_lead ?? 0,
+    contacted:            leadCounts?.contacted ?? 0,
+    scheduled:            leadCounts?.scheduled ?? 0,
+    converted_to_patient: leadCounts?.converted_to_patient ?? 0,
   };
-  const totalLeads = leads.length;
+  const totalLeads = leadCounts?.total ?? 0;
   const conversionRate = totalLeads > 0
     ? Math.round((leadsByStage.converted_to_patient / totalLeads) * 100)
     : 0;
 
   // ── Patients ──
-  const activePatients = patients.filter((p) => p.status === "active").length;
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-  const newThisMonth = patients.filter((p) => p.created_at >= monthStart).length;
+  const activePatients = patientCounts?.active ?? 0;
+  const newThisMonth = patientCounts?.newThisMonth ?? 0;
 
   const revDelta = financeKPIs
     ? deltaLabel(financeKPIs.revenueThisMonth, financeKPIs.revenueLastMonth)
