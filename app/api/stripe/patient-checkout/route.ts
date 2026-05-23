@@ -30,31 +30,40 @@ export async function POST(request: Request) {
 
   const supabase = createSupabaseAdminClient();
 
-  // 1. Look up the offer
-  const { data: offer, error: offerError } = await supabase
-    .from("monetization_offers")
-    .select("*")
-    .eq("id", offer_id)
-    .eq("is_active", true)
-    .maybeSingle();
+  // 1. Validate portal token + look up the offer in parallel
+  const tokenHash = crypto.createHash("sha256").update(portal_token).digest("hex");
+
+  const [
+    { data: link, error: linkError },
+    { data: offer, error: offerError },
+  ] = await Promise.all([
+    supabase
+      .from("patient_portal_links")
+      .select("patient_id, clinic_id")
+      .eq("token_hash", tokenHash)
+      .is("revoked_at", null)
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle(),
+    supabase
+      .from("monetization_offers")
+      .select("id, name, description, price_cents, currency, clinic_id")
+      .eq("id", offer_id)
+      .eq("is_active", true)
+      .maybeSingle(),
+  ]);
+
+  if (linkError || !link) {
+    return NextResponse.json({ error: "Token inválido ou expirado." }, { status: 401 });
+  }
 
   if (offerError || !offer) {
     return NextResponse.json({ error: "Oferta não encontrada." }, { status: 404 });
   }
 
-  // 2. Validate portal token
-  const tokenHash = crypto.createHash("sha256").update(portal_token).digest("hex");
-
-  const { data: link, error: linkError } = await supabase
-    .from("patient_portal_links")
-    .select("*")
-    .eq("token_hash", tokenHash)
-    .is("revoked_at", null)
-    .gt("expires_at", new Date().toISOString())
-    .maybeSingle();
-
-  if (linkError || !link) {
-    return NextResponse.json({ error: "Token inválido ou expirado." }, { status: 401 });
+  // 2. Verify the offer belongs to the same clinic as the portal token.
+  //    Prevents a valid token from Clinic A purchasing an offer from Clinic B.
+  if (offer.clinic_id !== link.clinic_id) {
+    return NextResponse.json({ error: "Oferta não disponível." }, { status: 403 });
   }
 
   // 3. Get patient email
