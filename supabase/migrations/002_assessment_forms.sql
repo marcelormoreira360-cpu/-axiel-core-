@@ -109,15 +109,18 @@ alter table public.assessment_responses  enable row level security;
 alter table public.assessment_answers    enable row level security;
 
 -- Templates: visíveis para usuários da clínica
+drop policy if exists "Clinic users can view assessment templates" on public.assessment_templates;
 create policy "Clinic users can view assessment templates"
   on public.assessment_templates for select
   using (clinic_id = (select clinic_id from public.users where id = auth.uid()));
 
+drop policy if exists "Clinic users can manage assessment templates" on public.assessment_templates;
 create policy "Clinic users can manage assessment templates"
   on public.assessment_templates for all
   using (clinic_id = (select clinic_id from public.users where id = auth.uid()));
 
 -- Sections: seguem a política do template
+drop policy if exists "Clinic users can view assessment sections" on public.assessment_sections;
 create policy "Clinic users can view assessment sections"
   on public.assessment_sections for select
   using (
@@ -127,6 +130,7 @@ create policy "Clinic users can view assessment sections"
     )
   );
 
+drop policy if exists "Clinic users can manage assessment sections" on public.assessment_sections;
 create policy "Clinic users can manage assessment sections"
   on public.assessment_sections for all
   using (
@@ -137,6 +141,7 @@ create policy "Clinic users can manage assessment sections"
   );
 
 -- Questions: seguem a política do template
+drop policy if exists "Clinic users can view assessment questions" on public.assessment_questions;
 create policy "Clinic users can view assessment questions"
   on public.assessment_questions for select
   using (
@@ -146,6 +151,7 @@ create policy "Clinic users can view assessment questions"
     )
   );
 
+drop policy if exists "Clinic users can manage assessment questions" on public.assessment_questions;
 create policy "Clinic users can manage assessment questions"
   on public.assessment_questions for all
   using (
@@ -156,15 +162,18 @@ create policy "Clinic users can manage assessment questions"
   );
 
 -- Responses: visíveis para usuários da clínica
+drop policy if exists "Clinic users can view assessment responses" on public.assessment_responses;
 create policy "Clinic users can view assessment responses"
   on public.assessment_responses for select
   using (clinic_id = (select clinic_id from public.users where id = auth.uid()));
 
+drop policy if exists "Clinic users can manage assessment responses" on public.assessment_responses;
 create policy "Clinic users can manage assessment responses"
   on public.assessment_responses for all
   using (clinic_id = (select clinic_id from public.users where id = auth.uid()));
 
 -- Answers: seguem a política da response
+drop policy if exists "Clinic users can view assessment answers" on public.assessment_answers;
 create policy "Clinic users can view assessment answers"
   on public.assessment_answers for select
   using (
@@ -174,6 +183,7 @@ create policy "Clinic users can view assessment answers"
     )
   );
 
+drop policy if exists "Clinic users can manage assessment answers" on public.assessment_answers;
 create policy "Clinic users can manage assessment answers"
   on public.assessment_answers for all
   using (

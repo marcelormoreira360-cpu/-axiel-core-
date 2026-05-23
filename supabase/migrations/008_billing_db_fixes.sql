@@ -28,6 +28,7 @@ alter table public.plans
 -- Previously used can_write_clinic_data (any staff) — should require manager+
 
 drop policy if exists "patient_packages_delete" on public.patient_packages;
+drop policy if exists "patient_packages_delete" on public.patient_packages;
 create policy "patient_packages_delete" on public.patient_packages
   for delete to authenticated
   using (public.can_manage_clinic(clinic_id::uuid));

@@ -25,20 +25,24 @@ create index if not exists assessment_invitations_clinic_id_idx   on public.asse
 alter table public.assessment_invitations enable row level security;
 
 drop policy if exists "assessment_invitations_select" on public.assessment_invitations;
+drop policy if exists "assessment_invitations_select" on public.assessment_invitations;
 create policy "assessment_invitations_select" on public.assessment_invitations
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "assessment_invitations_insert" on public.assessment_invitations;
 drop policy if exists "assessment_invitations_insert" on public.assessment_invitations;
 create policy "assessment_invitations_insert" on public.assessment_invitations
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "assessment_invitations_update" on public.assessment_invitations;
+drop policy if exists "assessment_invitations_update" on public.assessment_invitations;
 create policy "assessment_invitations_update" on public.assessment_invitations
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "assessment_invitations_delete" on public.assessment_invitations;
 drop policy if exists "assessment_invitations_delete" on public.assessment_invitations;
 create policy "assessment_invitations_delete" on public.assessment_invitations
   for delete to authenticated
@@ -76,20 +80,24 @@ create index if not exists calendar_integrations_clinic_id_idx on public.calenda
 alter table public.calendar_integrations enable row level security;
 
 drop policy if exists "calendar_integrations_select" on public.calendar_integrations;
+drop policy if exists "calendar_integrations_select" on public.calendar_integrations;
 create policy "calendar_integrations_select" on public.calendar_integrations
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "calendar_integrations_insert" on public.calendar_integrations;
 drop policy if exists "calendar_integrations_insert" on public.calendar_integrations;
 create policy "calendar_integrations_insert" on public.calendar_integrations
   for insert to authenticated
   with check (public.can_manage_clinic(clinic_id::uuid));
 
 drop policy if exists "calendar_integrations_update" on public.calendar_integrations;
+drop policy if exists "calendar_integrations_update" on public.calendar_integrations;
 create policy "calendar_integrations_update" on public.calendar_integrations
   for update to authenticated
   using (public.can_manage_clinic(clinic_id::uuid));
 
+drop policy if exists "calendar_integrations_delete" on public.calendar_integrations;
 drop policy if exists "calendar_integrations_delete" on public.calendar_integrations;
 create policy "calendar_integrations_delete" on public.calendar_integrations
   for delete to authenticated
@@ -115,20 +123,24 @@ create index if not exists patient_exams_patient_id_idx on public.patient_exams(
 alter table public.patient_exams enable row level security;
 
 drop policy if exists "patient_exams_select" on public.patient_exams;
+drop policy if exists "patient_exams_select" on public.patient_exams;
 create policy "patient_exams_select" on public.patient_exams
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "patient_exams_insert" on public.patient_exams;
 drop policy if exists "patient_exams_insert" on public.patient_exams;
 create policy "patient_exams_insert" on public.patient_exams
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "patient_exams_update" on public.patient_exams;
+drop policy if exists "patient_exams_update" on public.patient_exams;
 create policy "patient_exams_update" on public.patient_exams
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "patient_exams_delete" on public.patient_exams;
 drop policy if exists "patient_exams_delete" on public.patient_exams;
 create policy "patient_exams_delete" on public.patient_exams
   for delete to authenticated
@@ -162,6 +174,7 @@ create index if not exists exam_results_exam_id_idx on public.exam_results(exam_
 alter table public.exam_results enable row level security;
 
 drop policy if exists "exam_results_select" on public.exam_results;
+drop policy if exists "exam_results_select" on public.exam_results;
 create policy "exam_results_select" on public.exam_results
   for select to authenticated
   using (
@@ -171,6 +184,7 @@ create policy "exam_results_select" on public.exam_results
     )
   );
 
+drop policy if exists "exam_results_insert" on public.exam_results;
 drop policy if exists "exam_results_insert" on public.exam_results;
 create policy "exam_results_insert" on public.exam_results
   for insert to authenticated
@@ -182,6 +196,7 @@ create policy "exam_results_insert" on public.exam_results
   );
 
 drop policy if exists "exam_results_update" on public.exam_results;
+drop policy if exists "exam_results_update" on public.exam_results;
 create policy "exam_results_update" on public.exam_results
   for update to authenticated
   using (
@@ -191,6 +206,7 @@ create policy "exam_results_update" on public.exam_results
     )
   );
 
+drop policy if exists "exam_results_delete" on public.exam_results;
 drop policy if exists "exam_results_delete" on public.exam_results;
 create policy "exam_results_delete" on public.exam_results
   for delete to authenticated
@@ -219,15 +235,18 @@ create index if not exists finance_insights_clinic_generated_idx on public.finan
 alter table public.finance_insights enable row level security;
 
 drop policy if exists "finance_insights_select" on public.finance_insights;
+drop policy if exists "finance_insights_select" on public.finance_insights;
 create policy "finance_insights_select" on public.finance_insights
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "finance_insights_insert" on public.finance_insights;
+drop policy if exists "finance_insights_insert" on public.finance_insights;
 create policy "finance_insights_insert" on public.finance_insights
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "finance_insights_delete" on public.finance_insights;
 drop policy if exists "finance_insights_delete" on public.finance_insights;
 create policy "finance_insights_delete" on public.finance_insights
   for delete to authenticated
@@ -298,15 +317,18 @@ for each row execute function public.set_updated_at();
 alter table public.hotmart_purchases enable row level security;
 
 drop policy if exists "hotmart_purchases_select" on public.hotmart_purchases;
+drop policy if exists "hotmart_purchases_select" on public.hotmart_purchases;
 create policy "hotmart_purchases_select" on public.hotmart_purchases
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "hotmart_purchases_insert" on public.hotmart_purchases;
+drop policy if exists "hotmart_purchases_insert" on public.hotmart_purchases;
 create policy "hotmart_purchases_insert" on public.hotmart_purchases
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "hotmart_purchases_update" on public.hotmart_purchases;
 drop policy if exists "hotmart_purchases_update" on public.hotmart_purchases;
 create policy "hotmart_purchases_update" on public.hotmart_purchases
   for update to authenticated
@@ -337,15 +359,18 @@ create index if not exists media_entity_idx      on public.media(entity_type, en
 alter table public.media enable row level security;
 
 drop policy if exists "media_select" on public.media;
+drop policy if exists "media_select" on public.media;
 create policy "media_select" on public.media
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "media_insert" on public.media;
+drop policy if exists "media_insert" on public.media;
 create policy "media_insert" on public.media
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "media_delete" on public.media;
 drop policy if exists "media_delete" on public.media;
 create policy "media_delete" on public.media
   for delete to authenticated
@@ -394,15 +419,18 @@ for each row execute function public.set_updated_at();
 alter table public.meta_conversations enable row level security;
 
 drop policy if exists "meta_conversations_select" on public.meta_conversations;
+drop policy if exists "meta_conversations_select" on public.meta_conversations;
 create policy "meta_conversations_select" on public.meta_conversations
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "meta_conversations_insert" on public.meta_conversations;
+drop policy if exists "meta_conversations_insert" on public.meta_conversations;
 create policy "meta_conversations_insert" on public.meta_conversations
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "meta_conversations_update" on public.meta_conversations;
 drop policy if exists "meta_conversations_update" on public.meta_conversations;
 create policy "meta_conversations_update" on public.meta_conversations
   for update to authenticated
@@ -457,20 +485,24 @@ create index if not exists patient_payments_status_idx      on public.patient_pa
 alter table public.patient_payments enable row level security;
 
 drop policy if exists "patient_payments_select" on public.patient_payments;
+drop policy if exists "patient_payments_select" on public.patient_payments;
 create policy "patient_payments_select" on public.patient_payments
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "patient_payments_insert" on public.patient_payments;
 drop policy if exists "patient_payments_insert" on public.patient_payments;
 create policy "patient_payments_insert" on public.patient_payments
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "patient_payments_update" on public.patient_payments;
+drop policy if exists "patient_payments_update" on public.patient_payments;
 create policy "patient_payments_update" on public.patient_payments
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "patient_payments_delete" on public.patient_payments;
 drop policy if exists "patient_payments_delete" on public.patient_payments;
 create policy "patient_payments_delete" on public.patient_payments
   for delete to authenticated
@@ -511,20 +543,24 @@ create index if not exists nfse_invoices_created_at_idx        on public.nfse_in
 alter table public.nfse_invoices enable row level security;
 
 drop policy if exists "nfse_invoices_select" on public.nfse_invoices;
+drop policy if exists "nfse_invoices_select" on public.nfse_invoices;
 create policy "nfse_invoices_select" on public.nfse_invoices
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "nfse_invoices_insert" on public.nfse_invoices;
 drop policy if exists "nfse_invoices_insert" on public.nfse_invoices;
 create policy "nfse_invoices_insert" on public.nfse_invoices
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "nfse_invoices_update" on public.nfse_invoices;
+drop policy if exists "nfse_invoices_update" on public.nfse_invoices;
 create policy "nfse_invoices_update" on public.nfse_invoices
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "nfse_invoices_delete" on public.nfse_invoices;
 drop policy if exists "nfse_invoices_delete" on public.nfse_invoices;
 create policy "nfse_invoices_delete" on public.nfse_invoices
   for delete to authenticated
@@ -555,15 +591,18 @@ create index if not exists patient_documents_patient_id_idx on public.patient_do
 alter table public.patient_documents enable row level security;
 
 drop policy if exists "patient_documents_select" on public.patient_documents;
+drop policy if exists "patient_documents_select" on public.patient_documents;
 create policy "patient_documents_select" on public.patient_documents
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "patient_documents_insert" on public.patient_documents;
+drop policy if exists "patient_documents_insert" on public.patient_documents;
 create policy "patient_documents_insert" on public.patient_documents
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "patient_documents_delete" on public.patient_documents;
 drop policy if exists "patient_documents_delete" on public.patient_documents;
 create policy "patient_documents_delete" on public.patient_documents
   for delete to authenticated
@@ -591,20 +630,24 @@ create index if not exists patient_packages_patient_id_idx on public.patient_pac
 alter table public.patient_packages enable row level security;
 
 drop policy if exists "patient_packages_select" on public.patient_packages;
+drop policy if exists "patient_packages_select" on public.patient_packages;
 create policy "patient_packages_select" on public.patient_packages
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "patient_packages_insert" on public.patient_packages;
 drop policy if exists "patient_packages_insert" on public.patient_packages;
 create policy "patient_packages_insert" on public.patient_packages
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "patient_packages_update" on public.patient_packages;
+drop policy if exists "patient_packages_update" on public.patient_packages;
 create policy "patient_packages_update" on public.patient_packages
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "patient_packages_delete" on public.patient_packages;
 drop policy if exists "patient_packages_delete" on public.patient_packages;
 create policy "patient_packages_delete" on public.patient_packages
   for delete to authenticated
@@ -636,20 +679,24 @@ create index if not exists patient_prescriptions_patient_id_idx on public.patien
 alter table public.patient_prescriptions enable row level security;
 
 drop policy if exists "patient_prescriptions_select" on public.patient_prescriptions;
+drop policy if exists "patient_prescriptions_select" on public.patient_prescriptions;
 create policy "patient_prescriptions_select" on public.patient_prescriptions
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "patient_prescriptions_insert" on public.patient_prescriptions;
 drop policy if exists "patient_prescriptions_insert" on public.patient_prescriptions;
 create policy "patient_prescriptions_insert" on public.patient_prescriptions
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "patient_prescriptions_update" on public.patient_prescriptions;
+drop policy if exists "patient_prescriptions_update" on public.patient_prescriptions;
 create policy "patient_prescriptions_update" on public.patient_prescriptions
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "patient_prescriptions_delete" on public.patient_prescriptions;
 drop policy if exists "patient_prescriptions_delete" on public.patient_prescriptions;
 create policy "patient_prescriptions_delete" on public.patient_prescriptions
   for delete to authenticated
@@ -690,20 +737,24 @@ for each row execute function public.set_updated_at();
 alter table public.product_orders enable row level security;
 
 drop policy if exists "product_orders_select" on public.product_orders;
+drop policy if exists "product_orders_select" on public.product_orders;
 create policy "product_orders_select" on public.product_orders
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "product_orders_insert" on public.product_orders;
 drop policy if exists "product_orders_insert" on public.product_orders;
 create policy "product_orders_insert" on public.product_orders
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "product_orders_update" on public.product_orders;
+drop policy if exists "product_orders_update" on public.product_orders;
 create policy "product_orders_update" on public.product_orders
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "product_orders_delete" on public.product_orders;
 drop policy if exists "product_orders_delete" on public.product_orders;
 create policy "product_orders_delete" on public.product_orders
   for delete to authenticated
@@ -740,10 +791,12 @@ for each row execute function public.set_updated_at();
 alter table public.repasse_ledger enable row level security;
 
 drop policy if exists "repasse_ledger_select" on public.repasse_ledger;
+drop policy if exists "repasse_ledger_select" on public.repasse_ledger;
 create policy "repasse_ledger_select" on public.repasse_ledger
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "repasse_ledger_all" on public.repasse_ledger;
 drop policy if exists "repasse_ledger_all" on public.repasse_ledger;
 create policy "repasse_ledger_all" on public.repasse_ledger
   for all to authenticated
@@ -774,10 +827,12 @@ for each row execute function public.set_updated_at();
 alter table public.repasse_rules enable row level security;
 
 drop policy if exists "repasse_rules_select" on public.repasse_rules;
+drop policy if exists "repasse_rules_select" on public.repasse_rules;
 create policy "repasse_rules_select" on public.repasse_rules
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "repasse_rules_all" on public.repasse_rules;
 drop policy if exists "repasse_rules_all" on public.repasse_rules;
 create policy "repasse_rules_all" on public.repasse_rules
   for all to authenticated
@@ -837,20 +892,24 @@ for each row execute function public.set_updated_at();
 alter table public.treatment_plans enable row level security;
 
 drop policy if exists "treatment_plans_select" on public.treatment_plans;
+drop policy if exists "treatment_plans_select" on public.treatment_plans;
 create policy "treatment_plans_select" on public.treatment_plans
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "treatment_plans_insert" on public.treatment_plans;
 drop policy if exists "treatment_plans_insert" on public.treatment_plans;
 create policy "treatment_plans_insert" on public.treatment_plans
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "treatment_plans_update" on public.treatment_plans;
+drop policy if exists "treatment_plans_update" on public.treatment_plans;
 create policy "treatment_plans_update" on public.treatment_plans
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "treatment_plans_delete" on public.treatment_plans;
 drop policy if exists "treatment_plans_delete" on public.treatment_plans;
 create policy "treatment_plans_delete" on public.treatment_plans
   for delete to authenticated
@@ -879,20 +938,24 @@ create index if not exists treatment_plan_steps_clinic_id_idx  on public.treatme
 alter table public.treatment_plan_steps enable row level security;
 
 drop policy if exists "treatment_steps_select" on public.treatment_plan_steps;
+drop policy if exists "treatment_steps_select" on public.treatment_plan_steps;
 create policy "treatment_steps_select" on public.treatment_plan_steps
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "treatment_steps_insert" on public.treatment_plan_steps;
 drop policy if exists "treatment_steps_insert" on public.treatment_plan_steps;
 create policy "treatment_steps_insert" on public.treatment_plan_steps
   for insert to authenticated
   with check (public.can_write_clinic_data(clinic_id::uuid));
 
 drop policy if exists "treatment_steps_update" on public.treatment_plan_steps;
+drop policy if exists "treatment_steps_update" on public.treatment_plan_steps;
 create policy "treatment_steps_update" on public.treatment_plan_steps
   for update to authenticated
   using (public.can_write_clinic_data(clinic_id::uuid));
 
+drop policy if exists "treatment_steps_delete" on public.treatment_plan_steps;
 drop policy if exists "treatment_steps_delete" on public.treatment_plan_steps;
 create policy "treatment_steps_delete" on public.treatment_plan_steps
   for delete to authenticated
@@ -928,20 +991,24 @@ for each row execute function public.set_updated_at();
 alter table public.whatsapp_bot_configs enable row level security;
 
 drop policy if exists "whatsapp_bot_configs_select" on public.whatsapp_bot_configs;
+drop policy if exists "whatsapp_bot_configs_select" on public.whatsapp_bot_configs;
 create policy "whatsapp_bot_configs_select" on public.whatsapp_bot_configs
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
+drop policy if exists "whatsapp_bot_configs_insert" on public.whatsapp_bot_configs;
 drop policy if exists "whatsapp_bot_configs_insert" on public.whatsapp_bot_configs;
 create policy "whatsapp_bot_configs_insert" on public.whatsapp_bot_configs
   for insert to authenticated
   with check (public.can_manage_clinic(clinic_id::uuid));
 
 drop policy if exists "whatsapp_bot_configs_update" on public.whatsapp_bot_configs;
+drop policy if exists "whatsapp_bot_configs_update" on public.whatsapp_bot_configs;
 create policy "whatsapp_bot_configs_update" on public.whatsapp_bot_configs
   for update to authenticated
   using (public.can_manage_clinic(clinic_id::uuid));
 
+drop policy if exists "whatsapp_bot_configs_delete" on public.whatsapp_bot_configs;
 drop policy if exists "whatsapp_bot_configs_delete" on public.whatsapp_bot_configs;
 create policy "whatsapp_bot_configs_delete" on public.whatsapp_bot_configs
   for delete to authenticated
@@ -998,6 +1065,7 @@ for each row execute function public.set_updated_at();
 alter table public.whatsapp_conversations enable row level security;
 
 drop policy if exists "whatsapp_conversations_select" on public.whatsapp_conversations;
+drop policy if exists "whatsapp_conversations_select" on public.whatsapp_conversations;
 create policy "whatsapp_conversations_select" on public.whatsapp_conversations
   for select to authenticated
   using (
@@ -1006,10 +1074,12 @@ create policy "whatsapp_conversations_select" on public.whatsapp_conversations
   );
 
 drop policy if exists "whatsapp_conversations_insert" on public.whatsapp_conversations;
+drop policy if exists "whatsapp_conversations_insert" on public.whatsapp_conversations;
 create policy "whatsapp_conversations_insert" on public.whatsapp_conversations
   for insert to service_role
   with check (true);
 
+drop policy if exists "whatsapp_conversations_update" on public.whatsapp_conversations;
 drop policy if exists "whatsapp_conversations_update" on public.whatsapp_conversations;
 create policy "whatsapp_conversations_update" on public.whatsapp_conversations
   for update to authenticated
@@ -1076,15 +1146,18 @@ create index if not exists zoom_recordings_meeting_id_idx     on public.zoom_rec
 alter table public.zoom_recordings enable row level security;
 
 drop policy if exists "zoom_recordings_select" on public.zoom_recordings;
+drop policy if exists "zoom_recordings_select" on public.zoom_recordings;
 create policy "zoom_recordings_select" on public.zoom_recordings
   for select to authenticated
   using (public.can_access_clinic(clinic_id::uuid));
 
 drop policy if exists "zoom_recordings_insert" on public.zoom_recordings;
+drop policy if exists "zoom_recordings_insert" on public.zoom_recordings;
 create policy "zoom_recordings_insert" on public.zoom_recordings
   for insert to service_role
   with check (true);
 
+drop policy if exists "zoom_recordings_delete" on public.zoom_recordings;
 drop policy if exists "zoom_recordings_delete" on public.zoom_recordings;
 create policy "zoom_recordings_delete" on public.zoom_recordings
   for delete to authenticated

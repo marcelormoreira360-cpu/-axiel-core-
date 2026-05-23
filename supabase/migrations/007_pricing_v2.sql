@@ -44,6 +44,7 @@ alter table public.plans enable row level security;
 
 -- Anyone (including unauthenticated visitors) can read active plans
 drop policy if exists "plans_select_public" on public.plans;
+drop policy if exists "plans_select_public" on public.plans;
 create policy "plans_select_public" on public.plans
   for select
   using (is_active = true);
