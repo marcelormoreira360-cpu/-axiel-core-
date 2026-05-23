@@ -17,6 +17,28 @@ export async function POST(req: NextRequest) {
   try {
     const { appointmentId } = await req.json();
 
+    if (!appointmentId) {
+      return NextResponse.json({ error: "appointmentId required" }, { status: 400 });
+    }
+
+    // ── B7: Verify appointment belongs to the caller's clinic ─────────────────
+    const { data: profile } = await supabase
+      .from("users")
+      .select("clinic_id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const { data: appointment } = await supabase
+      .from("appointments")
+      .select("id, clinic_id")
+      .eq("id", appointmentId)
+      .maybeSingle();
+
+    if (!appointment || !profile?.clinic_id || appointment.clinic_id !== profile.clinic_id) {
+      return NextResponse.json({ error: "Appointment not found or access denied" }, { status: 403 });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     const res = await fetch("https://api.daily.co/v1/rooms", {
       method: "POST",
       headers: {

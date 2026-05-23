@@ -5,14 +5,36 @@ function accountId()    { return process.env.ZOOM_ACCOUNT_ID ?? ""; }
 function clientId()     { return process.env.ZOOM_CLIENT_ID ?? ""; }
 function clientSecret() { return process.env.ZOOM_CLIENT_SECRET ?? ""; }
 
+// ── Per-clinic Zoom credentials (stored in clinic_settings.settings JSONB) ────
+type ZoomCreds = { account_id: string; client_id: string; client_secret: string };
+
+async function getClinicZoomCreds(clinicId: string): Promise<ZoomCreds | null> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("clinic_settings")
+      .select("settings")
+      .eq("clinic_id", clinicId)
+      .maybeSingle();
+    const s = data?.settings as Record<string, unknown> | null;
+    const c = s?.zoom as ZoomCreds | null;
+    if (c?.account_id && c?.client_id && c?.client_secret) return c;
+  } catch { /* fall through to global env */ }
+  return null;
+}
+
 // ── Server-to-Server OAuth token ─────────────────────────────────────────────
 
-async function getZoomAccessToken(): Promise<string | null> {
-  if (!accountId() || !clientId() || !clientSecret()) return null;
+async function getZoomAccessToken(cliCreds?: ZoomCreds | null): Promise<string | null> {
+  const aid = cliCreds?.account_id ?? accountId();
+  const cid = cliCreds?.client_id  ?? clientId();
+  const cs  = cliCreds?.client_secret ?? clientSecret();
+  if (!aid || !cid || !cs) return null;
 
-  const credentials = Buffer.from(`${clientId()}:${clientSecret()}`).toString("base64");
+  const credentials = Buffer.from(`${cid}:${cs}`).toString("base64");
   const res = await fetch(
-    `${ZOOM_TOKEN_URL}?grant_type=account_credentials&account_id=${accountId()}`,
+    `${ZOOM_TOKEN_URL}?grant_type=account_credentials&account_id=${aid}`,
     {
       method:  "POST",
       headers: {
@@ -33,16 +55,55 @@ export function getZoomIntegrationStatus(): { connected: boolean } {
   return { connected: !!(accountId() && clientId() && clientSecret()) };
 }
 
+// Save per-clinic Zoom credentials to clinic_settings.settings JSONB
+export async function saveClinicZoomCredentials(clinicId: string, creds: {
+  account_id: string;
+  client_id: string;
+  client_secret: string;
+}): Promise<void> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data: existing } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const current = (existing?.settings ?? {}) as Record<string, unknown>;
+  const updated = { ...current, zoom: creds };
+  await supabase
+    .from("clinic_settings")
+    .upsert({ clinic_id: clinicId, settings: updated, updated_at: new Date().toISOString() },
+             { onConflict: "clinic_id" });
+}
+
+export async function removeClinicZoomCredentials(clinicId: string): Promise<void> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data: existing } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const current = (existing?.settings ?? {}) as Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { zoom: _removed, ...rest } = current;
+  await supabase
+    .from("clinic_settings")
+    .upsert({ clinic_id: clinicId, settings: rest, updated_at: new Date().toISOString() },
+             { onConflict: "clinic_id" });
+}
+
 // ── Meeting management ────────────────────────────────────────────────────────
 
-export async function createZoomMeeting(_clinicId: string, meeting: {
+export async function createZoomMeeting(clinicId: string, meeting: {
   topic: string;
   startIso: string;
   durationMinutes: number;
   agenda?: string;
   autoRecord?: boolean; // defaults to true; false = no cloud recording
 }): Promise<{ meeting_id: string; join_url: string; start_url: string } | null> {
-  const token = await getZoomAccessToken();
+  const creds = clinicId ? await getClinicZoomCreds(clinicId) : null;
+  const token = await getZoomAccessToken(creds);
   if (!token) return null;
 
   const res = await fetch(`${ZOOM_API}/users/me/meetings`, {
@@ -73,8 +134,9 @@ export async function createZoomMeeting(_clinicId: string, meeting: {
   };
 }
 
-export async function deleteZoomMeeting(_clinicId: string, meetingId: string) {
-  const token = await getZoomAccessToken();
+export async function deleteZoomMeeting(clinicId: string, meetingId: string) {
+  const creds = clinicId ? await getClinicZoomCreds(clinicId) : null;
+  const token = await getZoomAccessToken(creds);
   if (!token) return;
   await fetch(`${ZOOM_API}/meetings/${meetingId}`, {
     method:  "DELETE",
