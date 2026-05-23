@@ -55,6 +55,7 @@ export function PatientPortalDashboard({
 
   // Contact edit state
   const [editingContact, setEditingContact] = useState(false);
+  const [fullName, setFullName] = useState(data.patient.full_name ?? "");
   const [phone, setPhone]   = useState(data.patient.phone ?? "");
   const [email, setEmail]   = useState(data.patient.email ?? "");
   const [contactMsg, setContactMsg] = useState<string | null>(null);
@@ -93,7 +94,7 @@ export function PatientPortalDashboard({
   function handleSaveContact() {
     startContactTransition(async () => {
       setContactMsg(null);
-      const result = await updatePatientContactAction(rawToken, { phone, email });
+      const result = await updatePatientContactAction(rawToken, { full_name: fullName, phone, email });
       if (result.ok) {
         setContactMsg("Dados atualizados!");
         setEditingContact(false);
@@ -318,10 +319,10 @@ export function PatientPortalDashboard({
           )}
         </div>
 
-        {/* Meu contato */}
+        {/* Meus dados */}
         <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Meu contato</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">Meus dados</p>
             {!editingContact && (
               <button onClick={() => setEditingContact(true)} className="flex items-center gap-1 text-xs text-black/40 hover:text-black/70 transition">
                 <Pencil className="h-3 w-3" /> Editar
@@ -334,7 +335,17 @@ export function PatientPortalDashboard({
           {editingContact ? (
             <div className="space-y-2">
               <div>
-                <label className="text-xs text-black/40 block mb-1">Telefone</label>
+                <label className="text-xs text-black/40 block mb-1">Nome completo</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="w-full rounded-xl border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-black/30"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-black/40 block mb-1">Telefone / WhatsApp</label>
                 <input
                   type="tel"
                   value={phone}
@@ -364,6 +375,7 @@ export function PatientPortalDashboard({
             </div>
           ) : (
             <div className="space-y-1.5">
+              <p className="text-sm font-medium text-[#0F1A2E]">{data.patient.full_name}</p>
               <p className="text-sm text-[#0F1A2E]">{data.patient.phone || <span className="text-black/30 italic">Telefone não informado</span>}</p>
               <p className="text-sm text-[#0F1A2E]">{data.patient.email || <span className="text-black/30 italic">E-mail não informado</span>}</p>
             </div>

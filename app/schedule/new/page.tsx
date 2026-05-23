@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { AppointmentForm, type ClinicUserOption } from "@/components/appointment-form";
-import { EmptyState } from "@/components/empty-state";
-import { getPatients } from "@/services/patient-service";
+import { getPatients, createPatient } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createAppointment, getSessionTypes } from "@/services/appointment-service";
@@ -43,7 +42,6 @@ export default async function NewAppointmentPage() {
     const profile = await getCurrentUserProfile();
     if (!profile?.clinic_id) throw new Error("User must be assigned to a clinic before creating sessions.");
 
-    const patientId = String(formData.get("patient_id") ?? "");
     const date = String(formData.get("date") ?? "");
     const time = String(formData.get("time") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
@@ -53,7 +51,25 @@ export default async function NewAppointmentPage() {
     const practitionerId  = String(formData.get("practitioner_id") ?? "").trim() || null;
     const source = (String(formData.get("source") ?? "direct").trim() || "direct") as import("@/lib/types").AppointmentSource;
 
-    if (!patientId || !date || !time) throw new Error("Paciente, data e horário são obrigatórios.");
+    if (!date || !time) throw new Error("Data e horário são obrigatórios.");
+
+    // ── Resolve patient: existing or create new inline ────────────────────────
+    const newPatientName = String(formData.get("new_patient_name") ?? "").trim();
+    let patientId = String(formData.get("patient_id") ?? "").trim();
+
+    if (newPatientName) {
+      // Create the patient on the fly then use their new ID
+      const newPatient = await createPatient({
+        clinic_id: profile.clinic_id,
+        full_name: newPatientName,
+        email:     String(formData.get("new_patient_email") ?? "").trim() || null,
+        phone:     String(formData.get("new_patient_phone") ?? "").trim() || null,
+        notes:     null,
+      });
+      patientId = newPatient.id;
+    }
+
+    if (!patientId) throw new Error("Paciente é obrigatório.");
 
     await createAppointment({
       clinic_id: profile.clinic_id,
@@ -90,14 +106,6 @@ export default async function NewAppointmentPage() {
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
           <p className="text-[13px] text-[#A09E98]">Usuário precisa estar vinculado a uma clínica.</p>
         </div>
-      ) : patients.length === 0 ? (
-        <EmptyState
-          icon={<UserPlus className="h-7 w-7" />}
-          title="Nenhum paciente ainda"
-          text="Cadastre o primeiro paciente antes de agendar uma sessão."
-          href="/patients/new"
-          action="Cadastrar paciente"
-        />
       ) : (
         <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} clinicUsers={clinicUsers} />
       )}

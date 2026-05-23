@@ -26,13 +26,14 @@ async function getLinkByToken(rawToken: string) {
 
 export async function updatePatientContactAction(
   rawToken: string,
-  updates: { phone?: string; email?: string },
+  updates: { full_name?: string; phone?: string; email?: string },
 ): Promise<{ ok: boolean; error: string | null }> {
   const link = await getLinkByToken(rawToken);
   if (!link) return { ok: false, error: "Link inválido ou expirado." };
 
   const supabase = createSupabaseAdminClient();
   const cleanUpdates: Record<string, string> = {};
+  if (updates.full_name?.trim()) cleanUpdates.full_name = updates.full_name.trim();
   if (updates.phone?.trim()) cleanUpdates.phone = updates.phone.trim();
   if (updates.email?.trim()) cleanUpdates.email = updates.email.trim().toLowerCase();
 
