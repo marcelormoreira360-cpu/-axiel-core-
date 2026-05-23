@@ -24,7 +24,7 @@ export type PatientPortalSessionItem = {
   id: string;
   starts_at: string;
   duration_minutes: number;
-  notes: string | null;
+  // M-05: `notes` is internal (clinician-only) — NOT included in portal data
   observations: string[];
 };
 
@@ -386,23 +386,14 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       id: appointment.id,
       starts_at: appointment.starts_at,
       duration_minutes: appointment.duration_minutes,
-      notes: appointment.notes,
+      // M-05: omit `notes` — clinician-only field, must not reach the patient portal
       observations: record?.key_observations?.slice(0, 3) ?? [],
     };
   }
 
   const upcomingMapped = ((upcoming ?? []) as Appointment[]).map(mapAppointment);
 
-  const sessions = ((appointments ?? []) as Appointment[]).map((appointment) => {
-    const record = recordsByAppointment.get(appointment.id);
-    return {
-      id: appointment.id,
-      starts_at: appointment.starts_at,
-      duration_minutes: appointment.duration_minutes,
-      notes: appointment.notes,
-      observations: record?.key_observations?.slice(0, 3) ?? [],
-    };
-  });
+  const sessions = ((appointments ?? []) as Appointment[]).map(mapAppointment);
 
   const insight = latestInsight ? asInsightSummary(latestInsight as AiInsight) : null;
   const settingsObject = (settings?.settings ?? {}) as Record<string, unknown>;

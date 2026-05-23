@@ -25,11 +25,12 @@ const SOAP_LABELS: Record<string, string> = {
 
 export default async function ProntuarioPrintPage({ params }: Props) {
   const { id } = await params;
-  const [patient, sessionRecords, appointments, clinic] = await Promise.all([
-    getPatientById(id),
+  // A-06: scope getPatientById to the caller's clinic
+  const clinic = await getCurrentClinic();
+  const [patient, sessionRecords, appointments] = await Promise.all([
+    getPatientById(id, clinic?.id),
     getSessionRecordsByPatient(id),
     getAppointmentsByPatient(id),
-    getCurrentClinic(),
   ]);
 
   if (!patient) notFound();

@@ -3,7 +3,7 @@ import { PatientPortalDashboard } from "@/components/patient-portal/patient-port
 import { getPatientPortalDataByToken } from "@/services/patient-portal-service";
 
 export const metadata: Metadata = {
-  title: "Patient Dashboard | AXIEL Core",
+  title: "Portal do Paciente | AXIEL Core",
   robots: {
     index: false,
     follow: false,

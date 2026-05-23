@@ -4,6 +4,10 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 
+// A-05: sentinel email used for the demo patient created during onboarding.
+// No real messages should ever be sent to this address or its associated phone.
+const DEMO_PATIENT_EMAIL = "paciente-demo@exemplo.com";
+
 type AppointmentRef = {
   id: string;
   clinic_id: string;
@@ -79,8 +83,19 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       return "skipped";
     }
 
+    // A-05: never send real messages to the onboarding demo patient
+    if (patient.email === DEMO_PATIENT_EMAIL) {
+      await supabase.from("follow_ups").update({ status: "canceled" }).eq("id", fu.id);
+      return "skipped";
+    }
+
     const body = buildMessage(fu.notes as string, patient.full_name, appt?.starts_at ?? null);
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : "follow_up";
+
+    // L-08: mark as "processing" before attempting send to prevent double-delivery
+    // on cron retry. If the process crashes mid-flight the row stays "processing"
+    // and won't be re-queued by the next run (operator can manually reset if needed).
+    await supabase.from("follow_ups").update({ status: "processing" }).eq("id", fu.id);
 
     try {
       await sendWhatsAppText(patient.phone, body);
@@ -103,6 +118,8 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       }
       return "sent";
     } catch (e) {
+      // Mark as "failed" (not "pending") so a cron retry doesn't resend (L-08)
+      await supabase.from("follow_ups").update({ status: "failed" }).eq("id", fu.id);
       await supabase.from("communication_logs").insert({
         clinic_id:      fu.clinic_id,
         patient_id:     patient.id,
@@ -253,6 +270,9 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
     const patient = (pkg.patients as unknown) as { id: string; full_name: string; email: string | null; phone: string | null } | null;
     if (!patient) { skipped++; continue; }
 
+    // A-05: never send real messages to the onboarding demo patient
+    if (patient.email === DEMO_PATIENT_EMAIL) { skipped++; continue; }
+
     // Dedup: skip if already notified in the last 7 days (checked in batch above)
     if (alreadyNotified.has(patient.id)) { skipped++; continue; }
 
@@ -346,6 +366,10 @@ export async function sendAppointmentConfirmation(params: {
   durationMinutes: number;
 }): Promise<void> {
   const { clinicId, patientId, appointmentId, patientName, patientPhone, patientEmail, clinicName, startsAt, durationMinutes } = params;
+
+  // A-05: never send real messages to the onboarding demo patient
+  if (patientEmail === DEMO_PATIENT_EMAIL) return;
+
   const first = patientName.split(" ")[0];
   const dateStr = new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
   const timeStr = new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });

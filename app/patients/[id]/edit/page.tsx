@@ -2,11 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { updatePatientAction, anonymizePatientAction } from "./actions";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const patient = await getPatientById(id);
+  const clinic = await getCurrentClinic();
+  const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
 
   const action = updatePatientAction.bind(null, id);

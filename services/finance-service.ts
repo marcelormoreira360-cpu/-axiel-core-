@@ -140,12 +140,13 @@ export async function getUnpaidSessions(clinicId: string): Promise<UnpaidSession
 
   const supabase = await createSupabaseServerClient();
 
-  // Get past appointments
+  // Get past appointments — exclude cancelled / no_show (M-04)
   const { data: appts } = await supabase
     .from("appointments")
-    .select("id, patient_id, starts_at, patients(full_name), session_types(name, price_cents)")
+    .select("id, patient_id, starts_at, status, patients(full_name), session_types(name, price_cents)")
     .eq("clinic_id", clinicId)
     .lt("starts_at", new Date().toISOString())
+    .not("status", "in", '("cancelled","no_show")')
     .order("starts_at", { ascending: false })
     .limit(100);
 
@@ -183,32 +184,40 @@ export type MonthlyRevenue = { month: string; label: string; cents: number };
 
 export async function getMonthlyRevenue(clinicId: string): Promise<MonthlyRevenue[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-
   const supabase = await createSupabaseServerClient();
-  const results: MonthlyRevenue[] = [];
 
+  // Single query for the whole 6-month window instead of 6 sequential queries (B-02)
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth() - 5, 1).toISOString();
+
+  const { data } = await supabase
+    .from("patient_payments")
+    .select("amount_cents, paid_at")
+    .eq("clinic_id", clinicId)
+    .eq("status", "paid")           // A-07: only count confirmed paid (excludes pending/refunded)
+    .gte("paid_at", from)
+    .limit(5000);
+
+  // Build month buckets (always includes all 6 months even if empty)
+  const buckets = new Map<string, MonthlyRevenue>();
   for (let i = 5; i >= 0; i--) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const from = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-    const to   = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
-    const { data } = await supabase
-      .from("patient_payments")
-      .select("amount_cents")
-      .eq("clinic_id", clinicId)
-      .gte("paid_at", from)
-      .lte("paid_at", to);
-
-    const cents = (data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
-    results.push({
-      month: monthKey(d),
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = monthKey(d);
+    buckets.set(key, {
+      month: key,
       label: d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }),
-      cents,
+      cents: 0,
     });
   }
 
-  return results;
+  for (const p of data ?? []) {
+    const d = new Date(p.paid_at);
+    const key = monthKey(d);
+    const bucket = buckets.get(key);
+    if (bucket) bucket.cents += p.amount_cents ?? 0;
+  }
+
+  return [...buckets.values()];
 }
 
 // ── Admin: create payment (used by server actions) ────────────────

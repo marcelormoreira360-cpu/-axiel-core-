@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { AiInsightPanel } from "@/components/ai-insight-panel";
 import { getAiValidationEvents, getLatestAiInsight } from "@/services/ai-insight-service";
 import { getPatientById } from "@/services/patient-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -14,7 +15,8 @@ type Props = {
 export default async function PatientInsightsPage({ params, searchParams }: Props) {
   const { id } = await params;
   const { error } = await searchParams;
-  const patient = await getPatientById(id);
+  const clinic = await getCurrentClinic();
+  const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
 
   const insight = await getLatestAiInsight(id);

@@ -7,6 +7,7 @@ import { Card } from "@/components/card";
 import { CopyPortalLinkCard } from "@/components/copy-portal-link-card";
 import { getPatientById } from "@/services/patient-service";
 import { getRecentPatientPortalLinks } from "@/services/patient-portal-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { createPatientPortalLinkAction, regeneratePatientPortalLinkAction, revokePatientPortalLinkAction } from "@/app/patients/[id]/portal-link/actions";
 
 function formatDate(value: string) {
@@ -29,7 +30,8 @@ export default async function PatientPortalLinkPage({
 }) {
   const { id } = await params;
   const { token } = await searchParams;
-  const patient = await getPatientById(id);
+  const clinic = await getCurrentClinic();
+  const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
 
   const [baseUrl, recentLinks] = await Promise.all([getBaseUrl(), getRecentPatientPortalLinks(id)]);

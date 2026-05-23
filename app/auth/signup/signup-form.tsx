@@ -40,7 +40,21 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
     });
 
     if (error) {
-      setMessage(error.message);
+      // L-01: translate Supabase's English error messages to PT-BR
+      const msg = error.message.toLowerCase();
+      if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("email address is already")) {
+        setMessage("Este e-mail já está cadastrado. Tente entrar.");
+      } else if (msg.includes("invalid email") || msg.includes("email is invalid")) {
+        setMessage("E-mail inválido.");
+      } else if (msg.includes("password") && msg.includes("characters")) {
+        setMessage("A senha deve ter pelo menos 8 caracteres.");
+      } else if (msg.includes("rate limit") || msg.includes("too many")) {
+        setMessage("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+      } else if (msg.includes("signup") && msg.includes("disabled")) {
+        setMessage("Cadastros temporariamente desativados. Tente mais tarde.");
+      } else {
+        setMessage("Ocorreu um erro ao criar a conta. Tente novamente.");
+      }
       setLoading(false);
       return;
     }

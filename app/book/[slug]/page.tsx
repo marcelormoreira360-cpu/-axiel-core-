@@ -7,7 +7,7 @@ import Image from "next/image";
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
 interface Slot          { time: string; iso: string; }
-interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; }
+interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; }
 interface Practitioner  { id: string; display_name: string; specialty: string | null; bio: string | null; }
 
 type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
@@ -21,8 +21,9 @@ const STEP_LABELS: Record<Exclude<Step, "done">, string> = {
 };
 const ALL_STEPS: Step[] = ["profissional", "service", "date", "slot", "info", "done"];
 
-function fmt(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+// L-05: use clinic's configured currency instead of hardcoded BRL
+function fmt(cents: number, currency = "BRL") {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: currency.toUpperCase() });
 }
 
 function addDays(date: Date, n: number) {
@@ -260,7 +261,7 @@ export default function BookingPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-[14px] font-medium text-[#0F1A2E] transition">{st.name}</p>
                   {st.price_cents > 0 && (
-                    <p className="text-[13px] font-semibold" style={{ color: accent }}>{fmt(st.price_cents)}</p>
+                    <p className="text-[13px] font-semibold" style={{ color: accent }}>{fmt(st.price_cents, clinic?.currency)}</p>
                   )}
                 </div>
                 <p className="text-[12px] text-[#A09E98] mt-[2px]">{st.duration_minutes} minutos</p>
@@ -395,7 +396,7 @@ export default function BookingPage() {
                 </p>
               </div>
               {selectedType.price_cents > 0 && (
-                <p className="text-[14px] font-semibold" style={{ color: accent }}>{fmt(selectedType.price_cents)}</p>
+                <p className="text-[14px] font-semibold" style={{ color: accent }}>{fmt(selectedType.price_cents, clinic?.currency)}</p>
               )}
             </div>
 

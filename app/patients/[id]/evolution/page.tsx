@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
 import { getPatientEvolution } from "@/services/evolution-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { EvolutionCharts } from "@/components/evolution-charts";
 
 function initials(name: string) {
@@ -11,8 +12,10 @@ function initials(name: string) {
 
 export default async function PatientEvolutionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // A-06: scope getPatientById to the caller's clinic
+  const clinic = await getCurrentClinic();
   const [patient, evolution] = await Promise.all([
-    getPatientById(id),
+    getPatientById(id, clinic?.id),
     getPatientEvolution(id),
   ]);
 

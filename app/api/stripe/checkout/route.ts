@@ -37,10 +37,13 @@ export async function POST(request: Request) {
     .eq("clinic_id", clinic.id)
     .maybeSingle();
 
-  // BILL-08: if there's already an active or trialing subscription, redirect
-  // to the Stripe billing portal instead of creating a duplicate subscription.
-  if (existingSubscription?.status === "active" || existingSubscription?.status === "trialing") {
-    return NextResponse.redirect(`${getAppUrl()}/billing?info=already_subscribed`, 303);
+  // BILL-08 / A-03: block duplicate checkout for active, trialing, OR past_due.
+  // past_due means a subscription already exists but payment failed — the correct
+  // action is to fix the payment method via the billing portal, not create a 2nd sub.
+  const blockedStatuses = ["active", "trialing", "past_due"];
+  if (existingSubscription?.status && blockedStatuses.includes(existingSubscription.status)) {
+    const suffix = existingSubscription.status === "past_due" ? "past_due" : "already_subscribed";
+    return NextResponse.redirect(`${getAppUrl()}/billing?info=${suffix}`, 303);
   }
 
   const session = await stripe.checkout.sessions.create({

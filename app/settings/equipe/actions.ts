@@ -37,12 +37,13 @@ export async function updateRoleAction(
   userId: string,
   role: AppRole,
 ): Promise<{ error?: string }> {
-  const profile = await getCurrentUserProfile();
+  const [clinic, profile] = await Promise.all([getCurrentClinic(), getCurrentUserProfile()]);
   if (!profile || !isManager(profile.role)) return { error: "Sem permissão." };
+  if (!clinic) return { error: "Clínica não encontrada." };
   if (userId === profile.id) return { error: "Não é possível alterar o próprio cargo." };
 
   try {
-    await updateMemberRole(userId, role);
+    await updateMemberRole(userId, role, clinic.id); // B-03: pass clinicId
     revalidatePath("/settings/equipe");
     return {};
   } catch (e) {
@@ -51,12 +52,13 @@ export async function updateRoleAction(
 }
 
 export async function removeMemberAction(userId: string): Promise<{ error?: string }> {
-  const profile = await getCurrentUserProfile();
+  const [clinic, profile] = await Promise.all([getCurrentClinic(), getCurrentUserProfile()]);
   if (!profile || !isManager(profile.role)) return { error: "Sem permissão." };
+  if (!clinic) return { error: "Clínica não encontrada." };
   if (userId === profile.id) return { error: "Não é possível remover a si mesmo." };
 
   try {
-    await removeTeamMember(userId);
+    await removeTeamMember(userId, clinic.id); // B-03: pass clinicId
     revalidatePath("/settings/equipe");
     return {};
   } catch (e) {

@@ -37,6 +37,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const mimeTypeRef = useRef<string>("audio/webm"); // L-04: track actual mimeType for Safari compat
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const callTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [callSeconds, setCallSeconds] = useState(0);
@@ -89,7 +90,14 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
     setRecordingError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      // L-04: Safari does not support audio/webm — fall back to audio/mp4
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus"
+        : MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : "audio/mp4";
+      mimeTypeRef.current = mimeType;
+      const recorder = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
 
       recorder.ondataavailable = (e) => {
@@ -120,9 +128,11 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
   async function transcribeAndSummarize() {
     try {
       // Step 1: Whisper transcription
-      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      const mt = mimeTypeRef.current;
+      const ext = mt.includes("mp4") ? "mp4" : mt.includes("ogg") ? "ogg" : "webm";
+      const blob = new Blob(chunksRef.current, { type: mt });
       const fd = new FormData();
-      fd.append("file", blob, "audio.webm");
+      fd.append("file", blob, `audio.${ext}`);
 
       const tRes = await fetch("/api/transcribe", { method: "POST", body: fd });
       const tData = await tRes.json();

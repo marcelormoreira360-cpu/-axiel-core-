@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
-import { checkRateLimit } from "@/lib/webhook-guard";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 export const runtime = "nodejs";
 
@@ -19,13 +19,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     .eq("status", "active")
     .maybeSingle();
 
-  if (!clinic) return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
+  if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
 
-  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }] = await Promise.all([
+  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }, { data: clinicSettings }] = await Promise.all([
     supabase.from("session_types").select("id, name, duration_minutes, price_cents").eq("clinic_id", clinic.id).eq("is_active", true).order("name"),
     supabase.from("working_hours").select("day_of_week, opens_at, closes_at, is_open").eq("clinic_id", clinic.id),
     supabase.from("clinic_users").select("user_id, display_name, specialty, bio, users(full_name)").eq("clinic_id", clinic.id).eq("status", "active").eq("is_bookable", true),
+    supabase.from("clinic_settings").select("settings").eq("clinic_id", clinic.id).maybeSingle(),
   ]);
+
+  // L-05: include the clinic's configured currency in the public response
+  const currency = (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string ?? "BRL";
 
   const practitioners = (practitionersRaw ?? []).map((p) => {
     const usersData = p.users as unknown as { full_name: string } | null;
@@ -37,14 +41,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     };
   });
 
-  return NextResponse.json({ clinic, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
+  return NextResponse.json({ clinic: { ...clinic, currency }, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
 }
 
 // POST /api/book/[slug] — create appointment (public)
 export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   // ── Rate limiting: 10 bookings per IP per 15-minute window ─────────────────
+  // Uses distributed Supabase-backed counter (M-08) so all Vercel instances share state.
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!checkRateLimit(`book:${ip}`, 10, 15 * 60_000)) {
+  if (!(await checkRateLimitDb(`book:${ip}`, 10, 15 * 60_000))) {
     return NextResponse.json({ error: "Muitas tentativas. Tente novamente em alguns minutos." }, { status: 429 });
   }
 
@@ -53,7 +58,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id } = body;
 
   if (!session_type_id || !starts_at || !full_name || !phone) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    return NextResponse.json({ error: "Campos obrigatórios ausentes." }, { status: 400 });
   }
 
   // ── Field length validation ─────────────────────────────────────────────────
@@ -87,7 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     .eq("status", "active")
     .maybeSingle();
 
-  if (!clinic) return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
+  if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
 
   const { data: sessionType } = await supabase
     .from("session_types")
@@ -97,7 +102,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     .eq("is_active", true)
     .maybeSingle();
 
-  if (!sessionType) return NextResponse.json({ error: "Session type not found" }, { status: 404 });
+  if (!sessionType) return NextResponse.json({ error: "Tipo de sessão não encontrado." }, { status: 404 });
 
   // Find or create patient
   const normalizedPhone = phone.replace(/\s/g, "");
@@ -118,7 +123,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active" })
       .select("id")
       .single();
-    if (patientError) return NextResponse.json({ error: "Failed to create patient" }, { status: 500 });
+    if (patientError) return NextResponse.json({ error: "Erro ao registrar paciente." }, { status: 500 });
     patientId = newPatient.id;
   }
 
@@ -138,7 +143,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     .select("id, clinic_id, patient_id, starts_at")
     .single();
 
-  if (apptError) return NextResponse.json({ error: "Failed to create appointment" }, { status: 500 });
+  if (apptError) return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
 
   // WhatsApp confirmation
   try {

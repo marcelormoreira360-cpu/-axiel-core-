@@ -49,23 +49,26 @@ export async function getTeamMembers(clinicId: string): Promise<TeamMember[]> {
   return (data ?? []) as TeamMember[];
 }
 
-export async function updateMemberRole(userId: string, role: AppRole): Promise<void> {
+export async function updateMemberRole(userId: string, role: AppRole, callerClinicId: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
+  // B-03: scope update to callerClinicId to prevent IDOR across clinics
   const { error } = await supabase
     .from("users")
     .update({ role, updated_at: new Date().toISOString() })
-    .eq("id", userId);
+    .eq("id", userId)
+    .eq("clinic_id", callerClinicId); // ← only affect users in same clinic
 
   if (error) throw error;
 }
 
-export async function removeTeamMember(userId: string): Promise<void> {
+export async function removeTeamMember(userId: string, callerClinicId: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
-  // Detach from clinic rather than delete the account
+  // B-03: scope detach to callerClinicId to prevent IDOR across clinics
   const { error } = await supabase
     .from("users")
     .update({ clinic_id: null, updated_at: new Date().toISOString() })
-    .eq("id", userId);
+    .eq("id", userId)
+    .eq("clinic_id", callerClinicId); // ← only detach if the user belongs to this clinic
 
   if (error) throw error;
 }
@@ -187,6 +190,7 @@ export async function getInviteByToken(token: string): Promise<TeamInvite | null
     .select("*")
     .eq("token_hash", token)
     .eq("status", "pending")
+    .gt("expires_at", new Date().toISOString()) // B-04: reject expired invites
     .maybeSingle();
 
   return (data ?? null) as TeamInvite | null;

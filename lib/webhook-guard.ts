@@ -56,9 +56,9 @@ export function validateMetaSignature(
   }
 }
 
-// ─── Simple In-Process Rate Limiter ───────────────────────────────────────────
-// Best-effort defense against burst abuse within a single serverless instance.
-// Not a substitute for an edge-level rate limiter (e.g. Vercel Firewall / Upstash).
+// ─── In-Process Rate Limiter (fallback) ──────────────────────────────────────
+// Best-effort per-instance defense. Use checkRateLimitDb() for distributed
+// rate limiting across all Vercel serverless instances.
 
 const rateLimitWindows = new Map<string, number[]>();
 
@@ -75,4 +75,39 @@ export function checkRateLimit(
   timestamps.push(now);
   rateLimitWindows.set(key, timestamps);
   return true;
+}
+
+// ─── Distributed Rate Limiter (Supabase-backed, M-08) ────────────────────────
+// Uses an atomic SQL upsert so all Vercel instances share window counts.
+// Falls back to allowing the request on DB error (fail-open) to avoid blocking
+// legitimate traffic due to transient DB issues.
+
+export async function checkRateLimitDb(
+  key: string,
+  maxRequests: number,
+  windowMs: number,
+): Promise<boolean> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const supabase = createSupabaseAdminClient();
+
+    // Align to fixed time windows (e.g. every 15 min = floor to nearest 15-min mark)
+    const windowStart = new Date(Math.floor(Date.now() / windowMs) * windowMs).toISOString();
+
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_key: key,
+      p_window_start: windowStart,
+      p_max_requests: maxRequests,
+    });
+
+    if (error) {
+      console.warn("[rate-limit] DB error, failing open:", error.message);
+      return true; // fail-open
+    }
+
+    return data === true;
+  } catch (e) {
+    console.warn("[rate-limit] unexpected error, failing open:", e);
+    return true; // fail-open
+  }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual, createHash } from "node:crypto";
 import {
   getHotmartToken,
   processHotmartWebhook,
@@ -26,7 +27,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       "";
 
     const storedToken = await getHotmartToken(clinicId);
-    if (!storedToken || incomingToken !== storedToken) {
+    // A-09: hash both tokens to the same fixed length before constant-time comparison
+    // so timingSafeEqual never throws a length mismatch error.
+    const hash = (s: string) => createHash("sha256").update(s).digest();
+    const tokensMatch = storedToken
+      ? timingSafeEqual(hash(incomingToken), hash(storedToken))
+      : false;
+    if (!tokensMatch) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

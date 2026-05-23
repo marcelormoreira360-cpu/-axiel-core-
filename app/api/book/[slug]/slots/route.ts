@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   const practitionerId = searchParams.get("practitioner_id");
 
   if (!date || !sessionTypeId) {
-    return NextResponse.json({ error: "date and session_type_id required" }, { status: 400 });
+    return NextResponse.json({ error: "Parâmetros date e session_type_id são obrigatórios." }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -25,14 +25,46 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     .eq("status", "active")
     .maybeSingle();
 
-  if (!clinic) return NextResponse.json({ error: "Clinic not found" }, { status: 404 });
+  if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
+
+  // Fetch timezone from clinic_settings (fall back to Brasília if not set)
+  const { data: clinicSettings } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", clinic.id)
+    .maybeSingle();
+
+  const timezone: string =
+    (clinicSettings?.settings as Record<string, unknown> | null)?.timezone as string
+    ?? "America/Sao_Paulo";
+
+  // Compute UTC boundaries for the requested wall-clock date in the clinic's TZ.
+  // This ensures we capture all appointments that fall within that local day,
+  // even when the clinic TZ is behind UTC (e.g. UTC-3 local midnight = UTC 03:00).
+  const [year, month, day] = date.split("-").map(Number);
+  // 00:00 and 23:59:59 wall-clock → UTC
+  const probe00 = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  const probe23 = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+  const getOffset = (probe: Date) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    }).formatToParts(probe);
+    const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+    return probe.getTime() - Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second"));
+  };
+  const dayStartUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + getOffset(probe00)).toISOString();
+  const dayEndUTC   = new Date(Date.UTC(year, month - 1, day, 23, 59, 59) + getOffset(probe23)).toISOString();
 
   let bookedQuery = supabase
     .from("appointments")
     .select("starts_at")
     .eq("clinic_id", clinic.id)
-    .gte("starts_at", `${date}T00:00:00`)
-    .lte("starts_at", `${date}T23:59:59`);
+    .not("status", "in", '("cancelled","no_show")')  // A-04: exclude cancelled slots
+    .gte("starts_at", dayStartUTC)
+    .lte("starts_at", dayEndUTC);
 
   if (practitionerId) {
     bookedQuery = bookedQuery.eq("practitioner_id", practitionerId);
@@ -44,7 +76,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     bookedQuery,
   ]);
 
-  if (!sessionType) return NextResponse.json({ error: "Session type not found" }, { status: 404 });
+  if (!sessionType) return NextResponse.json({ error: "Tipo de sessão não encontrado." }, { status: 404 });
 
   // Default hours if not configured
   const opensAt  = wh?.opens_at  ?? "09:00";
@@ -58,10 +90,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     opensAt,
     closesAt,
     sessionType.duration_minutes,
-    (booked ?? []).map((a) => a.starts_at)
+    (booked ?? []).map((a) => a.starts_at),
+    timezone,
   );
 
-  // Filter out past slots
+  // Filter out past slots — slot.iso is now a proper UTC ISO so comparison with
+  // `new Date()` (also UTC) correctly reflects the clinic's local wall-clock time.
   const now = new Date();
   const futureSlots = slots.filter((s) => new Date(s.iso) > now);
 

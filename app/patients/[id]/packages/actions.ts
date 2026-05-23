@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { createPatientPackage, deactivatePatientPackage, deletePatientPackage } from "@/services/package-service";
 
 export async function addPackageAction(formData: FormData) {
@@ -31,11 +32,15 @@ export async function addPackageAction(formData: FormData) {
 }
 
 export async function deactivatePackageAction(id: string, patientId: string) {
-  await deactivatePatientPackage(id);
+  const clinic = await getCurrentClinic();
+  if (!clinic) throw new Error("Clínica não encontrada.");
+  await deactivatePatientPackage(id, clinic.id);
   revalidatePath(`/patients/${patientId}`);
 }
 
 export async function deletePackageAction(id: string, patientId: string) {
-  await deletePatientPackage(id);
+  const clinic = await getCurrentClinic();
+  if (!clinic) throw new Error("Clínica não encontrada.");
+  await deletePatientPackage(id, clinic.id);
   revalidatePath(`/patients/${patientId}`);
 }

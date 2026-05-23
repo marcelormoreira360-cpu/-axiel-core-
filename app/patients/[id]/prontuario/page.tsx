@@ -6,6 +6,7 @@ import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getZoomRecordingsByAppointments } from "@/services/zoom-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -36,8 +37,10 @@ const SOAP_LABELS: Record<string, string> = {
 
 export default async function ProntuarioPage({ params }: Props) {
   const { id } = await params;
+  // A-06: fetch clinic first so we can scope getPatientById to the caller's clinic
+  const clinic = await getCurrentClinic();
   const [patient, sessionRecords, appointments] = await Promise.all([
-    getPatientById(id),
+    getPatientById(id, clinic?.id),
     getSessionRecordsByPatient(id),
     getAppointmentsByPatient(id),
   ]);

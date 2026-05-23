@@ -5,11 +5,13 @@ import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { PatientIntakeForm } from "@/components/patient-intake-form";
 import { getPatientById } from "@/services/patient-service";
+import { getCurrentClinic } from "@/services/clinic-service";
 import { getActiveIntakeForm, getPatientIntakeResponses, savePatientIntakeResponses } from "@/services/intake-service";
 
 export default async function PatientIntakePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const patient = await getPatientById(id);
+  const clinic = await getCurrentClinic();
+  const patient = await getPatientById(id, clinic?.id); // A-06
   const activeForm = patient ? await getActiveIntakeForm(patient.clinic_id) : null;
   const existingResponses = patient ? await getPatientIntakeResponses(patient.id) : [];
 

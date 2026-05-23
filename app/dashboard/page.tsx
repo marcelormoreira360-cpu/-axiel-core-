@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/shell";
+import { ROLE_LABELS } from "@/lib/team-utils";
 import { DashboardGreeting } from "./greeting";
 import { getClinicsForUser, getCurrentClinic } from "@/services/clinic-service";
 import { getAppointments } from "@/services/appointment-service";
@@ -87,7 +88,7 @@ export default async function Dashboard() {
   const name = firstName(profile?.full_name, profile?.email);
 
   return (
-    <Shell userName={profile?.full_name} userRole="Clinic owner">
+    <Shell userName={profile?.full_name} userRole={profile?.role ? ROLE_LABELS[profile.role] : undefined}>
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-[20px]">
@@ -326,8 +327,16 @@ export default async function Dashboard() {
           <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-white/40 mb-[12px]">Semana atual</p>
           <div className="space-y-[10px]">
             {(() => {
-              const weekStart = Date.now() - 7 * 24 * 60 * 60 * 1000;
-              const weekAppts = appointments.filter((a) => new Date(a.starts_at).getTime() >= weekStart);
+              // L-03: use Mon–Sun week, not rolling 7 days
+              const now = new Date();
+              const dayOfWeek = now.getDay(); // 0=Sun … 6=Sat
+              const daysSinceMonday = (dayOfWeek + 6) % 7; // 0 on Mon, 6 on Sun
+              const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysSinceMonday).getTime();
+              const weekEnd   = weekStart + 7 * 24 * 60 * 60 * 1000; // exclusive upper bound
+              const weekAppts = appointments.filter((a) => {
+                const t = new Date(a.starts_at).getTime();
+                return t >= weekStart && t < weekEnd;
+              });
               return [
                 { label: "Sessões agendadas", value: weekAppts.length },
                 { label: "Realizadas",         value: weekAppts.filter((a) => a.status === "completed").length },
