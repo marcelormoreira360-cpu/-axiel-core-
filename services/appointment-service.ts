@@ -17,7 +17,13 @@ export async function getSessionTypes(clinicId?: string): Promise<SessionType[]>
   return data ?? [];
 }
 
-export async function getAppointments(clinicId?: string, practitionerId?: string): Promise<Appointment[]> {
+export async function getAppointments(
+  clinicId?: string,
+  practitionerId?: string,
+  /** PERF-03: narrow the time window to avoid loading the full history.
+   *  Defaults to 60 days back + 90 days forward. Pass null to load all. */
+  windowDays: { past?: number; future?: number } | null = { past: 60, future: 90 },
+): Promise<Appointment[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
@@ -28,6 +34,15 @@ export async function getAppointments(clinicId?: string, practitionerId?: string
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
   if (practitionerId) query = query.eq("created_by", practitionerId);
+
+  if (windowDays !== null) {
+    const now = new Date();
+    const pastDays = windowDays.past ?? 60;
+    const futureDays = windowDays.future ?? 90;
+    const from = new Date(now.getTime() - pastDays * 86_400_000).toISOString();
+    const to   = new Date(now.getTime() + futureDays * 86_400_000).toISOString();
+    query = query.gte("starts_at", from).lte("starts_at", to);
+  }
 
   const { data, error } = await query;
   if (error) throw error;

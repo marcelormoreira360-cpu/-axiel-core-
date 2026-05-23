@@ -27,16 +27,12 @@ export async function getDashboardAlerts(clinicId: string): Promise<DashboardAle
 
   const supabase = await createSupabaseServerClient();
 
-  const [{ data: packages }, { data: appointments }, { data: recentExams }] = await Promise.all([
+  const [{ data: packages }, { data: recentExams }] = await Promise.all([
     supabase
       .from("patient_packages")
       .select("id, patient_id, name, sessions_total, start_date, patients(full_name)")
       .eq("clinic_id", clinicId)
       .eq("is_active", true),
-    supabase
-      .from("appointments")
-      .select("id, patient_id, starts_at")
-      .eq("clinic_id", clinicId),
     supabase
       .from("patient_exams")
       .select("exam_date, patient_id, patients(full_name), exam_results(biomarker, value, unit, status)")
@@ -45,10 +41,30 @@ export async function getDashboardAlerts(clinicId: string): Promise<DashboardAle
       .limit(20),
   ]);
 
+  // PERF-02: fetch appointments only for active-package patients, scoped to
+  // the earliest package start_date so we don't load the full history.
+  const activePackages = packages ?? [];
+  const packagePatientIds = [...new Set(activePackages.map((p) => p.patient_id))];
+  const earliestStartDate = activePackages.reduce<string | null>(
+    (min, p) => (!min || p.start_date < min ? p.start_date : min),
+    null,
+  );
+
+  let appointments: { id: string; patient_id: string; starts_at: string }[] = [];
+  if (packagePatientIds.length > 0 && earliestStartDate) {
+    const { data } = await supabase
+      .from("appointments")
+      .select("id, patient_id, starts_at")
+      .eq("clinic_id", clinicId)
+      .in("patient_id", packagePatientIds)
+      .gte("starts_at", earliestStartDate + "T00:00:00");
+    appointments = data ?? [];
+  }
+
   // Package alerts — remaining ≤ 2
   const packageAlerts: PackageAlert[] = [];
-  for (const pkg of packages ?? []) {
-    const used = (appointments ?? []).filter(
+  for (const pkg of activePackages) {
+    const used = appointments.filter(
       (a) => a.patient_id === pkg.patient_id &&
         new Date(a.starts_at) >= new Date(pkg.start_date + "T00:00:00")
     ).length;

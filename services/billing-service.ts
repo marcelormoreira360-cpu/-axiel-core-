@@ -77,31 +77,9 @@ export async function getBillingOverview() {
   return { clinic, plans: plans ?? [], subscription };
 }
 
-export async function seedDefaultPlans() {
-  const supabase = await createClient();
-
-  const rows = Object.values(AXIEL_PLANS).map((plan) => ({
-    code:             plan.slug,   // DB uses "code" as the unique identifier
-    slug:             plan.slug,
-    name:             plan.name,
-    description:      plan.description,
-    price_cents:      plan.priceCents ?? 0,
-    currency:         "BRL",
-    price_usd_cents:  plan.priceUsdCents,
-    price_eur_cents:  plan.priceEurCents,
-    billing_interval: plan.billingInterval,
-    recommended:      plan.recommended ?? false,
-    features:         plan.features,
-    limits:           plan.limits,
-    is_active:        true,
-  }));
-
-  const { error } = await supabase.from("plans").upsert(rows, { onConflict: "code" });
-
-  if (error) {
-    console.error("seedDefaultPlans error", error);
-  }
-}
+// QA-04: seedDefaultPlans was previously exported but never called from app code.
+// Plans are seeded via supabase/migrations/007_pricing_v2.sql. Removed to avoid
+// accidental runtime invocation and duplicate DB writes.
 
 // ─── Subscription Cancellation ────────────────────────────────────────────────
 
