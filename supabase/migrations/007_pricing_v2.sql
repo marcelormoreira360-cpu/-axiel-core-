@@ -63,13 +63,26 @@ create unique index if not exists plans_slug_key on public.plans (slug);
 
 do $$
 begin
+  -- Drop NOT NULL on legacy 'code' column (created manually on remote)
   if exists (
     select 1 from information_schema.columns
     where table_schema = 'public'
       and table_name   = 'plans'
       and column_name  = 'code'
+      and is_nullable  = 'NO'
   ) then
     alter table public.plans alter column code drop not null;
+  end if;
+
+  -- Drop NOT NULL on price_cents so Enterprise (custom pricing) can have null
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name   = 'plans'
+      and column_name  = 'price_cents'
+      and is_nullable  = 'NO'
+  ) then
+    alter table public.plans alter column price_cents drop not null;
   end if;
 end $$;
 
