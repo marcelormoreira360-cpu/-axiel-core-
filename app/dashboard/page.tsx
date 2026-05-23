@@ -55,10 +55,10 @@ function deltaColor(current: number, previous: number) {
 
 export default async function Dashboard() {
   const [profile, clinics, currentClinic, appointments] = await Promise.all([
-    getCurrentUserProfile(),
-    getClinicsForUser(),
-    getCurrentClinic(),
-    getAppointments(),
+    getCurrentUserProfile().catch(() => null),
+    getClinicsForUser().catch(() => []),
+    getCurrentClinic().catch(() => null),
+    getAppointments().catch(() => []),
   ]);
 
   const clinic = currentClinic ?? clinics[0] ?? null;
@@ -68,11 +68,15 @@ export default async function Dashboard() {
   }
 
   const [pendingReviews, alerts, kpis, chartData, setupTasks] = await Promise.all([
-    getPendingAiInsightReviewCount(clinic?.id),
-    clinic ? getDashboardAlerts(clinic.id) : Promise.resolve({ packageAlerts: [], biomarkerAlerts: [] }),
-    clinic ? getDashboardKPIs(clinic.id) : Promise.resolve({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }),
-    clinic ? getRevenueChartData(clinic.id, 6) : Promise.resolve([]),
-    clinic ? getSetupTasks(clinic) : Promise.resolve([]),
+    getPendingAiInsightReviewCount(clinic?.id).catch(() => 0),
+    clinic
+      ? getDashboardAlerts(clinic.id).catch(() => ({ packageAlerts: [], biomarkerAlerts: [] }))
+      : Promise.resolve({ packageAlerts: [], biomarkerAlerts: [] }),
+    clinic
+      ? getDashboardKPIs(clinic.id).catch(() => ({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }))
+      : Promise.resolve({ revenueThisMonth: 0, revenueLastMonth: 0, sessionsThisMonth: 0, sessionsLastMonth: 0, returnRate: 0, returnRateBase: 0 }),
+    clinic ? getRevenueChartData(clinic.id, 6).catch(() => []) : Promise.resolve([]),
+    clinic ? getSetupTasks(clinic).catch(() => []) : Promise.resolve([]),
   ]);
 
   const today = new Date().toDateString();
