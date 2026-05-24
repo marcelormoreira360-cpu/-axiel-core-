@@ -2,29 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Download, X, Check, Loader2 } from "lucide-react";
-
-interface Template {
-  key: string;
-  name: string;
-  description: string;
-  tag: string;
-  action: () => Promise<void>;
-}
-
-interface Props {
-  available: string[]; // keys not yet imported
-}
-
-// Keep in sync with actions.ts
-export const TEMPLATE_CATALOG: Omit<Template, "action">[] = [
-  { key: "phq9-pt", name: "PHQ-9 — Questionário sobre a Saúde do Paciente", description: "Rastreio de depressão, 9 itens, escala 0–3 (PT-BR)", tag: "Depressão" },
-  { key: "phq9-en", name: "PHQ-9 — Patient Health Questionnaire", description: "Validated depression screening, 9 items, 0–3 scale (EN)", tag: "Depression" },
-  { key: "gad7-pt", name: "GAD-7 — Transtorno de Ansiedade Generalizada (TAG)", description: "Rastreio de ansiedade, 7 itens, escala 0–3 (PT-BR)", tag: "Ansiedade" },
-  { key: "gad7-en", name: "GAD-7 — Generalized Anxiety Disorder", description: "Validated anxiety screening, 7 items, 0–3 scale (EN)", tag: "Anxiety" },
-  { key: "hpa-pt", name: "Eixo HPA — Questionário de Avaliação", description: "Disfunção hipotálamo-hipófise-adrenal, 3 seções (PT-BR)", tag: "HPA" },
-  { key: "hpa-en", name: "HPA Axis — Assessment Questionnaire", description: "Hypothalamus-pituitary-adrenal dysfunction, 3 sections (EN)", tag: "HPA" },
-  { key: "msq-en", name: "MSQ — Medical Symptoms Questionnaire", description: "15 body systems, 0–4 scale per symptom (EN)", tag: "MSQ" },
-];
+import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 
 const TAG_COLORS: Record<string, string> = {
   "Depressão":  "bg-blue-50 text-blue-600",
@@ -35,33 +13,42 @@ const TAG_COLORS: Record<string, string> = {
   "MSQ":        "bg-teal-50 text-teal-600",
 };
 
-export function ImportTemplatesButton({
-  available,
-  actions,
-}: {
+interface ActionEntry {
+  key: string;
+  action: () => Promise<void>;
+}
+
+interface Props {
   available: string[];
-  actions: Record<string, () => Promise<void>>;
-}) {
+  actionEntries: ActionEntry[];
+}
+
+export function ImportTemplatesButton({ available, actionEntries }: Props) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [done, setDone] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [currentKey, setCurrentKey] = useState<string | null>(null);
 
   if (available.length === 0) return null;
 
   function handleImport(key: string, action: () => Promise<void>) {
     setError(null);
+    setCurrentKey(key);
     startTransition(async () => {
       try {
         await action();
         setDone((prev) => [...prev, key]);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Erro ao importar");
+      } finally {
+        setCurrentKey(null);
       }
     });
   }
 
   const remaining = available.filter((k) => !done.includes(k));
+  const catalog = TEMPLATE_CATALOG.filter((t) => available.includes(t.key));
 
   return (
     <>
@@ -102,15 +89,15 @@ export function ImportTemplatesButton({
             )}
 
             <div className="space-y-[6px]">
-              {TEMPLATE_CATALOG.filter((t) => available.includes(t.key)).map((t) => {
+              {catalog.map((t) => {
                 const isDone = done.includes(t.key);
+                const isLoading = isPending && currentKey === t.key;
+                const entry = actionEntries.find((e) => e.key === t.key);
                 return (
                   <div
                     key={t.key}
                     className={`flex items-center gap-3 px-[12px] py-[10px] rounded-[10px] border transition ${
-                      isDone
-                        ? "border-[#0F6E56]/20 bg-[#F0FAF6]"
-                        : "border-black/[.07] bg-white hover:border-black/[.12]"
+                      isDone ? "border-[#0F6E56]/20 bg-[#F0FAF6]" : "border-black/[.07] bg-white"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
@@ -130,11 +117,11 @@ export function ImportTemplatesButton({
                     ) : (
                       <button
                         type="button"
-                        disabled={isPending}
-                        onClick={() => handleImport(t.key, actions[t.key])}
+                        disabled={isPending || !entry}
+                        onClick={() => entry && handleImport(t.key, entry.action)}
                         className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[6px] px-[10px] py-[5px] transition"
                       >
-                        {isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                        {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                         Importar
                       </button>
                     )}
@@ -143,7 +130,7 @@ export function ImportTemplatesButton({
               })}
             </div>
 
-            {remaining.filter((k) => !done.includes(k)).length === 0 && (
+            {remaining.filter((k) => !done.includes(k)).length === 0 && catalog.length > 0 && (
               <p className="mt-4 text-center text-[12px] text-[#0F6E56] font-medium">
                 ✓ Todos os modelos disponíveis foram importados!
               </p>

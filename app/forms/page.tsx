@@ -11,7 +11,8 @@ import {
 } from "@/app/forms/actions";
 import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
 import { ShareFormButton } from "@/app/forms/share-form-button";
-import { ImportTemplatesButton, TEMPLATE_CATALOG } from "@/app/forms/import-templates-button";
+import { ImportTemplatesButton } from "@/app/forms/import-templates-button";
+import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 
 export default async function FormsPage() {
   const profile = await getCurrentUserProfile();
@@ -46,15 +47,15 @@ export default async function FormsPage() {
   );
   const availableToImport = TEMPLATE_CATALOG.map((c) => c.key).filter((k) => !importedKeys.has(k));
 
-  const importActions: Record<string, () => Promise<void>> = {
-    "phq9-pt": importPHQ9PTAction,
-    "phq9-en": importPHQ9ENAction,
-    "gad7-pt": importGAD7PTAction,
-    "gad7-en": importGAD7ENAction,
-    "hpa-pt":  importHPAPTAction,
-    "hpa-en":  importHPAENAction,
-    "msq-en":  importMSQENAction,
-  };
+  const actionEntries = [
+    { key: "phq9-pt", action: importPHQ9PTAction },
+    { key: "phq9-en", action: importPHQ9ENAction },
+    { key: "gad7-pt", action: importGAD7PTAction },
+    { key: "gad7-en", action: importGAD7ENAction },
+    { key: "hpa-pt",  action: importHPAPTAction  },
+    { key: "hpa-en",  action: importHPAENAction  },
+    { key: "msq-en",  action: importMSQENAction  },
+  ];
 
   return (
     <Shell>
@@ -81,7 +82,7 @@ export default async function FormsPage() {
                 </button>
               </form>
             )}
-            <ImportTemplatesButton available={availableToImport} actions={importActions} />
+            <ImportTemplatesButton available={availableToImport} actionEntries={actionEntries} />
             <Link
               href="/forms/new"
               className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
