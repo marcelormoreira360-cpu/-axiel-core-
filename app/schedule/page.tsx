@@ -8,7 +8,7 @@ import { getAppointments, getAppointmentsByPatients, createAppointment, updateAp
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
-import { getPatients } from "@/services/patient-service";
+import { getPatients, createPatient } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { isPractitioner, getTeamMembers } from "@/services/team-service";
@@ -78,13 +78,27 @@ export default async function SchedulePage() {
     const profile = await getCurrentUserProfile();
     if (!profile?.clinic_id) throw new Error("User must be assigned to a clinic.");
 
-    const patientId = String(formData.get("patient_id") ?? "");
     const startsAt = String(formData.get("starts_at") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
     const sessionTypeId = String(formData.get("session_type_id") ?? "") || null;
     const source = (String(formData.get("source") ?? "") || null) as import("@/lib/types").AppointmentSource | null;
 
-    if (!patientId || !startsAt) throw new Error("Patient and time are required.");
+    // ── Resolve patient: existing or create new inline ────────────────────────
+    const newPatientName = String(formData.get("new_patient_name") ?? "").trim();
+    let patientId = String(formData.get("patient_id") ?? "").trim();
+
+    if (newPatientName) {
+      const newPatient = await createPatient({
+        clinic_id: profile.clinic_id,
+        full_name: newPatientName,
+        email: String(formData.get("new_patient_email") ?? "").trim() || null,
+        phone: String(formData.get("new_patient_phone") ?? "").trim() || null,
+        notes: null,
+      });
+      patientId = newPatient.id;
+    }
+
+    if (!patientId || !startsAt) throw new Error("Paciente e horário são obrigatórios.");
 
     const appointment = await createAppointment({
       clinic_id: profile.clinic_id,
