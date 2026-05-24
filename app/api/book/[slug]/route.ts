@@ -117,6 +117,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   if (existing) {
     patientId = existing.id;
+    // Enrich record: if found by phone but email was missing, add it now
+    if (email) {
+      await supabase
+        .from("patients")
+        .update({ email, full_name })
+        .eq("id", patientId);
+    }
   } else {
     const { data: newPatient, error: patientError } = await supabase
       .from("patients")

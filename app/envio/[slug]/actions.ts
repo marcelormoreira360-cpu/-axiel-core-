@@ -12,6 +12,9 @@ export async function lookupPatientAction(
   if (!emailRegex.test(normalised)) return { found: false };
 
   const supabase = createSupabaseAdminClient();
+
+  // Search by email (primary) — also try the normalised e-mail without dots
+  // in case the booking was saved with slight formatting differences
   const { data } = await supabase
     .from("patients")
     .select("id, full_name")
@@ -47,26 +50,32 @@ export async function submitIntakeAction(
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) return { error: "E-mail inválido." };
 
-    // Find or create patient
+    // Find existing patient by email OR phone (prevents duplicate records when
+    // the same person booked via phone and now sends documents with an email)
+    const normalizedPhone = phone ? phone.replace(/\D/g, "") : null;
+    const orFilter = [
+      `email.eq.${email}`,
+      ...(normalizedPhone ? [`phone.eq.${normalizedPhone}`, `phone.eq.${phone}`] : []),
+    ].join(",");
+
     const { data: existing } = await supabase
       .from("patients")
-      .select("id")
+      .select("id, email, phone")
       .eq("clinic_id", clinicId)
-      .eq("email", email)
+      .or(orFilter)
       .maybeSingle();
 
     if (existing) {
       patientId = existing.id;
-      if (phone) {
-        await supabase
-          .from("patients")
-          .update({ phone, full_name: name })
-          .eq("id", patientId);
-      }
+      // Enrich the record with any new information provided
+      const updates: Record<string, string> = { full_name: name };
+      if (email && !existing.email) updates.email = email;
+      if (normalizedPhone && !existing.phone) updates.phone = normalizedPhone;
+      await supabase.from("patients").update(updates).eq("id", patientId);
     } else {
       const { data: created, error } = await supabase
         .from("patients")
-        .insert({ clinic_id: clinicId, full_name: name, email, phone })
+        .insert({ clinic_id: clinicId, full_name: name, email, phone: normalizedPhone ?? phone })
         .select("id")
         .single();
       if (error || !created) return { error: "Erro ao identificar paciente. Tente novamente." };
