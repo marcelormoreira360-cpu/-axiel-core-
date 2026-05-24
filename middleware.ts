@@ -8,7 +8,11 @@ const publicPrefixes = [
   "/api/auth",         // accept-invite (called right after signup, no session yet)
   "/api/whatsapp",
   "/api/meta",
-  "/api/book",       // public booking slots API
+  "/api/book",                         // public booking slots API
+  "/api/p",                            // patient portal self-booking (token-authenticated, no session cookie)
+  "/api/stripe/patient-checkout",      // portal package purchase (token-authenticated)
+  "/api/stripe/session-checkout",      // portal session payment (token-authenticated)
+  "/api/stripe/patient-subscription",  // portal recurring plan checkout (token-authenticated)
 ];
 
 function isPublicPath(pathname: string) {

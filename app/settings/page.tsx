@@ -16,6 +16,7 @@ const settings = [
   { href: "/clinics", title: "Configuração da clínica", text: "Perfil e configurações básicas da clínica." },
   { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
   { href: "/settings/session-types", title: "Tipos de sessão", text: "Modalidades, durações, preços e configuração de Zoom por tipo." },
+  { href: "/settings/offers", title: "Ofertas e pacotes", text: "Crie pacotes de sessões e planos mensais visíveis no portal do paciente." },
   { href: "/settings/lembretes", title: "Lembretes automáticos", text: "Configure envio de lembretes de consulta por WhatsApp e e-mail." },
   { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure o assistente de IA: nome, programa, preços e idioma." },
   { href: "/intake", title: "Formulários de intake", text: "Perguntas que pacientes respondem antes do atendimento." },

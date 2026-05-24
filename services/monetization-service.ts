@@ -37,6 +37,7 @@ export async function createMonetizationOffer(input: {
   currency?: string;
   number_of_sessions: number;
   description?: string | null;
+  billing_interval?: "monthly" | "yearly" | null;
 }) {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -45,9 +46,16 @@ export async function createMonetizationOffer(input: {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { billing_interval, ...rest } = input;
+
   const { data, error } = await supabase
     .from("monetization_offers")
-    .insert({ ...input, currency: input.currency ?? "USD", created_by: user?.id ?? null })
+    .insert({
+      ...rest,
+      currency: rest.currency ?? "USD",
+      created_by: user?.id ?? null,
+      ...(billing_interval ? { billing_interval } : {}),
+    })
     .select("*")
     .single();
 
@@ -68,6 +76,37 @@ export async function updateMonetizationOfferStatus(id: string, isActive: boolea
 
   if (error) throw error;
   return data as MonetizationOffer;
+}
+
+export async function updateMonetizationOffer(
+  id: string,
+  input: Partial<{
+    name: string;
+    offer_type: MonetizationOfferType;
+    price_cents: number;
+    currency: string;
+    number_of_sessions: number;
+    description: string | null;
+    billing_interval: "monthly" | "yearly" | null;
+  }>
+) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("monetization_offers")
+    .update(input)
+    .eq("id", id)
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data as MonetizationOffer;
+}
+
+export async function deleteMonetizationOffer(id: string) {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.from("monetization_offers").delete().eq("id", id);
+  if (error) throw error;
 }
 
 export async function getPatientOffers(patientId?: string): Promise<PatientOffer[]> {

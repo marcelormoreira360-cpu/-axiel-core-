@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
+import { sendNpsRequest } from "@/services/email-service";
 
 // A-05: sentinel email used for the demo patient created during onboarding.
 // No real messages should ever be sent to this address or its associated phone.
@@ -34,6 +35,7 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
 
   const allRows = [
     { tag: "d-1",  due_at: new Date(t - day).toISOString(),      title: "Lembrete D-1",        settingKey: "d_minus_1" },
+    { tag: "nps",  due_at: new Date(t + day).toISOString(),      title: "NPS pós-sessão",      settingKey: "nps" },
     { tag: "d+3",  due_at: new Date(t + 3 * day).toISOString(),  title: "Acompanhamento D+3",  settingKey: "d_plus_3" },
     { tag: "d+30", due_at: new Date(t + 30 * day).toISOString(), title: "Fidelização D+30",    settingKey: "d_plus_30" },
   ];
@@ -57,6 +59,28 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
   if (error) console.error("[automation] schedule failed:", error.message);
 }
 
+// Converts automation tag to rule_key for automation_templates lookup
+const TAG_TO_RULE_KEY: Record<string, string> = {
+  "d-1": "d_minus_1",
+  "nps": "nps",
+  "d+3": "d_plus_3",
+  "d+30": "d_plus_30",
+};
+
+// Interpolates template variables: {{nome}}, {{horario}}, {{data}}
+function interpolateTemplate(template: string, firstName: string, startsAt: string | null): string {
+  const time = startsAt
+    ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    : "horário agendado";
+  const date = startsAt
+    ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+    : "data agendada";
+  return template
+    .replace(/{{nome}}/g, firstName)
+    .replace(/{{horario}}/g, time)
+    .replace(/{{data}}/g, date);
+}
+
 // Called by the daily cron — sends all due pending WhatsApp automations.
 // For D-1, also sends a reminder email when the patient has an email address.
 export async function processAutomations(): Promise<{ processed: number; sent: number; failed: number; skipped: number }> {
@@ -67,12 +91,27 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     .select("*, patients(id, full_name, phone, email), appointments(id, starts_at)")
     .eq("status", "pending")
     .eq("channel", "whatsapp")
-    .in("notes", ["d-1", "d+3", "d+30"])
+    .in("notes", ["d-1", "nps", "d+3", "d+30"])
     .lte("due_at", new Date().toISOString());
 
   if (error) throw error;
 
   type FollowUpRow = (typeof followUps extends (infer T)[] | null | undefined ? T : never);
+
+  // Batch-load custom templates for all unique clinic_ids in this batch
+  const clinicIds = [...new Set((followUps ?? []).map((fu) => fu.clinic_id as string))];
+  const customTemplates = new Map<string, string>(); // key: "clinicId:rule_key"
+  if (clinicIds.length > 0) {
+    const { data: tpls } = await supabase
+      .from("automation_templates")
+      .select("clinic_id, rule_key, template")
+      .in("clinic_id", clinicIds)
+      .eq("channel", "whatsapp")
+      .eq("is_active", true);
+    (tpls ?? []).forEach((t) => {
+      customTemplates.set(`${t.clinic_id as string}:${t.rule_key as string}`, t.template as string);
+    });
+  }
 
   async function processFollowUp(fu: FollowUpRow): Promise<"sent" | "failed" | "skipped"> {
     const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null } | null;
@@ -89,8 +128,14 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       return "skipped";
     }
 
-    const body = buildMessage(fu.notes as string, patient.full_name, appt?.starts_at ?? null);
-    const useCase = fu.notes === "d-1" ? "appointment_reminder" : "follow_up";
+    const tag = fu.notes as string;
+    const ruleKey = TAG_TO_RULE_KEY[tag];
+    const first = patient.full_name.split(" ")[0];
+    const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
+    const body = customTpl
+      ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null)
+      : buildMessage(tag, patient.full_name, appt?.starts_at ?? null);
+    const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
     // L-08: mark as "processing" before attempting send to prevent double-delivery
     // on cron retry. If the process crashes mid-flight the row stays "processing"
@@ -112,9 +157,13 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
         status:         "sent",
         provider:       "twilio",
       });
-      // For D-1: also send email if patient has one (non-blocking per follow-up)
+      // For D-1: also send email reminder (non-blocking)
       if (fu.notes === "d-1" && patient.email) {
         await sendReminderEmail(supabase, fu, patient, appt);
+      }
+      // For NPS: also send email requesting feedback (non-blocking)
+      if (fu.notes === "nps" && patient.email) {
+        await sendNpsEmail(supabase, fu, patient, appt);
       }
       return "sent";
     } catch (e) {
@@ -224,6 +273,51 @@ async function sendReminderEmail(
       error_message:  e instanceof Error ? e.message : "Unknown error",
     });
   }
+}
+
+// ── NPS email ─────────────────────────────────────────────────────────────────
+async function sendNpsEmail(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  fu: { id: string; clinic_id: string; appointment_id: string | null },
+  patient: { id: string; full_name: string; email: string | null },
+  appt: { id: string; starts_at: string } | null,
+) {
+  if (!patient.email) return;
+
+  const { data: clinicRow } = await supabase
+    .from("clinics")
+    .select("name")
+    .eq("id", fu.clinic_id)
+    .maybeSingle();
+
+  // Get session type name for context
+  const { data: apptRow } = appt?.id
+    ? await supabase.from("appointments").select("session_types(name)").eq("id", appt.id).maybeSingle()
+    : { data: null };
+
+  const sessionTypeName = (apptRow as unknown as { session_types: { name: string } | null } | null)?.session_types?.name ?? "sessão";
+
+  // Get the patient's active portal link to include in the email
+  const { data: portalLink } = await supabase
+    .from("patient_portal_links")
+    .select("token_hash")
+    .eq("patient_id", patient.id)
+    .eq("clinic_id", fu.clinic_id)
+    .is("revoked_at", null)
+    .gte("expires_at", new Date().toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  // We can only link to portal if we have a raw token; token_hash is unusable as URL.
+  // So we skip the CTA URL — patient uses their existing link.
+  await sendNpsRequest({
+    to: patient.email,
+    patientFirstName: patient.full_name.split(" ")[0],
+    clinicName: (clinicRow?.name as string | null) ?? "sua clínica",
+    sessionTypeName,
+    portalUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p`,
+  }).catch(() => { /* non-blocking */ });
 }
 
 // Called by the daily cron — finds patients with ≤2 sessions left in active packages
@@ -449,6 +543,14 @@ function buildMessage(tag: string, fullName: string, startsAt: string | null): s
       ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
       : "horário agendado";
     return `Olá, ${first}! 👋\n\nLembrete: sua sessão é *amanhã* às ${time}. 📅\n\nAté lá!`;
+  }
+
+  if (tag === "nps") {
+    return (
+      `Olá, ${first}! 🌿\n\n` +
+      `Como foi sua sessão de ontem? Sua avaliação nos ajuda a melhorar cada vez mais.\n\n` +
+      `Acesse seu portal pelo link que você recebeu e deixe sua nota — leva menos de 1 minuto! ⭐`
+    );
   }
 
   if (tag === "d+3") {

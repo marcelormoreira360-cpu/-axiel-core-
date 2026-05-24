@@ -26,6 +26,12 @@ export type PatientPortalSessionItem = {
   duration_minutes: number;
   // M-05: `notes` is internal (clinician-only) — NOT included in portal data
   observations: string[];
+  // Feature 2: per-session payment tracking
+  price_cents: number;
+  session_type_name: string | null;
+  payment_status: "free" | "paid" | "covered" | "pending";
+  // Feature 4: NPS feedback
+  has_feedback: boolean;
 };
 
 export type PatientPortalInsight = {
@@ -53,6 +59,7 @@ export type PatientPortalOffer = {
   price_cents: number;
   currency: string;
   number_of_sessions: number | null;
+  billing_interval: string | null;
 };
 
 export type PatientPortalDocument = {
@@ -61,6 +68,22 @@ export type PatientPortalDocument = {
   file_type: string;
   source: string;
   created_at: string;
+};
+
+export type PatientPortalPayment = {
+  id: string;
+  amount_cents: number;
+  currency: string;
+  paid_at: string;
+  description: string | null;
+  appointment_id: string | null;
+};
+
+export type PatientPortalSessionType = {
+  id: string;
+  name: string;
+  duration_minutes: number;
+  price_cents: number;
 };
 
 export type PatientPortalData = {
@@ -85,6 +108,21 @@ export type PatientPortalData = {
   availableOffers: PatientPortalOffer[];
   intakeResponses: PatientPortalIntakeItem[];
   documents: PatientPortalDocument[];
+  sessionTypes: PatientPortalSessionType[];
+  unreadClinicMessages: number;
+  paymentHistory: PatientPortalPayment[];
+  activeSubscription: {
+    id: string;
+    planName: string;
+    status: string;
+    amountCents: number;
+    currency: string;
+    billingInterval: string;
+    sessionsPerCycle: number;
+    sessionsUsedThisCycle: number;
+    currentPeriodEnd: string | null;
+    cancelAtPeriodEnd: boolean;
+  } | null;
 };
 
 function hashToken(token: string) {
@@ -294,7 +332,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   }
 
   const now = new Date().toISOString();
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }] = await Promise.all([
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }, { data: sessionTypesData }, { data: paymentsData }, { data: feedbackData }, { count: unreadCount }, { data: activeSubscriptionData }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status, email, phone, date_of_birth, address_line, city, state, zip_code, country").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, slug, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
@@ -309,7 +347,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .maybeSingle(),
     supabase
       .from("appointments")
-      .select("*")
+      .select("*, session_types(name, price_cents)")
       .eq("patient_id", link.patient_id)
       .eq("clinic_id", link.clinic_id)
       .lt("starts_at", now)
@@ -317,7 +355,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .limit(5),
     supabase
       .from("appointments")
-      .select("*")
+      .select("*, session_types(name, price_cents)")
       .eq("patient_id", link.patient_id)
       .eq("clinic_id", link.clinic_id)
       .gte("starts_at", now)
@@ -342,7 +380,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .maybeSingle(),
     supabase
       .from("monetization_offers")
-      .select("id, name, description, offer_type, price_cents, currency, number_of_sessions")
+      .select("id, name, description, offer_type, price_cents, currency, number_of_sessions, billing_interval")
       .eq("clinic_id", link.clinic_id)
       .eq("is_active", true)
       .order("price_cents", { ascending: true }),
@@ -360,6 +398,41 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .eq("clinic_id", link.clinic_id)
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase
+      .from("session_types")
+      .select("id, name, duration_minutes, price_cents")
+      .eq("clinic_id", link.clinic_id)
+      .eq("is_active", true)
+      .order("name"),
+    supabase
+      .from("patient_payments")
+      .select("id, amount_cents, currency, paid_at, notes, appointment_id, status")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .eq("status", "paid")
+      .order("paid_at", { ascending: false, nullsFirst: false })
+      .limit(20),
+    supabase
+      .from("session_feedback")
+      .select("appointment_id")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id),
+    supabase
+      .from("portal_messages")
+      .select("id", { count: "exact", head: true })
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .eq("direction", "clinic_to_patient")
+      .is("read_at", null),
+    supabase
+      .from("patient_subscriptions")
+      .select("id, plan_name, status, amount_cents, currency, billing_interval, sessions_per_cycle, sessions_used_this_cycle, current_period_end, cancel_at_period_end")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .in("status", ["active", "trialing", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (!patient || !clinic) return null;
@@ -380,25 +453,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   const recordsByAppointment = new Map<string, SessionRecord>();
   ((sessionRecords ?? []) as SessionRecord[]).forEach((record) => recordsByAppointment.set(record.appointment_id, record));
 
-  function mapAppointment(appointment: Appointment): PatientPortalSessionItem {
-    const record = recordsByAppointment.get(appointment.id);
-    return {
-      id: appointment.id,
-      starts_at: appointment.starts_at,
-      duration_minutes: appointment.duration_minutes,
-      // M-05: omit `notes` — clinician-only field, must not reach the patient portal
-      observations: record?.key_observations?.slice(0, 3) ?? [],
-    };
-  }
-
-  const upcomingMapped = ((upcoming ?? []) as Appointment[]).map(mapAppointment);
-
-  const sessions = ((appointments ?? []) as Appointment[]).map(mapAppointment);
-
-  const insight = latestInsight ? asInsightSummary(latestInsight as AiInsight) : null;
-  const settingsObject = (settings?.settings ?? {}) as Record<string, unknown>;
-  const whatsappNumber = typeof settingsObject.whatsapp_number === "string" ? settingsObject.whatsapp_number : null;
-
+  // pkg must be computed BEFORE mapAppointment so payment_status can check sessions_remaining
   const pkg = activePackage
     ? {
         name: activePackage.name,
@@ -408,6 +463,69 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       }
     : null;
 
+  // Set of appointment IDs that already have a direct payment record
+  const paidAppointmentIds = new Set<string>(
+    (paymentsData ?? [])
+      .filter((p) => p.appointment_id)
+      .map((p) => p.appointment_id as string),
+  );
+
+  // Payment history for portal display
+  const paymentHistory: PatientPortalPayment[] = (paymentsData ?? []).map((p) => ({
+    id: p.id as string,
+    amount_cents: p.amount_cents as number,
+    currency: (p.currency as string | null) ?? "BRL",
+    paid_at: (p.paid_at as string | null) ?? "",
+    description: (p.notes as string | null) ?? null,
+    appointment_id: (p.appointment_id as string | null) ?? null,
+  }));
+
+  // Set of appointment IDs that already have NPS feedback
+  const feedbackedAppointmentIds = new Set<string>(
+    (feedbackData ?? []).map((f) => f.appointment_id as string).filter(Boolean),
+  );
+
+  type AppointmentWithSessionType = Appointment & {
+    session_types?: { name: string; price_cents: number } | null;
+  };
+
+  function mapAppointment(appointment: AppointmentWithSessionType): PatientPortalSessionItem {
+    const record = recordsByAppointment.get(appointment.id);
+    const priceCents = (appointment.session_types as { price_cents?: number } | null)?.price_cents ?? 0;
+    const sessionTypeName = (appointment.session_types as { name?: string } | null)?.name ?? null;
+
+    let payment_status: PatientPortalSessionItem["payment_status"] = "free";
+    if (priceCents > 0) {
+      if (paidAppointmentIds.has(appointment.id)) {
+        payment_status = "paid";
+      } else if (pkg && pkg.sessions_remaining > 0) {
+        payment_status = "covered";
+      } else {
+        payment_status = "pending";
+      }
+    }
+
+    return {
+      id: appointment.id,
+      starts_at: appointment.starts_at,
+      duration_minutes: appointment.duration_minutes,
+      // M-05: omit `notes` — clinician-only field, must not reach the patient portal
+      observations: record?.key_observations?.slice(0, 3) ?? [],
+      price_cents: priceCents,
+      session_type_name: sessionTypeName,
+      payment_status,
+      has_feedback: feedbackedAppointmentIds.has(appointment.id),
+    };
+  }
+
+  const upcomingMapped = ((upcoming ?? []) as AppointmentWithSessionType[]).map(mapAppointment);
+
+  const sessions = ((appointments ?? []) as AppointmentWithSessionType[]).map(mapAppointment);
+
+  const insight = latestInsight ? asInsightSummary(latestInsight as AiInsight) : null;
+  const settingsObject = (settings?.settings ?? {}) as Record<string, unknown>;
+  const whatsappNumber = typeof settingsObject.whatsapp_number === "string" ? settingsObject.whatsapp_number : null;
+
   const availableOffers: PatientPortalOffer[] = (offersData ?? []).map((o) => ({
     id: o.id as string,
     name: o.name as string,
@@ -416,6 +534,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     price_cents: o.price_cents as number,
     currency: o.currency as string,
     number_of_sessions: (o.number_of_sessions as number | null) ?? null,
+    billing_interval: (o.billing_interval as string | null) ?? null,
   }));
 
   const intakeResponses: PatientPortalIntakeItem[] = (intakeData ?? [])
@@ -439,6 +558,13 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     created_at: d.created_at as string,
   }));
 
+  const sessionTypes: PatientPortalSessionType[] = (sessionTypesData ?? []).map((st) => ({
+    id: st.id as string,
+    name: st.name as string,
+    duration_minutes: st.duration_minutes as number,
+    price_cents: st.price_cents as number,
+  }));
+
   return {
     link: link as PatientPortalLink,
     patient: patient as PatientPortalData["patient"],
@@ -452,5 +578,22 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     availableOffers,
     intakeResponses,
     documents,
+    sessionTypes,
+    unreadClinicMessages: unreadCount ?? 0,
+    paymentHistory,
+    activeSubscription: activeSubscriptionData
+      ? {
+          id: activeSubscriptionData.id as string,
+          planName: activeSubscriptionData.plan_name as string,
+          status: activeSubscriptionData.status as string,
+          amountCents: activeSubscriptionData.amount_cents as number,
+          currency: activeSubscriptionData.currency as string,
+          billingInterval: activeSubscriptionData.billing_interval as string,
+          sessionsPerCycle: activeSubscriptionData.sessions_per_cycle as number,
+          sessionsUsedThisCycle: activeSubscriptionData.sessions_used_this_cycle as number,
+          currentPeriodEnd: activeSubscriptionData.current_period_end as string | null,
+          cancelAtPeriodEnd: activeSubscriptionData.cancel_at_period_end as boolean,
+        }
+      : null,
   };
 }

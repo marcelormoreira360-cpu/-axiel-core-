@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { updatePractitionerAction } from "./actions";
 
@@ -66,8 +67,17 @@ export function PractitionersList({ practitioners }: Props) {
 
   if (practitioners.length === 0) {
     return (
-      <div className="bg-white border border-black/[.07] rounded-[12px] p-8 text-center">
-        <p className="text-[13px] text-[#A09E98]">Nenhum membro de equipe encontrado. Convide profissionais na aba Equipe.</p>
+      <div className="bg-white border border-black/[.07] rounded-[12px] p-8 text-center space-y-3">
+        <p className="text-[14px] font-medium text-[#0F1A2E]">Nenhum profissional ainda</p>
+        <p className="text-[13px] text-[#A09E98] max-w-sm mx-auto leading-relaxed">
+          Convide os membros da equipe pelo e-mail. Após aceitarem o convite, eles aparecem aqui para configuração do perfil público.
+        </p>
+        <Link
+          href="/settings/equipe"
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[16px] py-[8px] rounded-lg mt-2"
+        >
+          + Convidar profissional
+        </Link>
       </div>
     );
   }

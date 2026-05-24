@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { toggleReminderAction } from "./actions";
+import { PushSettingsToggle } from "@/components/push-prompt";
 
 type CommunicationLog = {
   id: string;
@@ -258,6 +259,17 @@ export default async function LembretesPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Push notification toggle */}
+        <div className="mt-8 rounded-2xl border border-black/[.07] bg-white p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 mb-1">
+            Notificações push
+          </p>
+          <p className="text-[12px] text-black/45 mb-4">
+            Receba alertas no navegador quando pacientes enviarem mensagens ou novas ações forem criadas.
+          </p>
+          <PushSettingsToggle />
         </div>
       </div>
     </Shell>

@@ -74,6 +74,32 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
+    // Handle patient per-session payment (Feature 2)
+    if (session.metadata?.type === "session_payment") {
+      const { patient_id, clinic_id, appointment_id } = session.metadata;
+      const supabaseAdmin = createSupabaseAdminClient();
+
+      const paymentIntentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : (session.payment_intent?.id ?? null);
+
+      await supabaseAdmin.from("patient_payments").insert({
+        clinic_id,
+        patient_id,
+        appointment_id,
+        amount_cents: session.amount_total ?? 0,
+        currency: (session.currency?.toUpperCase() ?? "BRL"),
+        payment_method: "credit_card",
+        paid_at: new Date().toISOString(),
+        status: "paid",
+        stripe_payment_intent_id: paymentIntentId,
+        notes: `Stripe session checkout ${session.id}`,
+      });
+
+      return NextResponse.json({ received: true });
+    }
+
     // Handle patient package purchase
     if (session.metadata?.type === "patient_purchase") {
       const { patient_id, clinic_id, offer_id } = session.metadata;
@@ -121,6 +147,36 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    // Handle patient recurring subscription checkout
+    if (session.metadata?.type === "patient_subscription" && session.subscription) {
+      const sub = await stripe.subscriptions.retrieve(String(session.subscription));
+      const meta = sub.metadata ?? {};
+      const supabaseAdmin = createSupabaseAdminClient();
+      const periodStart = (sub as StripeSubscriptionWithPeriod).current_period_start;
+      const periodEnd = (sub as StripeSubscriptionWithPeriod).current_period_end;
+      await supabaseAdmin.from("patient_subscriptions").upsert(
+        {
+          clinic_id: meta.clinic_id,
+          patient_id: meta.patient_id,
+          offer_id: meta.offer_id ?? null,
+          stripe_subscription_id: sub.id,
+          stripe_customer_id: typeof sub.customer === "string" ? sub.customer : sub.customer.id,
+          plan_name: meta.plan_name ?? "Plano mensal",
+          amount_cents: sub.items.data[0]?.price?.unit_amount ?? 0,
+          currency: (sub.currency ?? "brl").toUpperCase(),
+          billing_interval: sub.items.data[0]?.price?.recurring?.interval === "year" ? "yearly" : "monthly",
+          sessions_per_cycle: parseInt(meta.sessions_per_cycle ?? "0", 10),
+          status: sub.status,
+          current_period_start: periodStart ? new Date(periodStart * 1000).toISOString() : null,
+          current_period_end: periodEnd ? new Date(periodEnd * 1000).toISOString() : null,
+          cancel_at_period_end: sub.cancel_at_period_end,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "stripe_subscription_id" }
+      );
+      return NextResponse.json({ received: true });
+    }
+
     if (session.subscription) {
       const subscription = await stripe.subscriptions.retrieve(String(session.subscription));
       await syncSubscription(subscription as StripeSubscriptionWithPeriod);
@@ -134,7 +190,35 @@ export async function POST(request: Request) {
     event.type === "customer.subscription.paused" ||
     event.type === "customer.subscription.resumed"
   ) {
-    await syncSubscription(event.data.object as StripeSubscriptionWithPeriod);
+    const sub = event.data.object as StripeSubscriptionWithPeriod;
+
+    // Route to patient_subscriptions if this is a patient plan
+    if (sub.metadata?.type === "patient_subscription") {
+      const supabaseAdmin = createSupabaseAdminClient();
+      await supabaseAdmin
+        .from("patient_subscriptions")
+        .update({
+          status: sub.status,
+          current_period_start: sub.current_period_start ? new Date(sub.current_period_start * 1000).toISOString() : null,
+          current_period_end: sub.current_period_end ? new Date(sub.current_period_end * 1000).toISOString() : null,
+          cancel_at_period_end: sub.cancel_at_period_end,
+          canceled_at: sub.canceled_at ? new Date(sub.canceled_at * 1000).toISOString() : null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("stripe_subscription_id", sub.id);
+
+      // On renewal (subscription.updated with new period): reset sessions_used_this_cycle
+      const prevAttr = (event.data as Stripe.Event.Data).previous_attributes as Record<string, unknown> | undefined;
+      const periodChanged = prevAttr?.current_period_start !== undefined;
+      if (event.type === "customer.subscription.updated" && periodChanged) {
+        await supabaseAdmin
+          .from("patient_subscriptions")
+          .update({ sessions_used_this_cycle: 0 })
+          .eq("stripe_subscription_id", sub.id);
+      }
+    } else {
+      await syncSubscription(sub);
+    }
   }
 
   if (event.type === "invoice.payment_failed" || event.type === "invoice.paid") {
@@ -142,6 +226,27 @@ export async function POST(request: Request) {
     const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
     const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
     const supabase = createSupabaseAdminClient();
+
+    // Check if this invoice belongs to a patient subscription
+    if (subscriptionId) {
+      const { data: patientSub } = await supabase
+        .from("patient_subscriptions")
+        .select("id, clinic_id, patient_id")
+        .eq("stripe_subscription_id", subscriptionId)
+        .maybeSingle();
+
+      if (patientSub) {
+        await supabase
+          .from("patient_subscriptions")
+          .update({
+            status: event.type === "invoice.payment_failed" ? "past_due" : "active",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", patientSub.id as string);
+        // Rest of invoice processing handled separately (clinic subscriptions below)
+        return NextResponse.json({ received: true });
+      }
+    }
     const { data: subscription } = await supabase
       .from("subscriptions")
       .select("clinic_id")

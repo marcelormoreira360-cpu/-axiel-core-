@@ -101,7 +101,10 @@ export async function POST(request: Request) {
       patient_id: link.patient_id as string,
       clinic_id: link.clinic_id as string,
       offer_id,
-      portal_token,
+      // B-05: store only the SHA-256 hash, never the raw token.
+      // The webhook only needs patient_id/clinic_id/offer_id (all already present).
+      // The raw token is in success_url/cancel_url (visible only to the payer).
+      portal_token_hash: tokenHash,
     },
   });
 

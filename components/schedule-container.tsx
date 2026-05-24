@@ -664,6 +664,7 @@ export function ScheduleContainer({
   sessionTypes,
   createSessionAction,
   updateStatusAction,
+  practitioners,
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
@@ -671,11 +672,13 @@ export function ScheduleContainer({
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
+  practitioners?: { id: string; name: string }[];
 }) {
   const [view, setView]                       = useState<View>("semana");
   const [navDate, setNavDate]                 = useState(new Date());
   const [selectedSlot, setSelectedSlot]       = useState<TimeSlot | null>(null);
   const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);
+  const [filterPractitionerId, setFilterPractitionerId] = useState<string>("all");
 
   function navigatePrev() {
     if (view === "semana") setNavDate((d) => addDays(d, -7));
@@ -704,6 +707,11 @@ export function ScheduleContainer({
   }, [view, navDate]);
 
   const showNav = view !== "dia";
+
+  // Client-side filter by practitioner for clinic owners
+  const filteredSessions = filterPractitionerId === "all"
+    ? sessions
+    : sessions.filter((s) => s.practitioner_id === filterPractitionerId);
 
   return (
     <div className="space-y-[10px]">
@@ -745,29 +753,43 @@ export function ScheduleContainer({
           )}
         </div>
 
-        <div className="flex items-center gap-[2px] bg-[#F4F3EF] rounded-[8px] p-[3px]">
-          {(["dia", "semana", "mes"] as View[]).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={[
-                "text-[11px] font-medium px-[10px] py-[5px] rounded-[6px] capitalize transition",
-                view === v
-                  ? "bg-white text-[#0F1A2E] shadow-sm border border-black/[.06]"
-                  : "text-[#6B6A66] hover:text-[#0F1A2E]",
-              ].join(" ")}
+        <div className="flex items-center gap-2">
+          {practitioners && practitioners.length > 1 && (
+            <select
+              value={filterPractitionerId}
+              onChange={(e) => setFilterPractitionerId(e.target.value)}
+              className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium outline-none focus:border-[#0F6E56]/40 transition"
             >
-              {v === "mes" ? "Mês" : v.charAt(0).toUpperCase() + v.slice(1)}
-            </button>
-          ))}
+              <option value="all">Todos</option>
+              {practitioners.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+          <div className="flex items-center gap-[2px] bg-[#F4F3EF] rounded-[8px] p-[3px]">
+            {(["dia", "semana", "mes"] as View[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={[
+                  "text-[11px] font-medium px-[10px] py-[5px] rounded-[6px] capitalize transition",
+                  view === v
+                    ? "bg-white text-[#0F1A2E] shadow-sm border border-black/[.06]"
+                    : "text-[#6B6A66] hover:text-[#0F1A2E]",
+                ].join(" ")}
+              >
+                {v === "mes" ? "Mês" : v.charAt(0).toUpperCase() + v.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Views ── */}
       {view === "dia" && (
         <DayView
-          sessions={sessions}
+          sessions={filteredSessions}
           patients={patients}
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
@@ -778,7 +800,9 @@ export function ScheduleContainer({
       )}
       {view === "semana" && (
         <WeekView
-          appointments={allAppointments}
+          appointments={filterPractitionerId === "all"
+            ? allAppointments
+            : allAppointments.filter((a) => a.practitioner_id === filterPractitionerId)}
           navDate={navDate}
           onDayClick={onDayClick}
           patients={patients}
@@ -788,7 +812,9 @@ export function ScheduleContainer({
       )}
       {view === "mes" && (
         <MonthView
-          appointments={allAppointments}
+          appointments={filterPractitionerId === "all"
+            ? allAppointments
+            : allAppointments.filter((a) => a.practitioner_id === filterPractitionerId)}
           navDate={navDate}
           onDayClick={onDayClick}
         />

@@ -11,7 +11,7 @@ import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { isPractitioner } from "@/services/team-service";
+import { isPractitioner, getTeamMembers } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
 import { formatTime } from "@/modules/schedule/date-utils";
 
@@ -20,13 +20,23 @@ export default async function SchedulePage() {
   const clinicId = profile?.clinic_id ?? undefined;
   const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
 
-  const [appointments, patients, openReviews, sessionTypes, clinic] = await Promise.all([
+  const [appointments, patients, openReviews, sessionTypes, clinic, teamMembers] = await Promise.all([
     getAppointments(clinicId, practitionerId),
     getPatients(clinicId, practitionerId),
     getPendingAiInsightReviewCount(clinicId),
     getSessionTypes(clinicId),
     getCurrentClinic(),
+    // Only fetch team for non-practitioners (owners/admins who need the filter)
+    !practitionerId && clinicId ? getTeamMembers(clinicId) : Promise.resolve([]),
   ]);
+
+  // Practitioners available for the filter dropdown (owners/admins only)
+  const practitionerOptions = practitionerId
+    ? undefined
+    : teamMembers
+        .filter((m) => m.id !== profile?.id) // exclude self if already filtered above
+        .map((m) => ({ id: m.id, name: (m as { full_name?: string }).full_name ?? m.email ?? m.id }))
+        .filter((m) => m.name);
 
   const todayAppointments = getAppointmentsForDay(appointments, new Date());
   const nextSession = todayAppointments.find(
@@ -186,6 +196,7 @@ export default async function SchedulePage() {
             sessionTypes={sessionTypes}
             createSessionAction={createSessionAction}
             updateStatusAction={updateStatusAction}
+            practitioners={practitionerOptions}
           />
         </>
       )}

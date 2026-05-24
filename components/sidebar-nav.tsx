@@ -12,13 +12,16 @@ import {
   Banknote,
   MessageCircle,
   Link2,
+  Inbox,
 } from "lucide-react";
+import { InboxBadge } from "./inbox-badge";
 
 const mainNav = [
   { href: "/dashboard",   label: "Dashboard",   icon: LayoutDashboard },
   { href: "/patients",    label: "Pacientes",   icon: Users },
   { href: "/leads",       label: "Leads",       icon: Megaphone, dot: true },
   { href: "/schedule",    label: "Agenda",      icon: Calendar },
+  { href: "/inbox",       label: "Mensagens",   icon: Inbox, liveCount: true },
   { href: "/financeiro",  label: "Financeiro",  icon: Banknote },
   { href: "/actions",     label: "AI Insights", icon: Sparkles },
   { href: "/forms",       label: "Formulários", icon: FileText },
@@ -26,12 +29,16 @@ const mainNav = [
 ];
 
 const clinicNav = [
-  { href: "/monetization", label: "Planos e pacotes" },
-  { href: "/relatorios",   label: "Relatórios" },
-  { href: "/settings",     label: "Configurações" },
+  { href: "/monetization",  label: "Planos e pacotes" },
+  { href: "/assinaturas",   label: "Assinaturas" },
+  { href: "/analytics",     label: "Analytics" },
+  { href: "/profissionais", label: "Equipe" },
+  { href: "/relatorios",    label: "Relatórios" },
+  { href: "/settings",      label: "Configurações" },
 ];
 
 const moreNav = [
+  { href: "/automacoes",     label: "Automações" },
   { href: "/whatsapp",       label: "WhatsApp Bot" },
   { href: "/follow-ups",     label: "Follow-ups" },
   { href: "/communications", label: "Mensagens" },
@@ -45,11 +52,13 @@ function NavItem({
   label,
   icon: Icon,
   dot,
+  liveCount,
 }: {
   href: string;
   label: string;
   icon: React.ElementType;
   dot?: boolean;
+  liveCount?: boolean;
 }) {
   const pathname = usePathname();
   const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href));
@@ -72,6 +81,7 @@ function NavItem({
       {dot && (
         <span className="h-[5px] w-[5px] rounded-full bg-[#0F6E56]" aria-hidden="true" />
       )}
+      {liveCount && <InboxBadge />}
     </Link>
   );
 }

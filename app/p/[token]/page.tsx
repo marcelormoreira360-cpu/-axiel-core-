@@ -52,6 +52,16 @@ export default async function PublicPatientDashboardPage({
   }
 
   const purchaseSuccess = resolvedSearch.compra === "sucesso";
+  const paymentSuccess = resolvedSearch.pagamento === "sucesso";
+  const subscriptionSuccess = resolvedSearch.assinatura === "sucesso";
 
-  return <PatientPortalDashboard data={data} rawToken={token} purchaseSuccess={purchaseSuccess} />;
+  return (
+    <PatientPortalDashboard
+      data={data}
+      rawToken={token}
+      purchaseSuccess={purchaseSuccess}
+      paymentSuccess={paymentSuccess}
+      subscriptionSuccess={subscriptionSuccess}
+    />
+  );
 }

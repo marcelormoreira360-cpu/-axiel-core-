@@ -24,6 +24,15 @@ export type Clinic = {
   clinic_profile: ClinicProfile;
   logo_url: string | null;
   primary_color: string | null;
+  // Contact & location (migration 024)
+  phone: string | null;
+  contact_email: string | null;
+  website: string | null;
+  address_line: string | null;
+  city: string | null;
+  state: string | null;
+  cnpj: string | null;
+  description: string | null;
   created_at: string;
   updated_at: string;
 };

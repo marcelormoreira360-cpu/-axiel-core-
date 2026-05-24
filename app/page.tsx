@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MessageCircle, BarChart3, Users, Bot, Smartphone, Star, Check } from "lucide-react";
+import { ArrowRight, CalendarDays, MessageCircle, BarChart3, Users, Bot, Smartphone, Star, Check, ChevronDown } from "lucide-react";
 
 const FEATURES = [
   {
@@ -75,6 +75,92 @@ const SPECIALTIES = [
   "Osteopatia", "Acupuntura", "Wellness Center", "Clínica Integrativa",
 ];
 
+const TESTIMONIALS = [
+  {
+    quote: "Antes eu usava três ferramentas diferentes — agenda, prontuário e WhatsApp manual. Com o AXIEL, tudo ficou em um lugar só. Minha taxa de faltas caiu 40% com os lembretes automáticos.",
+    name: "Dra. Fernanda Lopes",
+    role: "Fisioterapeuta · São Paulo, SP",
+    initials: "FL",
+    color: "#E1F5EE",
+    textColor: "#085041",
+  },
+  {
+    quote: "O portal do paciente foi um diferencial enorme. Meus pacientes conseguem ver a evolução deles, o histórico de sessões e o pacote — isso gera engajamento e fidelidade que eu não tinha antes.",
+    name: "Dr. Rodrigo Menezes",
+    role: "Médico Integrativo · Florianópolis, SC",
+    initials: "RM",
+    color: "#EEF2FF",
+    textColor: "#3730A3",
+  },
+  {
+    quote: "A IA que gera insights clínicos após cada sessão me economiza uns 20 minutos de documentação por dia. Parece pouco, mas são mais de 7 horas por mês — que eu uso para atender mais pacientes.",
+    name: "Camila Soares",
+    role: "Nutricionista Funcional · Curitiba, PR",
+    initials: "CS",
+    color: "#FFF7ED",
+    textColor: "#92400E",
+  },
+  {
+    quote: "Migrei de uma planilha para o AXIEL em um único dia. O onboarding é realmente simples. Em 30 minutos já tinha meus pacientes cadastrados e a agenda configurada.",
+    name: "Paulo Henrique Costa",
+    role: "Osteopata · Belo Horizonte, MG",
+    initials: "PC",
+    color: "#F0FDF4",
+    textColor: "#065F46",
+  },
+  {
+    quote: "O módulo financeiro resolveu minha dor crônica: saber exatamente quem pagou, quem deve e qual foi a receita do mês. Sem planilha, sem chute.",
+    name: "Dra. Aline Barbosa",
+    role: "Psicóloga · Rio de Janeiro, RJ",
+    initials: "AB",
+    color: "#FDF4FF",
+    textColor: "#6B21A8",
+  },
+  {
+    quote: "Meus pacientes adoram receber o lembrete pelo WhatsApp no dia anterior. Parece simples, mas o feedback deles é que isso passa uma imagem muito profissional da clínica.",
+    name: "Marcos Vieira",
+    role: "Acupunturista · Porto Alegre, RS",
+    initials: "MV",
+    color: "#FFF1F2",
+    textColor: "#9F1239",
+  },
+];
+
+const FAQ = [
+  {
+    q: "Preciso de cartão de crédito para começar?",
+    a: "Não. O período de teste de 14 dias é completamente grátis e não requer cartão de crédito. Você só paga se decidir continuar após o período de teste.",
+  },
+  {
+    q: "Posso migrar meus pacientes de outro sistema?",
+    a: "Sim. O AXIEL aceita importação via planilha (CSV/Excel) com nome, email, telefone e data de nascimento. Em minutos seus pacientes estão cadastrados.",
+  },
+  {
+    q: "O WhatsApp automático exige alguma conta business?",
+    a: "Sim, utilizamos a API oficial do WhatsApp Business (Meta). Ajudamos você a configurar durante o onboarding — é simples e a maioria das clínicas ativa em menos de uma hora.",
+  },
+  {
+    q: "Meus dados ficam seguros? Está de acordo com a LGPD?",
+    a: "Sim. Todos os dados são armazenados em servidores criptografados. Aplicamos controles de acesso por clínica, isolamento de dados entre contas e seguimos as diretrizes da LGPD.",
+  },
+  {
+    q: "Posso usar em vários dispositivos e computadores?",
+    a: "Sim. O AXIEL é 100% web — funciona em qualquer navegador, computador, tablet ou celular. Sem instalação.",
+  },
+  {
+    q: "E se eu precisar de ajuda ou tiver dúvidas?",
+    a: "Oferecemos suporte via chat e email. No plano Professional e acima, o suporte tem resposta prioritária. Também temos base de conhecimento com vídeos e tutoriais.",
+  },
+  {
+    q: "Posso cancelar a qualquer momento?",
+    a: "Sim, sem multa e sem burocracia. Você cancela diretamente nas configurações da conta. Seus dados ficam disponíveis por 30 dias após o cancelamento para exportação.",
+  },
+  {
+    q: "O sistema funciona para clínicas com vários profissionais?",
+    a: "Sim. Você pode convidar toda a equipe, definir permissões por cargo (dono, gestor, profissional, recepcionista) e cada um vê apenas o que precisa.",
+  },
+];
+
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F1A2E]">
@@ -86,6 +172,7 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#funcionalidades" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Funcionalidades</a>
             <a href="#como-funciona" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Como funciona</a>
+            <a href="#depoimentos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Depoimentos</a>
             <a href="#planos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Planos</a>
           </nav>
           <div className="flex items-center gap-3">
@@ -218,6 +305,41 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Depoimentos ── */}
+      <section id="depoimentos" className="mx-auto max-w-6xl px-6 py-24">
+        <div className="mb-14 max-w-xl">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Depoimentos</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Profissionais que transformaram sua clínica.</h2>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {TESTIMONIALS.map((t) => (
+            <div key={t.name} className="flex flex-col rounded-2xl border border-black/[.07] bg-white p-6 hover:border-black/15 transition">
+              {/* Stars */}
+              <div className="flex gap-0.5 mb-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />
+                ))}
+              </div>
+              {/* Quote */}
+              <p className="flex-1 text-sm leading-relaxed text-black/65 mb-6">&ldquo;{t.quote}&rdquo;</p>
+              {/* Author */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
+                  style={{ backgroundColor: t.color, color: t.textColor }}
+                >
+                  {t.initials}
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{t.name}</p>
+                  <p className="text-[11px] text-black/40">{t.role}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ── Planos ── */}
       <section id="planos" className="mx-auto max-w-6xl px-6 pb-24">
         <div className="mb-14 max-w-xl">
@@ -269,6 +391,33 @@ export default function LandingPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="mx-auto max-w-3xl px-6 pb-24">
+        <div className="mb-14 text-center">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Dúvidas frequentes</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Respostas rápidas.</h2>
+        </div>
+        <div className="space-y-2">
+          {FAQ.map((item) => (
+            <details key={item.q} className="group rounded-2xl border border-black/[.07] bg-white">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 select-none">
+                <span className="text-[15px] font-medium text-[#0F1A2E] leading-snug">{item.q}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-black/35 transition-transform duration-200 group-open:rotate-180" />
+              </summary>
+              <div className="px-6 pb-5">
+                <p className="text-sm leading-relaxed text-black/55">{item.a}</p>
+              </div>
+            </details>
+          ))}
+        </div>
+        <p className="mt-10 text-center text-sm text-black/40">
+          Ainda tem dúvidas?{" "}
+          <a href="mailto:contato@axielcore.com" className="text-[#0F6E56] hover:underline">
+            Fale com a gente
+          </a>
+        </p>
       </section>
 
       {/* ── CTA Final ── */}

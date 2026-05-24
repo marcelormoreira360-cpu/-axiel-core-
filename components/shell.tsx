@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
+import { PushPrompt } from "@/components/push-prompt";
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
@@ -129,6 +130,7 @@ export async function Shell({
 
       <SoftOnboardingGuide />
       <GlobalSearch key="global-search-modal" />
+      <PushPrompt />
     </div>
   );
 }

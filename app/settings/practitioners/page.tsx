@@ -60,12 +60,20 @@ export default async function PractitionersPage() {
             o paciente possa escolher o profissional ao agendar online.
           </p>
         </div>
-        <Link
-          href="/settings"
-          className="shrink-0 text-[12px] text-black/40 hover:text-black/70 transition"
-        >
-          ← Voltar
-        </Link>
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            href="/settings/equipe"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg"
+          >
+            + Convidar profissional
+          </Link>
+          <Link
+            href="/settings"
+            className="text-[12px] text-black/40 hover:text-black/70 transition"
+          >
+            ← Voltar
+          </Link>
+        </div>
       </div>
 
       <PractitionersList practitioners={practitioners} />

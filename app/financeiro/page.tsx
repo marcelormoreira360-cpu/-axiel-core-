@@ -46,6 +46,12 @@ export default async function FinanceiroPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/financeiro/relatorio"
+            className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
+          >
+            Relatório →
+          </Link>
+          <Link
             href="/financeiro/nfse"
             className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
           >

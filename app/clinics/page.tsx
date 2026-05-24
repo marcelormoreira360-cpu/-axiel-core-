@@ -1,4 +1,5 @@
-import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2 } from "lucide-react";
+import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2, Palette, Phone, Mail, Globe, MapPin, FileText } from "lucide-react";
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
@@ -64,6 +65,23 @@ export default async function ClinicsPage() {
     await updateClinic(id, { name, slug });
     revalidatePath("/clinics");
     revalidatePath("/settings");
+  }
+
+  async function updateClinicContactAction(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "");
+    if (!id) return;
+    await updateClinic(id, {
+      phone:         String(formData.get("phone")         ?? "").trim() || null,
+      contact_email: String(formData.get("contact_email") ?? "").trim() || null,
+      website:       String(formData.get("website")       ?? "").trim() || null,
+      address_line:  String(formData.get("address_line")  ?? "").trim() || null,
+      city:          String(formData.get("city")          ?? "").trim() || null,
+      state:         String(formData.get("state")         ?? "").trim() || null,
+      cnpj:          String(formData.get("cnpj")          ?? "").trim() || null,
+      description:   String(formData.get("description")   ?? "").trim() || null,
+    });
+    revalidatePath("/clinics");
   }
 
   async function updateClinicProfileAction(formData: FormData) {
@@ -156,6 +174,176 @@ export default async function ClinicsPage() {
                 })}
               </div>
             </Card>
+          </div>
+
+          {/* ── Contato e localização ── */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
+              Contato e localização
+            </p>
+            <Card className="p-[16px]">
+              <p className="text-[12px] text-[#A09E98] mb-[14px]">
+                Exibido na página de agendamento online e usado para emissão de notas fiscais.
+              </p>
+              <form action={updateClinicContactAction} className="space-y-[12px]">
+                <input type="hidden" name="id" value={myClinic.id} />
+
+                {/* Descrição */}
+                <div>
+                  <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                    <FileText className="h-3 w-3" /> Descrição curta
+                  </label>
+                  <textarea
+                    name="description"
+                    rows={2}
+                    defaultValue={myClinic.description ?? ""}
+                    placeholder="Ex: Clínica especializada em medicina integrativa e funcional em São Paulo."
+                    className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] resize-none transition"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-[10px]">
+                  {/* Telefone */}
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                      <Phone className="h-3 w-3" /> Telefone
+                    </label>
+                    <input
+                      name="phone"
+                      type="tel"
+                      defaultValue={myClinic.phone ?? ""}
+                      placeholder="(11) 99999-9999"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* Email de contato */}
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                      <Mail className="h-3 w-3" /> Email de contato
+                    </label>
+                    <input
+                      name="contact_email"
+                      type="email"
+                      defaultValue={myClinic.contact_email ?? ""}
+                      placeholder="contato@suaclinica.com.br"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* Site */}
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                      <Globe className="h-3 w-3" /> Site
+                    </label>
+                    <input
+                      name="website"
+                      type="url"
+                      defaultValue={myClinic.website ?? ""}
+                      placeholder="https://suaclinica.com.br"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* CNPJ */}
+                  <div>
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                      <FileText className="h-3 w-3" /> CNPJ
+                    </label>
+                    <input
+                      name="cnpj"
+                      defaultValue={myClinic.cnpj ?? ""}
+                      placeholder="00.000.000/0001-00"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* Endereço */}
+                  <div className="sm:col-span-2">
+                    <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
+                      <MapPin className="h-3 w-3" /> Endereço
+                    </label>
+                    <input
+                      name="address_line"
+                      defaultValue={myClinic.address_line ?? ""}
+                      placeholder="Rua Exemplo, 123 — Sala 45"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* Cidade */}
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Cidade</label>
+                    <input
+                      name="city"
+                      defaultValue={myClinic.city ?? ""}
+                      placeholder="São Paulo"
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+
+                  {/* Estado */}
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Estado</label>
+                    <input
+                      name="state"
+                      defaultValue={myClinic.state ?? ""}
+                      placeholder="SP"
+                      maxLength={2}
+                      className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition uppercase"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-[2px]">
+                  <button
+                    type="submit"
+                    className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-[14px] py-[7px] rounded-[8px] transition"
+                  >
+                    Salvar contato
+                  </button>
+                </div>
+              </form>
+            </Card>
+          </div>
+
+          {/* ── Identidade visual (atalho) ── */}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
+              Identidade visual
+            </p>
+            <Link href="/settings/branding">
+              <Card className="p-[16px] flex items-center justify-between hover:border-black/[.15] transition group">
+                <div className="flex items-center gap-3">
+                  {myClinic.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={myClinic.logo_url} alt="Logo" className="h-9 w-9 rounded-[8px] object-contain border border-black/[.07]" />
+                  ) : (
+                    <div className="h-9 w-9 rounded-[8px] border border-black/[.07] bg-[#F4F3EF] flex items-center justify-center">
+                      <Palette className="h-4 w-4 text-[#A09E98]" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-[13px] font-medium text-[#0F1A2E]">Logo e cor primária</p>
+                    <p className="text-[11px] text-[#A09E98] mt-[1px]">
+                      {myClinic.primary_color
+                        ? `Cor ativa: ${myClinic.primary_color}`
+                        : "Nenhuma cor configurada"}
+                      {myClinic.logo_url ? " · Logo enviado" : " · Sem logo"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {myClinic.primary_color && (
+                    <div
+                      className="h-5 w-5 rounded-full border border-black/[.10]"
+                      style={{ backgroundColor: myClinic.primary_color }}
+                    />
+                  )}
+                  <span className="text-[12px] text-[#0F6E56] group-hover:underline">Editar →</span>
+                </div>
+              </Card>
+            </Link>
           </div>
         </div>
       )}

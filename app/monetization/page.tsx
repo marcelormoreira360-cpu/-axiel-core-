@@ -41,14 +41,19 @@ export default async function MonetizationPage() {
 
     const name = String(formData.get("name") ?? "").trim();
     const offerType = String(formData.get("offer_type") ?? "session_package") as MonetizationOfferType;
-    const numberOfSessions = Number(formData.get("number_of_sessions") ?? 1);
+    const isMembership = offerType === "membership";
+    const numberOfSessions = isMembership ? 0 : Number(formData.get("number_of_sessions") ?? 1);
+    const billingIntervalRaw = String(formData.get("billing_interval") ?? "monthly");
+    const billingInterval = isMembership
+      ? (billingIntervalRaw === "yearly" ? "yearly" : "monthly") as "monthly" | "yearly"
+      : null;
     const price = Number(formData.get("price") ?? 0);
-    const currency = String(formData.get("currency") ?? "USD").trim().toUpperCase() || "USD";
+    const currency = String(formData.get("currency") ?? "BRL").trim().toUpperCase() || "BRL";
     const description = String(formData.get("description") ?? "").trim() || null;
 
     if (!name) throw new Error("Offer name is required.");
     if (!Number.isFinite(price) || price < 0) throw new Error("Price must be zero or greater.");
-    if (!Number.isInteger(numberOfSessions) || numberOfSessions < 1) throw new Error("Sessions must be at least 1.");
+    if (!isMembership && (!Number.isInteger(numberOfSessions) || numberOfSessions < 1)) throw new Error("Sessions must be at least 1.");
 
     await createMonetizationOffer({
       clinic_id: profile.clinic_id,
@@ -56,8 +61,9 @@ export default async function MonetizationPage() {
       offer_type: offerType,
       price_cents: Math.round(price * 100),
       currency,
-      number_of_sessions: numberOfSessions,
+      number_of_sessions: isMembership ? 1 : numberOfSessions,
       description,
+      billing_interval: billingInterval,
     });
 
     redirect("/monetization");

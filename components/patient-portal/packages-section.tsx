@@ -19,13 +19,18 @@ type PurchaseButtonProps = {
 function PurchaseButton({ offer, rawToken }: PurchaseButtonProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMembership = offer.offer_type === "membership";
 
   async function handlePurchase() {
     setLoading(true);
     setError(null);
 
+    const endpoint = isMembership
+      ? "/api/stripe/patient-subscription"
+      : "/api/stripe/patient-checkout";
+
     try {
-      const res = await fetch("/api/stripe/patient-checkout", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ offer_id: offer.id, portal_token: rawToken }),
@@ -56,7 +61,7 @@ function PurchaseButton({ offer, rawToken }: PurchaseButtonProps) {
         disabled={loading}
         className="w-full rounded-xl bg-[#0F6E56] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a5b47] disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? "Redirecionando…" : "Comprar"}
+        {loading ? "Redirecionando…" : isMembership ? "Assinar plano" : "Comprar"}
       </button>
       {error && (
         <p className="mt-2 text-xs text-red-500 text-center">{error}</p>
@@ -76,7 +81,11 @@ export function PackagesSection({ offers, rawToken }: PackagesSectionProps) {
   return (
     <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">
-        Pacotes disponíveis
+        {offers.some((o) => o.offer_type === "membership") && offers.some((o) => o.offer_type !== "membership")
+          ? "Planos e pacotes"
+          : offers.every((o) => o.offer_type === "membership")
+          ? "Planos disponíveis"
+          : "Pacotes disponíveis"}
       </p>
       <div className="space-y-3">
         {offers.map((offer) => (
@@ -96,9 +105,14 @@ export function PackagesSection({ offers, rawToken }: PackagesSectionProps) {
                   </p>
                 )}
               </div>
-              <p className="shrink-0 text-base font-bold text-[#0F1A2E]">
-                {formatCurrency(offer.price_cents, offer.currency || "BRL")}
-              </p>
+              <div className="shrink-0 text-right">
+                <p className="text-base font-bold text-[#0F1A2E]">
+                  {formatCurrency(offer.price_cents, offer.currency || "BRL")}
+                </p>
+                {offer.offer_type === "membership" && (
+                  <p className="text-[10px] text-black/35">/ mês</p>
+                )}
+              </div>
             </div>
             <PurchaseButton offer={offer} rawToken={rawToken} />
           </div>

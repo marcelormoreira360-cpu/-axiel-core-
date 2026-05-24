@@ -21,6 +21,8 @@ import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { QuickVoiceNote } from "@/components/quick-voice-note";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -49,7 +51,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const patient = await getPatientById(id, clinic?.id ?? undefined);
   if (!patient) notFound();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, activeSubscriptionResult] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
@@ -60,7 +62,17 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     getPatientPackages(id),
     getPatientDocuments(id),
     getPatientTreatmentPlans(id),
+    createSupabaseAdminClient()
+      .from("patient_subscriptions")
+      .select("id, plan_name, status, amount_cents, currency, billing_interval, current_period_end, cancel_at_period_end")
+      .eq("patient_id", id)
+      .in("status", ["active", "trialing", "past_due"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
+
+  const activeSub = activeSubscriptionResult.data;
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -169,23 +181,42 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <p className="text-[11px] text-[#0F6E56] mt-[4px]">
               {lastSession ? `Última: ${formatDate(lastSession.starts_at)}` : "Nenhuma sessão ainda"}
             </p>
-            {activePackage && packageNumber !== null && sessionInPackage !== null && (
-              <div className="mt-[8px] pt-[8px] border-t border-black/[.06]">
-                <div className="flex items-center gap-[5px] flex-wrap">
-                  <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">
-                    Sessão {sessionInPackage} · Pacote {packageNumber}
-                  </span>
-                </div>
-                <p className="text-[10px] text-[#A09E98] mt-[3px] truncate">{activePackage.name}</p>
-                <div className="mt-[5px] h-[3px] bg-[#E1F5EE] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#0F6E56] rounded-full"
-                    style={{ width: `${Math.min(100, Math.round((activePackage.sessions_used / activePackage.sessions_total) * 100))}%` }}
-                  />
-                </div>
-                <p className="text-[9px] text-[#A09E98] mt-[3px]">
-                  {activePackage.sessions_used} de {activePackage.sessions_total} sessões usadas
-                </p>
+            {(activePackage || activeSub) && (
+              <div className="mt-[8px] pt-[8px] border-t border-black/[.06] space-y-2">
+                {activePackage && packageNumber !== null && sessionInPackage !== null && (
+                  <div>
+                    <div className="flex items-center gap-[5px] flex-wrap">
+                      <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">
+                        Sessão {sessionInPackage} · Pacote {packageNumber}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-[#A09E98] mt-[3px] truncate">{activePackage.name}</p>
+                    <div className="mt-[5px] h-[3px] bg-[#E1F5EE] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#0F6E56] rounded-full"
+                        style={{ width: `${Math.min(100, Math.round((activePackage.sessions_used / activePackage.sessions_total) * 100))}%` }}
+                      />
+                    </div>
+                    <p className="text-[9px] text-[#A09E98] mt-[3px]">
+                      {activePackage.sessions_used} de {activePackage.sessions_total} sessões usadas
+                    </p>
+                  </div>
+                )}
+                {activeSub && (
+                  <div className="flex items-center gap-[5px] flex-wrap">
+                    <span className={[
+                      "text-[10px] font-medium px-[7px] py-[2px] rounded-full",
+                      activeSub.status === "past_due"
+                        ? "bg-amber-50 text-amber-600"
+                        : "bg-blue-50 text-blue-600",
+                    ].join(" ")}>
+                      {activeSub.status === "past_due" ? "⚠️ " : "↻ "}
+                      {activeSub.plan_name as string}
+                      {" · "}
+                      {(activeSub.billing_interval as string) === "yearly" ? "Anual" : "Mensal"}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -256,6 +287,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
               <span>Portal do paciente</span>
+              <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </Link>
+            <Link
+              href={`/patients/${patient.id}/messages`}
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+            >
+              <span>Mensagens do portal</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
           </div>
@@ -384,13 +422,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         </div>
       </div>
 
-      {/* Notes */}
-      {patient.notes && (
-        <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-          <p className="text-[11px] font-medium text-[#A09E98] uppercase tracking-[.06em] mb-2">Observações</p>
-          <p className="text-[13px] text-[#6B6A66] leading-relaxed">{patient.notes}</p>
-        </div>
-      )}
+      {/* Notes — quick voice note widget */}
+      <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
 
       {/* Assessment responses */}
       <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden mt-5">

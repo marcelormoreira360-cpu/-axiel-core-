@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processAutomations, checkLowPackageNotifications } from "@/services/automation-service";
+import { processDunning } from "@/services/dunning-service";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,11 +13,12 @@ export async function GET(request: Request) {
   }
 
   try {
-    const [automations, packageAlerts] = await Promise.all([
+    const [automations, packageAlerts, dunning] = await Promise.all([
       processAutomations(),
       checkLowPackageNotifications(),
+      processDunning(),
     ]);
-    return NextResponse.json({ ok: true, automations, packageAlerts });
+    return NextResponse.json({ ok: true, automations, packageAlerts, dunning });
   } catch (error) {
     console.error("[cron/automations] error:", error);
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });

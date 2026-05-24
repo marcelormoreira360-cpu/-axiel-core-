@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 export function MonetizationOfferForm({ action }: { action: (formData: FormData) => Promise<void> }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const [offerType, setOfferType] = useState("session_package");
 
   return (
     <form
@@ -31,24 +32,39 @@ export function MonetizationOfferForm({ action }: { action: (formData: FormData)
           <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Tipo</label>
           <select
             name="offer_type"
+            value={offerType}
+            onChange={(e) => setOfferType(e.target.value)}
             className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
           >
             <option value="session_package">Pacote de sessões</option>
-            <option value="membership">Assinatura mensal</option>
+            <option value="membership">Assinatura recorrente</option>
           </select>
         </div>
-        <div>
-          <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Sessões</label>
-          <input
-            name="number_of_sessions"
-            type="number"
-            min="1"
-            max="500"
-            required
-            defaultValue="4"
-            className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
-          />
-        </div>
+        {offerType === "membership" ? (
+          <div>
+            <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Cobrança</label>
+            <select
+              name="billing_interval"
+              className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+            >
+              <option value="monthly">Mensal</option>
+              <option value="yearly">Anual</option>
+            </select>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-[11px] font-medium text-[#6B6A66] mb-[5px]">Sessões</label>
+            <input
+              name="number_of_sessions"
+              type="number"
+              min="1"
+              max="500"
+              required
+              defaultValue="4"
+              className="h-10 w-full rounded-[8px] border border-black/[.08] bg-[#FAFAF8] px-3 text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]/40 focus:bg-white transition"
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid gap-3 grid-cols-[1fr_90px]">
