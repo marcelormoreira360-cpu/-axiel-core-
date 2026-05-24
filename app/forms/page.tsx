@@ -2,14 +2,19 @@ import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getPatients } from "@/services/patient-service";
 import { FileText, Plus, Pencil, ClipboardList, Download } from "lucide-react";
 import { importQSNAAction, importQRMAction, deleteTemplateAction } from "@/app/forms/actions";
 import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
+import { ShareFormButton } from "@/app/forms/share-form-button";
 
 export default async function FormsPage() {
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
-  const templates = await getAssessmentTemplates(clinicId);
+  const [templates, patients] = await Promise.all([
+    getAssessmentTemplates(clinicId),
+    getPatients(clinicId),
+  ]);
 
   const hasQSNA = templates.some((t) =>
     t.name.toLowerCase().includes("q-sna") || t.name.toLowerCase().includes("nervoso autônomo")
@@ -96,6 +101,11 @@ export default async function FormsPage() {
                 >
                   <Pencil className="h-3 w-3" /> Editar
                 </Link>
+                <ShareFormButton
+                  templateId={t.id}
+                  templateName={t.name}
+                  patients={patients.map((p) => ({ id: p.id, full_name: p.full_name, email: p.email ?? null }))}
+                />
                 <Link
                   href={`/forms/${t.id}`}
                   className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[6px] px-[10px] py-[5px] transition"
