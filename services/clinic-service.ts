@@ -119,11 +119,12 @@ export async function createClinic(name: string): Promise<Clinic> {
 export async function getClinicBySlug(slug: string): Promise<Pick<import("@/lib/types").Clinic, "id" | "name" | "logo_url" | "primary_color" | "slug"> | null> {
   const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
   const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("clinics")
     .select("id, name, logo_url, primary_color, slug")
     .eq("slug", slug)
     .maybeSingle();
+  if (error) console.error("[getClinicBySlug] error for slug=%s: %s", slug, error.message);
   return data ?? null;
 }
 // ── Clinic settings helpers ────────────────────────────────────────────────────
