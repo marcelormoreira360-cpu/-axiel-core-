@@ -3,10 +3,15 @@ import { Shell } from "@/components/shell";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatients } from "@/services/patient-service";
-import { FileText, Plus, Pencil, ClipboardList, Download } from "lucide-react";
-import { importQSNAAction, importQRMAction, deleteTemplateAction } from "@/app/forms/actions";
+import { FileText, Plus, Pencil, ClipboardList } from "lucide-react";
+import {
+  importQSNAAction, importQRMAction, deleteTemplateAction,
+  importPHQ9PTAction, importPHQ9ENAction, importGAD7PTAction, importGAD7ENAction,
+  importHPAPTAction, importHPAENAction, importMSQENAction,
+} from "@/app/forms/actions";
 import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
 import { ShareFormButton } from "@/app/forms/share-form-button";
+import { ImportTemplatesButton, TEMPLATE_CATALOG } from "@/app/forms/import-templates-button";
 
 export default async function FormsPage() {
   const profile = await getCurrentUserProfile();
@@ -19,10 +24,37 @@ export default async function FormsPage() {
   const hasQSNA = templates.some((t) =>
     t.name.toLowerCase().includes("q-sna") || t.name.toLowerCase().includes("nervoso autônomo")
   );
-
   const hasQRM = templates.some((t) =>
     t.name.toLowerCase().includes("q.r.m") || t.name.toLowerCase().includes("rastreamento metabólico")
   );
+
+  // Detect which catalog templates are already imported
+  const keyDetectors: Record<string, (name: string) => boolean> = {
+    "phq9-pt": (n) => n.includes("phq-9") && (n.includes("saúde") || n.includes("saude") || n.includes("paciente")),
+    "phq9-en": (n) => n.includes("phq-9") && n.includes("patient health"),
+    "gad7-pt": (n) => (n.includes("gad-7") || n.includes("tag")) && (n.includes("ansiedade") || n.includes("transtorno")),
+    "gad7-en": (n) => n.includes("gad-7") && n.includes("generalized"),
+    "hpa-pt":  (n) => n.includes("hpa") && (n.includes("eixo") || n.includes("avaliação")),
+    "hpa-en":  (n) => n.includes("hpa") && n.includes("axis"),
+    "msq-en":  (n) => n.includes("msq") || n.includes("medical symptoms"),
+  };
+  const importedKeys = new Set(
+    templates.flatMap((t) => {
+      const name = t.name.toLowerCase();
+      return TEMPLATE_CATALOG.filter((c) => keyDetectors[c.key]?.(name)).map((c) => c.key);
+    })
+  );
+  const availableToImport = TEMPLATE_CATALOG.map((c) => c.key).filter((k) => !importedKeys.has(k));
+
+  const importActions: Record<string, () => Promise<void>> = {
+    "phq9-pt": importPHQ9PTAction,
+    "phq9-en": importPHQ9ENAction,
+    "gad7-pt": importGAD7PTAction,
+    "gad7-en": importGAD7ENAction,
+    "hpa-pt":  importHPAPTAction,
+    "hpa-en":  importHPAENAction,
+    "msq-en":  importMSQENAction,
+  };
 
   return (
     <Shell>
@@ -37,24 +69,19 @@ export default async function FormsPage() {
           <div className="flex items-center gap-[8px]">
             {!hasQRM && (
               <form action={importQRMAction}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition"
-                >
-                  <Download className="h-3 w-3" /> Importar Q.R.M.
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                  Importar Q.R.M.
                 </button>
               </form>
             )}
             {!hasQSNA && (
               <form action={importQSNAAction}>
-                <button
-                  type="submit"
-                  className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition"
-                >
-                  <Download className="h-3 w-3" /> Importar Q-SNA
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                  Importar Q-SNA
                 </button>
               </form>
             )}
+            <ImportTemplatesButton available={availableToImport} actions={importActions} />
             <Link
               href="/forms/new"
               className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
