@@ -55,7 +55,7 @@ const starterFeatures: Record<FeatureKey, boolean> = {
   stripe_checkout:      false,
   follow_up_automation: false,
   whatsapp_automation:  false,
-  audio_transcription:  false,
+  audio_transcription:  true,
   advanced_reports:     false,
   multi_clinic:         false,
   advanced_permissions: false,
