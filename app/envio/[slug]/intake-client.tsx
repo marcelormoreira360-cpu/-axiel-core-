@@ -2,7 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { submitIntakeAction } from "./actions";
+import { submitIntakeAction, lookupPatientAction } from "./actions";
 
 interface Props {
   clinicId: string;
@@ -15,6 +15,12 @@ type UploadedFile = {
   file: File;
   preview: string | null; // data URL for images
 };
+
+// "idle" → user typing email
+// "looking" → lookup in progress
+// "found"   → existing patient recognised
+// "new"     → not found, asking for name+phone
+type LookupState = "idle" | "looking" | "found" | "new";
 
 function FileIcon({ type }: { type: string }) {
   if (type.startsWith("image/")) {
@@ -47,26 +53,29 @@ function fmtSize(bytes: number) {
 }
 
 export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Props) {
-  const [step, setStep]             = useState<1 | 2 | 3>(1);
-  const [isPending, startTransition] = useTransition();
-  const [error, setError]           = useState<string | null>(null);
-  const [files, setFiles]           = useState<UploadedFile[]>([]);
-  const [name, setName]             = useState("");
-  const [email, setEmail]           = useState("");
-  const [phone, setPhone]           = useState("");
-  const [notes, setNotes]           = useState("");
-  const fileInputRef                = useRef<HTMLInputElement>(null);
-  const formRef                     = useRef<HTMLFormElement>(null);
+  const [step, setStep]               = useState<1 | 2 | 3>(1);
+  const [lookupState, setLookupState] = useState<LookupState>("idle");
+  const [isPending, startTransition]  = useTransition();
+  const [error, setError]             = useState<string | null>(null);
+  const [files, setFiles]             = useState<UploadedFile[]>([]);
+
+  // Patient fields
+  const [email, setEmail]             = useState("");
+  const [name, setName]               = useState("");   // filled by user (new) or returned by lookup (found)
+  const [phone, setPhone]             = useState("");
+  const [patientId, setPatientId]     = useState<string | null>(null); // set when patient recognised
+
+  const [notes, setNotes]             = useState("");
+  const fileInputRef                  = useRef<HTMLInputElement>(null);
+  const formRef                       = useRef<HTMLFormElement>(null);
 
   const brand = primaryColor ?? "#0B1F3A";
 
+  // ── File helpers ──────────────────────────────────────────────────
   function addFiles(newFiles: FileList | null) {
     if (!newFiles) return;
-    const arr = Array.from(newFiles);
-    arr.forEach((f) => {
-      const preview = f.type.startsWith("image/")
-        ? URL.createObjectURL(f)
-        : null;
+    Array.from(newFiles).forEach((f) => {
+      const preview = f.type.startsWith("image/") ? URL.createObjectURL(f) : null;
       setFiles((prev) => [...prev, { file: f, preview }]);
     });
   }
@@ -85,16 +94,52 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
     addFiles(e.dataTransfer.files);
   }
 
+  // ── Step 1: lookup by email ────────────────────────────────────────
+  function handleLookup() {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) { setError("Digite seu e-mail para continuar."); return; }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) { setError("E-mail inválido."); return; }
+
+    setError(null);
+    setLookupState("looking");
+
+    startTransition(async () => {
+      const result = await lookupPatientAction(trimmedEmail, clinicId);
+      if (result.found && result.patientId) {
+        setName(result.name ?? "");
+        setPatientId(result.patientId);
+        setLookupState("found");
+      } else {
+        setLookupState("new");
+      }
+    });
+  }
+
+  function handleNewPatientContinue() {
+    if (!name.trim()) { setError("Preencha seu nome completo."); return; }
+    setError(null);
+    setStep(2);
+  }
+
+  // ── Step 2: submit ─────────────────────────────────────────────────
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const fd = new FormData();
     fd.set("clinic_id", clinicId);
-    fd.set("name", name);
-    fd.set("email", email);
-    fd.set("phone", phone);
     fd.set("notes", notes);
     files.forEach(({ file }) => fd.append("files", file));
+
+    if (patientId) {
+      // Returning patient — pass the resolved id
+      fd.set("patient_id", patientId);
+    } else {
+      // New patient — pass name/email/phone for server-side create
+      fd.set("name", name);
+      fd.set("email", email);
+      fd.set("phone", phone);
+    }
 
     startTransition(async () => {
       const result = await submitIntakeAction(fd);
@@ -103,35 +148,39 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
     });
   }
 
+  // ── Clinic logo / header (reused in step 1 & 2) ───────────────────
+  const ClinicHeader = () => (
+    <div className="flex flex-col items-center mb-8">
+      {logoUrl ? (
+        <Image src={logoUrl} alt={clinicName} width={160} height={56} className="h-14 w-auto object-contain mb-3" />
+      ) : (
+        <div
+          className="h-14 w-14 rounded-2xl flex items-center justify-center mb-3"
+          style={{ background: brand }}
+        >
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
+      <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-[#A09E98]">
+        {clinicName}
+      </p>
+      <h1 className="text-[22px] font-semibold text-[#0F1A2E] mt-1 text-center">
+        Envio de documentos
+      </h1>
+      <p className="text-[13px] text-[#6B6A66] mt-1 text-center leading-relaxed">
+        Envie exames, fotos e observações diretamente para a sua ficha.
+      </p>
+    </div>
+  );
+
   // ── Step 1: Identification ─────────────────────────────────────────
   if (step === 1) {
     return (
       <div className="min-h-screen bg-[#F7F6F2] flex flex-col items-center px-4 py-10">
         <div className="w-full max-w-md">
-          {/* Header */}
-          <div className="flex flex-col items-center mb-8">
-            {logoUrl ? (
-              <Image src={logoUrl} alt={clinicName} width={160} height={56} className="h-14 w-auto object-contain mb-3" />
-            ) : (
-              <div
-                className="h-14 w-14 rounded-2xl flex items-center justify-center mb-3"
-                style={{ background: brand }}
-              >
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L3 7v10l9 5 9-5V7L12 2z" stroke="white" strokeWidth="1.5" strokeLinejoin="round"/>
-                </svg>
-              </div>
-            )}
-            <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-[#A09E98]">
-              {clinicName}
-            </p>
-            <h1 className="text-[22px] font-semibold text-[#0F1A2E] mt-1 text-center">
-              Envio de documentos
-            </h1>
-            <p className="text-[13px] text-[#6B6A66] mt-1 text-center leading-relaxed">
-              Envie exames, fotos e observações diretamente para a sua ficha.
-            </p>
-          </div>
+          <ClinicHeader />
 
           {/* Progress */}
           <div className="flex items-center gap-2 mb-7">
@@ -140,64 +189,140 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
           </div>
           <p className="text-[11px] font-medium text-[#A09E98] mb-5">Passo 1 de 2 — Identificação</p>
 
-          {/* Form */}
           <div className="bg-white rounded-2xl border border-black/[.07] p-6 space-y-4">
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                Nome completo <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
-                autoComplete="name"
-                className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                E-mail <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
-                autoComplete="email"
-                inputMode="email"
-                className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
-              />
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                Telefone / WhatsApp
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(00) 00000-0000"
-                autoComplete="tel"
-                inputMode="tel"
-                className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
-              />
-            </div>
 
-            <button
-              onClick={() => {
-                if (!name.trim() || !email.trim()) {
-                  setError("Preencha nome e e-mail.");
-                  return;
-                }
-                setError(null);
-                setStep(2);
-              }}
-              className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98]"
-              style={{ background: brand }}
-            >
-              Continuar →
-            </button>
+            {/* ── Returning patient recognised ── */}
+            {lookupState === "found" && (
+              <>
+                <div className="flex items-center gap-3 rounded-xl bg-[#F0FAF6] border border-[#0F6E56]/20 px-4 py-3">
+                  <div
+                    className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-[13px] font-semibold text-white"
+                    style={{ background: brand }}
+                  >
+                    {name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-[#0F1A2E]">Olá, {name.split(" ")[0]}!</p>
+                    <p className="text-[11px] text-[#0F6E56]">Você já está cadastrado ✓</p>
+                  </div>
+                </div>
+                <p className="text-[12px] text-[#6B6A66]">
+                  Identificamos seu cadastro pelo e-mail <span className="font-medium text-[#0F1A2E]">{email}</span>.
+                  Clique em continuar para enviar seus arquivos.
+                </p>
+                <button
+                  onClick={() => { setError(null); setStep(2); }}
+                  className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98]"
+                  style={{ background: brand }}
+                >
+                  Continuar →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLookupState("idle"); setEmail(""); setName(""); setPatientId(null); }}
+                  className="w-full text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition text-center"
+                >
+                  Não é você? Usar outro e-mail
+                </button>
+              </>
+            )}
+
+            {/* ── New patient: full form ── */}
+            {lookupState === "new" && (
+              <>
+                <p className="text-[12px] text-[#6B6A66]">
+                  E-mail não encontrado. Complete seu cadastro para continuar.
+                </p>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    E-mail
+                  </label>
+                  <div className="w-full rounded-xl border border-black/10 bg-[#F4F3EF] px-4 py-3 text-[15px] text-[#6B6A66]">
+                    {email}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    Nome completo <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome"
+                    autoComplete="name"
+                    autoFocus
+                    className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    Telefone / WhatsApp
+                  </label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="(00) 00000-0000"
+                    autoComplete="tel"
+                    inputMode="tel"
+                    className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                  />
+                </div>
+                <button
+                  onClick={handleNewPatientContinue}
+                  className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98]"
+                  style={{ background: brand }}
+                >
+                  Continuar →
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setLookupState("idle"); setName(""); setPhone(""); }}
+                  className="w-full text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition text-center"
+                >
+                  ← Usar outro e-mail
+                </button>
+              </>
+            )}
+
+            {/* ── Initial email entry ── */}
+            {(lookupState === "idle" || lookupState === "looking") && (
+              <>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    E-mail <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => { setEmail(e.target.value); setError(null); }}
+                    onKeyDown={(e) => e.key === "Enter" && handleLookup()}
+                    placeholder="seu@email.com"
+                    autoComplete="email"
+                    inputMode="email"
+                    autoFocus
+                    className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                  />
+                </div>
+                <button
+                  onClick={handleLookup}
+                  disabled={isPending}
+                  className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98] disabled:opacity-60"
+                  style={{ background: brand }}
+                >
+                  {isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                      </svg>
+                      Verificando…
+                    </span>
+                  ) : "Continuar →"}
+                </button>
+              </>
+            )}
 
             {error && (
               <p className="text-[12px] text-red-500 text-center">{error}</p>
@@ -214,6 +339,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
 
   // ── Step 2: Upload ─────────────────────────────────────────────────
   if (step === 2) {
+    const displayName = name || email;
     return (
       <div className="min-h-screen bg-[#F7F6F2] flex flex-col items-center px-4 py-10">
         <div className="w-full max-w-md">
@@ -228,7 +354,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
               </svg>
             </button>
             <div>
-              <p className="text-[13px] font-semibold text-[#0F1A2E]">{name}</p>
+              <p className="text-[13px] font-semibold text-[#0F1A2E]">{displayName}</p>
               <p className="text-[11px] text-[#A09E98]">{email}</p>
             </div>
           </div>
@@ -282,7 +408,6 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                     key={i}
                     className={`flex items-center gap-3 px-4 py-3 ${i < files.length - 1 ? "border-b border-black/[.05]" : ""}`}
                   >
-                    {/* Thumbnail or icon */}
                     {uf.preview ? (
                       <img
                         src={uf.preview}
@@ -388,7 +513,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">Resumo do envio</p>
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-[#6B6A66]">Paciente</span>
-            <span className="text-[13px] font-medium text-[#0F1A2E]">{name}</span>
+            <span className="text-[13px] font-medium text-[#0F1A2E]">{name || email}</span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-[13px] text-[#6B6A66]">Arquivos</span>
@@ -403,7 +528,16 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
         </div>
 
         <button
-          onClick={() => { setStep(1); setFiles([]); setName(""); setEmail(""); setPhone(""); setNotes(""); }}
+          onClick={() => {
+            setStep(1);
+            setLookupState("idle");
+            setFiles([]);
+            setName("");
+            setEmail("");
+            setPhone("");
+            setNotes("");
+            setPatientId(null);
+          }}
           className="mt-6 text-[13px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
         >
           Enviar mais arquivos

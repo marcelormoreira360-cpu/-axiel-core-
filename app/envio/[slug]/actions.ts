@@ -3,49 +3,75 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { uploadPatientDocument } from "@/services/patient-document-service";
 
+export async function lookupPatientAction(
+  email: string,
+  clinicId: string,
+): Promise<{ found: boolean; name?: string; patientId?: string }> {
+  const normalised = email.toLowerCase().trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalised)) return { found: false };
+
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("patients")
+    .select("id, full_name")
+    .eq("clinic_id", clinicId)
+    .eq("email", normalised)
+    .maybeSingle();
+
+  if (data) return { found: true, name: data.full_name, patientId: data.id };
+  return { found: false };
+}
+
 export async function submitIntakeAction(
   formData: FormData,
 ): Promise<{ error?: string; success?: boolean }> {
-  const name     = (formData.get("name")      as string ?? "").trim();
-  const email    = (formData.get("email")     as string ?? "").toLowerCase().trim();
-  const phone    = (formData.get("phone")     as string ?? "").trim() || null;
-  const notes    = (formData.get("notes")     as string ?? "").trim() || null;
-  const clinicId =  formData.get("clinic_id") as string;
+  const name         = (formData.get("name")       as string ?? "").trim();
+  const email        = (formData.get("email")      as string ?? "").toLowerCase().trim();
+  const phone        = (formData.get("phone")      as string ?? "").trim() || null;
+  const notes        = (formData.get("notes")      as string ?? "").trim() || null;
+  const clinicId     =  formData.get("clinic_id")  as string;
+  const prePatientId = (formData.get("patient_id") as string ?? "").trim() || null;
 
-  if (!name || !email || !clinicId) return { error: "Nome e e-mail são obrigatórios." };
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) return { error: "E-mail inválido." };
+  if (!clinicId) return { error: "Clínica inválida." };
 
   const supabase = createSupabaseAdminClient();
-
-  // Find or create patient
-  const { data: existing } = await supabase
-    .from("patients")
-    .select("id")
-    .eq("clinic_id", clinicId)
-    .eq("email", email)
-    .maybeSingle();
-
   let patientId: string;
 
-  if (existing) {
-    patientId = existing.id;
-    // Update phone if provided and not already set
-    if (phone) {
-      await supabase
-        .from("patients")
-        .update({ phone, full_name: name })
-        .eq("id", patientId);
-    }
+  if (prePatientId) {
+    // Patient was already identified in the lookup step — skip find-or-create
+    patientId = prePatientId;
   } else {
-    const { data: created, error } = await supabase
+    // New patient flow: name + email required
+    if (!name || !email) return { error: "Nome e e-mail são obrigatórios." };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) return { error: "E-mail inválido." };
+
+    // Find or create patient
+    const { data: existing } = await supabase
       .from("patients")
-      .insert({ clinic_id: clinicId, full_name: name, email, phone })
       .select("id")
-      .single();
-    if (error || !created) return { error: "Erro ao identificar paciente. Tente novamente." };
-    patientId = created.id;
+      .eq("clinic_id", clinicId)
+      .eq("email", email)
+      .maybeSingle();
+
+    if (existing) {
+      patientId = existing.id;
+      if (phone) {
+        await supabase
+          .from("patients")
+          .update({ phone, full_name: name })
+          .eq("id", patientId);
+      }
+    } else {
+      const { data: created, error } = await supabase
+        .from("patients")
+        .insert({ clinic_id: clinicId, full_name: name, email, phone })
+        .select("id")
+        .single();
+      if (error || !created) return { error: "Erro ao identificar paciente. Tente novamente." };
+      patientId = created.id;
+    }
   }
 
   // Upload files
