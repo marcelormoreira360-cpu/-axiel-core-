@@ -111,7 +111,13 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   async function startRecording() {
     setRecordingError(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       // L-04: Safari does not support audio/webm — detect and fall back to audio/mp4
       const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus"
