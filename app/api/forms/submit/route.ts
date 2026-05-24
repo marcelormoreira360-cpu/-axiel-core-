@@ -75,9 +75,8 @@ export async function POST(req: NextRequest) {
         answers.map((a) => ({
           response_id: response.id,
           question_id: a.question_id,
-          section_id: a.section_id,
-          value_number: a.value_number,
-          value_text: a.value_text,
+          score:        a.value_number ?? null,
+          text_answer:  a.value_text   ?? null,
         }))
       );
       if (aErr) throw aErr;
