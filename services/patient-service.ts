@@ -5,6 +5,7 @@ export async function getPatients(
   practitionerId?: string,
   limit = 500,
   offset = 0,
+  search?: string,
 ): Promise<Patient[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -18,6 +19,12 @@ export async function getPatients(
   if (clinicId) query = query.eq("clinic_id", clinicId);
   if (practitionerId) query = query.eq("created_by", practitionerId);
 
+  // Server-side search across name, email, and phone (case-insensitive prefix/infix match)
+  if (search && search.trim()) {
+    const term = `%${search.trim()}%`;
+    query = query.or(`full_name.ilike.${term},email.ilike.${term},phone.ilike.${term}`);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
   return data ?? [];
@@ -26,6 +33,7 @@ export async function getPatients(
 export async function getPatientCount(
   clinicId?: string,
   practitionerId?: string,
+  search?: string,
 ): Promise<number> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -36,6 +44,11 @@ export async function getPatientCount(
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
   if (practitionerId) query = query.eq("created_by", practitionerId);
+
+  if (search && search.trim()) {
+    const term = `%${search.trim()}%`;
+    query = query.or(`full_name.ilike.${term},email.ilike.${term},phone.ilike.${term}`);
+  }
 
   const { count, error } = await query;
   if (error) throw error;

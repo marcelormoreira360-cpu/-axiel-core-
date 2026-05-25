@@ -1,5 +1,6 @@
 import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2, Palette, Phone, Mail, Globe, MapPin, FileText } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
@@ -321,8 +322,7 @@ export default async function ClinicsPage() {
               <Card className="p-[16px] flex items-center justify-between hover:border-black/[.15] transition group">
                 <div className="flex items-center gap-3">
                   {myClinic.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={myClinic.logo_url} alt="Logo" className="h-9 w-9 rounded-[8px] object-contain border border-black/[.07]" />
+                    <Image src={myClinic.logo_url} alt="Logo" width={36} height={36} className="h-9 w-9 rounded-[8px] object-contain border border-black/[.07]" />
                   ) : (
                     <div className="h-9 w-9 rounded-[8px] border border-black/[.07] bg-[#F4F3EF] flex items-center justify-center">
                       <Palette className="h-4 w-4 text-[#A09E98]" />

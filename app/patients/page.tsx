@@ -14,6 +14,7 @@ export default async function PatientsPage({
 }) {
   const sp = await searchParams;
   const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  const search = typeof sp.q === "string" && sp.q.trim() ? sp.q.trim() : undefined;
   const offset = (page - 1) * PAGE_SIZE;
 
   const profile = await getCurrentUserProfile();
@@ -22,9 +23,9 @@ export default async function PatientsPage({
   const practitionerId = practitionerMode ? profile!.id : undefined;
 
   const [patients, appointments, totalCount] = await Promise.all([
-    getPatients(clinicId, practitionerId, PAGE_SIZE, offset),
+    getPatients(clinicId, practitionerId, PAGE_SIZE, offset, search),
     getAppointments(clinicId, practitionerId),
-    getPatientCount(clinicId, practitionerId),
+    getPatientCount(clinicId, practitionerId, search),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
@@ -51,6 +52,7 @@ export default async function PatientsPage({
         page={page}
         totalPages={totalPages}
         totalCount={totalCount}
+        initialSearch={search}
       />
     </Shell>
   );

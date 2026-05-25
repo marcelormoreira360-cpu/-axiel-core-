@@ -1,6 +1,32 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
+const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
+  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).host
+  : "*.supabase.co";
+
+// Content-Security-Policy
+// - script-src: 'unsafe-inline' required by Next.js inline hydration scripts.
+//   'unsafe-eval' required by some bundled libraries (e.g. Sentry replay).
+//   A nonce-based strict CSP is the next step but requires middleware changes.
+// - connect-src: Supabase REST + Realtime (wss), Sentry tunnel, Resend webhooks.
+// - img-src: data: for Supabase TOTP QR codes; blob: for camera previews.
+// - media-src: blob: for MediaRecorder audio playback.
+const csp = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.sentry.io https://sentry.io`,
+  "font-src 'self'",
+  "media-src 'self' blob:",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "upgrade-insecure-requests",
+].join("; ");
+
 const securityHeaders = [
   // Prevent clickjacking — never render inside an iframe
   { key: "X-Frame-Options", value: "DENY" },
@@ -18,6 +44,8 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(self), geolocation=()",
   },
+  // Content Security Policy
+  { key: "Content-Security-Policy", value: csp },
 ];
 
 const nextConfig: NextConfig = {

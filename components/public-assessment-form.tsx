@@ -66,19 +66,24 @@ export function PublicAssessmentForm({
     setAnswers((prev) => ({ ...prev, [qid]: value }));
   }
 
-  const { sectionScores, totalScore, maxPossible, percentage } = useMemo(() => {
+  const { sectionScores, totalScore, maxPossible, percentage, answeredCount, totalQuestions } = useMemo(() => {
     let total = 0;
     let maxP = 0;
+    let answered = 0;
+    let totalQ = 0;
     const sScores: Record<string, { score: number; max: number }> = {};
     for (const section of template.assessment_sections) {
       let sScore = 0;
       let sMax = 0;
       for (const q of section.assessment_questions) {
+        totalQ++;
+        const v = answers[q.id];
         if (q.question_type !== "text") {
-          const v = answers[q.id];
-          if (typeof v === "number") { sScore += v; total += v; }
+          if (typeof v === "number") { sScore += v; total += v; answered++; }
           sMax += q.max_score;
           maxP += q.max_score;
+        } else {
+          if (typeof v === "string" && v.trim()) answered++;
         }
       }
       sScores[section.id] = { score: sScore, max: sMax };
@@ -88,6 +93,8 @@ export function PublicAssessmentForm({
       totalScore: total,
       maxPossible: maxP,
       percentage: maxP > 0 ? Math.round((total / maxP) * 100) : 0,
+      answeredCount: answered,
+      totalQuestions: totalQ,
     };
   }, [answers, template]);
 
@@ -174,8 +181,26 @@ export function PublicAssessmentForm({
 
   const scaleLabels = (template as any).scale_labels ?? DEFAULT_SCALE_LABELS;
 
+  const fillPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
+
   return (
     <form onSubmit={submit} className="space-y-[16px]">
+      {/* Progress indicator */}
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
+        <div className="flex items-center justify-between mb-[8px]">
+          <p className="text-[11px] font-medium text-[#6B6A66]">
+            {answeredCount} de {totalQuestions} pergunta{totalQuestions !== 1 ? "s" : ""} respondida{totalQuestions !== 1 ? "s" : ""}
+          </p>
+          <p className="text-[11px] font-semibold text-[#0F6E56]">{fillPercent}%</p>
+        </div>
+        <div className="h-[5px] rounded-full bg-[#F4F3EF] overflow-hidden">
+          <div
+            className="h-full rounded-full bg-[#0F6E56] transition-all duration-300"
+            style={{ width: `${fillPercent}%` }}
+          />
+        </div>
+      </div>
+
       {/* Instructions */}
       {template.instructions && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">

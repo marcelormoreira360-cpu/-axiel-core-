@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Patient } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export function PatientsClient({
   page = 1,
   totalPages = 1,
   totalCount,
+  initialSearch,
 }: {
   patients: Patient[];
   practitionerMode: boolean;
@@ -49,9 +51,28 @@ export function PatientsClient({
   page?: number;
   totalPages?: number;
   totalCount?: number;
+  initialSearch?: string;
 }) {
-  const [query, setQuery] = useState("");
+  const router = useRouter();
+  // When initialSearch is set, we're showing server-filtered results.
+  // Local query state is used for client-side filtering within the loaded page.
+  const [query, setQuery] = useState(initialSearch ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce URL navigation so server search fires after typing stops (~400ms)
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setQuery(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams();
+        if (value.trim()) params.set("q", value.trim());
+        router.push(`/patients${params.toString() ? `?${params.toString()}` : ""}`);
+      }, 400);
+    },
+    [router],
+  );
 
   // When no search/filter active: recently-scheduled patients float to top
   const sortedPatients = useMemo(() => {
@@ -112,12 +133,12 @@ export function PatientsClient({
               type="text"
               placeholder="Buscar por nome, e-mail ou telefone…"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-[32px] pr-[10px] py-[8px] text-[13px] bg-white border border-black/[.09] rounded-lg outline-none focus:ring-2 focus:ring-[#0F6E56]/20 focus:border-[#0F6E56] placeholder:text-[#C4C2BA] text-[#0F1A2E] transition"
             />
             {query && (
               <button
-                onClick={() => setQuery("")}
+                onClick={() => handleSearchChange("")}
                 className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#A09E98] hover:text-[#0F1A2E] transition text-[13px] leading-none"
                 aria-label="Limpar busca"
               >
@@ -180,7 +201,7 @@ export function PatientsClient({
               : "Nenhum paciente com esse filtro."}
           </p>
           <button
-            onClick={() => { setQuery(""); setStatusFilter("all"); }}
+            onClick={() => { handleSearchChange(""); setStatusFilter("all"); }}
             className="mt-2 text-[12px] text-[#0F6E56] hover:underline"
           >
             Limpar filtros
@@ -260,8 +281,8 @@ export function PatientsClient({
         </p>
       )}
 
-      {/* Pagination — only shown when no active search/filter and there are multiple pages */}
-      {!query && statusFilter === "all" && totalPages > 1 && (
+      {/* Pagination — only shown when no local-only filter and there are multiple pages */}
+      {statusFilter === "all" && totalPages > 1 && (
         <div className="flex items-center justify-between mt-[14px] pt-[12px] border-t border-black/[.06]">
           <p className="text-[11px] text-[#A09E98]">
             Página {page} de {totalPages}
@@ -270,7 +291,7 @@ export function PatientsClient({
           <div className="flex items-center gap-[6px]">
             {page > 1 ? (
               <Link
-                href={`?page=${page - 1}`}
+                href={`?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page - 1) }).toString()}`}
                 className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
               >
                 <ChevronLeft className="w-[12px] h-[12px]" />
@@ -284,7 +305,7 @@ export function PatientsClient({
             )}
             {page < totalPages ? (
               <Link
-                href={`?page=${page + 1}`}
+                href={`?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page + 1) }).toString()}`}
                 className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
               >
                 Próxima
