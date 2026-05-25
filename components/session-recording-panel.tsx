@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useActionState } from "react";
 import { Check, Mic, MicOff, Plus, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord } from "@/lib/types";
-import { saveSessionRecord } from "@/app/schedule/[id]/session/actions";
+import { saveSessionRecord, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
@@ -55,6 +55,7 @@ const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan
 export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
 
+  const [saveState, saveAction] = useActionState<SaveSessionState, FormData>(saveSessionRecord, null);
   const [mode, setMode] = useState<NoteMode>(initialMode);
   const [notes, setNotes] = useState(record?.notes ?? "");
   const [soap, setSoap] = useState({
@@ -199,7 +200,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   }
 
   return (
-    <form action={saveSessionRecord} className="space-y-[18px]">
+    <form action={saveAction} className="space-y-[18px]">
       <input type="hidden" name="appointment_id" value={appointment.id} />
       <input type="hidden" name="patient_id" value={appointment.patient_id} />
       <input type="hidden" name="clinic_id" value={appointment.clinic_id} />
@@ -248,6 +249,12 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       {saved && (
         <div className="bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[10px] px-[14px] py-[10px]">
           <p className="text-[12px] text-[#085041] font-medium">Sessão salva com sucesso.</p>
+        </div>
+      )}
+
+      {saveState?.error && (
+        <div className="bg-[#FEE2E2] border border-red-200 rounded-[10px] px-[14px] py-[10px]">
+          <p className="text-[12px] text-red-700 font-medium">⚠️ {saveState.error}</p>
         </div>
       )}
 

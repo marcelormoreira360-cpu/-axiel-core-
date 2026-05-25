@@ -7,7 +7,12 @@ import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
 import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
 import type { AiInsight } from "@/lib/types";
 
-export async function saveSessionRecord(formData: FormData) {
+export type SaveSessionState = { error?: string } | null;
+
+export async function saveSessionRecord(
+  _prev: SaveSessionState,
+  formData: FormData,
+): Promise<SaveSessionState> {
   const appointmentId = String(formData.get("appointment_id") ?? "");
   const patientId     = String(formData.get("patient_id") ?? "");
   const clinicId      = String(formData.get("clinic_id") ?? "");
@@ -45,22 +50,27 @@ export async function saveSessionRecord(formData: FormData) {
   }
 
   if (!appointmentId || !patientId || !clinicId) {
-    throw new Error("Missing session information.");
+    return { error: "Informações da sessão estão incompletas. Recarregue a página." };
   }
 
-  await upsertSessionRecord({
-    appointment_id:  appointmentId,
-    patient_id:      patientId,
-    clinic_id:       clinicId,
-    notes,
-    key_observations: keyObservations,
-    soap_mode:       soapMode,
-    subjective,
-    objective,
-    assessment_note: assessmentNote,
-    plan,
-    vitals:          hasVitals ? vitals : null,
-  });
+  try {
+    await upsertSessionRecord({
+      appointment_id:  appointmentId,
+      patient_id:      patientId,
+      clinic_id:       clinicId,
+      notes,
+      key_observations: keyObservations,
+      soap_mode:       soapMode,
+      subjective,
+      objective,
+      assessment_note: assessmentNote,
+      plan,
+      vitals:          hasVitals ? vitals : null,
+    });
+  } catch (err: unknown) {
+    console.error("[saveSessionRecord] upsert failed:", err);
+    return { error: "Erro ao salvar a sessão. Tente novamente." };
+  }
 
   revalidatePath(`/schedule/${appointmentId}/session`);
   revalidatePath(`/patients/${patientId}`);
