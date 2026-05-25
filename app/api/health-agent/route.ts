@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 // ─── Supabase result types ────────────────────────────────────────────────────
 
@@ -266,6 +267,14 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.clinic_id) {
     return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
+  }
+
+  // ── Rate limiting: 10 GPT-4 calls per clinic per hour ──────────────────────
+  if (!(await checkRateLimitDb(`health-agent:${profile.clinic_id}`, 10, 60 * 60_000))) {
+    return NextResponse.json(
+      { error: "Limite de análises atingido. Tente novamente em alguns minutos." },
+      { status: 429 }
+    );
   }
 
   // ── Feature gate: ai_insights ───────────────────────────────────────────────

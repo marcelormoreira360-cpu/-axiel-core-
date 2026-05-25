@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 import type { HealthAgentReport } from "../route";
 
 function buildEmailHtml(patientName: string, report: HealthAgentReport): string {
@@ -102,6 +103,14 @@ export async function POST(req: NextRequest) {
 
   if (!profile?.clinic_id) {
     return NextResponse.json({ error: "Usuário sem clínica associada." }, { status: 403 });
+  }
+
+  // ── Rate limiting: 20 sends per clinic per hour ─────────────────────────────
+  if (!(await checkRateLimitDb(`health-agent-send:${profile.clinic_id}`, 20, 60 * 60_000))) {
+    return NextResponse.json(
+      { error: "Limite de envios atingido. Tente novamente em alguns minutos." },
+      { status: 429 }
+    );
   }
 
   // ── Feature gate: ai_insights ───────────────────────────────────────────────
