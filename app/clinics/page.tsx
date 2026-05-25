@@ -9,6 +9,8 @@ import { ClinicEditForm } from "@/components/clinic-edit-form";
 import { getClinicsForUser, updateClinic, getCurrentClinic } from "@/services/clinic-service";
 import { getUsersForCurrentScope } from "@/services/user-service";
 import { roleLabels } from "@/modules/auth/roles";
+import { getBillingContext } from "@/services/billing-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 import type { ClinicProfile } from "@/lib/types";
 
 const PROFILES: {
@@ -55,6 +57,9 @@ export default async function ClinicsPage() {
     getUsersForCurrentScope(),
     getCurrentClinic(),
   ]);
+
+  const billingCtx = myClinic ? await getBillingContext(myClinic.id) : null;
+  const canMultiClinic = billingCtx ? canUseFeature(billingCtx, "multi_clinic") : false;
 
   async function updateClinicAction(formData: FormData) {
     "use server";
@@ -348,8 +353,8 @@ export default async function ClinicsPage() {
         </div>
       )}
 
-      {/* ── Outras clínicas (admins) ── */}
-      {clinics.filter((c) => c.id !== myClinic?.id).length > 0 && (
+      {/* ── Outras clínicas (admins, plan: multi_clinic) ── */}
+      {canMultiClinic && clinics.filter((c) => c.id !== myClinic?.id).length > 0 && (
         <div className="mt-8">
           <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
             Outras clínicas

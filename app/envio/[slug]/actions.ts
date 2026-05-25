@@ -97,6 +97,11 @@ export async function submitIntakeAction(
     return { error: "Envie ao menos um arquivo ou escreva uma observação." };
   }
 
+  // Server-side file count limit (prevents zip-bomb style abuse)
+  if (validFiles.length > 20) {
+    return { error: "Máximo de 20 arquivos por envio." };
+  }
+
   for (const file of validFiles) {
     if (file.size > 15 * 1024 * 1024) {
       return { error: `O arquivo "${file.name}" excede o limite de 15 MB.` };
