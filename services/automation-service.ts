@@ -4,6 +4,22 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 import { sendNpsRequest } from "@/services/email-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
+
+// Resolves plan slug for a clinic using the admin client (no session required).
+// Falls back to "starter" when the clinic has no subscription row.
+async function getClinicPlanSlug(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  clinicId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("subscriptions")
+    .select("plans(code, slug)")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const plans = (data?.plans as { code?: string | null; slug?: string | null } | null);
+  return plans?.code ?? plans?.slug ?? "starter";
+}
 
 // A-05: sentinel email used for the demo patient created during onboarding.
 // No real messages should ever be sent to this address or its associated phone.
@@ -19,6 +35,10 @@ type AppointmentRef = {
 // Called right after appointment creation — schedules D-1, D+3 and D+30 follow-ups.
 export async function scheduleAutomations(appointment: AppointmentRef): Promise<void> {
   const supabase = createSupabaseAdminClient();
+
+  // Feature gate: only schedule automations for clinics on Professional or above
+  const planSlug = await getClinicPlanSlug(supabase, appointment.clinic_id);
+  if (!canUseFeature({ planSlug }, "follow_up_automation")) return;
 
   // Read clinic reminder settings (default all to enabled)
   const { data: cs } = await supabase
@@ -98,8 +118,33 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
   type FollowUpRow = (typeof followUps extends (infer T)[] | null | undefined ? T : never);
 
-  // Batch-load custom templates for all unique clinic_ids in this batch
+  // Feature gate safety net: batch-load plan slugs and cancel any follow_ups
+  // belonging to clinics that no longer have follow_up_automation (e.g. downgraded).
   const clinicIds = [...new Set((followUps ?? []).map((fu) => fu.clinic_id as string))];
+  const clinicPlanMap = new Map<string, string>(); // clinicId → planSlug
+  if (clinicIds.length > 0) {
+    const { data: subs } = await supabase
+      .from("subscriptions")
+      .select("clinic_id, plans(code, slug)")
+      .in("clinic_id", clinicIds);
+    (subs ?? []).forEach((s) => {
+      const plans = s.plans as { code?: string | null; slug?: string | null } | null;
+      clinicPlanMap.set(s.clinic_id as string, plans?.code ?? plans?.slug ?? "starter");
+    });
+  }
+
+  // Cancel and skip follow_ups for clinics without the feature
+  const allowedFollowUps = [];
+  for (const fu of followUps ?? []) {
+    const planSlug = clinicPlanMap.get(fu.clinic_id as string) ?? "starter";
+    if (!canUseFeature({ planSlug }, "follow_up_automation")) {
+      await supabase.from("follow_ups").update({ status: "canceled" }).eq("id", fu.id);
+      continue;
+    }
+    allowedFollowUps.push(fu);
+  }
+
+  // Batch-load custom templates for all unique clinic_ids in this batch
   const customTemplates = new Map<string, string>(); // key: "clinicId:rule_key"
   if (clinicIds.length > 0) {
     const { data: tpls } = await supabase
@@ -186,8 +231,8 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     }
   }
 
-  // Process all follow-ups in parallel — one failure won't block others
-  const results = await Promise.allSettled((followUps ?? []).map(processFollowUp));
+  // Process all allowed follow-ups in parallel — one failure won't block others
+  const results = await Promise.allSettled(allowedFollowUps.map(processFollowUp));
 
   let sent = 0, failed = 0, skipped = 0;
   for (const r of results) {
