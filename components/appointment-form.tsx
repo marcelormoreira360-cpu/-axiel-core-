@@ -16,12 +16,14 @@ type Props = {
   sessionTypes: SessionType[];
   action: (formData: FormData) => Promise<void>;
   clinicUsers?: ClinicUserOption[];
+  defaultPatientId?: string;
 };
 
-export function AppointmentForm({ patients, sessionTypes, action, clinicUsers }: Props) {
+export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, defaultPatientId }: Props) {
   const [isPending, startTransition] = useTransition();
-  const [query, setQuery] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const defaultPatient = defaultPatientId ? (patients.find((p) => p.id === defaultPatientId) ?? null) : null;
+  const [query, setQuery] = useState(defaultPatient?.full_name ?? "");
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(defaultPatient);
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? null);
   const [source, setSource] = useState<AppointmentSource>("direct");
   const [selectedPractitionerId, setSelectedPractitionerId] = useState<string>("");

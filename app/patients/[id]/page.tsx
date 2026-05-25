@@ -78,6 +78,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
 
   const lastSession = appointments[0] ?? null;
+  // Fix #7: next upcoming session (soonest future) for teleconsulta link
+  const nowIso = new Date().toISOString();
+  const futureAppts = appointments.filter(
+    (a) => a.starts_at >= nowIso && a.status !== "cancelled" && a.status !== "no_show",
+  );
+  // appointments is sorted DESC, so last element is the soonest upcoming
+  const nextSession = futureAppts[futureAppts.length - 1] ?? null;
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
@@ -150,15 +157,15 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           </Link>
           <Link
-            href="/schedule/new"
+            href={`/schedule/new?patient_id=${patient.id}`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
             title="Agendar sessão"
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
           </Link>
-          {lastSession && (
+          {nextSession && (
             <Link
-              href={`/teleconsulta/${lastSession.id}`}
+              href={`/teleconsulta/${nextSession.id}`}
               className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-[#0F6E56] text-white text-[11px] font-medium hover:bg-[#085041] transition"
               title="Iniciar teleconsulta"
             >
@@ -310,7 +317,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <p className="text-[12px] text-[#6B6A66]">Nenhuma sessão ainda.</p>
               <Link
-                href="/schedule/new"
+                href={`/schedule/new?patient_id=${patient.id}`}
                 className="mt-3 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-3 py-1.5 rounded-lg transition"
               >
                 Agendar primeira sessão

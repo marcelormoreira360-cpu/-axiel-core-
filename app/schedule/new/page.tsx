@@ -9,7 +9,14 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { createAppointment, getSessionTypes } from "@/services/appointment-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-export default async function NewAppointmentPage() {
+export default async function NewAppointmentPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const defaultPatientId = typeof sp.patient_id === "string" ? sp.patient_id : undefined;
+
   const [profile, patients, sessionTypes, clinic] = await Promise.all([
     getCurrentUserProfile(),
     getPatients(),
@@ -107,7 +114,7 @@ export default async function NewAppointmentPage() {
           <p className="text-[13px] text-[#A09E98]">Usuário precisa estar vinculado a uma clínica.</p>
         </div>
       ) : (
-        <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} clinicUsers={clinicUsers} />
+        <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} clinicUsers={clinicUsers} defaultPatientId={defaultPatientId} />
       )}
     </Shell>
   );
