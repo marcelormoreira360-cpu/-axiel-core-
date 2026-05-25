@@ -23,6 +23,25 @@ export async function getPatients(
   return data ?? [];
 }
 
+export async function getPatientCount(
+  clinicId?: string,
+  practitionerId?: string,
+): Promise<number> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("patients")
+    .select("id", { count: "exact", head: true });
+
+  if (clinicId) query = query.eq("clinic_id", clinicId);
+  if (practitionerId) query = query.eq("created_by", practitionerId);
+
+  const { count, error } = await query;
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function createPatient(input: Pick<Patient, "clinic_id" | "full_name" | "email" | "phone" | "notes"> & {
   first_name?: string | null;
   last_name?: string | null;

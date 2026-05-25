@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import type { Patient } from "@/lib/types";
 
 function initials(name: string) {
@@ -39,10 +39,16 @@ export function PatientsClient({
   patients,
   practitionerMode,
   recentPatientIds = [],
+  page = 1,
+  totalPages = 1,
+  totalCount,
 }: {
   patients: Patient[];
   practitionerMode: boolean;
   recentPatientIds?: string[];
+  page?: number;
+  totalPages?: number;
+  totalCount?: number;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -252,6 +258,46 @@ export function PatientsClient({
         <p className="mt-[10px] text-[11px] text-[#A09E98] text-center">
           {filtered.length} de {patients.length} paciente{patients.length !== 1 ? "s" : ""}
         </p>
+      )}
+
+      {/* Pagination — only shown when no active search/filter and there are multiple pages */}
+      {!query && statusFilter === "all" && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-[14px] pt-[12px] border-t border-black/[.06]">
+          <p className="text-[11px] text-[#A09E98]">
+            Página {page} de {totalPages}
+            {totalCount !== undefined && ` · ${totalCount} pacientes`}
+          </p>
+          <div className="flex items-center gap-[6px]">
+            {page > 1 ? (
+              <Link
+                href={`?page=${page - 1}`}
+                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+              >
+                <ChevronLeft className="w-[12px] h-[12px]" />
+                Anterior
+              </Link>
+            ) : (
+              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
+                <ChevronLeft className="w-[12px] h-[12px]" />
+                Anterior
+              </span>
+            )}
+            {page < totalPages ? (
+              <Link
+                href={`?page=${page + 1}`}
+                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+              >
+                Próxima
+                <ChevronRight className="w-[12px] h-[12px]" />
+              </Link>
+            ) : (
+              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
+                Próxima
+                <ChevronRight className="w-[12px] h-[12px]" />
+              </span>
+            )}
+          </div>
+        </div>
       )}
     </>
   );
