@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -34,6 +35,14 @@ export async function POST(req: NextRequest) {
 
     const supabase = createSupabaseAdminClient();
     const token_hash = hashToken(token);
+
+    // Rate limit: 5 attempts per token per 15 minutes (brute-force protection)
+    if (!(await checkRateLimitDb(`form-submit:${token_hash}`, 5, 15 * 60_000))) {
+      return NextResponse.json(
+        { error: "Muitas tentativas. Tente novamente em alguns minutos." },
+        { status: 429 },
+      );
+    }
 
     // Validate invitation
     const { data: inv } = await supabase

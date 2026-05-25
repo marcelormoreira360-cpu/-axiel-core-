@@ -2,6 +2,7 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { uploadPatientDocument } from "@/services/patient-document-service";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 export async function lookupPatientAction(
   email: string,
@@ -37,6 +38,11 @@ export async function submitIntakeAction(
   const prePatientId = (formData.get("patient_id") as string ?? "").trim() || null;
 
   if (!clinicId) return { error: "Clínica inválida." };
+
+  // Rate limit: 50 intake submissions per clinic per hour
+  if (!(await checkRateLimitDb(`intake-submit:${clinicId}`, 50, 60 * 60_000))) {
+    return { error: "Muitas solicitações. Tente novamente em alguns minutos." };
+  }
 
   const supabase = createSupabaseAdminClient();
   let patientId: string;
