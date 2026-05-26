@@ -105,13 +105,32 @@ export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileError || !profile?.clinic_id) return null;
+  if (!profileError && profile?.clinic_id) {
+    const clinic = Array.isArray(profile.clinics)
+      ? profile.clinics[0]
+      : profile.clinics;
+    if (clinic) return clinic as Clinic;
+  }
 
-  const clinic = Array.isArray(profile.clinics)
-    ? profile.clinics[0]
-    : profile.clinics;
+  // Fallback: users.clinic_id may be null while clinic_users still has the
+  // correct association (e.g. after a migration or onboarding edge case).
+  const { data: cu } = await supabase
+    .from("clinic_users")
+    .select("clinic_id")
+    .eq("user_id", user.id)
+    .eq("status", "active")
+    .limit(1)
+    .maybeSingle();
 
-  return (clinic as Clinic) ?? null;
+  if (!cu?.clinic_id) return null;
+
+  const { data: fallbackClinic } = await supabase
+    .from("clinics")
+    .select(CLINIC_SELECT)
+    .eq("id", cu.clinic_id as string)
+    .maybeSingle();
+
+  return (fallbackClinic as Clinic) ?? null;
 });
 
 export async function createClinic(name: string): Promise<Clinic> {
