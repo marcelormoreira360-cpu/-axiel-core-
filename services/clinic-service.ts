@@ -14,15 +14,12 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
   // The clinics table RLS (can_access_clinic) does not resolve correctly in
   // some SSR token contexts, so we bypass it by resolving the clinic_id here
   // and fetching the clinic directly with the admin client.
-  const { data: userRows, error: userRowsError } = await supabase
+  const { data: userRows } = await supabase
     .from("users")
     .select("clinic_id")
     .order("created_at", { ascending: false });
 
-  console.log("[getClinicsForUser] userRows:", JSON.stringify(userRows), "error:", userRowsError?.message);
-
   const clinicId = userRows?.find((u: { clinic_id: string | null }) => u.clinic_id != null)?.clinic_id as string | undefined;
-  console.log("[getClinicsForUser] clinicId resolved:", clinicId);
   if (!clinicId) return [];
 
   // Step 2: fetch clinic via admin client scoped to the verified clinic_id.
@@ -95,15 +92,12 @@ export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
   }
 
   // Step 1: resolve clinic_id via users table (RLS on users works reliably).
-  const { data: userRows, error: userRowsError } = await supabase
+  const { data: userRows } = await supabase
     .from("users")
     .select("clinic_id")
     .order("created_at", { ascending: false });
 
-  console.log("[getCurrentClinic] userRows:", JSON.stringify(userRows), "error:", userRowsError?.message);
-
   const clinicId = userRows?.find((u: { clinic_id: string | null }) => u.clinic_id != null)?.clinic_id as string | undefined;
-  console.log("[getCurrentClinic] clinicId resolved:", clinicId);
   if (!clinicId) return null;
 
   // Step 2: fetch clinic via admin client using the verified clinic_id.
