@@ -16,7 +16,7 @@ import { SetupProgressBanner } from "@/components/setup-progress-banner";
 import dynamic from "next/dynamic";
 const RevenueChart = dynamic(
   () => import("@/components/dashboard/revenue-chart").then((m) => m.RevenueChart),
-  { ssr: false, loading: () => <div className="h-40 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-40 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 import { TodayAgenda } from "@/components/dashboard/today-agenda";
 import type { SetupTask } from "@/components/setup-progress-banner";

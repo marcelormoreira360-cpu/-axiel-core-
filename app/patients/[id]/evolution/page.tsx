@@ -7,7 +7,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import dynamic from "next/dynamic";
 const EvolutionCharts = dynamic(
   () => import("@/components/evolution-charts").then((m) => m.EvolutionCharts),
-  { ssr: false, loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 
 function initials(name: string) {

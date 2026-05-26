@@ -7,7 +7,7 @@ import { getNpsKPIs, getOccupancyKPIs, getAlertsKPIs } from "@/modules/analytics
 import dynamicImport from "next/dynamic";
 const NpsTrendChart = dynamicImport(
   () => import("@/components/analytics/nps-trend-chart").then((m) => m.NpsTrendChart),
-  { ssr: false, loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 
 export const metadata: Metadata = { title: "Analytics | AXIEL Core" };

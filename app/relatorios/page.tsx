@@ -8,7 +8,7 @@ import { RelatoriosClient } from "./relatorios-client";
 import dynamic from "next/dynamic";
 const RelatoriosCharts = dynamic(
   () => import("@/components/relatorios-charts").then((m) => m.RelatoriosCharts),
-  { ssr: false, loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 
 function deltaLabel(current: number, prev: number): { text: string; up: boolean | null } {
