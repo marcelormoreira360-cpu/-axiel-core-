@@ -46,10 +46,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_session_records_clinic_created
   ON session_records (clinic_id, created_at DESC);
 
 -- ── assessment_responses ────────────────────────────────────
--- Used by getPatientAssessmentResponses(), health-agent
+-- patient_id and clinic_id indexes already exist from migration 002.
+-- Add composite (patient_id, created_at DESC) for ordered recent-first queries.
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_assessment_responses_patient_filled
-  ON assessment_responses (patient_id, filled_at DESC);
+CREATE INDEX IF NOT EXISTS idx_assessment_responses_patient_created
+  ON assessment_responses (patient_id, created_at DESC);
 
 -- ── assessment_invitations ──────────────────────────────────
 -- Used by /api/forms/submit token lookup (hot path for every form submission)
