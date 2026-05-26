@@ -32,6 +32,32 @@ export const getCurrentUserProfile = cache(async (): Promise<AppUser | null> => 
     .maybeSingle();
 
   if (error) throw error;
+  if (!data) return null;
+
+  // Self-heal: if users.clinic_id is null, resolve from clinic_users and
+  // patch the row so all subsequent API calls (which read users.clinic_id
+  // directly) also work without needing per-route fallbacks.
+  if (!data.clinic_id) {
+    const { data: cu } = await supabase
+      .from("clinic_users")
+      .select("clinic_id")
+      .eq("user_id", authUser.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle();
+
+    if (cu?.clinic_id) {
+      // Best-effort write — if RLS blocks it the user still gets the
+      // correct clinic_id for this request via the patched object.
+      await supabase
+        .from("users")
+        .update({ clinic_id: cu.clinic_id })
+        .eq("id", authUser.id);
+
+      return { ...data, clinic_id: cu.clinic_id } as AppUser;
+    }
+  }
+
   return data;
 });
 
