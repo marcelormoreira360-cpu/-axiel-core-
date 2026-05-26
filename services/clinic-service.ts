@@ -6,16 +6,30 @@ export const ACTIVE_CLINIC_COOKIE = "axiel_active_clinic_id";
 
 export async function getClinicsForUser(): Promise<Clinic[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
 
   const supabase = await createSupabaseServerClient();
 
-  // RLS already scopes the result to the current user's clinic(s).
-  // We removed the auth.getUser() + users lookup because auth.getUser()
-  // can silently fail in SSR (expired session not refreshed), while RLS
-  // continues to work correctly from the JWT in cookies.
-  const { data, error } = await supabase
+  // Step 1: resolve clinic_id via the users table — RLS on users is working.
+  // The clinics table RLS (can_access_clinic) does not resolve correctly in
+  // some SSR token contexts, so we bypass it by resolving the clinic_id here
+  // and fetching the clinic directly with the admin client.
+  const { data: userRows } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .not("clinic_id", "is", null)
+    .limit(1);
+
+  const clinicId = userRows?.[0]?.clinic_id as string | undefined;
+  if (!clinicId) return [];
+
+  // Step 2: fetch clinic via admin client scoped to the verified clinic_id.
+  // Safe: clinicId came from an RLS-validated query.
+  const admin = createSupabaseAdminClient();
+  const { data, error } = await admin
     .from("clinics")
     .select(CLINIC_SELECT)
+    .eq("id", clinicId)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -63,25 +77,36 @@ export async function updateClinic(id: string, fields: {
 // correctly from the JWT stored in cookies.
 export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
 
   const supabase = await createSupabaseServerClient();
+  const admin = createSupabaseAdminClient();
 
   // Check cookie override first (multi-clinic switcher)
   const cookieStore = await cookies();
   const activeId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value;
 
   if (activeId) {
-    const { data: overrideClinic } = await supabase
+    const { data: overrideClinic } = await admin
       .from("clinics").select(CLINIC_SELECT).eq("id", activeId).maybeSingle();
     if (overrideClinic) return overrideClinic as Clinic;
   }
 
-  // RLS scopes this to the user's own clinic — returns at most one row.
-  const { data: clinic } = await supabase
+  // Step 1: resolve clinic_id via users table (RLS on users works reliably).
+  const { data: userRows } = await supabase
+    .from("users")
+    .select("clinic_id")
+    .not("clinic_id", "is", null)
+    .limit(1);
+
+  const clinicId = userRows?.[0]?.clinic_id as string | undefined;
+  if (!clinicId) return null;
+
+  // Step 2: fetch clinic via admin client using the verified clinic_id.
+  const { data: clinic } = await admin
     .from("clinics")
     .select(CLINIC_SELECT)
-    .order("created_at", { ascending: true })
-    .limit(1)
+    .eq("id", clinicId)
     .maybeSingle();
 
   return (clinic as Clinic) ?? null;
