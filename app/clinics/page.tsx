@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2, Palette, Phone, Mail, Globe, MapPin, FileText } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
