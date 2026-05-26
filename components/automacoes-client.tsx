@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Loader2, CheckCircle2, XCircle, AlertCircle, Clock,
   MessageSquare, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
-  Zap, BarChart2, History,
+  Zap, BarChart2, History, Plus, Trash2,
 } from "lucide-react";
 import type { AutomacaoRule } from "@/app/api/automacoes/route";
 import type { AutomacaoHistoryItem } from "@/app/api/automacoes/history/route";
@@ -47,9 +47,11 @@ const KEY_COLOR: Record<string, string> = {
   d_plus_30: "#F59E0B",
 };
 
+const CUSTOM_ACCENT = "#E85D3D";
+
 // ── Rule Card ─────────────────────────────────────────────────────────────────
 
-function RuleCard({ rule, onUpdated }: { rule: AutomacaoRule; onUpdated: () => void }) {
+function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdated: () => void; onDelete?: () => void }) {
   const [expanded, setExpanded] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(false);
   const [draft, setDraft] = useState(rule.template);
@@ -57,9 +59,11 @@ function RuleCard({ rule, onUpdated }: { rule: AutomacaoRule; onUpdated: () => v
   const [saveError, setSaveError] = useState("");
   const [toggling, setToggling] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const accentColor = KEY_COLOR[rule.key] ?? "#0F1A2E";
+  const accentColor = rule.isCustom ? CUSTOM_ACCENT : (KEY_COLOR[rule.key] ?? "#0F1A2E");
 
   async function toggle() {
     setToggling(true);
@@ -105,6 +109,32 @@ function RuleCard({ rule, onUpdated }: { rule: AutomacaoRule; onUpdated: () => v
     setEditingTemplate(false);
     setSaveError("");
     setDraft(rule.template);
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setDeleting(true);
+    try {
+      if (rule.isCustom) {
+        const ruleId = rule.key.replace("custom_", "");
+        await fetch("/api/automacoes", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: ruleId }),
+        });
+      } else {
+        await fetch("/api/automacoes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key: rule.key, action: "delete" }),
+        });
+      }
+      onDelete?.();
+      onUpdated();
+    } finally {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
   }
 
   function insertVariable(v: string) {
@@ -175,6 +205,26 @@ function RuleCard({ rule, onUpdated }: { rule: AutomacaoRule; onUpdated: () => v
             <ToggleRight className="h-6 w-6 text-[#0F6E56]" />
           ) : (
             <ToggleLeft className="h-6 w-6 text-black/25" />
+          )}
+        </button>
+
+        {/* Delete */}
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className={[
+            "shrink-0 transition-colors",
+            confirmDelete
+              ? "text-red-500 hover:text-red-600"
+              : "text-black/20 hover:text-red-400",
+          ].join(" ")}
+          aria-label={confirmDelete ? "Confirmar exclusão" : "Excluir regra"}
+          title={confirmDelete ? "Clique de novo para confirmar" : "Excluir regra"}
+        >
+          {deleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
           )}
         </button>
 
@@ -307,6 +357,165 @@ function RuleCard({ rule, onUpdated }: { rule: AutomacaoRule; onUpdated: () => v
   );
 }
 
+// ── Create Rule Form ──────────────────────────────────────────────────────────
+
+function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [offsetDays, setOffsetDays] = useState(1);
+  const [triggerType, setTriggerType] = useState<"before_session" | "after_session">("after_session");
+  const [template, setTemplate] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertVariable(v: string) {
+    const el = textareaRef.current;
+    if (!el) { setTemplate((d) => d + v); return; }
+    const start = el.selectionStart ?? template.length;
+    const end = el.selectionEnd ?? template.length;
+    const next = template.slice(0, start) + v + template.slice(end);
+    setTemplate(next);
+    setTimeout(() => {
+      el.setSelectionRange(start + v.length, start + v.length);
+      el.focus();
+    }, 0);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!title.trim()) { setError("Título obrigatório."); return; }
+    if (template.trim().length < 10) { setError("Mensagem muito curta (mín. 10 caracteres)."); return; }
+    setSaving(true);
+    try {
+      const res = await fetch("/api/automacoes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), description: description.trim(), offsetDays, triggerType, template: template.trim() }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError((j as { error?: string }).error ?? "Erro ao criar regra.");
+        return;
+      }
+      onCreated();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const VARIABLES = ["{{nome}}", "{{horario}}", "{{data}}"];
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#E85D3D]/30 shadow-sm p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] font-semibold text-[#0F1A2E]">Nova automação personalizada</p>
+        <button onClick={onCancel} className="text-[11px] text-black/40 hover:text-black/60 transition-colors">Cancelar</button>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {/* Title */}
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Título</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Ex: Boas-vindas D+7"
+            className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Descrição <span className="text-black/25 normal-case font-normal">(opcional)</span></label>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Breve descrição do objetivo"
+            className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
+          />
+        </div>
+
+        {/* Timing */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Dias</label>
+            <input
+              type="number"
+              min={0}
+              max={365}
+              value={offsetDays}
+              onChange={(e) => setOffsetDays(Math.max(0, parseInt(e.target.value, 10) || 0))}
+              className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
+            />
+          </div>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Quando</label>
+            <select
+              value={triggerType}
+              onChange={(e) => setTriggerType(e.target.value as "before_session" | "after_session")}
+              className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
+            >
+              <option value="before_session">antes da sessão</option>
+              <option value="after_session">após a sessão</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Template */}
+        <div>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Mensagem WhatsApp</label>
+          <div className="flex gap-1.5 flex-wrap mb-2">
+            {VARIABLES.map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => insertVariable(v)}
+                className="px-2 py-0.5 rounded-md bg-[#E85D3D]/8 text-[#E85D3D] text-[11px] font-mono font-medium hover:bg-[#E85D3D]/15 transition-colors border border-[#E85D3D]/20"
+              >
+                {v}
+              </button>
+            ))}
+            <span className="text-[11px] text-black/30 self-center">← clique para inserir</span>
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={template}
+            onChange={(e) => setTemplate(e.target.value)}
+            rows={5}
+            placeholder="Olá, {{nome}}! ..."
+            className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2.5 text-[13px] text-[#0F1A2E] font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
+          />
+          <p className="text-[11px] text-black/30 mt-1 text-right">{template.length} / 1500</p>
+        </div>
+
+        {error && <p className="text-[12px] text-red-500">{error}</p>}
+
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 rounded-xl text-[12px] text-black/50 hover:bg-black/[.04] transition"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-4 py-2 rounded-xl text-[12px] font-medium bg-[#E85D3D] text-white hover:bg-[#d04e30] transition disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            Criar automação
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ── Main client ───────────────────────────────────────────────────────────────
 
 export function AutomacoesClient() {
@@ -314,6 +523,7 @@ export function AutomacoesClient() {
   const [history, setHistory] = useState<AutomacaoHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"rules" | "history">("rules");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const fetchData = useCallback(async () => {
     const [rulesRes, histRes] = await Promise.all([
@@ -380,8 +590,30 @@ export function AutomacoesClient() {
       {tab === "rules" && (
         <div className="space-y-3">
           {rules.map((rule) => (
-            <RuleCard key={rule.key} rule={rule} onUpdated={fetchData} />
+            <RuleCard
+              key={rule.key}
+              rule={rule}
+              onUpdated={fetchData}
+              onDelete={fetchData}
+            />
           ))}
+
+          {/* Create form or button */}
+          {showCreateForm ? (
+            <CreateRuleForm
+              onCreated={() => { setShowCreateForm(false); fetchData(); }}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          ) : (
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-black/[.12] text-[12px] text-black/40 hover:text-[#E85D3D] hover:border-[#E85D3D]/40 hover:bg-[#E85D3D]/[.02] transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Nova automação personalizada
+            </button>
+          )}
+
           <p className="text-[11px] text-black/30 text-center pt-1">
             As automações são enviadas diariamente via cron às 08:00.
           </p>

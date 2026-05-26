@@ -40,27 +40,32 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
   const planSlug = await getClinicPlanSlug(supabase, appointment.clinic_id);
   if (!canUseFeature({ planSlug }, "follow_up_automation")) return;
 
-  // Read clinic reminder settings (default all to enabled)
+  // Read clinic settings (reminders + custom_rules)
   const { data: cs } = await supabase
     .from("clinic_settings")
     .select("settings")
     .eq("clinic_id", appointment.clinic_id)
     .maybeSingle();
 
-  const reminderSettings = (cs?.settings as Record<string, unknown> | null)?.reminders as Record<string, boolean> | undefined;
+  const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+  const reminderSettings = (settings.reminders as Record<string, boolean> | undefined);
   const isEnabled = (key: string) => reminderSettings ? (reminderSettings[key] !== false) : true;
+  const customRules = (settings.custom_rules as Array<{
+    id: string; title: string; offsetDays: number; isEnabled: boolean;
+  }> | undefined) ?? [];
 
   const t = new Date(appointment.starts_at).getTime();
   const day = 24 * 60 * 60 * 1000;
 
-  const allRows = [
+  // Default rules
+  const defaultRows = [
     { tag: "d-1",  due_at: new Date(t - day).toISOString(),      title: "Lembrete D-1",        settingKey: "d_minus_1" },
     { tag: "nps",  due_at: new Date(t + day).toISOString(),      title: "NPS pós-sessão",      settingKey: "nps" },
     { tag: "d+3",  due_at: new Date(t + 3 * day).toISOString(),  title: "Acompanhamento D+3",  settingKey: "d_plus_3" },
     { tag: "d+30", due_at: new Date(t + 30 * day).toISOString(), title: "Fidelização D+30",    settingKey: "d_plus_30" },
   ];
 
-  const rows = allRows
+  const rows = defaultRows
     .filter(({ settingKey }) => isEnabled(settingKey))
     .map(({ tag, due_at, title }) => ({
       clinic_id:      appointment.clinic_id,
@@ -72,6 +77,22 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
       notes:          tag,
       status:         "pending",
     }));
+
+  // Custom rules
+  for (const cr of customRules) {
+    if (!cr.isEnabled) continue;
+    const due_at = new Date(t + cr.offsetDays * day).toISOString();
+    rows.push({
+      clinic_id:      appointment.clinic_id,
+      patient_id:     appointment.patient_id,
+      appointment_id: appointment.id,
+      title:          cr.title,
+      due_at,
+      channel:        "whatsapp",
+      notes:          `custom:${cr.id}`,
+      status:         "pending",
+    });
+  }
 
   if (rows.length === 0) return;
 
@@ -111,7 +132,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     .select("*, patients(id, full_name, phone, email), appointments(id, starts_at)")
     .eq("status", "pending")
     .eq("channel", "whatsapp")
-    .in("notes", ["d-1", "nps", "d+3", "d+30"])
+    .or(`notes.in.(d-1,nps,d+3,d+30),notes.like.custom:%`)
     .lte("due_at", new Date().toISOString());
 
   if (error) throw error;
@@ -158,6 +179,30 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     });
   }
 
+  // Batch-load clinic_settings for clinics that have custom follow_ups
+  // to resolve custom:uuid → template
+  const clinicCustomRules = new Map<string, Map<string, string>>(); // clinicId → (ruleId → template)
+  const clinicsWithCustom = [
+    ...new Set(
+      (allowedFollowUps ?? [])
+        .filter((fu) => (fu.notes as string).startsWith("custom:"))
+        .map((fu) => fu.clinic_id as string)
+    ),
+  ];
+  if (clinicsWithCustom.length > 0) {
+    const { data: csRows } = await supabase
+      .from("clinic_settings")
+      .select("clinic_id, settings")
+      .in("clinic_id", clinicsWithCustom);
+    (csRows ?? []).forEach((row) => {
+      const crList = ((row.settings as Record<string, unknown> | null)?.custom_rules as Array<{
+        id: string; template: string;
+      }> | undefined) ?? [];
+      const ruleMap = new Map(crList.map((r) => [r.id, r.template]));
+      clinicCustomRules.set(row.clinic_id as string, ruleMap);
+    });
+  }
+
   async function processFollowUp(fu: FollowUpRow): Promise<"sent" | "failed" | "skipped"> {
     const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null } | null;
     const appt    = fu.appointments as { id: string; starts_at: string } | null;
@@ -174,12 +219,21 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     }
 
     const tag = fu.notes as string;
-    const ruleKey = TAG_TO_RULE_KEY[tag];
     const first = patient.full_name.split(" ")[0];
-    const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
-    const body = customTpl
-      ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null)
-      : buildMessage(tag, patient.full_name, appt?.starts_at ?? null);
+    let body: string;
+    if (tag.startsWith("custom:")) {
+      const ruleId = tag.replace("custom:", "");
+      const tpl = clinicCustomRules.get(fu.clinic_id as string)?.get(ruleId);
+      body = tpl
+        ? interpolateTemplate(tpl, first, appt?.starts_at ?? null)
+        : `Olá, ${first}! 🌿\n\nTemos uma mensagem para você. Entre em contato se precisar de algo.`;
+    } else {
+      const ruleKey = TAG_TO_RULE_KEY[tag];
+      const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
+      body = customTpl
+        ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null)
+        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null);
+    }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
     // L-08: mark as "processing" before attempting send to prevent double-delivery

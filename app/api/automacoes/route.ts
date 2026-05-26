@@ -1,27 +1,42 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import crypto from "node:crypto";
 
-// ── Rule definitions ──────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface RuleDef {
-  key: "d_minus_1" | "nps" | "d_plus_3" | "d_plus_30";
-  tag: string;            // internal tag used in follow_ups.notes
+  key: string;
+  tag: string;
   title: string;
   description: string;
-  timing: string;         // human-readable trigger description
+  timing: string;
   defaultTemplate: string;
-  variables: string[];    // available interpolation variables
+  variables: string[];
 }
 
 export interface AutomacaoRule extends RuleDef {
   isEnabled: boolean;
-  template: string;      // custom template or default
-  sentLast30d: number;   // stats from communication_logs
+  template: string;
+  sentLast30d: number;
   sentTotal: number;
+  isCustom: boolean;
 }
 
-const RULES: RuleDef[] = [
+export interface CustomRuleSettings {
+  id: string;
+  title: string;
+  description: string;
+  offsetDays: number;
+  triggerType: "before_session" | "after_session";
+  template: string;
+  isEnabled: boolean;
+  createdAt: string;
+}
+
+// ── Default rule definitions ──────────────────────────────────────────────────
+
+const DEFAULT_RULES: RuleDef[] = [
   {
     key: "d_minus_1",
     tag: "d-1",
@@ -64,13 +79,12 @@ const RULES: RuleDef[] = [
   },
 ];
 
-// ── GET /api/automacoes ───────────────────────────────────────────────────────
+// ── Auth helper ───────────────────────────────────────────────────────────────
 
-export async function GET() {
+async function getClinicId(): Promise<string | null> {
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
+  if (!user) return null;
   const { data: cu } = await supabase
     .from("clinic_users")
     .select("clinic_id")
@@ -78,21 +92,32 @@ export async function GET() {
     .eq("status", "active")
     .limit(1)
     .maybeSingle();
-  if (!cu) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  return (cu?.clinic_id as string | null) ?? null;
+}
 
-  const clinicId = cu.clinic_id as string;
+// ── GET /api/automacoes ───────────────────────────────────────────────────────
+
+export async function GET() {
+  const clinicId = await getClinicId();
+  if (!clinicId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const admin = createSupabaseAdminClient();
 
-  // Fetch clinic settings (enabled/disabled per rule)
+  // Load clinic settings
   const { data: cs } = await admin
     .from("clinic_settings")
     .select("settings")
     .eq("clinic_id", clinicId)
     .maybeSingle();
-  const reminders = (cs?.settings as Record<string, unknown> | null)?.reminders as Record<string, boolean> | undefined;
-  const isEnabled = (key: string) => (reminders ? reminders[key] !== false : true);
 
-  // Fetch custom templates
+  const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+  const reminders = (settings.reminders as Record<string, boolean> | undefined) ?? {};
+  const deletedRules = (settings.deleted_rules as string[] | undefined) ?? [];
+  const customRules = (settings.custom_rules as CustomRuleSettings[] | undefined) ?? [];
+
+  const isEnabled = (key: string) => reminders[key] !== false;
+
+  // Fetch custom templates for default rules
   const { data: templates } = await admin
     .from("automation_templates")
     .select("rule_key, template")
@@ -100,22 +125,13 @@ export async function GET() {
     .eq("channel", "whatsapp");
   const templateMap = new Map((templates ?? []).map((t) => [t.rule_key as string, t.template as string]));
 
-  // Stats: last 30 days + total per rule use_case
+  // Stats from follow_ups
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const useCaseByKey: Record<string, string> = {
-    d_minus_1: "appointment_reminder",
-    nps: "nps_feedback",
-    d_plus_3: "follow_up",
-    d_plus_30: "follow_up",
-  };
 
-  // Count follow_ups by notes tag (more accurate than communication_logs use_case collision for d+3/d+30)
-  const tagByKey: Record<string, string> = {
-    d_minus_1: "d-1",
-    nps: "nps",
-    d_plus_3: "d+3",
-    d_plus_30: "d+30",
-  };
+  // All tags we care about: default + custom
+  const defaultTags = DEFAULT_RULES.map((r) => r.tag);
+  const customTags = customRules.map((r) => `custom:${r.id}`);
+  const allTags = [...defaultTags, ...customTags];
 
   const [{ data: recent }, { data: total }] = await Promise.all([
     admin
@@ -123,85 +139,184 @@ export async function GET() {
       .select("notes")
       .eq("clinic_id", clinicId)
       .eq("status", "completed")
-      .in("notes", ["d-1", "nps", "d+3", "d+30"])
+      .in("notes", allTags)
       .gte("updated_at", since30d),
     admin
       .from("follow_ups")
       .select("notes")
       .eq("clinic_id", clinicId)
       .eq("status", "completed")
-      .in("notes", ["d-1", "nps", "d+3", "d+30"]),
+      .in("notes", allTags),
   ]);
 
   const countBy = (rows: { notes: string }[] | null, tag: string) =>
     (rows ?? []).filter((r) => r.notes === tag).length;
 
-  const result: AutomacaoRule[] = RULES.map((rule) => ({
-    ...rule,
-    isEnabled: isEnabled(rule.key),
-    template: templateMap.get(rule.key) ?? rule.defaultTemplate,
-    sentLast30d: countBy(recent, rule.tag),
-    sentTotal: countBy(total, rule.tag),
-  }));
+  // Build default rules (excluding deleted)
+  const defaultResult: AutomacaoRule[] = DEFAULT_RULES
+    .filter((rule) => !deletedRules.includes(rule.key))
+    .map((rule) => ({
+      ...rule,
+      isEnabled: isEnabled(rule.key),
+      template: templateMap.get(rule.key) ?? rule.defaultTemplate,
+      sentLast30d: countBy(recent, rule.tag),
+      sentTotal: countBy(total, rule.tag),
+      isCustom: false,
+    }));
 
-  return NextResponse.json(result);
+  // Build custom rules
+  const customResult: AutomacaoRule[] = customRules.map((cr) => {
+    const tag = `custom:${cr.id}`;
+    const timingLabel =
+      cr.offsetDays === 0
+        ? "No dia da sessão"
+        : cr.offsetDays < 0
+        ? `${Math.abs(cr.offsetDays)} dia${Math.abs(cr.offsetDays) > 1 ? "s" : ""} antes da sessão`
+        : `${cr.offsetDays} dia${cr.offsetDays > 1 ? "s" : ""} após a sessão`;
+    return {
+      key: `custom_${cr.id}`,
+      tag,
+      title: cr.title,
+      description: cr.description,
+      timing: timingLabel,
+      defaultTemplate: cr.template,
+      variables: ["{{nome}}", "{{horario}}", "{{data}}"],
+      isEnabled: cr.isEnabled,
+      template: cr.template,
+      sentLast30d: countBy(recent, tag),
+      sentTotal: countBy(total, tag),
+      isCustom: true,
+    };
+  });
+
+  return NextResponse.json([...defaultResult, ...customResult]);
 }
 
-// ── PUT /api/automacoes ───────────────────────────────────────────────────────
-// Body: { key, action: "toggle" | "template", value: boolean | string }
+// ── POST /api/automacoes — create custom rule ─────────────────────────────────
+
+export async function POST(request: Request) {
+  const clinicId = await getClinicId();
+  if (!clinicId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const body = (await request.json()) as {
+    title: string;
+    description?: string;
+    offsetDays: number;
+    triggerType: "before_session" | "after_session";
+    template: string;
+  };
+
+  if (!body.title?.trim()) return NextResponse.json({ error: "Title required" }, { status: 400 });
+  if (!body.template?.trim() || body.template.length < 10) return NextResponse.json({ error: "Template too short" }, { status: 400 });
+  if (!Number.isInteger(body.offsetDays)) return NextResponse.json({ error: "Invalid offsetDays" }, { status: 400 });
+
+  const admin = createSupabaseAdminClient();
+  const { data: cs } = await admin
+    .from("clinic_settings")
+    .select("id, settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+  const customRules = (settings.custom_rules as CustomRuleSettings[] | undefined) ?? [];
+
+  const newRule: CustomRuleSettings = {
+    id: crypto.randomUUID(),
+    title: body.title.trim(),
+    description: (body.description ?? "").trim() || `Enviado ${Math.abs(body.offsetDays)} dia(s) ${body.triggerType === "before_session" ? "antes" : "após"} a sessão.`,
+    offsetDays: body.triggerType === "before_session" ? -Math.abs(body.offsetDays) : Math.abs(body.offsetDays),
+    triggerType: body.triggerType,
+    template: body.template.trim(),
+    isEnabled: true,
+    createdAt: new Date().toISOString(),
+  };
+
+  const newSettings = { ...settings, custom_rules: [...customRules, newRule] };
+
+  if (cs?.id) {
+    await admin.from("clinic_settings").update({ settings: newSettings }).eq("id", cs.id as string);
+  } else {
+    await admin.from("clinic_settings").insert({ clinic_id: clinicId, settings: newSettings });
+  }
+
+  return NextResponse.json({ ok: true, id: newRule.id });
+}
+
+// ── PUT /api/automacoes — toggle / template / delete-default ──────────────────
 
 export async function PUT(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { data: cu } = await supabase
-    .from("clinic_users")
-    .select("clinic_id, role")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .limit(1)
-    .maybeSingle();
-  if (!cu) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-
-  const clinicId = cu.clinic_id as string;
-  const admin = createSupabaseAdminClient();
+  const clinicId = await getClinicId();
+  if (!clinicId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = (await request.json()) as {
     key: string;
-    action: "toggle" | "template";
-    value: boolean | string;
+    action: "toggle" | "template" | "delete";
+    value?: boolean | string;
   };
 
+  const admin = createSupabaseAdminClient();
+  const { data: cs } = await admin
+    .from("clinic_settings")
+    .select("id, settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+
+  async function saveSettings(newSettings: Record<string, unknown>) {
+    if (cs?.id) {
+      await admin.from("clinic_settings").update({ settings: newSettings }).eq("id", cs.id as string);
+    } else {
+      await admin.from("clinic_settings").insert({ clinic_id: clinicId, settings: newSettings });
+    }
+  }
+
+  // Handle custom rule toggle/template
+  if (body.key.startsWith("custom_")) {
+    const ruleId = body.key.replace("custom_", "");
+    const customRules = (settings.custom_rules as CustomRuleSettings[] | undefined) ?? [];
+
+    if (body.action === "toggle") {
+      const updated = customRules.map((r) =>
+        r.id === ruleId ? { ...r, isEnabled: body.value as boolean } : r
+      );
+      await saveSettings({ ...settings, custom_rules: updated });
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === "template") {
+      const tpl = (body.value as string).trim();
+      if (tpl.length < 10 || tpl.length > 1500) {
+        return NextResponse.json({ error: "Template must be 10–1500 characters" }, { status: 400 });
+      }
+      const updated = customRules.map((r) =>
+        r.id === ruleId ? { ...r, template: tpl } : r
+      );
+      await saveSettings({ ...settings, custom_rules: updated });
+      return NextResponse.json({ ok: true });
+    }
+
+    return NextResponse.json({ error: "Invalid action for custom rule" }, { status: 400 });
+  }
+
+  // Handle default rule actions
   const validKeys = ["d_minus_1", "nps", "d_plus_3", "d_plus_30"];
   if (!validKeys.includes(body.key)) {
     return NextResponse.json({ error: "Invalid key" }, { status: 400 });
   }
 
-  if (body.action === "toggle") {
-    // Update clinic_settings.settings.reminders[key]
-    const { data: cs } = await admin
-      .from("clinic_settings")
-      .select("id, settings")
-      .eq("clinic_id", clinicId)
-      .maybeSingle();
+  if (body.action === "delete") {
+    const deletedRules = (settings.deleted_rules as string[] | undefined) ?? [];
+    if (!deletedRules.includes(body.key)) {
+      await saveSettings({ ...settings, deleted_rules: [...deletedRules, body.key] });
+    }
+    return NextResponse.json({ ok: true });
+  }
 
-    const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+  if (body.action === "toggle") {
     const reminders = ((settings.reminders as Record<string, boolean> | undefined) ?? {}) as Record<string, boolean>;
     reminders[body.key] = body.value as boolean;
-    const newSettings = { ...settings, reminders };
-
-    if (cs?.id) {
-      await admin
-        .from("clinic_settings")
-        .update({ settings: newSettings })
-        .eq("id", cs.id as string);
-    } else {
-      await admin
-        .from("clinic_settings")
-        .insert({ clinic_id: clinicId, settings: newSettings });
-    }
-
+    await saveSettings({ ...settings, reminders });
     return NextResponse.json({ ok: true });
   }
 
@@ -210,16 +325,41 @@ export async function PUT(request: Request) {
     if (tpl.length < 10 || tpl.length > 1500) {
       return NextResponse.json({ error: "Template must be 10–1500 characters" }, { status: 400 });
     }
-
     await admin
       .from("automation_templates")
       .upsert(
         { clinic_id: clinicId, rule_key: body.key, channel: "whatsapp", template: tpl, updated_at: new Date().toISOString() },
         { onConflict: "clinic_id,rule_key,channel" }
       );
-
     return NextResponse.json({ ok: true });
   }
 
   return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+}
+
+// ── DELETE /api/automacoes — remove custom rule ───────────────────────────────
+
+export async function DELETE(request: Request) {
+  const clinicId = await getClinicId();
+  if (!clinicId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = (await request.json()) as { id: string };
+  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+
+  const admin = createSupabaseAdminClient();
+  const { data: cs } = await admin
+    .from("clinic_settings")
+    .select("id, settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
+  const customRules = (settings.custom_rules as CustomRuleSettings[] | undefined) ?? [];
+  const updated = customRules.filter((r) => r.id !== id);
+
+  if (cs?.id) {
+    await admin.from("clinic_settings").update({ settings: { ...settings, custom_rules: updated } }).eq("id", cs.id as string);
+  }
+
+  return NextResponse.json({ ok: true });
 }
