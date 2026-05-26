@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { BadgeDollarSign, PackagePlus, Pencil, Trash2, X, Check } from "lucide-react";
 import type { MonetizationOffer, PatientOffer } from "@/lib/types";
 import { Card } from "@/components/card";
-import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { LimitedList } from "@/components/limited-list";
 import { formatPrice, getPatientOfferProgress, OFFER_TYPE_LABELS } from "@/modules/monetization/pricing";
@@ -21,14 +20,30 @@ export function OfferList({
   deleteAction?: (formData: FormData) => Promise<void>;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function handleToggle(offer: MonetizationOffer) {
+    const fd = new FormData();
+    fd.set("id", offer.id);
+    fd.set("is_active", String(!offer.is_active));
+    setPendingId(offer.id + "-toggle");
+    startTransition(async () => {
+      await toggleAction(fd);
+      setPendingId(null);
+    });
+  }
 
   function handleDelete(offer: MonetizationOffer) {
     if (!deleteAction) return;
     if (!confirm(`Remover "${offer.name}"? Esta ação não pode ser desfeita.`)) return;
     const fd = new FormData();
     fd.set("id", offer.id);
-    startTransition(() => deleteAction(fd));
+    setPendingId(offer.id + "-delete");
+    startTransition(async () => {
+      await deleteAction(fd);
+      setPendingId(null);
+    });
   }
 
   function handleEdit(e: React.FormEvent<HTMLFormElement>, offerId: string) {
@@ -36,8 +51,10 @@ export function OfferList({
     if (!editAction) return;
     const fd = new FormData(e.currentTarget);
     fd.set("id", offerId);
+    setPendingId(offerId + "-edit");
     startTransition(async () => {
       await editAction(fd);
+      setPendingId(null);
       setEditingId(null);
     });
   }
@@ -80,7 +97,8 @@ export function OfferList({
                 <button
                   type="button"
                   onClick={() => setEditingId(editingId === offer.id ? null : offer.id)}
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg transition
+                  disabled={pendingId === offer.id + "-edit"}
+                  className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-40
                     ${editingId === offer.id
                       ? "bg-axiel-ink/10 text-axiel-ink"
                       : "text-black/30 hover:bg-black/5 hover:text-black/60"}`}
@@ -93,7 +111,7 @@ export function OfferList({
                 <button
                   type="button"
                   onClick={() => handleDelete(offer)}
-                  disabled={isPending}
+                  disabled={pendingId === offer.id + "-delete"}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-black/30 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
                   title="Excluir"
                 >
@@ -183,11 +201,11 @@ export function OfferList({
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={isPending}
+                  disabled={pendingId === offer.id + "-edit"}
                   className="flex items-center gap-1.5 rounded-lg bg-axiel-ink px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   <Check className="h-3.5 w-3.5" />
-                  {isPending ? "Salvando…" : "Salvar"}
+                  {pendingId === offer.id + "-edit" ? "Salvando…" : "Salvar"}
                 </button>
                 <button
                   type="button"
@@ -201,13 +219,18 @@ export function OfferList({
           )}
 
           {/* Toggle active */}
-          <form action={toggleAction} className="mt-4">
-            <input type="hidden" name="id" value={offer.id} />
-            <input type="hidden" name="is_active" value={String(!offer.is_active)} />
-            <Button variant="secondary" className="w-full">
-              {offer.is_active ? "Pause" : "Reactivate"}
-            </Button>
-          </form>
+          <button
+            type="button"
+            onClick={() => handleToggle(offer)}
+            disabled={pendingId === offer.id + "-toggle" || isPending}
+            className="mt-4 w-full rounded-xl border border-black/[.10] bg-white px-4 py-2.5 text-sm font-medium text-black/60 transition hover:bg-black/[.03] hover:text-black/80 disabled:opacity-50"
+          >
+            {pendingId === offer.id + "-toggle"
+              ? "Atualizando…"
+              : offer.is_active
+              ? "Pause"
+              : "Reactivate"}
+          </button>
         </Card>
       )}
     />
