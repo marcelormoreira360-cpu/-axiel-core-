@@ -69,8 +69,10 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_patient_exams_patient_date
 CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follow_ups_clinic_status
   ON follow_ups (clinic_id, status);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_follow_ups_scheduled_for
-  ON follow_ups (scheduled_for)
+-- due_at index already created in 001_initial_schema.sql (follow_ups_due_at_idx)
+-- Partial index on pending only for processAutomations() cron query
+CREATE INDEX IF NOT EXISTS idx_follow_ups_due_at_pending
+  ON follow_ups (due_at)
   WHERE status = 'pending';
 
 -- ── api_rate_limits ──────────────────────────────────────────
