@@ -9,24 +9,13 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
 
   const supabase = await createSupabaseServerClient();
 
-  // Resolve user's clinic_id explicitly — defense-in-depth on top of RLS.
-  // Without this, the query returns whatever RLS allows, which could expose
-  // all clinics if a policy is misconfigured.
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("clinic_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profile?.clinic_id) return [];
-
+  // RLS already scopes the result to the current user's clinic(s).
+  // We removed the auth.getUser() + users lookup because auth.getUser()
+  // can silently fail in SSR (expired session not refreshed), while RLS
+  // continues to work correctly from the JWT in cookies.
   const { data, error } = await supabase
     .from("clinics")
     .select(CLINIC_SELECT)
-    .eq("id", profile.clinic_id)
     .order("created_at", { ascending: false });
 
   if (error) throw error;
@@ -54,18 +43,9 @@ export async function updateClinic(id: string, fields: {
 
   const supabase = await createSupabaseServerClient();
 
-  // Verify the caller owns this clinic before updating.
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-
-  const { data: profile } = await supabase
-    .from("users")
-    .select("clinic_id")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.clinic_id !== id) throw new Error("Acesso negado.");
-
+  // RLS enforces that only clinic_owner/manager of this clinic can update.
+  // We rely on RLS instead of a manual auth.getUser() check to avoid the
+  // SSR token-refresh issue that makes auth.getUser() silently return null.
   const { data, error } = await supabase
     .from("clinics")
     .update(fields)
@@ -77,15 +57,14 @@ export async function updateClinic(id: string, fields: {
 }
 
 // React.cache deduplicates within a single request.
-// getCurrentClinic used to make 3 sequential round-trips; now makes 2
-// (auth.getUser + one joined users+clinics query), and subsequent calls
-// within the same render tree cost nothing.
+// getCurrentClinic relies entirely on RLS to scope the result — we removed
+// the auth.getUser() guard because it can silently fail in SSR contexts
+// (expired access token not yet refreshed), while RLS continues to work
+// correctly from the JWT stored in cookies.
 export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
 
   // Check cookie override first (multi-clinic switcher)
   const cookieStore = await cookies();
@@ -97,40 +76,15 @@ export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
     if (overrideClinic) return overrideClinic as Clinic;
   }
 
-  // Single join query instead of two sequential queries (users → clinics).
-  // Supabase resolves the FK relation in one round-trip.
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select(`clinic_id, clinics:clinics!clinic_id(${CLINIC_SELECT})`)
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profileError && profile?.clinic_id) {
-    const clinic = Array.isArray(profile.clinics)
-      ? profile.clinics[0]
-      : profile.clinics;
-    if (clinic) return clinic as Clinic;
-  }
-
-  // Fallback: users.clinic_id may be null while clinic_users still has the
-  // correct association (e.g. after a migration or onboarding edge case).
-  const { data: cu } = await supabase
-    .from("clinic_users")
-    .select("clinic_id")
-    .eq("user_id", user.id)
-    .eq("status", "active")
+  // RLS scopes this to the user's own clinic — returns at most one row.
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select(CLINIC_SELECT)
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  if (!cu?.clinic_id) return null;
-
-  const { data: fallbackClinic } = await supabase
-    .from("clinics")
-    .select(CLINIC_SELECT)
-    .eq("id", cu.clinic_id as string)
-    .maybeSingle();
-
-  return (fallbackClinic as Clinic) ?? null;
+  return (clinic as Clinic) ?? null;
 });
 
 export async function createClinic(name: string): Promise<Clinic> {
