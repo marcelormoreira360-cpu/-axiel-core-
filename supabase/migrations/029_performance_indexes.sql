@@ -79,8 +79,8 @@ CREATE INDEX IF NOT EXISTS idx_follow_ups_due_at_pending
 -- ── api_rate_limits ──────────────────────────────────────────
 -- Used by checkRateLimitDb() on every API call
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_api_rate_limits_key_window
-  ON api_rate_limits (key, window_start);
+CREATE INDEX IF NOT EXISTS idx_rate_limit_buckets_key_window
+  ON rate_limit_buckets (key, window_start);
 
 -- ── users ────────────────────────────────────────────────────
 -- Used by getCurrentUserProfile() and getCurrentClinic() auth flow
