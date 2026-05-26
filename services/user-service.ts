@@ -1,6 +1,11 @@
+import { cache } from "react";
 import type { AppUser } from "@/lib/types";
 
-export async function getCurrentAuthUser() {
+// React.cache deduplicates calls within a single request render tree.
+// If getCurrentAuthUser / getCurrentUserProfile are called N times per page,
+// only the first call hits the network; the rest return the cached result.
+
+export const getCurrentAuthUser = cache(async () => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
@@ -11,14 +16,13 @@ export async function getCurrentAuthUser() {
 
   if (error) throw error;
   return user;
-}
+});
 
-export async function getCurrentUserProfile(): Promise<AppUser | null> {
+export const getCurrentUserProfile = cache(async (): Promise<AppUser | null> => {
   const authUser = await getCurrentAuthUser();
   if (!authUser) return null;
 
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
@@ -29,7 +33,7 @@ export async function getCurrentUserProfile(): Promise<AppUser | null> {
 
   if (error) throw error;
   return data;
-}
+});
 
 export async function getUsersForCurrentScope(): Promise<AppUser[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");

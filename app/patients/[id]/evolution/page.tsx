@@ -4,7 +4,11 @@ import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
 import { getPatientEvolution } from "@/services/evolution-service";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { EvolutionCharts } from "@/components/evolution-charts";
+import dynamic from "next/dynamic";
+const EvolutionCharts = dynamic(
+  () => import("@/components/evolution-charts").then((m) => m.EvolutionCharts),
+  { ssr: false, loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+);
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();

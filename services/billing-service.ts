@@ -1,8 +1,12 @@
+import { cache } from "react";
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
 import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
 import type { ClinicBillingContext } from "@/modules/billing/feature-access";
 
-export async function getClinicSubscription(clinicId: string) {
+// React.cache deduplicates per clinicId within a single request.
+// getBillingContext was being called 5-10x per page (feature gates on multiple
+// components); now only the first call per clinicId hits the DB.
+export const getClinicSubscription = cache(async (clinicId: string) => {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -17,9 +21,9 @@ export async function getClinicSubscription(clinicId: string) {
   }
 
   return data;
-}
+});
 
-export async function getClinicPlanContext(clinicId: string) {
+export const getClinicPlanContext = cache(async (clinicId: string) => {
   const subscription = await getClinicSubscription(clinicId);
   // BILL-07: 'code' is the canonical identifier (NOT NULL unique in DB).
   // 'slug' is an alias added in 007 — prefer 'code' so fresh and migrated DBs
@@ -31,19 +35,20 @@ export async function getClinicPlanContext(clinicId: string) {
     subscription,
     plan: getPlanConfig(planSlug),
   };
-}
+});
 
 /**
  * Returns a ClinicBillingContext for use with canUseFeature / checkUsageLimit.
  * Pass optional usage counts when you need to enforce numeric limits.
+ * Cached per clinicId per request — safe to call from every feature gate.
  */
-export async function getBillingContext(
+export const getBillingContext = cache(async (
   clinicId: string,
   usage?: ClinicBillingContext["usage"],
-): Promise<ClinicBillingContext> {
+): Promise<ClinicBillingContext> => {
   const { plan } = await getClinicPlanContext(clinicId);
   return { planSlug: plan.slug, usage };
-}
+});
 
 export async function getCurrentUserForBilling() {
   const supabase = await createClient();

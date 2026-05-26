@@ -13,7 +13,11 @@ import { getRevenueChartData } from "@/modules/dashboard/dashboard-charts";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SetupProgressBanner } from "@/components/setup-progress-banner";
-import { RevenueChart } from "@/components/dashboard/revenue-chart";
+import dynamic from "next/dynamic";
+const RevenueChart = dynamic(
+  () => import("@/components/dashboard/revenue-chart").then((m) => m.RevenueChart),
+  { ssr: false, loading: () => <div className="h-40 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+);
 import { TodayAgenda } from "@/components/dashboard/today-agenda";
 import type { SetupTask } from "@/components/setup-progress-banner";
 

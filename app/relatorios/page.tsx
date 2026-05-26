@@ -5,7 +5,11 @@ import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 import { getReportTimeSeries } from "@/services/report-service";
 import { Shell } from "@/components/shell";
 import { RelatoriosClient } from "./relatorios-client";
-import { RelatoriosCharts } from "@/components/relatorios-charts";
+import dynamic from "next/dynamic";
+const RelatoriosCharts = dynamic(
+  () => import("@/components/relatorios-charts").then((m) => m.RelatoriosCharts),
+  { ssr: false, loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+);
 
 function deltaLabel(current: number, prev: number): { text: string; up: boolean | null } {
   if (prev === 0 && current === 0) return { text: "sem dados", up: null };

@@ -4,7 +4,11 @@ import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getNpsKPIs, getOccupancyKPIs, getAlertsKPIs } from "@/modules/analytics/analytics-kpis";
-import { NpsTrendChart } from "@/components/analytics/nps-trend-chart";
+import dynamicImport from "next/dynamic";
+const NpsTrendChart = dynamicImport(
+  () => import("@/components/analytics/nps-trend-chart").then((m) => m.NpsTrendChart),
+  { ssr: false, loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+);
 
 export const metadata: Metadata = { title: "Analytics | AXIEL Core" };
 export const dynamic = "force-dynamic";

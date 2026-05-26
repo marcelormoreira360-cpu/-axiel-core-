@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Clinic } from "@/lib/types";
 
@@ -75,7 +76,11 @@ export async function updateClinic(id: string, fields: {
   return data as Clinic;
 }
 
-export async function getCurrentClinic(): Promise<Clinic | null> {
+// React.cache deduplicates within a single request.
+// getCurrentClinic used to make 3 sequential round-trips; now makes 2
+// (auth.getUser + one joined users+clinics query), and subsequent calls
+// within the same render tree cost nothing.
+export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
@@ -88,19 +93,26 @@ export async function getCurrentClinic(): Promise<Clinic | null> {
 
   if (activeId) {
     const { data: overrideClinic } = await supabase
-      .from("clinics").select("*").eq("id", activeId).maybeSingle();
-    if (overrideClinic) return overrideClinic;
+      .from("clinics").select(CLINIC_SELECT).eq("id", activeId).maybeSingle();
+    if (overrideClinic) return overrideClinic as Clinic;
   }
 
+  // Single join query instead of two sequential queries (users → clinics).
+  // Supabase resolves the FK relation in one round-trip.
   const { data: profile, error: profileError } = await supabase
-    .from("users").select("clinic_id").eq("id", user.id).maybeSingle();
+    .from("users")
+    .select(`clinic_id, clinics:clinics!clinic_id(${CLINIC_SELECT})`)
+    .eq("id", user.id)
+    .maybeSingle();
+
   if (profileError || !profile?.clinic_id) return null;
 
-  const { data, error } = await supabase
-    .from("clinics").select("*").eq("id", profile.clinic_id).maybeSingle();
-  if (error) throw error;
-  return data;
-}
+  const clinic = Array.isArray(profile.clinics)
+    ? profile.clinics[0]
+    : profile.clinics;
+
+  return (clinic as Clinic) ?? null;
+});
 
 export async function createClinic(name: string): Promise<Clinic> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
