@@ -235,18 +235,24 @@ export async function GET(req: NextRequest) {
 // ─── POST — incoming WhatsApp messages ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
+  console.log("[whatsapp] POST received");
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return new NextResponse("", { status: 200 });
+  if (!apiKey) {
+    console.error("[whatsapp] OPENAI_API_KEY not set");
+    return new NextResponse("", { status: 200 });
+  }
 
   try {
     const rawBody = await req.text();
+    console.log("[whatsapp] raw body length:", rawBody.length);
 
     // Validate Meta signature
     const signature = req.headers.get("x-hub-signature-256");
     if (!validateMetaSignature(signature, Buffer.from(rawBody))) {
-      console.warn("Meta webhook: invalid signature — rejected");
+      console.warn("[whatsapp] invalid signature — rejected. META_APP_SECRET set:", !!process.env.META_APP_SECRET);
       return new NextResponse("Forbidden", { status: 403 });
     }
+    console.log("[whatsapp] signature valid");
 
     const body: MetaWebhookBody = JSON.parse(rawBody);
 
@@ -318,7 +324,9 @@ export async function POST(req: NextRequest) {
             void autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText);
           }
 
+          console.log("[whatsapp] generating reply for phone:", fromPhone.slice(-4));
           const reply = await generateReply(incomingText, history, systemPrompt, apiKey);
+          console.log("[whatsapp] reply generated, length:", reply.length);
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
           // Save history (non-blocking)
@@ -331,7 +339,9 @@ export async function POST(req: NextRequest) {
           );
 
           // Send reply via Meta API
+          console.log("[whatsapp] sending reply via Meta API, phoneNumberId:", phoneNumberId);
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);
+          console.log("[whatsapp] reply sent successfully");
         }
       }
     }
@@ -339,7 +349,7 @@ export async function POST(req: NextRequest) {
     // Meta requires a 200 response to acknowledge receipt
     return new NextResponse("", { status: 200 });
   } catch (err) {
-    console.error("Meta WhatsApp webhook error:", err);
+    console.error("[whatsapp] webhook error:", err);
     // Always return 200 to Meta — otherwise it retries indefinitely
     return new NextResponse("", { status: 200 });
   }
