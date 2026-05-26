@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { CheckCircle2, Circle, ExternalLink } from "lucide-react";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
 import { saveWhatsAppBotConfig } from "./actions";
 import type { PricingLocation, PricingPlan } from "@/lib/whatsapp-bot-defaults";
 import { IFWC_DEFAULT_CONFIG } from "@/lib/whatsapp-bot-defaults";
+import type { WhatsAppBotConfig } from "@/services/whatsapp-bot-service";
 
 const LANGUAGE_OPTIONS = [
   { value: "pt-BR", label: "Português (Brasil)" },
@@ -13,10 +15,15 @@ const LANGUAGE_OPTIONS = [
   { value: "en-US", label: "English (US)" },
 ];
 
-export function WhatsAppBotForm() {
+const WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/whatsapp/webhook";
+
+export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBotConfig | null }) {
+  const cfg = initialConfig ?? null;
+  const defaults = IFWC_DEFAULT_CONFIG;
+
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
-  const [locations, setLocations] = useState<PricingLocation[]>(IFWC_DEFAULT_CONFIG.locations);
+  const [locations, setLocations] = useState<PricingLocation[]>(cfg?.locations ?? defaults.locations);
 
   function addLocation() {
     setLocations((prev) => [...prev, { city: "", plans: [{ name: "", price: "", description: "", recommended: false }] }]);
@@ -63,37 +70,104 @@ export function WhatsAppBotForm() {
     });
   }
 
+  const hasConfig = !!cfg;
+  const hasTwilioNumber = !!(cfg?.twilio_number);
+  const isActive = !!cfg?.is_active;
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
+      {/* Activation checklist */}
+      <Card className="p-6">
+        <h2 className="mb-1 text-base font-semibold">Checklist de ativação</h2>
+        <p className="mb-5 text-sm text-black/50">Complete os 3 passos abaixo para o bot começar a responder automaticamente.</p>
+        <ol className="flex flex-col gap-4">
+          <li className="flex items-start gap-3">
+            {hasConfig && hasTwilioNumber ? (
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+            ) : (
+              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            )}
+            <div>
+              <p className="text-sm font-medium">1. Preencher e salvar a configuração abaixo</p>
+              <p className="text-xs text-black/45">Inclui nome da clínica, especialidade, preços e número Twilio.</p>
+            </div>
+          </li>
+          <li className="flex items-start gap-3">
+            <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            <div>
+              <p className="text-sm font-medium">2. Adicionar variáveis de ambiente no Vercel</p>
+              <p className="mb-2 text-xs text-black/45">Acesse <strong>Vercel → seu projeto → Settings → Environment Variables</strong> e adicione:</p>
+              <div className="rounded-lg bg-black/[.04] p-3 font-mono text-xs leading-6 text-black/70">
+                <div><span className="text-axiel-ink font-semibold">TWILIO_ACCOUNT_SID</span>=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+                <div><span className="text-axiel-ink font-semibold">TWILIO_AUTH_TOKEN</span>=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+                <div><span className="text-axiel-ink font-semibold">TWILIO_FROM_NUMBER</span>=whatsapp:+14155238886</div>
+              </div>
+              <p className="mt-2 text-xs text-black/40">Valores encontrados em: <strong>console.twilio.com → Account Info</strong>. Após adicionar, faça Redeploy.</p>
+            </div>
+          </li>
+          <li className="flex items-start gap-3">
+            <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            <div>
+              <p className="text-sm font-medium">3. Configurar webhook no Twilio</p>
+              <p className="mb-2 text-xs text-black/45">No console do Twilio, vá em <strong>Messaging → Senders → WhatsApp Senders → seu número → Sandbox Settings</strong> (ou configurações do número aprovado) e cole a URL abaixo em <em>"When a message comes in"</em>:</p>
+              <div className="flex items-center gap-2 rounded-lg bg-black/[.04] px-3 py-2 font-mono text-xs text-black/70">
+                <span className="flex-1 break-all">{WEBHOOK_URL}</span>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(WEBHOOK_URL)}
+                  className="shrink-0 rounded bg-axiel-ink/10 px-2 py-1 text-[10px] font-semibold text-axiel-ink hover:bg-axiel-ink/20 transition"
+                >
+                  Copiar
+                </button>
+              </div>
+              <a
+                href="https://console.twilio.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-axiel-ink hover:underline"
+              >
+                Abrir Twilio Console <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
+          </li>
+        </ol>
+        {isActive && (
+          <div className="mt-5 rounded-xl bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            ✓ Bot ativo — respondendo mensagens automaticamente.
+          </div>
+        )}
+      </Card>
+
+    <form onSubmit={handleSubmit} className="contents">
       <Card className="p-6">
         <h2 className="mb-4 text-lg font-semibold">Identidade da clínica</h2>
         <div className="grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-sm font-medium">Nome do profissional</label>
-            <input name="professional_name" defaultValue={IFWC_DEFAULT_CONFIG.professional_name}
+            <input name="professional_name" defaultValue={cfg?.professional_name ?? defaults.professional_name}
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium">Nome da clínica</label>
-            <input name="clinic_name" defaultValue={IFWC_DEFAULT_CONFIG.clinic_name}
+            <input name="clinic_name" defaultValue={cfg?.clinic_name ?? defaults.clinic_name}
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium">Especialidade / abordagem</label>
-            <input name="specialty" defaultValue={IFWC_DEFAULT_CONFIG.specialty}
+            <input name="specialty" defaultValue={cfg?.specialty ?? defaults.specialty}
               placeholder="ex: fisioterapia e pilates clínico"
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium">Idioma do bot</label>
-            <select name="language" defaultValue={IFWC_DEFAULT_CONFIG.language}
+            <select name="language" defaultValue={cfg?.language ?? defaults.language}
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20">
               {LANGUAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="md:col-span-2">
             <label className="mb-1 block text-sm font-medium">Número Twilio do WhatsApp (ex: +14155238886)</label>
-            <input name="twilio_number" placeholder="+14155238886"
+            <input name="twilio_number" defaultValue={cfg?.twilio_number ?? ""} placeholder="+14155238886"
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
             <p className="mt-1 text-xs text-black/40">Vincula este número ao bot da sua clínica. Deixe em branco para usar o padrão.</p>
           </div>
@@ -103,7 +177,7 @@ export function WhatsAppBotForm() {
       <Card className="p-6">
         <h2 className="mb-1 text-lg font-semibold">Programa / O que está incluído</h2>
         <p className="mb-4 text-sm text-black/50">Descreva o que o paciente recebe no atendimento. O bot apresenta isso na Etapa 4.</p>
-        <textarea name="methodology" rows={8} defaultValue={IFWC_DEFAULT_CONFIG.methodology}
+        <textarea name="methodology" rows={8} defaultValue={cfg?.methodology ?? defaults.methodology}
           className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
       </Card>
 
@@ -162,6 +236,7 @@ export function WhatsAppBotForm() {
         <h2 className="mb-1 text-lg font-semibold">Instruções adicionais (opcional)</h2>
         <p className="mb-4 text-sm text-black/50">Regras específicas da sua clínica, tom de voz personalizado ou informações extras para o bot.</p>
         <textarea name="custom_instructions" rows={4}
+          defaultValue={cfg?.custom_instructions ?? ""}
           placeholder="ex: Sempre mencionar que o atendimento é presencial. Não agendar aos domingos."
           className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
       </Card>
@@ -170,8 +245,9 @@ export function WhatsAppBotForm() {
         <Button type="submit" disabled={isPending}>
           {isPending ? "Salvando..." : "Salvar configuração"}
         </Button>
-        {saved && <span className="text-sm text-green-600">Configuração salva com sucesso.</span>}
+        {saved && <span className="text-sm text-green-600">✓ Configuração salva. Bot ativo.</span>}
       </div>
     </form>
+    </div>
   );
 }

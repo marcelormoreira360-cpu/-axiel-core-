@@ -14,5 +14,6 @@ export function getTwilioClient() {
 export function getTwilioFromNumber() {
   const from = process.env.TWILIO_FROM_NUMBER;
   if (!from) throw new Error("TWILIO_FROM_NUMBER is not configured.");
-  return from;
+  // Normalize: ensure the WhatsApp prefix is present regardless of how the env var is set.
+  return from.startsWith("whatsapp:") ? from : `whatsapp:${from}`;
 }

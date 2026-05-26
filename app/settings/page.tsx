@@ -19,6 +19,7 @@ const settings = [
   { href: "/settings/offers", title: "Ofertas e pacotes", text: "Crie pacotes de sessões e planos mensais visíveis no portal do paciente." },
   { href: "/settings/lembretes", title: "Lembretes automáticos", text: "Configure envio de lembretes de consulta por WhatsApp e e-mail." },
   { href: "/settings/whatsapp", title: "WhatsApp Bot", text: "Configure o assistente de IA: nome, programa, preços e idioma." },
+  { href: "/settings/voice", title: "Ligações com IA", text: "IA atende ligações em português e inglês com voz neural. Mesmo persona do WhatsApp Bot." },
   { href: "/intake", title: "Formulários de intake", text: "Perguntas que pacientes respondem antes do atendimento." },
   { href: "/monetization", title: "Pacotes", text: "Pacotes de sessões e planos de adesão." },
   { href: "/follow-ups", title: "Acompanhamentos", text: "Lembretes manuais e mensagens de acompanhamento." },
