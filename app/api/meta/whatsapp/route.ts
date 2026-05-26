@@ -324,6 +324,14 @@ export async function POST(req: NextRequest) {
             void autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText);
           }
 
+          // Reset command — clears conversation history for testing
+          if (incomingText.toLowerCase().trim() === "reset") {
+            void saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
+            await sendMetaReply(fromPhone, "Conversa reiniciada. Olá! 👋 Como posso ajudar?", phoneNumberId);
+            console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
+            continue;
+          }
+
           console.log("[whatsapp] generating reply for phone:", fromPhone.slice(-4));
           const reply = await generateReply(incomingText, history, systemPrompt, apiKey);
           console.log("[whatsapp] reply generated, length:", reply.length);
