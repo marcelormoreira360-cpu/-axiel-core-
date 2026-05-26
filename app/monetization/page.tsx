@@ -10,9 +10,11 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import {
   assignOfferToPatient,
   createMonetizationOffer,
+  deleteMonetizationOffer,
   getActiveMonetizationOffers,
   getMonetizationOffers,
   getPatientOffers,
+  updateMonetizationOffer,
   updateMonetizationOfferStatus,
 } from "@/services/monetization-service";
 import { formatPrice } from "@/modules/monetization/pricing";
@@ -75,6 +77,37 @@ export default async function MonetizationPage() {
     const isActive = String(formData.get("is_active") ?? "false") === "true";
     if (!id) throw new Error("Offer ID is required.");
     await updateMonetizationOfferStatus(id, isActive);
+    redirect("/monetization");
+  }
+
+  async function editOfferAction(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const price_cents = Math.round(Number(formData.get("price_brl") ?? 0) * 100);
+    const number_of_sessions = Number(formData.get("number_of_sessions") ?? 1);
+    const description = String(formData.get("description") ?? "").trim() || null;
+    const billing_interval_raw = String(formData.get("billing_interval") ?? "");
+    const billing_interval =
+      billing_interval_raw === "monthly" || billing_interval_raw === "yearly"
+        ? billing_interval_raw as "monthly" | "yearly"
+        : null;
+    if (!id || !name) return;
+    await updateMonetizationOffer(id, {
+      name,
+      price_cents,
+      number_of_sessions,
+      description,
+      ...(billing_interval ? { billing_interval } : {}),
+    });
+    redirect("/monetization");
+  }
+
+  async function deleteOfferAction(formData: FormData) {
+    "use server";
+    const id = String(formData.get("id") ?? "");
+    if (!id) return;
+    await deleteMonetizationOffer(id);
     redirect("/monetization");
   }
 
@@ -145,7 +178,12 @@ export default async function MonetizationPage() {
               <h2 className="text-2xl font-semibold tracking-tight">Clinic offers</h2>
               <p className="text-sm text-black/40">Simple and flexible</p>
             </div>
-            <OfferList offers={offers} toggleAction={toggleOfferAction} />
+            <OfferList
+              offers={offers}
+              toggleAction={toggleOfferAction}
+              editAction={editOfferAction}
+              deleteAction={deleteOfferAction}
+            />
           </div>
 
           <div>
