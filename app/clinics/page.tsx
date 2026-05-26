@@ -54,9 +54,9 @@ const PROFILES: {
 
 export default async function ClinicsPage() {
   const [clinics, users, myClinic] = await Promise.all([
-    getClinicsForUser(),
-    getUsersForCurrentScope(),
-    getCurrentClinic(),
+    getClinicsForUser().catch((e) => { console.error("[/clinics] getClinicsForUser error:", e?.message ?? e); return []; }),
+    getUsersForCurrentScope().catch((e) => { console.error("[/clinics] getUsersForCurrentScope error:", e?.message ?? e); return []; }),
+    getCurrentClinic().catch((e) => { console.error("[/clinics] getCurrentClinic error:", e?.message ?? e); return null; }),
   ]);
 
   const billingCtx = myClinic ? await getBillingContext(myClinic.id) : null;
