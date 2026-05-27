@@ -28,3 +28,25 @@ Ele contém: visão geral do sistema, estado atual, arquivos mais importantes, p
 - Prefira editar arquivos existentes a criar novos
 - Nunca use `ssr: false` em Server Components com `next/dynamic`
 - Nunca reverta decisões listadas em `CONTEXT.md` sem motivo técnico justificado
+
+---
+
+## 🔁 Após qualquer implementação de feature
+
+Sempre que terminar de implementar código (nova feature, fix, refactor), lembre o usuário:
+
+> 💡 **Rode agora:** `/code-review --fix` para o review completo com IA antes do commit.
+
+---
+
+## ⚡ Tarefas longas — background automático
+
+Antes de começar qualquer tarefa que envolva **2 ou mais arquivos novos**, **um módulo completo**, ou **integração com serviço externo**, avise o usuário e sugira background:
+
+> 🔄 **Esta tarefa é longa. Para rodar em background enquanto você faz outra coisa, use:**
+> ```bash
+> claude "DESCRIÇÃO_EXATA_DA_TAREFA" &
+> ```
+> Ou continue aqui e eu foco só nisso agora.
+
+Aguarde a resposta do usuário antes de começar.

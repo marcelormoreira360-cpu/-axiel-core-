@@ -18,5 +18,18 @@
       "Bash(*-X DELETE*sessions*)",
       "Bash(*-X DELETE*whatsapp_conversations*)"
     ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"/Users/marcelorodriguesmoreira/Documents/JIFWC/AI-powered integrative clinic system/AXIEL_Core_Work\" && echo \"\\n🔍 TypeScript check...\" && npx tsc --noEmit 2>&1 | tail -20 && echo \"\\n🔍 ESLint check...\" && npx eslint app/ services/ lib/ components/ --ext .ts,.tsx --max-warnings 5 2>&1 | tail -20 && echo \"\\n✅ Auto-check concluído. Rode /code-review --fix para o review completo com IA.\""
+          }
+        ]
+      }
+    ]
   }
 }
