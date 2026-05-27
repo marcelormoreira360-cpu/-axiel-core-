@@ -1,0 +1,22 @@
+{
+  "autoMode": {
+    "hard_deny": [
+      "Bash(*DROP TABLE*)",
+      "Bash(*DROP TABLE IF EXISTS*)",
+      "Bash(*TRUNCATE*patients*)",
+      "Bash(*TRUNCATE*sessions*)",
+      "Bash(*TRUNCATE*whatsapp_conversations*)",
+      "Bash(*TRUNCATE*ai_insights*)",
+      "Bash(*TRUNCATE*intake_responses*)",
+      "Bash(*DELETE FROM patients*)",
+      "Bash(*DELETE FROM sessions*)",
+      "Bash(*DELETE FROM whatsapp_conversations*)",
+      "Bash(*delete from patients*)",
+      "Bash(*delete from sessions*)",
+      "Bash(*delete from whatsapp_conversations*)",
+      "Bash(*-X DELETE*patients*)",
+      "Bash(*-X DELETE*sessions*)",
+      "Bash(*-X DELETE*whatsapp_conversations*)"
+    ]
+  }
+}
