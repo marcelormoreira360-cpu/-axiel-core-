@@ -50,11 +50,22 @@ async function saveHistory(
   } catch { /* non-blocking */ }
 }
 
+// ─── Page token lookup ────────────────────────────────────────────────────────
+// Env var per page: META_FACEBOOK_TOKEN_<PAGE_ID>
+// Falls back to META_FACEBOOK_PAGE_TOKEN for any unlisted page.
+
+function getPageToken(pageId: string): string {
+  const specific = process.env[`META_FACEBOOK_TOKEN_${pageId}`];
+  const fallback = process.env.META_FACEBOOK_PAGE_TOKEN;
+  const token = specific ?? fallback;
+  if (!token) throw new Error(`No Facebook token for page ${pageId}`);
+  return token;
+}
+
 // ─── Send reply via Facebook Messenger API ───────────────────────────────────
 
-async function sendFacebookReply(recipientPsid: string, text: string): Promise<void> {
-  const token = process.env.META_FACEBOOK_PAGE_TOKEN;
-  if (!token) throw new Error("META_FACEBOOK_PAGE_TOKEN not set");
+async function sendFacebookReply(recipientPsid: string, text: string, pageId: string): Promise<void> {
+  const token = getPageToken(pageId);
 
   const res = await fetch("https://graph.facebook.com/v20.0/me/messages", {
     method: "POST",
@@ -144,6 +155,8 @@ export async function POST(req: NextRequest) {
     const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
 
     for (const entry of body.entry ?? []) {
+      const pageId: string = entry.id;
+
       for (const event of entry.messaging ?? []) {
         // Skip echoes and deliveries
         if (event.message?.is_echo) continue;
@@ -175,7 +188,7 @@ export async function POST(req: NextRequest) {
           { role: "assistant", content: finalReply },
         ]);
 
-        await sendFacebookReply(senderPsid, finalReply);
+        await sendFacebookReply(senderPsid, finalReply, pageId);
       }
     }
 
