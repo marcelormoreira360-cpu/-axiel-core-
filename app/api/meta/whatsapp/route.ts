@@ -311,7 +311,7 @@ export async function POST(req: NextRequest) {
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
-            void saveHistory(supabase, fromPhone, convId, [
+            await saveHistory(supabase, fromPhone, convId, [
               ...history,
               { role: "user", content: incomingText },
             ], convClinicId ?? clinicId);
@@ -326,7 +326,7 @@ export async function POST(req: NextRequest) {
 
           // Reset command — clears conversation history for testing
           if (incomingText.toLowerCase().trim() === "reset") {
-            void saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
+            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
             await sendMetaReply(fromPhone, "Conversa reiniciada. Olá! 👋 Como posso ajudar?", phoneNumberId);
             console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
             continue;
@@ -337,8 +337,8 @@ export async function POST(req: NextRequest) {
           console.log("[whatsapp] reply generated, length:", reply.length);
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-          // Save history (non-blocking)
-          void saveHistory(
+          // Save history before sending reply to prevent race condition on rapid messages
+          await saveHistory(
             supabase,
             fromPhone,
             convId,

@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
 
         // Human takeover — save message, don't reply
         if (botDisabled) {
-          void saveHistory(supabase, senderPsid, convId, [
+          await saveHistory(supabase, senderPsid, convId, [
             ...history,
             { role: "user", content: messageText },
           ]);
@@ -182,7 +182,7 @@ export async function POST(req: NextRequest) {
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-        void saveHistory(supabase, senderPsid, convId, [
+        await saveHistory(supabase, senderPsid, convId, [
           ...history,
           { role: "user", content: messageText },
           { role: "assistant", content: finalReply },
