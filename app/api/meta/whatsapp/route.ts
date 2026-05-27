@@ -182,6 +182,21 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
   }
 }
 
+// ─── Detect current conversation step from history (code, not LLM) ──────────
+
+function detectStep(history: ChatMessage[]): number {
+  const lastBot = [...history].reverse().find(m => m.role === "assistant");
+  if (!lastBot) return 1;
+  const c = lastBot.content;
+  if (c.includes("Qual é o seu nome") || c.includes("seu nome para")) return 7;
+  if (c.includes("manhã ou da tarde") || c.includes("manhã ou tarde")) return 6;
+  if ((c.includes("$") || c.includes("US$")) && c.includes("investimento")) return 5;
+  if (c.includes("Você está em") || c.includes("ou outra cidade") || c.includes("está em Orlando")) return 4;
+  if (c.includes("Há quanto tempo") || c.includes("perguntas rápidas")) return 3;
+  if (c.includes("principal motivo") || c.includes("trouxe aqui agora")) return 2;
+  return 2;
+}
+
 // ─── AI reply ────────────────────────────────────────────────────────────────
 
 async function generateReply(
@@ -301,13 +316,15 @@ export async function POST(req: NextRequest) {
 
           const supabase = createSupabaseAdminClient();
 
-          // Load clinic config — for now uses IFWC default
-          // When multi-clinic is needed, look up by phoneNumberId
-          const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
           const clinicId = null; // TODO: look up clinic by Meta phone_number_id
 
           const { id: convId, messages: history, botDisabled, clinicId: convClinicId } =
             await getHistory(supabase, fromPhone);
+
+          // Detect conversation step in code — do NOT rely on LLM for state detection
+          const currentStep = detectStep(history);
+          const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG, currentStep);
+          console.log("[whatsapp] detected step:", currentStep, "for phone:", fromPhone.slice(-4));
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
