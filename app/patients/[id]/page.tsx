@@ -23,6 +23,7 @@ import { getPatientDocuments } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
+import { SessionPackageBadge } from "@/components/session-package-badge";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -91,11 +92,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const badge = statusBadge(patient.status);
   const since = new Date(patient.created_at).toLocaleDateString([], { month: "short", year: "numeric" });
 
-  // Pacote ativo
+  // Pacote ativo — usado para exibir o badge no card de sessões
   const activePackage = packages.find((p) => p.is_active) ?? null;
-  const activePackageIdx = activePackage ? packages.findIndex((p) => p.is_active) : -1;
-  const packageNumber = activePackage ? packages.length - activePackageIdx : null;
-  const sessionInPackage = activePackage ? activePackage.sessions_used + 1 : null;
 
   return (
     <Shell>
@@ -190,24 +188,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             </p>
             {(activePackage || activeSub) && (
               <div className="mt-[8px] pt-[8px] border-t border-black/[.06] space-y-2">
-                {activePackage && packageNumber !== null && sessionInPackage !== null && (
-                  <div>
-                    <div className="flex items-center gap-[5px] flex-wrap">
-                      <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">
-                        Sessão {sessionInPackage} · Pacote {packageNumber}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-[#A09E98] mt-[3px] truncate">{activePackage.name}</p>
-                    <div className="mt-[5px] h-[3px] bg-[#E1F5EE] rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-[#0F6E56] rounded-full"
-                        style={{ width: `${Math.min(100, Math.round((activePackage.sessions_used / activePackage.sessions_total) * 100))}%` }}
-                      />
-                    </div>
-                    <p className="text-[9px] text-[#A09E98] mt-[3px]">
-                      {activePackage.sessions_used} de {activePackage.sessions_total} sessões usadas
-                    </p>
-                  </div>
+                {activePackage && (
+                  <SessionPackageBadge packages={packages} />
                 )}
                 {activeSub && (
                   <div className="flex items-center gap-[5px] flex-wrap">
