@@ -197,7 +197,7 @@ async function generateReply(
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        ...history.slice(-12),
+        ...history.slice(-6),
         { role: "user", content: incomingMessage },
       ],
       temperature: 0.7,
