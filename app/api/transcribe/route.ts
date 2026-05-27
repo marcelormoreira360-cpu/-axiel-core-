@@ -3,6 +3,8 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 
+export const runtime = "nodejs";
+
 export async function POST(req: NextRequest) {
   // ── Auth guard ──────────────────────────────────────────────────────────────
   const supabase = await createSupabaseServerClient();
