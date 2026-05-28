@@ -85,9 +85,12 @@ async function saveHistory(
     if (id) {
       await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
     } else {
-      await supabase.from("whatsapp_conversations").insert(payload);
+      // UPSERT on phone — prevents duplicate rows from double-save per message
+      await supabase
+        .from("whatsapp_conversations")
+        .upsert(payload, { onConflict: "phone" });
     }
-  } catch { /* non-blocking */ }
+  } catch (e) { console.error("[whatsapp] saveHistory error:", e); }
 }
 
 async function autoCreateLead(
