@@ -220,18 +220,55 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
   }
 }
 
+// ─── Language detection ───────────────────────────────────────────────────────
+
+type Lang = "pt" | "en";
+
+function detectLanguage(messages: ChatMessage[], currentMessage: string): Lang {
+  // Use the very first user message (stable — doesn't change mid-conversation)
+  const firstUserMsg = messages.find((m) => m.role === "user")?.content ?? currentMessage;
+  const lower = firstUserMsg.toLowerCase();
+
+  const enWords = [
+    "hello", "hi ", "hey ", "good morning", "good afternoon", "good evening",
+    " i ", "i'm", "i have", "i've", "i feel", "i've been", "i am",
+    "what", "how ", "my ", "the ", " is ", " are ", " can ", " do ", "please",
+    "thank", "help", "looking", "want", "need", "would", "pain", "feel",
+    "years", "months", "ago", "treatment", "appointment", "schedule", "book",
+    "cost", "price", "available", "when ", "where ", "who ", "anxiety",
+    "fatigue", "sleep", "energy", "doctor", "clinic", "health",
+  ];
+  const ptWords = [
+    "olá", "oi ", "bom dia", "boa tarde", "boa noite", "tudo bem",
+    "quero", "preciso", "tenho", "estou", "sinto", "dor", "anos", "meses",
+    "tratamento", "ajuda", "quanto", "valor", "preço", "agendar", "como ",
+    " que ", "meu ", "minha ", "você", "não ", "sim ", "também", "sempre",
+    "desde", "muito", "pouco", "porque", "então", "assim",
+  ];
+
+  const enScore = enWords.filter((w) => lower.includes(w)).length;
+  const ptScore = ptWords.filter((w) => lower.includes(w)).length;
+
+  return enScore > ptScore ? "en" : "pt";
+}
+
 // ─── City detection for step 4 ───────────────────────────────────────────────
 
-function detectCity(text: string, locations: PricingLocation[]): PricingLocation {
+function detectCity(text: string, locations: PricingLocation[], lang: Lang): PricingLocation {
   const lower = text.toLowerCase();
   const match = locations.find((l) =>
     lower.includes(l.city.toLowerCase().split(" ")[0].toLowerCase())
   );
   if (!match) {
-    const usaKeywords = ["florida", "miami", "tampa", "usa", "eua", "estados unidos", "orlando", "us"];
+    const usaKeywords =
+      lang === "en"
+        ? ["florida", "miami", "tampa", "usa", "united states", "orlando", "america", "us ", "u.s"]
+        : ["florida", "miami", "tampa", "usa", "eua", "estados unidos", "orlando"];
     if (usaKeywords.some((k) => lower.includes(k))) {
-      return locations[0]; // Orlando primeiro
+      return locations[0]; // Orlando first
     }
+    // English speakers default to Orlando; PT defaults to São Paulo
+    if (lang === "en") return locations[0];
     return locations.find((l) => l.city.includes("São Paulo")) ?? locations[0];
   }
   return match;
@@ -239,26 +276,61 @@ function detectCity(text: string, locations: PricingLocation[]): PricingLocation
 
 // ─── Build pricing block for a location ──────────────────────────────────────
 
-function buildPricingBlock(location: PricingLocation): string {
+function buildPricingBlock(location: PricingLocation, lang: Lang): string {
+  const label = lang === "en" ? "Investment" : "Investimento";
+  const recLabel = lang === "en" ? " ← recommended" : " ← recomendado";
   const lines = location.plans.map(
-    (p) =>
-      `• ${p.name}: ${p.price}${p.recommended ? " ← recomendado" : ""} — ${p.description}`
+    (p) => `• ${p.name}: ${p.price}${p.recommended ? recLabel : ""} — ${p.description}`
   );
-  return `*Investimento — ${location.city}:*\n${lines.join("\n")}`;
+  return `*${label} — ${location.city}:*\n${lines.join("\n")}`;
 }
 
 // ─── Fixed step templates ─────────────────────────────────────────────────────
 
-function buildFixedReply(step: number, userText: string, config: typeof IFWC_DEFAULT_CONFIG): string {
+function buildFixedReply(
+  step: number,
+  userText: string,
+  config: typeof IFWC_DEFAULT_CONFIG,
+  lang: Lang
+): string {
   const { professional_name, locations } = config;
 
+  if (lang === "en") {
+    switch (step) {
+      case 1:
+        return `Hello! Welcome 🙏 ${professional_name}'s service is a personalized integrative evaluation — not a standalone session. It analyzes the body, nervous system, bioemotional factors, and functional health.\nTell me: what's the main reason you're reaching out today?`;
+
+      case 4: {
+        const location = detectCity(userText, locations, lang);
+        const pricingBlock = buildPricingBlock(location, lang);
+        return `${pricingBlock}\n\nThis includes a full evaluation, extended session, exams, reports, and follow-up care — not a one-time session. The recommended option (←) is best suited for most cases.`;
+      }
+
+      case 5:
+        return `Based on what you've shared, this format is the most suitable for your case 😊 Would you prefer a morning or afternoon appointment?`;
+
+      case 6:
+        return `Great! What's your name so I can reserve your spot? 😊`;
+
+      case 7:
+        return `Perfect! I'll forward your contact to ${professional_name} 🙏\n\nIf you'd like to secure your date, you can book directly here:\n👉 https://axiel-core-6ikl.vercel.app/book/ifwc\n\nWe'll be in touch soon to confirm 😊`;
+
+      case 8:
+        return `Your contact has already been sent to ${professional_name} 🙏 They'll be in touch soon. If you need anything else, just let me know!`;
+
+      default:
+        return "";
+    }
+  }
+
+  // PT-BR templates
   switch (step) {
     case 1:
       return `Olá! Seja muito bem-vindo(a) 🙏 O atendimento do ${professional_name} é uma avaliação integrativa personalizada — não é uma sessão isolada. Analisa corpo, sistema nervoso, parte bioemocional e fatores funcionais.\nMe conta: qual é o principal motivo que te trouxe aqui agora?`;
 
     case 4: {
-      const location = detectCity(userText, locations);
-      const pricingBlock = buildPricingBlock(location);
+      const location = detectCity(userText, locations, lang);
+      const pricingBlock = buildPricingBlock(location, lang);
       return `${pricingBlock}\n\nIsso inclui avaliação, sessão estendida, exames, relatórios e acompanhamento — não é sessão avulsa. O formato recomendado (←) é o mais indicado para a maioria dos casos.`;
     }
 
@@ -315,9 +387,13 @@ async function generateOpenAIReply(
 async function generateStep2Reply(
   userMessage: string,
   config: typeof IFWC_DEFAULT_CONFIG,
-  apiKey: string
+  apiKey: string,
+  lang: Lang
 ): Promise<string> {
-  const system = `Você é assistente de ${config.clinic_name}. Responda em português brasileiro, tom acolhedor, estilo WhatsApp, mensagens curtas. O paciente informou o motivo do contato. Sua tarefa: valide em 1 frase de empatia + faça as 4 perguntas juntas numa única mensagem numerada: (1) Há quanto tempo você sente isso? (2) Isso afeta mais dor, sono, ansiedade, energia, intestino, cansaço ou parte emocional? (3) Você já fez outros tratamentos antes? (4) O que você mais gostaria de melhorar nos próximos 60 dias? Não explique programa, não mostre valores.`;
+  const system =
+    lang === "en"
+      ? `You are an assistant for ${config.clinic_name}. Respond in English, warm and professional tone, WhatsApp style, short messages. The patient shared their reason for contact. Your task: validate with 1 empathetic sentence + ask 4 questions together in a single numbered message: (1) How long have you been experiencing this? (2) Does this mainly affect pain, sleep, anxiety, energy, digestion, fatigue, or your emotional state? (3) Have you tried other treatments before? (4) What would you most like to improve in the next 60 days? Do not explain the program, do not show prices.`
+      : `Você é assistente de ${config.clinic_name}. Responda em português brasileiro, tom acolhedor, estilo WhatsApp, mensagens curtas. O paciente informou o motivo do contato. Sua tarefa: valide em 1 frase de empatia + faça as 4 perguntas juntas numa única mensagem numerada: (1) Há quanto tempo você sente isso? (2) Isso afeta mais dor, sono, ansiedade, energia, intestino, cansaço ou parte emocional? (3) Você já fez outros tratamentos antes? (4) O que você mais gostaria de melhorar nos próximos 60 dias? Não explique programa, não mostre valores.`;
   return generateOpenAIReply(system, userMessage, [], apiKey);
 }
 
@@ -327,23 +403,41 @@ async function generateStep3Reply(
   userMessage: string,
   history: ChatMessage[],
   config: typeof IFWC_DEFAULT_CONFIG,
-  apiKey: string
+  apiKey: string,
+  lang: Lang
 ): Promise<string> {
   const cityList = config.locations.map((l) => l.city).join(", ");
-  const system = `Você é assistente de ${config.clinic_name}. Tom acolhedor, estilo WhatsApp. O paciente respondeu as perguntas de qualificação. Sua tarefa: valide com empatia em 2-3 frases, depois explique o programa: ${config.methodology}. Termine perguntando: 'Você está em ${cityList} ou outra cidade?'`;
+  const system =
+    lang === "en"
+      ? `You are an assistant for ${config.clinic_name}. Warm, professional tone, WhatsApp style. The patient answered the qualification questions. Your task: validate with empathy in 2-3 sentences, then explain the program: ${config.methodology}. End by asking: 'Are you in ${cityList} or another city?'`
+      : `Você é assistente de ${config.clinic_name}. Tom acolhedor, estilo WhatsApp. O paciente respondeu as perguntas de qualificação. Sua tarefa: valide com empatia em 2-3 frases, depois explique o programa: ${config.methodology}. Termine perguntando: 'Você está em ${cityList} ou outra cidade?'`;
   return generateOpenAIReply(system, userMessage, history, apiKey);
 }
 
 // ─── Price objection guard ────────────────────────────────────────────────────
 
-function isPriceQuestion(text: string): boolean {
+function isPriceQuestion(text: string, lang: Lang): boolean {
   const lower = text.toLowerCase();
+  if (lang === "en") {
+    return ["how much", "what's the cost", "what is the cost", "the price", "pricing", "cost?", "fees", "fee?", "rates", "charges"].some((k) => lower.includes(k));
+  }
   return ["quanto custa", "qual o valor", "qual o preço", "preço", "valor", "custa"].some((k) =>
     lower.includes(k)
   );
 }
 
-function buildPriceObjectionReply(currentStep: number, config: typeof IFWC_DEFAULT_CONFIG): string {
+function buildPriceObjectionReply(currentStep: number, config: typeof IFWC_DEFAULT_CONFIG, lang: Lang): string {
+  if (lang === "en") {
+    const nextQuestions: Record<number, string> = {
+      1: "what's the main reason you're reaching out?",
+      2: "which symptoms are you hoping to improve?",
+      3: "which city are you in?",
+      5: "do you prefer mornings or afternoons?",
+      6: "what's your name?",
+    };
+    const nextQ = nextQuestions[currentStep] ?? "how can I best help you?";
+    return `Sure! The investment varies based on format and location. It includes a full evaluation, extended session, exams, reports, and follow-up with ${config.professional_name}. To give you the right numbers: ${nextQ}`;
+  }
   const nextQuestions: Record<number, string> = {
     1: "qual é o principal motivo que te trouxe aqui?",
     2: "quais sintomas você quer melhorar?",
@@ -424,11 +518,15 @@ export async function POST(req: NextRequest) {
             if (transcribed) {
               incomingText = transcribed;
             } else {
-              await sendMetaReply(
-                fromPhone,
-                "Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊",
-                phoneNumberId
-              );
+              // Peek at history to choose language for the fallback message
+              const supabasePeek = createSupabaseAdminClient();
+              const { messages: peekHistory } = await getHistory(supabasePeek, fromPhone);
+              const peekLang = detectLanguage(peekHistory, "");
+              const audioFallback =
+                peekLang === "en"
+                  ? "Sorry, I couldn't process the audio. Could you type your message? 😊"
+                  : "Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊";
+              await sendMetaReply(fromPhone, audioFallback, phoneNumberId);
               continue;
             }
           } else {
@@ -452,7 +550,11 @@ export async function POST(req: NextRequest) {
 
           // Step derived from message history — never depends on DB column
           const currentStep = stepFromHistory(history);
-          console.log("[whatsapp] step from history:", currentStep, "| bot msgs:", history.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4));
+
+          // Language — detected from first user message and stable for the whole conversation
+          const lang: Lang = detectLanguage(history, incomingText);
+
+          console.log("[whatsapp] step:", currentStep, "| lang:", lang, "| bot msgs:", history.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4));
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
@@ -468,17 +570,19 @@ export async function POST(req: NextRequest) {
             void autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText);
           }
 
-          // Reset command
-          if (incomingText.toLowerCase().trim() === "reset") {
+          // Reset command (accept both languages)
+          const resetTrigger = incomingText.toLowerCase().trim();
+          if (resetTrigger === "reset" || resetTrigger === "reiniciar") {
             await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
-            await sendMetaReply(fromPhone, "Conversa reiniciada. 👋 Como posso ajudar?", phoneNumberId);
+            const resetMsg = lang === "en" ? "Conversation reset. 👋 How can I help you?" : "Conversa reiniciada. 👋 Como posso ajudar?";
+            await sendMetaReply(fromPhone, resetMsg, phoneNumberId);
             console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
             continue;
           }
 
           // Price objection — answer without advancing step
-          if (currentStep !== 4 && isPriceQuestion(incomingText)) {
-            const objectionReply = buildPriceObjectionReply(currentStep, config);
+          if (currentStep !== 4 && isPriceQuestion(incomingText, lang)) {
+            const objectionReply = buildPriceObjectionReply(currentStep, config, lang);
             const updatedMessages = [
               ...history,
               { role: "user" as const, content: incomingText },
@@ -495,39 +599,41 @@ export async function POST(req: NextRequest) {
 
           if (currentStep === 1) {
             // Fixed welcome template — no OpenAI
-            reply = buildFixedReply(1, incomingText, config);
+            reply = buildFixedReply(1, incomingText, config, lang);
             nextStep = 2;
           } else if (currentStep === 2) {
             // OpenAI: empathy + 4 qualification questions
-            reply = await generateStep2Reply(incomingText, config, apiKey);
+            reply = await generateStep2Reply(incomingText, config, apiKey, lang);
             nextStep = 3;
           } else if (currentStep === 3) {
             // OpenAI: validate answers + present program + ask city
-            reply = await generateStep3Reply(incomingText, history.slice(-2), config, apiKey);
+            reply = await generateStep3Reply(incomingText, history.slice(-2), config, apiKey, lang);
             nextStep = 4;
           } else if (currentStep === 4) {
             // Fixed: show pricing for detected city
-            reply = buildFixedReply(4, incomingText, config);
+            reply = buildFixedReply(4, incomingText, config, lang);
             nextStep = 5;
           } else if (currentStep === 5) {
             // Fixed: morning or afternoon?
-            reply = buildFixedReply(5, incomingText, config);
+            reply = buildFixedReply(5, incomingText, config, lang);
             nextStep = 6;
           } else if (currentStep === 6) {
             // Fixed: ask name
-            reply = buildFixedReply(6, incomingText, config);
+            reply = buildFixedReply(6, incomingText, config, lang);
             nextStep = 7;
           } else if (currentStep === 7) {
             // Fixed: confirm + scheduling link
-            reply = buildFixedReply(7, incomingText, config);
+            reply = buildFixedReply(7, incomingText, config, lang);
             nextStep = 8;
           } else {
             // Step 8+: terminal — already confirmed, short reply
-            reply = buildFixedReply(8, incomingText, config);
+            reply = buildFixedReply(8, incomingText, config, lang);
             nextStep = 8; // stays at 8
           }
 
-          const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
+          const finalReply = reply || (lang === "en"
+            ? "Hello! I received your message. We'll be in touch soon. 😊"
+            : "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊");
 
           // Single save: messages only (step is derived from history, no column needed)
           const updatedHistory = [
