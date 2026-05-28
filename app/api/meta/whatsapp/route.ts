@@ -38,6 +38,20 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Derives the current step from the number of assistant messages already sent.
+// Does NOT rely on the current_step DB column — always correct as long as messages are saved.
+// 0 bot replies → step 1 (send welcome)
+// 1 bot reply   → step 2 (qualification questions)
+// 2 bot replies → step 3 (present program + ask city)
+// 3 bot replies → step 4 (show prices)
+// 4 bot replies → step 5 (morning/afternoon?)
+// 5 bot replies → step 6 (ask name)
+// 6+ bot replies → step 7 (confirm scheduling)
+function stepFromHistory(messages: ChatMessage[]): number {
+  const botCount = messages.filter((m) => m.role === "assistant").length;
+  return Math.min(botCount + 1, 7);
+}
+
 async function getHistory(
   supabase: SupabaseAdmin,
   phone: string
@@ -46,23 +60,23 @@ async function getHistory(
   messages: ChatMessage[];
   botDisabled: boolean;
   clinicId: string | null;
-  currentStep: number;
 }> {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, clinic_id, current_step")
+      .select("id, messages, bot_disabled, clinic_id")
       .eq("phone", phone)
       .maybeSingle();
+    if (error) console.error("[whatsapp] getHistory error:", error.message);
     return {
       id: data?.id ?? null,
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
       clinicId: data?.clinic_id ?? null,
-      currentStep: data?.current_step ?? 1,
     };
-  } catch {
-    return { id: null, messages: [], botDisabled: false, clinicId: null, currentStep: 1 };
+  } catch (e) {
+    console.error("[whatsapp] getHistory exception:", e);
+    return { id: null, messages: [], botDisabled: false, clinicId: null };
   }
 }
 
@@ -71,18 +85,16 @@ async function saveHistory(
   phone: string,
   id: string | null,
   messages: ChatMessage[],
-  clinicId?: string | null,
-  currentStep?: number
+  clinicId?: string | null
 ) {
   const payload: Record<string, unknown> = {
     phone,
     messages: messages.slice(-20),
     updated_at: new Date().toISOString(),
-    ...(currentStep !== undefined && { current_step: currentStep }),
   };
   try {
     if (id) {
-      // Row exists — UPDATE by ID (fastest, no conflict needed)
+      // Row exists — UPDATE by ID
       const { error } = await supabase
         .from("whatsapp_conversations")
         .update(payload)
@@ -423,13 +435,14 @@ export async function POST(req: NextRequest) {
             messages: history,
             botDisabled,
             clinicId: convClinicId,
-            currentStep,
           } = await getHistory(supabase, fromPhone);
 
           const effectiveClinicId = convClinicId ?? clinicId;
           const config = IFWC_DEFAULT_CONFIG;
 
-          console.log("[whatsapp] db step:", currentStep, "for phone:", fromPhone.slice(-4));
+          // Step derived from message history — never depends on DB column
+          const currentStep = stepFromHistory(history);
+          console.log("[whatsapp] step from history:", currentStep, "| bot msgs:", history.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4));
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
@@ -447,7 +460,7 @@ export async function POST(req: NextRequest) {
 
           // Reset command
           if (incomingText.toLowerCase().trim() === "reset") {
-            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId, 1);
+            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
             await sendMetaReply(fromPhone, "Conversa reiniciada. 👋 Como posso ajudar?", phoneNumberId);
             console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
             continue;
@@ -461,9 +474,8 @@ export async function POST(req: NextRequest) {
               { role: "user" as const, content: incomingText },
               { role: "assistant" as const, content: objectionReply },
             ];
-            await saveHistory(supabase, fromPhone, convId, updatedMessages, effectiveClinicId, currentStep);
+            await saveHistory(supabase, fromPhone, convId, updatedMessages, effectiveClinicId);
             await sendMetaReply(fromPhone, objectionReply, phoneNumberId);
-            console.log("[whatsapp] price objection handled at step:", currentStep);
             continue;
           }
 
@@ -503,23 +515,17 @@ export async function POST(req: NextRequest) {
 
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-          // Save full exchange with new step
-          await saveHistory(
-            supabase,
-            fromPhone,
-            convId,
-            [
-              ...history,
-              { role: "user", content: incomingText },
-              { role: "assistant", content: finalReply },
-            ],
-            effectiveClinicId,
-            nextStep
-          );
+          // Single save: messages only (step is derived from history, no column needed)
+          const updatedHistory = [
+            ...history,
+            { role: "user" as const, content: incomingText },
+            { role: "assistant" as const, content: finalReply },
+          ];
+          await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId);
 
-          console.log("[whatsapp] sending reply at step:", currentStep, "→ next step:", nextStep);
+          console.log("[whatsapp] saved step:", currentStep, "→ next:", nextStep, "| total bot msgs now:", updatedHistory.filter(m => m.role === "assistant").length);
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);
-          console.log("[whatsapp] reply sent successfully");
+          console.log("[whatsapp] reply sent ok");
         }
       }
     }
