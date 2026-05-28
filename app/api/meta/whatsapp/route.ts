@@ -218,7 +218,7 @@ async function generateReply(
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        ...history.slice(-6),
+        ...history.slice(-2),
         { role: "user", content: incomingMessage },
       ],
       temperature: 0.7,
@@ -361,8 +361,13 @@ export async function POST(req: NextRequest) {
           const historyWithUser = [...history, { role: "user" as const, content: incomingText }];
           await saveHistory(supabase, fromPhone, convId, historyWithUser, effectiveClinicId);
 
+          // Steps 1-2: no prior history needed — system prompt has the full instruction.
+          // Sending old welcome messages confuses gpt-4o-mini into repeating them.
+          // Steps 3+: pass last exchange for contextual reference (city, answers, period).
+          const historyForLLM = currentStep <= 2 ? [] : history.slice(-2);
+
           console.log("[whatsapp] generating reply for phone:", fromPhone.slice(-4));
-          const reply = await generateReply(incomingText, history, systemPrompt, apiKey);
+          const reply = await generateReply(incomingText, historyForLLM, systemPrompt, apiKey);
           console.log("[whatsapp] reply generated, length:", reply.length);
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
