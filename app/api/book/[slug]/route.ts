@@ -152,6 +152,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   if (apptError) return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
 
   // WhatsApp confirmation via Meta API
+  // WhatsApp confirmation via Meta template (works outside 24h window)
   try {
     const metaToken = process.env.META_WHATSAPP_TOKEN;
     const phoneNumberId = process.env.META_PHONE_NUMBER_ID ?? "1031933676681061";
@@ -160,17 +161,31 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
       const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
       const firstName = full_name.split(" ")[0];
-      // Meta API requires phone without + sign
-      const metaPhone = normalizedPhone.replace(/^\+/, "");
-      const msgBody = `Olá, ${firstName}! ✅\n\nSeu agendamento foi confirmado:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic.name}`;
+      const metaPhone = normalizedPhone.replace(/^\+/, ""); // Meta requires no + sign
       const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${metaToken}` },
-        body: JSON.stringify({ messaging_product: "whatsapp", to: metaPhone, type: "text", text: { body: msgBody, preview_url: false } }),
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: metaPhone,
+          type: "template",
+          template: {
+            name: "agendamento_confirmado",
+            language: { code: "pt_BR" },
+            components: [{
+              type: "body",
+              parameters: [
+                { type: "text", text: firstName },
+                { type: "text", text: `${dateStr} às ${timeStr}` },
+                { type: "text", text: sessionType.name },
+              ],
+            }],
+          },
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
-        console.error("[book] WhatsApp confirmation failed:", JSON.stringify(err));
+        console.error("[book] WhatsApp template failed:", JSON.stringify(err));
       }
     }
   } catch (e) { console.error("[book] WhatsApp confirmation exception:", e); }
