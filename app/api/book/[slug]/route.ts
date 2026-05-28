@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { scheduleAutomations } from "@/services/automation-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { detectLanguage } from "@/lib/whatsapp-lang";
 
 export const runtime = "nodejs";
 
@@ -151,33 +152,60 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   if (apptError) return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
 
-  // WhatsApp confirmation via Meta API
   // WhatsApp confirmation via Meta template (works outside 24h window)
   try {
     const metaToken = process.env.META_WHATSAPP_TOKEN;
     // SEC-04: no hardcoded fallback — if env var is missing, skip the template send
     const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
     if (metaToken && phoneNumberId) {
-      const date = new Date(starts_at);
-      const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-      const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-      const firstName = full_name.split(" ")[0];
       const metaPhone = normalizedPhone.replace(/^\+/, ""); // Meta requires no + sign
+
+      // Detect language from existing WhatsApp conversation, if any
+      const { data: conv } = await supabase
+        .from("whatsapp_conversations")
+        .select("messages")
+        .eq("phone", metaPhone)
+        .maybeSingle();
+      const history = (conv?.messages as Array<{ role: string; content: string }> | null) ?? [];
+      const lang = detectLanguage(history, "");
+
+      const date = new Date(starts_at);
+      const firstName = full_name.split(" ")[0];
+
+      let templateName: string;
+      let langCode: string;
+      let dateTimeStr: string;
+
+      if (lang === "en") {
+        templateName = "booking_confirmation_en";
+        langCode = "en_US";
+        const dateStr = date.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" });
+        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+        dateTimeStr = `${dateStr} at ${timeStr}`;
+      } else {
+        templateName = "agendamento_confirmado";
+        langCode = "pt_BR";
+        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        dateTimeStr = `${dateStr} às ${timeStr}`;
+      }
+
       const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${metaToken}` },
+        signal: AbortSignal.timeout(15_000),
         body: JSON.stringify({
           messaging_product: "whatsapp",
           to: metaPhone,
           type: "template",
           template: {
-            name: "agendamento_confirmado",
-            language: { code: "pt_BR" },
+            name: templateName,
+            language: { code: langCode },
             components: [{
               type: "body",
               parameters: [
                 { type: "text", text: firstName },
-                { type: "text", text: `${dateStr} às ${timeStr}` },
+                { type: "text", text: dateTimeStr },
                 { type: "text", text: sessionType.name },
               ],
             }],

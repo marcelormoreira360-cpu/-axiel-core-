@@ -3,6 +3,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
 import { IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByMetaPhoneId } from "@/services/whatsapp-bot-service";
 import type { PricingLocation } from "@/services/whatsapp-bot-service";
+import { detectLanguage } from "@/lib/whatsapp-lang";
+import type { Lang } from "@/lib/whatsapp-lang";
 
 export const runtime = "nodejs";
 
@@ -241,41 +243,7 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
 }
 
 // ─── Language detection ───────────────────────────────────────────────────────
-
-type Lang = "pt" | "en";
-
-function detectLanguage(messages: ChatMessage[], currentMessage: string): Lang {
-  // Use the very first user message (stable — doesn't change mid-conversation)
-  const firstUserMsg = messages.find((m) => m.role === "user")?.content ?? currentMessage;
-  // BUG-05: normalize to lowercase with leading/trailing space so boundary-sensitive
-  // keywords like "hi" and "oi" match correctly at the start/end of the string.
-  const lower = ` ${firstUserMsg.toLowerCase()} `;
-
-  const enWords = [
-    " hello ", " hi ", " hey ", "good morning", "good afternoon", "good evening",
-    " i ", "i'm ", "i have ", "i've ", "i feel ", "i am ",
-    " what ", " how ", " my ", " the ", " is ", " are ", " can ", " do ", " please ",
-    " thank", " help", " looking", " want ", " need ", " would ",
-    " pain ", " feel ", " years ", " months ", " ago ",
-    " treatment", " appointment", " schedule", " book ",
-    " cost ", " price ", " available", " when ", " where ", " who ",
-    " anxiety", " fatigue", " sleep", " energy", " doctor", " clinic", " health",
-  ];
-  const ptWords = [
-    " olá", " oi ", "bom dia", "boa tarde", "boa noite", "tudo bem",
-    " quero", " preciso", " tenho", " estou", " sinto", " dor ",
-    " anos ", " meses ", " tratamento", " ajuda", " quanto", " valor",
-    " preço", " agendar", " como ", " meu ", " minha ", " você",
-    " não ", " sim ", " também", " sempre", " desde", " muito",
-    " porque", " então", " assim",
-  ];
-
-  const enScore = enWords.filter((w) => lower.includes(w)).length;
-  const ptScore = ptWords.filter((w) => lower.includes(w)).length;
-
-  // Require EN to win by at least 1 point to avoid false positives on short messages
-  return enScore > ptScore ? "en" : "pt";
-}
+// detectLanguage and Lang are imported from @/lib/whatsapp-lang
 
 // ─── City detection for step 4 ───────────────────────────────────────────────
 
