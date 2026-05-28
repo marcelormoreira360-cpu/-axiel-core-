@@ -80,17 +80,23 @@ async function saveHistory(
     updated_at: new Date().toISOString(),
     ...(currentStep !== undefined && { current_step: currentStep }),
   };
-  if (!id && clinicId) payload.clinic_id = clinicId;
   try {
     if (id) {
-      await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
+      // Row exists — UPDATE by ID (fastest, no conflict needed)
+      const { error } = await supabase
+        .from("whatsapp_conversations")
+        .update(payload)
+        .eq("id", id);
+      if (error) console.error("[whatsapp] saveHistory UPDATE error:", error.message);
     } else {
-      // UPSERT on phone — prevents duplicate rows from double-save per message
-      await supabase
+      // New row — UPSERT on phone (safe against concurrent first messages)
+      if (clinicId) payload.clinic_id = clinicId;
+      const { error } = await supabase
         .from("whatsapp_conversations")
         .upsert(payload, { onConflict: "phone" });
+      if (error) console.error("[whatsapp] saveHistory UPSERT error:", error.message);
     }
-  } catch (e) { console.error("[whatsapp] saveHistory error:", e); }
+  } catch (e) { console.error("[whatsapp] saveHistory exception:", e); }
 }
 
 async function autoCreateLead(
@@ -460,10 +466,6 @@ export async function POST(req: NextRequest) {
             console.log("[whatsapp] price objection handled at step:", currentStep);
             continue;
           }
-
-          // Save user message BEFORE generating reply (prevents race condition)
-          const historyWithUser = [...history, { role: "user" as const, content: incomingText }];
-          await saveHistory(supabase, fromPhone, convId, historyWithUser, effectiveClinicId, currentStep);
 
           // ─── Step dispatch ───────────────────────────────────────────────
           let reply = "";
