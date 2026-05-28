@@ -155,8 +155,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // WhatsApp confirmation via Meta template (works outside 24h window)
   try {
     const metaToken = process.env.META_WHATSAPP_TOKEN;
-    const phoneNumberId = process.env.META_PHONE_NUMBER_ID ?? "1031933676681061";
-    if (metaToken) {
+    // SEC-04: no hardcoded fallback — if env var is missing, skip the template send
+    const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+    if (metaToken && phoneNumberId) {
       const date = new Date(starts_at);
       const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
       const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });

@@ -236,10 +236,19 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
-    // L-08: mark as "processing" before attempting send to prevent double-delivery
-    // on cron retry. If the process crashes mid-flight the row stays "processing"
-    // and won't be re-queued by the next run (operator can manually reset if needed).
-    await supabase.from("follow_ups").update({ status: "processing" }).eq("id", fu.id);
+    // BUG-06: atomic claim — only update to "processing" if still "pending".
+    // If two cron instances race, only one UPDATE will match (status = pending).
+    // The other gets data=[] (0 rows) and should skip this follow_up.
+    const { data: claimResult } = await supabase
+      .from("follow_ups")
+      .update({ status: "processing" })
+      .eq("id", fu.id)
+      .eq("status", "pending")
+      .select("id");
+    if (!claimResult || claimResult.length === 0) {
+      console.warn("[automations] follow_up", fu.id, "already claimed by another instance — skipping");
+      return "skipped";
+    }
 
     try {
       await sendWhatsAppText(patient.phone, body);
@@ -299,6 +308,14 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     }
   }
 
+  // DB-04: purge rate_limit_buckets rows older than 1 hour to prevent unbounded growth.
+  // Non-blocking — failure doesn't affect the automation result.
+  supabase
+    .from("rate_limit_buckets")
+    .delete()
+    .lt("window_start", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .then(({ error }) => { if (error) console.warn("[automations] rate_limit cleanup error:", error.message); });
+
   return { processed: (followUps ?? []).length, sent, failed, skipped };
 }
 
@@ -326,7 +343,7 @@ async function sendReminderEmail(
     ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
     : null;
   const durationMinutes = appt
-    ? (() => { try { return (appt as { duration_minutes?: number }).duration_minutes ?? 60; } catch { return 60; } })()
+    ? ((appt as unknown as { duration_minutes?: number }).duration_minutes ?? 60)
     : 60;
 
   try {
@@ -424,18 +441,18 @@ async function sendNpsEmail(
 export async function checkLowPackageNotifications(): Promise<{ notified: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
 
+  // PERF-01: `sessions_remaining` is a generated column (migration 032) —
+  // the filter is pushed down to Postgres, no full table scan.
   const { data: packages, error } = await supabase
     .from("patient_packages")
-    .select("id, clinic_id, patient_id, name, sessions_total, sessions_used, patients(id, full_name, email, phone)")
-    .eq("is_active", true);
+    .select("id, clinic_id, patient_id, name, sessions_total, sessions_used, sessions_remaining, patients(id, full_name, email, phone)")
+    .eq("is_active", true)
+    .gte("sessions_remaining", 0)
+    .lte("sessions_remaining", 2);
 
   if (error) throw error;
 
-  // Filter to ≤2 sessions remaining in JS (avoids complex SQL expression)
-  const lowPackages = (packages ?? []).filter((pkg) => {
-    const remaining = (pkg.sessions_total ?? 0) - (pkg.sessions_used ?? 0);
-    return remaining >= 0 && remaining <= 2;
-  });
+  const lowPackages = packages ?? [];
 
   let notified = 0, skipped = 0;
 

@@ -96,6 +96,7 @@ async function buildPatientContext(
       .from("patient_prescriptions")
       .select("name, dosage, frequency, type")
       .eq("patient_id", patientId)
+      .eq("clinic_id", clinicId) // DB-02: defense in depth — scope to caller's clinic
       .eq("is_active", true),
     supabase
       .from("session_records")

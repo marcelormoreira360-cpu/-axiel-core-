@@ -38,7 +38,9 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-// Derives the current step from the number of assistant messages already sent.
+// Derives the current step.
+// Prefers the DB-persisted current_step (BUG-03: immune to history truncation).
+// Falls back to counting assistant messages when DB value is unavailable.
 // 0 bot replies → step 1 (welcome)
 // 1 → step 2 (qualification questions)
 // 2 → step 3 (present program + ask city)
@@ -47,7 +49,8 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 // 5 → step 6 (ask name)
 // 6 → step 7 (confirm + scheduling link)
 // 7+ → step 8 (terminal — already confirmed, short reply)
-function stepFromHistory(messages: ChatMessage[]): number {
+function stepFromHistory(messages: ChatMessage[], currentStepDb: number | null): number {
+  if (currentStepDb !== null) return currentStepDb;
   const botCount = messages.filter((m) => m.role === "assistant").length;
   if (botCount >= 7) return 8;
   return botCount + 1;
@@ -60,12 +63,13 @@ async function getHistory(
   id: string | null;
   messages: ChatMessage[];
   botDisabled: boolean;
+  currentStepDb: number | null;
   clinicId: string | null;
 }> {
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages")
+      .select("id, messages, bot_disabled, current_step")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -74,16 +78,19 @@ async function getHistory(
       console.error("[whatsapp] getHistory error:", error.code, error.message);
     }
     const msgs = (data?.messages as ChatMessage[]) ?? [];
-    console.log("[whatsapp] getHistory: id=", data?.id ?? "null", "msgs=", msgs.length, "phone=", phone.slice(-4));
+    const botDisabled = (data as unknown as { bot_disabled?: boolean } | null)?.bot_disabled ?? false;
+    const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
+    console.log("[whatsapp] getHistory: id=", data?.id ?? "null", "msgs=", msgs.length, "bot_disabled=", botDisabled, "phone=", phone.slice(-4));
     return {
       id: data?.id ?? null,
       messages: msgs,
-      botDisabled: false,
+      botDisabled,
+      currentStepDb,
       clinicId: null,
     };
   } catch (e) {
     console.error("[whatsapp] getHistory exception:", e);
-    return { id: null, messages: [], botDisabled: false, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, currentStepDb: null, clinicId: null };
   }
 }
 
@@ -92,13 +99,16 @@ async function saveHistory(
   phone: string,
   id: string | null,
   messages: ChatMessage[],
-  clinicId?: string | null
+  clinicId?: string | null,
+  currentStep?: number
 ) {
   const payload: Record<string, unknown> = {
     phone,
     messages: messages.slice(-20),
     updated_at: new Date().toISOString(),
   };
+  // BUG-03: persist current_step so stepFromHistory() never miscounts on truncated history
+  if (currentStep !== undefined) payload.current_step = currentStep;
   try {
     if (id) {
       // Row exists — UPDATE by ID
@@ -147,7 +157,9 @@ async function autoCreateLead(
 
 // ─── Send reply via Meta Graph API ───────────────────────────────────────────
 
-async function sendMetaReply(to: string, body: string, phoneNumberId: string): Promise<void> {
+// INT-03: retry with exponential backoff for 429 and 5xx
+// INT-04: 15s timeout per attempt to avoid Vercel edge timeouts
+async function sendMetaReply(to: string, body: string, phoneNumberId: string, attempt = 1): Promise<void> {
   const token = process.env.META_WHATSAPP_TOKEN;
   if (!token) throw new Error("META_WHATSAPP_TOKEN not set");
 
@@ -159,6 +171,7 @@ async function sendMetaReply(to: string, body: string, phoneNumberId: string): P
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         messaging_product: "whatsapp",
         to,
@@ -169,7 +182,14 @@ async function sendMetaReply(to: string, body: string, phoneNumberId: string): P
   );
 
   if (!res.ok) {
-    const err = await res.json();
+    const err = await res.json().catch(() => ({}));
+    // Retry on rate-limit (429) or server error (5xx), up to 3 attempts
+    if ((res.status === 429 || res.status >= 500) && attempt < 3) {
+      const delay = attempt * 2000; // 2s, 4s
+      console.warn(`[meta] sendMetaReply attempt ${attempt} failed (${res.status}), retrying in ${delay}ms`);
+      await new Promise((r) => setTimeout(r, delay));
+      return sendMetaReply(to, body, phoneNumberId, attempt + 1);
+    }
     console.error("Meta send error:", JSON.stringify(err));
     throw new Error(`Meta API error: ${res.status}`);
   }
@@ -227,51 +247,57 @@ type Lang = "pt" | "en";
 function detectLanguage(messages: ChatMessage[], currentMessage: string): Lang {
   // Use the very first user message (stable — doesn't change mid-conversation)
   const firstUserMsg = messages.find((m) => m.role === "user")?.content ?? currentMessage;
-  const lower = firstUserMsg.toLowerCase();
+  // BUG-05: normalize to lowercase with leading/trailing space so boundary-sensitive
+  // keywords like "hi" and "oi" match correctly at the start/end of the string.
+  const lower = ` ${firstUserMsg.toLowerCase()} `;
 
   const enWords = [
-    "hello", "hi ", "hey ", "good morning", "good afternoon", "good evening",
-    " i ", "i'm", "i have", "i've", "i feel", "i've been", "i am",
-    "what", "how ", "my ", "the ", " is ", " are ", " can ", " do ", "please",
-    "thank", "help", "looking", "want", "need", "would", "pain", "feel",
-    "years", "months", "ago", "treatment", "appointment", "schedule", "book",
-    "cost", "price", "available", "when ", "where ", "who ", "anxiety",
-    "fatigue", "sleep", "energy", "doctor", "clinic", "health",
+    " hello ", " hi ", " hey ", "good morning", "good afternoon", "good evening",
+    " i ", "i'm ", "i have ", "i've ", "i feel ", "i am ",
+    " what ", " how ", " my ", " the ", " is ", " are ", " can ", " do ", " please ",
+    " thank", " help", " looking", " want ", " need ", " would ",
+    " pain ", " feel ", " years ", " months ", " ago ",
+    " treatment", " appointment", " schedule", " book ",
+    " cost ", " price ", " available", " when ", " where ", " who ",
+    " anxiety", " fatigue", " sleep", " energy", " doctor", " clinic", " health",
   ];
   const ptWords = [
-    "olá", "oi ", "bom dia", "boa tarde", "boa noite", "tudo bem",
-    "quero", "preciso", "tenho", "estou", "sinto", "dor", "anos", "meses",
-    "tratamento", "ajuda", "quanto", "valor", "preço", "agendar", "como ",
-    " que ", "meu ", "minha ", "você", "não ", "sim ", "também", "sempre",
-    "desde", "muito", "pouco", "porque", "então", "assim",
+    " olá", " oi ", "bom dia", "boa tarde", "boa noite", "tudo bem",
+    " quero", " preciso", " tenho", " estou", " sinto", " dor ",
+    " anos ", " meses ", " tratamento", " ajuda", " quanto", " valor",
+    " preço", " agendar", " como ", " meu ", " minha ", " você",
+    " não ", " sim ", " também", " sempre", " desde", " muito",
+    " porque", " então", " assim",
   ];
 
   const enScore = enWords.filter((w) => lower.includes(w)).length;
   const ptScore = ptWords.filter((w) => lower.includes(w)).length;
 
+  // Require EN to win by at least 1 point to avoid false positives on short messages
   return enScore > ptScore ? "en" : "pt";
 }
 
 // ─── City detection for step 4 ───────────────────────────────────────────────
 
+// City aliases — avoids relying on single-word partial match (QUA-05 fix)
+const CITY_ALIASES: Record<string, string[]> = {
+  "Orlando / EUA": ["orlando", "florida", "miami", "tampa", "usa", "eua", "estados unidos", "united states", "america", " us ", "u.s.", "fl "],
+  "São Paulo": ["são paulo", "sao paulo", "sampa", "sp "],
+  "Maringá": ["maringá", "maringa", "pr "],
+};
+
 function detectCity(text: string, locations: PricingLocation[], lang: Lang): PricingLocation {
-  const lower = text.toLowerCase();
-  const match = locations.find((l) =>
-    lower.includes(l.city.toLowerCase().split(" ")[0].toLowerCase())
-  );
-  if (!match) {
-    const usaKeywords =
-      lang === "en"
-        ? ["florida", "miami", "tampa", "usa", "united states", "orlando", "america", "us ", "u.s"]
-        : ["florida", "miami", "tampa", "usa", "eua", "estados unidos", "orlando"];
-    if (usaKeywords.some((k) => lower.includes(k))) {
-      return locations[0]; // Orlando first
-    }
-    // English speakers default to Orlando; PT defaults to São Paulo
-    if (lang === "en") return locations[0];
-    return locations.find((l) => l.city.includes("São Paulo")) ?? locations[0];
+  const lower = ` ${text.toLowerCase()} `;
+
+  // Try to match against alias list first (most reliable)
+  for (const loc of locations) {
+    const aliases = CITY_ALIASES[loc.city] ?? [loc.city.toLowerCase()];
+    if (aliases.some((alias) => lower.includes(alias))) return loc;
   }
-  return match;
+
+  // English speakers default to Orlando (USA); PT defaults to São Paulo
+  if (lang === "en") return locations.find((l) => l.city.includes("Orlando")) ?? locations[0];
+  return locations.find((l) => l.city.includes("São Paulo")) ?? locations[0];
 }
 
 // ─── Build pricing block for a location ──────────────────────────────────────
@@ -312,8 +338,10 @@ function buildFixedReply(
       case 6:
         return `Great! What's your name so I can reserve your spot? 😊`;
 
-      case 7:
-        return `Perfect! I'll forward your contact to ${professional_name} 🙏\n\nIf you'd like to secure your date, you can book directly here:\n👉 https://axiel-core-6ikl.vercel.app/book/ifwc\n\nWe'll be in touch soon to confirm 😊`;
+      case 7: {
+        const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/ifwc`;
+        return `Perfect! I'll forward your contact to ${professional_name} 🙏\n\nIf you'd like to secure your date, you can book directly here:\n👉 ${bookUrl}\n\nWe'll be in touch soon to confirm 😊`;
+      }
 
       case 8:
         return `Your contact has already been sent to ${professional_name} 🙏 They'll be in touch soon. If you need anything else, just let me know!`;
@@ -340,8 +368,10 @@ function buildFixedReply(
     case 6:
       return `Ótimo! Qual é o seu nome para eu reservar a data? 😊`;
 
-    case 7:
-      return `Perfeito! Vou passar seu contato para ${professional_name} 🙏\n\nSe quiser já garantir sua data, você pode agendar diretamente por aqui:\n👉 https://axiel-core-6ikl.vercel.app/book/ifwc\n\nEm breve entraremos em contato para confirmar 😊`;
+    case 7: {
+      const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/ifwc`;
+      return `Perfeito! Vou passar seu contato para ${professional_name} 🙏\n\nSe quiser já garantir sua data, você pode agendar diretamente por aqui:\n👉 ${bookUrl}\n\nEm breve entraremos em contato para confirmar 😊`;
+    }
 
     case 8:
       return `Seu contato já foi enviado ao ${professional_name} 🙏 Em breve ele entra em contato. Se precisar de algo mais, é só avisar!`;
@@ -362,6 +392,7 @@ async function generateOpenAIReply(
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    signal: AbortSignal.timeout(15_000), // INT-04: prevent webhook timeout on slow OpenAI
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages: [
@@ -530,6 +561,18 @@ export async function POST(req: NextRequest) {
               continue;
             }
           } else {
+            // BOT-01: unsupported types (image, video, sticker, document, location)
+            // Peek at history to pick the right language for the fallback
+            const supabasePeekType = createSupabaseAdminClient();
+            const { messages: peekMsgs } = await getHistory(supabasePeekType, fromPhone);
+            const peekLangType = detectLanguage(peekMsgs, "");
+            const unsupportedMsg =
+              peekLangType === "en"
+                ? "I received your file! Unfortunately I can only process text and audio for now. Could you describe what you're sending? 😊"
+                : "Recebi seu arquivo! Infelizmente só consigo processar texto e áudio por enquanto. Pode me descrever o que está enviando? 😊";
+            if (phoneNumberId) {
+              await sendMetaReply(fromPhone, unsupportedMsg, phoneNumberId).catch(() => {});
+            }
             continue;
           }
 
@@ -542,14 +585,15 @@ export async function POST(req: NextRequest) {
             id: convId,
             messages: history,
             botDisabled,
+            currentStepDb,
             clinicId: convClinicId,
           } = await getHistory(supabase, fromPhone);
 
           const effectiveClinicId = convClinicId ?? clinicId;
           const config = IFWC_DEFAULT_CONFIG;
 
-          // Step derived from message history — never depends on DB column
-          const currentStep = stepFromHistory(history);
+          // Step: prefer DB-persisted value (immune to truncation); fall back to count
+          const currentStep = stepFromHistory(history, currentStepDb);
 
           // Language — detected from first user message and stable for the whole conversation
           const lang: Lang = detectLanguage(history, incomingText);
@@ -573,7 +617,7 @@ export async function POST(req: NextRequest) {
           // Reset command (accept both languages)
           const resetTrigger = incomingText.toLowerCase().trim();
           if (resetTrigger === "reset" || resetTrigger === "reiniciar") {
-            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
+            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId, 1);
             const resetMsg = lang === "en" ? "Conversation reset. 👋 How can I help you?" : "Conversa reiniciada. 👋 Como posso ajudar?";
             await sendMetaReply(fromPhone, resetMsg, phoneNumberId);
             console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
@@ -588,7 +632,7 @@ export async function POST(req: NextRequest) {
               { role: "user" as const, content: incomingText },
               { role: "assistant" as const, content: objectionReply },
             ];
-            await saveHistory(supabase, fromPhone, convId, updatedMessages, effectiveClinicId);
+            await saveHistory(supabase, fromPhone, convId, updatedMessages, effectiveClinicId, currentStep);
             await sendMetaReply(fromPhone, objectionReply, phoneNumberId);
             continue;
           }
@@ -635,13 +679,13 @@ export async function POST(req: NextRequest) {
             ? "Hello! I received your message. We'll be in touch soon. 😊"
             : "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊");
 
-          // Single save: messages only (step is derived from history, no column needed)
           const updatedHistory = [
             ...history,
             { role: "user" as const, content: incomingText },
             { role: "assistant" as const, content: finalReply },
           ];
-          await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId);
+          // Save history + persist current_step so truncation never causes step regression
+          await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId, nextStep);
 
           console.log("[whatsapp] saved step:", currentStep, "→ next:", nextStep, "| total bot msgs now:", updatedHistory.filter(m => m.role === "assistant").length);
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);

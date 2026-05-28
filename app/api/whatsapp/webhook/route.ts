@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
-import { validateTwilioSignature, checkRateLimit } from "@/lib/webhook-guard";
+import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
+import { canUseFeature } from "@/modules/billing/feature-access";
+import { createSupabaseAdminClient as _adminForBilling } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
@@ -57,15 +59,18 @@ async function autoCreateLead(supabase: SupabaseAdmin, phone: string, clinicId: 
 
 async function saveHistory(supabase: SupabaseAdmin, phone: string, id: string | null, messages: ChatMessage[], clinicId?: string | null) {
   const payload: Record<string, unknown> = { phone, messages: messages.slice(-20), updated_at: new Date().toISOString() };
-  if (!id && clinicId) payload.clinic_id = clinicId;
   try {
     if (id) {
-      await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
+      const { error } = await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
+      if (error) console.error("[twilio] saveHistory UPDATE error:", error.message);
     } else {
-      await supabase.from("whatsapp_conversations").insert(payload);
+      // BUG-01: upsert prevents duplicate rows when two rapid messages arrive simultaneously
+      if (clinicId) payload.clinic_id = clinicId;
+      const { error } = await supabase.from("whatsapp_conversations").upsert(payload, { onConflict: "phone" });
+      if (error) console.error("[twilio] saveHistory UPSERT error:", error.message);
     }
-  } catch {
-    // non-blocking
+  } catch (e) {
+    console.error("[twilio] saveHistory exception:", e);
   }
 }
 
@@ -86,6 +91,7 @@ async function generateReply(
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+    signal: AbortSignal.timeout(15_000), // INT-04: prevent webhook timeout on slow OpenAI responses
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages,
@@ -124,7 +130,7 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
     const formData = new FormData();
     formData.append("file", audioBlob, "audio.ogg");
     formData.append("model", "whisper-1");
-    formData.append("language", "pt");
+    // BOT-03: removed hardcoded "pt" — Whisper auto-detects language
 
     const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
@@ -165,9 +171,9 @@ export async function POST(req: NextRequest) {
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    // ── Rate limiting (best-effort per instance) ───────────────────────────
+    // ── Rate limiting — distributed (SEC-06: shared across all Vercel instances) ──
     const fromRaw = params["From"] ?? "";
-    if (!checkRateLimit(`wa:${fromRaw}`)) {
+    if (!(await checkRateLimitDb(`wa:${fromRaw}`, 20, 60_000))) {
       console.warn(`WhatsApp webhook: rate limit hit for ${fromRaw}`);
       return new NextResponse("", { status: 200 }); // silent 200 to Twilio
     }
@@ -209,6 +215,23 @@ export async function POST(req: NextRequest) {
       systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
     }
 
+    // TODO-02: Feature gate — whatsapp_automation requires Professional plan or above.
+    // Falls back silently (silent 200) so Twilio doesn't retry.
+    if (clinicIdFromConfig) {
+      const adminForBilling = _adminForBilling();
+      const { data: subRow } = await adminForBilling
+        .from("subscriptions")
+        .select("plans(code, slug)")
+        .eq("clinic_id", clinicIdFromConfig)
+        .maybeSingle();
+      const plans = (subRow?.plans as { code?: string | null; slug?: string | null } | null);
+      const planSlug = plans?.code ?? plans?.slug ?? "starter";
+      if (!canUseFeature({ planSlug }, "whatsapp_automation")) {
+        console.warn("[twilio] whatsapp_automation not available for clinic", clinicIdFromConfig, "plan:", planSlug);
+        return new NextResponse("", { status: 200 });
+      }
+    }
+
     // Get conversation history + check bot_disabled
     const { id: convId, messages: history, botDisabled, clinicId: convClinicId } = await getHistory(supabase, fromNumber);
 
@@ -233,13 +256,13 @@ export async function POST(req: NextRequest) {
 
     const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-    // Save updated history (non-blocking)
+    // BUG-02: await the save so history is persisted before next message arrives
     const updatedMessages: ChatMessage[] = [
       ...history,
       { role: "user", content: incomingMessage },
       { role: "assistant", content: finalReply },
     ];
-    void saveHistory(supabase, fromNumber, convId, updatedMessages, effectiveClinicId);
+    await saveHistory(supabase, fromNumber, convId, updatedMessages, effectiveClinicId);
 
     // Respond via TwiML (works for both sandbox and production)
     const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${finalReply.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message></Response>`;

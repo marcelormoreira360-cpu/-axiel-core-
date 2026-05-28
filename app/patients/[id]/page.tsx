@@ -67,6 +67,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       .from("patient_subscriptions")
       .select("id, plan_name, status, amount_cents, currency, billing_interval, current_period_end, cancel_at_period_end")
       .eq("patient_id", id)
+      .eq("clinic_id", clinic?.id ?? "00000000-0000-0000-0000-000000000000") // SEC-01: scope to caller's clinic
       .in("status", ["active", "trialing", "past_due"])
       .order("created_at", { ascending: false })
       .limit(1)
@@ -115,7 +116,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E] truncate">{patient.full_name}</p>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             Paciente desde {since}
-            {patient.date_of_birth ? ` · ${Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (1000 * 60 * 60 * 24 * 365))} anos` : ""}
+            {patient.date_of_birth ? (() => {
+              const dob = new Date(patient.date_of_birth);
+              const today = new Date();
+              let age = today.getFullYear() - dob.getFullYear();
+              if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+              return ` · ${age} anos`;
+            })() : ""}
           </p>
           <div className="flex gap-[6px] mt-[6px]">
             <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${badge.classes}`}>{badge.label}</span>

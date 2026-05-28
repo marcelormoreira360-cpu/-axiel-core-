@@ -81,23 +81,32 @@ export const getCurrentClinic = cache(async (): Promise<Clinic | null> => {
   const supabase = await createSupabaseServerClient();
   const admin = createSupabaseAdminClient();
 
-  // Check cookie override first (multi-clinic switcher)
-  const cookieStore = await cookies();
-  const activeId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value;
-
-  if (activeId) {
-    const { data: overrideClinic } = await admin
-      .from("clinics").select(CLINIC_SELECT).eq("id", activeId).maybeSingle();
-    if (overrideClinic) return overrideClinic as Clinic;
-  }
-
-  // Step 1: resolve clinic_id via users table (RLS on users works reliably).
+  // Step 1: resolve all clinic IDs this user owns via RLS-validated users query.
+  // Done first so the cookie override can be validated against this list (SEC-05).
   const { data: userRows } = await supabase
     .from("users")
     .select("clinic_id")
     .order("created_at", { ascending: false });
 
-  const clinicId = userRows?.find((u: { clinic_id: string | null }) => u.clinic_id != null)?.clinic_id as string | undefined;
+  const allowedClinicIds = (userRows ?? [])
+    .map((u: { clinic_id: string | null }) => u.clinic_id)
+    .filter(Boolean) as string[];
+
+  if (allowedClinicIds.length === 0) return null;
+
+  // Check cookie override (multi-clinic switcher).
+  // SEC-05: only honour the cookie if the clinic belongs to the current user.
+  const cookieStore = await cookies();
+  const activeId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value;
+
+  if (activeId && allowedClinicIds.includes(activeId)) {
+    const { data: overrideClinic } = await admin
+      .from("clinics").select(CLINIC_SELECT).eq("id", activeId).maybeSingle();
+    if (overrideClinic) return overrideClinic as Clinic;
+  }
+
+  // Default: first verified clinic_id from the users table.
+  const clinicId = allowedClinicIds[0];
   if (!clinicId) return null;
 
   // Step 2: fetch clinic via admin client using the verified clinic_id.
