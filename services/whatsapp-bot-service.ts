@@ -60,11 +60,34 @@ export async function upsertWhatsAppBotConfig(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+
+  // Use RPC to bypass PGRST schema cache stale issue (meta_phone_number_id column).
+  // The stored function runs raw SQL and always knows about the current schema.
+  const { data: rpcId, error: rpcError } = await supabase.rpc("upsert_whatsapp_bot_config", {
+    p_clinic_id:           clinicId,
+    p_professional_name:   input.professional_name ?? "",
+    p_clinic_name:         input.clinic_name ?? "",
+    p_specialty:           input.specialty ?? "",
+    p_methodology:         input.methodology ?? "",
+    p_locations:           (input.locations ?? []) as unknown as string,
+    p_language:            input.language ?? "pt-BR",
+    p_custom_instructions: input.custom_instructions ?? "",
+    p_is_active:           input.is_active ?? true,
+    p_twilio_number:       input.twilio_number ?? null,
+    p_meta_phone_number_id: input.meta_phone_number_id ?? null,
+  });
+  if (rpcError) throw rpcError;
+
+  // Fetch the full updated row
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")
-    .upsert({ clinic_id: clinicId, ...input, updated_at: new Date().toISOString() }, { onConflict: "clinic_id" })
-    .select("*")
+    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, created_at, updated_at")
+    .eq("id", rpcId as string)
     .single();
   if (error) throw error;
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [] };
+  return {
+    ...data,
+    meta_phone_number_id: input.meta_phone_number_id ?? null,
+    locations: (data.locations as PricingLocation[]) ?? [],
+  };
 }
