@@ -183,17 +183,23 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
 }
 
 // ─── Detect current conversation step from history (code, not LLM) ──────────
+// Step is determined by the LAST ASSISTANT message content.
+// If no assistant message exists but user messages do → step 1 was just sent
+// (race condition: user replied before save completed) → treat as step 2.
 
 function detectStep(history: ChatMessage[]): number {
   const lastBot = [...history].reverse().find(m => m.role === "assistant");
-  if (!lastBot) return 1;
+  if (!lastBot) {
+    // No bot message yet: if history has user messages, step 1 is in-flight → respond as step 2
+    return history.some(m => m.role === "user") ? 2 : 1;
+  }
   const c = lastBot.content;
-  if (c.includes("Qual é o seu nome") || c.includes("seu nome para")) return 7;
+  if (c.includes("seu nome") || c.includes("Qual é o seu nome")) return 7;
   if (c.includes("manhã ou da tarde") || c.includes("manhã ou tarde")) return 6;
   if ((c.includes("$") || c.includes("US$")) && c.includes("investimento")) return 5;
-  if (c.includes("Você está em") || c.includes("ou outra cidade") || c.includes("está em Orlando")) return 4;
+  if (c.includes("Você está em") || c.includes("ou outra cidade") || c.includes("Orlando")) return 4;
   if (c.includes("Há quanto tempo") || c.includes("perguntas rápidas")) return 3;
-  if (c.includes("principal motivo") || c.includes("trouxe aqui agora")) return 2;
+  if (c.includes("motivo") || c.includes("trouxe") || c.includes("ajudar")) return 2;
   return 2;
 }
 
@@ -349,12 +355,18 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          // Save user message IMMEDIATELY before OpenAI call to prevent race condition:
+          // if another message arrives during OpenAI latency (~2s), it will see this
+          // user message in history and detectStep will return ≥2 instead of 1.
+          const historyWithUser = [...history, { role: "user" as const, content: incomingText }];
+          await saveHistory(supabase, fromPhone, convId, historyWithUser, effectiveClinicId);
+
           console.log("[whatsapp] generating reply for phone:", fromPhone.slice(-4));
           const reply = await generateReply(incomingText, history, systemPrompt, apiKey);
           console.log("[whatsapp] reply generated, length:", reply.length);
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-          // Save history before sending reply to prevent race condition on rapid messages
+          // Save full exchange (user + assistant)
           await saveHistory(
             supabase,
             fromPhone,
