@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 
@@ -152,16 +151,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   if (apptError) return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
 
-  // WhatsApp confirmation
+  // WhatsApp confirmation via Meta API
   try {
-    const date = new Date(starts_at);
-    const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-    const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-    const firstName = full_name.split(" ")[0];
-    await sendWhatsAppText(normalizedPhone,
-      `Olá, ${firstName}! ✅\n\nSeu agendamento foi confirmado:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic.name}`
-    );
-  } catch { /* non-blocking */ }
+    const metaToken = process.env.META_WHATSAPP_TOKEN;
+    const phoneNumberId = process.env.META_PHONE_NUMBER_ID ?? "1031933676681061";
+    if (metaToken) {
+      const date = new Date(starts_at);
+      const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+      const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const firstName = full_name.split(" ")[0];
+      // Meta API requires phone without + sign
+      const metaPhone = normalizedPhone.replace(/^\+/, "");
+      const msgBody = `Olá, ${firstName}! ✅\n\nSeu agendamento foi confirmado:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic.name}`;
+      const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${metaToken}` },
+        body: JSON.stringify({ messaging_product: "whatsapp", to: metaPhone, type: "text", text: { body: msgBody, preview_url: false } }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        console.error("[book] WhatsApp confirmation failed:", JSON.stringify(err));
+      }
+    }
+  } catch (e) { console.error("[book] WhatsApp confirmation exception:", e); }
 
   // Schedule automations
   scheduleAutomations(appointment).catch(() => {});
