@@ -15,7 +15,8 @@ const LANGUAGE_OPTIONS = [
   { value: "en-US", label: "English (US)" },
 ];
 
-const WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/whatsapp/webhook";
+const TWILIO_WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/whatsapp/webhook";
+const META_WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/meta/whatsapp";
 
 export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBotConfig | null }) {
   const cfg = initialConfig ?? null;
@@ -72,6 +73,7 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
 
   const hasConfig = !!cfg;
   const hasTwilioNumber = !!(cfg?.twilio_number);
+  const hasMetaPhoneId = !!(cfg?.meta_phone_number_id);
   const isActive = !!cfg?.is_active;
 
   return (
@@ -82,51 +84,70 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
         <p className="mb-5 text-sm text-black/50">Complete os 3 passos abaixo para o bot começar a responder automaticamente.</p>
         <ol className="flex flex-col gap-4">
           <li className="flex items-start gap-3">
-            {hasConfig && hasTwilioNumber ? (
+            {hasConfig ? (
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
             ) : (
               <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
             )}
             <div>
               <p className="text-sm font-medium">1. Preencher e salvar a configuração abaixo</p>
-              <p className="text-xs text-black/45">Inclui nome da clínica, especialidade, preços e número Twilio.</p>
+              <p className="text-xs text-black/45">Nome da clínica, especialidade, preços, número Twilio e/ou Meta Phone Number ID.</p>
             </div>
           </li>
+
+          {/* ── Twilio (canal legado) ── */}
           <li className="flex items-start gap-3">
-            <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            {hasTwilioNumber ? (
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+            ) : (
+              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            )}
             <div>
-              <p className="text-sm font-medium">2. Adicionar variáveis de ambiente no Vercel</p>
-              <p className="mb-2 text-xs text-black/45">Acesse <strong>Vercel → seu projeto → Settings → Environment Variables</strong> e adicione:</p>
+              <p className="text-sm font-medium">2a. Twilio — adicionar variáveis de ambiente no Vercel</p>
+              <p className="mb-2 text-xs text-black/45">Acesse <strong>Vercel → Settings → Environment Variables</strong>:</p>
               <div className="rounded-lg bg-black/[.04] p-3 font-mono text-xs leading-6 text-black/70">
-                <div><span className="text-axiel-ink font-semibold">TWILIO_ACCOUNT_SID</span>=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
-                <div><span className="text-axiel-ink font-semibold">TWILIO_AUTH_TOKEN</span>=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</div>
+                <div><span className="text-axiel-ink font-semibold">TWILIO_ACCOUNT_SID</span>=ACxxx…</div>
+                <div><span className="text-axiel-ink font-semibold">TWILIO_AUTH_TOKEN</span>=xxx…</div>
                 <div><span className="text-axiel-ink font-semibold">TWILIO_FROM_NUMBER</span>=whatsapp:+14155238886</div>
               </div>
-              <p className="mt-2 text-xs text-black/40">Valores encontrados em: <strong>console.twilio.com → Account Info</strong>. Após adicionar, faça Redeploy.</p>
-            </div>
-          </li>
-          <li className="flex items-start gap-3">
-            <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
-            <div>
-              <p className="text-sm font-medium">3. Configurar webhook no Twilio</p>
-              <p className="mb-2 text-xs text-black/45">No console do Twilio, vá em <strong>Messaging → Senders → WhatsApp Senders → seu número → Sandbox Settings</strong> (ou configurações do número aprovado) e cole a URL abaixo em <em>"When a message comes in"</em>:</p>
+              <p className="mt-2 text-xs text-black/45 mb-2">Webhook URL para o Twilio Console:</p>
               <div className="flex items-center gap-2 rounded-lg bg-black/[.04] px-3 py-2 font-mono text-xs text-black/70">
-                <span className="flex-1 break-all">{WEBHOOK_URL}</span>
-                <button
-                  type="button"
-                  onClick={() => navigator.clipboard.writeText(WEBHOOK_URL)}
-                  className="shrink-0 rounded bg-axiel-ink/10 px-2 py-1 text-[10px] font-semibold text-axiel-ink hover:bg-axiel-ink/20 transition"
-                >
+                <span className="flex-1 break-all">{TWILIO_WEBHOOK_URL}</span>
+                <button type="button" onClick={() => navigator.clipboard.writeText(TWILIO_WEBHOOK_URL)}
+                  className="shrink-0 rounded bg-axiel-ink/10 px-2 py-1 text-[10px] font-semibold text-axiel-ink hover:bg-axiel-ink/20 transition">
                   Copiar
                 </button>
               </div>
-              <a
-                href="https://console.twilio.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1 text-xs text-axiel-ink hover:underline"
-              >
-                Abrir Twilio Console <ExternalLink className="h-3 w-3" />
+            </div>
+          </li>
+
+          {/* ── Meta API (canal principal) ── */}
+          <li className="flex items-start gap-3">
+            {hasMetaPhoneId ? (
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+            ) : (
+              <Circle className="mt-0.5 h-5 w-5 shrink-0 text-black/20" />
+            )}
+            <div>
+              <p className="text-sm font-medium">2b. Meta WhatsApp API — adicionar variáveis no Vercel</p>
+              <p className="mb-2 text-xs text-black/45">Acesse <strong>Meta for Developers → seu App → WhatsApp → API Setup</strong>:</p>
+              <div className="rounded-lg bg-black/[.04] p-3 font-mono text-xs leading-6 text-black/70">
+                <div><span className="text-axiel-ink font-semibold">META_WHATSAPP_TOKEN</span>=EAAxxxxx…</div>
+                <div><span className="text-axiel-ink font-semibold">META_PHONE_NUMBER_ID</span>=1031933676681061</div>
+                <div><span className="text-axiel-ink font-semibold">META_APP_SECRET</span>=xxxxxxxx</div>
+                <div><span className="text-axiel-ink font-semibold">META_VERIFY_TOKEN</span>=seu_token_verificação</div>
+              </div>
+              <p className="mt-2 text-xs text-black/45 mb-2">URL de callback do webhook Meta (configurar em <strong>WhatsApp → Configuration → Webhook</strong>):</p>
+              <div className="flex items-center gap-2 rounded-lg bg-black/[.04] px-3 py-2 font-mono text-xs text-black/70">
+                <span className="flex-1 break-all">{META_WEBHOOK_URL}</span>
+                <button type="button" onClick={() => navigator.clipboard.writeText(META_WEBHOOK_URL)}
+                  className="shrink-0 rounded bg-axiel-ink/10 px-2 py-1 text-[10px] font-semibold text-axiel-ink hover:bg-axiel-ink/20 transition">
+                  Copiar
+                </button>
+              </div>
+              <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-axiel-ink hover:underline">
+                Abrir Meta for Developers <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </li>
@@ -169,7 +190,13 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
             <label className="mb-1 block text-sm font-medium">Número Twilio do WhatsApp (ex: +14155238886)</label>
             <input name="twilio_number" defaultValue={cfg?.twilio_number ?? ""} placeholder="+14155238886"
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
-            <p className="mt-1 text-xs text-black/40">Vincula este número ao bot da sua clínica. Deixe em branco para usar o padrão.</p>
+            <p className="mt-1 text-xs text-black/40">Canal Twilio (legado). Deixe em branco se usar apenas a Meta API.</p>
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium">Meta Phone Number ID</label>
+            <input name="meta_phone_number_id" defaultValue={cfg?.meta_phone_number_id ?? ""} placeholder="ex: 1031933676681061"
+              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
+            <p className="mt-1 text-xs text-black/40">ID numérico do número na Meta for Developers → WhatsApp → API Setup. Necessário para o canal Meta API.</p>
           </div>
         </div>
       </Card>

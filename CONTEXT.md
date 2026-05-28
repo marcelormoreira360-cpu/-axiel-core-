@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 25/05/2026
+> Atualizado em: 28/05/2026
 
 ---
 
@@ -19,7 +19,13 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Auditoria de segurança/UX completa — 15 itens resolvidos
 - ✅ Performance otimizada — React.cache nos serviços core + 17 índices no banco
 - ✅ Migration 029 aplicada no banco de produção
-- 🔲 Push para produção feito em 25/05/2026 (commit d134b75)
+- ✅ Migration 030 aplicada — UNIQUE constraint em `whatsapp_conversations.phone`
+- ✅ Migration 031 aplicada — coluna `current_step` em `whatsapp_conversations`
+- ✅ Bot WhatsApp corrigido (loop + duplo INSERT) — commit ffabf22
+- ✅ Booking confirmation trocado Twilio → Meta API (template `agendamento_confirmado`)
+- ✅ Bot WhatsApp bilíngue PT/EN com auto-detecção — commit c0254eb (28/05/2026)
+- ✅ Auditoria completa — 21 correções de segurança, bugs e performance — commit 922961e (28/05/2026)
+- ✅ Migration 032 aplicada — coluna `sessions_remaining` gerada + índice parcial em `patient_packages`
 
 ---
 
@@ -37,7 +43,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 | `app/api/health-agent/route.ts` | Análise clínica com GPT-4o |
 | `components/session-recording-panel.tsx` | Gravação de sessão + useActionState |
 | `app/schedule/[id]/session/actions.ts` | `saveSessionRecord` — Server Action |
-| `supabase/migrations/` | 029 migrations, última = 029_performance_indexes.sql |
+| `supabase/migrations/` | 032 migrations, última = 032_patient_packages_sessions_remaining.sql |
+| `app/api/meta/whatsapp/route.ts` | Bot WhatsApp bilíngue PT/EN — 8 passos + auto-detecção |
+| `app/api/book/[slug]/route.ts` | Booking público — confirmação via Meta API (template) |
+| `lib/whatsapp-bot-defaults.ts` | Config IFWC + buildSystemPrompt() |
 
 ---
 
@@ -108,6 +117,11 @@ const Chart = dynamic(() => import("@/components/chart").then(m => m.Chart), {
 - Admin client obrigatório em contexto sem sessão (cron, webhooks)
 - `img` em vez de `Image` para QR code MFA (data: URL incompatível com next/image)
 - Paginação de pacientes: `PAGE_SIZE = 100`, URL `?page=N&q=termo`
+- Bot WhatsApp: step derivado do nº de msgs assistant (nunca coluna DB) — imune a cache stale
+- Bot WhatsApp: UPSERT com `onConflict: "phone"` no INSERT inicial (evita race condition)
+- Bot WhatsApp: SELECT `id, messages` only (não selecionar colunas que podem não existir)
+- Confirmação de agendamento: Meta API template `agendamento_confirmado` (não Twilio)
+- Bot bilíngue: idioma detectado da primeira mensagem do paciente, fixo para toda conversa
 
 ---
 

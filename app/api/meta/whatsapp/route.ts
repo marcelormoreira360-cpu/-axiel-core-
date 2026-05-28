@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import { IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByMetaPhoneId } from "@/services/whatsapp-bot-service";
 import type { PricingLocation } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
@@ -579,7 +579,14 @@ export async function POST(req: NextRequest) {
           if (!incomingText) continue;
 
           const supabase = createSupabaseAdminClient();
-          const clinicId = null; // TODO: look up clinic by Meta phone_number_id
+
+          // SEC-02: resolve clinic_id from Meta phone_number_id via whatsapp_bot_configs.
+          // Falls back to IFWC_DEFAULT_CONFIG when no clinic is configured for this number.
+          const botConfig = phoneNumberId
+            ? await getWhatsAppBotConfigByMetaPhoneId(phoneNumberId).catch(() => null)
+            : null;
+          const clinicId = botConfig?.clinic_id ?? null;
+          const config = botConfig ?? IFWC_DEFAULT_CONFIG;
 
           const {
             id: convId,
@@ -590,7 +597,6 @@ export async function POST(req: NextRequest) {
           } = await getHistory(supabase, fromPhone);
 
           const effectiveClinicId = convClinicId ?? clinicId;
-          const config = IFWC_DEFAULT_CONFIG;
 
           // Step: prefer DB-persisted value (immune to truncation); fall back to count
           const currentStep = stepFromHistory(history, currentStepDb);

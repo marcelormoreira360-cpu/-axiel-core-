@@ -18,6 +18,7 @@ export async function saveWhatsAppBotConfig(formData: FormData) {
 
   await upsertWhatsAppBotConfig(clinic.id, {
     twilio_number: (formData.get("twilio_number") as string)?.trim() || null,
+    meta_phone_number_id: (formData.get("meta_phone_number_id") as string)?.trim() || null,
     professional_name: (formData.get("professional_name") as string)?.trim() || "",
     clinic_name: (formData.get("clinic_name") as string)?.trim() || "",
     specialty: (formData.get("specialty") as string)?.trim() || "",
