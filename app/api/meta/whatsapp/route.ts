@@ -66,11 +66,18 @@ async function getHistory(
       .from("whatsapp_conversations")
       .select("id, messages, bot_disabled, clinic_id")
       .eq("phone", phone)
-      .maybeSingle();
-    if (error) console.error("[whatsapp] getHistory error:", error.message);
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single(); // always returns one row (or error if 0 rows)
+    if (error && error.code !== "PGRST116") {
+      // PGRST116 = no rows found — that's fine for first contact
+      console.error("[whatsapp] getHistory error:", error.code, error.message);
+    }
+    const msgs = (data?.messages as ChatMessage[]) ?? [];
+    console.log("[whatsapp] getHistory: id=", data?.id ?? "null", "msgs=", msgs.length, "phone=", phone.slice(-4));
     return {
       id: data?.id ?? null,
-      messages: (data?.messages as ChatMessage[]) ?? [],
+      messages: msgs,
       botDisabled: data?.bot_disabled ?? false,
       clinicId: data?.clinic_id ?? null,
     };
