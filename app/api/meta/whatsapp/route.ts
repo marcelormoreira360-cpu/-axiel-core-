@@ -39,17 +39,18 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // Derives the current step from the number of assistant messages already sent.
-// Does NOT rely on the current_step DB column — always correct as long as messages are saved.
-// 0 bot replies → step 1 (send welcome)
-// 1 bot reply   → step 2 (qualification questions)
-// 2 bot replies → step 3 (present program + ask city)
-// 3 bot replies → step 4 (show prices)
-// 4 bot replies → step 5 (morning/afternoon?)
-// 5 bot replies → step 6 (ask name)
-// 6+ bot replies → step 7 (confirm scheduling)
+// 0 bot replies → step 1 (welcome)
+// 1 → step 2 (qualification questions)
+// 2 → step 3 (present program + ask city)
+// 3 → step 4 (show prices)
+// 4 → step 5 (morning/afternoon?)
+// 5 → step 6 (ask name)
+// 6 → step 7 (confirm + scheduling link)
+// 7+ → step 8 (terminal — already confirmed, short reply)
 function stepFromHistory(messages: ChatMessage[]): number {
   const botCount = messages.filter((m) => m.role === "assistant").length;
-  return Math.min(botCount + 1, 7);
+  if (botCount >= 7) return 8;
+  return botCount + 1;
 }
 
 async function getHistory(
@@ -268,7 +269,10 @@ function buildFixedReply(step: number, userText: string, config: typeof IFWC_DEF
       return `Ótimo! Qual é o seu nome para eu reservar a data? 😊`;
 
     case 7:
-      return `Perfeito! Vou passar seu contato para ${professional_name} confirmar o agendamento. Em breve entraremos em contato 🙏`;
+      return `Perfeito! Vou passar seu contato para ${professional_name} 🙏\n\nSe quiser já garantir sua data, você pode agendar diretamente por aqui:\n👉 https://axiel-core-6ikl.vercel.app/book/ifwc\n\nEm breve entraremos em contato para confirmar 😊`;
+
+    case 8:
+      return `Seu contato já foi enviado ao ${professional_name} 🙏 Em breve ele entra em contato. Se precisar de algo mais, é só avisar!`;
 
     default:
       return "";
@@ -513,10 +517,14 @@ export async function POST(req: NextRequest) {
             // Fixed: ask name
             reply = buildFixedReply(6, incomingText, config);
             nextStep = 7;
-          } else {
-            // Step 7+: end of flow — confirm scheduling
+          } else if (currentStep === 7) {
+            // Fixed: confirm + scheduling link
             reply = buildFixedReply(7, incomingText, config);
-            nextStep = 7; // stays at 7 (terminal)
+            nextStep = 8;
+          } else {
+            // Step 8+: terminal — already confirmed, short reply
+            reply = buildFixedReply(8, incomingText, config);
+            nextStep = 8; // stays at 8
           }
 
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
