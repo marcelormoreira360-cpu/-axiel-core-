@@ -64,13 +64,12 @@ async function getHistory(
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, clinic_id")
+      .select("id, messages")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
-      .single(); // always returns one row (or error if 0 rows)
+      .single();
     if (error && error.code !== "PGRST116") {
-      // PGRST116 = no rows found — that's fine for first contact
       console.error("[whatsapp] getHistory error:", error.code, error.message);
     }
     const msgs = (data?.messages as ChatMessage[]) ?? [];
@@ -78,8 +77,8 @@ async function getHistory(
     return {
       id: data?.id ?? null,
       messages: msgs,
-      botDisabled: data?.bot_disabled ?? false,
-      clinicId: data?.clinic_id ?? null,
+      botDisabled: false,
+      clinicId: null,
     };
   } catch (e) {
     console.error("[whatsapp] getHistory exception:", e);
