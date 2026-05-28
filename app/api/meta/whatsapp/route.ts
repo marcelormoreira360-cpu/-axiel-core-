@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import { IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import type { PricingLocation } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
@@ -40,11 +41,17 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 async function getHistory(
   supabase: SupabaseAdmin,
   phone: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
+): Promise<{
+  id: string | null;
+  messages: ChatMessage[];
+  botDisabled: boolean;
+  clinicId: string | null;
+  currentStep: number;
+}> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, clinic_id")
+      .select("id, messages, bot_disabled, clinic_id, current_step")
       .eq("phone", phone)
       .maybeSingle();
     return {
@@ -52,9 +59,10 @@ async function getHistory(
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
       clinicId: data?.clinic_id ?? null,
+      currentStep: data?.current_step ?? 1,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, clinicId: null, currentStep: 1 };
   }
 }
 
@@ -63,12 +71,14 @@ async function saveHistory(
   phone: string,
   id: string | null,
   messages: ChatMessage[],
-  clinicId?: string | null
+  clinicId?: string | null,
+  currentStep?: number
 ) {
   const payload: Record<string, unknown> = {
     phone,
     messages: messages.slice(-20),
     updated_at: new Date().toISOString(),
+    ...(currentStep !== undefined && { current_step: currentStep }),
   };
   if (!id && clinicId) payload.clinic_id = clinicId;
   try {
@@ -182,33 +192,68 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
   }
 }
 
-// ─── Detect current conversation step from history (code, not LLM) ──────────
-// Step is determined by the LAST ASSISTANT message content.
-// If no assistant message exists but user messages do → step 1 was just sent
-// (race condition: user replied before save completed) → treat as step 2.
+// ─── City detection for step 4 ───────────────────────────────────────────────
 
-function detectStep(history: ChatMessage[]): number {
-  const lastBot = [...history].reverse().find(m => m.role === "assistant");
-  if (!lastBot) {
-    // No bot message yet: if history has user messages, step 1 is in-flight → respond as step 2
-    return history.some(m => m.role === "user") ? 2 : 1;
+function detectCity(text: string, locations: PricingLocation[]): PricingLocation {
+  const lower = text.toLowerCase();
+  const match = locations.find((l) =>
+    lower.includes(l.city.toLowerCase().split(" ")[0].toLowerCase())
+  );
+  if (!match) {
+    const usaKeywords = ["florida", "miami", "tampa", "usa", "eua", "estados unidos", "orlando", "us"];
+    if (usaKeywords.some((k) => lower.includes(k))) {
+      return locations[0]; // Orlando primeiro
+    }
+    return locations.find((l) => l.city.includes("São Paulo")) ?? locations[0];
   }
-  const c = lastBot.content;
-  if (c.includes("seu nome") || c.includes("Qual é o seu nome")) return 7;
-  if (c.includes("manhã ou da tarde") || c.includes("manhã ou tarde")) return 6;
-  if ((c.includes("$") || c.includes("US$")) && c.includes("investimento")) return 5;
-  if (c.includes("Você está em") || c.includes("ou outra cidade") || c.includes("Orlando")) return 4;
-  if (c.includes("Há quanto tempo") || c.includes("perguntas rápidas")) return 3;
-  if (c.includes("motivo") || c.includes("trouxe") || c.includes("ajudar")) return 2;
-  return 2;
+  return match;
 }
 
-// ─── AI reply ────────────────────────────────────────────────────────────────
+// ─── Build pricing block for a location ──────────────────────────────────────
 
-async function generateReply(
-  incomingMessage: string,
-  history: ChatMessage[],
+function buildPricingBlock(location: PricingLocation): string {
+  const lines = location.plans.map(
+    (p) =>
+      `• ${p.name}: ${p.price}${p.recommended ? " ← recomendado" : ""} — ${p.description}`
+  );
+  return `*Investimento — ${location.city}:*\n${lines.join("\n")}`;
+}
+
+// ─── Fixed step templates ─────────────────────────────────────────────────────
+
+function buildFixedReply(step: number, userText: string, config: typeof IFWC_DEFAULT_CONFIG): string {
+  const { professional_name, locations } = config;
+
+  switch (step) {
+    case 1:
+      return `Olá! Seja muito bem-vindo(a) 🙏 O atendimento do ${professional_name} é uma avaliação integrativa personalizada — não é uma sessão isolada. Analisa corpo, sistema nervoso, parte bioemocional e fatores funcionais.\nMe conta: qual é o principal motivo que te trouxe aqui agora?`;
+
+    case 4: {
+      const location = detectCity(userText, locations);
+      const pricingBlock = buildPricingBlock(location);
+      return `${pricingBlock}\n\nIsso inclui avaliação, sessão estendida, exames, relatórios e acompanhamento — não é sessão avulsa. O formato recomendado (←) é o mais indicado para a maioria dos casos.`;
+    }
+
+    case 5:
+      return `Pelo que você me contou, esse formato é o mais indicado para o seu caso 😊 Para você seria melhor no período da manhã ou da tarde?`;
+
+    case 6:
+      return `Ótimo! Qual é o seu nome para eu reservar a data? 😊`;
+
+    case 7:
+      return `Perfeito! Vou passar seu contato para ${professional_name} confirmar o agendamento. Em breve entraremos em contato 🙏`;
+
+    default:
+      return "";
+  }
+}
+
+// ─── AI reply helper ─────────────────────────────────────────────────────────
+
+async function generateOpenAIReply(
   systemPrompt: string,
+  userMessage: string,
+  historyContext: ChatMessage[],
   apiKey: string
 ): Promise<string> {
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -218,8 +263,8 @@ async function generateReply(
       model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
-        ...history.slice(-2),
-        { role: "user", content: incomingMessage },
+        ...historyContext.slice(-2),
+        { role: "user", content: userMessage },
       ],
       temperature: 0.7,
       max_tokens: 450,
@@ -234,8 +279,52 @@ async function generateReply(
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
+// ─── Step 2 — qualification questions (OpenAI) ────────────────────────────────
+
+async function generateStep2Reply(
+  userMessage: string,
+  config: typeof IFWC_DEFAULT_CONFIG,
+  apiKey: string
+): Promise<string> {
+  const system = `Você é assistente de ${config.clinic_name}. Responda em português brasileiro, tom acolhedor, estilo WhatsApp, mensagens curtas. O paciente informou o motivo do contato. Sua tarefa: valide em 1 frase de empatia + faça as 4 perguntas juntas numa única mensagem numerada: (1) Há quanto tempo você sente isso? (2) Isso afeta mais dor, sono, ansiedade, energia, intestino, cansaço ou parte emocional? (3) Você já fez outros tratamentos antes? (4) O que você mais gostaria de melhorar nos próximos 60 dias? Não explique programa, não mostre valores.`;
+  return generateOpenAIReply(system, userMessage, [], apiKey);
+}
+
+// ─── Step 3 — present program + ask city (OpenAI) ────────────────────────────
+
+async function generateStep3Reply(
+  userMessage: string,
+  history: ChatMessage[],
+  config: typeof IFWC_DEFAULT_CONFIG,
+  apiKey: string
+): Promise<string> {
+  const cityList = config.locations.map((l) => l.city).join(", ");
+  const system = `Você é assistente de ${config.clinic_name}. Tom acolhedor, estilo WhatsApp. O paciente respondeu as perguntas de qualificação. Sua tarefa: valide com empatia em 2-3 frases, depois explique o programa: ${config.methodology}. Termine perguntando: 'Você está em ${cityList} ou outra cidade?'`;
+  return generateOpenAIReply(system, userMessage, history, apiKey);
+}
+
+// ─── Price objection guard ────────────────────────────────────────────────────
+
+function isPriceQuestion(text: string): boolean {
+  const lower = text.toLowerCase();
+  return ["quanto custa", "qual o valor", "qual o preço", "preço", "valor", "custa"].some((k) =>
+    lower.includes(k)
+  );
+}
+
+function buildPriceObjectionReply(currentStep: number, config: typeof IFWC_DEFAULT_CONFIG): string {
+  const nextQuestions: Record<number, string> = {
+    1: "qual é o principal motivo que te trouxe aqui?",
+    2: "quais sintomas você quer melhorar?",
+    3: "você está em qual cidade?",
+    5: "você prefere manhã ou tarde?",
+    6: "qual é o seu nome?",
+  };
+  const nextQ = nextQuestions[currentStep] ?? "como posso te ajudar melhor?";
+  return `Claro! O investimento varia conforme o formato e a cidade. Inclui avaliação, sessão estendida, exames, relatórios e acompanhamento de ${config.professional_name}. Para te passar os valores certos: ${nextQ}`;
+}
+
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
-// Meta calls GET with hub.challenge to verify the endpoint owns the callback URL.
 
 export async function GET(req: NextRequest) {
   const mode = req.nextUrl.searchParams.get("hub.mode");
@@ -277,7 +366,6 @@ export async function POST(req: NextRequest) {
 
     const body: MetaWebhookBody = JSON.parse(rawBody);
 
-    // Only handle WhatsApp messages
     if (body.object !== "whatsapp_business_account") {
       return new NextResponse("", { status: 200 });
     }
@@ -292,7 +380,6 @@ export async function POST(req: NextRequest) {
         const contacts = value.contacts ?? [];
 
         for (const message of messages) {
-          // Only process inbound messages (not status updates)
           const fromPhone = message.from;
           const contactName = contacts.find((c) => c.wa_id === fromPhone)?.profile?.name ?? "";
 
@@ -314,85 +401,127 @@ export async function POST(req: NextRequest) {
               continue;
             }
           } else {
-            // Unsupported message type (image, doc, etc.) — ignore silently
             continue;
           }
 
           if (!incomingText) continue;
 
           const supabase = createSupabaseAdminClient();
-
           const clinicId = null; // TODO: look up clinic by Meta phone_number_id
 
-          const { id: convId, messages: history, botDisabled, clinicId: convClinicId } =
-            await getHistory(supabase, fromPhone);
+          const {
+            id: convId,
+            messages: history,
+            botDisabled,
+            clinicId: convClinicId,
+            currentStep,
+          } = await getHistory(supabase, fromPhone);
 
-          // Detect conversation step in code — do NOT rely on LLM for state detection
-          const currentStep = detectStep(history);
-          const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG, currentStep);
-          console.log("[whatsapp] detected step:", currentStep, "for phone:", fromPhone.slice(-4));
+          const effectiveClinicId = convClinicId ?? clinicId;
+          const config = IFWC_DEFAULT_CONFIG;
+
+          console.log("[whatsapp] db step:", currentStep, "for phone:", fromPhone.slice(-4));
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
             await saveHistory(supabase, fromPhone, convId, [
               ...history,
               { role: "user", content: incomingText },
-            ], convClinicId ?? clinicId);
+            ], effectiveClinicId);
             continue;
           }
 
           // Auto-create lead for new contacts
-          const effectiveClinicId = convClinicId ?? clinicId;
           if (effectiveClinicId && !convId) {
             void autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText);
           }
 
-          // Reset command — clears conversation history for testing
+          // Reset command
           if (incomingText.toLowerCase().trim() === "reset") {
-            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId);
-            await sendMetaReply(fromPhone, "Conversa reiniciada. Olá! 👋 Como posso ajudar?", phoneNumberId);
+            await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId, 1);
+            await sendMetaReply(fromPhone, "Conversa reiniciada. 👋 Como posso ajudar?", phoneNumberId);
             console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
             continue;
           }
 
-          // Save user message IMMEDIATELY before OpenAI call to prevent race condition:
-          // if another message arrives during OpenAI latency (~2s), it will see this
-          // user message in history and detectStep will return ≥2 instead of 1.
+          // Price objection — answer without advancing step
+          if (currentStep !== 4 && isPriceQuestion(incomingText)) {
+            const objectionReply = buildPriceObjectionReply(currentStep, config);
+            const updatedMessages = [
+              ...history,
+              { role: "user" as const, content: incomingText },
+              { role: "assistant" as const, content: objectionReply },
+            ];
+            await saveHistory(supabase, fromPhone, convId, updatedMessages, effectiveClinicId, currentStep);
+            await sendMetaReply(fromPhone, objectionReply, phoneNumberId);
+            console.log("[whatsapp] price objection handled at step:", currentStep);
+            continue;
+          }
+
+          // Save user message BEFORE generating reply (prevents race condition)
           const historyWithUser = [...history, { role: "user" as const, content: incomingText }];
-          await saveHistory(supabase, fromPhone, convId, historyWithUser, effectiveClinicId);
+          await saveHistory(supabase, fromPhone, convId, historyWithUser, effectiveClinicId, currentStep);
 
-          // Steps 1-2: no prior history needed — system prompt has the full instruction.
-          // Sending old welcome messages confuses gpt-4o-mini into repeating them.
-          // Steps 3+: pass last exchange for contextual reference (city, answers, period).
-          const historyForLLM = currentStep <= 2 ? [] : history.slice(-2);
+          // ─── Step dispatch ───────────────────────────────────────────────
+          let reply = "";
+          let nextStep = currentStep;
 
-          console.log("[whatsapp] generating reply for phone:", fromPhone.slice(-4));
-          const reply = await generateReply(incomingText, historyForLLM, systemPrompt, apiKey);
-          console.log("[whatsapp] reply generated, length:", reply.length);
+          if (currentStep === 1) {
+            // Fixed welcome template — no OpenAI
+            reply = buildFixedReply(1, incomingText, config);
+            nextStep = 2;
+          } else if (currentStep === 2) {
+            // OpenAI: empathy + 4 qualification questions
+            reply = await generateStep2Reply(incomingText, config, apiKey);
+            nextStep = 3;
+          } else if (currentStep === 3) {
+            // OpenAI: validate answers + present program + ask city
+            reply = await generateStep3Reply(incomingText, history.slice(-2), config, apiKey);
+            nextStep = 4;
+          } else if (currentStep === 4) {
+            // Fixed: show pricing for detected city
+            reply = buildFixedReply(4, incomingText, config);
+            nextStep = 5;
+          } else if (currentStep === 5) {
+            // Fixed: morning or afternoon?
+            reply = buildFixedReply(5, incomingText, config);
+            nextStep = 6;
+          } else if (currentStep === 6) {
+            // Fixed: ask name
+            reply = buildFixedReply(6, incomingText, config);
+            nextStep = 7;
+          } else {
+            // Step 7+: end of flow — confirm scheduling
+            reply = buildFixedReply(7, incomingText, config);
+            nextStep = 7; // stays at 7 (terminal)
+          }
+
           const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
 
-          // Save full exchange (user + assistant)
+          // Save full exchange with new step
           await saveHistory(
             supabase,
             fromPhone,
             convId,
-            [...history, { role: "user", content: incomingText }, { role: "assistant", content: finalReply }],
-            effectiveClinicId
+            [
+              ...history,
+              { role: "user", content: incomingText },
+              { role: "assistant", content: finalReply },
+            ],
+            effectiveClinicId,
+            nextStep
           );
 
-          // Send reply via Meta API
-          console.log("[whatsapp] sending reply via Meta API, phoneNumberId:", phoneNumberId);
+          console.log("[whatsapp] sending reply at step:", currentStep, "→ next step:", nextStep);
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);
           console.log("[whatsapp] reply sent successfully");
         }
       }
     }
 
-    // Meta requires a 200 response to acknowledge receipt
     return new NextResponse("", { status: 200 });
   } catch (err) {
     console.error("[whatsapp] webhook error:", err);
-    // Always return 200 to Meta — otherwise it retries indefinitely
     return new NextResponse("", { status: 200 });
   }
 }
