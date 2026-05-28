@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { exchangeGoogleCode, saveGoogleIntegration } from "@/services/google-calendar-service";
+import { getCurrentUserProfile } from "@/services/user-service";
 
 export const runtime = "nodejs";
 
@@ -34,7 +35,24 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_invalid_state`);
     }
 
-    const { clinicId } = JSON.parse(payload) as { clinicId: string };
+    const { clinicId, userId } = JSON.parse(payload) as { clinicId: string; userId: string };
+
+    // SEC-08: verify active session and ownership before saving tokens
+    const profile = await getCurrentUserProfile();
+    if (!profile) {
+      console.error("Google OAuth callback: no active session");
+      return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_unauthorized`);
+    }
+    if (profile.id !== userId || profile.clinic_id !== clinicId) {
+      console.error("Google OAuth callback: session user does not match state payload", {
+        sessionUserId: profile.id,
+        stateUserId: userId,
+        sessionClinicId: profile.clinic_id,
+        stateClinicId: clinicId,
+      });
+      return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_unauthorized`);
+    }
+
     const tokens = await exchangeGoogleCode(code);
     await saveGoogleIntegration(clinicId, tokens);
     return NextResponse.redirect(`${appUrl}/settings/integrations?success=google`);

@@ -17,7 +17,7 @@ export async function GET() {
   }
 
   const nonce  = randomBytes(16).toString("hex");
-  const payload = JSON.stringify({ clinicId: profile.clinic_id, nonce });
+  const payload = JSON.stringify({ clinicId: profile.clinic_id, userId: profile.id, nonce });
   const sig  = createHmac("sha256", secret).update(payload).digest("hex");
   const state = Buffer.from(JSON.stringify({ payload, sig })).toString("base64url");
 
