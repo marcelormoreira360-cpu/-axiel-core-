@@ -22,9 +22,11 @@ export function PwaRegister() {
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e as BeforeInstallPromptEvent);
-      // Show banner only if not dismissed before
-      const dismissed = localStorage.getItem("pwa-install-dismissed");
-      if (!dismissed) setShowBanner(true);
+      // Show banner if never dismissed, or dismissed >7 days ago
+      const dismissedAt = localStorage.getItem("pwa-install-dismissed");
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      const shouldShow = !dismissedAt || Date.now() - Number(dismissedAt) > sevenDays;
+      if (shouldShow) setShowBanner(true);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -43,7 +45,7 @@ export function PwaRegister() {
 
   function handleDismiss() {
     setShowBanner(false);
-    localStorage.setItem("pwa-install-dismissed", "1");
+    localStorage.setItem("pwa-install-dismissed", String(Date.now()));
   }
 
   if (!showBanner) return null;
