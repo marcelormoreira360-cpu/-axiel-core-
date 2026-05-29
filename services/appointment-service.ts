@@ -200,6 +200,23 @@ export async function updateAppointment(
     );
   }
 
+  // Delete Zoom meeting if appointment is cancelled
+  if (updates.status === "cancelled" && appt.zoom_meeting_id) {
+    const { deleteZoomMeeting } = await import("@/services/zoom-service");
+    deleteZoomMeeting(appt.clinic_id, appt.zoom_meeting_id).catch(
+      (err: unknown) => console.error("Zoom meeting delete failed:", err)
+    );
+  }
+
+  // Update Zoom meeting time if appointment is rescheduled
+  if ((updates.starts_at || updates.duration_minutes) && appt.zoom_meeting_id) {
+    const { updateZoomMeeting } = await import("@/services/zoom-service");
+    updateZoomMeeting(appt.clinic_id, appt.zoom_meeting_id, {
+      startIso:        updates.starts_at ?? appt.starts_at,
+      durationMinutes: updates.duration_minutes ?? appt.duration_minutes,
+    }).catch((err: unknown) => console.error("Zoom meeting update failed:", err));
+  }
+
   return appt;
 }
 

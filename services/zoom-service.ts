@@ -144,6 +144,31 @@ export async function deleteZoomMeeting(clinicId: string, meetingId: string) {
   });
 }
 
+/**
+ * Update a Zoom meeting's start time and/or duration.
+ * Called when an appointment is rescheduled.
+ */
+export async function updateZoomMeeting(
+  clinicId: string,
+  meetingId: string,
+  updates: { startIso?: string; durationMinutes?: number },
+) {
+  const creds = clinicId ? await getClinicZoomCreds(clinicId) : null;
+  const token = await getZoomAccessToken(creds);
+  if (!token) return;
+
+  const body: Record<string, unknown> = {};
+  if (updates.startIso)        body.start_time = updates.startIso;
+  if (updates.durationMinutes) body.duration   = updates.durationMinutes;
+  if (Object.keys(body).length === 0) return;
+
+  await fetch(`${ZOOM_API}/meetings/${meetingId}`, {
+    method:  "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body:    JSON.stringify(body),
+  });
+}
+
 // ── Recordings ────────────────────────────────────────────────────────────────
 
 export type ZoomRecording = {
