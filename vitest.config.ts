@@ -9,8 +9,9 @@ export default defineConfig({
     exclude: ["node_modules", ".next"],
     coverage: {
       provider: "v8",
-      include: ["modules/**/*.ts", "lib/**/*.ts"],
-      exclude: ["**/*.d.ts"],
+      include: ["modules/**/*.ts", "lib/**/*.ts", "services/**/*.ts"],
+      exclude: ["**/*.d.ts", "**/__tests__/**", "**/*.test.ts"],
+      reporter: ["text", "html"],
     },
   },
   resolve: {

@@ -5,6 +5,7 @@ import { AppointmentConfirmationEmail } from "@/components/email/appointment-con
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 import { sendNpsRequest } from "@/services/email-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 
 // Resolves plan slug for a clinic using the admin client (no session required).
 // Falls back to "starter" when the clinic has no subscription row.
@@ -108,19 +109,7 @@ const TAG_TO_RULE_KEY: Record<string, string> = {
   "d+30": "d_plus_30",
 };
 
-// Interpolates template variables: {{nome}}, {{horario}}, {{data}}
-function interpolateTemplate(template: string, firstName: string, startsAt: string | null): string {
-  const time = startsAt
-    ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    : "horário agendado";
-  const date = startsAt
-    ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
-    : "data agendada";
-  return template
-    .replace(/{{nome}}/g, firstName)
-    .replace(/{{horario}}/g, time)
-    .replace(/{{data}}/g, date);
-}
+// interpolateTemplate and buildMessage imported from @/lib/automation-helpers
 
 // Called by the daily cron — sends all due pending WhatsApp automations.
 // For D-1, also sends a reminder email when the patient has an email address.
@@ -662,36 +651,4 @@ export async function sendAppointmentConfirmation(params: {
   }
 }
 
-function buildMessage(tag: string, fullName: string, startsAt: string | null): string {
-  const first = fullName.split(" ")[0];
-
-  if (tag === "d-1") {
-    const time = startsAt
-      ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-      : "horário agendado";
-    return `Olá, ${first}! 👋\n\nLembrete: sua sessão é *amanhã* às ${time}. 📅\n\nAté lá!`;
-  }
-
-  if (tag === "nps") {
-    return (
-      `Olá, ${first}! 🌿\n\n` +
-      `Como foi sua sessão de ontem? Sua avaliação nos ajuda a melhorar cada vez mais.\n\n` +
-      `Acesse seu portal pelo link que você recebeu e deixe sua nota — leva menos de 1 minuto! ⭐`
-    );
-  }
-
-  if (tag === "d+3") {
-    return (
-      `Olá, ${first}! 😊\n\n` +
-      `Já se passaram alguns dias desde a sua sessão. Como está se sentindo?\n\n` +
-      `Se tiver dúvidas ou quiser agendar o próximo atendimento, estou aqui. 🌿`
-    );
-  }
-
-  // d+30
-  return (
-    `Olá, ${first}! 🌟\n\n` +
-    `Faz 30 dias desde a sua última sessão — sentiu evolução? 💪\n\n` +
-    `Que tal agendar o próximo atendimento para continuar o seu progresso?`
-  );
-}
+// buildMessage re-exported from @/lib/automation-helpers
