@@ -3,7 +3,7 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
-import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
+// import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide"; // disabled for diagnostics
 import { PushPrompt } from "@/components/push-prompt";
 // import { MobileBottomNav } from "@/components/mobile-bottom-nav"; // temporarily disabled for diagnostics
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
