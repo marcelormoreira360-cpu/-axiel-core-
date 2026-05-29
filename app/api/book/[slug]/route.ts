@@ -79,8 +79,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const startsAtDate = new Date(starts_at);
   const now = new Date();
   const oneYearFromNow = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-  if (isNaN(startsAtDate.getTime()) || startsAtDate <= now || startsAtDate > oneYearFromNow) {
-    return NextResponse.json({ error: "Data de agendamento inválida." }, { status: 400 });
+  if (isNaN(startsAtDate.getTime())) {
+    return NextResponse.json({ error: "Data de agendamento inválida.", code: "DATE_INVALID_FORMAT" }, { status: 400 });
+  }
+  if (startsAtDate <= now) {
+    return NextResponse.json({ error: "Data de agendamento inválida.", code: "DATE_IN_PAST" }, { status: 400 });
+  }
+  if (startsAtDate > oneYearFromNow) {
+    return NextResponse.json({ error: "Data de agendamento inválida.", code: "DATE_TOO_FAR" }, { status: 400 });
   }
 
   const supabase = createSupabaseAdminClient();
@@ -108,21 +114,37 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const normalizedPhone = phone.replace(/\s/g, "");
   let patientId: string;
 
+  // BUG-01: use separate .eq() calls to avoid PostgREST filter injection via
+  // special characters in email (comma, parentheses, etc.)
+  // SEC-05: fetch existing email so we only update if the field was empty
   const { data: existing } = await supabase
     .from("patients")
-    .select("id")
+    .select("id, email")
     .eq("clinic_id", clinic.id)
-    .or(email ? `phone.eq.${normalizedPhone},email.eq.${email}` : `phone.eq.${normalizedPhone}`)
+    .eq("phone", normalizedPhone)
     .maybeSingle();
 
-  if (existing) {
-    patientId = existing.id;
-    // Enrich record: if found by phone but email was missing, add it now
-    if (email) {
-      await supabase
-        .from("patients")
-        .update({ email, full_name })
-        .eq("id", patientId);
+  // If not found by phone, try by email (only when email is provided)
+  let existingByEmail: { id: string; email: string | null } | null = null;
+  if (!existing && email) {
+    const { data } = await supabase
+      .from("patients")
+      .select("id, email")
+      .eq("clinic_id", clinic.id)
+      .eq("email", email)
+      .maybeSingle();
+    existingByEmail = data ?? null;
+  }
+
+  const existingPatient = existing ?? existingByEmail;
+
+  if (existingPatient) {
+    patientId = existingPatient.id;
+    // SEC-05: only enrich record if fields were previously empty — never overwrite existing data
+    const updates: Record<string, string> = {};
+    if (email && !existingPatient.email) updates.email = email;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("patients").update(updates).eq("id", patientId);
     }
   } else {
     const { data: newPatient, error: patientError } = await supabase
@@ -133,6 +155,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     if (patientError) return NextResponse.json({ error: "Erro ao registrar paciente." }, { status: 500 });
     patientId = newPatient.id;
   }
+
 
   // Create appointment
   const { data: appointment, error: apptError } = await supabase

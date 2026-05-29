@@ -486,7 +486,8 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
     // Dedup: skip if already notified in the last 7 days (checked in batch above)
     if (alreadyNotified.has(patient.id)) { skipped++; continue; }
 
-    const remaining = (pkg.sessions_total ?? 0) - (pkg.sessions_used ?? 0);
+    // BUG-06: use the generated column directly — avoids divergence if sessions_used is stale
+    const remaining = (pkg as unknown as { sessions_remaining?: number }).sessions_remaining ?? 0;
     const first = patient.full_name.split(" ")[0];
 
     // Send email if patient has one

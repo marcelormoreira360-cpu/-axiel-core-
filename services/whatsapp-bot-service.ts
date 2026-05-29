@@ -8,6 +8,8 @@ export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
   clinic_id: string;
   twilio_number: string | null;
   meta_phone_number_id: string | null;
+  // DEBT-03: clinic slug for booking URL in bot step 7
+  clinic_slug: string | null;
 };
 
 export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBotConfig | null> {
@@ -16,11 +18,12 @@ export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBo
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*")
+    .select("*, clinics(slug)")
     .eq("clinic_id", clinicId)
     .maybeSingle();
   if (!data) return null;
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [] };
+  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
 export async function getWhatsAppBotConfigByNumber(twilioNumber: string): Promise<WhatsAppBotConfig | null> {
@@ -39,18 +42,20 @@ export async function getWhatsAppBotConfigByNumber(twilioNumber: string): Promis
 
 // SEC-02: lookup by Meta phone_number_id — used by the Meta webhook to resolve clinic_id.
 // Uses admin client because webhooks run without a user session.
+// DEBT-03: also fetches clinic slug for booking URL in bot step 7.
 export async function getWhatsAppBotConfigByMetaPhoneId(metaPhoneNumberId: string): Promise<WhatsAppBotConfig | null> {
   const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
 
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*")
+    .select("*, clinics(slug)")
     .eq("meta_phone_number_id", metaPhoneNumberId)
     .eq("is_active", true)
     .maybeSingle();
   if (!data) return null;
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [] };
+  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
 export async function upsertWhatsAppBotConfig(
@@ -78,16 +83,17 @@ export async function upsertWhatsAppBotConfig(
   });
   if (rpcError) throw rpcError;
 
-  // Fetch the full updated row
+  // Fetch the full updated row — DEBT-02: include meta_phone_number_id from DB, not input
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")
-    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, created_at, updated_at")
+    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, created_at, updated_at, clinics(slug)")
     .eq("id", rpcId as string)
     .single();
   if (error) throw error;
+  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
   return {
     ...data,
-    meta_phone_number_id: input.meta_phone_number_id ?? null,
     locations: (data.locations as PricingLocation[]) ?? [],
+    clinic_slug: clinicSlug,
   };
 }

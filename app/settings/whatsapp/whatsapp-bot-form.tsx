@@ -15,8 +15,10 @@ const LANGUAGE_OPTIONS = [
   { value: "en-US", label: "English (US)" },
 ];
 
-const TWILIO_WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/whatsapp/webhook";
-const META_WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/meta/whatsapp";
+// SEC-07: use env var so URLs stay correct if domain changes
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app";
+const TWILIO_WEBHOOK_URL = `${APP_URL}/api/whatsapp/webhook`;
+const META_WEBHOOK_URL = `${APP_URL}/api/meta/whatsapp`;
 
 export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBotConfig | null }) {
   const cfg = initialConfig ?? null;
@@ -24,6 +26,7 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
 
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [locations, setLocations] = useState<PricingLocation[]>(cfg?.locations ?? defaults.locations);
 
   function addLocation() {
@@ -59,15 +62,21 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
     ));
   }
 
+  // UX-01: handle save errors explicitly so the user sees a message instead of a silent hang
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const formData = new FormData(form);
     formData.set("locations_json", JSON.stringify(locations));
+    setSaveError(null);
     startTransition(async () => {
-      await saveWhatsAppBotConfig(formData);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      try {
+        await saveWhatsAppBotConfig(formData);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      } catch (err) {
+        setSaveError(err instanceof Error ? err.message : "Erro ao salvar. Tente novamente.");
+      }
     });
   }
 
@@ -273,6 +282,7 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
           {isPending ? "Salvando..." : "Salvar configuração"}
         </Button>
         {saved && <span className="text-sm text-green-600">✓ Configuração salva. Bot ativo.</span>}
+        {saveError && <span className="text-sm text-red-600">✗ {saveError}</span>}
       </div>
     </form>
     </div>

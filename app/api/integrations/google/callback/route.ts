@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { exchangeGoogleCode, saveGoogleIntegration } from "@/services/google-calendar-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 
@@ -28,9 +28,12 @@ export async function GET(req: Request) {
       sig: string;
     };
 
-    // ── CSRF: verify HMAC signature ─────────────────────────────────────────
+    // ── CSRF: verify HMAC signature — SEC-04: timingSafeEqual prevents timing attacks ──
     const expected = createHmac("sha256", secret).update(payload).digest("hex");
-    if (sig !== expected) {
+    const sigBuf = Buffer.from(sig ?? "", "hex");
+    const expBuf = Buffer.from(expected, "hex");
+    const sigValid = sigBuf.length > 0 && sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf);
+    if (!sigValid) {
       console.error("Google OAuth callback: invalid state signature — possible CSRF");
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_invalid_state`);
     }

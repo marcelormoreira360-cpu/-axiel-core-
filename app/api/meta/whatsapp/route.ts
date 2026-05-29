@@ -67,11 +67,12 @@ async function getHistory(
   botDisabled: boolean;
   currentStepDb: number | null;
   clinicId: string | null;
+  updatedAt: string | null;
 }> {
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, current_step")
+      .select("id, messages, bot_disabled, current_step, updated_at")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -82,6 +83,7 @@ async function getHistory(
     const msgs = (data?.messages as ChatMessage[]) ?? [];
     const botDisabled = (data as unknown as { bot_disabled?: boolean } | null)?.bot_disabled ?? false;
     const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
+    const updatedAt = (data as unknown as { updated_at?: string } | null)?.updated_at ?? null;
     console.log("[whatsapp] getHistory: id=", data?.id ?? "null", "msgs=", msgs.length, "bot_disabled=", botDisabled, "phone=", phone.slice(-4));
     return {
       id: data?.id ?? null,
@@ -89,10 +91,11 @@ async function getHistory(
       botDisabled,
       currentStepDb,
       clinicId: null,
+      updatedAt,
     };
   } catch (e) {
     console.error("[whatsapp] getHistory exception:", e);
-    return { id: null, messages: [], botDisabled: false, currentStepDb: null, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, currentStepDb: null, clinicId: null, updatedAt: null };
   }
 }
 
@@ -284,10 +287,12 @@ function buildPricingBlock(location: PricingLocation, lang: Lang): string {
 function buildFixedReply(
   step: number,
   userText: string,
-  config: typeof IFWC_DEFAULT_CONFIG,
+  config: typeof IFWC_DEFAULT_CONFIG & { clinic_slug?: string | null },
   lang: Lang
 ): string {
   const { professional_name, locations } = config;
+  // DEBT-03: use clinic's own booking slug — never hardcode "ifwc"
+  const bookingSlug = config.clinic_slug ?? "ifwc";
 
   if (lang === "en") {
     switch (step) {
@@ -307,7 +312,7 @@ function buildFixedReply(
         return `Great! What's your name so I can reserve your spot? 😊`;
 
       case 7: {
-        const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/ifwc`;
+        const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/${bookingSlug}`;
         return `Perfect! I'll forward your contact to ${professional_name} 🙏\n\nIf you'd like to secure your date, you can book directly here:\n👉 ${bookUrl}\n\nWe'll be in touch soon to confirm 😊`;
       }
 
@@ -337,7 +342,7 @@ function buildFixedReply(
       return `Ótimo! Qual é o seu nome para eu reservar a data? 😊`;
 
     case 7: {
-      const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/ifwc`;
+      const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/${bookingSlug}`;
       return `Perfeito! Vou passar seu contato para ${professional_name} 🙏\n\nSe quiser já garantir sua data, você pode agendar diretamente por aqui:\n👉 ${bookUrl}\n\nEm breve entraremos em contato para confirmar 😊`;
     }
 
@@ -503,6 +508,12 @@ export async function POST(req: NextRequest) {
         const messages = value.messages ?? [];
         const contacts = value.contacts ?? [];
 
+        // BUG-07: skip message if phoneNumberId is missing — can't send reply without it
+        if (!phoneNumberId) {
+          console.warn("[whatsapp] skipping message: phone_number_id missing in metadata");
+          continue;
+        }
+
         for (const message of messages) {
           const fromPhone = message.from;
           const contactName = contacts.find((c) => c.wa_id === fromPhone)?.profile?.name ?? "";
@@ -549,12 +560,14 @@ export async function POST(req: NextRequest) {
           const supabase = createSupabaseAdminClient();
 
           // SEC-02: resolve clinic_id from Meta phone_number_id via whatsapp_bot_configs.
-          // Falls back to IFWC_DEFAULT_CONFIG when no clinic is configured for this number.
-          const botConfig = phoneNumberId
-            ? await getWhatsAppBotConfigByMetaPhoneId(phoneNumberId).catch(() => null)
-            : null;
-          const clinicId = botConfig?.clinic_id ?? null;
-          const config = botConfig ?? IFWC_DEFAULT_CONFIG;
+          // SEC-01: no fallback to IFWC_DEFAULT_CONFIG — if no clinic found, drop message silently.
+          const botConfig = await getWhatsAppBotConfigByMetaPhoneId(phoneNumberId).catch(() => null);
+          if (!botConfig) {
+            console.warn("[whatsapp] no clinic config found for phone_number_id:", phoneNumberId, "— dropping message");
+            continue;
+          }
+          const clinicId = botConfig.clinic_id;
+          const config = botConfig;
 
           const {
             id: convId,
@@ -562,22 +575,34 @@ export async function POST(req: NextRequest) {
             botDisabled,
             currentStepDb,
             clinicId: convClinicId,
+            updatedAt: convUpdatedAt,
           } = await getHistory(supabase, fromPhone);
 
           const effectiveClinicId = convClinicId ?? clinicId;
 
+          // UX-02: auto-reset conversation if idle for more than 72h
+          const CONVERSATION_TIMEOUT_MS = 72 * 60 * 60 * 1000;
+          const isTimedOut = convUpdatedAt
+            ? Date.now() - new Date(convUpdatedAt).getTime() > CONVERSATION_TIMEOUT_MS
+            : false;
+          const activeHistory = isTimedOut ? [] : history;
+          const activeStepDb = isTimedOut ? null : currentStepDb;
+          if (isTimedOut && convId) {
+            console.log("[whatsapp] conversation timed out after 72h — resetting step for phone:", fromPhone.slice(-4));
+          }
+
           // Step: prefer DB-persisted value (immune to truncation); fall back to count
-          const currentStep = stepFromHistory(history, currentStepDb);
+          const currentStep = stepFromHistory(activeHistory, activeStepDb);
 
           // Language — detected from first user message and stable for the whole conversation
-          const lang: Lang = detectLanguage(history, incomingText);
+          const lang: Lang = detectLanguage(activeHistory, incomingText);
 
-          console.log("[whatsapp] step:", currentStep, "| lang:", lang, "| bot msgs:", history.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4));
+          console.log("[whatsapp] step:", currentStep, "| lang:", lang, "| bot msgs:", activeHistory.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4), isTimedOut ? "| TIMEOUT_RESET" : "");
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
             await saveHistory(supabase, fromPhone, convId, [
-              ...history,
+              ...activeHistory,
               { role: "user", content: incomingText },
             ], effectiveClinicId);
             continue;
@@ -602,7 +627,7 @@ export async function POST(req: NextRequest) {
           if (currentStep !== 4 && isPriceQuestion(incomingText, lang)) {
             const objectionReply = buildPriceObjectionReply(currentStep, config, lang);
             const updatedMessages = [
-              ...history,
+              ...activeHistory,
               { role: "user" as const, content: incomingText },
               { role: "assistant" as const, content: objectionReply },
             ];
@@ -625,7 +650,7 @@ export async function POST(req: NextRequest) {
             nextStep = 3;
           } else if (currentStep === 3) {
             // OpenAI: validate answers + present program + ask city
-            reply = await generateStep3Reply(incomingText, history.slice(-2), config, apiKey, lang);
+            reply = await generateStep3Reply(incomingText, activeHistory.slice(-2), config, apiKey, lang);
             nextStep = 4;
           } else if (currentStep === 4) {
             // Fixed: show pricing for detected city
@@ -654,7 +679,7 @@ export async function POST(req: NextRequest) {
             : "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊");
 
           const updatedHistory = [
-            ...history,
+            ...activeHistory,
             { role: "user" as const, content: incomingText },
             { role: "assistant" as const, content: finalReply },
           ];
