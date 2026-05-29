@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { AiInsight } from "@/services/business-analytics-service";
+
+// Local type — mirrors AiInsight in business-analytics-service.ts
+interface AiInsight {
+  title: string;
+  body: string;
+  type: "opportunity" | "warning" | "highlight";
+}
 
 const TYPE_STYLE = {
   highlight:   { bg: "bg-[#E1F5EE]", border: "border-[#9FE1CB]", dot: "bg-[#0F6E56]", text: "text-[#085041]" },

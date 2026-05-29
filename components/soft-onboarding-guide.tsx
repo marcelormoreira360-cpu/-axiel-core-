@@ -15,9 +15,21 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
-import type { OnboardingChecklistResult } from "@/app/api/onboarding/checklist/route";
-
 const STORAGE_KEY = "axiel-soft-onboarding-dismissed";
+
+// Mirrors the shape returned by GET /api/onboarding/checklist
+interface OnboardingChecklistResult {
+  steps: {
+    session_types: boolean;
+    patients: boolean;
+    appointments: boolean;
+    forms: boolean;
+    booking: boolean;
+    team: boolean;
+  };
+  completed: number;
+  total: number;
+}
 
 type StepKey = keyof OnboardingChecklistResult["steps"];
 
