@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { refreshDashboardData } from "@/app/dashboard/actions";
-import { sessionsDelta, revenueDelta, formatBRL } from "@/modules/dashboard/dashboard-kpis";
+import { sessionsDelta, revenueDelta, formatBRL } from "@/modules/dashboard/dashboard-kpis-utils";
 import type { DashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
