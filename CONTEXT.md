@@ -48,6 +48,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Fase 2: VoiceDictation integrado no formulário de follow-up (notes)
 - ✅ Fase 3 (Stripe): onboarding plan page com "Continuar com trial grátis" (skip sem cartão)
 - ✅ Fase 3: histórico de faturas Stripe na página /billing (lista até 8 faturas com status + PDF)
+- ✅ Fase 4 (Results avançado): breakdown mensal em `business-analytics-service.ts` (MonthlyBreakdown)
+- ✅ Fase 4: period selector 1/3/6/12 meses via URL em `/results`
+- ✅ Fase 4: `ResultsChart` (recharts ComposedChart — barras sessões/novos pacientes + linha receita)
+- ✅ Fase 4: `ResultsExportButton` — CSV client-side com BOM UTF-8 (resumo + tabela mensal)
 
 ---
 
