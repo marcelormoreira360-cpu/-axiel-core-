@@ -11,7 +11,7 @@ const ResultsChart = dynamic(
 
 const ResultsExportButton = dynamic(
   () => import("@/components/results-export-button").then((m) => m.ResultsExportButton),
-  { ssr: false }
+  { loading: () => null }
 );
 
 function fmt(cents: number) {
