@@ -69,7 +69,7 @@ async function getHistory(
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, current_step, updated_at")
+      .select("id, messages, bot_disabled, current_step, clinic_id, updated_at")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -80,6 +80,7 @@ async function getHistory(
     const msgs = (data?.messages as ChatMessage[]) ?? [];
     const botDisabled = (data as unknown as { bot_disabled?: boolean } | null)?.bot_disabled ?? false;
     const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
+    const clinicId = (data as unknown as { clinic_id?: string | null } | null)?.clinic_id ?? null;
     const updatedAt = (data as unknown as { updated_at?: string } | null)?.updated_at ?? null;
     log.debug("getHistory", { id: data?.id ?? "null", msgs: msgs.length, bot_disabled: botDisabled, phone: phone.slice(-4) });
     return {
@@ -87,7 +88,7 @@ async function getHistory(
       messages: msgs,
       botDisabled,
       currentStepDb,
-      clinicId: null,
+      clinicId,
       updatedAt,
     };
   } catch (e) {
