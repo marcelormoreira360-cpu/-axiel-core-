@@ -12,6 +12,8 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 // - connect-src: Supabase REST + Realtime (wss), Sentry tunnel, Resend webhooks.
 // - img-src: data: for Supabase TOTP QR codes; blob: for camera previews.
 // - media-src: blob: for MediaRecorder audio playback.
+const isDev = process.env.NODE_ENV !== "production";
+
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
@@ -24,7 +26,9 @@ const csp = [
   "object-src 'none'",
   "base-uri 'self'",
   "form-action 'self'",
-  "upgrade-insecure-requests",
+  // upgrade-insecure-requests must be omitted in dev (HTTP localhost) — it would
+  // instruct Safari to load all subresources via HTTPS, breaking CSS/JS loading.
+  ...(!isDev ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const securityHeaders = [
@@ -49,6 +53,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd(),
+  },
   serverExternalPackages: ["pdfkit", "fontkit", "restructure", "iconv-lite"],
   images: {
     remotePatterns: [
