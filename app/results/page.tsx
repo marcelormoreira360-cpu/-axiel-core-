@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBusinessAnalytics } from "@/services/business-analytics-service";
+import { ResultsInsights } from "@/components/results-insights";
 
 const ResultsChart = dynamic(
   () => import("@/components/results-chart").then((m) => m.ResultsChart),
@@ -18,11 +19,6 @@ function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-const TYPE_STYLE = {
-  highlight:   { bg: "bg-[#E1F5EE]", border: "border-[#9FE1CB]", dot: "bg-[#0F6E56]", text: "text-[#085041]" },
-  opportunity: { bg: "bg-[#EEF2FF]", border: "border-[#C7D2FE]", dot: "bg-[#4F46E5]", text: "text-[#3730A3]" },
-  warning:     { bg: "bg-amber-50",  border: "border-amber-200",  dot: "bg-amber-400",  text: "text-amber-800" },
-};
 
 const PERIOD_OPTIONS = [
   { label: "1 mês",   value: 1 },
@@ -209,44 +205,9 @@ export default async function ResultsPage({
           </div>
         </div>
 
-        {/* Coluna direita — AI Insights */}
+        {/* Coluna direita — AI Insights (carrega de forma assíncrona após o render) */}
         <div className="space-y-[12px]">
-          <div>
-            <p className="text-[12px] font-medium text-[#0F1A2E]">Análise por IA</p>
-            <p className="text-[11px] text-[#A09E98] mt-[2px]">
-              Claude analisa seus dados e aponta o que fazer a seguir.
-            </p>
-          </div>
-
-          {data.aiInsights === null || data.aiInsights.length === 0 ? (
-            <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-              <p className="text-[12px] text-[#A09E98]">
-                Análise de IA indisponível — configure{" "}
-                <code className="text-[11px] bg-[#F4F3EF] px-1 rounded">OPENAI_API_KEY</code>{" "}
-                no Vercel para ativar.
-              </p>
-            </div>
-          ) : (
-            data.aiInsights.map((insight, i) => {
-              const s = TYPE_STYLE[insight.type] ?? TYPE_STYLE.highlight;
-              return (
-                <div
-                  key={i}
-                  className={`rounded-[12px] border p-[14px] ${s.bg} ${s.border}`}
-                >
-                  <div className="flex items-start gap-[8px]">
-                    <div className={`w-[7px] h-[7px] rounded-full mt-[4px] shrink-0 ${s.dot}`} />
-                    <div>
-                      <p className={`text-[12px] font-semibold ${s.text}`}>{insight.title}</p>
-                      <p className={`text-[12px] mt-[4px] leading-relaxed ${s.text} opacity-80`}>
-                        {insight.body}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
+          <ResultsInsights months={months} />
 
           {/* Métricas de retenção */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">

@@ -236,17 +236,12 @@ export async function getBusinessAnalytics(
     aiInsights: null,
   };
 
-  // AI analysis
-  try {
-    analytics.aiInsights = await generateAiInsights(analytics);
-  } catch {
-    // AI analysis is optional — never block the page
-  }
-
   return analytics;
 }
 
-async function generateAiInsights(data: Omit<BusinessAnalytics, "aiInsights">): Promise<AiInsight[]> {
+// Exported so the dedicated /api/results/insights route can call it independently
+// without blocking the main page render.
+export async function generateAiInsights(data: Omit<BusinessAnalytics, "aiInsights">): Promise<AiInsight[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return [];
 
