@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import type { Patient } from "@/lib/types";
 
 function initials(name: string) {
@@ -115,12 +115,22 @@ export function PatientsClient({
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Pacientes</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">{totalLabel}</p>
         </div>
-        <Link
-          href="/patients/new"
-          className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
-        >
-          + Novo paciente
-        </Link>
+        <div className="flex items-center gap-[8px]">
+          <a
+            href="/api/patients/export"
+            download
+            className="flex items-center gap-1.5 text-[12px] font-medium text-black/60 border border-black/[.10] hover:bg-black/[.04] rounded-xl px-3 py-1.5 transition"
+          >
+            <Download className="w-[13px] h-[13px]" />
+            Exportar CSV
+          </a>
+          <Link
+            href="/patients/new"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
+          >
+            + Novo paciente
+          </Link>
+        </div>
       </div>
 
       {/* Search + filter bar */}
