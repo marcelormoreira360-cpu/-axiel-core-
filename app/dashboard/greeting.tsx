@@ -10,10 +10,13 @@ function getGreeting() {
 }
 
 export function DashboardGreeting({ name }: { name: string }) {
-  const [greeting, setGreeting] = useState(getGreeting());
+  // Initialize with empty string to avoid server/client timezone mismatch (React #418).
+  // getGreeting() on the server uses UTC; on the client uses the local timezone.
+  // useEffect only runs on the client, so the greeting is set correctly after hydration.
+  const [greeting, setGreeting] = useState("");
 
-  // Re-evaluate every minute so a tab left open eventually updates
   useEffect(() => {
+    setGreeting(getGreeting());
     const id = setInterval(() => setGreeting(getGreeting()), 60_000);
     return () => clearInterval(id);
   }, []);
