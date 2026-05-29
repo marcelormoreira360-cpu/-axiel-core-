@@ -15,6 +15,8 @@ const settings = [
   { href: "/settings/regional", title: "Regional", text: "Fuso horário e moeda padrão usados em toda a plataforma." },
   { href: "/clinics", title: "Configuração da clínica", text: "Perfil e configurações básicas da clínica." },
   { href: "/settings/integrations", title: "Integrações", text: "Google Calendar, Zoom e feed iCal para Apple Calendar." },
+  { href: "/settings/lgpd", title: "Privacidade e LGPD", text: "Gerencie solicitações de exclusão de dados dos pacientes (direito ao esquecimento)." },
+  { href: "/settings/usage", title: "Uso da conta", text: "Pacientes, usuários e recursos consumidos no plano atual." },
   { href: "/settings/session-types", title: "Tipos de sessão", text: "Modalidades, durações, preços e configuração de Zoom por tipo." },
   { href: "/settings/offers", title: "Ofertas e pacotes", text: "Crie pacotes de sessões e planos mensais visíveis no portal do paciente." },
   { href: "/settings/lembretes", title: "Lembretes automáticos", text: "Configure envio de lembretes de consulta por WhatsApp e e-mail." },

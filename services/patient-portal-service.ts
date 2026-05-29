@@ -36,6 +36,8 @@ export type PatientPortalSessionItem = {
   payment_status: "free" | "paid" | "covered" | "pending";
   // Feature 4: NPS feedback
   has_feedback: boolean;
+  // Zoom teleconsultação
+  zoom_join_url: string | null;
 };
 
 export type PatientPortalInsight = {
@@ -529,6 +531,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       session_type_name: sessionTypeName,
       payment_status,
       has_feedback: feedbackedAppointmentIds.has(appointment.id),
+      zoom_join_url: (appointment as { zoom_join_url?: string | null }).zoom_join_url ?? null,
     };
   }
 

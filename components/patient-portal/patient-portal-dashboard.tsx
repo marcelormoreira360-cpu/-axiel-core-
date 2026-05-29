@@ -573,6 +573,20 @@ export function PatientPortalDashboard({
             {nextSession.payment_status === "covered" && (
               <p className="mt-3 text-xs font-medium text-white/70">✓ Coberta pelo pacote</p>
             )}
+            {nextSession.zoom_join_url && (
+              <a
+                href={nextSession.zoom_join_url}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-4 flex items-center gap-2 w-full justify-center rounded-xl py-2.5 text-sm font-semibold transition"
+                style={{ background: "rgba(255,255,255,0.18)", color: "#fff" }}
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M15 10.5v3l4-3v6l-4-3v3a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h10a1 1 0 011 1v3.5z"/>
+                </svg>
+                Entrar na teleconsulta
+              </a>
+            )}
             {data.whatsappUrl && (
               <Link
                 href={data.whatsappUrl}
@@ -719,7 +733,20 @@ export function PatientPortalDashboard({
                       <span className="ml-2 text-xs text-black/40">{appt.duration_minutes} min</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                    {appt.zoom_join_url && (
+                      <a
+                        href={appt.zoom_join_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-[11px] font-semibold text-white bg-[#0078D4] hover:bg-[#006BBE] px-2.5 py-1 rounded-lg transition"
+                      >
+                        <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M15 10.5v3l4-3v6l-4-3v3a1 1 0 01-1 1H4a1 1 0 01-1-1V7a1 1 0 011-1h10a1 1 0 011 1v3.5z"/>
+                        </svg>
+                        Zoom
+                      </a>
+                    )}
                     {appt.payment_status === "pending" && (
                       <PaySessionButton
                         appointmentId={appt.id}

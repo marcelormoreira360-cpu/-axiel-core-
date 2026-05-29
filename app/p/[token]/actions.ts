@@ -205,5 +205,18 @@ export async function requestDataDeletionAction(
   });
 
   if (error) return { ok: false, error: "Erro ao enviar solicitação. Tente novamente." };
+
+  // Notify clinic via push (fire-and-forget)
+  import("@/services/push-service")
+    .then(({ sendPushToClinic }) =>
+      sendPushToClinic(link.clinic_id, {
+        title: "Solicitação de exclusão de dados",
+        body: "Um paciente solicitou a exclusão dos seus dados (LGPD). Acesse Configurações → LGPD.",
+        url: "/settings/lgpd",
+        tag: `lgpd-deletion-${link.patient_id}`,
+      }).catch(() => {})
+    )
+    .catch(() => {});
+
   return { ok: true, error: null };
 }
