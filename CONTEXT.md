@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 28/05/2026
+> Atualizado em: 29/05/2026
 
 ---
 
@@ -26,6 +26,16 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Bot WhatsApp bilíngue PT/EN com auto-detecção — commit c0254eb (28/05/2026)
 - ✅ Auditoria completa — 21 correções de segurança, bugs e performance — commit 922961e (28/05/2026)
 - ✅ Migration 032 aplicada — coluna `sessions_remaining` gerada + índice parcial em `patient_packages`
+- ✅ Migrations 033–045 aplicadas no banco de produção (29/05/2026)
+- ✅ Google Calendar OAuth conectado — `GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET` em produção
+- ✅ Drag-and-drop + resize de duração na agenda semanal e diária (dnd-kit)
+- ✅ Gráfico mensal de receita no relatório financeiro (recharts AreaChart)
+- ✅ Badge de notificações na sidebar (insights pendentes + solicitações LGPD)
+- ✅ Exportar lista de pacientes em CSV
+- ✅ Filtro de pacientes por profissional (owners/admins)
+- ✅ Página de upgrade + banner de trial expirado
+- ✅ Bot Meta WhatsApp: `getHistory()` agora lê `clinic_id` real do banco (fix SEC-02)
+- ✅ `SessionPackageBadge` no perfil do paciente — exibe "Sessão X · Pacote Y" + barra de progresso
 
 ---
 
@@ -43,7 +53,7 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 | `app/api/health-agent/route.ts` | Análise clínica com GPT-4o |
 | `components/session-recording-panel.tsx` | Gravação de sessão + useActionState |
 | `app/schedule/[id]/session/actions.ts` | `saveSessionRecord` — Server Action |
-| `supabase/migrations/` | 032 migrations, última = 032_patient_packages_sessions_remaining.sql |
+| `supabase/migrations/` | 045 migrations, última = 045_lgpd_consent_and_deletion.sql |
 | `app/api/meta/whatsapp/route.ts` | Bot WhatsApp bilíngue PT/EN — 8 passos + auto-detecção |
 | `app/api/book/[slug]/route.ts` | Booking público — confirmação via Meta API (template) |
 | `lib/whatsapp-bot-defaults.ts` | Config IFWC + buildSystemPrompt() |
@@ -119,9 +129,11 @@ const Chart = dynamic(() => import("@/components/chart").then(m => m.Chart), {
 - Paginação de pacientes: `PAGE_SIZE = 100`, URL `?page=N&q=termo`
 - Bot WhatsApp: step derivado do nº de msgs assistant (nunca coluna DB) — imune a cache stale
 - Bot WhatsApp: UPSERT com `onConflict: "phone"` no INSERT inicial (evita race condition)
-- Bot WhatsApp: SELECT `id, messages` only (não selecionar colunas que podem não existir)
+- Bot WhatsApp: SELECT inclui `clinic_id` — usado em `effectiveClinicId = convClinicId ?? botConfig.clinic_id`
 - Confirmação de agendamento: Meta API template `agendamento_confirmado` (não Twilio)
 - Bot bilíngue: idioma detectado da primeira mensagem do paciente, fixo para toda conversa
+- Drag-drop agenda: dnd-kit com `activationConstraint: { distance: 8 }` + resize via pointer capture
+- Google Calendar: já implementado em `services/google-calendar-service.ts`, precisa de env vars por clínica
 
 ---
 
@@ -135,7 +147,9 @@ const Chart = dynamic(() => import("@/components/chart").then(m => m.Chart), {
 - **Financeiro**: `/financeiro` — pagamentos, repasses, NFSe
 - **Analytics**: `/analytics` — NPS, ocupação, alertas
 - **Automações**: cron no Supabase → `automation-service.ts`
-- **Integrações**: Google Calendar (OAuth HMAC), Zoom (token)
+- **Integrações**: Google Calendar (OAuth, conectado em produção), Zoom (token por clínica)
+- **Portal do Paciente**: `/p/[token]` — sessões, documentos, LGPD, link Zoom
+- **LGPD**: `/settings/lgpd` — solicitações de exclusão + `patient_consents`
 
 ---
 
