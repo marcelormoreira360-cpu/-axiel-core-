@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useRef, useState, useActionState } from "react";
-import { Check, Mic, MicOff, Plus, Video, X } from "lucide-react";
+import { useMemo, useRef, useState, useActionState, useTransition } from "react";
+import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord } from "@/lib/types";
-import { saveSessionRecord, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
+import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
@@ -68,6 +68,8 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   const [observations, setObservations] = useState<string[]>(record?.key_observations ?? []);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [soapSuggesting, startSoapSuggestion] = useTransition();
+  const [soapSuggestError, setSoapSuggestError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeSOAPField, setActiveSOAPField] = useState<"subjective" | "objective" | "assessment_note" | "plan">("subjective");
   const [vitals, setVitals] = useState<Record<VitalKey, number | null>>({
@@ -91,6 +93,28 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
     day: "numeric",
     month: "long",
   });
+
+  function handleSuggestSoap() {
+    setSoapSuggestError(null);
+    startSoapSuggestion(async () => {
+      const draftNotes = [
+        soap.subjective, soap.objective, soap.assessment_note, soap.plan, notes,
+      ].filter(Boolean).join("\n").trim();
+
+      const result = await suggestSoapAction(appointment.patient_id, draftNotes);
+      if (result.error || !result.suggestion) {
+        setSoapSuggestError(result.error ?? "Erro ao gerar sugestão.");
+        return;
+      }
+      // Merge: only fill empty fields (don't overwrite user content)
+      setSoap((prev) => ({
+        subjective:      prev.subjective.trim()      || result.suggestion!.subjective,
+        objective:       prev.objective.trim()       || result.suggestion!.objective,
+        assessment_note: prev.assessment_note.trim() || result.suggestion!.assessment_note,
+        plan:            prev.plan.trim()            || result.suggestion!.plan,
+      }));
+    });
+  }
 
   function addObservation() {
     const clean = draft.trim();
@@ -327,6 +351,29 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                 <span className="text-[10px] text-[#A09E98] self-center ml-1">
                   · áudio vai para <strong>{SOAP_FIELDS.find(f => f.key === activeSOAPField)?.short}</strong>
                 </span>
+              </div>
+
+              {/* AI Suggest button */}
+              <div className="flex items-center gap-[8px]">
+                <button
+                  type="button"
+                  onClick={handleSuggestSoap}
+                  disabled={soapSuggesting}
+                  className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] disabled:opacity-50 disabled:cursor-not-allowed px-[10px] py-[6px] rounded-[7px] transition"
+                >
+                  {soapSuggesting ? (
+                    <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3 w-3" />
+                  )}
+                  {soapSuggesting ? "Sugerindo…" : "Sugerir com IA"}
+                </button>
+                {soapSuggestError && (
+                  <span className="text-[10px] text-red-500">{soapSuggestError}</span>
+                )}
+                {!soapSuggestError && !soapSuggesting && (
+                  <span className="text-[10px] text-[#A09E98]">preenche campos vazios</span>
+                )}
               </div>
 
               {SOAP_FIELDS.map((f) => (

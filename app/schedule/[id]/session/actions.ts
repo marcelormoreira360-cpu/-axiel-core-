@@ -101,3 +101,85 @@ export async function generateSessionInsightAction(
     return { insight: null, error: msg };
   }
 }
+
+// ── SOAP pre-fill suggestion ──────────────────────────────────────────────────
+
+export type SoapSuggestion = {
+  subjective: string;
+  objective: string;
+  assessment_note: string;
+  plan: string;
+};
+
+/**
+ * Suggests SOAP field content based on the patient's recent session history
+ * and any draft notes already typed. Runs BEFORE the session is saved.
+ */
+export async function suggestSoapAction(
+  patientId: string,
+  draftNotes: string,
+): Promise<{ suggestion: SoapSuggestion | null; error: string | null }> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const supabase = createSupabaseAdminClient();
+
+    // Fetch last 5 session records for this patient
+    const { data: records } = await supabase
+      .from("session_records")
+      .select("subjective, objective, assessment_note, plan, notes, created_at")
+      .eq("patient_id", patientId)
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+    const history = (records ?? []).map((r, i) => {
+      const parts: string[] = [];
+      if (r.subjective)      parts.push(`S: ${r.subjective}`);
+      if (r.objective)       parts.push(`O: ${r.objective}`);
+      if (r.assessment_note) parts.push(`A: ${r.assessment_note}`);
+      if (r.plan)            parts.push(`P: ${r.plan}`);
+      if (r.notes && !parts.length) parts.push(r.notes);
+      return `Sessão anterior ${i + 1} (${new Date(r.created_at).toLocaleDateString("pt-BR")}):\n${parts.join("\n")}`;
+    }).join("\n\n");
+
+    const systemPrompt = `Você é um assistente clínico para profissionais de saúde integrativa.
+Sua tarefa é sugerir o preenchimento de uma nota SOAP para a sessão atual com base no histórico do paciente.
+Responda APENAS com um objeto JSON válido no formato:
+{"subjective":"...","objective":"...","assessment_note":"...","plan":"..."}
+Seja conciso e clínico. Use português brasileiro. Não invente dados — baseie-se no histórico.
+Se não houver histórico suficiente, sugira um template padrão para o tipo de sessão.`;
+
+    const userPrompt = history
+      ? `Histórico recente do paciente:\n${history}\n\n${draftNotes ? `Notas em rascunho do profissional:\n${draftNotes}\n\n` : ""}Sugira o preenchimento SOAP para a sessão atual.`
+      : `${draftNotes ? `Notas em rascunho:\n${draftNotes}\n\n` : ""}Não há histórico anterior. Sugira um template SOAP inicial para uma sessão integrativa.`;
+
+    const OpenAI = (await import("openai")).default;
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      max_tokens: 600,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system",  content: systemPrompt },
+        { role: "user",    content: userPrompt },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const parsed = JSON.parse(raw) as Partial<SoapSuggestion>;
+
+    return {
+      suggestion: {
+        subjective:      parsed.subjective      ?? "",
+        objective:       parsed.objective       ?? "",
+        assessment_note: parsed.assessment_note ?? "",
+        plan:            parsed.plan            ?? "",
+      },
+      error: null,
+    };
+  } catch (err: unknown) {
+    console.error("[suggestSoapAction] failed:", err);
+    return { suggestion: null, error: "Erro ao gerar sugestão SOAP." };
+  }
+}
