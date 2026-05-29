@@ -8,6 +8,7 @@ import { PushPrompt } from "@/components/push-prompt";
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 
@@ -87,6 +88,7 @@ export async function Shell({
                 <p className="text-[10px] text-[#A09E98] dark:text-[#6B6A66] truncate leading-tight">{userRole}</p>
               )}
             </div>
+            <NotificationBell />
             <DarkModeToggle />
           </div>
           <SignOutButton />
@@ -114,6 +116,7 @@ export async function Shell({
             )}
           </Link>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <DarkModeToggle />
             <SignOutButton />
           </div>
