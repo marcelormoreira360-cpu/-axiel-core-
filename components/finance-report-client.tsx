@@ -109,13 +109,24 @@ export function FinanceReportClient() {
           ))}
         </div>
         {data && data.paymentCount > 0 && (
-          <button
-            onClick={() => exportCSV(data)}
-            className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Exportar CSV
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportCSV(data)}
+              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
+            >
+              <Download className="h-3.5 w-3.5" />
+              CSV
+            </button>
+            <a
+              href={`/api/finance/report/pdf?period=${period}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
+            >
+              <Download className="h-3.5 w-3.5" />
+              PDF
+            </a>
+          </div>
         )}
       </div>
 

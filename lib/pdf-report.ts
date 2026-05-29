@@ -18,8 +18,9 @@ export async function buildTablePdf(opts: {
   rows: (string | number | null | undefined)[][];
   clinicName: string;
   accentColor?: string;
+  summary?: string;
 }): Promise<Buffer> {
-  const { title, subtitle, periodLabel, headers, rows, clinicName, accentColor = "#0B1F3A" } = opts;
+  const { title, subtitle, periodLabel, headers, rows, clinicName, accentColor = "#0B1F3A", summary } = opts;
   const doc = new PDFDocument({ margin: 40, size: "A4", info: { Title: title, Author: clinicName } });
 
   doc.rect(0, 0, 595, 72).fill(accentColor);
@@ -60,6 +61,11 @@ export async function buildTablePdf(opts: {
   });
 
   doc.moveDown(2);
+  if (summary) {
+    doc.fillColor("#374151").font("Helvetica-Bold").fontSize(9)
+       .text(summary, { align: "right" });
+    doc.moveDown(0.8);
+  }
   doc.fillColor("#d1d5db").font("Helvetica").fontSize(8)
      .text(`${clinicName} · Relatório gerado pelo AXIEL Core`, { align: "center" });
 

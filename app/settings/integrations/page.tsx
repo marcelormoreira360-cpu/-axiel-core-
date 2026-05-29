@@ -6,6 +6,8 @@ import { getGoogleIntegrationStatus } from "@/services/google-calendar-service";
 import { getZoomIntegrationStatus } from "@/services/zoom-service";
 import { getIcalSecret } from "@/services/ical-service";
 import { IcalCopyButton } from "@/components/ical-copy-button";
+import { ZoomCredentialsForm } from "@/components/zoom-credentials-form";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
 function StatusBadge({ connected }: { connected: boolean }) {
@@ -26,6 +28,14 @@ export default async function IntegrationsPage({
   if (!clinicId) redirect("/dashboard");
 
   const zoomStatus = getZoomIntegrationStatus();
+  const supabase = await createSupabaseServerClient();
+  const { data: clinicSettings } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const hasClinicZoomCreds = !!(clinicSettings?.settings as Record<string, unknown> | null)?.zoom;
+
   const [googleStatus, icalSecret] = await Promise.all([
     getGoogleIntegrationStatus(clinicId),
     getIcalSecret(clinicId),
@@ -155,6 +165,8 @@ export default async function IntegrationsPage({
               </span>
             </div>
           )}
+
+          <ZoomCredentialsForm hasClinicCreds={hasClinicZoomCreds} />
         </div>
 
         {/* ── iCal / Apple Calendar ── */}
