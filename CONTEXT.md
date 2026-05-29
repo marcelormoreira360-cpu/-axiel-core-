@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 29/05/2026 (4)
+> Atualizado em: 29/05/2026 (5)
 
 ---
 
@@ -58,6 +58,23 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ PWA mobile: MobileBottomNav (4 tabs + Mais), safe-area-inset-bottom iPhone, manifest com 4 shortcuts, install prompt re-mostra após 7 dias — commit 5ef1f26 (29/05/2026)
 - ✅ `/results` assíncrono: AI insights carregam em background via `/api/results/insights` (GPT isolado, maxDuration=60s), página renderiza em <1s com skeleton — commit 6b327af (29/05/2026)
 - ✅ Bug crítico resolvido: Shell com `try-catch` explícito no `Promise.all` — edge case Next.js 16 RSC onde rejeição silenciosa de promise nested derrubava todas as páginas — commit 13ccb6a (29/05/2026)
+- ✅ Relatório mensal: template React Email + botão enviar agora + cron no Vercel (dia 1º às 9h e 10h) — commit 08b64aa
+- ✅ Phase 2 Intelligence: engagement score 0-100, churn risk badge, patient timeline — zero queries extras — commit 6b2eccd
+- ✅ Push notifications para pacientes: tabela `patient_push_subscriptions`, portal usa token auth (sem Supabase Auth), bot envia push em booking + insight aprovado — commit 27adb80
+- ✅ Prontuário PDF completo: 7 seções (intelligence strip, SOAP, assessments, exames, insights, prescrições) — commit a4092f1
+- ✅ Landing page comercial: DashboardMockup, stats, integrações, SEO metadata — commit 9dbc725
+- ✅ NPS pós-sessão via WhatsApp: paciente responde 1-5 direto no chat, score salvo em `session_feedback`, score ≥ 4 dispara link Google Reviews — commit 7dccd51
+- ✅ Google Reviews URL: campo nas Settings → Integrações, salvo em `clinic_settings.settings.google_review_url` — commit 7dccd51
+- ✅ Broadcast WhatsApp: envio em massa por segmento (todos ativos / inativos 30d / 60d), tabela `broadcast_campaigns`, modal com preview e variáveis {{nome}} — migration 047 aplicada — commit 708a327
+- ✅ Fila de espera: tabela `waitlist_entries`, hook no cancelamento de agendamento notifica os 3 primeiros via WhatsApp com link de booking, WaitlistButton no perfil do paciente — migration 048 pendente — commit 5942863
+- ✅ Correções críticas de produção (29/05/2026):
+  - `renderToStaticMarkup` → `@react-email/render` (react-dom/server proibido em route handlers no Next.js 16)
+  - `app/error.tsx` html/body removidos (nested html crashava hidratação)
+  - ThemeProvider: try-catch em localStorage/matchMedia (Safari Private Browsing)
+  - notification-bell: canal Supabase Realtime único por mount (evita crash React 18 ao remontar)
+  - CSP: `worker-src 'self' blob:` adicionado para service workers
+  - DashboardGreeting: `useState("")` em vez de `useState(getGreeting())` (mismatch UTC vs timezone local = React #418)
+  - `suppressHydrationWarning` no `<body>` (extensões de browser modificam atributos)
 
 ---
 
@@ -75,7 +92,11 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 | `app/api/health-agent/route.ts` | Análise clínica com GPT-4o |
 | `components/session-recording-panel.tsx` | Gravação de sessão + useActionState |
 | `app/schedule/[id]/session/actions.ts` | `saveSessionRecord` — Server Action |
-| `supabase/migrations/` | 045 migrations, última = 045_lgpd_consent_and_deletion.sql |
+| `supabase/migrations/` | 048 migrations, última aplicada = 047_broadcast_campaigns.sql (048_waitlist.sql pendente) |
+| `services/waitlist-service.ts` | Fila de espera — addToWaitlist, notifyWaitlistOnCancellation |
+| `services/broadcast-service.ts` | Broadcast WhatsApp — segmentos, envio em lote, histórico |
+| `components/notification-bell.tsx` | Canal Realtime único por mount (notification-bell-{timestamp}) |
+| `app/dashboard/greeting.tsx` | useState("") evita mismatch de timezone servidor/cliente |
 | `app/api/meta/whatsapp/route.ts` | Bot WhatsApp bilíngue PT/EN — 8 passos + auto-detecção |
 | `app/api/book/[slug]/route.ts` | Booking público — confirmação via Meta API (template) |
 | `lib/whatsapp-bot-defaults.ts` | Config IFWC + buildSystemPrompt() |
