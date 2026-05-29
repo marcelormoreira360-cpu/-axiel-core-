@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Shell } from "@/components/shell";
 import { ROLE_LABELS } from "@/lib/team-utils";
@@ -8,11 +7,12 @@ import { getClinicsForUser, getCurrentClinic } from "@/services/clinic-service";
 import { getAppointments } from "@/services/appointment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
-import { getDashboardKPIs, formatBRL, sessionsDelta, revenueDelta } from "@/modules/dashboard/dashboard-kpis";
+import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 import { getRevenueChartData } from "@/modules/dashboard/dashboard-charts";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SetupProgressBanner } from "@/components/setup-progress-banner";
+import { DashboardRealtimeKpis } from "@/components/dashboard/dashboard-realtime-kpis";
 import dynamic from "next/dynamic";
 const RevenueChart = dynamic(
   () => import("@/components/dashboard/revenue-chart").then((m) => m.RevenueChart),
@@ -44,19 +44,6 @@ function firstName(fullName?: string | null, email?: string | null) {
   return "";
 }
 
-function DeltaIcon({ current, previous }: { current: number; previous: number }) {
-  if (previous === 0) return null;
-  if (current > previous) return <ArrowUp className="w-[10px] h-[10px] text-[#0F6E56]" />;
-  if (current < previous) return <ArrowDown className="w-[10px] h-[10px] text-[#DC2626]" />;
-  return <Minus className="w-[10px] h-[10px] text-[#A09E98]" />;
-}
-
-function deltaColor(current: number, previous: number) {
-  if (previous === 0) return "text-[#A09E98]";
-  if (current > previous) return "text-[#0F6E56]";
-  if (current < previous) return "text-[#DC2626]";
-  return "text-[#A09E98]";
-}
 
 export default async function Dashboard() {
   // PERF: single round-trip — all data fetched in parallel
@@ -144,60 +131,14 @@ export default async function Dashboard() {
         </div>
       )}
 
-      {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[14px]">
-        {/* Sessões hoje */}
-        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">SESSÕES HOJE</p>
-          <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none ${todayAppts.length > 0 ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
-            {todayAppts.length}
-          </p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">
-            {todayAppts.length === 0 ? "nenhuma hoje" : todayAppts.length === 1 ? "sessão agendada" : "sessões agendadas"}
-          </p>
-        </div>
-
-        {/* Sessões do mês */}
-        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">SESSÕES DO MÊS</p>
-          <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2]">
-            {kpis.sessionsThisMonth}
-          </p>
-          <div className="flex items-center gap-[3px] mt-[4px]">
-            <DeltaIcon current={kpis.sessionsThisMonth} previous={kpis.sessionsLastMonth} />
-            <p className={`text-[10px] ${deltaColor(kpis.sessionsThisMonth, kpis.sessionsLastMonth)}`}>
-              {sessionsDelta(kpis.sessionsThisMonth, kpis.sessionsLastMonth)}
-            </p>
-          </div>
-        </div>
-
-        {/* Receita do mês */}
-        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">RECEITA DO MÊS</p>
-          <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2]">
-            {formatBRL(kpis.revenueThisMonth)}
-          </p>
-          <div className="flex items-center gap-[3px] mt-[4px]">
-            <DeltaIcon current={kpis.revenueThisMonth} previous={kpis.revenueLastMonth} />
-            <p className={`text-[10px] ${deltaColor(kpis.revenueThisMonth, kpis.revenueLastMonth)}`}>
-              {revenueDelta(kpis.revenueThisMonth, kpis.revenueLastMonth)}
-            </p>
-          </div>
-        </div>
-
-        {/* Taxa de retorno */}
-        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">TAXA DE RETORNO</p>
-          <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none ${kpis.returnRate >= 60 ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
-            {kpis.returnRate}%
-          </p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">
-            {kpis.returnRateBase > 0
-              ? `de ${kpis.returnRateBase} paciente${kpis.returnRateBase !== 1 ? "s" : ""} este mês`
-              : "sem sessões este mês"}
-          </p>
-        </div>
-      </div>
+      {/* ── KPI Cards — realtime via Supabase postgres_changes ── */}
+      {clinic && (
+        <DashboardRealtimeKpis
+          clinicId={clinic.id}
+          initialKpis={kpis}
+          initialTodayCount={todayAppts.length}
+        />
+      )}
 
       {/* ── Chart + Agenda ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] gap-[12px] mb-[14px]" style={{ minHeight: 280 }}>
