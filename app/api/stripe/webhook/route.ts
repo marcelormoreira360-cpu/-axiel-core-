@@ -3,7 +3,6 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createLogger } from "@/lib/logger";
-import { invalidateBillingCache } from "@/services/billing-service";
 
 const log = createLogger("stripe-webhook");
 
@@ -90,9 +89,6 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
     event_type: `subscription.${subscription.status}`,
     payload: subscription as unknown as Record<string, unknown>,
   });
-
-  // Bust billing cache so feature gates pick up the new plan immediately
-  invalidateBillingCache();
 }
 
 export async function POST(request: Request) {

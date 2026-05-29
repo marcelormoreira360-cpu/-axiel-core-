@@ -1,4 +1,3 @@
-import { revalidateTag } from "next/cache";
 import type { SessionType } from "@/lib/types";
 
 export async function getSessionTypesForClinic(clinicId: string): Promise<SessionType[]> {
@@ -30,7 +29,6 @@ export async function createSessionType(input: {
     .select("*")
     .single();
   if (error) throw error;
-  revalidateTag("session-types", {}); // bust the getSessionTypes cache
   return data;
 }
 
@@ -48,7 +46,6 @@ export async function updateSessionType(
     .select("*")
     .single();
   if (error) throw error;
-  revalidateTag("session-types", {}); // bust the getSessionTypes cache
   return data;
 }
 
@@ -58,5 +55,4 @@ export async function deleteSessionType(id: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.from("session_types").delete().eq("id", id);
   if (error) throw error;
-  revalidateTag("session-types", {}); // bust the getSessionTypes cache
 }

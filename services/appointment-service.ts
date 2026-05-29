@@ -1,43 +1,20 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { unstable_cache } from "next/cache";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 
-// ── Cached helpers ────────────────────────────────────────────────────────────
-// unstable_cache persists across requests (unlike React.cache which is
-// per-request only). TTL = 5 min; invalidated by revalidateTag on mutations.
+export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
-async function _getSessionTypes(clinicId: string): Promise<SessionType[]> {
-  // Must use admin client — unstable_cache runs outside the request context
-  // so cookies() (used by createSupabaseServerClient) are not available.
-  const supabase = createSupabaseAdminClient();
-  const { data } = await supabase
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
     .from("session_types")
     .select("*")
-    .eq("clinic_id", clinicId)
     .eq("is_active", true)
     .order("duration_minutes", { ascending: true });
+
+  if (clinicId) query = query.eq("clinic_id", clinicId);
+
+  const { data } = await query;
   return data ?? [];
-}
-
-const _getSessionTypesCached = unstable_cache(
-  _getSessionTypes,
-  ["session-types"],
-  { revalidate: 300, tags: ["session-types"] },
-);
-
-export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
-  if (!clinicId) {
-    // Fallback: no clinicId — query without cache (e.g. public booking page)
-    const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase
-      .from("session_types")
-      .select("*")
-      .eq("is_active", true)
-      .order("duration_minutes", { ascending: true });
-    return data ?? [];
-  }
-  return _getSessionTypesCached(clinicId);
 }
 
 export async function getAppointments(
