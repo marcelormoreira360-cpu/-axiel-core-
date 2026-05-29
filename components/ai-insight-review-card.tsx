@@ -4,6 +4,7 @@ import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { Badge, type BadgeStatus } from "@/components/status-badge";
 import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
+import { VoiceDictation } from "@/components/voice-dictation";
 
 function insightOutput(insight: AiInsight) {
   return insight.final_output ?? insight.output;
@@ -44,7 +45,14 @@ export function AiInsightReviewCard({ patientId, insight }: { patientId: string;
       <p className="line-clamp-3 text-sm leading-6 text-axiel-text-secondary">{shortSummary(insight)}</p>
 
       <div className="flex flex-wrap gap-3">
-        <form action={approveAction}>
+        <form action={approveAction} className="space-y-2">
+          {!isFinal && (
+            <VoiceDictation
+              name="reviewer_notes"
+              placeholder="Notas de revisão (opcional) — clique no 🎤 para ditar"
+              rows={2}
+            />
+          )}
           <ButtonPrimary type="submit" disabled={isFinal}>
             Approve
           </ButtonPrimary>

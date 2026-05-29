@@ -43,6 +43,9 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Fase 1 (jornada conectada): painel "Contexto do paciente" na tela de sessão (anamnese + assessment + última sessão)
 - ✅ Fase 1: strip "Next Step" na página do paciente — amber se revisão pendente, verde com current_status se insight final
 - ✅ Fase 1: após aprovar insight → banner sugere criar follow-up (`?approved=1&suggest_followup=1`)
+- ✅ Fase 2 (Voice Notes): `VoiceDictation` genérico — textarea + mic + Whisper, uncontrolled, funciona em qualquer form
+- ✅ Fase 2: VoiceDictation integrado no formulário de aprovação de insights (reviewer_notes)
+- ✅ Fase 2: VoiceDictation integrado no formulário de follow-up (notes)
 
 ---
 

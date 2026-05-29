@@ -1,6 +1,7 @@
 import type { Patient } from "@/lib/types";
 import { Button } from "@/components/button";
 import { MESSAGE_AUTOMATION_STATUS } from "@/modules/follow-ups/message-placeholder";
+import { VoiceDictation } from "@/components/voice-dictation";
 
 export function FollowUpForm({ patients, action }: { patients: Patient[]; action: (formData: FormData) => Promise<void> }) {
   const tomorrow = new Date();
@@ -51,7 +52,12 @@ export function FollowUpForm({ patients, action }: { patients: Patient[]; action
 
       <label className="block text-sm font-semibold text-black/65">
         Observações
-        <textarea name="notes" rows={3} placeholder="Nota interna opcional" className="mt-2 w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 text-sm outline-none focus:border-black/25" />
+        <VoiceDictation
+          name="notes"
+          placeholder="Nota interna opcional — clique no 🎤 para ditar"
+          rows={3}
+          textareaClassName="mt-2 w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 pr-8 text-sm outline-none focus:border-black/25"
+        />
       </label>
 
       <div className="rounded-3xl bg-axiel-soft p-4 text-xs leading-5 text-black/50">
