@@ -1,3 +1,4 @@
+import "server-only";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { Resend } from "resend";
