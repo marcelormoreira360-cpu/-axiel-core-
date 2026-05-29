@@ -77,29 +77,45 @@ export async function saveGoogleIntegration(clinicId: string, tokens: {
 }
 
 export async function getGoogleAccessToken(clinicId: string): Promise<string | null> {
+  const { token } = await getGoogleTokenAndCalendarId(clinicId);
+  return token;
+}
+
+// PERF-02: internal helper that fetches access_token + calendar_id in a single query,
+// then handles token refresh if needed. Callers that need both values avoid a second round-trip.
+async function getGoogleTokenAndCalendarId(
+  clinicId: string
+): Promise<{ token: string | null; calendarId: string }> {
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("calendar_integrations")
-    .select("access_token, refresh_token, token_expires_at")
+    .select("access_token, refresh_token, token_expires_at, calendar_id")
     .eq("clinic_id", clinicId)
     .eq("provider", "google")
     .maybeSingle();
 
-  if (!data) return null;
+  if (!data) return { token: null, calendarId: "primary" };
 
-  // Refresh if expired (with 5-min buffer)
+  const calendarId = (data.calendar_id as string | null) ?? "primary";
+
+  // BUG-04: also refresh when token_expires_at is NULL (first-time token, no expiry recorded)
   const expiresAt = data.token_expires_at ? new Date(data.token_expires_at) : null;
-  if (expiresAt && expiresAt.getTime() - Date.now() < 5 * 60 * 1000 && data.refresh_token) {
-    const refreshed = await refreshGoogleToken(data.refresh_token);
-    const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
-    await supabase.from("calendar_integrations")
-      .update({ access_token: refreshed.access_token, token_expires_at: newExpiry })
-      .eq("clinic_id", clinicId)
-      .eq("provider", "google");
-    return refreshed.access_token;
+  if ((!expiresAt || expiresAt.getTime() - Date.now() < 5 * 60 * 1000) && data.refresh_token) {
+    try {
+      const refreshed = await refreshGoogleToken(data.refresh_token);
+      const newExpiry = new Date(Date.now() + refreshed.expires_in * 1000).toISOString();
+      await supabase.from("calendar_integrations")
+        .update({ access_token: refreshed.access_token, token_expires_at: newExpiry })
+        .eq("clinic_id", clinicId)
+        .eq("provider", "google");
+      return { token: refreshed.access_token, calendarId };
+    } catch (e) {
+      console.error("[google-calendar] token refresh failed:", e);
+      // Fall through — return existing token (may be expired)
+    }
   }
 
-  return data.access_token;
+  return { token: data.access_token as string | null, calendarId };
 }
 
 export async function disconnectGoogle(clinicId: string) {
@@ -128,13 +144,9 @@ export async function createGoogleCalendarEvent(clinicId: string, event: {
   location?: string;
   meetLink?: string;
 }): Promise<string | null> {
-  const token = await getGoogleAccessToken(clinicId);
+  // PERF-02: single query for both token and calendar_id
+  const { token, calendarId } = await getGoogleTokenAndCalendarId(clinicId);
   if (!token) return null;
-
-  const supabase = createSupabaseAdminClient();
-  const { data: integration } = await supabase.from("calendar_integrations")
-    .select("calendar_id").eq("clinic_id", clinicId).eq("provider", "google").maybeSingle();
-  const calendarId = integration?.calendar_id ?? "primary";
 
   const startDt = new Date(event.startIso);
   const endDt   = new Date(startDt.getTime() + event.durationMinutes * 60 * 1000);
@@ -164,12 +176,9 @@ export async function createGoogleCalendarEvent(clinicId: string, event: {
 }
 
 export async function deleteGoogleCalendarEvent(clinicId: string, eventId: string) {
-  const token = await getGoogleAccessToken(clinicId);
+  // PERF-02: single query for both token and calendar_id
+  const { token, calendarId } = await getGoogleTokenAndCalendarId(clinicId);
   if (!token) return;
-  const supabase = createSupabaseAdminClient();
-  const { data: integration } = await supabase.from("calendar_integrations")
-    .select("calendar_id").eq("clinic_id", clinicId).eq("provider", "google").maybeSingle();
-  const calendarId = integration?.calendar_id ?? "primary";
   await fetch(`${GOOGLE_CALENDAR_API}/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
@@ -189,17 +198,9 @@ export async function updateGoogleCalendarEvent(
     meetLink?: string;
   }
 ): Promise<void> {
-  const token = await getGoogleAccessToken(clinicId);
+  // PERF-02: single query for both token and calendar_id
+  const { token, calendarId } = await getGoogleTokenAndCalendarId(clinicId);
   if (!token) return;
-
-  const supabase = createSupabaseAdminClient();
-  const { data: integration } = await supabase
-    .from("calendar_integrations")
-    .select("calendar_id")
-    .eq("clinic_id", clinicId)
-    .eq("provider", "google")
-    .maybeSingle();
-  const calendarId = integration?.calendar_id ?? "primary";
 
   const startDt = new Date(event.startIso);
   const endDt = new Date(startDt.getTime() + event.durationMinutes * 60 * 1000);

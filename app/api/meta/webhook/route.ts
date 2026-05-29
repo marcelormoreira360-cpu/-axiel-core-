@@ -10,6 +10,11 @@ type ChatMessage = { role: "user" | "assistant"; content: string };
 
 type MetaPlatform = "messenger" | "instagram";
 
+// PERF-04: meta_conversations (Messenger/Instagram) is a legacy table — no active bot
+// uses it. This route keeps the webhook alive for platform verification but the AI
+// reply pipeline is effectively disabled. Do NOT delete the table yet (referenced in
+// migration 005); mark for removal once the Messenger/Instagram bot is re-evaluated.
+
 // ─── Conversation History ─────────────────────────────────────────────────────
 
 async function getHistory(

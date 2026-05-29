@@ -520,6 +520,10 @@ export async function POST(req: NextRequest) {
 
           let incomingText = "";
 
+          // BUG-02: create one shared client per message — reused in all branches
+          // (audio peek, unsupported-type peek, and the main conversation flow)
+          const supabase = createSupabaseAdminClient();
+
           if (message.type === "text") {
             incomingText = (message as MetaTextMessage).text.body.trim();
           } else if (message.type === "audio") {
@@ -529,8 +533,7 @@ export async function POST(req: NextRequest) {
               incomingText = transcribed;
             } else {
               // Peek at history to choose language for the fallback message
-              const supabasePeek = createSupabaseAdminClient();
-              const { messages: peekHistory } = await getHistory(supabasePeek, fromPhone);
+              const { messages: peekHistory } = await getHistory(supabase, fromPhone);
               const peekLang = detectLanguage(peekHistory, "");
               const audioFallback =
                 peekLang === "en"
@@ -542,8 +545,7 @@ export async function POST(req: NextRequest) {
           } else {
             // BOT-01: unsupported types (image, video, sticker, document, location)
             // Peek at history to pick the right language for the fallback
-            const supabasePeekType = createSupabaseAdminClient();
-            const { messages: peekMsgs } = await getHistory(supabasePeekType, fromPhone);
+            const { messages: peekMsgs } = await getHistory(supabase, fromPhone);
             const peekLangType = detectLanguage(peekMsgs, "");
             const unsupportedMsg =
               peekLangType === "en"
@@ -556,8 +558,6 @@ export async function POST(req: NextRequest) {
           }
 
           if (!incomingText) continue;
-
-          const supabase = createSupabaseAdminClient();
 
           // SEC-02: resolve clinic_id from Meta phone_number_id via whatsapp_bot_configs.
           // SEC-01: no fallback to IFWC_DEFAULT_CONFIG — if no clinic found, drop message silently.
@@ -606,11 +606,6 @@ export async function POST(req: NextRequest) {
               { role: "user", content: incomingText },
             ], effectiveClinicId);
             continue;
-          }
-
-          // Auto-create lead for new contacts
-          if (effectiveClinicId && !convId) {
-            void autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText);
           }
 
           // Reset command (accept both languages)
@@ -685,6 +680,14 @@ export async function POST(req: NextRequest) {
           ];
           // Save history + persist current_step so truncation never causes step regression
           await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId, nextStep);
+
+          // BUG-05: auto-create lead AFTER saveHistory to avoid race condition on first message.
+          // Fire-and-forget (non-blocking) but log failures for observability.
+          if (effectiveClinicId && !convId) {
+            autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText).catch((e) => {
+              console.warn("[whatsapp] autoCreateLead failed:", e instanceof Error ? e.message : e);
+            });
+          }
 
           console.log("[whatsapp] saved step:", currentStep, "→ next:", nextStep, "| total bot msgs now:", updatedHistory.filter(m => m.role === "assistant").length);
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);

@@ -105,6 +105,19 @@ export async function checkRateLimitDb(
       return true; // fail-open
     }
 
+    // PERF-05: probabilistic cleanup (~1% of requests) so stale rows are removed
+    // continuously rather than only during the daily automation run.
+    if (Math.random() < 0.01) {
+      const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      supabase
+        .from("rate_limit_buckets")
+        .delete()
+        .lt("window_start", cutoff)
+        .then(({ error: cleanErr }) => {
+          if (cleanErr) console.warn("[rate-limit] cleanup error:", cleanErr.message);
+        });
+    }
+
     return data === true;
   } catch (e) {
     console.warn("[rate-limit] unexpected error, failing open:", e);

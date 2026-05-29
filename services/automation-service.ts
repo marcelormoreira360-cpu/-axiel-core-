@@ -413,26 +413,36 @@ async function sendNpsEmail(
 
   const sessionTypeName = (apptRow as unknown as { session_types: { name: string } | null } | null)?.session_types?.name ?? "sessão";
 
-  // Get the patient's active portal link to include in the email
-  const { data: portalLink } = await supabase
-    .from("patient_portal_links")
-    .select("token_hash")
-    .eq("patient_id", patient.id)
-    .eq("clinic_id", fu.clinic_id)
-    .is("revoked_at", null)
-    .gte("expires_at", new Date().toISOString())
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  // UX-05: generate a fresh portal link so the NPS email contains a real direct URL.
+  // We store the hash, so we must mint a new token here. The link expires in 30 days.
+  let portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p`;
+  try {
+    const { randomUUID } = await import("crypto");
+    const rawToken = randomUUID();
+    const { createHash } = await import("crypto");
+    const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { error: linkError } = await supabase
+      .from("patient_portal_links")
+      .insert({
+        patient_id: patient.id,
+        clinic_id: fu.clinic_id,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+      });
+    if (!linkError) {
+      portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p/${rawToken}`;
+    }
+  } catch {
+    // Non-blocking — fall back to generic portal URL
+  }
 
-  // We can only link to portal if we have a raw token; token_hash is unusable as URL.
-  // So we skip the CTA URL — patient uses their existing link.
   await sendNpsRequest({
     to: patient.email,
     patientFirstName: patient.full_name.split(" ")[0],
     clinicName: (clinicRow?.name as string | null) ?? "sua clínica",
     sessionTypeName,
-    portalUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p`,
+    portalUrl,
   }).catch(() => { /* non-blocking */ });
 }
 
