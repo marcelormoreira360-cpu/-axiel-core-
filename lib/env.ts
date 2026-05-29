@@ -22,7 +22,8 @@ const serverEnvSchema = z.object({
 
   // Email
   RESEND_API_KEY: z.string().min(1, "RESEND_API_KEY is required"),
-  RESEND_FROM_EMAIL: z.string().email("RESEND_FROM_EMAIL must be a valid email address").optional(),
+  // Accepts plain "email@domain.com" or display name format "Name <email@domain.com>"
+  RESEND_FROM_EMAIL: z.string().min(1).optional(),
 
   // AI
   OPENAI_API_KEY: z.string().min(1, "OPENAI_API_KEY is required"),
