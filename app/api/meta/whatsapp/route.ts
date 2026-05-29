@@ -454,6 +454,16 @@ export async function POST(req: NextRequest) {
           const clinicId = botConfig.clinic_id;
           const config = botConfig;
 
+          // Push notification to clinic staff (fire-and-forget)
+          import("@/services/push-service").then(({ sendPushToClinic }) =>
+            sendPushToClinic(clinicId, {
+              title: "Nova mensagem WhatsApp",
+              body: `+${fromPhone.slice(-4).padStart(6, "·")} · ${incomingText.slice(0, 80)}${incomingText.length > 80 ? "…" : ""}`,
+              url:   "/messages",
+              tag:   `whatsapp-${fromPhone}`,
+            }).catch(() => {})
+          ).catch(() => {});
+
           // TODO-02: feature gate — whatsapp_automation requires Scale plan or higher.
           // Drop silently so the patient sees no error message from an unauthorized bot.
           const botAllowed = await clinicCanUseWhatsAppBot(supabase, clinicId);

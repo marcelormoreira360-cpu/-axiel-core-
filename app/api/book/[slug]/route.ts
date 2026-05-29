@@ -319,6 +319,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // Schedule automations (non-blocking)
   scheduleAutomations(appointment).catch(() => {});
 
+  // Push notification to clinic staff — new online booking (non-blocking)
+  const apptDate = new Date(starts_at).toLocaleString("pt-BR", {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "2-digit", minute: "2-digit",
+  });
+  import("@/services/push-service").then(({ sendPushToClinic }) =>
+    sendPushToClinic(clinic.id, {
+      title: "Novo agendamento",
+      body:  `${full_name} · ${sessionType.name} · ${apptDate}`,
+      url:   "/schedule",
+      tag:   `booking-${appointment.id}`,
+    }).catch(() => {})
+  ).catch(() => {});
+
   return NextResponse.json({
     ok: true,
     appointment_id: appointment.id,
