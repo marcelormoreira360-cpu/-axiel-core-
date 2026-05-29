@@ -418,6 +418,7 @@ async function sendNpsEmail(
         clinic_id: fu.clinic_id,
         token_hash: tokenHash,
         expires_at: expiresAt,
+        is_single_use: true,  // NPS link is consumed after first view
       });
     if (!linkError) {
       portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p/${rawToken}`;

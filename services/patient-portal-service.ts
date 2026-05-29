@@ -16,6 +16,10 @@ export type PatientPortalLink = {
   revoked_at: string | null;
   created_by: string | null;
   last_viewed_at: string | null;
+  /** When true, the token is consumed after the first successful view */
+  is_single_use: boolean;
+  /** Set on first successful view when is_single_use = true */
+  used_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -326,6 +330,12 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     return null;
   }
 
+  // Single-use tokens (e.g. NPS emails) are rejected after first successful view
+  if (link.is_single_use && link.used_at) {
+    await logPatientPortalSecurityEvent(tokenHash, "access_denied");
+    return null;
+  }
+
   if (new Date(link.expires_at).getTime() <= Date.now()) {
     await logPatientPortalSecurityEvent(tokenHash, "expired_token");
     return null;
@@ -439,7 +449,11 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   await supabase
     .from("patient_portal_links")
-    .update({ last_viewed_at: new Date().toISOString() })
+    .update({
+      last_viewed_at: now,
+      // Stamp used_at on first access for single-use tokens (e.g. NPS emails)
+      ...(link.is_single_use && !link.used_at ? { used_at: now } : {}),
+    })
     .eq("id", link.id);
 
   await supabase.from("patient_portal_access_logs").insert({

@@ -119,7 +119,7 @@ describe("CronGuard", () => {
     await guard.finish({ sent: 5 });
 
     // The update should have been called on cron_runs
-    const fromCalls = supabase.from.mock.calls.map(([t]: [string]) => t);
+    const fromCalls = supabase.from.mock.calls.map((args) => args[0] as string);
     expect(fromCalls).toContain("cron_runs");
   });
 
