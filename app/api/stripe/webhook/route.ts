@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("stripe-webhook");
 
 export const runtime = "nodejs";
 
@@ -19,15 +22,32 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
   const clinicId = subscription.metadata?.clinic_id;
   const planCode = subscription.metadata?.plan_code;
 
-  if (!clinicId || !planCode) return;
+  if (!clinicId || !planCode) {
+    log.warn("syncSubscription: missing metadata — skipping", {
+      subscription_id: subscription.id,
+      has_clinic_id: !!clinicId,
+      has_plan_code: !!planCode,
+    });
+    return;
+  }
 
-  const { data: plan } = await supabase
+  const { data: plan, error: planError } = await supabase
     .from("plans")
     .select("id")
     .eq("code", planCode)
     .maybeSingle();
 
-  await supabase.from("subscriptions").upsert(
+  if (planError || !plan) {
+    // CRITICAL: plan not found means plan_id would be null → clinic falls back to
+    // "starter" even though they paid. Log as error so Sentry captures it.
+    log.error("syncSubscription: plan not found in DB — subscription will have plan_id=null", planError ?? new Error("no plan row"), {
+      plan_code: planCode,
+      clinic_id: clinicId,
+      subscription_id: subscription.id,
+    });
+  }
+
+  const { error: upsertError } = await supabase.from("subscriptions").upsert(
     {
       clinic_id: clinicId,
       plan_id: plan?.id ?? null,
@@ -44,6 +64,24 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
     },
     { onConflict: "clinic_id" }
   );
+
+  if (upsertError) {
+    // Log as error — Sentry will capture this. Stripe will retry the webhook.
+    log.error("syncSubscription: failed to upsert subscription", upsertError, {
+      clinic_id: clinicId,
+      plan_code: planCode,
+      subscription_id: subscription.id,
+      status: subscription.status,
+    });
+    // Re-throw so the webhook returns 500 and Stripe retries automatically
+    throw upsertError;
+  }
+
+  log.info("syncSubscription: upserted", {
+    clinic_id: clinicId,
+    plan_code: planCode,
+    status: subscription.status,
+  });
 
   await supabase.from("billing_events").insert({
     clinic_id: clinicId,

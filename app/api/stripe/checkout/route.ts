@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { stripe, getAppUrl, getStripePriceId } from "@/lib/stripe";
+import { stripe, getStripePriceId } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentUserForBilling } from "@/services/billing-service";
+import { createLogger } from "@/lib/logger";
+import { APP_URL } from "@/lib/constants";
+
+const log = createLogger("stripe-checkout");
 
 export async function POST(request: Request) {
   const formData = await request.formData();
@@ -16,7 +20,7 @@ export async function POST(request: Request) {
   const user = await getCurrentUserForBilling();
 
   if (!clinic || !user?.email) {
-    return NextResponse.redirect(`${getAppUrl()}/onboarding`);
+    return NextResponse.redirect(`${APP_URL}/onboarding`);
   }
 
   const supabase = await createSupabaseServerClient();
@@ -43,16 +47,30 @@ export async function POST(request: Request) {
   const blockedStatuses = ["active", "trialing", "past_due"];
   if (existingSubscription?.status && blockedStatuses.includes(existingSubscription.status)) {
     const suffix = existingSubscription.status === "past_due" ? "past_due" : "already_subscribed";
-    return NextResponse.redirect(`${getAppUrl()}/billing?info=${suffix}`, 303);
+    return NextResponse.redirect(`${APP_URL}/billing?info=${suffix}`, 303);
+  }
+
+  let priceId: string;
+  try {
+    priceId = getStripePriceId(plan.code);
+  } catch (e) {
+    log.error("missing Stripe price ID — STRIPE_PRICE_<PLAN> env var not set", e as Error, {
+      plan_code: plan.code,
+      clinic_id: clinic.id,
+    });
+    return NextResponse.json(
+      { error: `Plano "${plan.code}" não está configurado para pagamento. Entre em contato com o suporte.` },
+      { status: 500 }
+    );
   }
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: existingSubscription?.external_customer_id ?? undefined,
     customer_email: existingSubscription?.external_customer_id ? undefined : user.email,
-    line_items: [{ price: getStripePriceId(plan.code), quantity: 1 }],
-    success_url: `${getAppUrl()}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${getAppUrl()}/billing`,
+    line_items: [{ price: priceId, quantity: 1 }],
+    success_url: `${APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${APP_URL}/billing`,
     allow_promotion_codes: true,
     subscription_data: {
       trial_period_days: plan.trial_days ?? undefined,
