@@ -181,7 +181,7 @@ export async function Shell({
         </div>
       </main>
 
-      <SoftOnboardingGuide />
+      {/* <SoftOnboardingGuide /> */}
       {/* <MobileBottomNav /> */}
       <GlobalSearch key="global-search-modal" />
       <PushPrompt />
