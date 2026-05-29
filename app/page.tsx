@@ -662,7 +662,7 @@ export default function LandingPage() {
       <footer className="border-t border-black/[.06] py-10">
         <div className="mx-auto max-w-6xl px-6 flex flex-col items-center justify-between gap-6 md:flex-row">
           <span className="text-sm font-semibold tracking-[0.18em] text-[#0F1A2E]">AXIEL CORE</span>
-          <p className="text-sm text-black/35">© {new Date().getFullYear()} AXIEL Core. Todos os direitos reservados.</p>
+          <p className="text-sm text-black/35">© 2026 AXIEL Core. Todos os direitos reservados.</p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="/auth/login" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Entrar</Link>
             <a href="mailto:contato@axielcore.com" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Contato</a>
