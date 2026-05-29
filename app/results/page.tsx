@@ -1,6 +1,18 @@
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBusinessAnalytics } from "@/services/business-analytics-service";
+
+const ResultsChart = dynamic(
+  () => import("@/components/results-chart").then((m) => m.ResultsChart),
+  { loading: () => <div className="h-[228px] animate-pulse rounded-[12px] bg-black/[.03]" /> }
+);
+
+const ResultsExportButton = dynamic(
+  () => import("@/components/results-export-button").then((m) => m.ResultsExportButton),
+  { ssr: false }
+);
 
 function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -12,9 +24,24 @@ const TYPE_STYLE = {
   warning:     { bg: "bg-amber-50",  border: "border-amber-200",  dot: "bg-amber-400",  text: "text-amber-800" },
 };
 
-export default async function ResultsPage() {
+const PERIOD_OPTIONS = [
+  { label: "1 mês",   value: 1 },
+  { label: "3 meses", value: 3 },
+  { label: "6 meses", value: 6 },
+  { label: "12 meses",value: 12 },
+];
+
+export default async function ResultsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ months?: string }>;
+}) {
+  const sp = await searchParams;
+  const monthsParam = parseInt(sp.months ?? "3", 10);
+  const months = [1, 3, 6, 12].includes(monthsParam) ? monthsParam : 3;
+
   const clinic = await getCurrentClinic();
-  const data = clinic ? await getBusinessAnalytics(clinic.id, 3) : null;
+  const data = clinic ? await getBusinessAnalytics(clinic.id, months) : null;
 
   if (!data) {
     return (
@@ -29,18 +56,39 @@ export default async function ResultsPage() {
   return (
     <Shell>
       {/* Header */}
-      <div className="mb-[22px]">
-        <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Resultados</p>
-        <h1 className="mt-[4px] text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
-          Análise de Negócio
-        </h1>
-        <p className="mt-[2px] text-[12px] text-[#A09E98]">
-          {data.period.from} → {data.period.to} · últimos 3 meses
-        </p>
+      <div className="mb-[18px] flex items-start justify-between gap-[12px]">
+        <div>
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Resultados</p>
+          <h1 className="mt-[4px] text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
+            Análise de Negócio
+          </h1>
+          <p className="mt-[2px] text-[12px] text-[#A09E98]">
+            {data.period.from} → {data.period.to}
+          </p>
+        </div>
+        <ResultsExportButton data={data} />
+      </div>
+
+      {/* Period selector */}
+      <div className="flex items-center gap-[6px] mb-[18px]">
+        {PERIOD_OPTIONS.map((opt) => (
+          <Link
+            key={opt.value}
+            href={`/results?months=${opt.value}`}
+            className={[
+              "px-[12px] py-[6px] rounded-[8px] text-[11px] font-medium transition",
+              months === opt.value
+                ? "bg-[#0F1A2E] text-white"
+                : "bg-white border border-black/[.09] text-[#6B6A66] hover:bg-[#F4F3EF]",
+            ].join(" ")}
+          >
+            {opt.label}
+          </Link>
+        ))}
       </div>
 
       {/* KPIs principais */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] mb-[18px]">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] mb-[14px]">
         {[
           { label: "RECEITA",           value: fmt(data.revenue_cents),              sub: `${data.packages_sold} pacote${data.packages_sold !== 1 ? "s" : ""} vendido${data.packages_sold !== 1 ? "s" : ""}` },
           { label: "SESSÕES",           value: String(data.sessions_total),           sub: `${data.avg_sessions_per_patient}× por paciente` },
@@ -56,6 +104,13 @@ export default async function ResultsPage() {
           </div>
         ))}
       </div>
+
+      {/* Chart — evolução mensal (só mostra se tiver ≥ 2 meses) */}
+      {months >= 2 && (
+        <div className="mb-[14px]">
+          <ResultsChart monthly={data.monthly} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] gap-[12px]">
 
@@ -143,7 +198,7 @@ export default async function ResultsPage() {
                 { label: "Pacotes vendidos",     value: String(data.packages_sold) },
                 { label: "Ticket médio/pacote",  value: data.packages_sold > 0 ? fmt(Math.round(data.packages_revenue_cents / data.packages_sold)) : "—" },
                 { label: "Sessões no período",   value: String(data.sessions_total) },
-                topService ? { label: `Serviço líder`, value: topService.name } : null,
+                topService ? { label: "Serviço líder", value: topService.name } : null,
               ].filter(Boolean).map((item) => (
                 <div key={item!.label} className="flex items-center justify-between">
                   <p className="text-[12px] text-white/60">{item!.label}</p>
@@ -167,7 +222,7 @@ export default async function ResultsPage() {
             <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
               <p className="text-[12px] text-[#A09E98]">
                 Análise de IA indisponível — configure{" "}
-                <code className="text-[11px] bg-[#F4F3EF] px-1 rounded">ANTHROPIC_API_KEY</code>{" "}
+                <code className="text-[11px] bg-[#F4F3EF] px-1 rounded">OPENAI_API_KEY</code>{" "}
                 no Vercel para ativar.
               </p>
             </div>

@@ -11,8 +11,16 @@ export interface SourceBreakdown {
   count: number;
 }
 
+export interface MonthlyBreakdown {
+  month: string;        // "jan/26"
+  sessions: number;
+  revenue_cents: number;
+  new_patients: number;
+}
+
 export interface BusinessAnalytics {
   period: { from: string; to: string };
+  months: number;
   revenue_cents: number;
   sessions_total: number;
   active_patients: number;
@@ -24,6 +32,7 @@ export interface BusinessAnalytics {
   sources: SourceBreakdown[];
   packages_sold: number;
   packages_revenue_cents: number;
+  monthly: MonthlyBreakdown[];
   aiInsights: AiInsight[] | null;
 }
 
@@ -156,11 +165,62 @@ export async function getBusinessAnalytics(
   const active_patients = allPatients.filter((p) => p.status === "active").length;
   const new_patients = allPatients.filter((p) => new Date(p.created_at) >= from).length;
 
+  // Monthly breakdown — initialize all months in the range
+  type MonthEntry = { sessions: number; session_revenue: number; new_patients: number };
+  const monthlyMap = new Map<string, MonthEntry>();
+  for (let i = 0; i < months; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - months + 1 + i, 1);
+    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    monthlyMap.set(key, { sessions: 0, session_revenue: 0, new_patients: 0 });
+  }
+
+  // Sessions per month (using session type price as revenue proxy)
+  for (const a of appointments) {
+    const d = new Date(a.starts_at);
+    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    const entry = monthlyMap.get(key);
+    if (entry) {
+      entry.sessions += 1;
+      const raw = a.session_types;
+      const st = (Array.isArray(raw) ? raw[0] : raw) as { name: string; price_cents: number } | null;
+      entry.session_revenue += st?.price_cents ?? 0;
+    }
+  }
+
+  // Payments per month (override session_revenue if payments exist)
+  const paymentMonthlyMap = new Map<string, number>();
+  for (const p of payments) {
+    const d = new Date(p.paid_at);
+    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    paymentMonthlyMap.set(key, (paymentMonthlyMap.get(key) ?? 0) + (p.amount_cents ?? 0));
+  }
+
+  // New patients per month
+  for (const p of allPatients) {
+    if (new Date(p.created_at) >= from) {
+      const d = new Date(p.created_at);
+      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      const entry = monthlyMap.get(key);
+      if (entry) entry.new_patients += 1;
+    }
+  }
+
+  const monthly: MonthlyBreakdown[] = [...monthlyMap.entries()].map(([month, v]) => {
+    const payRevenue = paymentMonthlyMap.get(month) ?? 0;
+    return {
+      month,
+      sessions: v.sessions,
+      revenue_cents: payRevenue > 0 ? payRevenue : v.session_revenue,
+      new_patients: v.new_patients,
+    };
+  });
+
   const analytics: BusinessAnalytics = {
     period: {
       from: from.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
       to: now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
     },
+    months,
     revenue_cents,
     sessions_total: appointments.length,
     active_patients,
@@ -172,6 +232,7 @@ export async function getBusinessAnalytics(
     sources,
     packages_sold: offers.length,
     packages_revenue_cents: packagesRevenue,
+    monthly,
     aiInsights: null,
   };
 
