@@ -1,27 +1,39 @@
 import { cache } from "react";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
 import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
 import type { ClinicBillingContext } from "@/modules/billing/feature-access";
 
-// React.cache deduplicates per clinicId within a single request.
-// getBillingContext was being called 5-10x per page (feature gates on multiple
-// components); now only the first call per clinicId hits the DB.
-export const getClinicSubscription = cache(async (clinicId: string) => {
-  const supabase = await createClient();
+// Two-layer cache strategy:
+//   1. unstable_cache (2 min TTL) — persists across requests, avoids DB on every page load
+//   2. React.cache wrapper — deduplicates multiple calls within the same request
+// On subscription changes, call invalidateBillingCache(clinicId) to bust immediately.
 
+async function _fetchSubscription(clinicId: string) {
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("subscriptions")
     .select("*, plans(*)")
     .eq("clinic_id", clinicId)
     .maybeSingle();
-
-  if (error) {
-    console.error("getClinicSubscription error", error);
-    return null;
-  }
-
+  if (error) { console.error("getClinicSubscription error", error); return null; }
   return data;
+}
+
+const _fetchSubscriptionCached = unstable_cache(
+  _fetchSubscription,
+  ["clinic-subscription"],
+  { revalidate: 120, tags: ["clinic-subscription"] },
+);
+
+export const getClinicSubscription = cache(async (clinicId: string) => {
+  return _fetchSubscriptionCached(clinicId);
 });
+
+/** Call after Stripe webhook updates the subscription row. */
+export function invalidateBillingCache() {
+  revalidateTag("clinic-subscription", {});
+}
 
 export const getClinicPlanContext = cache(async (clinicId: string) => {
   const subscription = await getClinicSubscription(clinicId);

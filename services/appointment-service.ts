@@ -1,20 +1,42 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { unstable_cache } from "next/cache";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 
-export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+// ── Cached helpers ────────────────────────────────────────────────────────────
+// unstable_cache persists across requests (unlike React.cache which is
+// per-request only). TTL = 5 min; invalidated by revalidateTag on mutations.
 
+async function _getSessionTypes(clinicId: string): Promise<SessionType[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
-  let query = supabase
+  const { data } = await supabase
     .from("session_types")
     .select("*")
+    .eq("clinic_id", clinicId)
     .eq("is_active", true)
     .order("duration_minutes", { ascending: true });
-
-  if (clinicId) query = query.eq("clinic_id", clinicId);
-
-  const { data } = await query;
   return data ?? [];
+}
+
+const _getSessionTypesCached = unstable_cache(
+  _getSessionTypes,
+  ["session-types"],
+  { revalidate: 300, tags: ["session-types"] },
+);
+
+export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
+  if (!clinicId) {
+    // Fallback: no clinicId — query without cache (e.g. public booking page)
+    const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("session_types")
+      .select("*")
+      .eq("is_active", true)
+      .order("duration_minutes", { ascending: true });
+    return data ?? [];
+  }
+  return _getSessionTypesCached(clinicId);
 }
 
 export async function getAppointments(

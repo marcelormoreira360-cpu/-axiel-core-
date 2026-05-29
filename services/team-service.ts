@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { unstable_cache, revalidateTag } from "next/cache";
 import { Resend } from "resend";
 import { randomUUID } from "crypto";
 import type { AppRole } from "@/lib/types";
@@ -36,18 +37,27 @@ export { ROLE_LABELS, INVITABLE_ROLES, isManager, isPractitioner } from "@/lib/t
 
 // ── Team members ──────────────────────────────────────────────────
 
-export async function getTeamMembers(clinicId: string): Promise<TeamMember[]> {
+async function _getTeamMembers(clinicId: string): Promise<TeamMember[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase
     .from("users")
     .select("id, full_name, email, role, created_at")
     .eq("clinic_id", clinicId)
     .order("created_at");
-
   if (error) throw error;
   return (data ?? []) as TeamMember[];
+}
+
+export const getTeamMembers = unstable_cache(
+  _getTeamMembers,
+  ["team-members"],
+  { revalidate: 300, tags: ["team-members"] },
+);
+
+/** Call after any team mutation to bust the cache. */
+export function invalidateTeamCache() {
+  revalidateTag("team-members", {});
 }
 
 export async function updateMemberRole(userId: string, role: AppRole, callerClinicId: string): Promise<void> {
