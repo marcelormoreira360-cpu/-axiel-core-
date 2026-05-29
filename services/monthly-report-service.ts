@@ -1,6 +1,9 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
+import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
 
 export async function sendMonthlyReports(): Promise<{ sent: number; failed: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
@@ -81,50 +84,20 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
       ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
       : "—";
 
-    const rows: Array<[string, string, string]> = [
-      ["💰", "Receita no mês", revenueStr],
-      ["📅", `Sessões realizadas em ${monthName}`, sessions.toString()],
-      ["👤", "Novos pacientes no mês", newPatients.toString()],
-      ["📦", "Pacotes ativos", activePackages.toString()],
-      ["💤", "Pacientes sem sessão há 30+ dias", inactive.toString()],
-    ];
-
-    const tableHtml = rows
-      .map(([icon, label, value]) => `
-        <tr>
-          <td style="padding:10px 16px;border-bottom:1px solid #f0f0f0">${icon} ${label}</td>
-          <td style="padding:10px 16px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:600">${value}</td>
-        </tr>`)
-      .join("");
-
-    const inactiveAlert = inactive > 0
-      ? `<p style="margin-top:20px;padding:14px 18px;background:#fffbeb;border-radius:12px;font-size:14px;color:#92400e">
-          💡 Você tem <strong>${inactive} paciente(s)</strong> sem sessão há mais de 30 dias — uma boa oportunidade de reengajamento.
-         </p>`
-      : "";
-
-    const html = `
-      <div style="font-family:Inter,sans-serif;max-width:540px;margin:0 auto;color:#1a1a1a">
-        <p style="font-size:12px;font-weight:600;letter-spacing:0.15em;color:#888;text-transform:uppercase">AXIEL Core</p>
-        <h1 style="font-size:24px;font-weight:600;margin:8px 0 4px">Relatório de ${monthName}</h1>
-        <p style="color:#666;font-size:15px;margin-bottom:24px">${clinic.name}</p>
-
-        <table style="width:100%;border-collapse:collapse;border-radius:12px;overflow:hidden;border:1px solid #e8e8e8">
-          <tbody>${tableHtml}</tbody>
-        </table>
-
-        ${inactiveAlert}
-
-        <p style="margin-top:28px">
-          <a href="${appUrl}/results"
-             style="display:inline-block;background:#0B1F3A;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;text-decoration:none">
-            Ver análise completa →
-          </a>
-        </p>
-
-        <p style="margin-top:32px;font-size:12px;color:#999">Este relatório é enviado automaticamente no início de cada mês.</p>
-      </div>
-    `.trim();
+    const html = renderToStaticMarkup(
+      createElement(MonthlyReportEmail, {
+        clinicName: clinic.name,
+        monthName,
+        appUrl,
+        metrics: {
+          revenue: revenueStr,
+          sessions,
+          newPatients,
+          activePackages,
+          inactivePatients: inactive,
+        },
+      })
+    );
 
     await resend.emails.send({
       from: fromAddress,

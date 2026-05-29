@@ -15,6 +15,11 @@ const ResultsExportButton = dynamic(
   { loading: () => null }
 );
 
+const ResultsSendReportButton = dynamic(
+  () => import("@/components/results-send-report-button").then((m) => m.ResultsSendReportButton),
+  { loading: () => null }
+);
+
 function fmt(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -62,7 +67,10 @@ export default async function ResultsPage({
             {data.period.from} → {data.period.to}
           </p>
         </div>
-        <ResultsExportButton data={data} />
+        <div className="flex items-center gap-[8px]">
+          <ResultsSendReportButton />
+          <ResultsExportButton data={data} />
+        </div>
       </div>
 
       {/* Period selector */}
