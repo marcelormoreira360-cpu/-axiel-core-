@@ -70,24 +70,158 @@ function getNowOffset(): number | null {
   return (mins / 60) * HOUR_HEIGHT;
 }
 
+// ─── Draggable session card (day view) ───────────────────────────────────────
+
+function DraggableDayCard({
+  session,
+  isActive,
+  onOpen,
+  onResize,
+}: {
+  session: ScheduleSession;
+  isActive: boolean;
+  onOpen: (s: ScheduleSession) => void;
+  onResize?: (id: string, newDuration: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: session.id,
+    data: { session },
+  });
+
+  const [resizeDuration, setResizeDuration] = useState<number | null>(null);
+  const resizeRef = useRef<{ startY: number; origDuration: number } | null>(null);
+
+  const displayDuration = resizeDuration ?? session.duration_minutes ?? 60;
+  const { top, height } = apptStyle(session.starts_at, displayDuration);
+  const name      = session.patients?.full_name ?? "Paciente";
+  const firstName = name.split(" ")[0];
+  const isResizing = resizeDuration !== null;
+
+  function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    resizeRef.current = { startY: e.clientY, origDuration: session.duration_minutes ?? 60 };
+    setResizeDuration(session.duration_minutes ?? 60);
+  }
+
+  function handleResizePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    const deltaY    = e.clientY - resizeRef.current.startY;
+    const MINS_PER_PX = 60 / HOUR_HEIGHT;
+    const deltaMins = Math.round((deltaY * MINS_PER_PX) / 15) * 15;
+    const newDur    = Math.max(15, resizeRef.current.origDuration + deltaMins);
+    setResizeDuration(newDur);
+  }
+
+  function handleResizePointerUp(_e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    const finalDur = resizeDuration ?? (session.duration_minutes ?? 60);
+    resizeRef.current = null;
+    setResizeDuration(null);
+    if (finalDur !== (session.duration_minutes ?? 60)) {
+      onResize?.(session.id, finalDur);
+    }
+  }
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      onClick={() => {
+        if (!isDragging && !isActive && !isResizing) onOpen(session);
+      }}
+      style={{
+        position: "absolute",
+        left: 3,
+        right: 3,
+        top: top + 1,
+        height: height - 2,
+        zIndex: isDragging ? 50 : 10,
+        background: isActive ? "#C3EBDB" : "#E1F5EE",
+        border: `1px solid ${isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
+        borderRadius: 6,
+        padding: "4px 6px",
+        overflow: "hidden",
+        display: "block",
+        textAlign: "left",
+        cursor: isDragging ? "grabbing" : "grab",
+        opacity: isDragging ? 0.35 : 1,
+        transform: CSS.Translate.toString(transform),
+        touchAction: "none",
+      }}
+      {...listeners}
+      {...attributes}
+    >
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+        {formatTime(session.starts_at)}
+      </p>
+      <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
+        {firstName}
+      </p>
+      {height >= 48 && (
+        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0 }}>
+          {displayDuration} min
+        </p>
+      )}
+
+      {/* ── Resize handle ── */}
+      <div
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={handleResizePointerUp}
+        onPointerCancel={handleResizePointerUp}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 8,
+          cursor: "ns-resize",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isResizing ? "rgba(15,110,86,0.15)" : "transparent",
+          borderRadius: "0 0 6px 6px",
+          touchAction: "none",
+        }}
+      >
+        <div style={{
+          width: 20,
+          height: 2,
+          borderRadius: 1,
+          background: isResizing ? "#0F6E56" : "rgba(15,110,86,0.3)",
+          transition: "background 0.15s",
+        }} />
+      </div>
+    </button>
+  );
+}
+
 // ─── Day view ────────────────────────────────────────────────────────────────
 
 function DayView({
   sessions,
+  navDate,
   patients,
   sessionTypes,
   createSessionAction,
   onOpenSession,
   setSelectedSlot,
   selectedSlot,
+  onReschedule,
+  onResizeDuration,
 }: {
   sessions: ScheduleSession[];
+  navDate: Date;
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   onOpenSession: (s: ScheduleSession) => void;
   setSelectedSlot: (s: TimeSlot | null) => void;
   selectedSlot: TimeSlot | null;
+  onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
   const slots      = useMemo(() => buildDayTimeSlots(), []);
   const scrollRef  = useRef<HTMLDivElement>(null);
@@ -103,16 +237,82 @@ function DayView({
     return () => clearInterval(id);
   }, []);
 
+  // Optimistic local state for drag-and-drop
+  const [localSessions, setLocalSessions] = useState<ScheduleSession[]>(sessions);
+  useEffect(() => { setLocalSessions(sessions); }, [sessions]);
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    setActiveId(String(e.active.id));
+  }, []);
+
+  const handleResize = useCallback((id: string, newDuration: number) => {
+    const s = localSessions.find((x) => x.id === id);
+    if (!s) return;
+    setLocalSessions((prev) =>
+      prev.map((x) => x.id === id ? { ...x, duration_minutes: newDuration } : x)
+    );
+    onResizeDuration?.(id, newDuration).catch(() => {
+      setLocalSessions((prev) =>
+        prev.map((x) => x.id === id ? { ...x, duration_minutes: s.duration_minutes } : x)
+      );
+    });
+  }, [localSessions, onResizeDuration]);
+
+  const handleDragEnd = useCallback((e: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = e;
+    if (!over || !onReschedule) return;
+
+    // overId format: "day__HH"
+    const parts = String(over.id).split("__");
+    if (parts.length !== 2 || parts[0] !== "day") return;
+    const targetHour = parseInt(parts[1], 10);
+    if (isNaN(targetHour)) return;
+
+    const sessionId = String(active.id);
+    const s         = localSessions.find((x) => x.id === sessionId);
+    if (!s) return;
+
+    const orig     = new Date(s.starts_at);
+    const newStart = new Date(navDate);
+    newStart.setHours(targetHour, orig.getMinutes(), 0, 0);
+
+    if (newStart.getTime() === orig.getTime()) return;
+
+    const newStartsAt = newStart.toISOString();
+
+    // Optimistic update
+    setLocalSessions((prev) =>
+      prev.map((x) => x.id === sessionId ? { ...x, starts_at: newStartsAt } : x)
+    );
+
+    // Persist
+    onReschedule(sessionId, newStartsAt).catch(() => {
+      setLocalSessions((prev) =>
+        prev.map((x) => x.id === sessionId ? { ...x, starts_at: s.starts_at } : x)
+      );
+    });
+  }, [localSessions, navDate, onReschedule]);
+
+  const activeSession = activeId ? localSessions.find((x) => x.id === activeId) : null;
+
   const sessionsBySlot = useMemo(() => {
-    return sessions.reduce<Record<string, ScheduleSession[]>>((acc, s) => {
+    return localSessions.reduce<Record<string, ScheduleSession[]>>((acc, s) => {
       const key = getSlotKeyFromStartsAt(s.starts_at);
       acc[key] = [...(acc[key] ?? []), s];
       return acc;
     }, {});
-  }, [sessions]);
+  }, [localSessions]);
 
   return (
     <>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
       {/* ── Grid ── */}
       <div
         ref={scrollRef}
@@ -184,8 +384,24 @@ function DayView({
             </div>
           )}
 
+          {/* Droppable hour cells */}
+          {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h) => (
+            <DroppableHourCell
+              key={`day-cell-${h}`}
+              id={`day__${h}`}
+              date={navDate}
+              hour={h}
+              onClick={() => {
+                if (!activeId) {
+                  const slot = slots.find((s) => s.hour === h);
+                  if (slot) setSelectedSlot(slot);
+                }
+              }}
+            />
+          ))}
+
+          {/* Background slot rows (visual only) */}
           {slots.map((slot, i) => {
-            const items  = sessionsBySlot[getSlotKey(slot.hour)] ?? [];
             const isLast = i === slots.length - 1;
             return (
               <div
@@ -198,6 +414,8 @@ function DayView({
                   height: HOUR_HEIGHT,
                   background: slot.isBusinessHour ? "#fff" : "#FAFAF8",
                   borderBottom: isLast ? "none" : "1px solid rgba(0,0,0,0.05)",
+                  pointerEvents: "none",
+                  zIndex: 0,
                 }}
               >
                 {/* Linha 30min */}
@@ -210,28 +428,80 @@ function DayView({
                     borderTop: "1px dashed rgba(0,0,0,0.05)",
                   }}
                 />
-                <div style={{ padding: 6, height: "100%" }}>
-                  {items.length === 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSlot(slot)}
-                      className="w-full h-full flex items-center justify-center rounded-[6px] text-[10px] text-transparent hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition"
-                    >
-                      {slot.isBusinessHour ? "+ Agendar" : ""}
-                    </button>
-                  ) : (
-                    <div className="space-y-[4px]">
-                      {items.map((s) => (
-                        <SessionCard key={s.id} session={s} onOpen={onOpenSession} />
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
             );
           })}
+
+          {/* Empty slot buttons (shown only when no session in that slot) */}
+          {slots.map((slot) => {
+            const items = sessionsBySlot[getSlotKey(slot.hour)] ?? [];
+            if (items.length > 0) return null;
+            return (
+              <button
+                key={`add-${slot.label}`}
+                type="button"
+                onClick={() => !activeId && setSelectedSlot(slot)}
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  top: (slot.hour - START_HOUR) * HOUR_HEIGHT,
+                  height: HOUR_HEIGHT,
+                  zIndex: 2,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 10,
+                  color: "transparent",
+                  borderRadius: 6,
+                }}
+                className="hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition"
+              >
+                {slot.isBusinessHour ? "+ Agendar" : ""}
+              </button>
+            );
+          })}
+
+          {/* Draggable session cards */}
+          {localSessions.map((s) => (
+            <DraggableDayCard
+              key={s.id}
+              session={s}
+              isActive={activeId === s.id}
+              onOpen={onOpenSession}
+              onResize={handleResize}
+            />
+          ))}
         </div>
       </div>
+
+      {/* DragOverlay: ghost card while dragging */}
+      <DragOverlay>
+        {activeSession ? (
+          <div
+            style={{
+              background: "#0F6E56",
+              borderRadius: 6,
+              padding: "6px 8px",
+              opacity: 0.9,
+              boxShadow: "0 4px 16px rgba(15,110,86,0.35)",
+              minWidth: 80,
+              cursor: "grabbing",
+            }}
+          >
+            <p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>
+              {formatTime(activeSession.starts_at)}
+            </p>
+            <p style={{ fontSize: 11, fontWeight: 500, color: "#C3EBDB", margin: "2px 0 0" }}>
+              {(activeSession.patients?.full_name ?? "Paciente").split(" ")[0]}
+            </p>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
 
       <CreateSessionModal
         slot={selectedSlot}
@@ -997,12 +1267,15 @@ export function ScheduleContainer({
       {view === "dia" && (
         <DayView
           sessions={filteredSessions}
+          navDate={navDate}
           patients={patients}
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
           onOpenSession={setSelectedSession}
           setSelectedSlot={setSelectedSlot}
           selectedSlot={selectedSlot}
+          onReschedule={rescheduleAction}
+          onResizeDuration={resizeDurationAction}
         />
       )}
       {view === "semana" && (
