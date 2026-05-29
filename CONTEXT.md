@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 29/05/2026 (3)
+> Atualizado em: 29/05/2026 (4)
 
 ---
 
@@ -56,6 +56,8 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Onboarding guiado: `/api/onboarding/checklist` detecta 6 passos; widget com barra de progresso, steps com ✓ real, refresh ao navegar — commit da65942 (29/05/2026)
 - ✅ Notificações in-app: 5 tipos (insights, LGPD, follow-ups vencidos, novos leads, formulários); Supabase Realtime em vez de polling 30s — commit 0efa4a2 (29/05/2026)
 - ✅ PWA mobile: MobileBottomNav (4 tabs + Mais), safe-area-inset-bottom iPhone, manifest com 4 shortcuts, install prompt re-mostra após 7 dias — commit 5ef1f26 (29/05/2026)
+- ✅ `/results` assíncrono: AI insights carregam em background via `/api/results/insights` (GPT isolado, maxDuration=60s), página renderiza em <1s com skeleton — commit 6b327af (29/05/2026)
+- ✅ Bug crítico resolvido: Shell com `try-catch` explícito no `Promise.all` — edge case Next.js 16 RSC onde rejeição silenciosa de promise nested derrubava todas as páginas — commit 13ccb6a (29/05/2026)
 
 ---
 
@@ -154,6 +156,9 @@ const Chart = dynamic(() => import("@/components/chart").then(m => m.Chart), {
 - Bot bilíngue: idioma detectado da primeira mensagem do paciente, fixo para toda conversa
 - Drag-drop agenda: dnd-kit com `activationConstraint: { distance: 8 }` + resize via pointer capture
 - Google Calendar: já implementado em `services/google-calendar-service.ts`, precisa de env vars por clínica
+- **Shell com try-catch obrigatório**: `Promise.all` em Server Components deve ser envolvido em try-catch explícito no Next.js 16 — rejeição de promise nested sem catch pode disparar error boundary em todas as páginas
+- AI insights no `/results`: sempre usar `generateAiInsights` via rota dedicada `/api/results/insights` (maxDuration=60s), nunca inline no page render
+- `ResultsInsights` client component com skeleton: carrega insights após render da página, nunca bloqueia SSR
 
 ---
 
