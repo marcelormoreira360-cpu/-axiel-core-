@@ -531,6 +531,94 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          // ─── NPS response detection ──────────────────────────────────────
+          // If the patient replies with a digit 1-5, check whether they received
+          // an NPS follow-up message in the last 48h for this clinic. If so, save
+          // their score and optionally follow up with a Google Review link (≥ 4).
+          const npsDigit = incomingText.trim();
+          if (/^[1-5]$/.test(npsDigit)) {
+            const npsScore = parseInt(npsDigit, 10);
+            const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+
+            // Step 1: find patient by phone (with or without leading "+")
+            const { data: patient } = await supabase
+              .from("patients")
+              .select("id")
+              .eq("clinic_id", effectiveClinicId)
+              .or(`phone.eq.${fromPhone},phone.eq.+${fromPhone}`)
+              .maybeSingle();
+
+            if (patient?.id) {
+              // Step 2: find most recent completed NPS follow-up in the last 48h
+              const { data: npsFu } = await supabase
+                .from("follow_ups")
+                .select("id, appointment_id, clinic_id")
+                .eq("notes", "nps")
+                .eq("status", "completed")
+                .eq("clinic_id", effectiveClinicId)
+                .eq("patient_id", patient.id)
+                .gte("updated_at", cutoff)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+              if (npsFu?.appointment_id) {
+                // Step 3: ensure no feedback exists yet (UNIQUE constraint on appointment_id)
+                const { data: existing } = await supabase
+                  .from("session_feedback")
+                  .select("id")
+                  .eq("appointment_id", npsFu.appointment_id)
+                  .maybeSingle();
+
+                if (!existing) {
+                  // Map 1-5 → 2-10 (DB stores 0–10 NPS scale)
+                  const dbScore = npsScore * 2;
+
+                  await supabase.from("session_feedback").upsert({
+                    clinic_id:      npsFu.clinic_id,
+                    patient_id:     patient.id,
+                    appointment_id: npsFu.appointment_id,
+                    nps_score:      dbScore,
+                  }, { onConflict: "appointment_id", ignoreDuplicates: true });
+
+                  // Fetch Google Review URL if score is high enough
+                  let reviewUrl: string | null = null;
+                  if (npsScore >= 4) {
+                    const { data: cs } = await supabase
+                      .from("clinic_settings")
+                      .select("settings")
+                      .eq("clinic_id", npsFu.clinic_id)
+                      .maybeSingle();
+                    reviewUrl = (cs?.settings as Record<string, unknown> | null)?.google_review_url as string | null ?? null;
+                  }
+
+                  let npsReply: string;
+                  if (npsScore >= 4 && reviewUrl) {
+                    npsReply =
+                      `Obrigado pela sua avaliação! ${npsDigit}⭐ Fico muito feliz. 🙏\n\n` +
+                      `Que tal compartilhar sua experiência no Google? Sua opinião ajuda outras pessoas a encontrar cuidado de qualidade:\n${reviewUrl}`;
+                  } else if (npsScore >= 4) {
+                    npsReply = `Obrigado pela sua avaliação! ${npsDigit}⭐ Fico feliz que tenha gostado. 🙏`;
+                  } else {
+                    npsReply =
+                      `Obrigado pelo feedback! 🙏\n\n` +
+                      `Lamento que a experiência não tenha sido tão boa quanto esperávamos. ` +
+                      `Vamos trabalhar para melhorar.`;
+                  }
+
+                  await sendMetaReply(fromPhone, npsReply, phoneNumberId);
+                  log.info("nps response captured via whatsapp", {
+                    phone: fromPhone.slice(-4),
+                    score: dbScore,
+                    google_prompted: !!(npsScore >= 4 && reviewUrl),
+                  });
+                  continue;
+                }
+              }
+            }
+          }
+          // ─────────────────────────────────────────────────────────────────────
+
           // Price objection — answer without advancing step
           if (currentStep !== 4 && isPriceQuestion(incomingText, lang)) {
             const objectionReply = buildPriceObjectionReply(currentStep, config, lang);

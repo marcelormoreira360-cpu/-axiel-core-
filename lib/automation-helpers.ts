@@ -49,8 +49,14 @@ export function buildMessage(
   if (tag === "nps") {
     return (
       `Olá, ${first}! 🌿\n\n` +
-      `Como foi sua sessão de ontem? Sua avaliação nos ajuda a melhorar cada vez mais.\n\n` +
-      `Acesse seu portal pelo link que você recebeu e deixe sua nota — leva menos de 1 minuto! ⭐`
+      `Como foi sua sessão de ontem?\n\n` +
+      `Responda com um número:\n` +
+      `1 — Precisa melhorar\n` +
+      `2 — Razoável\n` +
+      `3 — Boa\n` +
+      `4 — Muito boa\n` +
+      `5 — Excelente ⭐\n\n` +
+      `Basta digitar o número e enviar.`
     );
   }
 
