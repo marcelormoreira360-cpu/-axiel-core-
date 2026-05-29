@@ -29,6 +29,11 @@ export interface PaymentRow {
   notes: string;
 }
 
+export interface MonthlyTrendPoint {
+  month: string; // e.g. "Jan", "Fev", ...
+  totalCents: number;
+}
+
 export interface FinanceReportData {
   period: { from: string; to: string; label: string };
   totalRevenueCents: number;
@@ -37,6 +42,7 @@ export interface FinanceReportData {
   bySessionType: SessionTypeRevenue[];
   topPatients: TopPatient[];
   payments: PaymentRow[];
+  monthlyTrend: MonthlyTrendPoint[];
 }
 
 // ── GET /api/finance/report?period=this_month|last_month|last_3m|last_6m|this_year
@@ -121,6 +127,21 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => b.totalCents - a.totalCents)
     .slice(0, 10);
 
+  // Monthly trend — group payments by year-month, sorted chronologically
+  const MONTH_LABELS_PT = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  const monthMap = new Map<string, number>(); // key: "YYYY-MM"
+  for (const p of rows) {
+    const d = new Date(p.paid_at as string);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthMap.set(key, (monthMap.get(key) ?? 0) + (p.amount_cents ?? 0));
+  }
+  const monthlyTrend: MonthlyTrendPoint[] = [...monthMap.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, totalCents]) => {
+      const [, mm] = key.split("-");
+      return { month: MONTH_LABELS_PT[parseInt(mm, 10) - 1], totalCents };
+    });
+
   // Payment rows for table/export
   const PAYMENT_LABELS: Record<string, string> = {
     cash: "Dinheiro", pix: "Pix", credit_card: "Cartão crédito",
@@ -148,6 +169,7 @@ export async function GET(req: NextRequest) {
     bySessionType,
     topPatients,
     payments: paymentRows,
+    monthlyTrend,
   };
 
   return NextResponse.json(data);

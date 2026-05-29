@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Download, Loader2, TrendingUp, Users, CreditCard, BarChart3 } from "lucide-react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import type { FinanceReportData } from "@/app/api/finance/report/route";
 
 function formatBRL(cents: number) {
@@ -34,6 +43,26 @@ function KpiCard({ label, value, sub, icon: Icon }: {
       </div>
       <p className="text-[24px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">{value}</p>
       {sub && <p className="text-[11px] text-black/40 mt-1">{sub}</p>}
+    </div>
+  );
+}
+
+interface MonthlyTooltipProps {
+  active?: boolean;
+  payload?: { value?: number }[];
+  label?: string;
+}
+
+function MonthlyTooltip({ active, payload, label }: MonthlyTooltipProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-black/[.08] rounded-xl shadow-sm px-3 py-2">
+      <p className="text-[11px] font-semibold text-black/40 mb-0.5">{label}</p>
+      <p className="text-[13px] font-semibold text-[#0F1A2E]">
+        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+          (payload[0].value ?? 0) / 100
+        )}
+      </p>
     </div>
   );
 }
@@ -164,6 +193,60 @@ export function FinanceReportClient() {
               icon={Users}
             />
           </div>
+
+          {/* Monthly revenue trend chart */}
+          {data.monthlyTrend.length >= 2 && (
+            <div className="bg-white rounded-2xl border border-black/[.07] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 mb-4">
+                Evolução mensal de receita
+              </p>
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart
+                  data={data.monthlyTrend}
+                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0F6E56" stopOpacity={0.18} />
+                      <stop offset="95%" stopColor="#0F6E56" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} stroke="rgba(0,0,0,0.05)" />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 11, fill: "rgba(0,0,0,0.35)", fontFamily: "Inter, sans-serif" }}
+                    axisLine={false}
+                    tickLine={false}
+                    dy={6}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) =>
+                      new Intl.NumberFormat("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                        notation: "compact",
+                        maximumFractionDigits: 0,
+                      }).format(v / 100)
+                    }
+                    tick={{ fontSize: 11, fill: "rgba(0,0,0,0.35)", fontFamily: "Inter, sans-serif" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={60}
+                  />
+                  <Tooltip content={<MonthlyTooltip />} cursor={{ stroke: "#0F6E56", strokeWidth: 1, strokeDasharray: "4 4" }} />
+                  <Area
+                    type="monotone"
+                    dataKey="totalCents"
+                    stroke="#0F6E56"
+                    strokeWidth={2}
+                    fill="url(#revenueGradient)"
+                    dot={{ fill: "#0F6E56", r: 3, strokeWidth: 0 }}
+                    activeDot={{ fill: "#0F6E56", r: 5, strokeWidth: 0 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           {data.paymentCount === 0 ? (
             <div className="bg-white rounded-2xl border border-black/[.07] p-10 text-center">
