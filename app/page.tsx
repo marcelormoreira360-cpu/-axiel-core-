@@ -1,6 +1,32 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MessageCircle, BarChart3, Users, Bot, Smartphone, Star, Check, ChevronDown } from "lucide-react";
 
+// ── SEO ───────────────────────────────────────────────────────────────────────
+export const metadata: Metadata = {
+  title: "AXIEL Core — Gestão clínica com IA para saúde integrativa",
+  description:
+    "Agenda, prontuário, WhatsApp automático, portal do paciente e insights de IA — tudo integrado para fisioterapeutas, psicólogos, nutricionistas e clínicas de wellness. 14 dias grátis.",
+  openGraph: {
+    title: "AXIEL Core — Gestão clínica com IA",
+    description: "Tudo que sua clínica precisa em um só lugar. 14 dias grátis, sem cartão de crédito.",
+    type: "website",
+    locale: "pt_BR",
+    siteName: "AXIEL Core",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AXIEL Core — Gestão clínica com IA",
+    description: "Agenda, prontuário e automações para clínicas integrativas.",
+  },
+  keywords: [
+    "sistema para clínica", "gestão clínica", "prontuário eletrônico",
+    "agenda online", "fisioterapia", "psicologia", "nutrição", "saúde integrativa",
+    "automação whatsapp clínica", "software clínica integrativa",
+  ],
+};
+
+// ── Data ──────────────────────────────────────────────────────────────────────
 const FEATURES = [
   {
     icon: CalendarDays,
@@ -25,7 +51,7 @@ const FEATURES = [
   {
     icon: Smartphone,
     title: "Portal do paciente",
-    text: "Link personalizado para o paciente acompanhar sessões, evolução e pacote de tratamento. Com a sua identidade visual.",
+    text: "Link personalizado para o paciente acompanhar sessões, evolução e pacote de tratamento.",
   },
   {
     icon: BarChart3,
@@ -161,6 +187,159 @@ const FAQ = [
   },
 ];
 
+const STATS = [
+  { value: "500+", label: "clínicas ativas" },
+  { value: "40%", label: "menos faltas com lembretes" },
+  { value: "7h", label: "economizadas/mês com IA" },
+  { value: "14 dias", label: "grátis para testar" },
+];
+
+const INTEGRATIONS = [
+  { name: "WhatsApp Business", desc: "Lembretes e automações", bg: "#25D366", letter: "W" },
+  { name: "Stripe", desc: "Cobranças e assinaturas", bg: "#635BFF", letter: "S" },
+  { name: "Google Calendar", desc: "Sincronização de agenda", bg: "#EA4335", letter: "G" },
+  { name: "Zoom", desc: "Teleconsultas integradas", bg: "#2D8CFF", letter: "Z" },
+  { name: "OpenAI GPT-4o", desc: "Insights e análise clínica", bg: "#10A37F", letter: "AI" },
+  { name: "Supabase", desc: "Dados seguros em tempo real", bg: "#3ECF8E", letter: "SB" },
+];
+
+// ── Dashboard mockup ───────────────────────────────────────────────────────────
+function DashboardMockup() {
+  return (
+    <div className="relative mx-auto max-w-4xl">
+      {/* Browser chrome */}
+      <div className="rounded-2xl border border-black/[.1] bg-[#1C1C1E] shadow-2xl overflow-hidden">
+        {/* Top bar */}
+        <div className="flex items-center gap-3 px-4 py-3 bg-[#2C2C2E]">
+          <div className="flex gap-1.5">
+            <span className="w-3 h-3 rounded-full bg-[#FF5F57]" />
+            <span className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+            <span className="w-3 h-3 rounded-full bg-[#28C840]" />
+          </div>
+          <div className="flex-1 max-w-xs mx-auto">
+            <div className="bg-[#3A3A3C] rounded-md px-3 py-1 text-center">
+              <span className="text-[11px] text-white/40">app.axielcore.com/dashboard</span>
+            </div>
+          </div>
+        </div>
+
+        {/* App shell */}
+        <div className="flex h-[440px] bg-[#F8F7F4]">
+          {/* Sidebar */}
+          <div className="w-[192px] shrink-0 bg-[#0F1A2E] flex flex-col py-4 px-3 gap-1">
+            <div className="px-2 pb-4 mb-2 border-b border-white/[.08]">
+              <span className="text-[11px] font-semibold tracking-[0.2em] text-white/90">AXIEL CORE</span>
+            </div>
+            {[
+              { label: "Dashboard", active: true },
+              { label: "Agenda" },
+              { label: "Pacientes" },
+              { label: "Formulários" },
+              { label: "Financeiro" },
+              { label: "Resultados" },
+              { label: "Automações" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className={`px-3 py-2 rounded-lg text-[12px] font-medium ${
+                  item.active ? "bg-white/[.12] text-white" : "text-white/45"
+                }`}
+              >
+                {item.label}
+              </div>
+            ))}
+          </div>
+
+          {/* Main content */}
+          <div className="flex-1 overflow-hidden p-5">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[13px] font-semibold text-[#0F1A2E]">Bom dia, Dra. Fernanda 👋</p>
+                <p className="text-[11px] text-[#A09E98]">Quinta, 29 maio 2026</p>
+              </div>
+              <div className="flex gap-2">
+                <div className="w-7 h-7 rounded-full bg-[#E1F5EE] flex items-center justify-center">
+                  <span className="text-[10px] font-semibold text-[#0F6E56]">3</span>
+                </div>
+                <div className="w-7 h-7 rounded-full bg-[#F4F3EF]" />
+              </div>
+            </div>
+
+            {/* KPI row */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              {[
+                { label: "Receita do mês", value: "R$12.480", sub: "+18% vs. anterior", color: "#0F6E56" },
+                { label: "Sessões", value: "87", sub: "↑12 vs. mês passado", color: "#3B82F6" },
+                { label: "Taxa de retorno", value: "76%", sub: "Meta: 70% ✓", color: "#8B5CF6" },
+                { label: "Novos pacientes", value: "14", sub: "Este mês", color: "#F59E0B" },
+              ].map((kpi) => (
+                <div key={kpi.label} className="bg-white rounded-xl p-3 border border-black/[.06]">
+                  <p className="text-[9px] text-[#A09E98] mb-1">{kpi.label.toUpperCase()}</p>
+                  <p className="text-[18px] font-semibold leading-none" style={{ color: kpi.color }}>{kpi.value}</p>
+                  <p className="text-[9px] text-[#A09E98] mt-1">{kpi.sub}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Lower row */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Next sessions */}
+              <div className="bg-white rounded-xl p-4 border border-black/[.06]">
+                <p className="text-[11px] font-semibold text-[#0F1A2E] mb-3">Próximas sessões</p>
+                {[
+                  { time: "09:00", name: "Ana Costa", type: "Fisioterapia", dot: "#0F6E56" },
+                  { time: "10:30", name: "João Lima", type: "Nutrição", dot: "#3B82F6" },
+                  { time: "14:00", name: "Carla Souza", type: "Pilates Clínico", dot: "#8B5CF6" },
+                ].map((s) => (
+                  <div key={s.name} className="flex items-center gap-2 py-1.5 border-b border-black/[.04] last:border-0">
+                    <span className="text-[10px] text-[#A09E98] w-10 shrink-0">{s.time}</span>
+                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
+                    <span className="text-[11px] font-medium text-[#0F1A2E] flex-1 truncate">{s.name}</span>
+                    <span className="text-[9px] text-[#A09E98]">{s.type}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* AI insight card */}
+              <div className="bg-[#F0FAF6] rounded-xl p-4 border border-[#9FE1CB]">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <span className="text-[10px]">✦</span>
+                  <p className="text-[10px] font-semibold text-[#0F6E56] tracking-[.04em] uppercase">Insight IA — Ana Costa</p>
+                </div>
+                <p className="text-[11px] text-[#085041] leading-relaxed line-clamp-3">
+                  Progressão consistente nas últimas 4 semanas. Dor reduziu de 7/10 para 3/10. Recomendo avançar para protocolo de fase 2.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <span className="text-[10px] bg-[#0F6E56] text-white px-2 py-1 rounded-md">Aprovar</span>
+                  <span className="text-[10px] bg-white text-[#0F6E56] border border-[#9FE1CB] px-2 py-1 rounded-md">Ver completo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Floating badges */}
+      <div className="absolute -bottom-4 -right-4 hidden md:flex items-center gap-2 bg-white border border-black/[.08] rounded-xl px-4 py-3 shadow-lg">
+        <div className="w-8 h-8 rounded-full bg-[#E1F5EE] flex items-center justify-center text-base">✦</div>
+        <div>
+          <p className="text-[12px] font-semibold text-[#0F1A2E]">Insight gerado</p>
+          <p className="text-[11px] text-[#A09E98]">Ana Costa · há 2min</p>
+        </div>
+      </div>
+      <div className="absolute -bottom-4 -left-4 hidden md:flex items-center gap-2 bg-white border border-black/[.08] rounded-xl px-4 py-3 shadow-lg">
+        <div className="w-8 h-8 rounded-full bg-[#FFF8E7] flex items-center justify-center text-sm">📅</div>
+        <div>
+          <p className="text-[12px] font-semibold text-[#0F1A2E]">Sessão confirmada</p>
+          <p className="text-[11px] text-[#A09E98]">WhatsApp enviado · agora</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F1A2E]">
@@ -188,13 +367,13 @@ export default function LandingPage() {
       </header>
 
       {/* ── Hero ── */}
-      <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 md:pt-32">
+      <section className="mx-auto max-w-6xl px-6 pb-16 pt-20 md:pt-28">
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#0F6E56]/20 bg-[#E1F5EE] px-3 py-1.5">
             <Star className="h-3 w-3 text-[#0F6E56]" />
             <span className="text-xs font-medium text-[#0F6E56]">Sistema clínico com IA — feito para saúde integrativa</span>
           </div>
-          <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.03em] md:text-[68px]">
+          <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.03em] md:text-[64px]">
             Gestão clínica<br />
             <span className="text-[#0F6E56]">simples e inteligente.</span>
           </h1>
@@ -219,8 +398,27 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Product mockup ── */}
+      <section className="mx-auto max-w-6xl px-6 pb-28 pt-4">
+        <DashboardMockup />
+      </section>
+
+      {/* ── Stats strip ── */}
+      <section className="border-y border-black/[.06] bg-white py-10">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            {STATS.map((s) => (
+              <div key={s.label} className="text-center">
+                <p className="text-3xl font-semibold tracking-tight text-[#0F1A2E]">{s.value}</p>
+                <p className="mt-1 text-sm text-black/45">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Especialidades ── */}
-      <section className="border-y border-black/[.06] bg-white py-5">
+      <section className="border-b border-black/[.06] bg-[#FAFAF8] py-5">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
             <span className="text-xs font-medium text-black/35 whitespace-nowrap">Usado por profissionais de:</span>
@@ -250,6 +448,32 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Integrações ── */}
+      <section className="border-y border-black/[.06] bg-white py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="mb-12 text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Integrações</p>
+            <h2 className="text-3xl font-semibold tracking-[-0.025em]">Conectado com as ferramentas que você já usa.</h2>
+          </div>
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            {INTEGRATIONS.map((int) => (
+              <div key={int.name} className="flex flex-col items-center gap-3 rounded-2xl border border-black/[.07] bg-[#FAFAF8] p-5 text-center hover:border-black/15 transition">
+                <div
+                  className="flex h-12 w-12 items-center justify-center rounded-xl text-white text-sm font-bold"
+                  style={{ backgroundColor: int.bg }}
+                >
+                  {int.letter}
+                </div>
+                <div>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E] leading-snug">{int.name}</p>
+                  <p className="text-[11px] text-black/40 mt-0.5">{int.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ── Como funciona ── */}
       <section id="como-funciona" className="bg-[#0F1A2E] py-24">
         <div className="mx-auto max-w-6xl px-6">
@@ -269,7 +493,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Destaque ── */}
+      {/* ── Automações destaque ── */}
       <section className="mx-auto max-w-6xl px-6 py-24">
         <div className="rounded-3xl bg-[#E1F5EE] p-10 md:p-14">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
@@ -314,15 +538,12 @@ export default function LandingPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {TESTIMONIALS.map((t) => (
             <div key={t.name} className="flex flex-col rounded-2xl border border-black/[.07] bg-white p-6 hover:border-black/15 transition">
-              {/* Stars */}
               <div className="flex gap-0.5 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />
                 ))}
               </div>
-              {/* Quote */}
               <p className="flex-1 text-sm leading-relaxed text-black/65 mb-6">&ldquo;{t.quote}&rdquo;</p>
-              {/* Author */}
               <div className="flex items-center gap-3">
                 <div
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
