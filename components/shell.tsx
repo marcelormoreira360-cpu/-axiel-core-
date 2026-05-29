@@ -11,6 +11,7 @@ import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
+import { getClinicSubscription } from "@/services/billing-service";
 
 export async function Shell({
   children,
@@ -34,6 +35,22 @@ export async function Shell({
     getCurrentClinic().catch(() => null),
   ]);
   const activeClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
+
+  // ── Trial / billing status ──────────────────────────────────────────────────
+  // Fetch subscription lightly (React.cache deduplicates if already called).
+  const clinicId = clinic?.id ?? clinics[0]?.id ?? null;
+  const subscription = clinicId
+    ? await getClinicSubscription(clinicId).catch(() => null)
+    : null;
+
+  const subStatus = (subscription as { status?: string | null } | null)?.status ?? null;
+  const trialEndsAtRaw = (subscription as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
+  const trialExpired =
+    subStatus === "trialing" && trialEndsAtRaw != null
+      ? new Date(trialEndsAtRaw) < new Date()
+      : false;
+  const isPastDue = subStatus === "past_due";
+  const showBillingBanner = trialExpired || isPastDue;
 
   const logoUrl = clinic?.logo_url ?? null;
   const primaryColor = clinic?.primary_color ?? "#0F6E56";
@@ -126,6 +143,38 @@ export async function Shell({
 
       {/* ── Page content ── */}
       <main className="flex-1 min-w-0 pt-[84px] lg:pt-0">
+        {/* Trial-expired / past_due banner */}
+        {showBillingBanner && (
+          <div className="bg-amber-500 text-white px-4 py-2.5 flex items-center justify-between gap-3 text-[12px]">
+            <div className="flex items-center gap-2 min-w-0">
+              <svg
+                className="w-3.5 h-3.5 shrink-0"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+              <span className="font-medium truncate">
+                {isPastDue
+                  ? "Pagamento pendente — seu acesso pode ser suspenso em breve."
+                  : "Seu trial expirou — escolha um plano para continuar."}
+              </span>
+            </div>
+            <Link
+              href="/upgrade"
+              className="shrink-0 bg-white text-amber-600 font-semibold text-[11px] px-3 py-1 rounded-full hover:bg-amber-50 transition"
+            >
+              Assinar agora
+            </Link>
+          </div>
+        )}
+
         <div className={fullWidth ? "px-4 py-4 lg:px-6 lg:py-5" : "mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8"}>
           {children}
         </div>
