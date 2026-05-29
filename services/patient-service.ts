@@ -12,7 +12,7 @@ export async function getPatients(
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("patients")
-    .select("*")
+    .select("*, appointments(practitioner_id)")
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 

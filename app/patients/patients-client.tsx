@@ -28,6 +28,7 @@ function avatarColor(name: string) {
 }
 
 type StatusFilter = "all" | "active" | "inactive" | "archived";
+type Practitioner = { id: string; name: string };
 
 const STATUS_TABS: { key: StatusFilter; label: string }[] = [
   { key: "all", label: "Todos" },
@@ -44,6 +45,7 @@ export function PatientsClient({
   totalPages = 1,
   totalCount,
   initialSearch,
+  practitioners,
 }: {
   patients: Patient[];
   practitionerMode: boolean;
@@ -52,12 +54,14 @@ export function PatientsClient({
   totalPages?: number;
   totalCount?: number;
   initialSearch?: string;
+  practitioners?: Practitioner[];
 }) {
   const router = useRouter();
   // When initialSearch is set, we're showing server-filtered results.
   // Local query state is used for client-side filtering within the loaded page.
   const [query, setQuery] = useState(initialSearch ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [practitionerFilter, setPractitionerFilter] = useState<string>("all");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce URL navigation so server search fires after typing stops (~400ms)
@@ -90,9 +94,15 @@ export function PatientsClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     // When a search/filter is active, use the original (created_at desc) order
-    const source = q || statusFilter !== "all" ? patients : sortedPatients;
+    const hasFilter = q || statusFilter !== "all" || practitionerFilter !== "all";
+    const source = hasFilter ? patients : sortedPatients;
     return source.filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (practitionerFilter !== "all") {
+        const appts = p.appointments ?? [];
+        const hasAppt = appts.some((a) => a.practitioner_id === practitionerFilter);
+        if (!hasAppt) return false;
+      }
       if (!q) return true;
       return (
         p.full_name.toLowerCase().includes(q) ||
@@ -100,7 +110,7 @@ export function PatientsClient({
         (p.phone ?? "").toLowerCase().includes(q)
       );
     });
-  }, [patients, sortedPatients, query, statusFilter]);
+  }, [patients, sortedPatients, query, statusFilter, practitionerFilter]);
 
   const totalLabel =
     patients.length > 0
@@ -116,6 +126,18 @@ export function PatientsClient({
           <p className="text-[12px] text-[#A09E98] mt-[2px]">{totalLabel}</p>
         </div>
         <div className="flex items-center gap-[8px]">
+          {practitioners && practitioners.length > 1 && (
+            <select
+              value={practitionerFilter}
+              onChange={(e) => setPractitionerFilter(e.target.value)}
+              className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium"
+            >
+              <option value="all">Todos os profissionais</option>
+              {practitioners.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
           <a
             href="/api/patients/export"
             download
@@ -211,7 +233,7 @@ export function PatientsClient({
               : "Nenhum paciente com esse filtro."}
           </p>
           <button
-            onClick={() => { handleSearchChange(""); setStatusFilter("all"); }}
+            onClick={() => { handleSearchChange(""); setStatusFilter("all"); setPractitionerFilter("all"); }}
             className="mt-2 text-[12px] text-[#0F6E56] hover:underline"
           >
             Limpar filtros
@@ -285,7 +307,7 @@ export function PatientsClient({
       )}
 
       {/* Result count when searching */}
-      {(query || statusFilter !== "all") && filtered.length > 0 && (
+      {(query || statusFilter !== "all" || practitionerFilter !== "all") && filtered.length > 0 && (
         <p className="mt-[10px] text-[11px] text-[#A09E98] text-center">
           {filtered.length} de {patients.length} paciente{patients.length !== 1 ? "s" : ""}
         </p>

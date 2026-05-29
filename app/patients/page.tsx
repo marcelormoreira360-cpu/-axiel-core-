@@ -2,7 +2,7 @@ import { Shell } from "@/components/shell";
 import { getPatients, getPatientCount } from "@/services/patient-service";
 import { getAppointments } from "@/services/appointment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { isPractitioner } from "@/services/team-service";
+import { isPractitioner, getTeamMembers, isManager } from "@/services/team-service";
 import { PatientsClient } from "./patients-client";
 
 const PAGE_SIZE = 100;
@@ -21,12 +21,21 @@ export default async function PatientsPage({
   const clinicId = profile?.clinic_id ?? undefined;
   const practitionerMode = !!(profile && isPractitioner(profile.role));
   const practitionerId = practitionerMode ? profile!.id : undefined;
+  const isManagerMode = !!(profile && isManager(profile.role));
 
-  const [patients, appointments, totalCount] = await Promise.all([
+  const [patients, appointments, totalCount, teamMembers] = await Promise.all([
     getPatients(clinicId, practitionerId, PAGE_SIZE, offset, search),
     getAppointments(clinicId, practitionerId),
     getPatientCount(clinicId, practitionerId, search),
+    isManagerMode && clinicId ? getTeamMembers(clinicId) : Promise.resolve([]),
   ]);
+
+  const practitioners =
+    isManagerMode && teamMembers.length > 0
+      ? teamMembers
+          .filter((m) => isPractitioner(m.role))
+          .map((m) => ({ id: m.id, name: m.full_name ?? m.email ?? m.id }))
+      : undefined;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
@@ -53,6 +62,7 @@ export default async function PatientsPage({
         totalPages={totalPages}
         totalCount={totalCount}
         initialSearch={search}
+        practitioners={practitioners}
       />
     </Shell>
   );

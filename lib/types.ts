@@ -66,6 +66,8 @@ export type Patient = {
   country: string | null;
   created_at: string;
   updated_at: string;
+  /** Populated only when fetched with appointments(practitioner_id) */
+  appointments?: { practitioner_id: string | null }[] | null;
 };
 
 export type LeadSource = "website" | "instagram" | "facebook" | "google" | "referral" | "other";
