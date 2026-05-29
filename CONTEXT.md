@@ -52,6 +52,7 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Fase 4: period selector 1/3/6/12 meses via URL em `/results`
 - ✅ Fase 4: `ResultsChart` (recharts ComposedChart — barras sessões/novos pacientes + linha receita)
 - ✅ Fase 4: `ResultsExportButton` — CSV client-side com BOM UTF-8 (resumo + tabela mensal)
+- ✅ Portal melhorado: timeline de todos insights aprovados, exames com biomarkers, protocolo (medicamentos + suplementos), "ver mais sessões"
 
 ---
 
