@@ -68,19 +68,28 @@ export function NotificationBell() {
     fetchCounts();
 
     const supabase = createSupabaseBrowserClient();
-    const channel = supabase
-      .channel("notification-bell")
-      .on("postgres_changes", { event: "*", schema: "public", table: "ai_insights" }, fetchCounts)
-      .on("postgres_changes", { event: "*", schema: "public", table: "data_deletion_requests" }, fetchCounts)
-      .on("postgres_changes", { event: "*", schema: "public", table: "follow_ups" }, fetchCounts)
-      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, fetchCounts)
-      .on("postgres_changes", { event: "*", schema: "public", table: "assessment_invitations" }, fetchCounts)
-      .subscribe();
+    // Use a unique channel name per mount to avoid "cannot add callbacks after subscribe()"
+    // which happens when React remounts the component and the previous channel is still subscribed.
+    const channelName = `notification-bell-${Date.now()}`;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    try {
+      channel = supabase
+        .channel(channelName)
+        .on("postgres_changes", { event: "*", schema: "public", table: "ai_insights" }, fetchCounts)
+        .on("postgres_changes", { event: "*", schema: "public", table: "data_deletion_requests" }, fetchCounts)
+        .on("postgres_changes", { event: "*", schema: "public", table: "follow_ups" }, fetchCounts)
+        .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, fetchCounts)
+        .on("postgres_changes", { event: "*", schema: "public", table: "assessment_invitations" }, fetchCounts)
+        .subscribe();
+    } catch {
+      /* Realtime not available — polling via setInterval is the fallback */
+    }
 
     const id = setInterval(fetchCounts, 60_000);
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel).catch(() => {});
       clearInterval(id);
     };
   }, [fetchCounts]);
