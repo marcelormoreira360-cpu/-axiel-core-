@@ -46,6 +46,8 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Fase 2 (Voice Notes): `VoiceDictation` genérico — textarea + mic + Whisper, uncontrolled, funciona em qualquer form
 - ✅ Fase 2: VoiceDictation integrado no formulário de aprovação de insights (reviewer_notes)
 - ✅ Fase 2: VoiceDictation integrado no formulário de follow-up (notes)
+- ✅ Fase 3 (Stripe): onboarding plan page com "Continuar com trial grátis" (skip sem cartão)
+- ✅ Fase 3: histórico de faturas Stripe na página /billing (lista até 8 faturas com status + PDF)
 
 ---
 
