@@ -35,7 +35,7 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     if (!ownerEmail) return "skipped";
 
     // Compute metrics in parallel
-    const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes] = await Promise.all([
+    const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes, paymentsRes] = await Promise.all([
       supabase.from("appointments")
         .select("id", { count: "exact", head: true })
         .eq("clinic_id", clinic.id)
@@ -62,6 +62,12 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
         .select("id", { count: "exact", head: true })
         .eq("clinic_id", clinic.id)
         .eq("status", "active"),
+
+      supabase.from("patient_payments")
+        .select("amount_cents")
+        .eq("clinic_id", clinic.id)
+        .gte("paid_at", startISO)
+        .lt("paid_at", endISO),
     ]);
 
     const sessions = sessionsRes.count ?? 0;
@@ -70,8 +76,13 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     const recentPatientIds = new Set((recentSessionsRes.data ?? []).map((r) => r.patient_id));
     const totalActive = totalActiveRes.count ?? 0;
     const inactive = Math.max(0, totalActive - recentPatientIds.size);
+    const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
+    const revenueStr = revenueCents > 0
+      ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      : "—";
 
-    const rows: Array<[string, string, string?]> = [
+    const rows: Array<[string, string, string]> = [
+      ["💰", "Receita no mês", revenueStr],
       ["📅", `Sessões realizadas em ${monthName}`, sessions.toString()],
       ["👤", "Novos pacientes no mês", newPatients.toString()],
       ["📦", "Pacotes ativos", activePackages.toString()],
@@ -105,9 +116,9 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
         ${inactiveAlert}
 
         <p style="margin-top:28px">
-          <a href="${appUrl}/dashboard"
+          <a href="${appUrl}/results"
              style="display:inline-block;background:#0B1F3A;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:500;text-decoration:none">
-            Acessar dashboard →
+            Ver análise completa →
           </a>
         </p>
 
