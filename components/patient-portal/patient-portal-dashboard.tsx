@@ -409,6 +409,10 @@ export function PatientPortalDashboard({
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
+  // Session history expand state
+  const [showAllSessions, setShowAllSessions] = useState(false);
+  const SESSION_PREVIEW = 5;
+
   // NPS feedback state
   // The session to rate: most recent past session that hasn't been rated yet
   const [ratingDismissed, setRatingDismissed] = useState(false);
@@ -674,11 +678,112 @@ export function PatientPortalDashboard({
           </Section>
         )}
 
+        {/* Todos os insights aprovados */}
+        {data.allInsights.length > 1 && (
+          <Section title="Sua jornada de saúde">
+            <div className="space-y-3">
+              {data.allInsights.map((ins, i) => (
+                <div key={ins.id} className="border-b border-black/[.05] pb-3 last:border-0 last:pb-0">
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#0F6E56] mt-1.5 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <p className="text-sm font-semibold text-[#0F1A2E]">{ins.title}</p>
+                        <span className="text-[10px] text-black/30">
+                          {ins.approved_at
+                            ? new Date(ins.approved_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })
+                            : new Date(ins.created_at).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
+                        </span>
+                      </div>
+                      {i === 0 && (
+                        <p className="text-xs text-[#0F6E56] font-medium mt-0.5">✓ Mais recente</p>
+                      )}
+                      <p className="text-xs text-black/55 leading-relaxed mt-1 line-clamp-2">{ins.summary}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Exames laboratoriais */}
+        {data.exams.length > 0 && (
+          <Section title="Exames laboratoriais">
+            <div className="space-y-3">
+              {data.exams.map((exam) => (
+                <div key={exam.id} className="border-b border-black/[.05] pb-3 last:border-0 last:pb-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-sm font-semibold text-[#0F1A2E]">
+                      {exam.lab_name ?? "Exame"}
+                    </p>
+                    <span className="text-xs text-black/35">
+                      {new Date(exam.exam_date).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                  {exam.results.length > 0 && (
+                    <div className="space-y-1">
+                      {exam.results.slice(0, 4).map((r, i) => {
+                        const statusColor = r.status === "high" ? "text-red-500" : r.status === "low" ? "text-amber-500" : "text-[#0F6E56]";
+                        return (
+                          <div key={i} className="flex items-center justify-between text-xs">
+                            <span className="text-black/55">{r.biomarker}</span>
+                            <span className={`font-medium ${statusColor}`}>
+                              {r.value} {r.unit ?? ""}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {exam.results.length > 4 && (
+                        <p className="text-[10px] text-black/30">+{exam.results.length - 4} marcadores</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Prescrições e suplementos ativos */}
+        {data.activePrescriptions.length > 0 && (
+          <Section title="Protocolo atual">
+            <div className="space-y-2">
+              {data.activePrescriptions.map((p) => (
+                <div key={p.id} className="flex items-start gap-2.5 py-1.5 border-b border-black/[.05] last:border-0">
+                  <div
+                    className="mt-0.5 w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: p.type === "medication" ? "#4F46E5" : "#0F6E56" }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-medium text-[#0F1A2E]">{p.name}</p>
+                      <span className="text-[10px] bg-black/[.05] text-black/40 rounded-full px-1.5 py-0.5">
+                        {p.type === "medication" ? "Medicamento" : "Suplemento"}
+                      </span>
+                    </div>
+                    {(p.dosage || p.frequency) && (
+                      <p className="text-xs text-black/45 mt-0.5">
+                        {[p.dosage, p.frequency].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    {p.end_date && (
+                      <p className="text-[10px] text-black/30 mt-0.5">
+                        Até {new Date(p.end_date).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
         {/* Histórico de sessões */}
         {data.sessions.length > 0 && (
           <Section title="Histórico de sessões">
             <div className="space-y-1">
-              {data.sessions.slice(0, 5).map((session, index) => (
+              {(showAllSessions ? data.sessions : data.sessions.slice(0, SESSION_PREVIEW)).map((session, index) => (
                 <SessionHistoryCard
                   key={session.id ?? index}
                   session={session}
@@ -688,6 +793,17 @@ export function PatientPortalDashboard({
                 />
               ))}
             </div>
+            {data.sessions.length > SESSION_PREVIEW && (
+              <button
+                type="button"
+                onClick={() => setShowAllSessions((v) => !v)}
+                className="mt-1 text-xs text-black/40 hover:text-black/70 transition underline underline-offset-2"
+              >
+                {showAllSessions
+                  ? "Ver menos"
+                  : `Ver mais ${data.sessions.length - SESSION_PREVIEW} sessões`}
+              </button>
+            )}
           </Section>
         )}
 

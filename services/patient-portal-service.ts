@@ -76,6 +76,23 @@ export type PatientPortalDocument = {
   created_at: string;
 };
 
+export type PatientPortalExam = {
+  id: string;
+  exam_date: string;
+  lab_name: string | null;
+  results: { biomarker: string; value: number; unit: string | null; status: string }[];
+};
+
+export type PatientPortalPrescription = {
+  id: string;
+  type: "medication" | "supplement";
+  name: string;
+  dosage: string | null;
+  frequency: string | null;
+  start_date: string | null;
+  end_date: string | null;
+};
+
 export type PatientPortalPayment = {
   id: string;
   amount_cents: number;
@@ -117,6 +134,9 @@ export type PatientPortalData = {
   sessionTypes: PatientPortalSessionType[];
   unreadClinicMessages: number;
   paymentHistory: PatientPortalPayment[];
+  allInsights: PatientPortalInsight[];
+  exams: PatientPortalExam[];
+  activePrescriptions: PatientPortalPrescription[];
   activeSubscription: {
     id: string;
     planName: string;
@@ -449,6 +469,33 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   if (!patient || !clinic) return null;
 
+  // Additional data: all approved insights + exams + active prescriptions
+  const [{ data: allInsightsRaw }, { data: examsRaw }, { data: prescriptionsRaw }] = await Promise.all([
+    supabase
+      .from("ai_insights")
+      .select("*")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .eq("review_status", "final")
+      .order("approved_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("patient_exams")
+      .select("id, exam_date, lab_name, exam_results(biomarker, value, unit, status)")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .order("exam_date", { ascending: false })
+      .limit(10),
+    supabase
+      .from("patient_prescriptions")
+      .select("id, type, name, dosage, frequency, start_date, end_date")
+      .eq("patient_id", link.patient_id)
+      .eq("clinic_id", link.clinic_id)
+      .eq("is_active", true)
+      .order("created_at", { ascending: false }),
+  ]);
+
   await supabase
     .from("patient_portal_links")
     .update({
@@ -582,6 +629,36 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     price_cents: st.price_cents as number,
   }));
 
+  const allInsights: PatientPortalInsight[] = ((allInsightsRaw ?? []) as AiInsight[]).map(asInsightSummary);
+
+  const exams: PatientPortalExam[] = (examsRaw ?? []).map((e) => {
+    const raw = e as { id: string; exam_date: string; lab_name: string | null; exam_results?: unknown[] };
+    return {
+      id: raw.id,
+      exam_date: raw.exam_date,
+      lab_name: raw.lab_name,
+      results: ((raw.exam_results ?? []) as Array<{ biomarker: string; value: number; unit: string | null; status: string }>).map((r) => ({
+        biomarker: r.biomarker,
+        value: r.value,
+        unit: r.unit,
+        status: r.status,
+      })),
+    };
+  });
+
+  const activePrescriptions: PatientPortalPrescription[] = (prescriptionsRaw ?? []).map((p) => {
+    const raw = p as { id: string; type: string; name: string; dosage: string | null; frequency: string | null; start_date: string | null; end_date: string | null };
+    return {
+      id: raw.id,
+      type: raw.type as "medication" | "supplement",
+      name: raw.name,
+      dosage: raw.dosage,
+      frequency: raw.frequency,
+      start_date: raw.start_date,
+      end_date: raw.end_date,
+    };
+  });
+
   return {
     link: link as PatientPortalLink,
     patient: patient as PatientPortalData["patient"],
@@ -598,6 +675,9 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     sessionTypes,
     unreadClinicMessages: unreadCount ?? 0,
     paymentHistory,
+    allInsights,
+    exams,
+    activePrescriptions,
     activeSubscription: activeSubscriptionData
       ? {
           id: activeSubscriptionData.id as string,
