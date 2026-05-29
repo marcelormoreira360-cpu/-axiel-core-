@@ -183,7 +183,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
         const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
         dateTimeStr = `${dateStr} at ${timeStr}`;
       } else {
-        templateName = "agendamento_confirmado";
+        templateName = "confirmacao_agendamento";
         langCode = "pt_BR";
         const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
         const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
