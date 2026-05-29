@@ -19,7 +19,7 @@ export function detectLanguage(messages: ChatMessage[], currentMessage: string):
   const firstUserMsg = messages.find((m) => m.role === "user")?.content ?? currentMessage;
   const lower = ` ${firstUserMsg.toLowerCase()} `;
 
-  // DEBT-08: words weighted by length/uniqueness — short ambiguous words (" i ", " do ")
+  // Words weighted by length/uniqueness — short ambiguous words (" i ", " do ")
   // get weight 1; longer/unambiguous words get weight 2.
   // EN requires at least 2 points more than PT to switch language (avoids false positives).
   const enWords: Array<[string, number]> = [

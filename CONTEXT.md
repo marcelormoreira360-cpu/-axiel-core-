@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 29/05/2026
+> Atualizado em: 29/05/2026 (2)
 
 ---
 
@@ -36,6 +36,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ Página de upgrade + banner de trial expirado
 - ✅ Bot Meta WhatsApp: `getHistory()` agora lê `clinic_id` real do banco (fix SEC-02)
 - ✅ `SessionPackageBadge` no perfil do paciente — exibe "Sessão X · Pacote Y" + barra de progresso
+- ✅ Results Dashboard (Execução 13) — `/results` com 4 KPIs, serviços, origem, resumo financeiro e AI insights
+- ✅ `/results` adicionado à sidebar (seção Clínica)
+- ✅ Feature gates WhatsApp bot implementados (Meta: Scale+; Twilio: Professional+)
+- ✅ Todos os marcadores TODO-02, DEBT-04, DEBT-08 removidos (código já estava implementado)
 
 ---
 

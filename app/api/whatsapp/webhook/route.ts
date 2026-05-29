@@ -215,7 +215,7 @@ export async function POST(req: NextRequest) {
       systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
     }
 
-    // TODO-02: Feature gate — whatsapp_automation requires Professional plan or above.
+    // Feature gate — whatsapp_automation requires Professional plan or above.
     // Falls back silently (silent 200) so Twilio doesn't retry.
     if (clinicIdFromConfig) {
       const adminForBilling = _adminForBilling();

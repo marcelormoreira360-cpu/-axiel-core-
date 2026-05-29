@@ -31,6 +31,7 @@ const mainNav = [
 const clinicNav = [
   { href: "/monetization",  label: "Planos e pacotes" },
   { href: "/assinaturas",   label: "Assinaturas" },
+  { href: "/results",       label: "Resultados" },
   { href: "/analytics",     label: "Analytics" },
   { href: "/profissionais", label: "Equipe" },
   { href: "/relatorios",    label: "Relatórios" },

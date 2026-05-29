@@ -465,7 +465,7 @@ export async function POST(req: NextRequest) {
             }).catch(() => {})
           ).catch(() => {});
 
-          // TODO-02: feature gate — whatsapp_automation requires Scale plan or higher.
+          // Feature gate — whatsapp_automation requires Scale plan or higher.
           // Drop silently so the patient sees no error message from an unauthorized bot.
           const botAllowed = await clinicCanUseWhatsAppBot(supabase, clinicId);
           if (!botAllowed) {
