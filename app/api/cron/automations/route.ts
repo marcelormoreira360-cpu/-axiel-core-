@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { processAutomations, checkLowPackageNotifications } from "@/services/automation-service";
 import { processDunning } from "@/services/dunning-service";
+import { CronGuard } from "@/lib/cron-guard";
+import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
+
+const log = createLogger("cron/automations");
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
@@ -12,15 +16,23 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Idempotency window: 20 min — prevents double-run if Vercel retries within the hour
+  const guard = await CronGuard.start("automations", { windowMs: 20 * 60_000 });
+  if (guard.skipped) return NextResponse.json({ ok: true, skipped: true });
+
   try {
     const [automations, packageAlerts, dunning] = await Promise.all([
       processAutomations(),
       checkLowPackageNotifications(),
       processDunning(),
     ]);
-    return NextResponse.json({ ok: true, automations, packageAlerts, dunning });
+
+    const result = { automations, packageAlerts, dunning };
+    await guard.finish(result as Record<string, unknown>);
+    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
-    console.error("[cron/automations] error:", error);
+    log.error("unhandled error", error);
+    await guard.fail(error);
     return NextResponse.json({ ok: false, error: String(error) }, { status: 500 });
   }
 }
