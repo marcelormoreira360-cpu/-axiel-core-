@@ -49,7 +49,7 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
   revalidatePath(`/patients/${patientId}/insights`);
   revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/patients/${patientId}/reports/clinical-insight`);
-  redirect(`/patients/${patientId}/insights?approved=1`);
+  redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1`);
 }
 
 export async function requestAiInsightChangesAction(patientId: string, aiInsightId: string, formData: FormData) {

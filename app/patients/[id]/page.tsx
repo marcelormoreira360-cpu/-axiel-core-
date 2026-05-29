@@ -418,6 +418,41 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         </div>
       </div>
 
+      {/* Next Step strip — ação prioritária baseada no estado atual */}
+      {(pendingReviews > 0 || latestInsight?.output?.structured_summary?.current_status) && (
+        <div className={[
+          "mt-3 rounded-[10px] border px-[15px] py-[11px] flex items-center gap-[10px]",
+          pendingReviews > 0
+            ? "bg-[#FAEEDA] border-[#F5C47F]"
+            : "bg-[#E1F5EE] border-[#9FE1CB]",
+        ].join(" ")}>
+          <div className="flex-1 min-w-0">
+            <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806]" : "text-[#085041]"].join(" ")}>
+              {pendingReviews > 0
+                ? `${pendingReviews} insight${pendingReviews > 1 ? "s" : ""} aguardando revisão`
+                : "Próximo passo"
+              }
+            </p>
+            {pendingReviews === 0 && latestInsight?.output?.structured_summary?.current_status && (
+              <p className="text-[11px] text-[#0F6E56] mt-[2px] line-clamp-1">
+                {latestInsight.output.structured_summary.current_status}
+              </p>
+            )}
+          </div>
+          <Link
+            href={`/patients/${patient.id}/insights`}
+            className={[
+              "shrink-0 text-[11px] font-medium px-[10px] py-[4px] rounded-[6px] transition",
+              pendingReviews > 0
+                ? "bg-[#F5A623] text-white hover:bg-[#e09510]"
+                : "bg-[#0F6E56] text-white hover:bg-[#085041]",
+            ].join(" ")}
+          >
+            {pendingReviews > 0 ? "Revisar" : "Ver insight"}
+          </Link>
+        </div>
+      )}
+
       {/* Notes — quick voice note widget */}
       <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
 

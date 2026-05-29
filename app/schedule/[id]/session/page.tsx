@@ -6,8 +6,10 @@ import { SessionRecordingPanel } from "@/components/session-recording-panel";
 import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
 import { getAppointmentById } from "@/services/appointment-service";
-import { getSessionRecordByAppointment } from "@/services/session-recording-service";
+import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
+import { getPatientIntakeResponses } from "@/services/intake-service";
+import { getPatientAssessmentResponses } from "@/services/assessment-service";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -20,9 +22,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const appointment = await getAppointmentById(id);
   if (!appointment) notFound();
 
-  const [record, recordings] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
+    getPatientIntakeResponses(appointment.patient_id),
+    getPatientAssessmentResponses(appointment.patient_id),
+    getSessionRecordsByPatient(appointment.patient_id),
   ]);
 
   const patientName =
@@ -82,6 +87,84 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
           startsAt={appointment.starts_at}
           patientName={patientName}
         />
+      )}
+
+      {/* Contexto do paciente — anamnese, assessments, última sessão */}
+      {(intakeResponses.length > 0 || assessmentResponses.length > 0 || prevRecords.length > 0) && (
+        <div className="mb-5 bg-[#F8F7F4] border border-black/[.07] rounded-[12px] p-[15px]">
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[12px]">
+            Contexto do paciente
+          </p>
+
+          <div className="space-y-[14px]">
+            {/* Última sessão — key observations */}
+            {prevRecords.length > 0 && ((prevRecords[0].key_observations as string[] | null) ?? []).length > 0 && (
+              <div>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">Observações da última sessão</p>
+                <div className="space-y-[3px]">
+                  {((prevRecords[0].key_observations as string[] | null) ?? []).slice(0, 3).map((obs, i) => (
+                    <div key={i} className="flex gap-[7px] items-start">
+                      <span className="w-1 h-1 rounded-full bg-[#0F6E56] mt-[5px] shrink-0" />
+                      <p className="text-[11px] text-[#6B6A66] leading-relaxed">{obs}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Assessment mais recente */}
+            {assessmentResponses.length > 0 && (
+              <div>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">Último formulário aplicado</p>
+                {(() => {
+                  const resp = assessmentResponses[0];
+                  const pct = resp.score_percentage ?? 0;
+                  const name = resp.assessment_templates?.name ?? "Formulário";
+                  const filledDate = new Date(resp.filled_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+                  return (
+                    <div className="flex items-center gap-[10px]">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-[#0F1A2E] truncate">{name}</p>
+                        <p className="text-[10px] text-[#A09E98]">{filledDate}</p>
+                      </div>
+                      <div className="flex items-center gap-[6px] shrink-0">
+                        <div className="w-[60px] h-[4px] bg-[#E5E3DC] rounded-full overflow-hidden">
+                          <div
+                            className={["h-full rounded-full", pct >= 70 ? "bg-[#FF6B4A]" : pct >= 40 ? "bg-[#F5A623]" : "bg-[#0F6E56]"].join(" ")}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <span className="text-[12px] font-medium text-[#0F1A2E]">{Math.round(pct)}%</span>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Anamnese — top 3 respostas */}
+            {intakeResponses.length > 0 && (
+              <div>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">
+                  Anamnese <span className="font-normal text-[#A09E98]">({intakeResponses.length} resposta{intakeResponses.length !== 1 ? "s" : ""})</span>
+                </p>
+                <div className="space-y-[4px]">
+                  {intakeResponses.slice(0, 3).map((r) => {
+                    const label = r.intake_questions?.label;
+                    const answer = typeof r.answer === "string" ? r.answer : r.answer != null ? JSON.stringify(r.answer) : null;
+                    if (!label || !answer) return null;
+                    return (
+                      <div key={r.id} className="flex gap-[6px] flex-wrap">
+                        <span className="text-[10px] text-[#A09E98]">{label}:</span>
+                        <span className="text-[10px] text-[#0F1A2E]">{answer.slice(0, 80)}{answer.length > 80 ? "…" : ""}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
 
       <SessionRecordingPanel
