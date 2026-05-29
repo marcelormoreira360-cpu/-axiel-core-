@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useActionState, useEffect } from "react";
+import { useState, useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
-  Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle,
+  Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle, Upload,
 } from "lucide-react";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
 
@@ -64,6 +64,9 @@ export function OnboardingFlow() {
   const [staffEmail,    setStaffEmail]    = useState("");
   const [userEmail,     setUserEmail]     = useState<string | null>(null);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [logoFile, setLogoFile]           = useState<File | null>(null);
+  const [logoPreview, setLogoPreview]     = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch current user email for self-invite guard
   useEffect(() => {
@@ -75,6 +78,16 @@ export function OnboardingFlow() {
       setUserEmail(data.user?.email ?? null);
     });
   }, []);
+
+  function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) return; // 2MB max
+    setLogoFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setLogoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  }
 
   const progress        = ((step + 1) / STEPS.length) * 100;
   const selectedProfile = PROFILES.find((p) => p.id === clinicProfile)!;
@@ -216,6 +229,40 @@ export function OnboardingFlow() {
             {clinicName.trim().length > 0 && clinicName.trim().length < 2 && (
               <p className="mt-2 text-[12px] text-red-500">Nome muito curto — mínimo 2 caracteres.</p>
             )}
+
+            {/* Logo (optional) */}
+            <div className="mt-[20px]">
+              <label className="block text-sm font-medium text-[#0F1A2E] mb-2">
+                Logo da clínica <span className="text-black/30 font-normal">(opcional)</span>
+              </label>
+              <div
+                onClick={() => logoInputRef.current?.click()}
+                className="flex items-center gap-3 cursor-pointer border border-dashed border-black/20 hover:border-[#0F6E56] rounded-xl p-3 transition"
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded-lg object-cover" />
+                ) : (
+                  <div className="h-10 w-10 rounded-lg bg-[#F4F3EF] flex items-center justify-center shrink-0">
+                    <Upload className="h-4 w-4 text-[#A09E98]" />
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-[#0F1A2E]">{logoPreview ? "Trocar logo" : "Enviar logo"}</p>
+                  <p className="text-xs text-black/40">PNG, JPG · máx 2 MB</p>
+                </div>
+              </div>
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={handleLogoChange}
+              />
+              {/* Hidden input to pass logo data via form */}
+              {logoFile && (
+                <input type="hidden" name="logo_data_url" value={logoPreview ?? ""} />
+              )}
+            </div>
           </div>
         )}
 

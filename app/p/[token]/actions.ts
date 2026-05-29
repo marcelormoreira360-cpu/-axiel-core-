@@ -102,3 +102,108 @@ export async function uploadPortalDocumentAction(
     return { ok: false, error: "Erro ao enviar arquivo. Tente novamente." };
   }
 }
+
+// ── Cancel upcoming appointment ───────────────────────────────────────────────
+
+export async function cancelPortalAppointmentAction(
+  rawToken: string,
+  appointmentId: string,
+): Promise<{ ok: boolean; error: string | null }> {
+  const link = await getLinkByToken(rawToken);
+  if (!link) return { ok: false, error: "Link inválido ou expirado." };
+
+  const supabase = createSupabaseAdminClient();
+
+  // Verify the appointment belongs to this patient/clinic and is in the future
+  const { data: appt } = await supabase
+    .from("appointments")
+    .select("id, starts_at, status, zoom_meeting_id")
+    .eq("id", appointmentId)
+    .eq("patient_id", link.patient_id)
+    .eq("clinic_id", link.clinic_id)
+    .maybeSingle();
+
+  if (!appt) return { ok: false, error: "Agendamento não encontrado." };
+  if (appt.status === "cancelled") return { ok: false, error: "Sessão já cancelada." };
+
+  const startsAt = new Date(appt.starts_at);
+  const now = new Date();
+  const hoursUntil = (startsAt.getTime() - now.getTime()) / (1000 * 60 * 60);
+  if (hoursUntil < 24) {
+    return { ok: false, error: "Cancelamentos devem ser feitos com pelo menos 24h de antecedência." };
+  }
+
+  // Cancel the appointment
+  const { error } = await supabase
+    .from("appointments")
+    .update({ status: "cancelled" })
+    .eq("id", appointmentId);
+
+  if (error) return { ok: false, error: "Erro ao cancelar. Tente novamente." };
+
+  // Delete Zoom meeting if exists (non-blocking)
+  if (appt.zoom_meeting_id) {
+    import("@/services/zoom-service").then(({ deleteZoomMeeting }) =>
+      deleteZoomMeeting(link.clinic_id, appt.zoom_meeting_id!).catch(() => {})
+    ).catch(() => {});
+  }
+
+  return { ok: true, error: null };
+}
+
+// ── LGPD: record consent ──────────────────────────────────────────────────────
+
+export async function recordConsentAction(
+  rawToken: string,
+  consentType: "data_processing" | "marketing" | "portal_access",
+  granted: boolean,
+): Promise<{ ok: boolean; error: string | null }> {
+  const link = await getLinkByToken(rawToken);
+  if (!link) return { ok: false, error: "Link inválido ou expirado." };
+
+  const supabase = createSupabaseAdminClient();
+  const { error } = await supabase.from("patient_consents").insert({
+    clinic_id:    link.clinic_id,
+    patient_id:   link.patient_id,
+    consent_type: consentType,
+    granted,
+    source:       "portal",
+  });
+
+  if (error) return { ok: false, error: "Erro ao registrar consentimento." };
+  return { ok: true, error: null };
+}
+
+// ── LGPD: request data deletion ───────────────────────────────────────────────
+
+export async function requestDataDeletionAction(
+  rawToken: string,
+  reason?: string,
+): Promise<{ ok: boolean; error: string | null }> {
+  const link = await getLinkByToken(rawToken);
+  if (!link) return { ok: false, error: "Link inválido ou expirado." };
+
+  const supabase = createSupabaseAdminClient();
+
+  // Check if there's already a pending request
+  const { data: existing } = await supabase
+    .from("data_deletion_requests")
+    .select("id, status")
+    .eq("patient_id", link.patient_id)
+    .eq("status", "pending")
+    .maybeSingle();
+
+  if (existing) {
+    return { ok: false, error: "Já existe uma solicitação de exclusão em análise." };
+  }
+
+  const { error } = await supabase.from("data_deletion_requests").insert({
+    clinic_id:  link.clinic_id,
+    patient_id: link.patient_id,
+    reason:     reason?.trim() || null,
+    status:     "pending",
+  });
+
+  if (error) return { ok: false, error: "Erro ao enviar solicitação. Tente novamente." };
+  return { ok: true, error: null };
+}

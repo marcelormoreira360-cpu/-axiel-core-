@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useState, useTransition, useRef } from "react";
-import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus, MessageCircle, ChevronDown, ChevronUp, Receipt } from "lucide-react";
+import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus, MessageCircle, ChevronDown, ChevronUp, Receipt, Trash2 } from "lucide-react";
 import { type PatientPortalData } from "@/services/patient-portal-service";
 import { PackagesSection } from "./packages-section";
 import { PortalBookingModal } from "./portal-booking-modal";
 import { NpsWidget } from "./nps-widget";
 import { PortalChat } from "./portal-chat";
-import { uploadPortalDocumentAction, updatePatientContactAction } from "@/app/p/[token]/actions";
+import { uploadPortalDocumentAction, updatePatientContactAction, cancelPortalAppointmentAction, requestDataDeletionAction } from "@/app/p/[token]/actions";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
@@ -107,6 +107,69 @@ function SubscriptionCard({
           ⚠️ Entre em contato com a clínica para regularizar o pagamento.
         </p>
       )}
+    </div>
+  );
+}
+
+function CancelAppointmentButton({
+  appointmentId,
+  rawToken,
+  brandColor,
+}: {
+  appointmentId: string;
+  rawToken: string;
+  brandColor: string;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [loading, startTransition] = useTransition();
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (done) {
+    return <span className="shrink-0 text-xs text-red-500">Cancelado</span>;
+  }
+
+  if (!confirming) {
+    return (
+      <button
+        type="button"
+        onClick={() => setConfirming(true)}
+        className="shrink-0 text-[10px] text-black/30 hover:text-red-500 transition px-2 py-1 rounded border border-black/[.06] hover:border-red-200"
+      >
+        Cancelar
+      </button>
+    );
+  }
+
+  return (
+    <div className="shrink-0 flex items-center gap-1.5">
+      <span className="text-[10px] text-black/50">Confirmar?</span>
+      <button
+        type="button"
+        onClick={() => {
+          startTransition(async () => {
+            const result = await cancelPortalAppointmentAction(rawToken, appointmentId);
+            if (result.ok) {
+              setDone(true);
+            } else {
+              setError(result.error);
+              setConfirming(false);
+            }
+          });
+        }}
+        disabled={loading}
+        className="text-[10px] font-medium text-red-600 border border-red-200 hover:bg-red-50 px-2 py-1 rounded transition disabled:opacity-50"
+      >
+        {loading ? "…" : "Sim"}
+      </button>
+      <button
+        type="button"
+        onClick={() => setConfirming(false)}
+        className="text-[10px] text-black/40 border border-black/[.08] hover:bg-black/[.03] px-2 py-1 rounded transition"
+      >
+        Não
+      </button>
+      {error && <span className="text-[10px] text-red-500 ml-1">{error}</span>}
     </div>
   );
 }
@@ -250,6 +313,73 @@ function SessionHistoryCard({
               • {obs}
             </p>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LgpdSection({ rawToken }: { rawToken: string }) {
+  const [requested, setRequested] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [loading, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  if (requested) {
+    return (
+      <p className="text-sm text-[#0F6E56]">
+        ✓ Solicitação de exclusão enviada. Nossa equipe entrará em contato em até 15 dias úteis.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-black/60 leading-relaxed">
+        De acordo com a LGPD (Lei Geral de Proteção de Dados), você tem o direito de solicitar
+        a exclusão dos seus dados pessoais armazenados pela clínica.
+      </p>
+      {!confirming ? (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-sm text-red-500 hover:text-red-700 underline transition"
+        >
+          Solicitar exclusão dos meus dados
+        </button>
+      ) : (
+        <div className="bg-red-50 border border-red-100 rounded-xl p-4 space-y-3">
+          <p className="text-sm font-medium text-red-800">
+            Tem certeza? Esta ação é irreversível e removerá seu histórico de sessões,
+            pagamentos e informações de saúde.
+          </p>
+          {error && <p className="text-xs text-red-600">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => {
+                startTransition(async () => {
+                  const result = await requestDataDeletionAction(rawToken);
+                  if (result.ok) {
+                    setRequested(true);
+                  } else {
+                    setError(result.error);
+                  }
+                });
+              }}
+              className="text-sm font-medium text-white bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition disabled:opacity-50"
+            >
+              {loading ? "Enviando…" : "Confirmar solicitação"}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirming(false); setError(null); }}
+              className="text-sm text-black/50 hover:text-black/70 px-4 py-2 rounded-lg border border-black/10 transition"
+            >
+              Cancelar
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -589,20 +719,27 @@ export function PatientPortalDashboard({
                       <span className="ml-2 text-xs text-black/40">{appt.duration_minutes} min</span>
                     )}
                   </div>
-                  {appt.payment_status === "pending" && (
-                    <PaySessionButton
+                  <div className="flex items-center gap-2 shrink-0">
+                    {appt.payment_status === "pending" && (
+                      <PaySessionButton
+                        appointmentId={appt.id}
+                        priceCents={appt.price_cents}
+                        rawToken={rawToken}
+                        brandColor={brandColor}
+                      />
+                    )}
+                    {appt.payment_status === "paid" && (
+                      <span className="shrink-0 text-xs font-medium text-[#0F6E56]">✓ Pago</span>
+                    )}
+                    {appt.payment_status === "covered" && (
+                      <span className="shrink-0 text-xs text-black/40">Pacote</span>
+                    )}
+                    <CancelAppointmentButton
                       appointmentId={appt.id}
-                      priceCents={appt.price_cents}
                       rawToken={rawToken}
                       brandColor={brandColor}
                     />
-                  )}
-                  {appt.payment_status === "paid" && (
-                    <span className="shrink-0 text-xs font-medium text-[#0F6E56]">✓ Pago</span>
-                  )}
-                  {appt.payment_status === "covered" && (
-                    <span className="shrink-0 text-xs text-black/40">Pacote</span>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -844,6 +981,11 @@ export function PatientPortalDashboard({
             Falar com sua clínica pelo WhatsApp
           </Link>
         )}
+
+        {/* LGPD — Seus dados */}
+        <Section title="Privacidade e seus dados">
+          <LgpdSection rawToken={rawToken} />
+        </Section>
 
         <p className="text-center text-xs text-black/30">
           Esta página é privada. Não compartilhe este link.
