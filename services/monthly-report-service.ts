@@ -1,6 +1,4 @@
-import "server-only";
-import { renderToStaticMarkup } from "react-dom/server";
-import { createElement } from "react";
+import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -85,8 +83,8 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
       ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
       : "—";
 
-    const html = renderToStaticMarkup(
-      createElement(MonthlyReportEmail, {
+    const html = await render(
+      MonthlyReportEmail({
         clinicName: clinic.name,
         monthName,
         appUrl,

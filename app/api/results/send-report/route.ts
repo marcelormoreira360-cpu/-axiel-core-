@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import "server-only";
-import { renderToStaticMarkup } from "react-dom/server";
-import { createElement } from "react";
+import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentAuthUser } from "@/services/user-service";
@@ -85,8 +83,8 @@ export async function POST() {
         ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
         : "—";
 
-    const html = renderToStaticMarkup(
-      createElement(MonthlyReportEmail, {
+    const html = await render(
+      MonthlyReportEmail({
         clinicName: clinic.name,
         monthName,
         appUrl: APP_URL,
