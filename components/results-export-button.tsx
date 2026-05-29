@@ -47,7 +47,9 @@ export function ResultsExportButton({ data }: Props) {
     const a = document.createElement("a");
     a.href = url;
     a.download = `axiel-resultados-${data.period.to.replace(/\s/g, "-")}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
 

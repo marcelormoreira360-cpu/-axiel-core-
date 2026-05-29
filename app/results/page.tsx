@@ -6,7 +6,7 @@ import { getBusinessAnalytics } from "@/services/business-analytics-service";
 
 const ResultsChart = dynamic(
   () => import("@/components/results-chart").then((m) => m.ResultsChart),
-  { loading: () => <div className="h-[228px] animate-pulse rounded-[12px] bg-black/[.03]" /> }
+  { loading: () => <div className="h-[252px] animate-pulse rounded-[12px] bg-black/[.03]" /> }
 );
 
 const ResultsExportButton = dynamic(
