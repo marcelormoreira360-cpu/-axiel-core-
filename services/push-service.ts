@@ -55,6 +55,41 @@ export async function sendPushToUser(userId: string, payload: PushPayload): Prom
   );
 }
 
+// ── Send push to a patient's devices (portal subscriptions) ─────────────────
+export async function sendPushToPatient(patientId: string, payload: PushPayload): Promise<void> {
+  if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { data: subs } = await supabase
+    .from("patient_push_subscriptions")
+    .select("id, endpoint, p256dh, auth")
+    .eq("patient_id", patientId);
+
+  if (!subs?.length) return;
+
+  const json = JSON.stringify(payload);
+
+  await Promise.allSettled(
+    subs.map(async (sub) => {
+      try {
+        await webpush.sendNotification(
+          { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
+          json,
+        );
+        await supabase
+          .from("patient_push_subscriptions")
+          .update({ last_used_at: new Date().toISOString() })
+          .eq("id", sub.id);
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode;
+        if (status === 410 || status === 404) {
+          await supabase.from("patient_push_subscriptions").delete().eq("id", sub.id);
+        }
+      }
+    }),
+  );
+}
+
 // ── Send push to all clinic staff (for patient messages) ─────────────────────
 export async function sendPushToClinic(clinicId: string, payload: PushPayload): Promise<void> {
   if (!VAPID_PUBLIC || !VAPID_PRIVATE) return;

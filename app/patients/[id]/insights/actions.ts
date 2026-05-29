@@ -6,6 +6,7 @@ import { approveAiInsightAsFinal, generateAndSaveAiInsight, requestAiInsightChan
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { sendPushToPatient } from "@/services/push-service";
 
 function fieldValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -49,6 +50,14 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
   revalidatePath(`/patients/${patientId}/insights`);
   revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/patients/${patientId}/reports/clinical-insight`);
+
+  // Notify patient on their device (non-blocking — fire-and-forget)
+  sendPushToPatient(patientId, {
+    title: "Atualização de saúde",
+    body:  "Seu profissional revisou e aprovou um novo insight sobre sua saúde.",
+    tag:   `insight-approved-${patientId}`,
+  }).catch(() => {});
+
   redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1`);
 }
 

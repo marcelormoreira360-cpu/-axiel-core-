@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import nextDynamic from "next/dynamic";
 import { PatientPortalDashboard } from "@/components/patient-portal/patient-portal-dashboard";
 import { getPatientPortalDataByToken } from "@/services/patient-portal-service";
+
+const PatientPushPrompt = nextDynamic(
+  () => import("@/components/patient-portal/patient-push-prompt").then((m) => m.PatientPushPrompt),
+  { loading: () => null },
+);
 
 export const metadata: Metadata = {
   title: "Portal do Paciente | AXIEL Core",
@@ -56,12 +62,20 @@ export default async function PublicPatientDashboardPage({
   const subscriptionSuccess = resolvedSearch.assinatura === "sucesso";
 
   return (
-    <PatientPortalDashboard
-      data={data}
-      rawToken={token}
-      purchaseSuccess={purchaseSuccess}
-      paymentSuccess={paymentSuccess}
-      subscriptionSuccess={subscriptionSuccess}
-    />
+    <>
+      <PatientPortalDashboard
+        data={data}
+        rawToken={token}
+        purchaseSuccess={purchaseSuccess}
+        paymentSuccess={paymentSuccess}
+        subscriptionSuccess={subscriptionSuccess}
+      />
+      {/* Push notification prompt — rendered outside the dashboard scroll so it's always visible */}
+      <div className="fixed bottom-4 left-4 right-4 max-w-sm mx-auto z-40 pointer-events-none">
+        <div className="pointer-events-auto">
+          <PatientPushPrompt token={token} />
+        </div>
+      </div>
+    </>
   );
 }

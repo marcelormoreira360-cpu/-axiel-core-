@@ -324,13 +324,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     weekday: "short", day: "numeric", month: "short",
     hour: "2-digit", minute: "2-digit",
   });
-  import("@/services/push-service").then(({ sendPushToClinic }) =>
-    sendPushToClinic(clinic.id, {
-      title: "Novo agendamento",
-      body:  `${full_name} · ${sessionType.name} · ${apptDate}`,
-      url:   "/schedule",
-      tag:   `booking-${appointment.id}`,
-    }).catch(() => {})
+  import("@/services/push-service").then(({ sendPushToClinic, sendPushToPatient }) =>
+    Promise.allSettled([
+      sendPushToClinic(clinic.id, {
+        title: "Novo agendamento",
+        body:  `${full_name} · ${sessionType.name} · ${apptDate}`,
+        url:   "/schedule",
+        tag:   `booking-${appointment.id}`,
+      }),
+      // Notify the patient on their device
+      sendPushToPatient(patientId, {
+        title: "Sessão confirmada ✓",
+        body:  `${sessionType.name} · ${apptDate}`,
+        tag:   `booking-confirm-${appointment.id}`,
+      }),
+    ])
   ).catch(() => {});
 
   return NextResponse.json({
