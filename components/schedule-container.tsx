@@ -1158,11 +1158,13 @@ export function ScheduleContainer({
   const [filterPractitionerId, setFilterPractitionerId] = useState<string>("all");
 
   function navigatePrev() {
-    if (view === "semana") setNavDate((d) => addDays(d, -7));
+    if (view === "dia") setNavDate((d) => addDays(d, -1));
+    else if (view === "semana") setNavDate((d) => addDays(d, -7));
     else if (view === "mes") setNavDate((d) => addMonths(d, -1));
   }
   function navigateNext() {
-    if (view === "semana") setNavDate((d) => addDays(d, 7));
+    if (view === "dia") setNavDate((d) => addDays(d, 1));
+    else if (view === "semana") setNavDate((d) => addDays(d, 7));
     else if (view === "mes") setNavDate((d) => addMonths(d, 1));
   }
   function goToday()                { setNavDate(new Date()); }
@@ -1183,12 +1185,47 @@ export function ScheduleContainer({
     return formatMonthYear(navDate);
   }, [view, navDate]);
 
-  const showNav = view !== "dia";
+  const showNav = true; // navigation always visible in all views
 
   // Client-side filter by practitioner for clinic owners
   const filteredSessions = filterPractitionerId === "all"
     ? sessions
     : sessions.filter((s) => s.practitioner_id === filterPractitionerId);
+
+  // For day view on non-today dates, derive sessions from allAppointments
+  const today = new Date();
+  const isNavToday = isSameDay(navDate, today);
+  const emptySnapshot = {
+    patient_name: "",
+    patient_status: "active",
+    latest_insight_title: "",
+    latest_insight_summary: "",
+    latest_insight_status: "Not ready" as const,
+    last_session_date: null,
+    last_session_summary: "",
+    key_notes: [],
+    next_step: "",
+    attention_needed: "",
+    pending_reviews_count: 0,
+    follow_up_status: "",
+  };
+  const dayViewSessions: ScheduleSession[] = useMemo(() => {
+    if (isNavToday) return filteredSessions;
+    // Map bare Appointment → minimal ScheduleSession for other days
+    const dayAppts = getAppointmentsForDay(
+      filterPractitionerId === "all"
+        ? allAppointments
+        : allAppointments.filter((a) => a.practitioner_id === filterPractitionerId),
+      navDate,
+    );
+    return dayAppts.map((a) => ({
+      ...a,
+      latestInsightStatus: "review" as const,
+      previousSessions: [],
+      snapshot: emptySnapshot,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNavToday, filteredSessions, allAppointments, navDate, filterPractitionerId]);
 
   return (
     <div className="space-y-[10px]">
@@ -1222,11 +1259,6 @@ export function ScheduleContainer({
                 Hoje
               </button>
             </>
-          )}
-          {!showNav && (
-            <span className="text-[12px] font-medium text-[#0F1A2E] capitalize">
-              {navLabel}
-            </span>
           )}
         </div>
 
@@ -1266,7 +1298,7 @@ export function ScheduleContainer({
       {/* ── Views ── */}
       {view === "dia" && (
         <DayView
-          sessions={filteredSessions}
+          sessions={dayViewSessions}
           navDate={navDate}
           patients={patients}
           sessionTypes={sessionTypes}
