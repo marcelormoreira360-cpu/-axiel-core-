@@ -244,30 +244,65 @@ function DayView({
   );
 }
 
-// ─── Draggable appointment card (week view) ───────────────────────────────────
+// ─── Draggable + resizable appointment card (week view) ──────────────────────
 
 function DraggableApptCard({
   appt,
   isActive,
+  onResize,
 }: {
   appt: Appointment;
   isActive: boolean;
+  onResize?: (id: string, newDuration: number) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appt.id,
     data: { appt },
   });
-  const { top, height } = apptStyle(appt.starts_at, appt.duration_minutes ?? 60);
+
+  // Resize state — null = not resizing
+  const [resizeDuration, setResizeDuration] = useState<number | null>(null);
+  const resizeRef = useRef<{ startY: number; origDuration: number } | null>(null);
+
+  const displayDuration = resizeDuration ?? appt.duration_minutes ?? 60;
+  const { top, height } = apptStyle(appt.starts_at, displayDuration);
   const name      = appt.patients?.full_name ?? "Paciente";
   const firstName = name.split(" ")[0];
+  const isResizing = resizeDuration !== null;
+
+  function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.stopPropagation(); // prevent dnd-kit from activating drag
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    resizeRef.current = { startY: e.clientY, origDuration: appt.duration_minutes ?? 60 };
+    setResizeDuration(appt.duration_minutes ?? 60);
+  }
+
+  function handleResizePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    const deltaY    = e.clientY - resizeRef.current.startY;
+    const MINS_PER_PX = 60 / HOUR_HEIGHT;
+    const deltaMins = Math.round((deltaY * MINS_PER_PX) / 15) * 15;
+    const newDur    = Math.max(15, resizeRef.current.origDuration + deltaMins);
+    setResizeDuration(newDur);
+  }
+
+  function handleResizePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!resizeRef.current) return;
+    const finalDur = resizeDuration ?? (appt.duration_minutes ?? 60);
+    resizeRef.current = null;
+    setResizeDuration(null);
+    if (finalDur !== (appt.duration_minutes ?? 60)) {
+      onResize?.(appt.id, finalDur);
+    }
+  }
 
   return (
     <Link
       ref={setNodeRef}
       href={`/patients/${appt.patient_id}`}
       onClick={(e) => {
-        // Prevent navigation if this was a real drag (transform indicates movement)
-        if (isDragging || isActive) e.preventDefault();
+        if (isDragging || isActive || isResizing) e.preventDefault();
       }}
       style={{
         position: "absolute",
@@ -277,7 +312,7 @@ function DraggableApptCard({
         height: height - 2,
         zIndex: isDragging ? 50 : 10,
         background: isActive ? "#C3EBDB" : "#E1F5EE",
-        border: `1px solid ${isActive ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
+        border: `1px solid ${isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
         borderRadius: 6,
         padding: "4px 6px",
         overflow: "hidden",
@@ -299,9 +334,39 @@ function DraggableApptCard({
       </p>
       {height >= 48 && (
         <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0 }}>
-          {appt.duration_minutes} min
+          {displayDuration} min
         </p>
       )}
+
+      {/* ── Resize handle ── */}
+      <div
+        onPointerDown={handleResizePointerDown}
+        onPointerMove={handleResizePointerMove}
+        onPointerUp={handleResizePointerUp}
+        onPointerCancel={handleResizePointerUp}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 8,
+          cursor: "ns-resize",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: isResizing ? "rgba(15,110,86,0.15)" : "transparent",
+          borderRadius: "0 0 6px 6px",
+          touchAction: "none",
+        }}
+      >
+        <div style={{
+          width: 20,
+          height: 2,
+          borderRadius: 1,
+          background: isResizing ? "#0F6E56" : "rgba(15,110,86,0.3)",
+          transition: "background 0.15s",
+        }} />
+      </div>
     </Link>
   );
 }
@@ -357,6 +422,7 @@ function WeekView({
   sessionTypes,
   createSessionAction,
   onReschedule,
+  onResizeDuration,
 }: {
   appointments: Appointment[];
   navDate: Date;
@@ -365,6 +431,7 @@ function WeekView({
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
   const today    = new Date();
   const weekDays = getWeekDays(navDate);
@@ -387,6 +454,15 @@ function WeekView({
   const handleDragStart = useCallback((e: DragStartEvent) => {
     setActiveId(String(e.active.id));
   }, []);
+
+  const handleResize = useCallback((id: string, newDuration: number) => {
+    const appt = localAppts.find((a) => a.id === id);
+    if (!appt) return;
+    setLocalAppts((prev) => prev.map((a) => a.id === id ? { ...a, duration_minutes: newDuration } : a));
+    onResizeDuration?.(id, newDuration).catch(() => {
+      setLocalAppts((prev) => prev.map((a) => a.id === id ? { ...a, duration_minutes: appt.duration_minutes } : a));
+    });
+  }, [localAppts, onResizeDuration]);
 
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null);
@@ -652,12 +728,13 @@ function WeekView({
                   />
                 ))}
 
-                {/* Agendamentos — draggable */}
+                {/* Agendamentos — draggable + resizable */}
                 {appts.map((appt) => (
                   <DraggableApptCard
                     key={appt.id}
                     appt={appt}
                     isActive={activeId === appt.id}
+                    onResize={handleResize}
                   />
                 ))}
               </div>
@@ -791,6 +868,7 @@ export function ScheduleContainer({
   createSessionAction,
   updateStatusAction,
   rescheduleAction,
+  resizeDurationAction,
   practitioners,
 }: {
   sessions: ScheduleSession[];
@@ -800,6 +878,7 @@ export function ScheduleContainer({
   createSessionAction: (formData: FormData) => Promise<void>;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
+  resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
 }) {
   const [view, setView]                       = useState<View>("semana");
@@ -937,6 +1016,7 @@ export function ScheduleContainer({
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
           onReschedule={rescheduleAction}
+          onResizeDuration={resizeDurationAction}
         />
       )}
       {view === "mes" && (

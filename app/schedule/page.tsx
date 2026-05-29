@@ -153,6 +153,12 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  async function resizeDurationAction(id: string, newDuration: number) {
+    "use server";
+    await updateAppointment(id, { duration_minutes: newDuration });
+    revalidatePath("/schedule");
+  }
+
   const today = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
@@ -217,6 +223,7 @@ export default async function SchedulePage() {
             createSessionAction={createSessionAction}
             updateStatusAction={updateStatusAction}
             rescheduleAction={rescheduleAction}
+            resizeDurationAction={resizeDurationAction}
             practitioners={practitionerOptions}
           />
         </>
