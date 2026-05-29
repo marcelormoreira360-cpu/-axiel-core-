@@ -30,18 +30,27 @@ export async function Shell({
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "U";
 
-  const [clinics, cookieStore, clinic] = await Promise.all([
-    getClinicsForUser().catch(() => []),
-    cookies(),
-    getCurrentClinic().catch(() => null),
-  ]);
-  const activeClinicId = cookieStore.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
+  let clinics: Awaited<ReturnType<typeof getClinicsForUser>> = [];
+  let cookieStore: Awaited<ReturnType<typeof cookies>>;
+  let clinic: Awaited<ReturnType<typeof getCurrentClinic>> = null;
+
+  try {
+    [clinics, cookieStore, clinic] = await Promise.all([
+      getClinicsForUser().catch((e) => { console.error("[Shell] getClinicsForUser:", e); return []; }),
+      cookies(),
+      getCurrentClinic().catch((e) => { console.error("[Shell] getCurrentClinic:", e); return null; }),
+    ]);
+  } catch (e) {
+    console.error("[Shell] Promise.all THREW:", e);
+    throw e;
+  }
+  const activeClinicId = cookieStore!.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
 
   // ── Trial / billing status ──────────────────────────────────────────────────
   // Fetch subscription lightly (React.cache deduplicates if already called).
   const clinicId = clinic?.id ?? clinics[0]?.id ?? null;
   const subscription = clinicId
-    ? await getClinicSubscription(clinicId).catch(() => null)
+    ? await getClinicSubscription(clinicId).catch((e) => { console.error("[Shell] getClinicSubscription:", e); return null; })
     : null;
 
   const subStatus = (subscription as { status?: string | null } | null)?.status ?? null;
