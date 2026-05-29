@@ -208,6 +208,30 @@ export async function updateAppointment(
     );
   }
 
+  // Notify waitlist when a slot is freed (fire-and-forget)
+  if (updates.status === "cancelled") {
+    import("@/services/waitlist-service").then(async ({ notifyWaitlistOnCancellation }) => {
+      // Fetch clinic slug for the booking link
+      const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+      const admin = createSupabaseAdminClient();
+      const { data: clinic } = await admin
+        .from("clinics")
+        .select("slug")
+        .eq("id", appt.clinic_id)
+        .maybeSingle();
+      if (!clinic?.slug) return;
+
+      const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
+
+      notifyWaitlistOnCancellation({
+        clinicId:          appt.clinic_id,
+        clinicSlug:        clinic.slug as string,
+        cancelledStartsAt: appt.starts_at,
+        sessionTypeName:   sessionType?.name ?? undefined,
+      }).catch((err: unknown) => console.error("Waitlist notification failed:", err));
+    }).catch((err: unknown) => console.error("Waitlist import failed:", err));
+  }
+
   // Update Zoom meeting time if appointment is rescheduled
   if ((updates.starts_at || updates.duration_minutes) && appt.zoom_meeting_id) {
     const { updateZoomMeeting } = await import("@/services/zoom-service");

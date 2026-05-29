@@ -27,6 +27,8 @@ import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
+import { WaitlistButton } from "@/components/waitlist-button";
+import { getWaitlist } from "@/services/waitlist-service";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -99,6 +101,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // Pacote ativo — usado para exibir o badge no card de sessões
   const activePackage = packages.find((p) => p.is_active) ?? null;
 
+  // ── Waitlist status for this patient ────────────────────────────────────────
+  const waitlistEntries = clinic?.id ? await getWaitlist(clinic.id).catch(() => []) : [];
+  const waitlistEntry = waitlistEntries.find((e) => e.patient_id === id && e.status === "waiting") ?? null;
+
   // ── Intelligence — computed from already-loaded data (zero extra queries) ──
   const engagement = computePatientEngagement(appointments, patient);
   const timelineEvents = buildPatientTimeline(patient.id, {
@@ -143,7 +149,14 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">Integrativo</span>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
+        <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
+          {/* Fila de espera */}
+          <WaitlistButton
+            patientId={patient.id}
+            patientName={patient.full_name}
+            isOnWaitlist={!!waitlistEntry}
+            waitlistEntryId={waitlistEntry?.id ?? null}
+          />
           {/* Exportar PDF */}
           <a
             href={`/api/reports/paciente/${patient.id}`}
