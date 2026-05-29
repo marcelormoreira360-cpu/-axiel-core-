@@ -3,13 +3,16 @@
 import { useState, useTransition } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
+type PatientRef = { full_name: string; email: string | null; phone: string | null };
+
 type Request = {
   id: string;
   status: string;
   reason: string | null;
   requested_at: string;
   reviewed_at: string | null;
-  patients: { full_name: string; email: string | null; phone: string | null } | null;
+  // Supabase join returns array when using FK select
+  patients: PatientRef | PatientRef[] | null;
 };
 
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {

@@ -1,8 +1,20 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { CreateSessionModal } from "@/components/create-session-modal";
 import { SessionCard, type ScheduleSession } from "@/components/session-card";
 import { SessionDrawer } from "@/components/session-drawer";
@@ -232,6 +244,109 @@ function DayView({
   );
 }
 
+// ─── Draggable appointment card (week view) ───────────────────────────────────
+
+function DraggableApptCard({
+  appt,
+  isActive,
+}: {
+  appt: Appointment;
+  isActive: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id: appt.id,
+    data: { appt },
+  });
+  const { top, height } = apptStyle(appt.starts_at, appt.duration_minutes ?? 60);
+  const name      = appt.patients?.full_name ?? "Paciente";
+  const firstName = name.split(" ")[0];
+
+  return (
+    <Link
+      ref={setNodeRef}
+      href={`/patients/${appt.patient_id}`}
+      onClick={(e) => {
+        // Prevent navigation if this was a real drag (transform indicates movement)
+        if (isDragging || isActive) e.preventDefault();
+      }}
+      style={{
+        position: "absolute",
+        left: 3,
+        right: 3,
+        top: top + 1,
+        height: height - 2,
+        zIndex: isDragging ? 50 : 10,
+        background: isActive ? "#C3EBDB" : "#E1F5EE",
+        border: `1px solid ${isActive ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
+        borderRadius: 6,
+        padding: "4px 6px",
+        overflow: "hidden",
+        display: "block",
+        textDecoration: "none",
+        cursor: isDragging ? "grabbing" : "grab",
+        opacity: isDragging ? 0.35 : 1,
+        transform: CSS.Translate.toString(transform),
+        touchAction: "none",
+      }}
+      {...listeners}
+      {...attributes}
+    >
+      <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+        {formatTime(appt.starts_at)}
+      </p>
+      <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
+        {firstName}
+      </p>
+      {height >= 48 && (
+        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0 }}>
+          {appt.duration_minutes} min
+        </p>
+      )}
+    </Link>
+  );
+}
+
+// ─── Droppable hour cell (week view) ─────────────────────────────────────────
+
+function DroppableHourCell({
+  id,
+  date,
+  hour,
+  onClick,
+  children,
+}: {
+  id: string;
+  date: Date;
+  hour: number;
+  onClick: () => void;
+  children?: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id, data: { date, hour } });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        top: (hour - START_HOUR) * HOUR_HEIGHT,
+        height: HOUR_HEIGHT,
+        background: isOver ? "rgba(15,110,86,0.06)" : "transparent",
+        border: isOver ? "1px dashed rgba(15,110,86,0.35)" : "1px solid transparent",
+        borderRadius: 4,
+        cursor: "pointer",
+        zIndex: 1,
+        transition: "background 0.1s, border-color 0.1s",
+      }}
+      onClick={onClick}
+      title={`Agendar às ${String(hour).padStart(2, "0")}:00`}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ─── Week view — time grid ────────────────────────────────────────────────────
 
 function WeekView({
@@ -241,6 +356,7 @@ function WeekView({
   patients,
   sessionTypes,
   createSessionAction,
+  onReschedule,
 }: {
   appointments: Appointment[];
   navDate: Date;
@@ -248,13 +364,71 @@ function WeekView({
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
+  onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
 }) {
   const today    = new Date();
   const weekDays = getWeekDays(navDate);
-  const groups   = weekDays.map((day) => ({
+
+  // Optimistic local state for drag-and-drop
+  const [localAppts, setLocalAppts] = useState<Appointment[]>(appointments);
+  useEffect(() => { setLocalAppts(appointments); }, [appointments]);
+
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const groups = weekDays.map((day) => ({
     date: day,
-    appointments: getAppointmentsForDay(appointments, day),
+    appointments: getAppointmentsForDay(localAppts, day),
   }));
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    setActiveId(String(e.active.id));
+  }, []);
+
+  const handleDragEnd = useCallback((e: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = e;
+    if (!over || !onReschedule) return;
+
+    // overId format: "YYYY-MM-DDTHH:mm:ss.sssZ__HH"
+    const parts = String(over.id).split("__");
+    if (parts.length !== 2) return;
+    const [dateIso, hourStr] = parts;
+    const targetDate = new Date(dateIso);
+    const targetHour = parseInt(hourStr, 10);
+    if (isNaN(targetHour)) return;
+
+    const apptId    = String(active.id);
+    const appt      = localAppts.find((a) => a.id === apptId);
+    if (!appt) return;
+
+    const orig      = new Date(appt.starts_at);
+    const newStart  = new Date(targetDate);
+    newStart.setHours(targetHour, orig.getMinutes(), 0, 0);
+
+    // Skip if same time
+    if (newStart.getTime() === orig.getTime()) return;
+
+    const newStartsAt = newStart.toISOString();
+
+    // Optimistic update
+    setLocalAppts((prev) =>
+      prev.map((a) => a.id === apptId ? { ...a, starts_at: newStartsAt } : a)
+    );
+
+    // Persist
+    onReschedule(apptId, newStartsAt).catch(() => {
+      // Revert on error
+      setLocalAppts((prev) =>
+        prev.map((a) => a.id === apptId ? { ...a, starts_at: appt.starts_at } : a)
+      );
+    });
+  }, [localAppts, onReschedule]);
+
+  const activeAppt = activeId ? localAppts.find((a) => a.id === activeId) : null;
 
   const [nowOffset, setNowOffset] = useState<number | null>(getNowOffset);
   useEffect(() => {
@@ -285,6 +459,7 @@ function WeekView({
 
   return (
     <>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
     <div
       style={{
         background: "#fff",
@@ -423,26 +598,14 @@ function WeekView({
                   borderRight: "1px solid rgba(0,0,0,0.05)",
                 }}
               >
-                {/* Células clicáveis por hora */}
-                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
-                  <button
+                {/* Células clicáveis e droppable por hora */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h) => (
+                  <DroppableHourCell
                     key={`cell-${h}`}
-                    type="button"
-                    onClick={() => handleCellClick(date, h)}
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: i * HOUR_HEIGHT,
-                      height: HOUR_HEIGHT,
-                      background: "transparent",
-                      border: "none",
-                      borderTop: "1px solid rgba(0,0,0,0.07)",
-                      cursor: "pointer",
-                      zIndex: 1,
-                    }}
-                    className="hover:bg-[#F0FAF6]/60 transition-colors"
-                    title={`Agendar às ${String(h).padStart(2,"0")}:00`}
+                    id={`${date.toISOString()}__${h}`}
+                    date={date}
+                    hour={h}
+                    onClick={() => !activeId && handleCellClick(date, h)}
                   />
                 ))}
 
@@ -489,83 +652,46 @@ function WeekView({
                   />
                 ))}
 
-                {/* Agendamentos */}
-                {appts.map((appt) => {
-                  const { top, height } = apptStyle(
-                    appt.starts_at,
-                    appt.duration_minutes ?? 60
-                  );
-                  const name      = appt.patients?.full_name ?? "Paciente";
-                  const firstName = name.split(" ")[0];
-                  return (
-                    <Link
-                      key={appt.id}
-                      href={`/patients/${appt.patient_id}`}
-                      style={{
-                        position: "absolute",
-                        left: 3,
-                        right: 3,
-                        top: top + 1,
-                        height: height - 2,
-                        zIndex: 10,
-                        background: "#E1F5EE",
-                        border: "1px solid rgba(15,110,86,0.25)",
-                        borderRadius: 6,
-                        padding: "4px 6px",
-                        overflow: "hidden",
-                        display: "block",
-                        textDecoration: "none",
-                      }}
-                    >
-                      <p
-                        style={{
-                          fontSize: 10,
-                          fontWeight: 700,
-                          color: "#0F6E56",
-                          lineHeight: 1.2,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          margin: 0,
-                        }}
-                      >
-                        {formatTime(appt.starts_at)}
-                      </p>
-                      <p
-                        style={{
-                          fontSize: 11,
-                          fontWeight: 500,
-                          color: "#0F1A2E",
-                          lineHeight: 1.2,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          margin: "2px 0 0",
-                        }}
-                      >
-                        {firstName}
-                      </p>
-                      {height >= 48 && (
-                        <p
-                          style={{
-                            fontSize: 9,
-                            color: "#6B6A66",
-                            lineHeight: 1.2,
-                            margin: 0,
-                          }}
-                        >
-                          {appt.duration_minutes} min
-                        </p>
-                      )}
-                    </Link>
-                  );
-                })}
+                {/* Agendamentos — draggable */}
+                {appts.map((appt) => (
+                  <DraggableApptCard
+                    key={appt.id}
+                    appt={appt}
+                    isActive={activeId === appt.id}
+                  />
+                ))}
               </div>
             );
           })}
         </div>
       </div>
     </div>
+
+    {/* DragOverlay: ghost card while dragging */}
+    <DragOverlay>
+      {activeAppt ? (
+        <div
+          style={{
+            background: "#0F6E56",
+            borderRadius: 6,
+            padding: "6px 8px",
+            opacity: 0.9,
+            boxShadow: "0 4px 16px rgba(15,110,86,0.35)",
+            minWidth: 80,
+            cursor: "grabbing",
+          }}
+        >
+          <p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>
+            {formatTime(activeAppt.starts_at)}
+          </p>
+          <p style={{ fontSize: 11, fontWeight: 500, color: "#C3EBDB", margin: "2px 0 0" }}>
+            {(activeAppt.patients?.full_name ?? "Paciente").split(" ")[0]}
+          </p>
+        </div>
+      ) : null}
+    </DragOverlay>
+
+    </DndContext>
 
     <CreateSessionModal
       slot={selectedSlot}
@@ -664,6 +790,7 @@ export function ScheduleContainer({
   sessionTypes,
   createSessionAction,
   updateStatusAction,
+  rescheduleAction,
   practitioners,
 }: {
   sessions: ScheduleSession[];
@@ -672,6 +799,7 @@ export function ScheduleContainer({
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
+  rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   practitioners?: { id: string; name: string }[];
 }) {
   const [view, setView]                       = useState<View>("semana");
@@ -808,6 +936,7 @@ export function ScheduleContainer({
           patients={patients}
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
+          onReschedule={rescheduleAction}
         />
       )}
       {view === "mes" && (
