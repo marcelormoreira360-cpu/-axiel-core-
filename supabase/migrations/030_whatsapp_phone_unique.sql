@@ -6,6 +6,11 @@
 -- Drop the non-unique index first (will be replaced by unique constraint's implicit index)
 drop index if exists public.whatsapp_conversations_phone_idx;
 
--- Add unique constraint (creates implicit unique index)
-alter table public.whatsapp_conversations
-  add constraint whatsapp_conversations_phone_key unique (phone);
+-- Add unique constraint (creates implicit unique index) — idempotent
+do $$ begin
+  alter table public.whatsapp_conversations
+    add constraint whatsapp_conversations_phone_key unique (phone);
+exception when duplicate_table then null;
+         when others then
+           if sqlerrm not like '%already exists%' then raise; end if;
+end $$;

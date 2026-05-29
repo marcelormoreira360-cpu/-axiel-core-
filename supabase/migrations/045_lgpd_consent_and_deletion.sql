@@ -23,10 +23,12 @@ CREATE INDEX IF NOT EXISTS idx_patient_consents_patient_id
 
 ALTER TABLE public.patient_consents ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "clinic staff can read their consents" ON public.patient_consents;
 CREATE POLICY "clinic staff can read their consents"
   ON public.patient_consents FOR SELECT
   USING (clinic_id IN (SELECT clinic_id FROM public.clinic_users WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "service role full access on patient_consents" ON public.patient_consents;
 CREATE POLICY "service role full access on patient_consents"
   ON public.patient_consents FOR ALL
   USING (true)
@@ -51,10 +53,12 @@ CREATE INDEX IF NOT EXISTS idx_deletion_requests_clinic_status
 
 ALTER TABLE public.data_deletion_requests ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "clinic staff can manage deletion requests" ON public.data_deletion_requests;
 CREATE POLICY "clinic staff can manage deletion requests"
   ON public.data_deletion_requests FOR ALL
   USING (clinic_id IN (SELECT clinic_id FROM public.clinic_users WHERE user_id = auth.uid()));
 
+DROP POLICY IF EXISTS "service role full access on data_deletion_requests" ON public.data_deletion_requests;
 CREATE POLICY "service role full access on data_deletion_requests"
   ON public.data_deletion_requests FOR ALL
   USING (true)
