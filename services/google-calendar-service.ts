@@ -1,4 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("google-calendar");
 const GOOGLE_AUTH_URL    = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL   = "https://oauth2.googleapis.com/token";
 const GOOGLE_CALENDAR_API = "https://www.googleapis.com/calendar/v3";
@@ -110,7 +113,7 @@ async function getGoogleTokenAndCalendarId(
         .eq("provider", "google");
       return { token: refreshed.access_token, calendarId };
     } catch (e) {
-      console.error("[google-calendar] token refresh failed:", e);
+      log.error("token refresh failed", e);
       // Fall through — return existing token (may be expired)
     }
   }
@@ -170,7 +173,7 @@ export async function createGoogleCalendarEvent(clinicId: string, event: {
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body:    JSON.stringify(body),
   });
-  if (!res.ok) { console.error("Google Calendar event creation failed", await res.text()); return null; }
+  if (!res.ok) { log.error("event creation failed", { body: await res.text() }); return null; }
   const created = await res.json();
   return created.id ?? null;
 }
@@ -226,7 +229,7 @@ export async function updateGoogleCalendarEvent(
     }
   );
   if (!res.ok) {
-    console.error("Google Calendar event update failed", await res.text());
+    log.error("event update failed", { body: await res.text() });
   }
 }
 
@@ -317,7 +320,7 @@ export async function syncGoogleCalendarToAxiel(clinicId: string): Promise<{
       }
 
       if (!res.ok) {
-        console.error("Google Calendar list failed:", res.status, await res.text());
+        log.error("list events failed", { status: res.status, body: await res.text() });
         break;
       }
 
@@ -369,7 +372,7 @@ export async function syncGoogleCalendarToAxiel(clinicId: string): Promise<{
             }
           }
         } catch (eventErr) {
-          console.error("Error processing Google event", event.id, eventErr);
+          log.error("error processing event", eventErr, { event_id: event.id });
           errors++;
         }
       }
@@ -387,7 +390,7 @@ export async function syncGoogleCalendarToAxiel(clinicId: string): Promise<{
         .eq("provider", "google");
     }
   } catch (err) {
-    console.error("Google Calendar sync error:", err);
+    log.error("sync error", err);
     errors++;
   }
 

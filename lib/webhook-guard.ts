@@ -1,5 +1,8 @@
 import crypto from "crypto";
 import twilio from "twilio";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("webhook-guard");
 
 // ─── Twilio Webhook Signature Validation ─────────────────────────────────────
 // Validates that incoming requests genuinely originate from Twilio.
@@ -12,7 +15,7 @@ export function validateTwilioSignature(
 ): boolean {
   const authToken = process.env.TWILIO_AUTH_TOKEN;
   if (!authToken) {
-    console.error("webhook-guard: TWILIO_AUTH_TOKEN not set — rejecting request (fail closed)");
+    log.error("TWILIO_AUTH_TOKEN not set — rejecting request (fail closed)");
     return false;
   }
   if (!signature) return false;
@@ -34,7 +37,7 @@ export function validateMetaSignature(
 ): boolean {
   const appSecret = process.env.META_APP_SECRET;
   if (!appSecret) {
-    console.error("webhook-guard: META_APP_SECRET not set — rejecting request (fail closed)");
+    log.error("META_APP_SECRET not set — rejecting request (fail closed)");
     return false;
   }
   if (!signature) return false;
@@ -101,7 +104,7 @@ export async function checkRateLimitDb(
     });
 
     if (error) {
-      console.warn("[rate-limit] DB error, failing open:", error.message);
+      log.warn("DB error — failing open", { message: error.message, key });
       return true; // fail-open
     }
 
@@ -114,13 +117,13 @@ export async function checkRateLimitDb(
         .delete()
         .lt("window_start", cutoff)
         .then(({ error: cleanErr }) => {
-          if (cleanErr) console.warn("[rate-limit] cleanup error:", cleanErr.message);
+          if (cleanErr) log.warn("cleanup error", { message: cleanErr.message });
         });
     }
 
     return data === true;
   } catch (e) {
-    console.warn("[rate-limit] unexpected error, failing open:", e);
+    log.warn("unexpected error — failing open", { error: e instanceof Error ? e.message : String(e) });
     return true; // fail-open
   }
 }

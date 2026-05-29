@@ -5,6 +5,9 @@ import { IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByMetaPhoneId } from "@/servic
 import type { PricingLocation } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import type { Lang } from "@/lib/whatsapp-lang";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("whatsapp");
 import {
   stepFromHistory,
   buildFixedReply,
@@ -71,13 +74,13 @@ async function getHistory(
       .limit(1)
       .single();
     if (error && error.code !== "PGRST116") {
-      console.error("[whatsapp] getHistory error:", error.code, error.message);
+      log.error("getHistory DB error", { code: error.code, message: error.message, phone: phone.slice(-4) });
     }
     const msgs = (data?.messages as ChatMessage[]) ?? [];
     const botDisabled = (data as unknown as { bot_disabled?: boolean } | null)?.bot_disabled ?? false;
     const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
     const updatedAt = (data as unknown as { updated_at?: string } | null)?.updated_at ?? null;
-    console.log("[whatsapp] getHistory: id=", data?.id ?? "null", "msgs=", msgs.length, "bot_disabled=", botDisabled, "phone=", phone.slice(-4));
+    log.debug("getHistory", { id: data?.id ?? "null", msgs: msgs.length, bot_disabled: botDisabled, phone: phone.slice(-4) });
     return {
       id: data?.id ?? null,
       messages: msgs,
@@ -87,7 +90,7 @@ async function getHistory(
       updatedAt,
     };
   } catch (e) {
-    console.error("[whatsapp] getHistory exception:", e);
+    log.error("getHistory exception", e, { phone: phone.slice(-4) });
     return { id: null, messages: [], botDisabled: false, currentStepDb: null, clinicId: null, updatedAt: null };
   }
 }
@@ -114,16 +117,16 @@ async function saveHistory(
         .from("whatsapp_conversations")
         .update(payload)
         .eq("id", id);
-      if (error) console.error("[whatsapp] saveHistory UPDATE error:", error.message);
+      if (error) log.error("saveHistory UPDATE error", { message: error.message });
     } else {
       // New row — UPSERT on phone (safe against concurrent first messages)
       if (clinicId) payload.clinic_id = clinicId;
       const { error } = await supabase
         .from("whatsapp_conversations")
         .upsert(payload, { onConflict: "phone" });
-      if (error) console.error("[whatsapp] saveHistory UPSERT error:", error.message);
+      if (error) log.error("saveHistory UPSERT error", { message: error.message });
     }
-  } catch (e) { console.error("[whatsapp] saveHistory exception:", e); }
+  } catch (e) { log.error("saveHistory exception", e); }
 }
 
 async function autoCreateLead(
@@ -149,7 +152,7 @@ async function autoCreateLead(
       notes: `Lead criado automaticamente via WhatsApp (Meta API).\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
     });
   } catch (e) {
-    console.error("auto-create lead (Meta) failed:", e);
+    log.error("autoCreateLead failed", e, { clinic_id: clinicId, phone: phone.slice(-4) });
   }
 }
 
@@ -184,11 +187,11 @@ async function sendMetaReply(to: string, body: string, phoneNumberId: string, at
     // Retry on rate-limit (429) or server error (5xx), up to 3 attempts
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
       const delay = attempt * 2000; // 2s, 4s
-      console.warn(`[meta] sendMetaReply attempt ${attempt} failed (${res.status}), retrying in ${delay}ms`);
+      log.warn(`sendMetaReply attempt ${attempt} failed — retrying`, { status: res.status, delay_ms: delay, phone: to.slice(-4) });
       await new Promise((r) => setTimeout(r, delay));
       return sendMetaReply(to, body, phoneNumberId, attempt + 1);
     }
-    console.error("Meta send error:", JSON.stringify(err));
+    log.error("sendMetaReply failed", { status: res.status, body: JSON.stringify(err) });
     throw new Error(`Meta API error: ${res.status}`);
   }
 }
@@ -233,7 +236,7 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
     const data = await whisperRes.json();
     return data.text?.trim() ?? "";
   } catch (err) {
-    console.error("Meta audio transcription error:", err);
+    log.error("audio transcription failed", err, { media_id: mediaId });
     return "";
   }
 }
@@ -269,7 +272,7 @@ async function generateOpenAIReply(
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("OpenAI error (Meta webhook):", res.status, JSON.stringify(data));
+    log.error("OpenAI API error", { status: res.status, body: JSON.stringify(data) });
     return "";
   }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
@@ -319,35 +322,35 @@ export async function GET(req: NextRequest) {
   const verifyToken = process.env.META_VERIFY_TOKEN;
 
   if (mode === "subscribe" && token === verifyToken && challenge) {
-    console.log("Meta webhook verified successfully");
+    log.info("webhook verification successful");
     return new NextResponse(challenge, { status: 200 });
   }
 
-  console.warn("Meta webhook verification failed — token mismatch or missing params");
+  log.warn("webhook verification failed — token mismatch or missing params");
   return new NextResponse("Forbidden", { status: 403 });
 }
 
 // ─── POST — incoming WhatsApp messages ───────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  console.log("[whatsapp] POST received");
+  log.debug("POST received");
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error("[whatsapp] OPENAI_API_KEY not set");
+    log.error("OPENAI_API_KEY not set — dropping request");
     return new NextResponse("", { status: 200 });
   }
 
   try {
     const rawBody = await req.text();
-    console.log("[whatsapp] raw body length:", rawBody.length);
+    log.debug("raw body received", { length: rawBody.length });
 
     // Validate Meta signature
     const signature = req.headers.get("x-hub-signature-256");
     if (!validateMetaSignature(signature, Buffer.from(rawBody))) {
-      console.warn("[whatsapp] invalid signature — rejected. META_APP_SECRET set:", !!process.env.META_APP_SECRET);
+      log.warn("invalid signature — rejected", { meta_app_secret_set: !!process.env.META_APP_SECRET });
       return new NextResponse("Forbidden", { status: 403 });
     }
-    console.log("[whatsapp] signature valid");
+    log.debug("signature valid");
 
     const body: MetaWebhookBody = JSON.parse(rawBody);
 
@@ -366,7 +369,7 @@ export async function POST(req: NextRequest) {
 
         // BUG-07: skip message if phoneNumberId is missing — can't send reply without it
         if (!phoneNumberId) {
-          console.warn("[whatsapp] skipping message: phone_number_id missing in metadata");
+          log.warn("skipping message: phone_number_id missing in metadata");
           continue;
         }
 
@@ -419,7 +422,7 @@ export async function POST(req: NextRequest) {
           // SEC-01: no fallback to IFWC_DEFAULT_CONFIG — if no clinic found, drop message silently.
           const botConfig = await getWhatsAppBotConfigByMetaPhoneId(phoneNumberId).catch(() => null);
           if (!botConfig) {
-            console.warn("[whatsapp] no clinic config found for phone_number_id:", phoneNumberId, "— dropping message");
+            log.warn("no clinic config found — dropping message", { phone_number_id: phoneNumberId });
             continue;
           }
           const clinicId = botConfig.clinic_id;
@@ -444,7 +447,7 @@ export async function POST(req: NextRequest) {
           const activeHistory = isTimedOut ? [] : history;
           const activeStepDb = isTimedOut ? null : currentStepDb;
           if (isTimedOut && convId) {
-            console.log("[whatsapp] conversation timed out after 72h — resetting step for phone:", fromPhone.slice(-4));
+            log.info("conversation timed out — resetting step", { phone: fromPhone.slice(-4) });
           }
 
           // Step: prefer DB-persisted value (immune to truncation); fall back to count
@@ -453,7 +456,13 @@ export async function POST(req: NextRequest) {
           // Language — detected from first user message and stable for the whole conversation
           const lang: Lang = detectLanguage(activeHistory, incomingText);
 
-          console.log("[whatsapp] step:", currentStep, "| lang:", lang, "| bot msgs:", activeHistory.filter(m => m.role === "assistant").length, "| phone:", fromPhone.slice(-4), isTimedOut ? "| TIMEOUT_RESET" : "");
+          log.info("dispatch", {
+            step: currentStep,
+            lang,
+            bot_msgs: activeHistory.filter(m => m.role === "assistant").length,
+            phone: fromPhone.slice(-4),
+            ...(isTimedOut ? { timeout_reset: true } : {}),
+          });
 
           // Human takeover — save message, don't reply
           if (botDisabled) {
@@ -470,7 +479,7 @@ export async function POST(req: NextRequest) {
             await saveHistory(supabase, fromPhone, convId, [], effectiveClinicId, 1);
             const resetMsg = lang === "en" ? "Conversation reset. 👋 How can I help you?" : "Conversa reiniciada. 👋 Como posso ajudar?";
             await sendMetaReply(fromPhone, resetMsg, phoneNumberId);
-            console.log("[whatsapp] conversation reset for phone:", fromPhone.slice(-4));
+            log.info("conversation reset", { phone: fromPhone.slice(-4) });
             continue;
           }
 
@@ -541,20 +550,24 @@ export async function POST(req: NextRequest) {
           // Fire-and-forget (non-blocking) but log failures for observability.
           if (effectiveClinicId && !convId) {
             autoCreateLead(supabase, fromPhone, effectiveClinicId, contactName, incomingText).catch((e) => {
-              console.warn("[whatsapp] autoCreateLead failed:", e instanceof Error ? e.message : e);
+              log.warn("autoCreateLead failed", { error: e instanceof Error ? e.message : String(e) });
             });
           }
 
-          console.log("[whatsapp] saved step:", currentStep, "→ next:", nextStep, "| total bot msgs now:", updatedHistory.filter(m => m.role === "assistant").length);
+          log.info("step saved — reply queued", {
+            step: currentStep,
+            next_step: nextStep,
+            bot_msgs: updatedHistory.filter(m => m.role === "assistant").length,
+          });
           await sendMetaReply(fromPhone, finalReply, phoneNumberId);
-          console.log("[whatsapp] reply sent ok");
+          log.debug("reply sent", { phone: fromPhone.slice(-4) });
         }
       }
     }
 
     return new NextResponse("", { status: 200 });
   } catch (err) {
-    console.error("[whatsapp] webhook error:", err);
+    log.error("webhook unhandled error", err);
     return new NextResponse("", { status: 200 });
   }
 }
