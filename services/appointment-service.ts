@@ -7,8 +7,9 @@ import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 // per-request only). TTL = 5 min; invalidated by revalidateTag on mutations.
 
 async function _getSessionTypes(clinicId: string): Promise<SessionType[]> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+  // Must use admin client — unstable_cache runs outside the request context
+  // so cookies() (used by createSupabaseServerClient) are not available.
+  const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("session_types")
     .select("*")

@@ -1,16 +1,18 @@
 import { cache } from "react";
 import { unstable_cache, revalidateTag } from "next/cache";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
-import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
+import { getPlanConfig } from "@/modules/billing/plan-config";
 import type { ClinicBillingContext } from "@/modules/billing/feature-access";
 
 // Two-layer cache strategy:
 //   1. unstable_cache (2 min TTL) — persists across requests, avoids DB on every page load
 //   2. React.cache wrapper — deduplicates multiple calls within the same request
-// On subscription changes, call invalidateBillingCache(clinicId) to bust immediately.
+// IMPORTANT: uses admin client — unstable_cache callbacks run outside request context,
+// so cookies() (createSupabaseServerClient) are unavailable here.
 
 async function _fetchSubscription(clinicId: string) {
-  const supabase = await createClient();
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("subscriptions")
     .select("*, plans(*)")

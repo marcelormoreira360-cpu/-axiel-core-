@@ -38,8 +38,8 @@ export { ROLE_LABELS, INVITABLE_ROLES, isManager, isPractitioner } from "@/lib/t
 // ── Team members ──────────────────────────────────────────────────
 
 async function _getTeamMembers(clinicId: string): Promise<TeamMember[]> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+  // Must use admin client — unstable_cache runs outside the request context
+  const supabase = createSupabaseAdminClient();
   const { data, error } = await supabase
     .from("users")
     .select("id, full_name, email, role, created_at")
