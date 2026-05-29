@@ -13,7 +13,7 @@
 import { env } from "@/lib/env";
 
 /** The "from" address used for all transactional emails sent via Resend. */
-export const DEFAULT_FROM_EMAIL: string = env.RESEND_FROM_EMAIL;
+export const DEFAULT_FROM_EMAIL: string = env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
 
 /** Root URL of the application (e.g. https://axiel-core-6ikl.vercel.app). No trailing slash. */
 export const APP_URL: string = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
