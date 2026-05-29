@@ -17,6 +17,7 @@ const isDev = process.env.NODE_ENV !== "production";
 const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
   `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.sentry.io https://sentry.io`,

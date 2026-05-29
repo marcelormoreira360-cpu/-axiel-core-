@@ -30,7 +30,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className={`${inter.variable} min-h-screen font-sans antialiased`}>
+      <body className={`${inter.variable} min-h-screen font-sans antialiased`} suppressHydrationWarning>
         <ThemeProvider>{children}</ThemeProvider>
         <PwaRegister />
       </body>
