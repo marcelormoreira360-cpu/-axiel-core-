@@ -5,6 +5,7 @@ import type { AppRole } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/team-utils";
 import { getBillingContext } from "@/services/billing-service";
 import { checkUsageLimit } from "@/modules/billing/feature-access";
+import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
 // ── Types ─────────────────────────────────────────────────────────
 
@@ -134,13 +135,12 @@ export async function inviteTeamMember(
   if (error) throw error;
 
   // Send email
-  const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const joinUrl = `${appUrl}/join/${token}`;
+  const joinUrl = `${APP_URL}/join/${token}`;
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from:    process.env.RESEND_FROM_EMAIL ?? "noreply@axielcore.com",
+      from:    DEFAULT_FROM_EMAIL,
       to:      email,
       subject: `Convite para ${clinicName} — AXIEL Core`,
       html: `

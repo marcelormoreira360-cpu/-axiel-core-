@@ -5,6 +5,7 @@ import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import type { HealthAgentReport } from "../route";
+import { DEFAULT_FROM_EMAIL } from "@/lib/constants";
 
 function buildEmailHtml(patientName: string, report: HealthAgentReport): string {
   const firstName = patientName.split(" ")[0];
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
   }
 
   const apiKey = process.env.RESEND_API_KEY;
-  const fromEmail = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
+  const fromEmail = DEFAULT_FROM_EMAIL;
 
   if (!apiKey) {
     return NextResponse.json({ error: "RESEND_API_KEY não configurada" }, { status: 500 });

@@ -1,6 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { Resend } from "resend";
+import { DEFAULT_FROM_EMAIL } from "@/lib/constants";
 
 // ── Hotmart webhook payload types ────────────────────────────────
 
@@ -191,7 +192,7 @@ async function sendPurchaseWelcome(
 
   if (email) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const from = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+    const from = DEFAULT_FROM_EMAIL;
     const html = `
       <p>Olá, ${first}!</p>
       <p>Parabéns pela sua compra de <strong>${productName}</strong> na <strong>${clinicName}</strong>!</p>

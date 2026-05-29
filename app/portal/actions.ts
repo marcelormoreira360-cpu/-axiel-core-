@@ -2,6 +2,7 @@
 
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
 export type SendPortalAccessState = { sent: boolean } | null;
 
@@ -60,12 +61,11 @@ export async function sendPortalAccessAction(
           ? (patient.clinics as { name: string }).name
           : "sua clínica";
 
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-      const portalUrl = `${appUrl}/p/${rawToken}`;
+      const portalUrl = `${APP_URL}/p/${rawToken}`;
 
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
-      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+      const fromEmail = DEFAULT_FROM_EMAIL;
 
       await resend.emails.send({
         from: fromEmail,

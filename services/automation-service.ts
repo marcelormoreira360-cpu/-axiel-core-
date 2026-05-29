@@ -6,6 +6,7 @@ import { AppointmentReminderEmail } from "@/components/email/appointment-reminde
 import { sendNpsRequest } from "@/services/email-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
+import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
 // Resolves plan slug for a clinic using the admin client (no session required).
 // Falls back to "starter" when the clinic has no subscription row.
@@ -336,7 +337,7 @@ async function sendReminderEmail(
     : 60;
 
   try {
-    const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+    const fromAddress = DEFAULT_FROM_EMAIL;
     await resend.emails.send({
       from: fromAddress,
       to: patient.email,
@@ -404,7 +405,7 @@ async function sendNpsEmail(
 
   // UX-05: generate a fresh portal link so the NPS email contains a real direct URL.
   // We store the hash, so we must mint a new token here. The link expires in 30 days.
-  let portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p`;
+  let portalUrl = `${APP_URL}/p`;
   try {
     const { randomUUID } = await import("crypto");
     const rawToken = randomUUID();
@@ -421,7 +422,7 @@ async function sendNpsEmail(
         is_single_use: true,  // NPS link is consumed after first view
       });
     if (!linkError) {
-      portalUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? ""}/p/${rawToken}`;
+      portalUrl = `${APP_URL}/p/${rawToken}`;
     }
   } catch {
     // Non-blocking — fall back to generic portal URL
@@ -457,7 +458,7 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
   let notified = 0, skipped = 0;
 
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+  const fromAddress = DEFAULT_FROM_EMAIL;
 
   // Batch dedup check: one query for all patient IDs instead of N queries
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -614,7 +615,7 @@ export async function sendAppointmentConfirmation(params: {
 
   if (patientEmail) {
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
+    const fromAddress = DEFAULT_FROM_EMAIL;
     const subject = `Sessão confirmada — ${dateStr} às ${timeStr}`;
     const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
     const whatsappUrl = clinicRow?.whatsapp_number

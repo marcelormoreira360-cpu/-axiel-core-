@@ -1,11 +1,12 @@
 import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
 export async function sendMonthlyReports(): Promise<{ sent: number; failed: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const fromAddress = process.env.RESEND_FROM_EMAIL ?? "no-reply@axielcore.com";
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  const fromAddress = DEFAULT_FROM_EMAIL;
+  const appUrl = APP_URL;
 
   const now = new Date();
   const firstOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);

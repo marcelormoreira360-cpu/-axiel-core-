@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { DEFAULT_FROM_EMAIL } from "@/lib/constants";
 
 export function getResendClient() {
   if (!process.env.RESEND_API_KEY) {
@@ -7,6 +8,7 @@ export function getResendClient() {
   return new Resend(process.env.RESEND_API_KEY);
 }
 
+/** @deprecated Import DEFAULT_FROM_EMAIL from @/lib/constants instead */
 export function getDefaultEmailFrom() {
-  return process.env.RESEND_FROM_EMAIL || "AXIEL Core <onboarding@resend.dev>";
+  return DEFAULT_FROM_EMAIL;
 }
