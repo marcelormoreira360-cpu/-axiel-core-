@@ -3,9 +3,9 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { ReactNode } from "react";
 import { SignOutButton } from "@/components/sign-out-button";
-// import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide"; // disabled for diagnostics
+import { SoftOnboardingGuide } from "@/components/soft-onboarding-guide";
 import { PushPrompt } from "@/components/push-prompt";
-// import { MobileBottomNav } from "@/components/mobile-bottom-nav"; // temporarily disabled for diagnostics
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
@@ -30,18 +30,18 @@ export async function Shell({
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
     : "U";
 
+  // Wrap in try-catch to prevent unhandled rejection in Next.js 16 RSC error boundary
   let clinics: Awaited<ReturnType<typeof getClinicsForUser>> = [];
   let cookieStore: Awaited<ReturnType<typeof cookies>>;
   let clinic: Awaited<ReturnType<typeof getCurrentClinic>> = null;
 
   try {
     [clinics, cookieStore, clinic] = await Promise.all([
-      getClinicsForUser().catch((e) => { console.error("[Shell] getClinicsForUser:", e); return []; }),
+      getClinicsForUser().catch(() => []),
       cookies(),
-      getCurrentClinic().catch((e) => { console.error("[Shell] getCurrentClinic:", e); return null; }),
+      getCurrentClinic().catch(() => null),
     ]);
   } catch (e) {
-    console.error("[Shell] Promise.all THREW:", e);
     throw e;
   }
   const activeClinicId = cookieStore!.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
@@ -50,7 +50,7 @@ export async function Shell({
   // Fetch subscription lightly (React.cache deduplicates if already called).
   const clinicId = clinic?.id ?? clinics[0]?.id ?? null;
   const subscription = clinicId
-    ? await getClinicSubscription(clinicId).catch((e) => { console.error("[Shell] getClinicSubscription:", e); return null; })
+    ? await getClinicSubscription(clinicId).catch(() => null)
     : null;
 
   const subStatus = (subscription as { status?: string | null } | null)?.status ?? null;
@@ -190,8 +190,8 @@ export async function Shell({
         </div>
       </main>
 
-      {/* <SoftOnboardingGuide /> */}
-      {/* <MobileBottomNav /> */}
+      <SoftOnboardingGuide />
+      <MobileBottomNav />
       <GlobalSearch key="global-search-modal" />
       <PushPrompt />
     </div>
