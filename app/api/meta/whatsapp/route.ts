@@ -6,6 +6,7 @@ import type { PricingLocation } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import type { Lang } from "@/lib/whatsapp-lang";
 import { createLogger } from "@/lib/logger";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 const log = createLogger("whatsapp");
 import {
@@ -312,6 +313,31 @@ async function generateStep3Reply(
 
 // isPriceQuestion and buildPriceObjectionReply imported from @/lib/whatsapp-bot-helpers
 
+// ─── Feature gate helper ──────────────────────────────────────────────────────
+/**
+ * Returns true if the clinic's plan includes whatsapp_automation.
+ * Uses the admin client — safe for webhook handlers (no cookie/session needed).
+ * Falls back to "starter" (no access) on any DB error, preventing unplanned bot usage.
+ */
+async function clinicCanUseWhatsAppBot(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  clinicId: string,
+): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("plans(code, slug)")
+      .eq("clinic_id", clinicId)
+      .maybeSingle();
+    const plans = data?.plans as { code?: string | null; slug?: string | null } | null;
+    const planSlug = plans?.code ?? plans?.slug ?? "starter";
+    return canUseFeature({ planSlug }, "whatsapp_automation");
+  } catch {
+    // Fail closed — if we can't verify the plan, don't run the bot
+    return false;
+  }
+}
+
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -427,6 +453,17 @@ export async function POST(req: NextRequest) {
           }
           const clinicId = botConfig.clinic_id;
           const config = botConfig;
+
+          // TODO-02: feature gate — whatsapp_automation requires Scale plan or higher.
+          // Drop silently so the patient sees no error message from an unauthorized bot.
+          const botAllowed = await clinicCanUseWhatsAppBot(supabase, clinicId);
+          if (!botAllowed) {
+            log.warn("clinic plan does not include whatsapp_automation — dropping message", {
+              clinic_id: clinicId,
+              phone_number_id: phoneNumberId,
+            });
+            continue;
+          }
 
           const {
             id: convId,
