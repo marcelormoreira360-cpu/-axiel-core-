@@ -24,6 +24,9 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
+import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
+import { PatientTimeline } from "@/components/patient-timeline";
+import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -95,6 +98,17 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // Pacote ativo — usado para exibir o badge no card de sessões
   const activePackage = packages.find((p) => p.is_active) ?? null;
+
+  // ── Intelligence — computed from already-loaded data (zero extra queries) ──
+  const engagement = computePatientEngagement(appointments, patient);
+  const timelineEvents = buildPatientTimeline(patient.id, {
+    appointments,
+    sessionRecords,
+    aiInsights,
+    assessmentResponses,
+    exams,
+    prescriptions,
+  });
 
   return (
     <Shell>
@@ -180,6 +194,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           )}
         </div>
       </div>
+
+      {/* ── Intelligence strip ── */}
+      <PatientIntelligenceStrip engagement={engagement} />
 
       {/* ── 3-column body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-t-0 border-black/[.07] rounded-b-[12px] overflow-hidden mb-5">
@@ -452,6 +469,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           </Link>
         </div>
       )}
+
+      {/* ── Patient timeline — unified event stream ── */}
+      <div className="mt-5">
+        <PatientTimeline events={timelineEvents} limit={15} />
+      </div>
 
       {/* Notes — quick voice note widget */}
       <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
