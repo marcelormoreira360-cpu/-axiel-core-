@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
@@ -93,6 +94,7 @@ export default async function NewPatientPage({
   searchParams: Promise<{ name?: string }>;
 }) {
   const { name } = await searchParams;
+  const t = await getTranslations("patients.new");
   const prefillName = name ? decodeURIComponent(name) : "";
   const [prefillFirst, ...restWords] = prefillName.trim().split(/\s+/);
   const prefillLast = restWords.join(" ");
@@ -103,38 +105,38 @@ export default async function NewPatientPage({
   return (
     <Shell>
       <SimplePageHeader
-        eyebrow="NOVO PACIENTE"
-        title="Adicionar paciente"
-        helper="Apenas as informações essenciais para começar. Você pode adicionar mais depois."
+        eyebrow={t("eyebrow")}
+        title={t("title")}
+        helper={t("helper")}
       />
       <Card className="max-w-2xl p-6">
         <form action={createPatientAction} className="grid gap-7">
 
           {/* ── Nome ── */}
           <section>
-            <p className="text-[10px] font-semibold uppercase tracking-[.1em] text-black/35 mb-3">Nome</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[.1em] text-black/35 mb-3">{t("sectionName")}</p>
             <div className="grid gap-4 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-semibold">
-                Nome *
-                <input name="first_name" required defaultValue={prefillFirst} className={inputCls} placeholder="Ex: Maria" />
+                {t("firstName")}
+                <input name="first_name" required defaultValue={prefillFirst} className={inputCls} placeholder={t("firstNamePlaceholder")} />
               </label>
               <label className="grid gap-2 text-sm font-semibold">
-                Sobrenome
-                <input name="last_name" defaultValue={prefillLast} className={inputCls} placeholder="Ex: Silva" />
+                {t("lastName")}
+                <input name="last_name" defaultValue={prefillLast} className={inputCls} placeholder={t("lastNamePlaceholder")} />
               </label>
             </div>
           </section>
 
           {/* ── Contato ── */}
           <section>
-            <p className="text-[10px] font-semibold uppercase tracking-[.1em] text-black/35 mb-3">Contato</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[.1em] text-black/35 mb-3">{t("sectionContact")}</p>
             <div className="grid gap-4">
               <label className="grid gap-2 text-sm font-semibold">
-                E-mail
-                <input name="email" type="email" className={inputCls} placeholder="email@exemplo.com" />
+                {t("email")}
+                <input name="email" type="email" className={inputCls} placeholder={t("emailPlaceholder")} />
               </label>
               <label className="grid gap-2 text-sm font-semibold">
-                Telefone / WhatsApp
+                {t("phone")}
                 <div className="flex gap-2">
                   <select
                     name="country_code"
@@ -151,7 +153,7 @@ export default async function NewPatientPage({
                     name="phone"
                     type="tel"
                     className={`${inputCls} flex-1`}
-                    placeholder="(00) 90000-0000"
+                    placeholder={t("phonePlaceholder")}
                   />
                 </div>
               </label>
@@ -161,29 +163,29 @@ export default async function NewPatientPage({
           {/* ── Endereço ── */}
           <section>
             <p className="text-[10px] font-semibold uppercase tracking-[.1em] text-black/35 mb-1">
-              Endereço <span className="normal-case font-normal">(opcional)</span>
+              {t("sectionAddress")} <span className="normal-case font-normal">{t("optional")}</span>
             </p>
             <div className="grid gap-4 mt-3">
               <label className="grid gap-2 text-sm font-semibold">
-                Rua, número e complemento
-                <input name="address_line" className={inputCls} placeholder="Rua das Flores, 123 — Apto 4B" />
+                {t("addressLine")}
+                <input name="address_line" className={inputCls} placeholder={t("addressLinePlaceholder")} />
               </label>
               <div className="grid gap-4 md:grid-cols-3">
                 <label className="grid gap-2 text-sm font-semibold">
-                  Código postal
-                  <input name="zip_code" className={inputCls} placeholder="00000-000" />
+                  {t("zip")}
+                  <input name="zip_code" className={inputCls} placeholder={t("zipPlaceholder")} />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">
-                  Cidade
-                  <input name="city" className={inputCls} placeholder="São Paulo" />
+                  {t("city")}
+                  <input name="city" className={inputCls} placeholder={t("cityPlaceholder")} />
                 </label>
                 <label className="grid gap-2 text-sm font-semibold">
-                  Estado / Província
-                  <input name="state" className={inputCls} placeholder="SP" />
+                  {t("state")}
+                  <input name="state" className={inputCls} placeholder={t("statePlaceholder")} />
                 </label>
               </div>
               <label className="grid gap-2 text-sm font-semibold">
-                País
+                {t("country")}
                 <select name="country" defaultValue="Brasil" className={inputCls}>
                   {WORLD_COUNTRIES.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -195,12 +197,12 @@ export default async function NewPatientPage({
 
           {/* ── Observação ── */}
           <label className="grid gap-2 text-sm font-semibold">
-            Observação rápida
+            {t("notes")}
             <textarea
               name="notes"
               rows={3}
               className="rounded-xl border border-axiel-line bg-white p-4 text-base outline-none focus:border-black/30 transition resize-none"
-              placeholder="Algo importante a lembrar sobre este paciente?"
+              placeholder={t("notesPlaceholder")}
             />
           </label>
 
@@ -210,13 +212,13 @@ export default async function NewPatientPage({
               type="submit"
               className="min-h-[52px] rounded-lg bg-axiel-blue px-7 text-base font-semibold text-white shadow-md hover:opacity-90 transition"
             >
-              Salvar paciente
+              {t("save")}
             </button>
             <Link
               href="/patients"
               className="inline-flex min-h-[52px] items-center rounded-lg border border-axiel-line bg-white px-7 text-base font-semibold hover:bg-gray-50 transition"
             >
-              Cancelar
+              {t("cancel")}
             </Link>
           </div>
         </form>

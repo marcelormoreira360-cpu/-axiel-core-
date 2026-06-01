@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import type { Patient } from "@/lib/types";
 
@@ -10,10 +11,16 @@ function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function statusBadge(status: string) {
-  if (status === "active") return { label: "Ativo", classes: "bg-[#E1F5EE] text-[#085041]" };
-  if (status === "archived") return { label: "Arquivado", classes: "bg-[#F4F3EF] text-[#A09E98]" };
-  return { label: "Inativo", classes: "bg-[#FAEEDA] text-[#633806]" };
+function statusClasses(status: string) {
+  if (status === "active") return "bg-[#E1F5EE] text-[#085041]";
+  if (status === "archived") return "bg-[#F4F3EF] text-[#A09E98]";
+  return "bg-[#FAEEDA] text-[#633806]";
+}
+
+function statusKey(status: string): "active" | "inactive" | "archived" {
+  if (status === "active") return "active";
+  if (status === "archived") return "archived";
+  return "inactive";
 }
 
 function avatarColor(name: string) {
@@ -30,12 +37,7 @@ function avatarColor(name: string) {
 type StatusFilter = "all" | "active" | "inactive" | "archived";
 type Practitioner = { id: string; name: string };
 
-const STATUS_TABS: { key: StatusFilter; label: string }[] = [
-  { key: "all", label: "Todos" },
-  { key: "active", label: "Ativos" },
-  { key: "inactive", label: "Inativos" },
-  { key: "archived", label: "Arquivados" },
-];
+const STATUS_TAB_KEYS: StatusFilter[] = ["all", "active", "inactive", "archived"];
 
 export function PatientsClient({
   patients,
@@ -56,6 +58,8 @@ export function PatientsClient({
   initialSearch?: string;
   practitioners?: Practitioner[];
 }) {
+  const t = useTranslations("patients.list");
+  const locale = useLocale();
   const router = useRouter();
   // When initialSearch is set, we're showing server-filtered results.
   // Local query state is used for client-side filtering within the loaded page.
@@ -112,17 +116,16 @@ export function PatientsClient({
     });
   }, [patients, sortedPatients, query, statusFilter, practitionerFilter]);
 
-  const totalLabel =
-    patients.length > 0
-      ? `${patients.length} paciente${patients.length !== 1 ? "s" : ""}${practitionerMode ? " atendidos por você" : " na clínica"}`
-      : "Nenhum paciente ainda";
+  const totalLabel = practitionerMode
+    ? t("countPractitioner", { count: patients.length })
+    : t("countClinic", { count: patients.length });
 
   return (
     <>
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[16px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Pacientes</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">{totalLabel}</p>
         </div>
         <div className="flex items-center gap-[8px]">
@@ -132,7 +135,7 @@ export function PatientsClient({
               onChange={(e) => setPractitionerFilter(e.target.value)}
               className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium"
             >
-              <option value="all">Todos os profissionais</option>
+              <option value="all">{t("allPractitioners")}</option>
               {practitioners.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -144,13 +147,13 @@ export function PatientsClient({
             className="flex items-center gap-1.5 text-[12px] font-medium text-black/60 border border-black/[.10] hover:bg-black/[.04] rounded-xl px-3 py-1.5 transition"
           >
             <Download className="w-[13px] h-[13px]" />
-            Exportar CSV
+            {t("exportCsv")}
           </a>
           <Link
             href="/patients/new"
             className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
           >
-            + Novo paciente
+            {t("newPatient")}
           </Link>
         </div>
       </div>
@@ -163,7 +166,7 @@ export function PatientsClient({
             <Search className="absolute left-[10px] top-1/2 -translate-y-1/2 h-[14px] w-[14px] text-[#A09E98] pointer-events-none" />
             <input
               type="text"
-              placeholder="Buscar por nome, e-mail ou telefone…"
+              placeholder={t("searchPlaceholder")}
               value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="w-full pl-[32px] pr-[10px] py-[8px] text-[13px] bg-white border border-black/[.09] rounded-lg outline-none focus:ring-2 focus:ring-[#0F6E56]/20 focus:border-[#0F6E56] placeholder:text-[#C4C2BA] text-[#0F1A2E] transition"
@@ -172,7 +175,7 @@ export function PatientsClient({
               <button
                 onClick={() => handleSearchChange("")}
                 className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#A09E98] hover:text-[#0F1A2E] transition text-[13px] leading-none"
-                aria-label="Limpar busca"
+                aria-label={t("clearSearch")}
               >
                 ✕
               </button>
@@ -181,16 +184,16 @@ export function PatientsClient({
 
           {/* Status filter tabs */}
           <div className="flex gap-[6px] flex-wrap">
-            {STATUS_TABS.map((tab) => {
+            {STATUS_TAB_KEYS.map((tabKey) => {
               const count =
-                tab.key === "all"
+                tabKey === "all"
                   ? patients.length
-                  : patients.filter((p) => p.status === tab.key).length;
-              const active = statusFilter === tab.key;
+                  : patients.filter((p) => p.status === tabKey).length;
+              const active = statusFilter === tabKey;
               return (
                 <button
-                  key={tab.key}
-                  onClick={() => setStatusFilter(tab.key)}
+                  key={tabKey}
+                  onClick={() => setStatusFilter(tabKey)}
                   className={[
                     "inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-full text-[11px] font-medium transition",
                     active
@@ -198,7 +201,7 @@ export function PatientsClient({
                       : "bg-white border border-black/[.09] text-[#6B6966] hover:border-[#0F6E56]/40 hover:text-[#0F6E56]",
                   ].join(" ")}
                 >
-                  {tab.label}
+                  {t(`tabs.${tabKey}`)}
                   <span
                     className={[
                       "px-[5px] py-[1px] rounded-full text-[10px]",
@@ -217,34 +220,33 @@ export function PatientsClient({
       {/* List */}
       {patients.length === 0 ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[15px] py-[40px] text-center">
-          <p className="text-[13px] text-[#A09E98]">Nenhum paciente cadastrado ainda.</p>
+          <p className="text-[13px] text-[#A09E98]">{t("emptyTitle")}</p>
           <Link
             href="/patients/new"
             className="mt-3 inline-flex text-[12px] font-medium text-[#0F6E56] hover:underline"
           >
-            Cadastrar primeiro paciente →
+            {t("registerFirst")}
           </Link>
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[15px] py-[40px] text-center">
           <p className="text-[13px] text-[#A09E98]">
             {query
-              ? `Nenhum paciente encontrado para "${query}".`
-              : "Nenhum paciente com esse filtro."}
+              ? t("noResultsSearch", { query })
+              : t("noResultsFilter")}
           </p>
           <button
             onClick={() => { handleSearchChange(""); setStatusFilter("all"); setPractitionerFilter("all"); }}
             className="mt-2 text-[12px] text-[#0F6E56] hover:underline"
           >
-            Limpar filtros
+            {t("clearFilters")}
           </button>
         </div>
       ) : (
         <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
           {filtered.map((patient, i) => {
             const av = avatarColor(patient.full_name);
-            const badge = statusBadge(patient.status);
-            const since = new Date(patient.created_at).toLocaleDateString("pt-BR", {
+            const since = new Date(patient.created_at).toLocaleDateString(locale, {
               month: "short",
               year: "numeric",
             });
@@ -270,22 +272,22 @@ export function PatientsClient({
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{patient.full_name}</p>
                   <p className="text-[11px] text-[#A09E98] mt-[1px]">
-                    {patient.email ?? "Sem e-mail"}
+                    {patient.email ?? t("noEmail")}
                     {patient.phone ? ` · ${patient.phone}` : ""}
-                    {` · Desde ${since}`}
+                    {` · ${t("since", { date: since })}`}
                   </p>
                 </div>
 
                 {/* Recent badge */}
                 {recentPatientIds.indexOf(patient.id) < 5 && (
                   <span className="text-[10px] px-2 py-[2px] rounded-full shrink-0 bg-[#E6F1FB] text-[#0C447C]">
-                    Recente
+                    {t("recent")}
                   </span>
                 )}
 
                 {/* Status badge */}
-                <span className={`text-[10px] px-2 py-[2px] rounded-full shrink-0 ${badge.classes}`}>
-                  {badge.label}
+                <span className={`text-[10px] px-2 py-[2px] rounded-full shrink-0 ${statusClasses(patient.status)}`}>
+                  {t(`status.${statusKey(patient.status)}`)}
                 </span>
 
                 {/* Arrow */}
@@ -309,7 +311,7 @@ export function PatientsClient({
       {/* Result count when searching */}
       {(query || statusFilter !== "all" || practitionerFilter !== "all") && filtered.length > 0 && (
         <p className="mt-[10px] text-[11px] text-[#A09E98] text-center">
-          {filtered.length} de {patients.length} paciente{patients.length !== 1 ? "s" : ""}
+          {t("resultCount", { filtered: filtered.length, total: patients.length })}
         </p>
       )}
 
@@ -317,8 +319,8 @@ export function PatientsClient({
       {statusFilter === "all" && totalPages > 1 && (
         <div className="flex items-center justify-between mt-[14px] pt-[12px] border-t border-black/[.06]">
           <p className="text-[11px] text-[#A09E98]">
-            Página {page} de {totalPages}
-            {totalCount !== undefined && ` · ${totalCount} pacientes`}
+            {t("pageOf", { page, total: totalPages })}
+            {totalCount !== undefined && t("totalSuffix", { count: totalCount })}
           </p>
           <div className="flex items-center gap-[6px]">
             {page > 1 ? (
@@ -327,12 +329,12 @@ export function PatientsClient({
                 className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
               >
                 <ChevronLeft className="w-[12px] h-[12px]" />
-                Anterior
+                {t("prev")}
               </Link>
             ) : (
               <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
                 <ChevronLeft className="w-[12px] h-[12px]" />
-                Anterior
+                {t("prev")}
               </span>
             )}
             {page < totalPages ? (
@@ -340,12 +342,12 @@ export function PatientsClient({
                 href={`?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page + 1) }).toString()}`}
                 className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
               >
-                Próxima
+                {t("next")}
                 <ChevronRight className="w-[12px] h-[12px]" />
               </Link>
             ) : (
               <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
-                Próxima
+                {t("next")}
                 <ChevronRight className="w-[12px] h-[12px]" />
               </span>
             )}
