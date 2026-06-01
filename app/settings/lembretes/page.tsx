@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Mail, MessageCircle, CheckCircle2, XCircle } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -16,59 +17,32 @@ type CommunicationLog = {
   patients: { full_name: string } | null;
 };
 
-const USE_CASE_LABELS: Record<string, string> = {
-  appointment_confirmation: "Confirmação de agendamento",
-  appointment_reminder:     "Lembrete D-1",
-  follow_up:                "Acompanhamento",
-  package_low:              "Pacote quase no fim",
+const USE_CASE_KEYS: Record<string, string> = {
+  appointment_confirmation: "ucConfirmation",
+  appointment_reminder:     "ucReminder",
+  follow_up:                "ucFollowUp",
+  package_low:              "ucPackageLow",
 };
-
-function useCaseLabel(key: string): string {
-  return USE_CASE_LABELS[key] ?? key;
-}
 
 type ReminderRow = {
   key: string;
   settingKey: string;
-  label: string;
-  description: string;
+  labelKey: string;
+  descKey: string;
   channels: string[];
   alwaysOn?: boolean;
 };
 
 const REMINDER_ROWS: ReminderRow[] = [
-  {
-    key:         "confirmation",
-    settingKey:  "confirmation",
-    label:       "Confirmação imediata",
-    description: "Enviada assim que a sessão é criada",
-    channels:    ["whatsapp", "email"],
-    alwaysOn:    true,
-  },
-  {
-    key:        "d-1",
-    settingKey: "d_minus_1",
-    label:      "Lembrete D-1",
-    description: "24h antes da sessão",
-    channels:   ["whatsapp", "email"],
-  },
-  {
-    key:        "d+3",
-    settingKey: "d_plus_3",
-    label:      "Acompanhamento D+3",
-    description: "3 dias após a sessão",
-    channels:   ["whatsapp"],
-  },
-  {
-    key:        "d+30",
-    settingKey: "d_plus_30",
-    label:      "Fidelização D+30",
-    description: "30 dias após a sessão",
-    channels:   ["whatsapp"],
-  },
+  { key: "confirmation", settingKey: "confirmation", labelKey: "rowConfirmationLabel", descKey: "rowConfirmationDesc", channels: ["whatsapp", "email"], alwaysOn: true },
+  { key: "d-1", settingKey: "d_minus_1", labelKey: "rowD1Label", descKey: "rowD1Desc", channels: ["whatsapp", "email"] },
+  { key: "d+3", settingKey: "d_plus_3", labelKey: "rowD3Label", descKey: "rowD3Desc", channels: ["whatsapp"] },
+  { key: "d+30", settingKey: "d_plus_30", labelKey: "rowD30Label", descKey: "rowD30Desc", channels: ["whatsapp"] },
 ];
 
 export default async function LembretesPage() {
+  const t = await getTranslations("settings.lembretes");
+  const locale = await getLocale();
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
 
@@ -103,21 +77,21 @@ export default async function LembretesPage() {
           href="/settings"
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
         </Link>
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-1">Automações</p>
-          <h1 className="text-3xl font-semibold tracking-tight text-[#0F1A2E]">Lembretes automáticos</h1>
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-1">{t("eyebrow")}</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-[#0F1A2E]">{t("title")}</h1>
           <p className="mt-2 text-sm text-black/55">
-            Controle quais mensagens automáticas são enviadas aos pacientes via WhatsApp e e-mail após o agendamento.
+            {t("subtitle")}
           </p>
         </div>
 
         {/* Pipeline card */}
         <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px] mb-6">
-          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-4">Pipeline de mensagens</p>
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-4">{t("pipelineTitle")}</p>
 
           <div className="space-y-0">
             {REMINDER_ROWS.map((row, idx) => {
@@ -147,18 +121,18 @@ export default async function LembretesPage() {
                     <div className="flex-1 flex items-start justify-between gap-4 py-1">
                       <div>
                         <p className={`text-sm font-medium ${enabled ? "text-[#0F1A2E]" : "text-black/35"}`}>
-                          {row.label}
+                          {t(row.labelKey)}
                         </p>
-                        <p className="text-xs text-black/45 mt-0.5">{row.description}</p>
+                        <p className="text-xs text-black/45 mt-0.5">{t(row.descKey)}</p>
                         <div className="flex items-center gap-2 mt-1.5">
                           {row.channels.includes("whatsapp") && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-black/45 bg-black/[.04] rounded-full px-2 py-0.5">
-                              <MessageCircle className="h-2.5 w-2.5" /> WhatsApp
+                              <MessageCircle className="h-2.5 w-2.5" /> {t("whatsapp")}
                             </span>
                           )}
                           {row.channels.includes("email") && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-black/45 bg-black/[.04] rounded-full px-2 py-0.5">
-                              <Mail className="h-2.5 w-2.5" /> E-mail
+                              <Mail className="h-2.5 w-2.5" /> {t("email")}
                             </span>
                           )}
                         </div>
@@ -167,7 +141,7 @@ export default async function LembretesPage() {
                       {/* Toggle or always-on badge */}
                       {row.alwaysOn ? (
                         <span className="shrink-0 text-[10px] text-[#0F6E56] bg-[#E1F5EE] px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                          Sempre ativo
+                          {t("alwaysOn")}
                         </span>
                       ) : (
                         <div className="shrink-0 flex items-center gap-2">
@@ -179,7 +153,7 @@ export default async function LembretesPage() {
                               <button
                                 type="submit"
                                 className="relative inline-flex h-5 w-9 cursor-pointer rounded-full bg-[#0F6E56] transition-colors focus:outline-none"
-                                aria-label={`Desativar ${row.label}`}
+                                aria-label={t("disableAria", { label: t(row.labelKey) })}
                               >
                                 <span className="absolute right-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform" />
                               </button>
@@ -193,7 +167,7 @@ export default async function LembretesPage() {
                               <button
                                 type="submit"
                                 className="relative inline-flex h-5 w-9 cursor-pointer rounded-full bg-black/15 transition-colors focus:outline-none"
-                                aria-label={`Ativar ${row.label}`}
+                                aria-label={t("enableAria", { label: t(row.labelKey) })}
                               >
                                 <span className="absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform" />
                               </button>
@@ -211,10 +185,10 @@ export default async function LembretesPage() {
 
         {/* Communications log */}
         <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-4">Histórico de comunicações</p>
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase mb-4">{t("logTitle")}</p>
 
           {typedLogs.length === 0 ? (
-            <p className="text-sm text-black/40 py-4 text-center">Nenhuma comunicação enviada ainda.</p>
+            <p className="text-sm text-black/40 py-4 text-center">{t("logEmpty")}</p>
           ) : (
             <div className="space-y-0 divide-y divide-black/[.05]">
               {typedLogs.map((log) => (
@@ -233,27 +207,27 @@ export default async function LembretesPage() {
                     <p className="text-sm text-[#0F1A2E] truncate">
                       {log.patients?.full_name ?? "—"}
                     </p>
-                    <p className="text-[11px] text-black/40 truncate">{useCaseLabel(log.use_case)}</p>
+                    <p className="text-[11px] text-black/40 truncate">{USE_CASE_KEYS[log.use_case] ? t(USE_CASE_KEYS[log.use_case]) : log.use_case}</p>
                   </div>
 
                   {/* Status badge */}
                   <div className="shrink-0">
                     {log.status === "sent" ? (
                       <span className="inline-flex items-center gap-1 text-[10px] text-[#0F6E56] bg-[#E1F5EE] px-2 py-0.5 rounded-full font-medium">
-                        <CheckCircle2 className="h-2.5 w-2.5" /> Enviado
+                        <CheckCircle2 className="h-2.5 w-2.5" /> {t("statusSent")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-[10px] text-red-600 bg-red-50 px-2 py-0.5 rounded-full font-medium">
-                        <XCircle className="h-2.5 w-2.5" /> Falhou
+                        <XCircle className="h-2.5 w-2.5" /> {t("statusFailed")}
                       </span>
                     )}
                   </div>
 
                   {/* Timestamp */}
                   <div className="shrink-0 text-[11px] text-black/35 tabular-nums w-[72px] text-right">
-                    {new Date(log.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+                    {new Date(log.created_at).toLocaleDateString(locale, { day: "2-digit", month: "2-digit" })}
                     {" "}
-                    {new Date(log.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(log.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                   </div>
                 </div>
               ))}
@@ -264,10 +238,10 @@ export default async function LembretesPage() {
         {/* Push notification toggle */}
         <div className="mt-8 rounded-2xl border border-black/[.07] bg-white p-5">
           <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 mb-1">
-            Notificações push
+            {t("pushTitle")}
           </p>
           <p className="text-[12px] text-black/45 mb-4">
-            Receba alertas no navegador quando pacientes enviarem mensagens ou novas ações forem criadas.
+            {t("pushDesc")}
           </p>
           <PushSettingsToggle />
         </div>

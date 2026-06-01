@@ -1,37 +1,39 @@
 import Link from "next/link";
 import { ArrowLeft, ExternalLink, Phone } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 
 const WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/voice/webhook";
 
-export default function VoiceSettingsPage() {
+export default async function VoiceSettingsPage() {
+  const t = await getTranslations("settings.voice");
   return (
     <Shell>
       <div className="mb-7">
         <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
-          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
         </Link>
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Configurações</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
         <div className="flex items-center gap-3">
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Ligações com IA</h1>
-          <span className="rounded-full bg-axiel-gold/15 px-3 py-1 text-xs font-semibold text-axiel-gold">Pronto para ativar</span>
+          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <span className="rounded-full bg-axiel-gold/15 px-3 py-1 text-xs font-semibold text-axiel-gold">{t("badge")}</span>
         </div>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">
-          A IA atende ligações automaticamente, fala em português e inglês, e usa a mesma persona configurada no WhatsApp Bot.
+          {t("subtitle")}
         </p>
       </div>
 
       <div className="flex flex-col gap-5 max-w-2xl">
         {/* How it works */}
         <Card className="p-6">
-          <h2 className="mb-1 text-base font-semibold">Como funciona</h2>
-          <p className="mb-5 text-sm text-black/50">Cada ligação recebida no número Twilio é atendida pela IA usando o fluxo de vendas da sua clínica.</p>
+          <h2 className="mb-1 text-base font-semibold">{t("howTitle")}</h2>
+          <p className="mb-5 text-sm text-black/50">{t("howDesc")}</p>
           <div className="grid gap-3 md:grid-cols-3">
             {[
-              { icon: "1", title: "Paciente liga", desc: "Para o número Twilio configurado" },
-              { icon: "2", title: "IA atende", desc: "Saúda com a voz da Camila (Polly Neural)" },
-              { icon: "3", title: "Conversa fluída", desc: "GPT-4 responde em tempo real, máx. 2 frases por vez" },
+              { icon: "1", title: t("howStep1Title"), desc: t("howStep1Desc") },
+              { icon: "2", title: t("howStep2Title"), desc: t("howStep2Desc") },
+              { icon: "3", title: t("howStep3Title"), desc: t("howStep3Desc") },
             ].map((step) => (
               <div key={step.icon} className="rounded-xl bg-axiel-soft p-4">
                 <div className="mb-2 flex h-7 w-7 items-center justify-center rounded-full bg-axiel-ink text-xs font-bold text-white">{step.icon}</div>
@@ -44,13 +46,13 @@ export default function VoiceSettingsPage() {
 
         {/* Languages */}
         <Card className="p-6">
-          <h2 className="mb-1 text-base font-semibold">Idiomas suportados</h2>
-          <p className="mb-4 text-sm text-black/50">O idioma é definido pela configuração do WhatsApp Bot (campo "Idioma do bot").</p>
+          <h2 className="mb-1 text-base font-semibold">{t("langTitle")}</h2>
+          <p className="mb-4 text-sm text-black/50">{t("langDesc")}</p>
           <div className="grid gap-2 md:grid-cols-3">
             {[
-              { lang: "Português (Brasil)", voice: "Polly.Camila-Neural", code: "pt-BR" },
-              { lang: "Português (Portugal)", voice: "Polly.Ines-Neural", code: "pt-PT" },
-              { lang: "English (US)", voice: "Polly.Joanna-Neural", code: "en-US" },
+              { lang: t("langPtBr"), voice: "Polly.Camila-Neural", code: "pt-BR" },
+              { lang: t("langPtPt"), voice: "Polly.Ines-Neural", code: "pt-PT" },
+              { lang: t("langEnUs"), voice: "Polly.Joanna-Neural", code: "en-US" },
             ].map((item) => (
               <div key={item.code} className="rounded-lg border border-black/[.07] p-3">
                 <p className="text-sm font-medium">{item.lang}</p>
@@ -62,22 +64,22 @@ export default function VoiceSettingsPage() {
 
         {/* Activation */}
         <Card className="p-6">
-          <h2 className="mb-1 text-base font-semibold">Ativar — 2 passos</h2>
-          <p className="mb-5 text-sm text-black/50">Diferente do WhatsApp (sandbox), ligações precisam de um número de voz Twilio dedicado.</p>
+          <h2 className="mb-1 text-base font-semibold">{t("activateTitle")}</h2>
+          <p className="mb-5 text-sm text-black/50">{t("activateDesc")}</p>
 
           <ol className="flex flex-col gap-5">
             <li className="flex items-start gap-3">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-axiel-ink text-xs font-bold text-white mt-0.5">1</div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Comprar um número de voz no Twilio</p>
-                <p className="mb-2 text-xs text-black/45">No Console Twilio: <strong>Phone Numbers → Manage → Buy a number</strong>. Filtre por "Voice" e escolha um número brasileiro (+55) ou americano (+1).</p>
+                <p className="text-sm font-medium">{t("aStep1Title")}</p>
+                <p className="mb-2 text-xs text-black/45">{t.rich("aStep1Desc", { b: (c) => <strong>{c}</strong> })}</p>
                 <a
                   href="https://console.twilio.com/us1/develop/phone-numbers/search"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-xs text-axiel-ink hover:underline"
                 >
-                  Comprar número <ExternalLink className="h-3 w-3" />
+                  {t("buyNumber")} <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </li>
@@ -85,9 +87,9 @@ export default function VoiceSettingsPage() {
             <li className="flex items-start gap-3">
               <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-axiel-ink text-xs font-bold text-white mt-0.5">2</div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Configurar o webhook no número comprado</p>
+                <p className="text-sm font-medium">{t("aStep2Title")}</p>
                 <p className="mb-2 text-xs text-black/45">
-                  No Console: <strong>Phone Numbers → Manage → Active Numbers → clique no número → Voice &amp; Fax → "A call comes in"</strong>. Selecione <strong>Webhook</strong>, método <strong>POST</strong>, e cole a URL:
+                  {t.rich("aStep2Desc", { b: (c) => <strong>{c}</strong> })}
                 </p>
                 <VoiceWebhookCopy url={WEBHOOK_URL} />
               </div>
@@ -95,10 +97,9 @@ export default function VoiceSettingsPage() {
           </ol>
 
           <div className="mt-5 rounded-xl border border-black/[.07] bg-black/[.02] p-4">
-            <p className="text-xs font-semibold text-black/60">Após configurar</p>
+            <p className="text-xs font-semibold text-black/60">{t("afterTitle")}</p>
             <p className="mt-1 text-xs text-black/45">
-              Ligue para o número comprado — a IA vai atender imediatamente usando a persona e o fluxo de vendas configurados em{" "}
-              <Link href="/settings/whatsapp" className="text-axiel-ink hover:underline">WhatsApp Bot</Link>.
+              {t.rich("afterDesc", { a: (c) => <Link href="/settings/whatsapp" className="text-axiel-ink hover:underline">{c}</Link> })}
             </p>
           </div>
         </Card>
@@ -108,10 +109,9 @@ export default function VoiceSettingsPage() {
           <div className="flex items-start gap-3">
             <Phone className="mt-0.5 h-4 w-4 shrink-0 text-axiel-ink/60" />
             <div>
-              <p className="text-sm font-medium">Persona das ligações</p>
+              <p className="text-sm font-medium">{t("personaTitle")}</p>
               <p className="mt-1 text-xs text-black/50">
-                A IA nas ligações usa exatamente a mesma configuração do WhatsApp Bot (nome, especialidade, metodologia, preços). Para alterar o que ela fala, edite em{" "}
-                <Link href="/settings/whatsapp" className="text-axiel-ink hover:underline">Configurações → WhatsApp Bot</Link>.
+                {t.rich("personaDesc", { a: (c) => <Link href="/settings/whatsapp" className="text-axiel-ink hover:underline">{c}</Link> })}
               </p>
             </div>
           </div>

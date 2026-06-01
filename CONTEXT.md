@@ -119,11 +119,12 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4d-1: hub (`settings/page.tsx`, 19 cards via chaves + audit log), profile (page+form), regional (chrome; listas TZ/moeda são dados), usage, lgpd, security (RLS), `components/mfa-settings.tsx` (2FA)
   - 4d-2: equipe (page+client, modal de convite; ROLE_LABELS de lib/team-utils **ainda em PT — follow-up**), practitioners (page+list), session-types (page + `components/session-type-list.tsx`), offers (page + `components/offer-list.tsx`)
   - 4d-3: integrations hub (`integrations/page.tsx` — Google/Zoom/iCal/NFSe/Hotmart/Reviews + setup com `t.rich` `<b>`/`<a>`/`<code>` e `{appUrl}`), hotmart (page+form), nfse (page+form), branding (page+form); componentes-filhos `components/{zoom-credentials-form,google-review-url-form,ical-copy-button}.tsx`
-  - Rich text via `t.rich` com tags `<b>`/`<a>`/`<code>` (explainer session-types, infoTip offers, setup integrations, passos hotmart, hiw nfse)
+  - 4d-4: lembretes (`lembretes/page.tsx` — pipeline, log de comunicações com datas via locale, push), whatsapp (page + `whatsapp-bot-form.tsx` — checklist, identidade, preços por localidade), voice (`voice/page.tsx` — passos, idiomas, ativação com `t.rich` + links)
+  - Rich text via `t.rich` com tags `<b>`/`<a>`/`<code>` (explainer session-types, infoTip offers, setup integrations, passos hotmart, hiw nfse, steps whatsapp, ativação voice)
   - Plurais ICU: membersCount, sessionTypes.count, offers.count, offers.sessionsLabel
   - Validado: tsc do código limpo, paridade PT/EN (16 namespaces), ICU compila
-  - **Pendente Fase 4d**: 4d-4 lembretes/whatsapp/voice; depois 4e Automações
-  - Datas pt-BR ainda fixas em alguns server components secundários (hotmart purchases) — follow-up menor
+  - **Fase 4d COMPLETA** (Configurações). **Pendente**: 4e Automações (se houver telas específicas), Fases 5–6
+  - Follow-ups menores: ROLE_LABELS (lib/team-utils) ainda PT; datas pt-BR fixas em hotmart purchases; `components/push-prompt.tsx` (toggle de push) não migrado
   - **Pendente geral**: Fases 5–6 (áreas públicas; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 4c (01/06/2026): Results, Relatórios e Analytics
   - Results (`/results`) e Relatórios (`/relatorios`) migrados — namespaces `results` e `reports`
