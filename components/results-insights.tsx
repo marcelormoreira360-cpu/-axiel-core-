@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Local type — mirrors AiInsight in business-analytics-service.ts
 interface AiInsight {
@@ -31,6 +32,7 @@ function InsightSkeleton() {
 }
 
 export function ResultsInsights({ months }: { months: number }) {
+  const t = useTranslations("results.insights");
   const [insights, setInsights] = useState<AiInsight[] | null>(null);
   const [error, setError] = useState(false);
 
@@ -52,30 +54,30 @@ export function ResultsInsights({ months }: { months: number }) {
   return (
     <div className="space-y-[12px]">
       <div>
-        <p className="text-[12px] font-medium text-[#0F1A2E]">Análise por IA</p>
+        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         <p className="text-[11px] text-[#A09E98] mt-[2px]">
-          Claude analisa seus dados e aponta o que fazer a seguir.
+          {t("subtitle")}
         </p>
       </div>
 
       {error ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
           <p className="text-[12px] text-[#A09E98]">
-            Análise de IA indisponível — configure{" "}
+            {t("unavailableBefore")}{" "}
             <code className="text-[11px] bg-[#F4F3EF] px-1 rounded">OPENAI_API_KEY</code>{" "}
-            no Vercel para ativar.
+            {t("unavailableAfter")}
           </p>
         </div>
       ) : insights === null ? (
         // Loading state — 4 skeletons
         <>
           {[0, 1, 2, 3].map((i) => <InsightSkeleton key={i} />)}
-          <p className="text-[10px] text-[#A09E98] text-center">Analisando dados com IA…</p>
+          <p className="text-[10px] text-[#A09E98] text-center">{t("analyzing")}</p>
         </>
       ) : insights.length === 0 ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
           <p className="text-[12px] text-[#A09E98]">
-            Nenhum insight gerado para este período.
+            {t("none")}
           </p>
         </div>
       ) : (

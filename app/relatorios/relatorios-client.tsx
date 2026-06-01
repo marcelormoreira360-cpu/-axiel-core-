@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Download, FileText, Table2, Users } from "lucide-react";
 
 type ReportCard = {
   id: string;
-  title: string;
-  description: string;
   icon: "pdf" | "csv" | "leads";
   buildUrl: (from: string, to: string, month: string) => string;
   needsDateRange?: boolean;
@@ -14,52 +13,12 @@ type ReportCard = {
 };
 
 const REPORTS: ReportCard[] = [
-  {
-    id: "financeiro",
-    title: "Relatório financeiro",
-    description: "Receita total, ticket médio, pagamentos por método e lista detalhada de cobranças.",
-    icon: "pdf",
-    buildUrl: (from, to) => `/api/reports/financeiro${from ? `?from=${from}&to=${to}` : ""}`,
-    needsDateRange: true,
-  },
-  {
-    id: "repasse",
-    title: "Repasse médico",
-    description: "Resumo de repasse por profissional, sessões atendidas, receita bruta e valor calculado.",
-    icon: "pdf",
-    buildUrl: (_from, _to, month) => `/api/reports/repasse${month ? `?month=${month}` : ""}`,
-    needsMonth: true,
-  },
-  {
-    id: "pagamentos",
-    title: "Extrato de pagamentos",
-    description: "Planilha com todos os pagamentos: paciente, data, método, tipo de sessão e valor.",
-    icon: "csv",
-    buildUrl: (from, to) => `/api/reports/pagamentos${from ? `?from=${from}&to=${to}` : ""}`,
-    needsDateRange: true,
-  },
-  {
-    id: "sessoes",
-    title: "Histórico de sessões",
-    description: "Todas as consultas com paciente, tipo, status, duração e valor.",
-    icon: "csv",
-    buildUrl: (from, to) => `/api/reports/sessoes${from ? `?from=${from}&to=${to}` : ""}`,
-    needsDateRange: true,
-  },
-  {
-    id: "pacientes",
-    title: "Lista de pacientes",
-    description: "Todos os pacientes da clínica: nome, e-mail, telefone, status e data de cadastro.",
-    icon: "csv",
-    buildUrl: () => "/api/reports/pacientes",
-  },
-  {
-    id: "leads",
-    title: "Pipeline de leads",
-    description: "Todos os leads com etapa, origem, queixa principal e data de cadastro.",
-    icon: "leads",
-    buildUrl: () => "/api/reports/leads",
-  },
+  { id: "financeiro", icon: "pdf", buildUrl: (from, to) => `/api/reports/financeiro${from ? `?from=${from}&to=${to}` : ""}`, needsDateRange: true },
+  { id: "repasse",    icon: "pdf", buildUrl: (_from, _to, month) => `/api/reports/repasse${month ? `?month=${month}` : ""}`, needsMonth: true },
+  { id: "pagamentos", icon: "csv", buildUrl: (from, to) => `/api/reports/pagamentos${from ? `?from=${from}&to=${to}` : ""}`, needsDateRange: true },
+  { id: "sessoes",    icon: "csv", buildUrl: (from, to) => `/api/reports/sessoes${from ? `?from=${from}&to=${to}` : ""}`, needsDateRange: true },
+  { id: "pacientes",  icon: "csv", buildUrl: () => "/api/reports/pacientes" },
+  { id: "leads",      icon: "leads", buildUrl: () => "/api/reports/leads" },
 ];
 
 function defaultFrom() {
@@ -77,6 +36,7 @@ function defaultMonth() {
 }
 
 export function RelatoriosClient() {
+  const t = useTranslations("reports.client");
   const [from,  setFrom]  = useState(defaultFrom());
   const [to,    setTo]    = useState(defaultTo());
   const [month, setMonth] = useState(defaultMonth());
@@ -86,11 +46,11 @@ export function RelatoriosClient() {
       {/* ── Filtro de período ── */}
       <div className="bg-white border border-black/[.07] rounded-[12px] p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">
-          Filtro de período para exportação
+          {t("filterTitle")}
         </p>
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">De</label>
+            <label className="text-[11px] text-[#6B6A66]">{t("from")}</label>
             <input
               type="date"
               value={from}
@@ -99,7 +59,7 @@ export function RelatoriosClient() {
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">Até</label>
+            <label className="text-[11px] text-[#6B6A66]">{t("to")}</label>
             <input
               type="date"
               value={to}
@@ -109,7 +69,7 @@ export function RelatoriosClient() {
           </div>
           <div className="h-4 w-px bg-black/10 hidden sm:block" />
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">Mês repasse</label>
+            <label className="text-[11px] text-[#6B6A66]">{t("repasseMonth")}</label>
             <input
               type="month"
               value={month}
@@ -121,7 +81,7 @@ export function RelatoriosClient() {
       </div>
 
       {/* ── Cards de relatório ── */}
-      <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98]">Exportações disponíveis</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98]">{t("available")}</p>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {REPORTS.map((r) => {
           const url     = r.buildUrl(from, to, month);
@@ -145,18 +105,18 @@ export function RelatoriosClient() {
                               <Table2   className={`h-4 w-4 ${iconColor}`} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{r.title}</p>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{t(`reports.${r.id}.title`)}</p>
                   <div className="flex items-center gap-1 flex-wrap mt-0.5">
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-50 text-amber-600">PDF</span>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E1F5EE] text-[#0F6E56]">CSV</span>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E8F5E9] text-[#2E7D32]">XLS</span>
                   </div>
-                  <p className="text-[11px] text-[#A09E98] mt-1 leading-relaxed">{r.description}</p>
+                  <p className="text-[11px] text-[#A09E98] mt-1 leading-relaxed">{t(`reports.${r.id}.desc`)}</p>
                   {r.needsDateRange && (
-                    <p className="text-[10px] text-[#D3D1C7] mt-1">Período: {from} → {to}</p>
+                    <p className="text-[10px] text-[#D3D1C7] mt-1">{t("period", { from, to })}</p>
                   )}
                   {r.needsMonth && (
-                    <p className="text-[10px] text-[#D3D1C7] mt-1">Mês: {month}</p>
+                    <p className="text-[10px] text-[#D3D1C7] mt-1">{t("month", { month })}</p>
                   )}
                 </div>
               </div>
@@ -184,7 +144,7 @@ export function RelatoriosClient() {
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#E8F5E9] text-[#2E7D32] hover:bg-[#C8E6C9]"
                 >
                   <Download className="h-3 w-3" />
-                  Excel
+                  {t("excel")}
                 </a>
               </div>
             </div>

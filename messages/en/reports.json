@@ -1,0 +1,42 @@
+{
+  "page": {
+    "eyebrow": "Clinic",
+    "title": "Reports",
+    "subtitle": "Real-time data and exports to PDF or spreadsheet.",
+    "summaryTitle": "Current month summary",
+    "kpiRevenue": "REVENUE THIS MONTH",
+    "kpiSessions": "SESSIONS THIS MONTH",
+    "kpiPatients": "ACTIVE PATIENTS",
+    "kpiConversion": "LEAD CONVERSION",
+    "newThisMonth": "{count, plural, one {# new this month} other {# new this month}}",
+    "ofLeads": "{converted} of {total} leads",
+    "deltaNoData": "no data",
+    "deltaFirstMonth": "first month with data",
+    "deltaSame": "same as last month",
+    "deltaVsPrev": "vs. last month",
+    "funnelTitle": "Leads funnel",
+    "stageNew": "New lead",
+    "stageContacted": "Contacted",
+    "stageScheduled": "Scheduled",
+    "stageConverted": "Converted",
+    "historyTitle": "Historical trend"
+  },
+  "client": {
+    "filterTitle": "Date range filter for export",
+    "from": "From",
+    "to": "To",
+    "repasseMonth": "Payout month",
+    "available": "Available exports",
+    "period": "Period: {from} → {to}",
+    "month": "Month: {month}",
+    "excel": "Excel",
+    "reports": {
+      "financeiro": { "title": "Financial report", "desc": "Total revenue, average ticket, payments by method and a detailed list of charges." },
+      "repasse": { "title": "Practitioner payout", "desc": "Payout summary per practitioner, sessions attended, gross revenue and calculated amount." },
+      "pagamentos": { "title": "Payments statement", "desc": "Spreadsheet with all payments: patient, date, method, session type and amount." },
+      "sessoes": { "title": "Session history", "desc": "All appointments with patient, type, status, duration and amount." },
+      "pacientes": { "title": "Patient list", "desc": "All clinic patients: name, email, phone, status and registration date." },
+      "leads": { "title": "Leads pipeline", "desc": "All leads with stage, source, main complaint and registration date." }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getFinanceKPIs, formatBRL } from "@/services/finance-service";
 import { getLeadStageCounts, getPatientCounts } from "@/services/stats-service";
@@ -11,15 +12,17 @@ const RelatoriosCharts = dynamic(
   { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 
-function deltaLabel(current: number, prev: number): { text: string; up: boolean | null } {
-  if (prev === 0 && current === 0) return { text: "sem dados", up: null };
-  if (prev === 0) return { text: "primeiro mês com dados", up: null };
+type DeltaT = (k: string) => string;
+function deltaLabel(current: number, prev: number, t: DeltaT): { text: string; up: boolean | null } {
+  if (prev === 0 && current === 0) return { text: t("deltaNoData"), up: null };
+  if (prev === 0) return { text: t("deltaFirstMonth"), up: null };
   const pct = Math.round(((current - prev) / prev) * 100);
-  if (pct === 0) return { text: "igual ao mês passado", up: null };
-  return { text: `${pct > 0 ? "+" : ""}${pct}% vs. mês passado`, up: pct > 0 };
+  if (pct === 0) return { text: t("deltaSame"), up: null };
+  return { text: `${pct > 0 ? "+" : ""}${pct}% ${t("deltaVsPrev")}`, up: pct > 0 };
 }
 
 export default async function RelatoriosPage() {
+  const t = await getTranslations("reports.page");
   const clinic = await getCurrentClinic();
 
   const [financeKPIs, dashKPIs, leadCounts, patientCounts, timeSeries] = await Promise.all([
@@ -47,36 +50,36 @@ export default async function RelatoriosPage() {
   const newThisMonth = patientCounts?.newThisMonth ?? 0;
 
   const revDelta = financeKPIs
-    ? deltaLabel(financeKPIs.revenueThisMonth, financeKPIs.revenueLastMonth)
+    ? deltaLabel(financeKPIs.revenueThisMonth, financeKPIs.revenueLastMonth, t)
     : null;
 
   const sessionsDelta = dashKPIs
-    ? deltaLabel(dashKPIs.sessionsThisMonth, dashKPIs.sessionsLastMonth)
+    ? deltaLabel(dashKPIs.sessionsThisMonth, dashKPIs.sessionsLastMonth, t)
     : null;
 
   const kpis = [
     {
-      label: "RECEITA DO MÊS",
+      label: t("kpiRevenue"),
       value: financeKPIs ? formatBRL(financeKPIs.revenueThisMonth) : "—",
       sub: revDelta?.text ?? "—",
       up: revDelta?.up,
     },
     {
-      label: "SESSÕES DO MÊS",
+      label: t("kpiSessions"),
       value: dashKPIs ? String(dashKPIs.sessionsThisMonth) : "—",
       sub: sessionsDelta?.text ?? "—",
       up: sessionsDelta?.up,
     },
     {
-      label: "PACIENTES ATIVOS",
+      label: t("kpiPatients"),
       value: String(activePatients),
-      sub: `${newThisMonth} novo${newThisMonth !== 1 ? "s" : ""} este mês`,
+      sub: t("newThisMonth", { count: newThisMonth }),
       up: null,
     },
     {
-      label: "CONVERSÃO DE LEADS",
+      label: t("kpiConversion"),
       value: `${conversionRate}%`,
-      sub: `${leadsByStage.converted_to_patient} de ${totalLeads} leads`,
+      sub: t("ofLeads", { converted: leadsByStage.converted_to_patient, total: totalLeads }),
       up: null,
     },
   ];
@@ -85,16 +88,16 @@ export default async function RelatoriosPage() {
     <Shell>
       {/* ── Header ── */}
       <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Clínica</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Relatórios</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">
-          Dados em tempo real e exportações para PDF ou planilha.
+          {t("subtitle")}
         </p>
       </div>
 
       {/* ── Resumo do mês atual ── */}
       <div className="mb-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">Resumo do mês atual</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">{t("summaryTitle")}</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px]">
           {kpis.map((k) => (
             <div key={k.label} className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
@@ -115,13 +118,13 @@ export default async function RelatoriosPage() {
       {/* ── Funil de leads ── */}
       {totalLeads > 0 && (
         <div className="mb-6 bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-4">Funil de leads</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-4">{t("funnelTitle")}</p>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { label: "Novo lead",    count: leadsByStage.new_lead,             color: "#E8F0FE", text: "#3B6BE4" },
-              { label: "Contatado",    count: leadsByStage.contacted,            color: "#FEF9E7", text: "#B7791F" },
-              { label: "Agendado",     count: leadsByStage.scheduled,            color: "#E1F5EE", text: "#0F6E56" },
-              { label: "Convertido",   count: leadsByStage.converted_to_patient, color: "#0F1A2E", text: "#FFFFFF" },
+              { label: t("stageNew"),       count: leadsByStage.new_lead,             color: "#E8F0FE", text: "#3B6BE4" },
+              { label: t("stageContacted"), count: leadsByStage.contacted,            color: "#FEF9E7", text: "#B7791F" },
+              { label: t("stageScheduled"), count: leadsByStage.scheduled,            color: "#E1F5EE", text: "#0F6E56" },
+              { label: t("stageConverted"), count: leadsByStage.converted_to_patient, color: "#0F1A2E", text: "#FFFFFF" },
             ].map((stage) => (
               <div
                 key={stage.label}
@@ -143,7 +146,7 @@ export default async function RelatoriosPage() {
       {/* ── Evolução histórica ── */}
       {timeSeries && (
         <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">Evolução histórica</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">{t("historyTitle")}</p>
           <RelatoriosCharts data={timeSeries} />
         </div>
       )}

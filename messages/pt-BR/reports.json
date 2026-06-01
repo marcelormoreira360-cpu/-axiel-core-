@@ -1,0 +1,42 @@
+{
+  "page": {
+    "eyebrow": "Clínica",
+    "title": "Relatórios",
+    "subtitle": "Dados em tempo real e exportações para PDF ou planilha.",
+    "summaryTitle": "Resumo do mês atual",
+    "kpiRevenue": "RECEITA DO MÊS",
+    "kpiSessions": "SESSÕES DO MÊS",
+    "kpiPatients": "PACIENTES ATIVOS",
+    "kpiConversion": "CONVERSÃO DE LEADS",
+    "newThisMonth": "{count, plural, one {# novo este mês} other {# novos este mês}}",
+    "ofLeads": "{converted} de {total} leads",
+    "deltaNoData": "sem dados",
+    "deltaFirstMonth": "primeiro mês com dados",
+    "deltaSame": "igual ao mês passado",
+    "deltaVsPrev": "vs. mês passado",
+    "funnelTitle": "Funil de leads",
+    "stageNew": "Novo lead",
+    "stageContacted": "Contatado",
+    "stageScheduled": "Agendado",
+    "stageConverted": "Convertido",
+    "historyTitle": "Evolução histórica"
+  },
+  "client": {
+    "filterTitle": "Filtro de período para exportação",
+    "from": "De",
+    "to": "Até",
+    "repasseMonth": "Mês repasse",
+    "available": "Exportações disponíveis",
+    "period": "Período: {from} → {to}",
+    "month": "Mês: {month}",
+    "excel": "Excel",
+    "reports": {
+      "financeiro": { "title": "Relatório financeiro", "desc": "Receita total, ticket médio, pagamentos por método e lista detalhada de cobranças." },
+      "repasse": { "title": "Repasse médico", "desc": "Resumo de repasse por profissional, sessões atendidas, receita bruta e valor calculado." },
+      "pagamentos": { "title": "Extrato de pagamentos", "desc": "Planilha com todos os pagamentos: paciente, data, método, tipo de sessão e valor." },
+      "sessoes": { "title": "Histórico de sessões", "desc": "Todas as consultas com paciente, tipo, status, duração e valor." },
+      "pacientes": { "title": "Lista de pacientes", "desc": "Todos os pacientes da clínica: nome, e-mail, telefone, status e data de cadastro." },
+      "leads": { "title": "Pipeline de leads", "desc": "Todos os leads com etapa, origem, queixa principal e data de cadastro." }
+    }
+  }
+}

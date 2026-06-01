@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBusinessAnalytics } from "@/services/business-analytics-service";
@@ -20,17 +21,7 @@ const ResultsSendReportButton = dynamic(
   { loading: () => null }
 );
 
-function fmt(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
-
-const PERIOD_OPTIONS = [
-  { label: "1 mês",   value: 1 },
-  { label: "3 meses", value: 3 },
-  { label: "6 meses", value: 6 },
-  { label: "12 meses",value: 12 },
-];
+const PERIOD_OPTIONS = [1, 3, 6, 12];
 
 export default async function ResultsPage({
   searchParams,
@@ -41,13 +32,17 @@ export default async function ResultsPage({
   const monthsParam = parseInt(sp.months ?? "3", 10);
   const months = [1, 3, 6, 12].includes(monthsParam) ? monthsParam : 3;
 
+  const t = await getTranslations("results.page");
+  const locale = await getLocale();
+  const fmt = (cents: number) => (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" });
+
   const clinic = await getCurrentClinic();
   const data = clinic ? await getBusinessAnalytics(clinic.id, months) : null;
 
   if (!data) {
     return (
       <Shell>
-        <p className="text-[13px] text-[#A09E98]">Clínica não encontrada.</p>
+        <p className="text-[13px] text-[#A09E98]">{t("notFound")}</p>
       </Shell>
     );
   }
@@ -59,9 +54,9 @@ export default async function ResultsPage({
       {/* Header */}
       <div className="mb-[18px] flex items-start justify-between gap-[12px]">
         <div>
-          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Resultados</p>
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("eyebrow")}</p>
           <h1 className="mt-[4px] text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
-            Análise de Negócio
+            {t("title")}
           </h1>
           <p className="mt-[2px] text-[12px] text-[#A09E98]">
             {data.period.from} → {data.period.to}
@@ -77,16 +72,16 @@ export default async function ResultsPage({
       <div className="flex items-center gap-[6px] mb-[18px]">
         {PERIOD_OPTIONS.map((opt) => (
           <Link
-            key={opt.value}
-            href={`/results?months=${opt.value}`}
+            key={opt}
+            href={`/results?months=${opt}`}
             className={[
               "px-[12px] py-[6px] rounded-[8px] text-[11px] font-medium transition",
-              months === opt.value
+              months === opt
                 ? "bg-[#0F1A2E] text-white"
                 : "bg-white border border-black/[.09] text-[#6B6A66] hover:bg-[#F4F3EF]",
             ].join(" ")}
           >
-            {opt.label}
+            {t("periodMonths", { count: opt })}
           </Link>
         ))}
       </div>
@@ -94,10 +89,10 @@ export default async function ResultsPage({
       {/* KPIs principais */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px] mb-[14px]">
         {[
-          { label: "RECEITA",           value: fmt(data.revenue_cents),              sub: `${data.packages_sold} pacote${data.packages_sold !== 1 ? "s" : ""} vendido${data.packages_sold !== 1 ? "s" : ""}` },
-          { label: "SESSÕES",           value: String(data.sessions_total),           sub: `${data.avg_sessions_per_patient}× por paciente` },
-          { label: "TAXA DE RETORNO",   value: `${data.return_rate}%`,               sub: `${data.active_patients} pacientes ativos`, green: data.return_rate >= 60 },
-          { label: "CONVERSÃO LEADS",   value: `${data.conversion_rate}%`,           sub: `${data.new_patients} novo${data.new_patients !== 1 ? "s" : ""} este período` },
+          { label: t("kpiRevenue"),     value: fmt(data.revenue_cents),              sub: t("packagesSold", { count: data.packages_sold }) },
+          { label: t("kpiSessions"),    value: String(data.sessions_total),           sub: t("perPatient", { count: data.avg_sessions_per_patient }) },
+          { label: t("kpiReturn"),      value: `${data.return_rate}%`,               sub: t("activePatients", { count: data.active_patients }), green: data.return_rate >= 60 },
+          { label: t("kpiConversion"),  value: `${data.conversion_rate}%`,           sub: t("newThisPeriod", { count: data.new_patients }) },
         ].map((m) => (
           <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{m.label}</p>
@@ -123,11 +118,11 @@ export default async function ResultsPage({
 
           {/* Serviços */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">Serviços — volume e receita</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">{t("servicesTitle")}</p>
             {data.services.length === 0 ? (
               <p className="text-[12px] text-[#A09E98]">
-                Nenhum tipo de serviço associado aos agendamentos ainda.{" "}
-                <span className="text-[#0F6E56]">Configure tipos de sessão com preço em Configurações → Tipos de Sessão.</span>
+                {t("noServices")}{" "}
+                <span className="text-[#0F6E56]">{t("noServicesHint")}</span>
               </p>
             ) : (
               <div className="space-y-[8px]">
@@ -140,7 +135,7 @@ export default async function ResultsPage({
                       <div className="flex items-center justify-between mb-[3px]">
                         <span className="text-[12px] text-[#0F1A2E] font-medium">{s.name}</span>
                         <div className="flex items-center gap-[10px]">
-                          <span className="text-[11px] text-[#A09E98]">{s.sessions} sessões</span>
+                          <span className="text-[11px] text-[#A09E98]">{t("sessionsCount", { count: s.sessions })}</span>
                           {s.revenue_cents > 0 && (
                             <span className="text-[11px] font-medium text-[#0F6E56]">{fmt(s.revenue_cents)}</span>
                           )}
@@ -161,10 +156,10 @@ export default async function ResultsPage({
 
           {/* Origem dos agendamentos */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">Origem dos agendamentos</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">{t("sourcesTitle")}</p>
             {data.sources.length === 0 ? (
               <p className="text-[12px] text-[#A09E98]">
-                Origem não registrada ainda. A partir de agora, o campo será capturado em cada agendamento.
+                {t("noSources")}
               </p>
             ) : (
               <div className="space-y-[8px]">
@@ -194,15 +189,15 @@ export default async function ResultsPage({
           {/* Resumo financeiro */}
           <div className="bg-[#0F1A2E] rounded-[12px] p-[15px]">
             <p className="text-[10px] font-medium text-white/40 tracking-[.08em] uppercase mb-[10px]">
-              Resumo financeiro
+              {t("financialSummary")}
             </p>
             <div className="space-y-[8px]">
               {[
-                { label: "Receita (pacotes)",    value: fmt(data.packages_revenue_cents) },
-                { label: "Pacotes vendidos",     value: String(data.packages_sold) },
-                { label: "Ticket médio/pacote",  value: data.packages_sold > 0 ? fmt(Math.round(data.packages_revenue_cents / data.packages_sold)) : "—" },
-                { label: "Sessões no período",   value: String(data.sessions_total) },
-                topService ? { label: "Serviço líder", value: topService.name } : null,
+                { label: t("sumRevenue"),    value: fmt(data.packages_revenue_cents) },
+                { label: t("sumPackages"),   value: String(data.packages_sold) },
+                { label: t("sumTicket"),     value: data.packages_sold > 0 ? fmt(Math.round(data.packages_revenue_cents / data.packages_sold)) : "—" },
+                { label: t("sumSessions"),   value: String(data.sessions_total) },
+                topService ? { label: t("sumLeader"), value: topService.name } : null,
               ].filter(Boolean).map((item) => (
                 <div key={item!.label} className="flex items-center justify-between">
                   <p className="text-[12px] text-white/60">{item!.label}</p>
