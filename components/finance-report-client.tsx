@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Download, Loader2, TrendingUp, Users, CreditCard, BarChart3 } from "lucide-react";
 import {
   AreaChart,
@@ -17,17 +18,11 @@ function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 }
 
-const PERIODS = [
-  { value: "this_month",  label: "Este mês" },
-  { value: "last_month",  label: "Mês anterior" },
-  { value: "last_3m",     label: "Últimos 3 meses" },
-  { value: "last_6m",     label: "Últimos 6 meses" },
-  { value: "this_year",   label: "Este ano" },
-];
+type ReportT = (k: string, v?: Record<string, string | number>) => string;
 
 function KpiCard({ label, value, sub, icon: Icon }: {
   label: string;
@@ -67,10 +62,10 @@ function MonthlyTooltip({ active, payload, label }: MonthlyTooltipProps) {
   );
 }
 
-function exportCSV(data: FinanceReportData) {
-  const header = ["Data", "Paciente", "Tipo de sessão", "Forma de pagamento", "Valor (R$)", "Observações"];
+function exportCSV(data: FinanceReportData, t: ReportT, locale: string) {
+  const header = [t("colDate"), t("colPatient"), t("colType"), t("colPayment"), t("colAmount"), t("csvNotes")];
   const rows = data.payments.map((p) => [
-    formatDate(p.paidAt),
+    formatDate(p.paidAt, locale),
     p.patientName,
     p.sessionTypeName,
     p.method,
@@ -87,12 +82,21 @@ function exportCSV(data: FinanceReportData) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `financeiro_${data.period.label.replace(/\s/g, "_")}.csv`;
+  link.download = `${t("csvFilePrefix")}_${data.period.label.replace(/\s/g, "_")}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
 
 export function FinanceReportClient() {
+  const t = useTranslations("finance.report");
+  const locale = useLocale();
+  const PERIODS = [
+    { value: "this_month", label: t("periodThisMonth") },
+    { value: "last_month", label: t("periodLastMonth") },
+    { value: "last_3m",    label: t("periodLast3m") },
+    { value: "last_6m",    label: t("periodLast6m") },
+    { value: "this_year",  label: t("periodThisYear") },
+  ];
   const [period, setPeriod] = useState("this_month");
   const [data, setData] = useState<FinanceReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -115,7 +119,7 @@ export function FinanceReportClient() {
     fetchReport();
   }, [fetchReport]);
 
-  const maxTypeRevenue = Math.max(...(data?.bySessionType.map((t) => t.totalCents) ?? [1]), 1);
+  const maxTypeRevenue = Math.max(...(data?.bySessionType.map((st) => st.totalCents) ?? [1]), 1);
 
   return (
     <div className="space-y-6">
@@ -140,7 +144,7 @@ export function FinanceReportClient() {
         {data && data.paymentCount > 0 && (
           <div className="flex items-center gap-2">
             <button
-              onClick={() => exportCSV(data)}
+              onClick={() => exportCSV(data, t, locale)}
               className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
             >
               <Download className="h-3.5 w-3.5" />
@@ -164,7 +168,7 @@ export function FinanceReportClient() {
           <Loader2 className="h-6 w-6 animate-spin text-black/30" />
         </div>
       ) : !data ? (
-        <div className="text-center py-20 text-sm text-black/40">Erro ao carregar relatório.</div>
+        <div className="text-center py-20 text-sm text-black/40">{t("loadError")}</div>
       ) : (
         <>
           {/* Period label */}
@@ -173,22 +177,22 @@ export function FinanceReportClient() {
           {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <KpiCard
-              label="Receita total"
+              label={t("kpiRevenue")}
               value={formatBRL(data.totalRevenueCents)}
               icon={TrendingUp}
             />
             <KpiCard
-              label="Pagamentos"
+              label={t("kpiPayments")}
               value={String(data.paymentCount)}
               icon={CreditCard}
             />
             <KpiCard
-              label="Ticket médio"
+              label={t("kpiAvgTicket")}
               value={formatBRL(data.avgTicketCents)}
               icon={BarChart3}
             />
             <KpiCard
-              label="Pacientes únicos"
+              label={t("kpiPatients")}
               value={String(data.topPatients.length)}
               icon={Users}
             />
@@ -198,7 +202,7 @@ export function FinanceReportClient() {
           {data.monthlyTrend.length >= 2 && (
             <div className="bg-white rounded-2xl border border-black/[.07] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 mb-4">
-                Evolução mensal de receita
+                {t("monthlyTrend")}
               </p>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart
@@ -250,28 +254,28 @@ export function FinanceReportClient() {
 
           {data.paymentCount === 0 ? (
             <div className="bg-white rounded-2xl border border-black/[.07] p-10 text-center">
-              <p className="text-sm font-medium text-[#0F1A2E]">Nenhum pagamento neste período</p>
-              <p className="text-xs text-black/40 mt-1">Selecione outro período ou registre pagamentos</p>
+              <p className="text-sm font-medium text-[#0F1A2E]">{t("noPaymentsTitle")}</p>
+              <p className="text-xs text-black/40 mt-1">{t("noPaymentsDesc")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Revenue by session type */}
               <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
-                  Receita por tipo de sessão
+                  {t("byType")}
                 </p>
                 <div className="space-y-2.5">
-                  {data.bySessionType.map((t) => {
-                    const pct = Math.round((t.totalCents / data.totalRevenueCents) * 100);
-                    const barPct = Math.round((t.totalCents / maxTypeRevenue) * 100);
+                  {data.bySessionType.map((st) => {
+                    const pct = Math.round((st.totalCents / data.totalRevenueCents) * 100);
+                    const barPct = Math.round((st.totalCents / maxTypeRevenue) * 100);
                     return (
-                      <div key={t.sessionTypeId ?? "none"}>
+                      <div key={st.sessionTypeId ?? "none"}>
                         <div className="flex items-baseline justify-between mb-1">
                           <span className="text-[12px] font-medium text-[#0F1A2E] truncate max-w-[55%]">
-                            {t.sessionTypeName}
+                            {st.sessionTypeName}
                           </span>
                           <span className="text-[12px] text-black/60 shrink-0">
-                            {formatBRL(t.totalCents)}
+                            {formatBRL(st.totalCents)}
                             <span className="text-black/35 ml-1">({pct}%)</span>
                           </span>
                         </div>
@@ -282,7 +286,7 @@ export function FinanceReportClient() {
                           />
                         </div>
                         <p className="text-[10px] text-black/35 mt-0.5">
-                          {t.count} pagamento{t.count !== 1 ? "s" : ""} · ticket médio {formatBRL(t.avgTicketCents)}
+                          {t("typeStats", { count: st.count, avg: formatBRL(st.avgTicketCents) })}
                         </p>
                       </div>
                     );
@@ -293,7 +297,7 @@ export function FinanceReportClient() {
               {/* Top patients */}
               <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
-                  Top pacientes por receita
+                  {t("topPatients")}
                 </p>
                 <div className="space-y-2">
                   {data.topPatients.slice(0, 8).map((p, i) => {
@@ -331,25 +335,25 @@ export function FinanceReportClient() {
             <div className="bg-white rounded-2xl border border-black/[.07] overflow-hidden">
               <div className="px-5 py-4 border-b border-black/[.06] flex items-center justify-between">
                 <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
-                  Histórico de pagamentos
+                  {t("historyTitle")}
                 </p>
-                <span className="text-[11px] text-black/35">{data.paymentCount} registros</span>
+                <span className="text-[11px] text-black/35">{t("records", { count: data.paymentCount })}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-[12px]">
                   <thead>
                     <tr className="border-b border-black/[.05]">
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">Data</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">Paciente</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden sm:table-cell">Tipo de sessão</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden md:table-cell">Pagamento</th>
-                      <th className="text-right px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">Valor</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colDate")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colPatient")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden sm:table-cell">{t("colType")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden md:table-cell">{t("colPayment")}</th>
+                      <th className="text-right px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colAmount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.payments.map((p) => (
                       <tr key={p.id} className="border-b border-black/[.04] hover:bg-black/[.02] transition">
-                        <td className="px-5 py-3 text-black/55 whitespace-nowrap">{formatDate(p.paidAt)}</td>
+                        <td className="px-5 py-3 text-black/55 whitespace-nowrap">{formatDate(p.paidAt, locale)}</td>
                         <td className="px-5 py-3 font-medium text-[#0F1A2E]">{p.patientName}</td>
                         <td className="px-5 py-3 text-black/55 hidden sm:table-cell">{p.sessionTypeName}</td>
                         <td className="px-5 py-3 text-black/55 hidden md:table-cell">{p.method}</td>
@@ -362,7 +366,7 @@ export function FinanceReportClient() {
                   <tfoot>
                     <tr className="bg-black/[.02]">
                       <td colSpan={4} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[.08em] text-black/40">
-                        Total
+                        {t("total")}
                       </td>
                       <td className="px-5 py-3 text-right font-bold text-[#0F1A2E]">
                         {formatBRL(data.totalRevenueCents)}

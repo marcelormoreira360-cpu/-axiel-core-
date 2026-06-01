@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -21,12 +22,12 @@ function npsColor(score: number): string {
   return "#DC2626";
 }
 
-function npsLabel(score: number): string {
-  if (score >= 70) return "Excelente";
-  if (score >= 50) return "Muito bom";
-  if (score >= 30) return "Bom";
-  if (score >= 0)  return "Atenção";
-  return "Crítico";
+function npsLabelKey(score: number): string {
+  if (score >= 70) return "npsExcellent";
+  if (score >= 50) return "npsVeryGood";
+  if (score >= 30) return "npsGood";
+  if (score >= 0)  return "npsAttention";
+  return "npsCritical";
 }
 
 function scoreColor(score: number): string {
@@ -35,19 +36,22 @@ function scoreColor(score: number): string {
   return "#DC2626";
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
+function formatDate(iso: string, locale: string): string {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short" });
 }
 
-function daysSinceLabel(days: number): string {
-  if (days >= 365) return `${Math.floor(days / 30)} meses`;
-  if (days >= 30)  return `${Math.floor(days / 30)} m`;
-  return `${days}d`;
+type AnalyticsT = (k: string, v?: Record<string, string | number>) => string;
+function daysSinceLabel(days: number, t: AnalyticsT): string {
+  if (days >= 365) return t("daysMonths", { count: Math.floor(days / 30) });
+  if (days >= 30)  return t("daysM", { count: Math.floor(days / 30) });
+  return t("daysD", { count: days });
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function AnalyticsPage() {
+  const t = await getTranslations("analytics");
+  const locale = await getLocale();
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -69,14 +73,14 @@ export default async function AnalyticsPage() {
 
         {/* ── Page header ────────────────────────────────────────────── */}
         <div>
-          <h1 className="text-2xl font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">Analytics</h1>
+          <h1 className="text-2xl font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
           <p className="mt-1 text-sm text-black/50 dark:text-white/40">
-            Inteligência clínica em tempo real — NPS, ocupação e alertas.
+            {t("subtitle")}
           </p>
         </div>
 
         {!clinic ? (
-          <p className="text-sm text-black/40">Nenhuma clínica encontrada.</p>
+          <p className="text-sm text-black/40">{t("noClinic")}</p>
         ) : (
           <>
 
@@ -85,12 +89,12 @@ export default async function AnalyticsPage() {
             ═══════════════════════════════════════════════════════════ */}
             <section className="space-y-4">
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40 dark:text-white/30">
-                NPS & Satisfação
+                {t("npsSection")}
               </h2>
 
               {nps && nps.total === 0 ? (
                 <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-6 text-center text-sm text-black/40">
-                  Nenhuma avaliação registrada ainda. As avaliações aparecerão aqui assim que os pacientes responderem.
+                  {t("noRatings")}
                 </div>
               ) : nps ? (
                 <>
@@ -98,35 +102,35 @@ export default async function AnalyticsPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {/* NPS Index */}
                     <div className="col-span-2 md:col-span-1 bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Índice NPS</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("npsIndex")}</p>
                       <p className="text-3xl font-bold" style={{ color: npsColor(nps.npsIndex) }}>
                         {nps.npsIndex > 0 ? "+" : ""}{nps.npsIndex}
                       </p>
                       <p className="text-xs font-medium mt-1" style={{ color: npsColor(nps.npsIndex) }}>
-                        {npsLabel(nps.npsIndex)}
+                        {t(npsLabelKey(nps.npsIndex))}
                       </p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-2">{nps.total} avaliação{nps.total !== 1 ? "ões" : ""}</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-2">{t("ratings", { count: nps.total })}</p>
                     </div>
 
                     {/* Promotores */}
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Promotores</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("promoters")}</p>
                       <p className="text-2xl font-bold text-[#0F6E56]">{nps.promotersPct}%</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">nota 9-10</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("note910")}</p>
                     </div>
 
                     {/* Passivos */}
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Passivos</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("passives")}</p>
                       <p className="text-2xl font-bold text-[#D97706]">{nps.passivesPct}%</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">nota 7-8</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("note78")}</p>
                     </div>
 
                     {/* Detratores */}
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Detratores</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("detractors")}</p>
                       <p className="text-2xl font-bold text-[#DC2626]">{nps.detractorsPct}%</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">nota 0-6</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("note06")}</p>
                     </div>
                   </div>
 
@@ -134,17 +138,17 @@ export default async function AnalyticsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-3">
-                        Tendência (6 meses)
+                        {t("trend6mo")}
                       </p>
                       <NpsTrendChart data={nps.trend} />
                     </div>
 
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-3">
-                        Comentários recentes
+                        {t("recentComments")}
                       </p>
                       {nps.recentComments.length === 0 ? (
-                        <p className="text-sm text-black/30 dark:text-white/20">Nenhum comentário ainda.</p>
+                        <p className="text-sm text-black/30 dark:text-white/20">{t("noComments")}</p>
                       ) : (
                         <div className="space-y-3">
                           {nps.recentComments.map((c, i) => (
@@ -156,7 +160,7 @@ export default async function AnalyticsPage() {
                                 >
                                   {c.score}
                                 </span>
-                                <span className="text-[11px] text-black/30 dark:text-white/20">{formatDate(c.date)}</span>
+                                <span className="text-[11px] text-black/30 dark:text-white/20">{formatDate(c.date, locale)}</span>
                               </div>
                               <p className="text-sm text-[#0F1A2E] dark:text-[#E8E6E2] leading-relaxed line-clamp-2">{c.text}</p>
                             </div>
@@ -174,7 +178,7 @@ export default async function AnalyticsPage() {
             ═══════════════════════════════════════════════════════════ */}
             <section className="space-y-4">
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40 dark:text-white/30">
-                Ocupação — {new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
+                {t("occupancySection", { month: new Date().toLocaleDateString(locale, { month: "long", year: "numeric" }) })}
               </h2>
 
               {occupancy && (
@@ -182,27 +186,27 @@ export default async function AnalyticsPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {/* Completion rate */}
                     <div className="col-span-2 md:col-span-1 bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Taxa de realização</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("completionRate")}</p>
                       <p className="text-3xl font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">{occupancy.completionRate}%</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-2">{occupancy.total} sessões este mês</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-2">{t("sessionsThisMonth", { count: occupancy.total })}</p>
                     </div>
 
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Concluídas</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("completed")}</p>
                       <p className="text-2xl font-bold text-[#0F6E56]">{occupancy.completed}</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">realizadas</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("completedNote")}</p>
                     </div>
 
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Canceladas</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("cancelled")}</p>
                       <p className="text-2xl font-bold text-[#D97706]">{occupancy.cancelled}</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">cancelamentos</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("cancelledNote")}</p>
                     </div>
 
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">Não compareceu</p>
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("noShow")}</p>
                       <p className="text-2xl font-bold text-[#DC2626]">{occupancy.noShow}</p>
-                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">no-shows</p>
+                      <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("noShowNote")}</p>
                     </div>
                   </div>
 
@@ -210,7 +214,7 @@ export default async function AnalyticsPage() {
                   {occupancy.bySource.length > 0 && (
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-4">
-                        Origem dos agendamentos
+                        {t("sources")}
                       </p>
                       <div className="space-y-2">
                         {occupancy.bySource.map((s) => {
@@ -241,7 +245,7 @@ export default async function AnalyticsPage() {
             ═══════════════════════════════════════════════════════════ */}
             <section className="space-y-4">
               <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40 dark:text-white/30">
-                Alertas Inteligentes
+                {t("alertsSection")}
               </h2>
 
               {alerts && (
@@ -261,10 +265,10 @@ export default async function AnalyticsPage() {
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
                         {alerts.pendingFeedbackCount === 0
-                          ? "Todas as sessões foram avaliadas"
-                          : `${alerts.pendingFeedbackCount} sessão${alerts.pendingFeedbackCount !== 1 ? "ões" : ""} sem avaliação NPS`}
+                          ? t("npsAllRated")
+                          : t("npsPending", { count: alerts.pendingFeedbackCount })}
                       </p>
-                      <p className="text-xs text-black/40 dark:text-white/30 mt-0.5">Últimos 30 dias</p>
+                      <p className="text-xs text-black/40 dark:text-white/30 mt-0.5">{t("last30")}</p>
                     </div>
                   </div>
 
@@ -283,10 +287,10 @@ export default async function AnalyticsPage() {
                       <div>
                         <p className="text-sm font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
                           {alerts.lowPackages.length === 0
-                            ? "Nenhum pacote prestes a esgotar"
-                            : `${alerts.lowPackages.length} pacote${alerts.lowPackages.length !== 1 ? "s" : ""} com ≤ 2 sessões`}
+                            ? t("pkgNone")
+                            : t("pkgLow", { count: alerts.lowPackages.length })}
                         </p>
-                        <p className="text-xs text-black/40 dark:text-white/30">Pacotes ativos</p>
+                        <p className="text-xs text-black/40 dark:text-white/30">{t("activePackages")}</p>
                       </div>
                     </div>
                     {alerts.lowPackages.length > 0 && (
@@ -304,7 +308,7 @@ export default async function AnalyticsPage() {
                                 ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                 : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                             }`}>
-                              {pkg.sessionsRemaining === 0 ? "Esgotado" : `${pkg.sessionsRemaining} restante${pkg.sessionsRemaining !== 1 ? "s" : ""}`}
+                              {pkg.sessionsRemaining === 0 ? t("exhausted") : t("remaining", { count: pkg.sessionsRemaining })}
                             </span>
                           </div>
                         ))}
@@ -327,10 +331,10 @@ export default async function AnalyticsPage() {
                       <div>
                         <p className="text-sm font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
                           {alerts.inactiveCount === 0
-                            ? "Nenhum paciente inativo"
-                            : `${alerts.inactiveCount} paciente${alerts.inactiveCount !== 1 ? "s" : ""} sem sessão há +60 dias`}
+                            ? t("inactiveNone")
+                            : t("inactiveSome", { count: alerts.inactiveCount })}
                         </p>
-                        <p className="text-xs text-black/40 dark:text-white/30">Sem agendamento nos últimos 60 dias</p>
+                        <p className="text-xs text-black/40 dark:text-white/30">{t("inactiveNote")}</p>
                       </div>
                     </div>
                     {alerts.inactivePatients.length > 0 && (
@@ -341,7 +345,7 @@ export default async function AnalyticsPage() {
                               {p.patientName}
                             </Link>
                             <span className="shrink-0 ml-3 text-xs text-red-600 dark:text-red-400 font-medium">
-                              {daysSinceLabel(p.daysSince)} sem sessão
+                              {t("daysSince", { label: daysSinceLabel(p.daysSince, t) })}
                             </span>
                           </div>
                         ))}
