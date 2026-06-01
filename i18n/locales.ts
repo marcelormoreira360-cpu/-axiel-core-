@@ -14,3 +14,15 @@ export const LOCALE_COOKIE = "AXIEL_LOCALE";
 export function isLocale(value: string | null | undefined): value is Locale {
   return !!value && (LOCALES as readonly string[]).includes(value);
 }
+
+// Opções padrão do cookie de locale — compartilhadas entre middleware e Server Action.
+export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 ano
+
+export function localeCookieOptions() {
+  return {
+    path: "/",
+    maxAge: LOCALE_COOKIE_MAX_AGE,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+  };
+}
