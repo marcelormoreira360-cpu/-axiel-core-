@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -34,6 +35,7 @@ function Feedback({ msg }: { msg: { type: "ok" | "err"; text: string } | null })
 }
 
 export function ProfileForm() {
+  const t = useTranslations("settings.profile");
   const supabase = createSupabaseBrowserClient();
   const router = useRouter();
 
@@ -67,7 +69,7 @@ export function ProfileForm() {
     if (!user) return;
     const { error } = await supabase.from("users").update({ full_name: fullName.trim() }).eq("id", user.id);
     setSavingName(false);
-    setNameMsg(error ? { type: "err", text: error.message } : { type: "ok", text: "Nome atualizado." });
+    setNameMsg(error ? { type: "err", text: error.message } : { type: "ok", text: t("nameUpdated") });
   }
 
   async function saveEmail(e: React.FormEvent) {
@@ -77,70 +79,70 @@ export function ProfileForm() {
     setSavingEmail(false);
     setEmailMsg(error
       ? { type: "err", text: error.message }
-      : { type: "ok", text: "Confirmação enviada para o novo email." });
+      : { type: "ok", text: t("emailSent") });
   }
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (newPassword !== confirmPassword) { setPassMsg({ type: "err", text: "As senhas não coincidem." }); return; }
-    if (newPassword.length < 8) { setPassMsg({ type: "err", text: "Mínimo 8 caracteres." }); return; }
+    if (newPassword !== confirmPassword) { setPassMsg({ type: "err", text: t("passMismatch") }); return; }
+    if (newPassword.length < 8) { setPassMsg({ type: "err", text: t("passTooShort") }); return; }
     setSavingPass(true); setPassMsg(null);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setSavingPass(false);
     if (error) { setPassMsg({ type: "err", text: error.message }); return; }
-    setPassMsg({ type: "ok", text: "Senha atualizada com sucesso." });
+    setPassMsg({ type: "ok", text: t("passUpdated") });
     setNewPassword(""); setConfirmPassword("");
   }
 
   return (
     <div className="max-w-xl space-y-4">
-      <Section title="Nome">
+      <Section title={t("nameSection")}>
         <form onSubmit={saveName} className="space-y-3">
-          <Field label="Nome completo">
+          <Field label={t("fullName")}>
             <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)}
-              placeholder="Seu nome" className={inputClass} />
+              placeholder={t("namePlaceholder")} className={inputClass} />
           </Field>
           <Feedback msg={nameMsg} />
           <div className="flex justify-end">
             <button type="submit" disabled={savingName}
               className="text-xs font-medium text-white bg-axiel-ink hover:bg-black disabled:opacity-40 rounded-xl px-5 py-2 transition">
-              {savingName ? "Salvando..." : "Salvar nome"}
+              {savingName ? t("saving") : t("saveName")}
             </button>
           </div>
         </form>
       </Section>
 
-      <Section title="Email">
+      <Section title={t("emailSection")}>
         <form onSubmit={saveEmail} className="space-y-3">
-          <Field label="Endereço de email">
+          <Field label={t("emailLabel")}>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
           </Field>
-          <p className="text-xs text-black/40">Uma confirmação será enviada ao novo endereço.</p>
+          <p className="text-xs text-black/40">{t("emailHint")}</p>
           <Feedback msg={emailMsg} />
           <div className="flex justify-end">
             <button type="submit" disabled={savingEmail}
               className="text-xs font-medium text-white bg-axiel-ink hover:bg-black disabled:opacity-40 rounded-xl px-5 py-2 transition">
-              {savingEmail ? "Salvando..." : "Atualizar email"}
+              {savingEmail ? t("saving") : t("updateEmail")}
             </button>
           </div>
         </form>
       </Section>
 
-      <Section title="Senha">
+      <Section title={t("passSection")}>
         <form onSubmit={savePassword} className="space-y-3">
-          <Field label="Nova senha">
+          <Field label={t("newPassword")}>
             <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres" className={inputClass} />
+              placeholder={t("newPasswordPlaceholder")} className={inputClass} />
           </Field>
-          <Field label="Confirmar nova senha">
+          <Field label={t("confirmPassword")}>
             <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repita a nova senha" className={inputClass} />
+              placeholder={t("confirmPasswordPlaceholder")} className={inputClass} />
           </Field>
           <Feedback msg={passMsg} />
           <div className="flex justify-end">
             <button type="submit" disabled={savingPass}
               className="text-xs font-medium text-white bg-axiel-ink hover:bg-black disabled:opacity-40 rounded-xl px-5 py-2 transition">
-              {savingPass ? "Salvando..." : "Alterar senha"}
+              {savingPass ? t("saving") : t("changePassword")}
             </button>
           </div>
         </form>

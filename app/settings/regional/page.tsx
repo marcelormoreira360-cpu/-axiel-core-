@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClinicSettings } from "@/services/clinic-service";
@@ -49,6 +50,7 @@ const CURRENCIES = [
 ];
 
 export default async function RegionalSettingsPage() {
+  const t = await getTranslations("settings");
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -63,24 +65,24 @@ export default async function RegionalSettingsPage() {
     <Shell>
       <div className="mb-7">
         <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
-          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("common.back")}
         </Link>
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Configurações</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Regional</h1>
-        <p className="text-[12px] text-[#A09E98] mt-[2px]">Fuso horário e moeda padrão da clínica.</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("common.eyebrow")}</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("regional.title")}</h1>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("regional.subtitle")}</p>
       </div>
 
       <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden max-w-xl">
         <div className="px-[20px] py-[16px] border-b border-black/[.06]">
-          <p className="text-[14px] font-semibold text-[#0F1A2E]">Configurações regionais</p>
+          <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("regional.cardTitle")}</p>
           <p className="text-[11px] text-[#A09E98] mt-[2px]">
-            Afeta exibição de datas, horários e valores em toda a plataforma.
+            {t("regional.cardDesc")}
           </p>
         </div>
 
         <form action={updateRegionalSettingsAction} className="px-[20px] py-[20px] space-y-[16px]">
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Fuso horário</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("regional.timezone")}</label>
             <select
               name="timezone"
               defaultValue={settings.timezone}
@@ -93,7 +95,7 @@ export default async function RegionalSettingsPage() {
           </div>
 
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Moeda padrão</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("regional.currency")}</label>
             <select
               name="default_currency"
               defaultValue={settings.default_currency}
@@ -110,7 +112,7 @@ export default async function RegionalSettingsPage() {
               type="submit"
               className="text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[20px] py-[9px] transition"
             >
-              Salvar configurações
+              {t("regional.save")}
             </button>
           </div>
         </form>

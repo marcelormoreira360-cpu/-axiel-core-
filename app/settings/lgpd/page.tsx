@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LgpdRequestsClient } from "@/components/lgpd-requests-client";
 
 export default async function LgpdPage() {
+  const t = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) redirect("/dashboard");
   if (!["clinic_owner", "clinic_manager"].includes(profile.role ?? "")) redirect("/settings");
@@ -19,12 +21,12 @@ export default async function LgpdPage() {
   return (
     <Shell>
       <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[4px]">Configurações</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[4px]">{t("common.eyebrow")}</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-          Privacidade e LGPD
+          {t("lgpd.title")}
         </h1>
         <p className="text-[13px] text-[#A09E98] mt-[3px]">
-          Gerencie solicitações de exclusão de dados dos pacientes (LGPD — direito ao esquecimento).
+          {t("lgpd.subtitle")}
         </p>
       </div>
       <LgpdRequestsClient requests={requests ?? []} clinicId={profile.clinic_id} />
