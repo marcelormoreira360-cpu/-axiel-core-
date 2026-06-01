@@ -115,6 +115,12 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 5e (01/06/2026): Jurídico — **namespace `legal`** (Privacidade + Termos)
+  - `app/privacidade/page.tsx` e `app/termos/page.tsx` reescritos com `getTranslations`; listas longas via `t.raw` (arrays de strings e de objetos); links via `t.rich`
+  - Textos legais reescritos com acentuação correta no JSON (a fonte original era sem acentos)
+  - Script de verificação atualizado para também validar ICU dentro de arrays
+  - Validado: tsc do código limpo, paridade PT/EN (26 namespaces), ICU compila
+  - **FASE 5 COMPLETA.** App inteiro (autenticado + público) bilíngue PT/EN
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)
   - `app/p/[token]` (página de link expirado → portal.tokenExpired)
