@@ -102,7 +102,15 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 3b-2: 7 painéis + widgets — intelligence-strip, timeline, exams, prescriptions, package, treatment-plan, documents, health-agent, session-package-badge, waitlist-button, quick-voice-note
   - getTerm() (terminologia sessão/insight) deixado como está; conteúdo gerado por IA no health-agent não é traduzido (é dado)
   - Validado: tsc limpo, paridade PT/EN (8 namespaces), ICU compila
-  - **Pendente Fase 3**: 3d Tela de sessão
+- ✅ i18n Fase 3d (01/06/2026): Tela de sessão — namespace `session`
+  - app/schedule/[id]/session/page.tsx (contexto do paciente) + session-recording-panel.tsx (SOAP, vitais, observações, áudio, detalhes)
+  - SOAP_FIELDS e VITALS_CONFIG agora puxam labels/placeholders das mensagens
+  - Não migrados (fora de escopo, secundários): zoom-recordings-panel, zoom-session-banner, session-insight-generator
+  - Validado: tsc limpo, paridade PT/EN (10 namespaces), ICU compila
+- ✅ **Fase 3 COMPLETA** (Pacientes + Agenda + Sessões) — fluxo clínico principal 100% bilíngue
+  - Namespaces i18n totais: common, nav, dashboard, auth, onboarding, patients, patientProfile, patientPanels, schedule, session
+  - **Follow-ups conhecidos**: date-utils.ts (pt-BR fixo); mensagens de throw/WhatsApp em PT; escopar mensagens por rota no client; memoizar tooltip do revenue-chart
+  - **Pendente**: Fases 4–6 (Formulários, Financeiro, Results, Settings, Automações; áreas públicas; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 3c (01/06/2026): módulo Agenda — namespace `schedule`
   - 3c-1: app/schedule/page.tsx, schedule/new/page.tsx, appointment-form.tsx
   - 3c-2: schedule-container.tsx (toolbar, navegação, views Dia/Semana/Mês, dias da semana via chaves), session-card, session-drawer (badge reusa common.appointmentStatus), create-session-modal

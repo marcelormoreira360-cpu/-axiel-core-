@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { ArrowLeft, Video } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { SessionRecordingPanel } from "@/components/session-recording-panel";
@@ -22,6 +23,9 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const appointment = await getAppointmentById(id);
   if (!appointment) notFound();
 
+  const t = await getTranslations("session.page");
+  const locale = await getLocale();
+
   const [record, recordings, intakeResponses, assessmentResponses, prevRecords] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
@@ -40,7 +44,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const teleconsultaHref = hasZoom
     ? appointment.zoom_start_url ?? appointment.zoom_join_url!
     : `/schedule/${id}/telehealth`;
-  const teleconsultaLabel = hasZoom ? "Entrar no Zoom" : "Iniciar teleconsulta";
+  const teleconsultaLabel = hasZoom ? t("enterZoom") : t("startTelehealth");
 
   return (
     <Shell>
@@ -53,9 +57,9 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
           <ArrowLeft className="h-3.5 w-3.5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Registro de sessão</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
-            {patientName} · Notas e observações da consulta
+            {patientName} · {t("subtitle")}
           </p>
         </div>
         {hasZoom ? (
@@ -93,14 +97,14 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
       {(intakeResponses.length > 0 || assessmentResponses.length > 0 || prevRecords.length > 0) && (
         <div className="mb-5 bg-[#F8F7F4] border border-black/[.07] rounded-[12px] p-[15px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[12px]">
-            Contexto do paciente
+            {t("context")}
           </p>
 
           <div className="space-y-[14px]">
             {/* Última sessão — key observations */}
             {prevRecords.length > 0 && ((prevRecords[0].key_observations as string[] | null) ?? []).length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">Observações da última sessão</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastSessionObs")}</p>
                 <div className="space-y-[3px]">
                   {((prevRecords[0].key_observations as string[] | null) ?? []).slice(0, 3).map((obs, i) => (
                     <div key={i} className="flex gap-[7px] items-start">
@@ -115,12 +119,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {/* Assessment mais recente */}
             {assessmentResponses.length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">Último formulário aplicado</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastForm")}</p>
                 {(() => {
                   const resp = assessmentResponses[0];
                   const pct = resp.score_percentage ?? 0;
-                  const name = resp.assessment_templates?.name ?? "Formulário";
-                  const filledDate = new Date(resp.filled_at).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+                  const name = resp.assessment_templates?.name ?? t("formFallback");
+                  const filledDate = new Date(resp.filled_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
                   return (
                     <div className="flex items-center gap-[10px]">
                       <div className="flex-1 min-w-0">
@@ -146,7 +150,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {intakeResponses.length > 0 && (
               <div>
                 <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">
-                  Anamnese <span className="font-normal text-[#A09E98]">({intakeResponses.length} resposta{intakeResponses.length !== 1 ? "s" : ""})</span>
+                  {t("intake")} <span className="font-normal text-[#A09E98]">{t("intakeCount", { count: intakeResponses.length })}</span>
                 </p>
                 <div className="space-y-[4px]">
                   {intakeResponses.slice(0, 3).map((r) => {

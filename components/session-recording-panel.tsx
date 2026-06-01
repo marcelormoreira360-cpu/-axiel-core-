@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useActionState, useTransition } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord } from "@/lib/types";
 import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
@@ -18,41 +19,23 @@ type Props = {
 
 type VitalKey = "dor" | "energia" | "humor" | "sono";
 
-const VITALS_CONFIG: { key: VitalKey; label: string; lowLabel: string; highLabel: string; color: string }[] = [
-  { key: "dor",    label: "Dor",     lowLabel: "Sem dor",  highLabel: "Intensa",  color: "#E05252" },
-  { key: "energia",label: "Energia", lowLabel: "Exausto",  highLabel: "Plena",    color: "#0F6E56" },
-  { key: "humor",  label: "Humor",   lowLabel: "Ruim",     highLabel: "Ótimo",    color: "#7B5EA7" },
-  { key: "sono",   label: "Sono",    lowLabel: "Péssimo",  highLabel: "Ótimo",    color: "#2A7BC1" },
+const VITALS_CONFIG: { key: VitalKey; color: string }[] = [
+  { key: "dor",     color: "#E05252" },
+  { key: "energia", color: "#0F6E56" },
+  { key: "humor",   color: "#7B5EA7" },
+  { key: "sono",    color: "#2A7BC1" },
 ];
 
-const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan"; label: string; short: string; placeholder: string }[] = [
-  {
-    key: "subjective",
-    label: "S — Subjetivo",
-    short: "S",
-    placeholder: "Queixas, sintomas e percepções relatadas pelo paciente...",
-  },
-  {
-    key: "objective",
-    label: "O — Objetivo",
-    short: "O",
-    placeholder: "Achados clínicos: exame físico, sinais vitais, testes aplicados...",
-  },
-  {
-    key: "assessment_note",
-    label: "A — Avaliação",
-    short: "A",
-    placeholder: "Hipótese diagnóstica, análise clínica, evolução do quadro...",
-  },
-  {
-    key: "plan",
-    label: "P — Plano",
-    short: "P",
-    placeholder: "Conduta terapêutica, prescrições, orientações, próximos passos...",
-  },
+const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan"; short: string }[] = [
+  { key: "subjective",      short: "S" },
+  { key: "objective",       short: "O" },
+  { key: "assessment_note", short: "A" },
+  { key: "plan",            short: "P" },
 ];
 
 export function SessionRecordingPanel({ appointment, record, saved }: Props) {
+  const t = useTranslations("session.panel");
+  const locale = useLocale();
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
 
   const [saveState, saveAction] = useActionState<SaveSessionState, FormData>(saveSessionRecord, null);
@@ -85,10 +68,10 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const soapRefs = useRef<Partial<Record<string, HTMLTextAreaElement | null>>>({});
 
-  const patientName = appointment.patients?.full_name ?? "Paciente";
+  const patientName = appointment.patients?.full_name ?? t("patientFallback");
   const observationsValue = useMemo(() => JSON.stringify(observations), [observations]);
 
-  const sessionDate = new Date(appointment.starts_at).toLocaleDateString("pt-BR", {
+  const sessionDate = new Date(appointment.starts_at).toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -103,7 +86,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
 
       const result = await suggestSoapAction(appointment.patient_id, draftNotes);
       if (result.error || !result.suggestion) {
-        setSoapSuggestError(result.error ?? "Erro ao gerar sugestão.");
+        setSoapSuggestError(result.error ?? t("suggestError"));
         return;
       }
       // Merge: only fill empty fields (don't overwrite user content)
@@ -171,7 +154,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
         setElapsedSeconds((s) => s + 1);
       }, 1000);
     } catch {
-      setRecordingError("Microfone não disponível. Verifique as permissões do navegador.");
+      setRecordingError(t("micError"));
     }
   }
 
@@ -189,7 +172,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error ?? "Erro na transcrição");
+      if (!res.ok) throw new Error(data.error ?? t("transcribeError"));
 
       const transcribed: string = data.text ?? "";
 
@@ -217,7 +200,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
         }, 50);
       }
     } catch (err: unknown) {
-      setRecordingError(err instanceof Error ? err.message : "Erro na transcrição");
+      setRecordingError(err instanceof Error ? err.message : t("transcribeError"));
     } finally {
       setRecordingState("idle");
     }
@@ -239,13 +222,13 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] flex items-center justify-between">
         <div>
           <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40 mb-[4px]">
-            {saved ? "Sessão salva" : "Em andamento"}
+            {saved ? t("saved") : t("inProgress")}
           </p>
           <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-white leading-tight">
             {patientName}
           </h1>
           <p className="text-[12px] text-white/40 mt-[2px] capitalize">
-            {sessionDate} · {formatTime(appointment.starts_at)} · {appointment.duration_minutes} min
+            {t("meta", { date: sessionDate, time: formatTime(appointment.starts_at), minutes: appointment.duration_minutes })}
           </p>
         </div>
         <div className="flex items-center gap-[8px] shrink-0">
@@ -257,7 +240,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
               className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#2A7BC1] hover:bg-[#1e6aad] transition px-[14px] py-[9px] rounded-[8px] border border-white/[.10]"
             >
               <Video className="h-3.5 w-3.5" />
-              Entrar
+              {t("enter")}
             </a>
           )}
           <button
@@ -265,14 +248,14 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[16px] py-[9px] rounded-[8px] border border-white/[.10]"
           >
             <Check className="h-3.5 w-3.5" />
-            Salvar sessão
+            {t("save")}
           </button>
         </div>
       </div>
 
       {saved && (
         <div className="bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[10px] px-[14px] py-[10px]">
-          <p className="text-[12px] text-[#085041] font-medium">Sessão salva com sucesso.</p>
+          <p className="text-[12px] text-[#085041] font-medium">{t("savedSuccess")}</p>
         </div>
       )}
 
@@ -297,7 +280,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                     : "text-[#6B6A66] hover:bg-[#F4F3EF]"
                 }`}
               >
-                Livre
+                {t("modeLivre")}
               </button>
               <button
                 type="button"
@@ -312,7 +295,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
               </button>
             </div>
             {mode === "livre" && (
-              <span className="text-[10px] text-[#D3D1C7]">{notes.length} car.</span>
+              <span className="text-[10px] text-[#D3D1C7]">{t("chars", { count: notes.length })}</span>
             )}
           </div>
 
@@ -323,7 +306,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
               name="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Escreva ou grave as notas da sessão..."
+              placeholder={t("freePlaceholder")}
               rows={18}
               className="w-full resize-none rounded-[8px] bg-[#FAFAF8] border border-transparent px-[12px] py-[10px] text-[13px] text-[#0F1A2E] leading-relaxed placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]/30 focus:bg-white transition"
             />
@@ -349,7 +332,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                   </button>
                 ))}
                 <span className="text-[10px] text-[#A09E98] self-center ml-1">
-                  · áudio vai para <strong>{SOAP_FIELDS.find(f => f.key === activeSOAPField)?.short}</strong>
+                  {t("audioTarget")} <strong>{SOAP_FIELDS.find(f => f.key === activeSOAPField)?.short}</strong>
                 </span>
               </div>
 
@@ -366,20 +349,20 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                   ) : (
                     <Sparkles className="h-3 w-3" />
                   )}
-                  {soapSuggesting ? "Sugerindo…" : "Sugerir com IA"}
+                  {soapSuggesting ? t("suggesting") : t("suggest")}
                 </button>
                 {soapSuggestError && (
                   <span className="text-[10px] text-red-500">{soapSuggestError}</span>
                 )}
                 {!soapSuggestError && !soapSuggesting && (
-                  <span className="text-[10px] text-[#A09E98]">preenche campos vazios</span>
+                  <span className="text-[10px] text-[#A09E98]">{t("suggestHint")}</span>
                 )}
               </div>
 
               {SOAP_FIELDS.map((f) => (
                 <div key={f.key}>
                   <label className="text-[10px] font-semibold text-[#6B6A66] uppercase tracking-[.05em] mb-1 block">
-                    {f.label}
+                    {t(`soap.${f.key}.label`)}
                   </label>
                   <textarea
                     ref={(el) => { soapRefs.current[f.key] = el; }}
@@ -387,7 +370,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                     value={soap[f.key]}
                     onChange={(e) => setSoap((prev) => ({ ...prev, [f.key]: e.target.value }))}
                     onFocus={() => setActiveSOAPField(f.key)}
-                    placeholder={f.placeholder}
+                    placeholder={t(`soap.${f.key}.placeholder`)}
                     rows={4}
                     className="w-full resize-none rounded-[8px] bg-[#FAFAF8] border border-transparent px-[12px] py-[10px] text-[13px] text-[#0F1A2E] leading-relaxed placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]/30 focus:bg-white transition"
                   />
@@ -419,7 +402,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                 className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:border-[#0F6E56] hover:text-[#0F6E56] rounded-[8px] px-[12px] py-[7px] transition"
               >
                 <Mic className="h-3.5 w-3.5" />
-                Gravar nota em voz
+                {t("record")}
               </button>
             )}
 
@@ -430,14 +413,14 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                 className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-red-500 hover:bg-red-600 rounded-[8px] px-[12px] py-[7px] transition animate-pulse"
               >
                 <MicOff className="h-3.5 w-3.5" />
-                Parar · {formatElapsed(elapsedSeconds)}
+                {t("stop", { time: formatElapsed(elapsedSeconds) })}
               </button>
             )}
 
             {recordingState === "transcribing" && (
               <div className="flex items-center gap-[6px] text-[12px] text-[#A09E98] border border-black/[.08] rounded-[8px] px-[12px] py-[7px]">
                 <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
-                Transcrevendo…
+                {t("transcribing")}
               </div>
             )}
 
@@ -452,7 +435,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
           {/* Key observations */}
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
             <label className="text-[11px] font-medium text-[#6B6A66] mb-[10px] block">
-              Observações-chave
+              {t("keyObs")}
             </label>
 
             <div className="flex gap-[6px] mb-[10px]">
@@ -463,7 +446,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                 onKeyDown={(e) => {
                   if (e.key === "Enter") { e.preventDefault(); addObservation(); }
                 }}
-                placeholder="Ex: respiração calma..."
+                placeholder={t("obsPlaceholder")}
                 className="flex-1 px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
               <button
@@ -477,7 +460,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
 
             <div className="space-y-[5px]">
               {observations.length === 0 ? (
-                <p className="text-[12px] text-[#D3D1C7] px-[2px]">Nenhuma observação ainda.</p>
+                <p className="text-[12px] text-[#D3D1C7] px-[2px]">{t("noObs")}</p>
               ) : (
                 observations.map((item, i) => (
                   <div
@@ -498,7 +481,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             </div>
 
             {observations.length > 0 && (
-              <p className="text-[10px] text-[#D3D1C7] mt-[8px]">{observations.length}/12 observações</p>
+              <p className="text-[10px] text-[#D3D1C7] mt-[8px]">{t("obsCount", { count: observations.length })}</p>
             )}
           </div>
 
@@ -506,19 +489,19 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
             <div className="flex items-center justify-between mb-[12px]">
               <label className="text-[11px] font-medium text-[#6B6A66]">
-                Vitais relatados pelo paciente
+                {t("vitalsTitle")}
               </label>
-              <span className="text-[10px] text-[#D3D1C7]">Escala 1–5</span>
+              <span className="text-[10px] text-[#D3D1C7]">{t("scale")}</span>
             </div>
             <div className="space-y-[10px]">
-              {VITALS_CONFIG.map(({ key, label, lowLabel, highLabel, color }) => (
+              {VITALS_CONFIG.map(({ key, color }) => (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-[5px]">
-                    <span className="text-[11px] font-medium text-[#0F1A2E]">{label}</span>
+                    <span className="text-[11px] font-medium text-[#0F1A2E]">{t(`vitals.${key}.label`)}</span>
                     <div className="flex items-center gap-[4px] text-[9px] text-[#A09E98]">
-                      <span>{lowLabel}</span>
+                      <span>{t(`vitals.${key}.low`)}</span>
                       <span className="mx-[2px]">·</span>
-                      <span>{highLabel}</span>
+                      <span>{t(`vitals.${key}.high`)}</span>
                     </div>
                   </div>
                   <div className="flex gap-[5px]">
@@ -557,20 +540,20 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
 
           {/* Session info */}
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <p className="text-[11px] font-medium text-[#6B6A66] mb-[8px]">Detalhes</p>
+            <p className="text-[11px] font-medium text-[#6B6A66] mb-[8px]">{t("details")}</p>
             <div className="space-y-[6px]">
               {appointment.notes && (
                 <div>
-                  <p className="text-[10px] text-[#A09E98] mb-[2px]">Nota prévia</p>
+                  <p className="text-[10px] text-[#A09E98] mb-[2px]">{t("prevNote")}</p>
                   <p className="text-[12px] text-[#0F1A2E]">{appointment.notes}</p>
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#A09E98]">Duração</span>
-                <span className="text-[11px] font-medium text-[#0F1A2E]">{appointment.duration_minutes} min</span>
+                <span className="text-[11px] text-[#A09E98]">{t("duration")}</span>
+                <span className="text-[11px] font-medium text-[#0F1A2E]">{t("minutes", { count: appointment.duration_minutes })}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-[#A09E98]">Início</span>
+                <span className="text-[11px] text-[#A09E98]">{t("start")}</span>
                 <span className="text-[11px] font-medium text-[#0F1A2E]">{formatTime(appointment.starts_at)}</span>
               </div>
             </div>

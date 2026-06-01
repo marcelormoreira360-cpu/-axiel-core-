@@ -1,0 +1,60 @@
+{
+  "page": {
+    "title": "Registro de sessão",
+    "subtitle": "Notas e observações da consulta",
+    "enterZoom": "Entrar no Zoom",
+    "startTelehealth": "Iniciar teleconsulta",
+    "context": "Contexto do paciente",
+    "lastSessionObs": "Observações da última sessão",
+    "lastForm": "Último formulário aplicado",
+    "formFallback": "Formulário",
+    "intake": "Anamnese",
+    "intakeCount": "({count, plural, one {# resposta} other {# respostas}})"
+  },
+  "panel": {
+    "patientFallback": "Paciente",
+    "saved": "Sessão salva",
+    "inProgress": "Em andamento",
+    "savedSuccess": "Sessão salva com sucesso.",
+    "enter": "Entrar",
+    "save": "Salvar sessão",
+    "meta": "{date} · {time} · {minutes} min",
+    "modeLivre": "Livre",
+    "modeSoap": "SOAP",
+    "chars": "{count} car.",
+    "freePlaceholder": "Escreva ou grave as notas da sessão...",
+    "audioTarget": "· áudio vai para",
+    "suggest": "Sugerir com IA",
+    "suggesting": "Sugerindo…",
+    "suggestHint": "preenche campos vazios",
+    "suggestError": "Erro ao gerar sugestão.",
+    "record": "Gravar nota em voz",
+    "stop": "Parar · {time}",
+    "transcribing": "Transcrevendo…",
+    "micError": "Microfone não disponível. Verifique as permissões do navegador.",
+    "transcribeError": "Erro na transcrição",
+    "keyObs": "Observações-chave",
+    "obsPlaceholder": "Ex: respiração calma...",
+    "noObs": "Nenhuma observação ainda.",
+    "obsCount": "{count}/12 observações",
+    "vitalsTitle": "Vitais relatados pelo paciente",
+    "scale": "Escala 1–5",
+    "details": "Detalhes",
+    "prevNote": "Nota prévia",
+    "duration": "Duração",
+    "start": "Início",
+    "minutes": "{count} min",
+    "soap": {
+      "subjective": { "label": "S — Subjetivo", "placeholder": "Queixas, sintomas e percepções relatadas pelo paciente..." },
+      "objective": { "label": "O — Objetivo", "placeholder": "Achados clínicos: exame físico, sinais vitais, testes aplicados..." },
+      "assessment_note": { "label": "A — Avaliação", "placeholder": "Hipótese diagnóstica, análise clínica, evolução do quadro..." },
+      "plan": { "label": "P — Plano", "placeholder": "Conduta terapêutica, prescrições, orientações, próximos passos..." }
+    },
+    "vitals": {
+      "dor": { "label": "Dor", "low": "Sem dor", "high": "Intensa" },
+      "energia": { "label": "Energia", "low": "Exausto", "high": "Plena" },
+      "humor": { "label": "Humor", "low": "Ruim", "high": "Ótimo" },
+      "sono": { "label": "Sono", "low": "Péssimo", "high": "Ótimo" }
+    }
+  }
+}

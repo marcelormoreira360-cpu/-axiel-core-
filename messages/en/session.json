@@ -1,0 +1,60 @@
+{
+  "page": {
+    "title": "Session record",
+    "subtitle": "Consultation notes and observations",
+    "enterZoom": "Join Zoom",
+    "startTelehealth": "Start telehealth",
+    "context": "Patient context",
+    "lastSessionObs": "Last session observations",
+    "lastForm": "Last form completed",
+    "formFallback": "Form",
+    "intake": "Intake",
+    "intakeCount": "({count, plural, one {# answer} other {# answers}})"
+  },
+  "panel": {
+    "patientFallback": "Patient",
+    "saved": "Session saved",
+    "inProgress": "In progress",
+    "savedSuccess": "Session saved successfully.",
+    "enter": "Join",
+    "save": "Save session",
+    "meta": "{date} · {time} · {minutes} min",
+    "modeLivre": "Free",
+    "modeSoap": "SOAP",
+    "chars": "{count} chars",
+    "freePlaceholder": "Write or record the session notes...",
+    "audioTarget": "· audio goes to",
+    "suggest": "Suggest with AI",
+    "suggesting": "Suggesting…",
+    "suggestHint": "fills empty fields",
+    "suggestError": "Error generating suggestion.",
+    "record": "Record voice note",
+    "stop": "Stop · {time}",
+    "transcribing": "Transcribing…",
+    "micError": "Microphone not available. Check your browser permissions.",
+    "transcribeError": "Transcription error",
+    "keyObs": "Key observations",
+    "obsPlaceholder": "e.g. calm breathing...",
+    "noObs": "No observations yet.",
+    "obsCount": "{count}/12 observations",
+    "vitalsTitle": "Vitals reported by the patient",
+    "scale": "Scale 1–5",
+    "details": "Details",
+    "prevNote": "Previous note",
+    "duration": "Duration",
+    "start": "Start",
+    "minutes": "{count} min",
+    "soap": {
+      "subjective": { "label": "S — Subjective", "placeholder": "Complaints, symptoms and perceptions reported by the patient..." },
+      "objective": { "label": "O — Objective", "placeholder": "Clinical findings: physical exam, vitals, tests applied..." },
+      "assessment_note": { "label": "A — Assessment", "placeholder": "Diagnostic hypothesis, clinical analysis, progress of the condition..." },
+      "plan": { "label": "P — Plan", "placeholder": "Therapeutic plan, prescriptions, guidance, next steps..." }
+    },
+    "vitals": {
+      "dor": { "label": "Pain", "low": "No pain", "high": "Severe" },
+      "energia": { "label": "Energy", "low": "Exhausted", "high": "Full" },
+      "humor": { "label": "Mood", "low": "Bad", "high": "Great" },
+      "sono": { "label": "Sleep", "low": "Poor", "high": "Great" }
+    }
+  }
+}
