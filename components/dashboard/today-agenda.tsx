@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import type { Appointment } from "@/lib/types";
 
 interface Props {
@@ -10,17 +11,17 @@ interface Props {
 
 const STATUS_CONFIG: Record<
   string,
-  { label: string; dot: string; bg: string; text: string }
+  { dot: string; bg: string; text: string }
 > = {
-  scheduled:  { label: "Agendado",  dot: "bg-[#A09E98]", bg: "bg-[#F4F3EF]",        text: "text-[#6B6A66]" },
-  confirmed:  { label: "Confirmado", dot: "bg-[#2D8CFF]", bg: "bg-[#2D8CFF]/[.10]",  text: "text-[#2563EB]" },
-  completed:  { label: "Realizado",  dot: "bg-[#0F6E56]", bg: "bg-[#E1F5EE]",        text: "text-[#0F6E56]" },
-  cancelled:  { label: "Cancelado",  dot: "bg-[#DC2626]", bg: "bg-[#DC2626]/[.08]",  text: "text-[#DC2626]" },
-  no_show:    { label: "Faltou",     dot: "bg-amber-400",  bg: "bg-amber-50",          text: "text-amber-600" },
+  scheduled:  { dot: "bg-[#A09E98]", bg: "bg-[#F4F3EF]",        text: "text-[#6B6A66]" },
+  confirmed:  { dot: "bg-[#2D8CFF]", bg: "bg-[#2D8CFF]/[.10]",  text: "text-[#2563EB]" },
+  completed:  { dot: "bg-[#0F6E56]", bg: "bg-[#E1F5EE]",        text: "text-[#0F6E56]" },
+  cancelled:  { dot: "bg-[#DC2626]", bg: "bg-[#DC2626]/[.08]",  text: "text-[#DC2626]" },
+  no_show:    { dot: "bg-amber-400",  bg: "bg-amber-50",          text: "text-amber-600" },
 };
 
-function fmt(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-BR", {
+function fmt(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
@@ -47,6 +48,9 @@ function avatarColor(name: string) {
 }
 
 export function TodayAgenda({ appointments, date }: Props) {
+  const t = useTranslations("dashboard.agenda");
+  const tStatus = useTranslations("common.appointmentStatus");
+  const locale = useLocale();
   const target = date ?? new Date();
   const targetStr = target.toDateString();
 
@@ -60,7 +64,7 @@ export function TodayAgenda({ appointments, date }: Props) {
   const completed = todayAppts.filter((a) => a.status === "completed").length;
   const total = todayAppts.length;
 
-  const dateLabel = target.toLocaleDateString("pt-BR", {
+  const dateLabel = target.toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -72,7 +76,7 @@ export function TodayAgenda({ appointments, date }: Props) {
       <div className="flex items-start justify-between px-[16px] pt-[15px] pb-[12px] border-b border-black/[.05] dark:border-white/[.06]">
         <div>
           <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">
-            Agenda de hoje
+            {t("title")}
           </p>
           <p className="text-[10px] text-[#A09E98] mt-[1px] capitalize">{dateLabel}</p>
         </div>
@@ -86,7 +90,7 @@ export function TodayAgenda({ appointments, date }: Props) {
             href="/schedule"
             className="text-[11px] font-medium text-[#0F6E56] hover:underline"
           >
-            Ver agenda
+            {t("viewSchedule")}
           </Link>
         </div>
       </div>
@@ -113,12 +117,12 @@ export function TodayAgenda({ appointments, date }: Props) {
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
             </div>
-            <p className="text-[12px] text-[#A09E98]">Nenhuma sessão hoje.</p>
+            <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
             <Link
               href="/schedule/new"
               className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:underline mt-[10px]"
             >
-              + Criar sessão
+              {t("createSession")}
             </Link>
           </div>
         ) : (
@@ -126,7 +130,7 @@ export function TodayAgenda({ appointments, date }: Props) {
             const patientName =
               (Array.isArray(appt.patients)
                 ? appt.patients[0]
-                : appt.patients)?.full_name ?? "Paciente";
+                : appt.patients)?.full_name ?? t("patientFallback");
             const sessionType =
               (Array.isArray(appt.session_types)
                 ? appt.session_types[0]
@@ -142,7 +146,7 @@ export function TodayAgenda({ appointments, date }: Props) {
               >
                 {/* Time */}
                 <span className="text-[11px] font-medium text-[#A09E98] min-w-[38px] shrink-0">
-                  {fmt(appt.starts_at)}
+                  {fmt(appt.starts_at, locale)}
                 </span>
 
                 {/* Avatar */}
@@ -159,12 +163,12 @@ export function TodayAgenda({ appointments, date }: Props) {
                   </p>
                   {sessionType && (
                     <p className="text-[10px] text-[#A09E98] truncate mt-[1px]">
-                      {sessionType} · {appt.duration_minutes} min
+                      {sessionType} · {t("minutes", { count: appt.duration_minutes })}
                     </p>
                   )}
                   {!sessionType && (
                     <p className="text-[10px] text-[#A09E98]">
-                      {appt.duration_minutes} min
+                      {t("minutes", { count: appt.duration_minutes })}
                     </p>
                   )}
                 </div>
@@ -173,7 +177,7 @@ export function TodayAgenda({ appointments, date }: Props) {
                 <span
                   className={`text-[10px] font-medium px-[8px] py-[3px] rounded-full shrink-0 ${cfg.bg} ${cfg.text}`}
                 >
-                  {cfg.label}
+                  {tStatus(status)}
                 </span>
 
                 {/* Arrow */}
@@ -205,7 +209,7 @@ export function TodayAgenda({ appointments, date }: Props) {
               <line x1="12" y1="5" x2="12" y2="19" />
               <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
-            Nova sessão
+            {t("newSession")}
           </Link>
         </div>
       )}

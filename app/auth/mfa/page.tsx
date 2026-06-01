@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export default function MfaPage() {
+  const t = useTranslations("auth.mfa");
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const [code, setCode] = useState("");
@@ -28,7 +30,7 @@ export default function MfaPage() {
     setLoading(false);
 
     if (error) {
-      setError("Código inválido. Tente novamente.");
+      setError(t("invalidCode"));
       setCode("");
       return;
     }
@@ -41,9 +43,9 @@ export default function MfaPage() {
     <div className="min-h-screen flex items-center justify-center bg-axiel-cream px-4">
       <div className="w-full max-w-sm bg-white rounded-3xl shadow-sm border border-axiel-line p-8 space-y-6">
         <div className="text-center space-y-1">
-          <p className="text-xs font-medium tracking-widest text-black/40 uppercase">Segurança</p>
-          <h1 className="text-2xl font-semibold text-axiel-ink">Verificação 2FA</h1>
-          <p className="text-sm text-black/50">Digite o código do seu app autenticador.</p>
+          <p className="text-xs font-medium tracking-widest text-black/40 uppercase">{t("eyebrow")}</p>
+          <h1 className="text-2xl font-semibold text-axiel-ink">{t("title")}</h1>
+          <p className="text-sm text-black/50">{t("subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,7 +65,7 @@ export default function MfaPage() {
             disabled={loading || code.length < 6}
             className="w-full rounded-2xl bg-axiel-ink text-white py-3 text-sm font-medium hover:bg-black disabled:opacity-40 transition"
           >
-            {loading ? "Verificando..." : "Verificar"}
+            {loading ? t("submitting") : t("submit")}
           </button>
         </form>
       </div>

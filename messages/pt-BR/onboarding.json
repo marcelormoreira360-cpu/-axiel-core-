@@ -1,0 +1,61 @@
+{
+  "banner": {
+    "title": "Configuração inicial",
+    "progress": "{done}/{total} concluídos",
+    "dismiss": "Dispensar",
+    "next": "Próximo:",
+    "doNow": "Fazer agora",
+    "viewAll": "Ver tudo"
+  },
+  "guide": {
+    "titleDone": "Configuração completa! 🎉",
+    "titleTodo": "Configure sua clínica",
+    "subtitleDone": "Você está pronto para atender pacientes.",
+    "subtitleRequiredDone": "Principais passos concluídos — opcional restante.",
+    "subtitleProgress": "{done} de {total} passos concluídos",
+    "collapse": "Recolher",
+    "expand": "Expandir",
+    "close": "Fechar guia",
+    "optional": "opcional",
+    "closeButton": "Fechar guia",
+    "dismissButton": "Dispensar por agora"
+  },
+  "steps": {
+    "session_types": {
+      "label": "Passo 1",
+      "title": "Criar tipos de sessão",
+      "hint": "Defina seus serviços com duração e preço.",
+      "action": "Configurar"
+    },
+    "patients": {
+      "label": "Passo 2",
+      "title": "Adicionar primeiro paciente",
+      "hint": "Cadastre um paciente para começar a agendar.",
+      "action": "Adicionar"
+    },
+    "appointments": {
+      "label": "Passo 3",
+      "title": "Agendar primeira sessão",
+      "hint": "Marque uma consulta na agenda.",
+      "action": "Agendar"
+    },
+    "forms": {
+      "label": "Passo 4",
+      "title": "Criar formulário de anamnese",
+      "hint": "Envie um formulário de triagem para seus pacientes.",
+      "action": "Criar"
+    },
+    "booking": {
+      "label": "Passo 5",
+      "title": "Definir horários de atendimento",
+      "hint": "Configure sua disponibilidade semanal para agendamento online.",
+      "action": "Configurar"
+    },
+    "team": {
+      "label": "Passo 6",
+      "title": "Convidar profissional",
+      "hint": "Adicione um colega de equipe à clínica.",
+      "action": "Convidar"
+    }
+  }
+}

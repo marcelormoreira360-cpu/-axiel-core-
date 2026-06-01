@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { refreshDashboardData } from "@/app/dashboard/actions";
@@ -34,6 +35,8 @@ function deltaColor(current: number, previous: number) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount }: Props) {
+  const t = useTranslations("dashboard.kpis");
+  const locale = useLocale();
   const [kpis, setKpis] = useState<DashboardKPIs>(initialKpis);
   const [todayCount, setTodayCount] = useState(initialTodayCount);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -97,18 +100,18 @@ export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[14px]">
       {/* ── Sessões hoje ── */}
       <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">SESSÕES HOJE</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("today")}</p>
         <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none transition-opacity ${isPending ? "opacity-50" : ""} ${todayCount > 0 ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
           {todayCount}
         </p>
         <p className="text-[10px] text-[#A09E98] mt-[4px]">
-          {todayCount === 0 ? "nenhuma hoje" : todayCount === 1 ? "sessão agendada" : "sessões agendadas"}
+          {t("todayCount", { count: todayCount })}
         </p>
       </div>
 
       {/* ── Sessões do mês ── */}
       <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">SESSÕES DO MÊS</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("month")}</p>
         <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2] transition-opacity ${isPending ? "opacity-50" : ""}`}>
           {kpis.sessionsThisMonth}
         </p>
@@ -122,7 +125,7 @@ export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount
 
       {/* ── Receita do mês ── */}
       <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">RECEITA DO MÊS</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("revenue")}</p>
         <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2] transition-opacity ${isPending ? "opacity-50" : ""}`}>
           {formatBRL(kpis.revenueThisMonth)}
         </p>
@@ -136,14 +139,12 @@ export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount
 
       {/* ── Taxa de retorno ── */}
       <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
-        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">TAXA DE RETORNO</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("returnRate")}</p>
         <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none transition-opacity ${isPending ? "opacity-50" : ""} ${kpis.returnRate >= 60 ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
           {kpis.returnRate}%
         </p>
         <p className="text-[10px] text-[#A09E98] mt-[4px]">
-          {kpis.returnRateBase > 0
-            ? `de ${kpis.returnRateBase} paciente${kpis.returnRateBase !== 1 ? "s" : ""} este mês`
-            : "sem sessões este mês"}
+          {t("returnBase", { count: kpis.returnRateBase })}
         </p>
       </div>
 
@@ -151,7 +152,7 @@ export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount
       {lastUpdated && (
         <div className="col-span-2 lg:col-span-4 flex justify-end">
           <span className="text-[10px] text-[#A09E98]">
-            Atualizado às {lastUpdated.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            {t("updatedAt", { time: lastUpdated.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) })}
           </span>
         </div>
       )}

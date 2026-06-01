@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -11,6 +12,7 @@ interface SignupFormProps {
 }
 
 export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
+  const t = useTranslations("auth.signup");
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
 
@@ -26,7 +28,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
     setMessage("");
 
     if (password.length < 8) {
-      setMessage("A senha deve ter pelo menos 8 caracteres.");
+      setMessage(t("errors.minLength"));
       setLoading(false);
       return;
     }
@@ -43,17 +45,17 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
       // L-01: translate Supabase's English error messages to PT-BR
       const msg = error.message.toLowerCase();
       if (msg.includes("already registered") || msg.includes("already exists") || msg.includes("email address is already")) {
-        setMessage("Este e-mail já está cadastrado. Tente entrar.");
+        setMessage(t("errors.alreadyRegistered"));
       } else if (msg.includes("invalid email") || msg.includes("email is invalid")) {
-        setMessage("E-mail inválido.");
+        setMessage(t("errors.invalidEmail"));
       } else if (msg.includes("password") && msg.includes("characters")) {
-        setMessage("A senha deve ter pelo menos 8 caracteres.");
+        setMessage(t("errors.minLength"));
       } else if (msg.includes("rate limit") || msg.includes("too many")) {
-        setMessage("Muitas tentativas. Aguarde alguns minutos e tente novamente.");
+        setMessage(t("errors.rateLimit"));
       } else if (msg.includes("signup") && msg.includes("disabled")) {
-        setMessage("Cadastros temporariamente desativados. Tente mais tarde.");
+        setMessage(t("errors.disabled"));
       } else {
-        setMessage("Ocorreu um erro ao criar a conta. Tente novamente.");
+        setMessage(t("errors.generic"));
       }
       setLoading(false);
       return;
@@ -84,7 +86,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
     <form onSubmit={handleSubmit} className="mt-8 space-y-4">
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="Nome completo"
+        placeholder={t("fullName")}
         type="text"
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -93,7 +95,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
       />
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="E-mail"
+        placeholder={t("email")}
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -103,7 +105,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
       />
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="Senha (mín. 8 caracteres)"
+        placeholder={t("passwordHint")}
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
@@ -112,16 +114,16 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
         minLength={8}
       />
       <Button className="w-full" type="submit" disabled={loading}>
-        {loading ? "Criando conta..." : "Criar conta"}
+        {loading ? t("submitting") : t("submit")}
       </Button>
       {message && <p className="text-sm text-red-600">{message}</p>}
       <p className="text-center text-sm text-black/40">
-        Já tem uma conta?{" "}
+        {t("hasAccount")}{" "}
         <a
           href={inviteToken ? `/auth/login?invite=${inviteToken}&email=${encodeURIComponent(email)}` : "/auth/login"}
           className="text-axiel-ink hover:underline"
         >
-          Entrar
+          {t("login")}
         </a>
       </p>
     </form>

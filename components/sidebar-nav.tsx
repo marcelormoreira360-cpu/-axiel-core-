@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   LayoutDashboard,
   Users,
@@ -16,36 +17,37 @@ import {
 } from "lucide-react";
 import { InboxBadge } from "./inbox-badge";
 
+// `key` casa com a chave de tradução em messages/<locale>/nav.json
 const mainNav = [
-  { href: "/dashboard",   label: "Dashboard",   icon: LayoutDashboard },
-  { href: "/patients",    label: "Pacientes",   icon: Users },
-  { href: "/leads",       label: "Leads",       icon: Megaphone, dot: true },
-  { href: "/schedule",    label: "Agenda",      icon: Calendar },
-  { href: "/inbox",       label: "Mensagens",   icon: Inbox, liveCount: true },
-  { href: "/financeiro",  label: "Financeiro",  icon: Banknote },
-  { href: "/actions",     label: "AI Insights", icon: Sparkles },
-  { href: "/forms",       label: "Formulários", icon: FileText },
-  { href: "/links",       label: "Links",       icon: Link2 },
+  { href: "/dashboard",   key: "dashboard",   icon: LayoutDashboard },
+  { href: "/patients",    key: "patients",    icon: Users },
+  { href: "/leads",       key: "leads",       icon: Megaphone, dot: true },
+  { href: "/schedule",    key: "schedule",    icon: Calendar },
+  { href: "/inbox",       key: "inbox",       icon: Inbox, liveCount: true },
+  { href: "/financeiro",  key: "financeiro",  icon: Banknote },
+  { href: "/actions",     key: "actions",     icon: Sparkles },
+  { href: "/forms",       key: "forms",       icon: FileText },
+  { href: "/links",       key: "links",       icon: Link2 },
 ];
 
 const clinicNav = [
-  { href: "/monetization",  label: "Planos e pacotes" },
-  { href: "/assinaturas",   label: "Assinaturas" },
-  { href: "/results",       label: "Resultados" },
-  { href: "/analytics",     label: "Analytics" },
-  { href: "/profissionais", label: "Equipe" },
-  { href: "/relatorios",    label: "Relatórios" },
-  { href: "/settings",      label: "Configurações" },
+  { href: "/monetization",  key: "monetization" },
+  { href: "/assinaturas",   key: "assinaturas" },
+  { href: "/results",       key: "results" },
+  { href: "/analytics",     key: "analytics" },
+  { href: "/profissionais", key: "profissionais" },
+  { href: "/relatorios",    key: "relatorios" },
+  { href: "/settings",      key: "settings" },
 ];
 
 const moreNav = [
-  { href: "/automacoes",     label: "Automações" },
-  { href: "/whatsapp",       label: "WhatsApp Bot" },
-  { href: "/follow-ups",     label: "Follow-ups" },
-  { href: "/communications", label: "Mensagens" },
-  { href: "/products",       label: "Produtos" },
-  { href: "/hotmart",        label: "Hotmart" },
-  { href: "/billing",        label: "Faturamento" },
+  { href: "/automacoes",     key: "automacoes" },
+  { href: "/whatsapp",       key: "whatsapp" },
+  { href: "/follow-ups",     key: "follow-ups" },
+  { href: "/communications", key: "communications" },
+  { href: "/products",       key: "products" },
+  { href: "/hotmart",        key: "hotmart" },
+  { href: "/billing",        key: "billing" },
 ];
 
 function NavItem({
@@ -107,16 +109,24 @@ function QuietItem({ href, label }: { href: string; label: string }) {
 }
 
 export function SidebarNavigation() {
+  const t = useTranslations("nav");
   return (
     <>
       {/* Principal */}
       <div className="px-[10px] mb-4">
         <p className="px-2 mb-[5px] text-[9px] font-medium tracking-[.1em] uppercase text-[#A09E98] dark:text-[#6B6A66]">
-          Principal
+          {t("sections.main")}
         </p>
         <nav className="flex flex-col gap-[2px]">
           {mainNav.map((item) => (
-            <NavItem key={item.href} {...item} />
+            <NavItem
+              key={item.href}
+              href={item.href}
+              icon={item.icon}
+              dot={item.dot}
+              liveCount={item.liveCount}
+              label={t(`main.${item.key}`)}
+            />
           ))}
         </nav>
       </div>
@@ -124,11 +134,11 @@ export function SidebarNavigation() {
       {/* Clínica */}
       <div className="px-[10px] mb-4">
         <p className="px-2 mb-[5px] text-[9px] font-medium tracking-[.1em] uppercase text-[#A09E98] dark:text-[#6B6A66]">
-          Clínica
+          {t("sections.clinic")}
         </p>
         <nav className="flex flex-col gap-[2px]">
           {clinicNav.map((item) => (
-            <QuietItem key={item.href} {...item} />
+            <QuietItem key={item.href} href={item.href} label={t(`clinic.${item.key}`)} />
           ))}
         </nav>
       </div>
@@ -136,11 +146,11 @@ export function SidebarNavigation() {
       {/* Mais */}
       <div className="px-[10px] mb-4">
         <p className="px-2 mb-[5px] text-[9px] font-medium tracking-[.1em] uppercase text-[#A09E98] dark:text-[#6B6A66]">
-          Mais
+          {t("sections.more")}
         </p>
         <nav className="flex flex-col gap-[2px]">
           {moreNav.map((item) => (
-            <QuietItem key={item.href} {...item} />
+            <QuietItem key={item.href} href={item.href} label={t(`more.${item.key}`)} />
           ))}
         </nav>
       </div>
@@ -154,7 +164,7 @@ export function SidebarNavigation() {
           className="flex items-center gap-2 px-2 py-[7px] rounded-lg text-[12px] text-[#6B6A66] dark:text-[#9E9C97] hover:bg-white/60 dark:hover:bg-white/[.06] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition-colors"
         >
           <MessageCircle className="h-[15px] w-[15px] shrink-0 text-[#A09E98] dark:text-[#6B6A66]" aria-hidden="true" />
-          <span>Suporte</span>
+          <span>{t("support")}</span>
         </a>
       </div>
     </>
@@ -162,6 +172,7 @@ export function SidebarNavigation() {
 }
 
 export function MobileNav() {
+  const t = useTranslations("nav");
   return (
     <nav className="mt-3 grid grid-cols-5 gap-1.5">
       {mainNav.map((item) => (
@@ -170,7 +181,7 @@ export function MobileNav() {
           href={item.href}
           className="rounded-lg bg-white/70 dark:bg-white/[.07] px-1.5 py-2.5 text-center text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97]"
         >
-          {item.label}
+          {t(`main.${item.key}`)}
         </Link>
       ))}
     </nav>

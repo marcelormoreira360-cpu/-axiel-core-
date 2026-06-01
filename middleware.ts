@@ -1,5 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_COOKIE, isLocale } from "@/i18n/locales";
+import { localeFromAcceptLanguage } from "@/i18n/get-locale";
+
+const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 ano
+
+/**
+ * Garante o cookie AXIEL_LOCALE na resposta quando ainda não existe, derivando
+ * do Accept-Language. Não altera nada se o cookie já estiver presente e válido.
+ */
+function ensureLocaleCookie(request: NextRequest, response: NextResponse): NextResponse {
+  const current = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (isLocale(current)) return response;
+  const locale = localeFromAcceptLanguage(request.headers.get("accept-language"));
+  response.cookies.set(LOCALE_COOKIE, locale, { path: "/", maxAge: LOCALE_COOKIE_MAX_AGE });
+  return response;
+}
 
 const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade"];
 const publicPrefixes = [
@@ -104,7 +120,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return response;
+  return ensureLocaleCookie(request, response);
 }
 
 export const config = {

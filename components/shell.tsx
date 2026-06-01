@@ -9,6 +9,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
 import { DarkModeToggle } from "@/components/dark-mode-toggle";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
@@ -118,6 +119,9 @@ export async function Shell({
             <NotificationBell />
             <DarkModeToggle />
           </div>
+          <div className="mb-2">
+            <LanguageSwitcher />
+          </div>
           <SignOutButton />
         </div>
       </aside>
@@ -143,6 +147,7 @@ export async function Shell({
             )}
           </Link>
           <div className="flex items-center gap-2">
+            <LanguageSwitcher />
             <NotificationBell />
             <DarkModeToggle />
             <SignOutButton />

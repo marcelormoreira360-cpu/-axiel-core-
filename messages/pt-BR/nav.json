@@ -1,0 +1,37 @@
+{
+  "sections": {
+    "main": "Principal",
+    "clinic": "Clínica",
+    "more": "Mais"
+  },
+  "main": {
+    "dashboard": "Dashboard",
+    "patients": "Pacientes",
+    "leads": "Leads",
+    "schedule": "Agenda",
+    "inbox": "Mensagens",
+    "financeiro": "Financeiro",
+    "actions": "AI Insights",
+    "forms": "Formulários",
+    "links": "Links"
+  },
+  "clinic": {
+    "monetization": "Planos e pacotes",
+    "assinaturas": "Assinaturas",
+    "results": "Resultados",
+    "analytics": "Analytics",
+    "profissionais": "Equipe",
+    "relatorios": "Relatórios",
+    "settings": "Configurações"
+  },
+  "more": {
+    "automacoes": "Automações",
+    "whatsapp": "WhatsApp Bot",
+    "follow-ups": "Follow-ups",
+    "communications": "Mensagens",
+    "products": "Produtos",
+    "hotmart": "Hotmart",
+    "billing": "Faturamento"
+  },
+  "support": "Suporte"
+}

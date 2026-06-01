@@ -1,0 +1,69 @@
+{
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening",
+    "withName": "{greeting}, {name}",
+    "noName": "{greeting}"
+  },
+  "attention": "{count, plural, =0 {All clear for today.} one {# item needs your attention.} other {# items need your attention.}}",
+  "setup": {
+    "patient": "First patient",
+    "lead": "First lead",
+    "session": "First session",
+    "intake": "Intake form",
+    "branding": "Clinic logo & color"
+  },
+  "packageAlerts": {
+    "title": "Packages running out",
+    "exhausted": "Used up",
+    "remaining": "{count}×"
+  },
+  "biomarkerAlerts": {
+    "title": "Flagged biomarkers"
+  },
+  "aiInsights": {
+    "title": "AI Insights",
+    "pending": "{count, plural, one {# AI-generated insight awaits review.} other {# AI-generated insights await review.}}",
+    "reviewNow": "Review now →"
+  },
+  "quickActions": {
+    "title": "Quick actions",
+    "newPatient": "New patient",
+    "scheduleSession": "Schedule session",
+    "leadsPipeline": "Leads pipeline",
+    "reports": "Reports"
+  },
+  "week": {
+    "title": "This week",
+    "scheduled": "Scheduled sessions",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "fullReports": "View full reports →"
+  },
+  "kpis": {
+    "today": "Sessions today",
+    "todayCount": "{count, plural, =0 {none today} one {session scheduled} other {sessions scheduled}}",
+    "month": "Sessions this month",
+    "revenue": "Revenue this month",
+    "returnRate": "Return rate",
+    "returnBase": "{count, plural, =0 {no sessions this month} one {of # patient this month} other {of # patients this month}}",
+    "updatedAt": "Updated at {time}"
+  },
+  "chart": {
+    "title": "Performance — last {count} months",
+    "revenue": "Revenue",
+    "sessions": "Sessions",
+    "sessionsWithCount": "Sessions ({count})",
+    "empty": "No data yet. Charts appear after the first bookings."
+  },
+  "agenda": {
+    "title": "Today's schedule",
+    "viewSchedule": "View schedule",
+    "empty": "No sessions today.",
+    "createSession": "+ Create session",
+    "newSession": "New session",
+    "patientFallback": "Patient",
+    "minutes": "{count} min"
+  }
+}

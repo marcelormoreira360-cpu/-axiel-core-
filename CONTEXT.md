@@ -75,6 +75,26 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - CSP: `worker-src 'self' blob:` adicionado para service workers
   - DashboardGreeting: `useState("")` em vez de `useState(getGreeting())` (mismatch UTC vs timezone local = React #418)
   - `suppressHydrationWarning` no `<body>` (extensões de browser modificam atributos)
+- ✅ i18n PT-BR/EN — Fase 1 (Fundação) (01/06/2026):
+  - `next-intl` 4.13 instalado; modo **sem locale na URL** (cookie + `users.preferred_locale`)
+  - `i18n/locales.ts`, `i18n/get-locale.ts` (resolve cookie > Accept-Language > pt-BR), `i18n/request.ts` (loader de namespaces)
+  - `next.config.ts`: `withSentryConfig(withNextIntl(nextConfig), …)` — plugin envolvido por dentro do Sentry
+  - `app/layout.tsx` async: `lang={await getLocale()}` + `<NextIntlClientProvider>`
+  - `middleware.ts`: `ensureLocaleCookie()` seta `AXIEL_LOCALE` por Accept-Language sem tocar auth/MFA
+  - `LanguageSwitcher` + Server Action `setLocale` (`app/actions/locale-actions.ts`) grava cookie + banco
+  - Migration **049_user_preferred_locale.sql** APLICADA (01/06/2026) — `users.preferred_locale` default pt-BR
+  - Mensagens em `messages/{pt-BR,en}/{common,nav,dashboard}.json` (ICU para plurais)
+  - **Piloto migrado**: Dashboard (`app/dashboard/page.tsx` + `greeting.tsx`) e navegação (`sidebar-nav.tsx`)
+  - Validado: tsc limpo, paridade de chaves PT/EN, ICU compila. `next build` deve rodar localmente (SWC linux indisponível no sandbox)
+  - **Pendente**: aplicar migration 049; Fases 2–6 (demais ~200 telas, áreas públicas, e-mails/PDF)
+- ✅ i18n Fase 2 (01/06/2026): Dashboard 100% + telas de auth
+  - Namespaces novos: `auth`, `onboarding`; expandidos `common` (appointmentStatus, push) e `dashboard` (kpis, chart, agenda)
+  - Componentes migrados: dashboard-realtime-kpis, revenue-chart, today-agenda, setup-progress-banner, push-prompt (+ PushSettingsToggle), soft-onboarding-guide
+  - Auth migrado: login (page+form, com mapeamento de erro), signup (page+form), mfa, reset-password, update-password
+  - `LanguageSwitcher` adicionado nas páginas de login e signup (troca de idioma antes do login, via cookie)
+  - Datas/horas usam `useLocale()` (pt-BR/en) via toLocale*; moeda permanece BRL
+  - Migration 049 APLICADA em produção (bfuulpvzedcrpmmjxles)
+  - Validado: tsc limpo, paridade PT/EN (5 namespaces), ICU compila, sem literais PT acentuados nos arquivos migrados
 
 ---
 
@@ -92,7 +112,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 | `app/api/health-agent/route.ts` | Análise clínica com GPT-4o |
 | `components/session-recording-panel.tsx` | Gravação de sessão + useActionState |
 | `app/schedule/[id]/session/actions.ts` | `saveSessionRecord` — Server Action |
-| `supabase/migrations/` | 048 migrations, última aplicada = 047_broadcast_campaigns.sql (048_waitlist.sql pendente) |
+| `supabase/migrations/` | última aplicada = 047_broadcast_campaigns.sql (048_waitlist.sql e 049_user_preferred_locale.sql pendentes) |
+| `i18n/` | locales.ts, get-locale.ts, request.ts — config do next-intl (sem locale na URL) |
+| `messages/{pt-BR,en}/` | JSONs de tradução por namespace (common, nav, dashboard…) |
+| `components/language-switcher.tsx` | Toggle PT/EN — chama Server Action setLocale |
 | `services/waitlist-service.ts` | Fila de espera — addToWaitlist, notifyWaitlistOnCancellation |
 | `services/broadcast-service.ts` | Broadcast WhatsApp — segmentos, envio em lote, histórico |
 | `components/notification-bell.tsx` | Canal Realtime único por mount (notification-bell-{timestamp}) |
@@ -134,6 +157,24 @@ export async function myAction(_prev: MyState, fd: FormData): Promise<MyState> {
 // No componente:
 const [state, action] = useActionState<MyState, FormData>(myAction, null);
 ```
+
+### i18n (next-intl, sem locale na URL)
+```typescript
+// Server Component
+import { getTranslations } from "next-intl/server";
+const t = await getTranslations("dashboard");
+return <h1>{t("greeting.withName", { greeting, name })}</h1>;
+
+// Client Component
+"use client";
+import { useTranslations } from "next-intl";
+const t = useTranslations("nav");
+return <span>{t(`main.${item.key}`)}</span>;
+```
+- Strings novas vão em `messages/pt-BR/<ns>.json` **e** `messages/en/<ns>.json` (chaves em paridade)
+- Novo namespace: criar os 2 JSONs + adicionar o nome em `NAMESPACES` (`i18n/request.ts`)
+- Plurais: usar ICU (`{count, plural, one {# item} other {# itens}}`)
+- Nunca hardcodar texto de UI em PT — sempre via `t()`
 
 ### Dynamic import de componentes pesados
 ```typescript

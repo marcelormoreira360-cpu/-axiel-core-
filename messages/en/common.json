@@ -1,0 +1,60 @@
+{
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "confirm": "Confirm",
+    "close": "Close",
+    "viewMore": "View more",
+    "viewAll": "View all"
+  },
+  "status": {
+    "loading": "Loading…",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "error": "An error occurred",
+    "empty": "No results",
+    "active": "Active",
+    "inactive": "Inactive",
+    "high": "High",
+    "low": "Low"
+  },
+  "clinicProfile": {
+    "integrativa": "Integrative",
+    "fisioterapia": "Physiotherapy",
+    "saude_mental": "Mental Health",
+    "nutricao": "Nutrition",
+    "wellness": "Wellness"
+  },
+  "language": {
+    "label": "Language",
+    "pt-BR": "Português",
+    "en": "English"
+  },
+  "appointmentStatus": {
+    "scheduled": "Scheduled",
+    "confirmed": "Confirmed",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "no_show": "No-show"
+  },
+  "push": {
+    "title": "Enable notifications",
+    "description": "Get alerts when patients send messages through the portal.",
+    "enable": "Enable",
+    "enabling": "Enabling…",
+    "notNow": "Not now",
+    "close": "Close",
+    "settingsTitle": "Push notifications",
+    "denied": "Blocked by the browser — unblock it in the site settings.",
+    "active": "Active on this device",
+    "subtitle": "Get alerts for patient messages",
+    "unsupported": "Push notifications are not supported in this browser.",
+    "disable": "Disable"
+  }
+}

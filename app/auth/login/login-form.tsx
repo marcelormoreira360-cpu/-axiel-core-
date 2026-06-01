@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -12,6 +13,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormProps) {
+  const t = useTranslations("auth.login");
   const router = useRouter();
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState(prefillEmail ?? "");
@@ -29,7 +31,12 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
     setLoading(false);
 
     if (error) {
-      setMessage(error.message);
+      const msg = error.message.toLowerCase();
+      if (msg.includes("invalid login credentials") || msg.includes("invalid credentials")) {
+        setMessage(t("invalidCredentials"));
+      } else {
+        setMessage(t("genericError"));
+      }
       return;
     }
 
@@ -62,7 +69,7 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
     <form onSubmit={handleSubmit} className="mt-8 space-y-4">
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="E-mail"
+        placeholder={t("email")}
         type="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
@@ -72,7 +79,7 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
       />
       <input
         className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder="Senha"
+        placeholder={t("password")}
         type="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
@@ -80,12 +87,12 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
         autoComplete="current-password"
       />
       <Button className="w-full" type="submit" disabled={loading}>
-        {loading ? "Entrando..." : "Continuar"}
+        {loading ? t("submitting") : t("submit")}
       </Button>
       {message && <p className="text-sm text-red-600">{message}</p>}
       <p className="text-center text-sm text-black/40">
         <a href="/auth/reset-password" className="text-axiel-ink hover:underline">
-          Esqueceu sua senha?
+          {t("forgot")}
         </a>
       </p>
     </form>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   ComposedChart,
   Area,
@@ -24,29 +25,33 @@ function fmtBRL(cents: number) {
   return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function CustomTooltip({ active, payload, label }: any) {
-  if (!active || !payload?.length) return null;
-  const revenue = payload.find((p: { dataKey: string }) => p.dataKey === "revenue")?.value ?? 0;
-  const sessions = payload.find((p: { dataKey: string }) => p.dataKey === "sessions")?.value ?? 0;
-  return (
-    <div className="bg-white border border-black/[.08] rounded-[10px] shadow-lg px-[13px] py-[10px] text-[12px]">
-      <p className="font-medium text-[#0F1A2E] mb-[6px]">{label}</p>
-      <div className="flex items-center gap-2 mb-[3px]">
-        <span className="w-2 h-2 rounded-full bg-[#0F6E56]" />
-        <span className="text-[#6B6A66]">Receita:</span>
-        <span className="font-semibold text-[#0F1A2E]">{fmtBRL(revenue)}</span>
+function makeTooltip(labels: { revenue: string; sessions: string }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function CustomTooltip({ active, payload, label }: any) {
+    if (!active || !payload?.length) return null;
+    const revenue = payload.find((p: { dataKey: string }) => p.dataKey === "revenue")?.value ?? 0;
+    const sessions = payload.find((p: { dataKey: string }) => p.dataKey === "sessions")?.value ?? 0;
+    return (
+      <div className="bg-white border border-black/[.08] rounded-[10px] shadow-lg px-[13px] py-[10px] text-[12px]">
+        <p className="font-medium text-[#0F1A2E] mb-[6px]">{label}</p>
+        <div className="flex items-center gap-2 mb-[3px]">
+          <span className="w-2 h-2 rounded-full bg-[#0F6E56]" />
+          <span className="text-[#6B6A66]">{labels.revenue}:</span>
+          <span className="font-semibold text-[#0F1A2E]">{fmtBRL(revenue)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-[#2D8CFF]/70" />
+          <span className="text-[#6B6A66]">{labels.sessions}:</span>
+          <span className="font-semibold text-[#0F1A2E]">{sessions}</span>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#2D8CFF]/70" />
-        <span className="text-[#6B6A66]">Sessões:</span>
-        <span className="font-semibold text-[#0F1A2E]">{sessions}</span>
-      </div>
-    </div>
-  );
+    );
+  };
 }
 
 export function RevenueChart({ data }: Props) {
+  const t = useTranslations("dashboard.chart");
+  const CustomTooltip = makeTooltip({ revenue: t("revenue"), sessions: t("sessions") });
   const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
   const totalSessions = data.reduce((s, d) => s + d.sessions, 0);
   const hasData = totalRevenue > 0 || totalSessions > 0;
@@ -57,7 +62,7 @@ export function RevenueChart({ data }: Props) {
       <div className="flex items-start justify-between mb-[14px]">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[2px]">
-            Desempenho — últimos {data.length} meses
+            {t("title", { count: data.length })}
           </p>
           <p className="text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
             {fmtBRL(totalRevenue)}
@@ -66,11 +71,11 @@ export function RevenueChart({ data }: Props) {
         <div className="flex items-center gap-[14px] text-[11px] text-[#A09E98] mt-[4px]">
           <span className="flex items-center gap-[5px]">
             <span className="w-[10px] h-[3px] rounded-full bg-[#0F6E56]" />
-            Receita
+            {t("revenue")}
           </span>
           <span className="flex items-center gap-[5px]">
             <span className="w-[10px] h-[3px] rounded-full bg-[#2D8CFF]/70" />
-            Sessões ({totalSessions})
+            {t("sessionsWithCount", { count: totalSessions })}
           </span>
         </div>
       </div>
@@ -132,7 +137,7 @@ export function RevenueChart({ data }: Props) {
         </ResponsiveContainer>
       ) : (
         <div className="h-[170px] flex items-center justify-center">
-          <p className="text-[12px] text-[#C5C3BC]">Sem dados ainda. Os gráficos aparecem após os primeiros agendamentos.</p>
+          <p className="text-[12px] text-[#C5C3BC]">{t("empty")}</p>
         </div>
       )}
     </div>

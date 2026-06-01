@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { ROLE_LABELS } from "@/lib/team-utils";
 import { DashboardGreeting } from "./greeting";
@@ -23,6 +24,7 @@ import type { SetupTask } from "@/components/setup-progress-banner";
 
 async function getSetupTasks(clinic: { id: string; logo_url: string | null; primary_color: string | null }): Promise<SetupTask[]> {
   const supabase = await createSupabaseServerClient();
+  const t = await getTranslations("dashboard.setup");
   const [patients, sessions, leads, forms] = await Promise.all([
     supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id).not("email", "eq", "paciente-demo@exemplo.com"),
     supabase.from("appointments").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id),
@@ -30,11 +32,11 @@ async function getSetupTasks(clinic: { id: string; logo_url: string | null; prim
     supabase.from("intake_forms").select("id", { count: "exact", head: true }).eq("clinic_id", clinic.id),
   ]);
   return [
-    { key: "patient",  title: "Primeiro paciente",    href: "/patients/new",      done: (patients.count ?? 0) > 0 },
-    { key: "lead",     title: "Primeiro lead",         href: "/leads/new",         done: (leads.count ?? 0) > 0 },
-    { key: "session",  title: "Primeira sessão",       href: "/schedule/new",      done: (sessions.count ?? 0) > 0 },
-    { key: "intake",   title: "Formulário de intake",  href: "/forms/new",         done: (forms.count ?? 0) > 0 },
-    { key: "branding", title: "Logo e cor da clínica", href: "/settings/branding", done: !!(clinic.logo_url || clinic.primary_color) },
+    { key: "patient",  title: t("patient"),  href: "/patients/new",      done: (patients.count ?? 0) > 0 },
+    { key: "lead",     title: t("lead"),     href: "/leads/new",         done: (leads.count ?? 0) > 0 },
+    { key: "session",  title: t("session"),  href: "/schedule/new",      done: (sessions.count ?? 0) > 0 },
+    { key: "intake",   title: t("intake"),   href: "/forms/new",         done: (forms.count ?? 0) > 0 },
+    { key: "branding", title: t("branding"), href: "/settings/branding", done: !!(clinic.logo_url || clinic.primary_color) },
   ];
 }
 
@@ -78,6 +80,17 @@ export default async function Dashboard() {
   const totalAlerts = alerts.packageAlerts.length + alerts.biomarkerAlerts.length + pendingReviews;
   const name = firstName(profile?.full_name, profile?.email);
 
+  const t = await getTranslations("dashboard");
+  const tc = await getTranslations("common");
+  const knownProfiles = ["integrativa", "fisioterapia", "saude_mental", "nutricao", "wellness"];
+
+  const quickActions = [
+    { label: t("quickActions.newPatient"),      href: "/patients/new", icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" },
+    { label: t("quickActions.scheduleSession"), href: "/schedule/new", icon: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" },
+    { label: t("quickActions.leadsPipeline"),   href: "/leads",        icon: "M22 12h-4l-3 9L9 3l-3 9H2" },
+    { label: t("quickActions.reports"),         href: "/relatorios",   icon: "M18 20V10M12 20V4M6 20v-6" },
+  ];
+
   return (
     <Shell userName={profile?.full_name} userRole={profile?.role ? ROLE_LABELS[profile.role] : undefined}>
 
@@ -88,19 +101,13 @@ export default async function Dashboard() {
           <div className="flex items-center gap-[8px] mt-[4px] flex-wrap">
             {clinic?.clinic_profile && (
               <span className="text-[10px] font-medium px-[8px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">
-                {{
-                  integrativa:  "Integrativa",
-                  fisioterapia: "Fisioterapia",
-                  saude_mental: "Saúde Mental",
-                  nutricao:     "Nutrição",
-                  wellness:     "Wellness",
-                }[clinic.clinic_profile] ?? clinic.clinic_profile}
+                {knownProfiles.includes(clinic.clinic_profile)
+                  ? tc(`clinicProfile.${clinic.clinic_profile}`)
+                  : clinic.clinic_profile}
               </span>
             )}
             <p className="text-[12px] text-[#A09E98]">
-              {totalAlerts > 0
-                ? `${totalAlerts} item${totalAlerts > 1 ? "s" : ""} precisam da sua atenção.`
-                : "Tudo em ordem por hoje."}
+              {t("attention", { count: totalAlerts })}
             </p>
           </div>
         </div>
@@ -160,7 +167,7 @@ export default async function Dashboard() {
                   <line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
-              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">Pacotes encerrando</p>
+              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("packageAlerts.title")}</p>
               <span className="ml-auto text-[10px] font-medium bg-amber-50 text-amber-600 rounded-full px-[7px] py-[1px]">
                 {alerts.packageAlerts.length}
               </span>
@@ -177,7 +184,7 @@ export default async function Dashboard() {
                     <p className="text-[10px] text-amber-600 mt-[1px] truncate">{pkg.packageName}</p>
                   </div>
                   <span className={`text-[12px] font-semibold ml-2 shrink-0 ${pkg.remaining <= 0 ? "text-red-500" : "text-amber-500"}`}>
-                    {pkg.remaining <= 0 ? "Esgotado" : `${pkg.remaining}×`}
+                    {pkg.remaining <= 0 ? t("packageAlerts.exhausted") : t("packageAlerts.remaining", { count: pkg.remaining })}
                   </span>
                 </Link>
               ))}
@@ -197,7 +204,7 @@ export default async function Dashboard() {
                   <line x1="9" y1="15" x2="15" y2="15"/>
                 </svg>
               </div>
-              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">Biomarcadores alterados</p>
+              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("biomarkerAlerts.title")}</p>
               <span className="ml-auto text-[10px] font-medium bg-red-50 text-red-500 rounded-full px-[7px] py-[1px]">
                 {alerts.biomarkerAlerts.length}
               </span>
@@ -214,7 +221,7 @@ export default async function Dashboard() {
                     <p className="text-[10px] text-[#A09E98] truncate">{alert.biomarker}</p>
                   </div>
                   <span className={`text-[10px] font-medium px-[7px] py-[2px] rounded-full ml-2 shrink-0 ${alert.status === "high" ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-600"}`}>
-                    {alert.status === "high" ? "Alto" : "Baixo"}
+                    {alert.status === "high" ? tc("status.high") : tc("status.low")}
                   </span>
                 </Link>
               ))}
@@ -229,27 +236,22 @@ export default async function Dashboard() {
               <svg className="w-[13px] h-[13px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
               </svg>
-              <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-[#0F6E56]">Insights de IA</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-[#0F6E56]">{t("aiInsights.title")}</p>
             </div>
             <p className="text-[12px] text-[#085041] dark:text-[#9FE1CB] mb-[10px]">
-              {pendingReviews} insight{pendingReviews > 1 ? "s" : ""} gerado{pendingReviews > 1 ? "s" : ""} pela IA aguardam validação.
+              {t("aiInsights.pending", { count: pendingReviews })}
             </p>
             <Link href="/actions" className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:underline">
-              Revisar agora →
+              {t("aiInsights.reviewNow")}
             </Link>
           </div>
         )}
 
         {/* Quick actions */}
         <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] p-[15px]">
-          <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[10px]">Ações rápidas</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[10px]">{t("quickActions.title")}</p>
           <div className="space-y-[2px]">
-            {[
-              { label: "Novo paciente",     href: "/patients/new", icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6" },
-              { label: "Agendar sessão",    href: "/schedule/new", icon: "M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" },
-              { label: "Pipeline de leads", href: "/leads",        icon: "M22 12h-4l-3 9L9 3l-3 9H2" },
-              { label: "Relatórios",        href: "/relatorios",   icon: "M18 20V10M12 20V4M6 20v-6" },
-            ].map((action) => (
+            {quickActions.map((action) => (
               <Link key={action.href} href={action.href}
                 className="flex items-center gap-[10px] rounded-[8px] px-[10px] py-[9px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.04] transition group"
               >
@@ -269,7 +271,7 @@ export default async function Dashboard() {
 
         {/* Week summary */}
         <div className="bg-[#0F1A2E] dark:bg-[#0A0F1A] rounded-[12px] p-[15px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-white/40 mb-[12px]">Semana atual</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-white/40 mb-[12px]">{t("week.title")}</p>
           <div className="space-y-[10px]">
             {(() => {
               // L-03: use Mon–Sun week, not rolling 7 days
@@ -283,9 +285,9 @@ export default async function Dashboard() {
                 return t >= weekStart && t < weekEnd;
               });
               return [
-                { label: "Sessões agendadas", value: weekAppts.length },
-                { label: "Realizadas",         value: weekAppts.filter((a) => a.status === "completed").length },
-                { label: "Canceladas",          value: weekAppts.filter((a) => a.status === "cancelled").length },
+                { label: t("week.scheduled"), value: weekAppts.length },
+                { label: t("week.completed"), value: weekAppts.filter((a) => a.status === "completed").length },
+                { label: t("week.cancelled"), value: weekAppts.filter((a) => a.status === "cancelled").length },
               ];
             })().map((item) => (
               <div key={item.label} className="flex items-center justify-between">
@@ -296,7 +298,7 @@ export default async function Dashboard() {
           </div>
           <div className="mt-[14px] pt-[12px] border-t border-white/[.07]">
             <Link href="/relatorios" className="text-[11px] font-medium text-white/40 hover:text-white/70 transition">
-              Ver relatórios completos →
+              {t("week.fullReports")}
             </Link>
           </div>
         </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   CalendarPlus,
   CheckCircle2,
@@ -35,74 +36,24 @@ type StepKey = keyof OnboardingChecklistResult["steps"];
 
 interface Step {
   key: StepKey;
-  label: string;
-  title: string;
-  hint: string;
   href: string;
-  action: string;
   icon: React.ElementType;
   optional?: boolean;
 }
 
+// Textos (title/hint/action) vêm de messages/<locale>/onboarding.json em steps.<key>
 const STEPS: Step[] = [
-  {
-    key: "session_types",
-    label: "Passo 1",
-    title: "Criar tipos de sessão",
-    hint: "Defina seus serviços com duração e preço.",
-    href: "/settings/session-types",
-    action: "Configurar",
-    icon: Zap,
-  },
-  {
-    key: "patients",
-    label: "Passo 2",
-    title: "Adicionar primeiro paciente",
-    hint: "Cadastre um paciente para começar a agendar.",
-    href: "/patients/new",
-    action: "Adicionar",
-    icon: UserPlus,
-  },
-  {
-    key: "appointments",
-    label: "Passo 3",
-    title: "Agendar primeira sessão",
-    hint: "Marque uma consulta na agenda.",
-    href: "/schedule/new",
-    action: "Agendar",
-    icon: CalendarPlus,
-  },
-  {
-    key: "forms",
-    label: "Passo 4",
-    title: "Criar formulário de anamnese",
-    hint: "Envie um formulário de triagem para seus pacientes.",
-    href: "/forms/new",
-    action: "Criar",
-    icon: ClipboardList,
-  },
-  {
-    key: "booking",
-    label: "Passo 5",
-    title: "Definir horários de atendimento",
-    hint: "Configure sua disponibilidade semanal para agendamento online.",
-    href: "/settings",
-    action: "Configurar",
-    icon: Link2,
-  },
-  {
-    key: "team",
-    label: "Passo 6",
-    title: "Convidar profissional",
-    hint: "Adicione um colega de equipe à clínica.",
-    href: "/settings/equipe",
-    action: "Convidar",
-    icon: Users,
-    optional: true,
-  },
+  { key: "session_types", href: "/settings/session-types", icon: Zap },
+  { key: "patients",      href: "/patients/new",           icon: UserPlus },
+  { key: "appointments",  href: "/schedule/new",           icon: CalendarPlus },
+  { key: "forms",         href: "/forms/new",              icon: ClipboardList },
+  { key: "booking",       href: "/settings",               icon: Link2 },
+  { key: "team",          href: "/settings/equipe",        icon: Users, optional: true },
 ];
 
 export function SoftOnboardingGuide() {
+  const t = useTranslations("onboarding.guide");
+  const tSteps = useTranslations("onboarding.steps");
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -160,14 +111,14 @@ export function SoftOnboardingGuide() {
           </div>
           <div className="min-w-0">
             <h2 className="text-[14px] font-semibold tracking-[-0.02em] text-[#0F1A2E] leading-tight">
-              {allDone ? "Configuração completa! 🎉" : "Configure sua clínica"}
+              {allDone ? t("titleDone") : t("titleTodo")}
             </h2>
             <p className="text-[11px] text-[#A09E98] mt-[1px]">
               {allDone
-                ? "Você está pronto para atender pacientes."
+                ? t("subtitleDone")
                 : requiredDone
-                ? "Principais passos concluídos — opcional restante."
-                : `${completed} de ${total} passos concluídos`}
+                ? t("subtitleRequiredDone")
+                : t("subtitleProgress", { done: completed, total })}
             </p>
           </div>
         </div>
@@ -176,7 +127,7 @@ export function SoftOnboardingGuide() {
             type="button"
             onClick={() => setIsExpanded((v) => !v)}
             className="rounded-full w-7 h-7 flex items-center justify-center text-[#A09E98] hover:bg-[#F4F3EF] hover:text-[#0F1A2E] transition"
-            aria-label={isExpanded ? "Recolher" : "Expandir"}
+            aria-label={isExpanded ? t("collapse") : t("expand")}
           >
             {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
           </button>
@@ -184,7 +135,7 @@ export function SoftOnboardingGuide() {
             type="button"
             onClick={dismiss}
             className="rounded-full w-7 h-7 flex items-center justify-center text-[#A09E98] hover:bg-[#F4F3EF] hover:text-[#0F1A2E] transition"
-            aria-label="Fechar guia"
+            aria-label={t("close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -240,22 +191,22 @@ export function SoftOnboardingGuide() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-[5px]">
                       <p className={`text-[12px] font-semibold truncate ${done ? "line-through text-[#A09E98]" : "text-[#0F1A2E]"}`}>
-                        {step.title}
+                        {tSteps(`${step.key}.title`)}
                       </p>
                       {step.optional && !done && (
                         <span className="shrink-0 text-[9px] font-medium text-[#A09E98] bg-white border border-black/[.07] rounded-full px-[6px] py-[1px]">
-                          opcional
+                          {t("optional")}
                         </span>
                       )}
                     </div>
                     {!done && (
-                      <p className="text-[10px] text-[#A09E98] truncate">{step.hint}</p>
+                      <p className="text-[10px] text-[#A09E98] truncate">{tSteps(`${step.key}.hint`)}</p>
                     )}
                   </div>
                 </div>
                 {!done && (
                   <span className="shrink-0 rounded-full bg-white px-[9px] py-[4px] text-[10px] font-semibold text-[#6B6A66] border border-black/[.07] transition group-hover:bg-[#0F1A2E] group-hover:text-white group-hover:border-transparent">
-                    {step.action}
+                    {tSteps(`${step.key}.action`)}
                   </span>
                 )}
               </Link>
@@ -270,7 +221,7 @@ export function SoftOnboardingGuide() {
           onClick={dismiss}
           className="w-full rounded-[8px] py-[7px] text-[11px] font-medium text-[#A09E98] hover:bg-[#F4F3EF] hover:text-[#0F1A2E] transition"
         >
-          {allDone ? "Fechar guia" : "Dispensar por agora"}
+          {allDone ? t("closeButton") : t("dismissButton")}
         </button>
       </div>
     </aside>

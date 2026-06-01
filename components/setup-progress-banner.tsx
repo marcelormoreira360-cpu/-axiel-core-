@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Circle, ArrowRight, X } from "lucide-react";
 
 const STORAGE_KEY = "axiel-setup-banner-dismissed";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function SetupProgressBanner({ tasks }: Props) {
+  const t = useTranslations("onboarding.banner");
   const [dismissed, setDismissed] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -47,16 +49,16 @@ export function SetupProgressBanner({ tasks }: Props) {
       {/* Top row */}
       <div className="flex items-center justify-between mb-[10px]">
         <div className="flex items-center gap-[8px]">
-          <p className="text-[11px] font-semibold text-[#0F1A2E]">Configuração inicial</p>
+          <p className="text-[11px] font-semibold text-[#0F1A2E]">{t("title")}</p>
           <span className="text-[10px] font-medium text-[#0F6E56] bg-[#E1F5EE] px-[7px] py-[2px] rounded-full">
-            {done}/{total} concluídos
+            {t("progress", { done, total })}
           </span>
         </div>
         <button
           type="button"
           onClick={dismiss}
           className="text-[#D3D1C7] hover:text-[#A09E98] transition"
-          aria-label="Dispensar"
+          aria-label={t("dismiss")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -94,7 +96,7 @@ export function SetupProgressBanner({ tasks }: Props) {
       <div className="flex items-center justify-between">
         {nextTask && (
           <p className="text-[11px] text-[#6B6A66]">
-            Próximo: <span className="font-medium text-[#0F1A2E]">{nextTask.title}</span>
+            {t("next")} <span className="font-medium text-[#0F1A2E]">{nextTask.title}</span>
           </p>
         )}
         <div className="flex items-center gap-[8px] ml-auto">
@@ -103,14 +105,14 @@ export function SetupProgressBanner({ tasks }: Props) {
               href={nextTask.href}
               className="flex items-center gap-[4px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[12px] py-[6px] rounded-[7px]"
             >
-              Fazer agora <ArrowRight className="h-3 w-3" />
+              {t("doNow")} <ArrowRight className="h-3 w-3" />
             </Link>
           )}
           <Link
             href="/get-started"
             className="text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
           >
-            Ver tudo
+            {t("viewAll")}
           </Link>
         </div>
       </div>

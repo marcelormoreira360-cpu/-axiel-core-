@@ -1,0 +1,61 @@
+{
+  "banner": {
+    "title": "Initial setup",
+    "progress": "{done}/{total} done",
+    "dismiss": "Dismiss",
+    "next": "Next:",
+    "doNow": "Do it now",
+    "viewAll": "View all"
+  },
+  "guide": {
+    "titleDone": "Setup complete! 🎉",
+    "titleTodo": "Set up your clinic",
+    "subtitleDone": "You're ready to see patients.",
+    "subtitleRequiredDone": "Main steps done — optional one remaining.",
+    "subtitleProgress": "{done} of {total} steps done",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "close": "Close guide",
+    "optional": "optional",
+    "closeButton": "Close guide",
+    "dismissButton": "Dismiss for now"
+  },
+  "steps": {
+    "session_types": {
+      "label": "Step 1",
+      "title": "Create session types",
+      "hint": "Define your services with duration and price.",
+      "action": "Set up"
+    },
+    "patients": {
+      "label": "Step 2",
+      "title": "Add your first patient",
+      "hint": "Register a patient to start scheduling.",
+      "action": "Add"
+    },
+    "appointments": {
+      "label": "Step 3",
+      "title": "Schedule your first session",
+      "hint": "Book an appointment on the calendar.",
+      "action": "Schedule"
+    },
+    "forms": {
+      "label": "Step 4",
+      "title": "Create an intake form",
+      "hint": "Send a screening form to your patients.",
+      "action": "Create"
+    },
+    "booking": {
+      "label": "Step 5",
+      "title": "Set your working hours",
+      "hint": "Configure your weekly availability for online booking.",
+      "action": "Set up"
+    },
+    "team": {
+      "label": "Step 6",
+      "title": "Invite a practitioner",
+      "hint": "Add a teammate to the clinic.",
+      "action": "Invite"
+    }
+  }
+}

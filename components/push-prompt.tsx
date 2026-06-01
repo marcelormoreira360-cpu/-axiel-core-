@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, BellOff, X } from "lucide-react";
 
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
@@ -16,6 +17,7 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
 export function PushPrompt() {
+  const t = useTranslations("common.push");
   const [state, setState] = useState<PermissionState>("default");
   const [dismissed, setDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -78,10 +80,10 @@ export function PushPrompt() {
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-semibold text-[#0F1A2E] leading-tight">
-          Ativar notificações
+          {t("title")}
         </p>
         <p className="text-[11px] text-black/50 mt-0.5 leading-relaxed">
-          Receba alertas quando pacientes enviarem mensagens pelo portal.
+          {t("description")}
         </p>
         <div className="flex gap-2 mt-3">
           <button
@@ -89,20 +91,20 @@ export function PushPrompt() {
             disabled={loading}
             className="flex-1 rounded-xl bg-[#0F1A2E] text-white text-[12px] font-semibold py-2 hover:bg-black transition disabled:opacity-50"
           >
-            {loading ? "Ativando…" : "Ativar"}
+            {loading ? t("enabling") : t("enable")}
           </button>
           <button
             onClick={handleDismiss}
             className="rounded-xl border border-black/[.10] text-black/50 text-[12px] px-3 py-2 hover:bg-black/[.04] transition"
           >
-            Agora não
+            {t("notNow")}
           </button>
         </div>
       </div>
       <button
         onClick={handleDismiss}
         className="shrink-0 text-black/25 hover:text-black/50 transition"
-        aria-label="Fechar"
+        aria-label={t("close")}
       >
         <X className="h-3.5 w-3.5" />
       </button>
@@ -112,6 +114,7 @@ export function PushPrompt() {
 
 // ── Push settings toggle (for use in settings page) ──────────────────────────
 export function PushSettingsToggle() {
+  const t = useTranslations("common.push");
   const [state, setState] = useState<PermissionState>("default");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -170,19 +173,19 @@ export function PushSettingsToggle() {
   }
 
   if (state === "unsupported") {
-    return <p className="text-xs text-black/40">Notificações push não suportadas neste navegador.</p>;
+    return <p className="text-xs text-black/40">{t("unsupported")}</p>;
   }
 
   return (
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-[13px] font-medium text-[#0F1A2E]">Notificações push</p>
+        <p className="text-[13px] font-medium text-[#0F1A2E]">{t("settingsTitle")}</p>
         <p className="text-[11px] text-black/45">
           {state === "denied"
-            ? "Bloqueadas pelo navegador — desbloqueie nas configurações do site."
+            ? t("denied")
             : subscribed
-            ? "Ativas neste dispositivo"
-            : "Receba alertas de mensagens de pacientes"}
+            ? t("active")
+            : t("subtitle")}
         </p>
       </div>
       <button
@@ -195,7 +198,7 @@ export function PushSettingsToggle() {
             : "bg-[#0F1A2E] text-white hover:bg-black",
         ].join(" ")}
       >
-        {subscribed ? <><BellOff className="h-3.5 w-3.5" /> Desativar</> : <><Bell className="h-3.5 w-3.5" /> {loading ? "…" : "Ativar"}</>}
+        {subscribed ? <><BellOff className="h-3.5 w-3.5" /> {t("disable")}</> : <><Bell className="h-3.5 w-3.5" /> {loading ? "…" : t("enable")}</>}
       </button>
     </div>
   );

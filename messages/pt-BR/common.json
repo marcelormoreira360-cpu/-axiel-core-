@@ -1,0 +1,60 @@
+{
+  "actions": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "create": "Criar",
+    "search": "Buscar",
+    "back": "Voltar",
+    "next": "Avançar",
+    "confirm": "Confirmar",
+    "close": "Fechar",
+    "viewMore": "Ver mais",
+    "viewAll": "Ver tudo"
+  },
+  "status": {
+    "loading": "Carregando…",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "error": "Ocorreu um erro",
+    "empty": "Nenhum resultado",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "high": "Alto",
+    "low": "Baixo"
+  },
+  "clinicProfile": {
+    "integrativa": "Integrativa",
+    "fisioterapia": "Fisioterapia",
+    "saude_mental": "Saúde Mental",
+    "nutricao": "Nutrição",
+    "wellness": "Wellness"
+  },
+  "language": {
+    "label": "Idioma",
+    "pt-BR": "Português",
+    "en": "English"
+  },
+  "appointmentStatus": {
+    "scheduled": "Agendado",
+    "confirmed": "Confirmado",
+    "completed": "Realizado",
+    "cancelled": "Cancelado",
+    "no_show": "Faltou"
+  },
+  "push": {
+    "title": "Ativar notificações",
+    "description": "Receba alertas quando pacientes enviarem mensagens pelo portal.",
+    "enable": "Ativar",
+    "enabling": "Ativando…",
+    "notNow": "Agora não",
+    "close": "Fechar",
+    "settingsTitle": "Notificações push",
+    "denied": "Bloqueadas pelo navegador — desbloqueie nas configurações do site.",
+    "active": "Ativas neste dispositivo",
+    "subtitle": "Receba alertas de mensagens de pacientes",
+    "unsupported": "Notificações push não suportadas neste navegador.",
+    "disable": "Desativar"
+  }
+}
