@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { saveGoogleReviewUrlAction } from "@/app/settings/integrations/actions";
 import { ExternalLink } from "lucide-react";
 
@@ -11,6 +12,7 @@ async function wrappedAction(_prev: State, formData: FormData): Promise<State> {
 }
 
 export function GoogleReviewUrlForm({ current }: { current: string | null }) {
+  const t = useTranslations("settings.integrations");
   const [state, action, pending] = useActionState<State, FormData>(wrappedAction, null);
   const [value, setValue] = useState(current ?? "");
 
@@ -22,7 +24,7 @@ export function GoogleReviewUrlForm({ current }: { current: string | null }) {
           type="url"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          placeholder="https://g.page/r/xxxx/review"
+          placeholder={t("reviewPlaceholder")}
           className="flex-1 h-9 px-3 rounded-[8px] border border-black/[.08] dark:border-white/[.1] bg-white dark:bg-[#1C2333] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#A09E98] focus:outline-none focus:ring-2 focus:ring-[#0F6E56]/30"
         />
         <button
@@ -30,7 +32,7 @@ export function GoogleReviewUrlForm({ current }: { current: string | null }) {
           disabled={pending}
           className="h-9 px-4 rounded-[8px] bg-[#0F6E56] text-white text-[13px] font-medium hover:bg-[#085041] transition disabled:opacity-50 shrink-0"
         >
-          {pending ? "Salvando…" : "Salvar"}
+          {pending ? t("reviewSaving") : t("reviewSave")}
         </button>
       </div>
 
@@ -42,20 +44,19 @@ export function GoogleReviewUrlForm({ current }: { current: string | null }) {
           className="inline-flex items-center gap-1 text-[11px] text-[#0F6E56] hover:underline"
         >
           <ExternalLink className="w-3 h-3" />
-          Testar link
+          {t("reviewTestLink")}
         </a>
       )}
 
       {state?.ok && (
-        <p className="text-[11px] text-[#0F6E56]">Link salvo com sucesso.</p>
+        <p className="text-[11px] text-[#0F6E56]">{t("reviewSaved")}</p>
       )}
       {state?.error && (
         <p className="text-[11px] text-red-500">{state.error}</p>
       )}
 
       <p className="text-[11px] text-[#A09E98]">
-        Cole o link de avaliação do Google (encontre em Google Meu Negócio → Obter link para avaliação).
-        Pacientes com nota ≥ 4 receberão este link pelo WhatsApp automaticamente.
+        {t("reviewHint")}
       </p>
     </form>
   );

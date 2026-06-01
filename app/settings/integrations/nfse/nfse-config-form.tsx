@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { saveNfseConfigAction } from "./actions";
 import type { NfseConfig } from "@/services/nfse-service";
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function NfseConfigForm({ config }: Props) {
+  const t = useTranslations("settings.nfse");
   const [isPending, startTransition] = useTransition();
   const [error, setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -30,83 +32,83 @@ export function NfseConfigForm({ config }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4">
       {(error || success) && (
         <div className={`rounded-lg px-4 py-2.5 text-[12px] ${error ? "bg-red-50 text-red-600" : "bg-[#E1F5EE] text-[#0F6E56]"}`}>
-          {error ?? "Configuração salva com sucesso."}
+          {error ?? t("saved")}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">
-            API Key <span className="text-red-400">*</span>
+            {t("apiKey")} <span className="text-red-400">*</span>
           </label>
           <input
             name="api_key"
             type="password"
             defaultValue={config?.api_key ?? ""}
-            placeholder="Sua API Key do NFe.io"
+            placeholder={t("apiKeyPlaceholder")}
             required
             className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#0F6E56]/40"
           />
           <p className="text-[10px] text-[#A09E98] mt-1">
-            Em <a href="https://app.nfe.io/account/apikeys" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">app.nfe.io → API Keys</a>
+            {t.rich("apiKeyHint", { a: (c) => <a href="https://app.nfe.io/account/apikeys" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">{c}</a> })}
           </p>
         </div>
 
         <div>
           <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">
-            Company ID <span className="text-red-400">*</span>
+            {t("companyId")} <span className="text-red-400">*</span>
           </label>
           <input
             name="company_id"
             type="text"
             defaultValue={config?.company_id ?? ""}
-            placeholder="ID da empresa no NFe.io"
+            placeholder={t("companyIdPlaceholder")}
             required
             className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#0F6E56]/40"
           />
           <p className="text-[10px] text-[#A09E98] mt-1">
-            Em <a href="https://app.nfe.io/account/companies" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">app.nfe.io → Empresas</a>
+            {t.rich("companyIdHint", { a: (c) => <a href="https://app.nfe.io/account/companies" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">{c}</a> })}
           </p>
         </div>
 
         <div>
           <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">
-            Código de serviço municipal
+            {t("cityCode")}
           </label>
           <input
             name="city_service_code"
             type="text"
             defaultValue={config?.city_service_code ?? "1.05"}
-            placeholder="Ex: 1.05"
+            placeholder={t("cityCodePlaceholder")}
             className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#0F6E56]/40"
           />
-          <p className="text-[10px] text-[#A09E98] mt-1">Consulte a lista da prefeitura. Saúde: geralmente 1.05</p>
+          <p className="text-[10px] text-[#A09E98] mt-1">{t("cityCodeHint")}</p>
         </div>
 
         <div>
           <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">
-            Código CNAE (opcional)
+            {t("cnae")}
           </label>
           <input
             name="cnae_code"
             type="text"
             defaultValue={config?.cnae_code ?? ""}
-            placeholder="Ex: 8630504"
+            placeholder={t("cnaePlaceholder")}
             className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#0F6E56]/40"
           />
-          <p className="text-[10px] text-[#A09E98] mt-1">8621601 = Clínica médica · 8630504 = Fisioterapia</p>
+          <p className="text-[10px] text-[#A09E98] mt-1">{t("cnaeHint")}</p>
         </div>
       </div>
 
       <div>
         <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">
-          Descrição padrão do serviço
+          {t("serviceDesc")}
         </label>
         <input
           name="service_description"
           type="text"
           defaultValue={config?.service_description ?? "Prestação de serviços de saúde"}
-          placeholder="Descrição que aparece nas notas emitidas"
+          placeholder={t("serviceDescPlaceholder")}
           className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:border-[#0F6E56]/40"
         />
       </div>
@@ -116,7 +118,7 @@ export function NfseConfigForm({ config }: Props) {
         disabled={isPending}
         className="rounded-lg bg-[#0B1F3A] px-5 py-2 text-sm font-medium text-white hover:bg-black transition disabled:opacity-50"
       >
-        {isPending ? "Salvando..." : "Salvar configuração"}
+        {isPending ? t("saving") : t("save")}
       </button>
     </form>
   );

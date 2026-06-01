@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Card } from "@/components/card";
 import { Button } from "@/components/button";
 import { saveBrandingAction } from "./actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const PRESET_COLORS = [
-  { label: "Azul noite", value: "#0B1F3A" },
-  { label: "Verde clínico", value: "#0F6E56" },
-  { label: "Roxo", value: "#5B21B6" },
-  { label: "Terracota", value: "#B45309" },
-  { label: "Cinza ardósia", value: "#334155" },
-  { label: "Rosa antigo", value: "#9D4B6B" },
+  { key: "colorNight", value: "#0B1F3A" },
+  { key: "colorClinical", value: "#0F6E56" },
+  { key: "colorPurple", value: "#5B21B6" },
+  { key: "colorTerracotta", value: "#B45309" },
+  { key: "colorSlate", value: "#334155" },
+  { key: "colorRose", value: "#9D4B6B" },
 ];
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: Props) {
+  const t = useTranslations("settings.branding");
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,11 +39,11 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
 
     // Validar tipo
     if (!["image/png", "image/svg+xml", "image/jpeg", "image/webp"].includes(file.type)) {
-      setError("Formato inválido. Use PNG, SVG, JPEG ou WebP.");
+      setError(t("errFormat"));
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setError("Arquivo muito grande. Máximo 2 MB.");
+      setError(t("errSize"));
       return;
     }
 
@@ -69,7 +71,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
       setLogoUrl(publicUrl);
       setPreviewUrl(publicUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer upload.");
+      setError(err instanceof Error ? err.message : t("errUpload"));
       setPreviewUrl(currentLogoUrl);
     } finally {
       setUploading(false);
@@ -95,10 +97,9 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       {/* Logo */}
       <Card className="p-6">
-        <h2 className="mb-1 text-lg font-semibold">Logo da clínica</h2>
+        <h2 className="mb-1 text-lg font-semibold">{t("logoTitle")}</h2>
         <p className="mb-4 text-sm text-black/50">
-          PNG, SVG, JPEG ou WebP — fundo transparente recomendado. Máximo 2 MB.
-          Aparece no portal do paciente e na página de agendamento.
+          {t("logoDesc")}
         </p>
 
         {/* Preview */}
@@ -106,11 +107,11 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
           <div className="mb-4 flex items-center gap-3">
             <img
               src={previewUrl}
-              alt="Logo da clínica"
+              alt={t("logoAlt")}
               className="h-12 max-w-[180px] object-contain rounded border border-black/10 bg-white p-1.5"
             />
             <span className="text-xs text-black/40">
-              {uploading ? "Enviando..." : "Logo atual"}
+              {uploading ? t("uploading") : t("currentLogo")}
             </span>
           </div>
         )}
@@ -130,7 +131,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
             disabled={uploading}
             className="rounded-lg border border-black/20 bg-white px-4 py-2 text-sm font-medium hover:bg-black/5 disabled:opacity-50 transition"
           >
-            {uploading ? "Enviando…" : previewUrl ? "Trocar logo" : "Selecionar arquivo"}
+            {uploading ? t("uploadingShort") : previewUrl ? t("changeLogo") : t("selectFile")}
           </button>
           {previewUrl && !uploading && (
             <button
@@ -138,7 +139,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
               onClick={() => { setLogoUrl(""); setPreviewUrl(null); }}
               className="text-xs text-red-500 hover:underline"
             >
-              Remover
+              {t("remove")}
             </button>
           )}
         </div>
@@ -146,9 +147,9 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
 
       {/* Cor primária */}
       <Card className="p-6">
-        <h2 className="mb-1 text-lg font-semibold">Cor primária</h2>
+        <h2 className="mb-1 text-lg font-semibold">{t("colorTitle")}</h2>
         <p className="mb-4 text-sm text-black/50">
-          Usada no cabeçalho do portal do paciente e na página de agendamento.
+          {t("colorDesc")}
         </p>
 
         <div className="flex flex-wrap gap-2 mb-4">
@@ -157,7 +158,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
               key={preset.value}
               type="button"
               onClick={() => setColor(preset.value)}
-              title={preset.label}
+              title={t(preset.key)}
               className="flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition"
               style={{
                 borderColor: color === preset.value ? preset.value : "transparent",
@@ -169,7 +170,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
                 className="inline-block h-3 w-3 rounded-full shrink-0"
                 style={{ backgroundColor: preset.value }}
               />
-              {preset.label}
+              {t(preset.key)}
             </button>
           ))}
         </div>
@@ -192,16 +193,16 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
             className="flex h-9 w-24 items-center justify-center rounded-lg text-xs font-medium text-white"
             style={{ backgroundColor: color }}
           >
-            Preview
+            {t("preview")}
           </div>
         </div>
       </Card>
 
       <div className="flex items-center gap-4">
         <Button type="submit" disabled={isPending || uploading}>
-          {isPending ? "Salvando..." : "Salvar identidade visual"}
+          {isPending ? t("saving") : t("save")}
         </Button>
-        {saved && <span className="text-sm text-green-600">Salvo com sucesso.</span>}
+        {saved && <span className="text-sm text-green-600">{t("savedMsg")}</span>}
         {error && <span className="text-sm text-red-500">{error}</span>}
       </div>
     </form>

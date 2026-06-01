@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function IcalCopyButton({ url }: { url: string }) {
+  const t = useTranslations("settings.integrations");
   const [copied, setCopied] = useState(false);
   async function handleCopy() {
     await navigator.clipboard.writeText(url);
@@ -15,7 +17,7 @@ export function IcalCopyButton({ url }: { url: string }) {
         onClick={handleCopy}
         className={`shrink-0 text-[11px] font-medium px-[10px] py-[4px] rounded-[6px] transition ${copied ? "bg-[#0F6E56] text-white" : "bg-white dark:bg-white/[.08] text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#0F6E56]/[.08]"}`}
       >
-        {copied ? "Copiado ✓" : "Copiar"}
+        {copied ? t("copied") : t("copy")}
       </button>
     </div>
   );
