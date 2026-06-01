@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -7,11 +8,12 @@ import { PractitionersList, type PractitionerRow } from "./practitioners-list";
 export const metadata = { title: "Profissionais — AXIEL Core" };
 
 export default async function PractitionersPage() {
+  const t = await getTranslations("settings");
   const clinic = await getCurrentClinic();
   if (!clinic) {
     return (
       <Shell>
-        <p className="text-sm text-black/55">Clínica não encontrada.</p>
+        <p className="text-sm text-black/55">{t("practitioners.noClinic")}</p>
       </Shell>
     );
   }
@@ -53,11 +55,10 @@ export default async function PractitionersPage() {
     <Shell>
       <div className="mb-6 flex items-center gap-4">
         <div className="flex-1">
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Configurações</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Profissionais</h1>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">{t("common.eyebrow")}</p>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">{t("hub.items.practitioners.title")}</h1>
           <p className="mt-2 text-sm text-black/55">
-            Configure o perfil público de cada profissional da equipe. Ative &quot;Agenda pública&quot; para que
-            o paciente possa escolher o profissional ao agendar online.
+            {t("practitioners.subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -65,13 +66,13 @@ export default async function PractitionersPage() {
             href="/settings/equipe"
             className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg"
           >
-            + Convidar profissional
+            {t("practitioners.inviteBtn")}
           </Link>
           <Link
             href="/settings"
             className="text-[12px] text-black/40 hover:text-black/70 transition"
           >
-            ← Voltar
+            {t("practitioners.back")}
           </Link>
         </div>
       </div>

@@ -115,6 +115,14 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 4d (01/06/2026): módulo Configurações — **namespace `settings`**
+  - 4d-1: hub (`settings/page.tsx`, 19 cards via chaves + audit log), profile (page+form), regional (chrome; listas TZ/moeda são dados), usage, lgpd, security (RLS), `components/mfa-settings.tsx` (2FA)
+  - 4d-2: equipe (page+client, modal de convite; ROLE_LABELS de lib/team-utils **ainda em PT — follow-up**), practitioners (page+list), session-types (page + `components/session-type-list.tsx`), offers (page + `components/offer-list.tsx`)
+  - Rich text via `t.rich` com tags `<b>`/`<a>` (explainer de session-types, infoTip de offers)
+  - Plurais ICU: membersCount, sessionTypes.count, offers.count, offers.sessionsLabel
+  - Validado: tsc do código limpo, paridade PT/EN (16 namespaces), ICU compila
+  - **Pendente Fase 4d**: 4d-3 Integrações + branding, 4d-4 lembretes/whatsapp/voice; depois 4e Automações
+  - **Pendente geral**: Fases 5–6 (áreas públicas; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 4c (01/06/2026): Results, Relatórios e Analytics
   - Results (`/results`) e Relatórios (`/relatorios`) migrados — namespaces `results` e `reports`
   - Analytics (`app/analytics/page.tsx`) migrado — **novo namespace `analytics`** (registrado em i18n/request.ts); NPS, ocupação, alertas; plurais ICU (avaliações, sessões sem NPS, pacotes ≤2, restantes, pacientes inativos); `npsLabelKey` mapeia score→chave; `daysSinceLabel(days,t)` e datas via locale

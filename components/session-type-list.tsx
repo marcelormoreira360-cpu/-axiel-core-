@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
 
 function formatBRL(cents: number) {
@@ -36,6 +37,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 }
 
 export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction, toggleRecordingAction, toggleActiveAction, editAction, deleteAction }: Props) {
+  const t = useTranslations("settings.sessionTypes");
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
   }
 
   function handleDelete(id: string, name: string) {
-    if (!confirm(`Remover "${name}"? Esta ação não pode ser desfeita.`)) return;
+    if (!confirm(t("confirmDelete", { name }))) return;
     setPendingId(id + "-delete");
     startTransition(async () => {
       await deleteAction(id);
@@ -103,14 +105,14 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.06] dark:border-white/[.07]">
           <div>
             <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">
-              {sessionTypes.length} tipo{sessionTypes.length !== 1 ? "s" : ""} cadastrado{sessionTypes.length !== 1 ? "s" : ""}
+              {t("count", { count: sessionTypes.length })}
             </p>
           </div>
           <button
             onClick={() => setShowForm((v) => !v)}
             className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-[8px]"
           >
-            {showForm ? "Cancelar" : "+ Novo tipo"}
+            {showForm ? t("cancel") : t("newType")}
           </button>
         </div>
 
@@ -119,16 +121,16 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
           <form onSubmit={handleCreate} className="px-5 py-4 border-b border-black/[.06] dark:border-white/[.07] bg-[#FAFAF8] dark:bg-white/[.02]">
             <div className="grid grid-cols-2 gap-3 mb-3 sm:grid-cols-4">
               <div className="sm:col-span-2">
-                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Nome</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("name")}</label>
                 <input
                   name="name"
                   required
-                  placeholder="Ex: Consulta online"
+                  placeholder={t("namePlaceholder")}
                   className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Duração (min)</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("duration")}</label>
                 <input
                   name="duration_minutes"
                   type="number"
@@ -140,7 +142,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Preço (R$)</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")}</label>
                 <input
                   name="price_brl"
                   type="number"
@@ -166,7 +168,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                   }}
                 />
                 <span className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97]">
-                  Sessão online — cria reunião Zoom automaticamente
+                  {t("onlineHint")}
                 </span>
               </label>
             </div>
@@ -176,7 +178,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
               disabled={isPending}
               className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-60 transition px-[14px] py-[7px] rounded-[8px]"
             >
-              {isPending ? "Salvando…" : "Criar tipo de sessão"}
+              {isPending ? t("saving") : t("create")}
             </button>
           </form>
         )}
@@ -184,15 +186,15 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
         {/* Table */}
         {sessionTypes.length === 0 && !showForm ? (
           <div className="px-5 py-10 text-center">
-            <p className="text-[13px] text-[#A09E98]">Nenhum tipo de sessão cadastrado.</p>
-            <p className="text-[12px] text-[#C5C3BC] mt-1">Clique em "+ Novo tipo" para começar.</p>
+            <p className="text-[13px] text-[#A09E98]">{t("empty")}</p>
+            <p className="text-[12px] text-[#C5C3BC] mt-1">{t("emptyHint")}</p>
           </div>
         ) : (
           <div className="divide-y divide-black/[.04] dark:divide-white/[.04]">
             {/* Column headers */}
             <div className="hidden sm:grid grid-cols-[1fr_80px_90px_80px_90px_80px_64px] gap-4 px-5 py-2 bg-[#FAFAF8] dark:bg-white/[.02]">
-              {["Nome", "Duração", "Preço", "Online", "Gravar", "Ativo", ""].map((h) => (
-                <p key={h} className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98]">{h}</p>
+              {[t("colName"), t("colDuration"), t("colPrice"), t("colOnline"), t("colRecord"), t("colActive"), ""].map((h, i) => (
+                <p key={i} className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98]">{h}</p>
               ))}
             </div>
 
@@ -204,12 +206,12 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                   <div>
                     <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{st.name}</p>
                     <p className="text-[11px] text-[#A09E98] sm:hidden mt-[1px]">
-                      {st.duration_minutes} min · {formatBRL(st.price_cents)}
+                      {st.duration_minutes} {t("durationUnit")} · {formatBRL(st.price_cents)}
                     </p>
                   </div>
 
                   {/* Duration — hidden on mobile */}
-                  <p className="hidden sm:block text-[13px] text-[#6B6A66] dark:text-[#9E9C97]">{st.duration_minutes} min</p>
+                  <p className="hidden sm:block text-[13px] text-[#6B6A66] dark:text-[#9E9C97]">{st.duration_minutes} {t("durationUnit")}</p>
 
                   {/* Price */}
                   <p className="hidden sm:block text-[13px] text-[#6B6A66] dark:text-[#9E9C97]">{formatBRL(st.price_cents)}</p>
@@ -219,7 +221,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                     <Toggle
                       checked={st.is_online}
                       onChange={() => handleToggleOnline(st.id, st.is_online)}
-                      label="Online"
+                      label={t("toggleOnline")}
                     />
                     {st.is_online && (
                       <span className="text-[10px] font-medium text-[#2D8CFF] bg-[#2D8CFF]/[.10] px-[6px] py-[2px] rounded-full">Zoom</span>
@@ -233,7 +235,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                         <Toggle
                           checked={st.is_recorded ?? true}
                           onChange={() => handleToggleRecording(st.id, st.is_recorded ?? true)}
-                          label="Gravar"
+                          label={t("toggleRecord")}
                         />
                         {(st.is_recorded ?? true) && (
                           <span className="text-[10px] font-medium text-[#7C3AED] bg-[#7C3AED]/[.10] px-[6px] py-[2px] rounded-full">REC</span>
@@ -249,7 +251,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                     <Toggle
                       checked={st.is_active}
                       onChange={() => handleToggleActive(st.id, st.is_active)}
-                      label="Ativo"
+                      label={t("toggleActive")}
                     />
                   </div>
 
@@ -258,18 +260,18 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                     {/* Mobile: show toggles inline */}
                     <div className="flex items-center gap-3 sm:hidden mr-2">
                       <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
-                        <Toggle checked={st.is_online} onChange={() => handleToggleOnline(st.id, st.is_online)} label="Online" />
-                        Online
+                        <Toggle checked={st.is_online} onChange={() => handleToggleOnline(st.id, st.is_online)} label={t("toggleOnline")} />
+                        {t("toggleOnline")}
                       </label>
                       {st.is_online && (
                         <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
-                          <Toggle checked={st.is_recorded ?? true} onChange={() => handleToggleRecording(st.id, st.is_recorded ?? true)} label="Gravar" />
-                          Gravar
+                          <Toggle checked={st.is_recorded ?? true} onChange={() => handleToggleRecording(st.id, st.is_recorded ?? true)} label={t("toggleRecord")} />
+                          {t("toggleRecord")}
                         </label>
                       )}
                       <label className="flex items-center gap-1 text-[10px] text-[#A09E98]">
-                        <Toggle checked={st.is_active} onChange={() => handleToggleActive(st.id, st.is_active)} label="Ativo" />
-                        Ativo
+                        <Toggle checked={st.is_active} onChange={() => handleToggleActive(st.id, st.is_active)} label={t("toggleActive")} />
+                        {t("toggleActive")}
                       </label>
                     </div>
                     {/* Edit button */}
@@ -280,7 +282,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                         ${editingId === st.id
                           ? "text-[#0F6E56] bg-[#0F6E56]/[.10]"
                           : "text-[#A09E98] hover:text-[#0F6E56] hover:bg-[#0F6E56]/[.07]"}`}
-                      title={editingId === st.id ? "Cancelar edição" : "Editar"}
+                      title={editingId === st.id ? t("cancelEdit") : t("edit")}
                     >
                       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                         <path d="M9 2l2 2-7 7H2v-2L9 2z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -291,7 +293,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                       onClick={() => handleDelete(st.id, st.name)}
                       disabled={pendingId === st.id + "-delete"}
                       className="w-7 h-7 flex items-center justify-center rounded-[6px] text-[#A09E98] hover:text-[#DC2626] hover:bg-[#DC2626]/[.07] transition disabled:opacity-40"
-                      title="Remover"
+                      title={t("remove")}
                     >
                       <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                         <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 01.5-.5h2a.5.5 0 01.5.5v1M5.5 6v3.5M7.5 6v3.5M3 3.5l.5 7a1 1 0 001 1h4a1 1 0 001-1l.5-7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -308,7 +310,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                   >
                     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-3">
                       <div className="sm:col-span-2">
-                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Nome</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("name")}</label>
                         <input
                           name="name"
                           required
@@ -317,7 +319,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Duração (min)</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("duration")}</label>
                         <input
                           name="duration_minutes"
                           type="number"
@@ -329,7 +331,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Preço (R$)</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")}</label>
                         <input
                           name="price_brl"
                           type="number"
@@ -346,14 +348,14 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                         disabled={pendingId === st.id + "-edit"}
                         className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-60 transition px-[14px] py-[7px] rounded-[8px]"
                       >
-                        {pendingId === st.id + "-edit" ? "Salvando…" : "Salvar alterações"}
+                        {pendingId === st.id + "-edit" ? t("saving") : t("saveChanges")}
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingId(null)}
                         className="text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition px-[14px] py-[7px] rounded-[8px] border border-black/[.08] dark:border-white/[.08]"
                       >
-                        Cancelar
+                        {t("cancel")}
                       </button>
                     </div>
                   </form>
@@ -371,9 +373,10 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
           <path d="M8 5v4M8 10.5v.5" stroke="#2D8CFF" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
         <p className="text-[12px] text-[#2563EB] dark:text-[#93C5FD] leading-relaxed">
-          Tipos com <strong>Online ativado</strong> criam uma reunião Zoom automaticamente ao ser agendados — desde que o Zoom esteja conectado em{" "}
-          <a href="/settings/integrations" className="underline hover:no-underline">Settings → Integrações</a>.
-          Tipos presenciais não geram link Zoom.
+          {t.rich("explainer", {
+            b: (chunks) => <strong>{chunks}</strong>,
+            a: (chunks) => <a href="/settings/integrations" className="underline hover:no-underline">{chunks}</a>,
+          })}
         </p>
       </div>
     </div>
