@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Download, X, Check, Loader2 } from "lucide-react";
 import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function ImportTemplatesButton({ available, actionEntries }: Props) {
+  const t = useTranslations("forms.import");
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [done, setDone] = useState<string[]>([]);
@@ -40,7 +42,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
         await action();
         setDone((prev) => [...prev, key]);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Erro ao importar");
+        setError(e instanceof Error ? e.message : t("error"));
       } finally {
         setCurrentKey(null);
       }
@@ -58,22 +60,22 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
         className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition"
       >
         <Download className="h-3 w-3" />
-        Importar modelos ({remaining.length})
+        {t("button", { count: remaining.length })}
       </button>
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
           <button
             type="button"
-            aria-label="Fechar"
+            aria-label={t("close")}
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-[#0F1A2E]/30 backdrop-blur-[2px]"
           />
           <div className="relative w-full max-w-[520px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-5 max-h-[80vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Biblioteca de questionários</p>
-                <h2 className="text-[16px] font-medium text-[#0F1A2E] mt-[2px]">Importar modelos validados</h2>
+                <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("library")}</p>
+                <h2 className="text-[16px] font-medium text-[#0F1A2E] mt-[2px]">{t("importValidated")}</h2>
               </div>
               <button
                 type="button"
@@ -112,7 +114,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
 
                     {isDone ? (
                       <div className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56]">
-                        <Check className="h-3.5 w-3.5" /> Importado
+                        <Check className="h-3.5 w-3.5" /> {t("imported")}
                       </div>
                     ) : (
                       <button
@@ -122,7 +124,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
                         className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[6px] px-[10px] py-[5px] transition"
                       >
                         {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-                        Importar
+                        {t("import")}
                       </button>
                     )}
                   </div>
@@ -132,7 +134,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
 
             {remaining.filter((k) => !done.includes(k)).length === 0 && catalog.length > 0 && (
               <p className="mt-4 text-center text-[12px] text-[#0F6E56] font-medium">
-                ✓ Todos os modelos disponíveis foram importados!
+                {t("allImported")}
               </p>
             )}
           </div>

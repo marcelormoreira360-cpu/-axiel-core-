@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { AssessmentFormBuilder } from "@/components/assessment-form-builder";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -8,6 +9,7 @@ import { redirect } from "next/navigation";
 export default async function NewFormPage() {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) redirect("/forms");
+  const t = await getTranslations("forms.new");
 
   return (
     <Shell>
@@ -20,10 +22,10 @@ export default async function NewFormPage() {
         </Link>
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
-            Novo formulário
+            {t("title")}
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
-            Crie seções e perguntas com pontuação
+            {t("subtitle")}
           </p>
         </div>
       </div>

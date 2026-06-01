@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getTemplateWithStructure } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -17,6 +18,7 @@ export default async function EditFormPage({ params }: Props) {
     getCurrentUserProfile(),
   ]);
   if (!template || !profile?.clinic_id) notFound();
+  const t = await getTranslations("forms.edit");
 
   return (
     <Shell>
@@ -28,7 +30,7 @@ export default async function EditFormPage({ params }: Props) {
           <ArrowLeft className="h-3.5 w-3.5" />
         </Link>
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Editar formulário</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">{template.name}</p>
         </div>
       </div>

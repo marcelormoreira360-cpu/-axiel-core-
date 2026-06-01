@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Trash2 } from "lucide-react";
 
 export function DeleteTemplateButton({
@@ -9,10 +10,11 @@ export function DeleteTemplateButton({
   action: () => Promise<void>;
   templateName: string;
 }) {
+  const t = useTranslations("forms.delete");
   return (
     <form
       action={async () => {
-        if (!confirm(`Remover "${templateName}"?`)) return;
+        if (!confirm(t("confirm", { name: templateName }))) return;
         await action();
       }}
     >

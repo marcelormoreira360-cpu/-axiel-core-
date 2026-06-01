@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getTemplateWithStructure } from "@/services/assessment-service";
 import { getPatients } from "@/services/patient-service";
@@ -22,6 +23,7 @@ export default async function FormDetailPage({ params }: Props) {
 
   const clinicId = profile?.clinic_id ?? undefined;
   const patients = await getPatients(clinicId);
+  const t = await getTranslations("forms.detail");
 
   const totalQuestions = template.assessment_sections.reduce(
     (sum, s) => sum + s.assessment_questions.length,
@@ -46,7 +48,7 @@ export default async function FormDetailPage({ params }: Props) {
           <div>
             <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{template.name}</h1>
             <p className="text-[12px] text-[#A09E98] mt-[1px]">
-              {template.assessment_sections.length} seções · {totalQuestions} perguntas · pontuação máx. {maxScore}
+              {t("meta", { sections: template.assessment_sections.length, questions: totalQuestions, max: maxScore })}
             </p>
           </div>
         </div>
@@ -54,7 +56,7 @@ export default async function FormDetailPage({ params }: Props) {
           href={`/forms/${id}/edit`}
           className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[10px] py-[5px] transition"
         >
-          <Pencil className="h-3 w-3" /> Editar formulário
+          <Pencil className="h-3 w-3" /> {t("editForm")}
         </Link>
       </div>
 
@@ -68,8 +70,7 @@ export default async function FormDetailPage({ params }: Props) {
                   {section.title}
                 </p>
                 <span className="text-[10px] text-[#A09E98]">
-                  {section.assessment_questions.length} perguntas · máx{" "}
-                  {section.assessment_questions.reduce((s, q) => s + q.max_score, 0)} pts
+                  {t("sectionMeta", { count: section.assessment_questions.length, pts: section.assessment_questions.reduce((s, q) => s + q.max_score, 0) })}
                 </span>
               </div>
               <div className="divide-y divide-black/[.04]">
@@ -77,13 +78,11 @@ export default async function FormDetailPage({ params }: Props) {
                   <div key={q.id} className="flex items-center justify-between px-[14px] py-[9px] gap-[12px]">
                     <p className="text-[12px] text-[#0F1A2E] flex-1">{q.text}</p>
                     <span className="text-[10px] text-[#A09E98] shrink-0">
-                      {q.question_type === "scale"
-                        ? `0–${q.max_score}`
-                        : q.question_type === "yes_no"
-                        ? "Sim/Não"
+                      {q.question_type === "yes_no"
+                        ? t("qYesNo")
                         : q.question_type === "text"
-                        ? "Texto"
-                        : `0–${q.max_score}`}
+                        ? t("qText")
+                        : t("qScale", { max: q.max_score })}
                     </span>
                   </div>
                 ))}
@@ -95,18 +94,18 @@ export default async function FormDetailPage({ params }: Props) {
         {/* Patient picker */}
         <div className="space-y-[12px]">
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">Preencher para paciente</p>
+            <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("fillFor")}</p>
             <FormPatientPicker patients={patients} templateId={id} />
           </div>
 
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">Enviar link para paciente</p>
+            <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("sendLink")}</p>
             <FormInvitationPanel patients={patients} templateId={id} />
           </div>
 
           {template.instructions && (
             <div className="bg-[#F4F3EF] rounded-[12px] px-[14px] py-[12px]">
-              <p className="text-[10px] font-medium text-[#6B6A66] mb-[6px]">Instruções</p>
+              <p className="text-[10px] font-medium text-[#6B6A66] mb-[6px]">{t("instructions")}</p>
               <p className="text-[12px] text-[#0F1A2E] leading-relaxed">{template.instructions}</p>
             </div>
           )}

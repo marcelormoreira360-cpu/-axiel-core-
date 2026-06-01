@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -15,6 +16,7 @@ import { ImportTemplatesButton } from "@/app/forms/import-templates-button";
 import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 
 export default async function FormsPage() {
+  const t = await getTranslations("forms.list");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
   const [templates, patients] = await Promise.all([
@@ -61,9 +63,9 @@ export default async function FormsPage() {
     <Shell>
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Formulários</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {templates.length} {templates.length === 1 ? "modelo" : "modelos"} ativos
+            {t("count", { count: templates.length })}
           </p>
         </div>
         {profile?.clinic_id && (
@@ -71,14 +73,14 @@ export default async function FormsPage() {
             {!hasQRM && (
               <form action={importQRMAction}>
                 <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
-                  Importar Q.R.M.
+                  {t("importQRM")}
                 </button>
               </form>
             )}
             {!hasQSNA && (
               <form action={importQSNAAction}>
                 <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
-                  Importar Q-SNA
+                  {t("importQSNA")}
                 </button>
               </form>
             )}
@@ -87,7 +89,7 @@ export default async function FormsPage() {
               href="/forms/new"
               className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
             >
-              <Plus className="h-3.5 w-3.5" /> Novo formulário
+              <Plus className="h-3.5 w-3.5" /> {t("newForm")}
             </Link>
           </div>
         )}
@@ -95,9 +97,9 @@ export default async function FormsPage() {
 
       {templates.length === 0 ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[24px] text-center">
-          <p className="text-[13px] text-[#A09E98] mb-[4px]">Nenhum formulário criado ainda.</p>
+          <p className="text-[13px] text-[#A09E98] mb-[4px]">{t("empty")}</p>
           <p className="text-[11px] text-[#D3D1C7]">
-            Clique em "Importar Q-SNA" para adicionar o questionário do Sistema Nervoso Autônomo, ou crie um novo.
+            {t("emptyHint")}
           </p>
         </div>
       ) : (
@@ -127,7 +129,7 @@ export default async function FormsPage() {
                   href={`/forms/${t.id}/edit`}
                   className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[10px] py-[5px] transition"
                 >
-                  <Pencil className="h-3 w-3" /> Editar
+                  <Pencil className="h-3 w-3" /> {t("edit")}
                 </Link>
                 <ShareFormButton
                   templateId={t.id}
@@ -138,7 +140,7 @@ export default async function FormsPage() {
                   href={`/forms/${t.id}`}
                   className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[6px] px-[10px] py-[5px] transition"
                 >
-                  <ClipboardList className="h-3 w-3" /> Preencher
+                  <ClipboardList className="h-3 w-3" /> {t("fill")}
                 </Link>
               </div>
             </div>

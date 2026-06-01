@@ -1,0 +1,58 @@
+{
+  "list": {
+    "title": "Forms",
+    "count": "{count, plural, one {# active template} other {# active templates}}",
+    "importQRM": "Import Q.R.M.",
+    "importQSNA": "Import Q-SNA",
+    "newForm": "New form",
+    "empty": "No forms created yet.",
+    "emptyHint": "Click \"Import Q-SNA\" to add the Autonomic Nervous System questionnaire, or create a new one.",
+    "edit": "Edit",
+    "fill": "Fill out"
+  },
+  "detail": {
+    "meta": "{sections} sections · {questions} questions · max score {max}",
+    "editForm": "Edit form",
+    "sectionMeta": "{count} questions · max {pts} pts",
+    "qScale": "0–{max}",
+    "qYesNo": "Yes/No",
+    "qText": "Text",
+    "fillFor": "Fill out for patient",
+    "sendLink": "Send link to patient",
+    "instructions": "Instructions"
+  },
+  "new": {
+    "title": "New form",
+    "subtitle": "Create sections and questions with scoring"
+  },
+  "edit": {
+    "title": "Edit form"
+  },
+  "delete": {
+    "confirm": "Remove \"{name}\"?"
+  },
+  "share": {
+    "send": "Send",
+    "sendTitle": "Generate link for patient",
+    "generateLink": "Generate link",
+    "selectPatient": "Select the patient who will receive the form:",
+    "searchPlaceholder": "Search patient...",
+    "noPatients": "No patients found.",
+    "generating": "Generating link…",
+    "linkGenerated": "Link generated. Copy and send it to the patient:",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "selectOther": "← Select another patient",
+    "close": "Close"
+  },
+  "import": {
+    "button": "Import templates ({count})",
+    "library": "Questionnaire library",
+    "importValidated": "Import validated templates",
+    "error": "Error importing",
+    "imported": "Imported",
+    "import": "Import",
+    "allImported": "✓ All available templates have been imported!",
+    "close": "Close"
+  }
+}

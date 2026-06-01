@@ -1,0 +1,58 @@
+{
+  "list": {
+    "title": "Formulários",
+    "count": "{count, plural, one {# modelo ativo} other {# modelos ativos}}",
+    "importQRM": "Importar Q.R.M.",
+    "importQSNA": "Importar Q-SNA",
+    "newForm": "Novo formulário",
+    "empty": "Nenhum formulário criado ainda.",
+    "emptyHint": "Clique em \"Importar Q-SNA\" para adicionar o questionário do Sistema Nervoso Autônomo, ou crie um novo.",
+    "edit": "Editar",
+    "fill": "Preencher"
+  },
+  "detail": {
+    "meta": "{sections} seções · {questions} perguntas · pontuação máx. {max}",
+    "editForm": "Editar formulário",
+    "sectionMeta": "{count} perguntas · máx {pts} pts",
+    "qScale": "0–{max}",
+    "qYesNo": "Sim/Não",
+    "qText": "Texto",
+    "fillFor": "Preencher para paciente",
+    "sendLink": "Enviar link para paciente",
+    "instructions": "Instruções"
+  },
+  "new": {
+    "title": "Novo formulário",
+    "subtitle": "Crie seções e perguntas com pontuação"
+  },
+  "edit": {
+    "title": "Editar formulário"
+  },
+  "delete": {
+    "confirm": "Remover \"{name}\"?"
+  },
+  "share": {
+    "send": "Enviar",
+    "sendTitle": "Gerar link para paciente",
+    "generateLink": "Gerar link",
+    "selectPatient": "Selecione o paciente que vai receber o formulário:",
+    "searchPlaceholder": "Buscar paciente...",
+    "noPatients": "Nenhum paciente encontrado.",
+    "generating": "Gerando link…",
+    "linkGenerated": "Link gerado. Copie e envie para o paciente:",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "selectOther": "← Selecionar outro paciente",
+    "close": "Fechar"
+  },
+  "import": {
+    "button": "Importar modelos ({count})",
+    "library": "Biblioteca de questionários",
+    "importValidated": "Importar modelos validados",
+    "error": "Erro ao importar",
+    "imported": "Importado",
+    "import": "Importar",
+    "allImported": "✓ Todos os modelos disponíveis foram importados!",
+    "close": "Fechar"
+  }
+}
