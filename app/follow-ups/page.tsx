@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { Bell, CalendarClock, Sparkles } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { FollowUpForm } from "@/components/follow-up-form";
@@ -13,6 +14,7 @@ import type { FollowUpChannel } from "@/lib/types";
 import { sendManualCommunicationAction } from "@/app/communications/actions";
 
 export default async function FollowUpsPage() {
+  const t = await getTranslations("automations.followUps");
   const [profile, patients, followUps] = await Promise.all([getCurrentUserProfile(), getPatients(), getFollowUps()]);
   const pending = followUps.filter((item) => item.status === "pending");
   const completed = followUps.filter((item) => item.status === "completed");
@@ -79,44 +81,44 @@ export default async function FollowUpsPage() {
     <Shell>
       <header className="mb-8 flex flex-col gap-5 pt-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">ACOMPANHAMENTO</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Próximos passos, simplificados.</h1>
-          <p className="mt-3 max-w-2xl text-black/55">Lembretes para a próxima sessão e modelos de mensagem. Envie e-mail ou SMS manualmente a partir de cada lembrete. A automação pode ser adicionada depois.</p>
+          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
+          <p className="mt-3 max-w-2xl text-black/55">{t("subtitle")}</p>
         </div>
       </header>
 
       <section className="mb-5 grid gap-3 md:grid-cols-3">
         <Card className="bg-axiel-ink p-6 text-white">
           <Bell className="h-5 w-5 text-white/45" />
-          <p className="mt-3 text-sm text-white/55">Lembretes pendentes</p>
+          <p className="mt-3 text-sm text-white/55">{t("kpiPending")}</p>
           <p className="mt-2 text-4xl font-semibold">{pending.length}</p>
         </Card>
         <Card className="p-6">
           <CalendarClock className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Concluídos</p>
+          <p className="mt-3 text-sm text-black/45">{t("kpiCompleted")}</p>
           <p className="mt-2 text-4xl font-semibold">{completed.length}</p>
         </Card>
         <Card className="p-6">
           <Sparkles className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Sugestão de IA</p>
-          <p className="mt-2 text-2xl font-semibold">Timing</p>
+          <p className="mt-3 text-sm text-black/45">{t("kpiAi")}</p>
+          <p className="mt-2 text-2xl font-semibold">{t("kpiTiming")}</p>
         </Card>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-[1fr_360px]">
         <div>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold tracking-tight">Lembretes</h2>
-            <p className="text-sm text-black/40">Revisão manual necessária</p>
+            <h2 className="text-2xl font-semibold tracking-tight">{t("listTitle")}</h2>
+            <p className="text-sm text-black/40">{t("manualReview")}</p>
           </div>
           <FollowUpList followUps={followUps} completeAction={completeFollowUpAction} cancelAction={cancelFollowUpAction} sendAction={sendManualCommunicationAction} />
         </div>
 
         <div className="space-y-5">
           {!profile?.clinic_id ? (
-            <Card>Este usuário precisa estar vinculado a uma clínica antes de criar acompanhamentos.</Card>
+            <Card>{t("noClinic")}</Card>
           ) : patients.length === 0 ? (
-            <Card>Cadastre um paciente primeiro e volte aqui para criar um acompanhamento.</Card>
+            <Card>{t("noPatients")}</Card>
           ) : (
             <FollowUpForm patients={patients} action={createFollowUpAction} />
           )}
@@ -128,7 +130,7 @@ export default async function FollowUpsPage() {
               </div>
               <div>
                 <h2 className="font-semibold">{FOLLOW_UP_AI_LABEL}</h2>
-                <p className="text-xs text-black/45">Sugestões de timing automático</p>
+                <p className="text-xs text-black/45">{t("aiTimingSub")}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">

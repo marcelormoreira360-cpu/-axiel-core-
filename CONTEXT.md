@@ -115,6 +115,13 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 4e (01/06/2026): módulo Automações — **namespace `automations`**
+  - `automacoes/page.tsx` (hub + histórico de envios, datas via locale) + `components/automacoes-client.tsx` (KPIs, abas Regras/Histórico, RuleCard, CreateRuleForm — atenção: param do `.map((t)=>)` renomeado p/ `tabKey`) + `components/broadcast-whatsapp-modal.tsx` (segmentos, compose, preview, done)
+  - `follow-ups/page.tsx` + `components/follow-up-form.tsx` e `components/follow-up-list.tsx` — **convertidos para async server components** com `getTranslations`
+  - Placeholders com `{{nome}}` escapados com aspas simples no JSON (ICU trata `{` como argumento) — ex: `'{{nome}}'`
+  - **Fora de escopo (follow-up):** `app/actions/` (Action Center) e `components/action-suggestions-panel.tsx` já são EN e usam o sistema `getTerm` (modules/ui/terminology) — refactor à parte; `MESSAGE_AUTOMATION_STATUS`/`FOLLOW_UP_AI_LABEL` (modules/follow-ups) ainda PT
+  - Validado: tsc do código limpo, paridade PT/EN (17 namespaces), ICU compila
+  - **Fase 4 COMPLETA.** Pendente: Fases 5–6 (áreas públicas: landing/agendamento/portal; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 4d (01/06/2026): módulo Configurações — **namespace `settings`**
   - 4d-1: hub (`settings/page.tsx`, 19 cards via chaves + audit log), profile (page+form), regional (chrome; listas TZ/moeda são dados), usage, lgpd, security (RLS), `components/mfa-settings.tsx` (2FA)
   - 4d-2: equipe (page+client, modal de convite; ROLE_LABELS de lib/team-utils **ainda em PT — follow-up**), practitioners (page+list), session-types (page + `components/session-type-list.tsx`), offers (page + `components/offer-list.tsx`)

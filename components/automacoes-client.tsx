@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 import {
   Loader2, CheckCircle2, XCircle, AlertCircle, Clock,
   MessageSquare, ToggleLeft, ToggleRight, ChevronDown, ChevronUp,
@@ -9,16 +10,18 @@ import {
 import type { AutomacaoRule } from "@/app/api/automacoes/route";
 import type { AutomacaoHistoryItem } from "@/app/api/automacoes/history/route";
 
+type AutoT = (k: string, v?: Record<string, string | number>) => string;
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function timeAgo(iso: string) {
+function timeAgo(iso: string, t: AutoT) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1) return "agora";
-  if (m < 60) return `${m}min atrás`;
+  if (m < 1) return t("agora");
+  if (m < 60) return t("minsAgo", { m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h atrás`;
-  return `${Math.floor(h / 24)}d atrás`;
+  if (h < 24) return t("hoursAgo", { h });
+  return t("daysAgo", { d: Math.floor(h / 24) });
 }
 
 function applyVariables(template: string) {
@@ -34,10 +37,10 @@ const STATUS_ICON: Record<string, React.ReactElement> = {
   skipped: <AlertCircle className="h-3.5 w-3.5 text-amber-400 shrink-0" />,
 };
 
-const STATUS_LABEL: Record<string, string> = {
-  sent: "Enviado",
-  failed: "Falhou",
-  skipped: "Pulado",
+const STATUS_KEY: Record<string, string> = {
+  sent: "statusSent",
+  failed: "statusFailed",
+  skipped: "statusSkipped",
 };
 
 const KEY_COLOR: Record<string, string> = {
@@ -52,6 +55,7 @@ const CUSTOM_ACCENT = "#E85D3D";
 // ── Rule Card ─────────────────────────────────────────────────────────────────
 
 function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdated: () => void; onDelete?: () => void }) {
+  const t = useTranslations("automations.rule");
   const [expanded, setExpanded] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(false);
   const [draft, setDraft] = useState(rule.template);
@@ -81,8 +85,8 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
 
   async function saveTemplate() {
     setSaveError("");
-    if (draft.trim().length < 10) { setSaveError("Template muito curto (mín. 10 caracteres)."); return; }
-    if (draft.trim().length > 1500) { setSaveError("Template muito longo (máx. 1500 caracteres)."); return; }
+    if (draft.trim().length < 10) { setSaveError(t("tplTooShort")); return; }
+    if (draft.trim().length > 1500) { setSaveError(t("tplTooLong")); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/automacoes", {
@@ -90,7 +94,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ key: rule.key, action: "template", value: draft }),
       });
-      if (!res.ok) { setSaveError("Erro ao salvar."); return; }
+      if (!res.ok) { setSaveError(t("saveErr")); return; }
       setEditingTemplate(false);
       onUpdated();
     } finally {
@@ -172,7 +176,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
             <p className="text-[14px] font-semibold text-[#0F1A2E] leading-tight">{rule.title}</p>
             {!isDefault && (
               <span className="text-[9px] font-semibold uppercase tracking-[.1em] px-1.5 py-0.5 rounded-full bg-[#0F6E56]/10 text-[#0F6E56]">
-                Personalizado
+                {t("custom")}
               </span>
             )}
           </div>
@@ -186,9 +190,9 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
         {/* Stats */}
         <div className="shrink-0 text-right mr-2 hidden sm:block">
           <p className="text-[18px] font-semibold text-[#0F1A2E] leading-none">{rule.sentLast30d}</p>
-          <p className="text-[10px] text-black/35 mt-0.5">últimos 30d</p>
+          <p className="text-[10px] text-black/35 mt-0.5">{t("last30d")}</p>
           {rule.sentTotal > 0 && (
-            <p className="text-[10px] text-black/25 mt-0.5">{rule.sentTotal} total</p>
+            <p className="text-[10px] text-black/25 mt-0.5">{t("total", { count: rule.sentTotal })}</p>
           )}
         </div>
 
@@ -197,7 +201,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
           onClick={toggle}
           disabled={toggling}
           className="shrink-0 transition-opacity"
-          aria-label={rule.isEnabled ? "Desativar" : "Ativar"}
+          aria-label={rule.isEnabled ? t("disable") : t("enable")}
         >
           {toggling ? (
             <Loader2 className="h-5 w-5 animate-spin text-black/30" />
@@ -218,8 +222,8 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
               ? "text-red-500 hover:text-red-600"
               : "text-black/20 hover:text-red-400",
           ].join(" ")}
-          aria-label={confirmDelete ? "Confirmar exclusão" : "Excluir regra"}
-          title={confirmDelete ? "Clique de novo para confirmar" : "Excluir regra"}
+          aria-label={confirmDelete ? t("confirmDelete") : t("deleteRule")}
+          title={confirmDelete ? t("deleteHint") : t("deleteRule")}
         >
           {deleting ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -232,7 +236,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
         <button
           onClick={() => setExpanded((e) => !e)}
           className="shrink-0 text-black/30 hover:text-black/60 transition-colors"
-          aria-label="Expandir"
+          aria-label={t("expand")}
         >
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </button>
@@ -245,7 +249,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
           <div>
             <div className="flex items-center justify-between mb-2">
               <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
-                Mensagem WhatsApp
+                {t("msgWhatsapp")}
               </p>
               <div className="flex items-center gap-2">
                 {!editingTemplate && (
@@ -254,7 +258,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                     className="text-[11px] text-black/40 hover:text-[#0F1A2E] transition-colors flex items-center gap-1"
                   >
                     <MessageSquare className="h-3 w-3" />
-                    {showPreview ? "Editar" : "Prévia"}
+                    {showPreview ? t("edit") : t("preview")}
                   </button>
                 )}
                 {!editingTemplate && !showPreview && (
@@ -262,7 +266,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                     onClick={startEdit}
                     className="text-[11px] font-medium text-[#0F6E56] hover:text-[#0a5a45] transition-colors"
                   >
-                    Editar
+                    {t("edit")}
                   </button>
                 )}
               </div>
@@ -271,7 +275,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
             {/* Preview mode */}
             {showPreview && !editingTemplate && (
               <div className="rounded-xl bg-[#DCF8C6]/40 border border-[#25D366]/20 p-3">
-                <p className="text-[11px] text-black/35 mb-2 font-medium">Como o paciente vai receber:</p>
+                <p className="text-[11px] text-black/35 mb-2 font-medium">{t("previewHow")}</p>
                 <div className="bg-white rounded-xl rounded-tl-sm shadow-sm px-3 py-2 max-w-[85%] inline-block">
                   <p className="text-[13px] text-[#111B21] whitespace-pre-wrap leading-relaxed">
                     {applyVariables(rule.template)}
@@ -304,7 +308,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                       {v}
                     </button>
                   ))}
-                  <span className="text-[11px] text-black/30 self-center">← clique para inserir</span>
+                  <span className="text-[11px] text-black/30 self-center">{t("clickInsert")}</span>
                 </div>
                 <textarea
                   ref={textareaRef}
@@ -312,7 +316,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                   onChange={(e) => setDraft(e.target.value)}
                   rows={6}
                   className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2.5 text-[13px] text-[#0F1A2E] font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-[#0F6E56]/30 focus:border-[#0F6E56]/50"
-                  placeholder="Digite a mensagem..."
+                  placeholder={t("msgPlaceholder")}
                 />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -326,7 +330,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                       onClick={cancelEdit}
                       className="px-3 py-1.5 rounded-lg text-[12px] text-black/50 hover:bg-black/[.04] transition"
                     >
-                      Cancelar
+                      {t("cancel")}
                     </button>
                     <button
                       onClick={saveTemplate}
@@ -334,7 +338,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
                       className="px-3 py-1.5 rounded-lg text-[12px] font-medium bg-[#0F1A2E] text-white hover:bg-[#1a2a3e] transition disabled:opacity-50 flex items-center gap-1.5"
                     >
                       {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                      Salvar
+                      {t("save")}
                     </button>
                   </div>
                 </div>
@@ -348,7 +352,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
               onClick={() => { setDraft(rule.defaultTemplate); startEdit(); }}
               className="text-[11px] text-black/35 hover:text-black/60 transition-colors underline underline-offset-2"
             >
-              Restaurar template padrão
+              {t("restoreDefault")}
             </button>
           )}
         </div>
@@ -360,6 +364,7 @@ function RuleCard({ rule, onUpdated, onDelete }: { rule: AutomacaoRule; onUpdate
 // ── Create Rule Form ──────────────────────────────────────────────────────────
 
 function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCancel: () => void }) {
+  const t = useTranslations("automations.createForm");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [offsetDays, setOffsetDays] = useState(1);
@@ -385,8 +390,8 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    if (!title.trim()) { setError("Título obrigatório."); return; }
-    if (template.trim().length < 10) { setError("Mensagem muito curta (mín. 10 caracteres)."); return; }
+    if (!title.trim()) { setError(t("errTitle")); return; }
+    if (template.trim().length < 10) { setError(t("errShort")); return; }
     setSaving(true);
     try {
       const res = await fetch("/api/automacoes", {
@@ -396,7 +401,7 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        setError((j as { error?: string }).error ?? "Erro ao criar regra.");
+        setError((j as { error?: string }).error ?? t("errCreate"));
         return;
       }
       onCreated();
@@ -410,31 +415,31 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
   return (
     <div className="bg-white rounded-2xl border border-[#E85D3D]/30 shadow-sm p-5 space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-[13px] font-semibold text-[#0F1A2E]">Nova automação personalizada</p>
-        <button onClick={onCancel} className="text-[11px] text-black/40 hover:text-black/60 transition-colors">Cancelar</button>
+        <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("title")}</p>
+        <button onClick={onCancel} className="text-[11px] text-black/40 hover:text-black/60 transition-colors">{t("cancel")}</button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
         {/* Title */}
         <div>
-          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Título</label>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">{t("fTitle")}</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Ex: Boas-vindas D+7"
+            placeholder={t("fTitlePlaceholder")}
             className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
           />
         </div>
 
         {/* Description */}
         <div>
-          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Descrição <span className="text-black/25 normal-case font-normal">(opcional)</span></label>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">{t("fDesc")} <span className="text-black/25 normal-case font-normal">{t("fDescOpt")}</span></label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Breve descrição do objetivo"
+            placeholder={t("fDescPlaceholder")}
             className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
           />
         </div>
@@ -442,7 +447,7 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
         {/* Timing */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Dias</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">{t("fDays")}</label>
             <input
               type="number"
               min={0}
@@ -453,21 +458,21 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
             />
           </div>
           <div>
-            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Quando</label>
+            <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">{t("fWhen")}</label>
             <select
               value={triggerType}
               onChange={(e) => setTriggerType(e.target.value as "before_session" | "after_session")}
               className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2 text-[13px] text-[#0F1A2E] focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
             >
-              <option value="before_session">antes da sessão</option>
-              <option value="after_session">após a sessão</option>
+              <option value="before_session">{t("whenBefore")}</option>
+              <option value="after_session">{t("whenAfter")}</option>
             </select>
           </div>
         </div>
 
         {/* Template */}
         <div>
-          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">Mensagem WhatsApp</label>
+          <label className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 block mb-1">{t("fMsg")}</label>
           <div className="flex gap-1.5 flex-wrap mb-2">
             {VARIABLES.map((v) => (
               <button
@@ -479,14 +484,14 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
                 {v}
               </button>
             ))}
-            <span className="text-[11px] text-black/30 self-center">← clique para inserir</span>
+            <span className="text-[11px] text-black/30 self-center">{t("clickInsert")}</span>
           </div>
           <textarea
             ref={textareaRef}
             value={template}
             onChange={(e) => setTemplate(e.target.value)}
             rows={5}
-            placeholder="Olá, {{nome}}! ..."
+            placeholder={t("msgPlaceholder")}
             className="w-full rounded-xl border border-black/[.12] bg-white px-3 py-2.5 text-[13px] text-[#0F1A2E] font-mono leading-relaxed resize-y focus:outline-none focus:ring-2 focus:ring-[#E85D3D]/30 focus:border-[#E85D3D]/50"
           />
           <p className="text-[11px] text-black/30 mt-1 text-right">{template.length} / 1500</p>
@@ -500,7 +505,7 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
             onClick={onCancel}
             className="px-4 py-2 rounded-xl text-[12px] text-black/50 hover:bg-black/[.04] transition"
           >
-            Cancelar
+            {t("cancel")}
           </button>
           <button
             type="submit"
@@ -508,7 +513,7 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
             className="px-4 py-2 rounded-xl text-[12px] font-medium bg-[#E85D3D] text-white hover:bg-[#d04e30] transition disabled:opacity-50 flex items-center gap-1.5"
           >
             {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Criar automação
+            {t("create")}
           </button>
         </div>
       </form>
@@ -519,6 +524,7 @@ function CreateRuleForm({ onCreated, onCancel }: { onCreated: () => void; onCanc
 // ── Main client ───────────────────────────────────────────────────────────────
 
 export function AutomacoesClient() {
+  const t = useTranslations("automations.client");
   const [rules, setRules] = useState<AutomacaoRule[]>([]);
   const [history, setHistory] = useState<AutomacaoHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -553,9 +559,9 @@ export function AutomacoesClient() {
       {/* Summary KPIs */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Regras ativas", value: `${activeCount} / ${rules.length}`, icon: ToggleRight, color: "#0F6E56" },
-          { label: "Enviados (30d)", value: String(totalSent), icon: Zap, color: "#3B82F6" },
-          { label: "Histórico total", value: String(history.length > 0 ? history.length + "+" : "—"), icon: BarChart2, color: "#8B5CF6" },
+          { label: t("kpiActiveRules"), value: `${activeCount} / ${rules.length}`, icon: ToggleRight, color: "#0F6E56" },
+          { label: t("kpiSent30"), value: String(totalSent), icon: Zap, color: "#3B82F6" },
+          { label: t("kpiTotalHistory"), value: String(history.length > 0 ? history.length + "+" : "—"), icon: BarChart2, color: "#8B5CF6" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-white rounded-2xl border border-black/[.07] p-4">
             <div className="flex items-center justify-between mb-1.5">
@@ -569,19 +575,19 @@ export function AutomacoesClient() {
 
       {/* Tabs */}
       <div className="flex gap-1">
-        {(["rules", "history"] as const).map((t) => (
+        {(["rules", "history"] as const).map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={[
               "px-3 py-1.5 rounded-lg text-[12px] font-medium transition flex items-center gap-1.5",
-              tab === t
+              tab === tabKey
                 ? "bg-[#0F1A2E] text-white"
                 : "bg-white border border-black/[.10] text-black/60 hover:bg-black/[.04]",
             ].join(" ")}
           >
-            {t === "rules" ? <Zap className="h-3.5 w-3.5" /> : <History className="h-3.5 w-3.5" />}
-            {t === "rules" ? "Regras" : "Histórico"}
+            {tabKey === "rules" ? <Zap className="h-3.5 w-3.5" /> : <History className="h-3.5 w-3.5" />}
+            {tabKey === "rules" ? t("tabRules") : t("tabHistory")}
           </button>
         ))}
       </div>
@@ -610,12 +616,12 @@ export function AutomacoesClient() {
               className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-black/[.12] text-[12px] text-black/40 hover:text-[#E85D3D] hover:border-[#E85D3D]/40 hover:bg-[#E85D3D]/[.02] transition-colors"
             >
               <Plus className="h-4 w-4" />
-              Nova automação personalizada
+              {t("newCustom")}
             </button>
           )}
 
           <p className="text-[11px] text-black/30 text-center pt-1">
-            As automações são enviadas diariamente via cron às 08:00.
+            {t("cronNote")}
           </p>
         </div>
       )}
@@ -625,7 +631,7 @@ export function AutomacoesClient() {
         <div className="bg-white rounded-2xl border border-black/[.07] overflow-hidden">
           {history.length === 0 ? (
             <p className="text-[13px] text-black/35 text-center py-12">
-              Nenhuma automação enviada ainda.
+              {t("historyEmpty")}
             </p>
           ) : (
             <div className="divide-y divide-black/[.04]">
@@ -641,12 +647,12 @@ export function AutomacoesClient() {
                     <p className="text-[11px] text-black/40">{item.ruleTitle}</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[11px] text-black/40">{timeAgo(item.sentAt)}</p>
+                    <p className="text-[11px] text-black/40">{timeAgo(item.sentAt, t)}</p>
                     <p className={[
                       "text-[10px] font-medium",
                       item.status === "sent" ? "text-emerald-500" : item.status === "failed" ? "text-red-400" : "text-amber-400",
                     ].join(" ")}>
-                      {STATUS_LABEL[item.status]}
+                      {STATUS_KEY[item.status] ? t(STATUS_KEY[item.status]) : item.status}
                     </p>
                   </div>
                 </div>
