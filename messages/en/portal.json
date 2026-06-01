@@ -1,4 +1,9 @@
 {
+  "tokenExpired": {
+    "title": "Link expired",
+    "desc": "This link is no longer valid. Access links expire after 7 days for security.",
+    "contact": "Contact your clinic to receive a new link."
+  },
   "login": {
     "title": "Patient Portal",
     "subtitle": "Enter your email to receive the access link",

@@ -1,0 +1,9 @@
+{
+  "invalidTitle": "Invalid invite",
+  "invalidDesc": "This invite link is invalid, already used or expired.",
+  "eyebrow": "Invite",
+  "invitedAs": "You've been invited as <b>{role}</b>",
+  "createAccept": "Create account and accept invite",
+  "haveAccount": "I already have an account — log in",
+  "accessNote": "By accepting, you'll get access to the {name} clinic on AXIEL Core."
+}

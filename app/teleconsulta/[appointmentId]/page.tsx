@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { TeleconsultaVideo } from "@/components/teleconsulta-video";
 import { TeleconsultaNotes } from "@/components/teleconsulta-notes";
 import { getAppointmentById } from "@/services/appointment-service";
@@ -10,11 +11,11 @@ import { upsertSessionRecord } from "@/services/session-recording-service";
 import { getLatestAiInsight } from "@/services/ai-insight-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 
-function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function formatTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 }
 function age(dob?: string | null) {
   if (!dob) return null;
@@ -23,6 +24,8 @@ function age(dob?: string | null) {
 
 export default async function TeleconsultaPage({ params }: { params: Promise<{ appointmentId: string }> }) {
   const { appointmentId } = await params;
+  const t = await getTranslations("teleconsulta");
+  const locale = await getLocale();
   const profile = await getCurrentUserProfile();
 
   const [appointment, sessionRecord] = await Promise.all([
@@ -41,7 +44,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
 
   const pastSessions = previousAppointments.filter((a) => a.id !== appointmentId);
 
-  const practitionerName = profile?.full_name ?? "Praticante";
+  const practitionerName = profile?.full_name ?? t("practitionerDefault");
 
   async function saveNotesAction(apptId: string, notes: string, observations: string[]) {
     "use server";
@@ -80,11 +83,11 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
           <div>
             <p className="text-[13px] font-medium text-white leading-tight">
               {patient.full_name}
-              {patientAge && <span className="text-white/40 font-normal ml-1">· {patientAge}a</span>}
+              {patientAge && <span className="text-white/40 font-normal ml-1">· {t("ageSuffix", { age: patientAge })}</span>}
             </p>
             <p className="text-[11px] text-white/40">
-              {formatDate(appointment.starts_at)} · {formatTime(appointment.starts_at)}
-              {appointment.duration_minutes ? ` · ${appointment.duration_minutes} min` : ""}
+              {formatDate(appointment.starts_at, locale)} · {formatTime(appointment.starts_at, locale)}
+              {appointment.duration_minutes ? ` · ${appointment.duration_minutes} ${t("minUnit")}` : ""}
             </p>
           </div>
         </div>
@@ -92,7 +95,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
         <div className="flex items-center gap-2">
           {/* Session number badge */}
           <span className="text-[11px] text-white/40 bg-white/[.05] border border-white/[.08] px-3 py-1.5 rounded-lg">
-            Sessão #{previousAppointments.length}
+            {t("sessionNum", { count: previousAppointments.length })}
           </span>
 
           {/* Patient profile link */}
@@ -104,7 +107,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M4 1H1.5a.5.5 0 00-.5.5v9a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V8M7 1h4m0 0v4m0-4L5 7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            Prontuário completo
+            {t("fullRecord")}
           </Link>
 
           {/* Exit */}
@@ -112,7 +115,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             href={`/patients/${patient.id}`}
             className="text-[11px] font-medium text-white/60 hover:text-white border border-white/[.10] hover:border-white/25 px-3 py-1.5 rounded-lg transition"
           >
-            Sair da consulta
+            {t("exitSession")}
           </Link>
         </div>
       </header>
@@ -150,7 +153,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             {latestInsight?.output?.structured_summary && (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-                  Último insight AI
+                  {t("lastInsight")}
                 </p>
                 <div className="bg-[#0F6E56]/[.10] border border-[#0F6E56]/25 rounded-[10px] p-[12px]">
                   {latestInsight.output.structured_summary.overview && (
@@ -164,7 +167,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
                     </p>
                   )}
                   <p className="text-[9px] text-[#0F6E56]/60 mt-2">
-                    {latestInsight.review_status === "final" ? "Revisado" : "Rascunho"} · {formatDate(latestInsight.created_at)}
+                    {latestInsight.review_status === "final" ? t("reviewed") : t("draft")} · {formatDate(latestInsight.created_at, locale)}
                   </p>
                 </div>
               </div>
@@ -174,7 +177,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             {pastSessions.length > 0 && (
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-                  Sessões anteriores ({pastSessions.length})
+                  {t("previousSessions", { count: pastSessions.length })}
                 </p>
                 <div className="space-y-[6px]">
                   {pastSessions.slice(0, 5).map((s, i) => (
@@ -183,12 +186,12 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
                         {pastSessions.length - i}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-medium text-white/70">{formatDate(s.starts_at)}</p>
+                        <p className="text-[11px] font-medium text-white/70">{formatDate(s.starts_at, locale)}</p>
                         {s.notes && (
                           <p className="text-[10px] text-white/35 truncate mt-[1px]">{s.notes}</p>
                         )}
                       </div>
-                      <span className="text-[10px] text-white/30 shrink-0">{formatTime(s.starts_at)}</span>
+                      <span className="text-[10px] text-white/30 shrink-0">{formatTime(s.starts_at, locale)}</span>
                     </div>
                   ))}
                 </div>
@@ -198,7 +201,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             {/* Patient contact */}
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-                Contato
+                {t("contact")}
               </p>
               <div className="bg-white/[.03] border border-white/[.06] rounded-[10px] p-[12px] space-y-[6px]">
                 {patient.phone && (
@@ -224,14 +227,14 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
             {/* Quick links */}
             <div className="pb-2">
               <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-                Acesso rápido
+                {t("quickAccess")}
               </p>
               <div className="grid grid-cols-2 gap-[6px]">
                 {[
-                  { href: `/patients/${patient.id}/intake`, label: "Intake" },
-                  { href: `/patients/${patient.id}/insights`, label: "AI Insights" },
-                  { href: `/patients/${patient.id}/evolution`, label: "Evolução" },
-                  { href: `/patients/${patient.id}/forms/new`, label: "Formulário" },
+                  { href: `/patients/${patient.id}/intake`, label: t("qaIntake") },
+                  { href: `/patients/${patient.id}/insights`, label: t("qaInsights") },
+                  { href: `/patients/${patient.id}/evolution`, label: t("qaEvolution") },
+                  { href: `/patients/${patient.id}/forms/new`, label: t("qaForm") },
                 ].map((item) => (
                   <Link
                     key={item.href}

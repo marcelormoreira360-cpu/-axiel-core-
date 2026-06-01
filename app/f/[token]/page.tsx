@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getInvitationByToken } from "@/services/assessment-invitation-service";
 import { PublicAssessmentForm } from "@/components/public-assessment-form";
 
@@ -14,6 +15,7 @@ type Props = { params: Promise<{ token: string }> };
 
 export default async function PublicFormPage({ params }: Props) {
   const { token } = await params;
+  const t = await getTranslations("publicForm");
   const data = await getInvitationByToken(token);
 
   if (!data) {
@@ -21,9 +23,9 @@ export default async function PublicFormPage({ params }: Props) {
       <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-6">
         <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[32px] max-w-[400px] w-full text-center">
           <p className="text-[32px] mb-[12px]">⏰</p>
-          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[8px]">Link inválido ou expirado</h1>
+          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[8px]">{t("invalidTitle")}</h1>
           <p className="text-[13px] text-[#A09E98]">
-            Este link não existe mais. Peça ao seu terapeuta um novo link.
+            {t("invalidDesc")}
           </p>
         </div>
       </div>
@@ -36,12 +38,12 @@ export default async function PublicFormPage({ params }: Props) {
         {/* Header */}
         <div className="mb-[24px]">
           <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[4px]">
-            Questionário
+            {t("eyebrow")}
           </p>
           <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
             {data.template.name}
           </h1>
-          <p className="text-[13px] text-[#A09E98] mt-[2px]">Olá, {data.patientName}</p>
+          <p className="text-[13px] text-[#A09E98] mt-[2px]">{t("greeting", { name: data.patientName })}</p>
         </div>
 
         <PublicAssessmentForm
@@ -50,7 +52,7 @@ export default async function PublicFormPage({ params }: Props) {
         />
 
         <p className="text-center text-[11px] text-[#D3D1C7] mt-[32px]">
-          AXIEL Core · Formulário seguro
+          {t("secureFooter")}
         </p>
       </div>
     </div>

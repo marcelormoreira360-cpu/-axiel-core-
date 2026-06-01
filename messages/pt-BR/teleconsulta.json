@@ -1,0 +1,18 @@
+{
+  "practitionerDefault": "Praticante",
+  "ageSuffix": "{age}a",
+  "minUnit": "min",
+  "sessionNum": "Sessão #{count}",
+  "fullRecord": "Prontuário completo",
+  "exitSession": "Sair da consulta",
+  "lastInsight": "Último insight AI",
+  "reviewed": "Revisado",
+  "draft": "Rascunho",
+  "previousSessions": "Sessões anteriores ({count})",
+  "contact": "Contato",
+  "quickAccess": "Acesso rápido",
+  "qaIntake": "Intake",
+  "qaInsights": "AI Insights",
+  "qaEvolution": "Evolução",
+  "qaForm": "Formulário"
+}

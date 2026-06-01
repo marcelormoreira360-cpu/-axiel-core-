@@ -1,4 +1,9 @@
 {
+  "tokenExpired": {
+    "title": "Link expirado",
+    "desc": "Este link não é mais válido. Links de acesso expiram após 7 dias por segurança.",
+    "contact": "Entre em contato com sua clínica para receber um novo link."
+  },
   "login": {
     "title": "Portal do Paciente",
     "subtitle": "Digite seu e-mail para receber o link de acesso",

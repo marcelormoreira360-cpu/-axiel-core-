@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
+import { getTranslations } from "next-intl/server";
 import { PatientPortalDashboard } from "@/components/patient-portal/patient-portal-dashboard";
 import { getPatientPortalDataByToken } from "@/services/patient-portal-service";
 
@@ -36,6 +37,7 @@ export default async function PublicPatientDashboardPage({
 
   // Show a friendly expired-link page instead of generic 404
   if (!data) {
+    const t = await getTranslations("portal.tokenExpired");
     return (
       <main className="min-h-screen bg-[#F8F7F4] flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl border border-black/[.07] p-8 max-w-sm w-full text-center shadow-sm">
@@ -45,12 +47,12 @@ export default async function PublicPatientDashboardPage({
               <polyline points="12 6 12 12 16 14"/>
             </svg>
           </div>
-          <h1 className="text-[18px] font-semibold text-[#0F1A2E] mb-2">Link expirado</h1>
+          <h1 className="text-[18px] font-semibold text-[#0F1A2E] mb-2">{t("title")}</h1>
           <p className="text-[13px] text-[#6B6A66] leading-relaxed">
-            Este link não é mais válido. Links de acesso expiram após 7 dias por segurança.
+            {t("desc")}
           </p>
           <p className="text-[12px] text-[#A09E98] mt-3">
-            Entre em contato com sua clínica para receber um novo link.
+            {t("contact")}
           </p>
         </div>
       </main>

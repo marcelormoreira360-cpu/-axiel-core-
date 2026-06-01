@@ -115,6 +115,14 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
+  - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)
+  - `app/p/[token]` (página de link expirado → portal.tokenExpired)
+  - `app/join/[token]` (rich `<b>` em invitedAs; ROLE_LABELS ainda PT — follow-up)
+  - `app/links` (page + `links-hub.tsx`)
+  - `app/teleconsulta/[appointmentId]` (datas via locale; `components/teleconsulta-video/notes` **não migrados — follow-up**)
+  - Validado: tsc do código limpo, paridade PT/EN (25 namespaces), ICU compila
+  - **Pendente Fase 5**: 5e jurídico (privacidade + termos)
 - ✅ i18n Fase 5c (01/06/2026): Landing + Pricing — **namespaces `landing` e `pricing`**
   - `app/page.tsx` reescrito com `getTranslations` (hero, stats, features, integrações, steps, automações, depoimentos, planos, FAQ, CTA, footer + DashboardMockup) — nomes próprios/valores mantidos como amostra
   - `app/pricing/pricing-client.tsx` (cards, comparativo, add-ons, FAQ, CTA, footer) — `plan.name`/`description` vêm de `modules/billing/plan-config` (**ainda PT — follow-up**, como ROLE_LABELS); CURRENCY_LABELS mantidos

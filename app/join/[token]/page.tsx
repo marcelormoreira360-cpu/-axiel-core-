@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getInviteByToken, acceptInvite, ROLE_LABELS } from "@/services/team-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
@@ -13,6 +14,7 @@ async function getClinicName(clinicId: string): Promise<string> {
 
 export default async function JoinPage({ params }: Props) {
   const { token } = await params;
+  const t = await getTranslations("join");
 
   const invite = await getInviteByToken(token);
 
@@ -23,9 +25,9 @@ export default async function JoinPage({ params }: Props) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
             <svg className="h-6 w-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
-          <h1 className="text-[18px] font-semibold text-[#0F1A2E] mb-2">Convite inválido</h1>
+          <h1 className="text-[18px] font-semibold text-[#0F1A2E] mb-2">{t("invalidTitle")}</h1>
           <p className="text-[13px] text-[#A09E98]">
-            Este link de convite é inválido, já foi usado ou expirou.
+            {t("invalidDesc")}
           </p>
         </div>
       </div>
@@ -61,10 +63,10 @@ export default async function JoinPage({ params }: Props) {
           </svg>
         </div>
 
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-1">Convite</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-1">{t("eyebrow")}</p>
         <h1 className="text-[20px] font-semibold text-[#0F1A2E] mb-1">{clinicName}</h1>
         <p className="text-[13px] text-[#6B6A66] mb-1">
-          Você foi convidado como <strong>{ROLE_LABELS[invite.role]}</strong>
+          {t.rich("invitedAs", { role: ROLE_LABELS[invite.role], b: (c) => <strong>{c}</strong> })}
         </p>
         <p className="text-[12px] text-[#A09E98] mb-6">{invite.email}</p>
 
@@ -73,18 +75,18 @@ export default async function JoinPage({ params }: Props) {
             href={signupUrl}
             className="flex items-center justify-center w-full rounded-lg bg-[#0B1F3A] py-2.5 text-[13px] font-semibold text-white hover:bg-black transition"
           >
-            Criar conta e aceitar convite
+            {t("createAccept")}
           </a>
           <a
             href={loginUrl}
             className="flex items-center justify-center w-full rounded-lg border border-black/15 py-2.5 text-[13px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
           >
-            Já tenho conta — fazer login
+            {t("haveAccount")}
           </a>
         </div>
 
         <p className="text-[11px] text-[#D3D1C7] mt-5">
-          Ao aceitar, você terá acesso à clínica {clinicName} no AXIEL Core.
+          {t("accessNote", { name: clinicName })}
         </p>
       </div>
     </div>

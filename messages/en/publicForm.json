@@ -1,0 +1,19 @@
+{
+  "invalidTitle": "Invalid or expired link",
+  "invalidDesc": "This link no longer exists. Ask your therapist for a new link.",
+  "eyebrow": "Questionnaire",
+  "greeting": "Hi, {name}",
+  "secureFooter": "AXIEL Core · Secure form",
+  "answeredOf": "{answered} of {total, plural, one {# question answered} other {# questions answered}}",
+  "yes": "Yes",
+  "no": "No",
+  "notesLabel": "Additional notes (optional)",
+  "notesPlaceholder": "Anything you'd like to share with the therapist...",
+  "total": "Total",
+  "submitting": "Sending…",
+  "submit": "Submit answers",
+  "errSave": "Error saving",
+  "doneTitle": "Thank you!",
+  "doneDesc": "Your answers were submitted successfully and are now in your clinical record.",
+  "totalScore": "Total score"
+}

@@ -1,0 +1,19 @@
+{
+  "invalidTitle": "Link inválido ou expirado",
+  "invalidDesc": "Este link não existe mais. Peça ao seu terapeuta um novo link.",
+  "eyebrow": "Questionário",
+  "greeting": "Olá, {name}",
+  "secureFooter": "AXIEL Core · Formulário seguro",
+  "answeredOf": "{answered} de {total, plural, one {# pergunta respondida} other {# perguntas respondidas}}",
+  "yes": "Sim",
+  "no": "Não",
+  "notesLabel": "Observações adicionais (opcional)",
+  "notesPlaceholder": "Alguma observação que queira compartilhar com o terapeuta...",
+  "total": "Total",
+  "submitting": "Enviando…",
+  "submit": "Enviar respostas",
+  "errSave": "Erro ao salvar",
+  "doneTitle": "Obrigado!",
+  "doneDesc": "Suas respostas foram enviadas com sucesso e já estão na sua ficha clínica.",
+  "totalScore": "Pontuação total"
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import type { TemplateWithStructure, AssessmentQuestion } from "@/lib/types";
 
 const DEFAULT_SCALE_LABELS = [
@@ -56,6 +57,7 @@ export function PublicAssessmentForm({
   template: TemplateWithStructure;
   token: string;
 }) {
+  const t = useTranslations("publicForm");
   const [answers, setAnswers] = useState<Record<string, number | string | null>>({});
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -145,12 +147,12 @@ export function PublicAssessmentForm({
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? "Erro ao salvar");
+        throw new Error(body.error ?? t("errSave"));
       }
 
       setDone(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      setError(err instanceof Error ? err.message : t("errSave"));
     } finally {
       setSubmitting(false);
     }
@@ -162,12 +164,12 @@ export function PublicAssessmentForm({
         <div className="w-14 h-14 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-[16px]">
           <span className="text-[28px]">✓</span>
         </div>
-        <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[8px]">Obrigado!</h2>
+        <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[8px]">{t("doneTitle")}</h2>
         <p className="text-[13px] text-[#A09E98] leading-relaxed">
-          Suas respostas foram enviadas com sucesso e já estão na sua ficha clínica.
+          {t("doneDesc")}
         </p>
         <div className="mt-[24px] bg-[#F4F3EF] rounded-[12px] px-[16px] py-[12px]">
-          <p className="text-[11px] text-[#A09E98]">Pontuação total</p>
+          <p className="text-[11px] text-[#A09E98]">{t("totalScore")}</p>
           <p className="text-[28px] font-bold text-[#0F1A2E] tracking-[-0.04em]">
             {totalScore}<span className="text-[14px] text-[#A09E98] font-normal">/{maxPossible}</span>
           </p>
@@ -189,7 +191,7 @@ export function PublicAssessmentForm({
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
         <div className="flex items-center justify-between mb-[8px]">
           <p className="text-[11px] font-medium text-[#6B6A66]">
-            {answeredCount} de {totalQuestions} pergunta{totalQuestions !== 1 ? "s" : ""} respondida{totalQuestions !== 1 ? "s" : ""}
+            {t("answeredOf", { answered: answeredCount, total: totalQuestions })}
           </p>
           <p className="text-[11px] font-semibold text-[#0F6E56]">{fillPercent}%</p>
         </div>
@@ -240,7 +242,7 @@ export function PublicAssessmentForm({
                   )}
                   {q.question_type === "yes_no" && (
                     <div className="flex gap-[6px]">
-                      {[{ label: "Não", value: 0 }, { label: "Sim", value: 1 }].map((opt) => (
+                      {[{ label: t("no"), value: 0 }, { label: t("yes"), value: 1 }].map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
@@ -285,7 +287,7 @@ export function PublicAssessmentForm({
       {/* Grand total */}
       <div className="bg-[#0F1A2E] rounded-[12px] px-[16px] py-[14px]">
         <div className="flex items-baseline justify-between mb-[8px]">
-          <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">Total</p>
+          <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">{t("total")}</p>
           <div className="flex items-baseline gap-[4px]">
             <span className="text-[26px] font-bold text-white tracking-[-0.04em]">{totalScore}</span>
             <span className="text-[12px] text-white/40">/{maxPossible}</span>
@@ -300,13 +302,13 @@ export function PublicAssessmentForm({
       {/* Observations */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
         <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">
-          Observações adicionais (opcional)
+          {t("notesLabel")}
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="Alguma observação que queira compartilhar com o terapeuta..."
+          placeholder={t("notesPlaceholder")}
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
@@ -322,7 +324,7 @@ export function PublicAssessmentForm({
         disabled={submitting}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
-        {submitting ? "Enviando…" : "Enviar respostas"}
+        {submitting ? t("submitting") : t("submit")}
       </button>
     </form>
   );

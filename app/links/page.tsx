@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -9,6 +10,7 @@ import { LinksHub } from "./links-hub";
 export const metadata = { title: "Links de Agendamento — AXIEL Core" };
 
 export default async function LinksPage() {
+  const t = await getTranslations("links");
   const [profile, clinic] = await Promise.all([
     getCurrentUserProfile(),
     getCurrentClinic(),
@@ -18,9 +20,9 @@ export default async function LinksPage() {
     return (
       <Shell>
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[24px] text-center">
-          <p className="text-[13px] text-[#A09E98] mb-[4px]">Clínica sem slug configurado.</p>
+          <p className="text-[13px] text-[#A09E98] mb-[4px]">{t("noSlugTitle")}</p>
           <p className="text-[11px] text-[#D3D1C7]">
-            Configure o slug da clínica em Configurações → Perfil para ativar os links de agendamento.
+            {t("noSlugDesc")}
           </p>
         </div>
       </Shell>
@@ -81,9 +83,9 @@ export default async function LinksPage() {
     <Shell>
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Links de Agendamento</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            Copie e compartilhe com seus pacientes
+            {t("subtitle")}
           </p>
         </div>
       </div>

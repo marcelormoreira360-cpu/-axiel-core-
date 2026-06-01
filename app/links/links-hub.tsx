@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Copy, Check, Calendar, FileText, UserCircle2, ExternalLink, Video, Save } from "lucide-react";
 
 interface Practitioner {
@@ -12,6 +13,7 @@ interface Practitioner {
 }
 
 function CopyButton({ url }: { url: string }) {
+  const t = useTranslations("links");
   const [copied, setCopied] = useState(false);
 
   async function copy() {
@@ -35,7 +37,7 @@ function CopyButton({ url }: { url: string }) {
       onClick={copy}
       className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition shrink-0"
     >
-      {copied ? <><Check className="h-3 w-3" />Copiado!</> : <><Copy className="h-3 w-3" />Copiar</>}
+      {copied ? <><Check className="h-3 w-3" />{t("copied")}</> : <><Copy className="h-3 w-3" />{t("copy")}</>}
     </button>
   );
 }
@@ -93,6 +95,7 @@ function ZoomCard({
   myZoomUrl: string | null;
   saveAction: (formData: FormData) => Promise<void>;
 }) {
+  const t = useTranslations("links");
   const [editing, setEditing] = useState(!myZoomUrl);
   const [value, setValue] = useState(myZoomUrl ?? "");
   const [isPending, startTransition] = useTransition();
@@ -118,10 +121,10 @@ function ZoomCard({
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-[6px] mb-[2px]">
-            <p className="text-[13px] font-medium text-[#0F1A2E]">Teleconsulta Zoom</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E]">{t("zoomTitle")}</p>
           </div>
           <p className="text-[11px] text-[#A09E98] mb-[10px]">
-            Link da sua sala pessoal Zoom para enviar aos pacientes.
+            {t("zoomDesc")}
           </p>
 
           {editing ? (
@@ -139,12 +142,12 @@ function ZoomCard({
                 className="flex items-center gap-[4px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[6px] px-[10px] py-[6px] transition shrink-0"
               >
                 <Save className="h-3 w-3" />
-                {isPending ? "Salvando…" : "Salvar"}
+                {isPending ? t("saving") : t("save")}
               </button>
               {myZoomUrl && (
                 <button type="button" onClick={() => { setValue(myZoomUrl); setEditing(false); }}
                   className="text-[11px] text-[#A09E98] hover:text-[#0F1A2E] transition shrink-0">
-                  Cancelar
+                  {t("cancel")}
                 </button>
               )}
             </form>
@@ -159,9 +162,9 @@ function ZoomCard({
               </a>
               <button type="button" onClick={() => setEditing(true)}
                 className="text-[11px] text-[#A09E98] hover:text-[#0F1A2E] transition ml-[2px]">
-                Editar
+                {t("edit")}
               </button>
-              {saved && <span className="text-[11px] text-[#0F6E56]">✓ Salvo</span>}
+              {saved && <span className="text-[11px] text-[#0F6E56]">{t("saved")}</span>}
             </div>
           )}
         </div>
@@ -189,6 +192,7 @@ export function LinksHub({
   myZoomUrl: string | null;
   saveZoomUrlAction: (formData: FormData) => Promise<void>;
 }) {
+  const t = useTranslations("links");
   const bookingUrl = `${baseUrl}/book/${clinicSlug}`;
   const intakeUrl  = `${baseUrl}/envio/${clinicSlug}`;
 
@@ -197,20 +201,20 @@ export function LinksHub({
       {/* ── Links principais ── */}
       <section>
         <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[10px]">
-          Links da clínica
+          {t("sectionClinic")}
         </p>
         <div className="space-y-[8px]">
           <LinkCard
             icon={<Calendar className="h-4 w-4 text-[#0F6E56]" />}
-            title="Agendamento online"
-            description={`Pacientes podem agendar uma sessão com ${clinicName} de forma automática.`}
+            title={t("bookingTitle")}
+            description={t("bookingDesc", { clinic: clinicName })}
             url={bookingUrl}
-            badge="Principal"
+            badge={t("badgePrincipal")}
           />
           <LinkCard
             icon={<FileText className="h-4 w-4 text-[#A09E98]" />}
-            title="Envio de documentos"
-            description="Link para o paciente enviar exames, fichas e anamneses antes da consulta."
+            title={t("docsTitle")}
+            description={t("docsDesc")}
             url={intakeUrl}
           />
         </div>
@@ -219,7 +223,7 @@ export function LinksHub({
       {/* ── Zoom ── */}
       <section>
         <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[10px]">
-          Teleconsulta
+          {t("sectionTele")}
         </p>
         <ZoomCard myZoomUrl={myZoomUrl} saveAction={saveZoomUrlAction} />
       </section>
@@ -228,26 +232,26 @@ export function LinksHub({
       {practitioners.length > 0 && (
         <section>
           <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[10px]">
-            Por profissional
+            {t("sectionByPro")}
           </p>
           <div className="space-y-[8px]">
             {practitioners.map((p) => {
-              const name = p.display_name ?? p.full_name ?? "Profissional";
+              const name = p.display_name ?? p.full_name ?? t("proDefaultName");
               const zoomUrl = p.zoom_personal_url;
               return (
                 <div key={p.user_id} className="space-y-[4px]">
                   <LinkCard
                     icon={<UserCircle2 className="h-4 w-4 text-[#A09E98]" />}
                     title={name}
-                    description={p.specialty ? `Especialidade: ${p.specialty}` : "Agendamento online disponível."}
+                    description={p.specialty ? t("proSpecialty", { specialty: p.specialty }) : t("proNoSpecialty")}
                     url={bookingUrl}
                   />
                   {zoomUrl && (
                     <div className="ml-[10px]">
                       <LinkCard
                         icon={<Video className="h-4 w-4 text-[#2D8CFF]" />}
-                        title={`${name} — Zoom`}
-                        description="Link direto da sala Zoom deste profissional."
+                        title={t("proZoomTitle", { name })}
+                        description={t("proZoomDesc")}
                         url={zoomUrl}
                       />
                     </div>
@@ -262,9 +266,9 @@ export function LinksHub({
       {/* ── Portal individual ── */}
       <section>
         <div className="bg-[#F4F3EF] rounded-[12px] px-[16px] py-[14px]">
-          <p className="text-[13px] font-medium text-[#0F1A2E] mb-[4px]">Links individuais do paciente</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E] mb-[4px]">{t("portalTitle")}</p>
           <p className="text-[12px] text-[#6B6A66] leading-relaxed">
-            Para enviar um link privado de portal para um paciente específico, acesse o perfil do paciente → <strong className="text-[#0F1A2E]">Link do portal</strong>. Único, sem login, expira em 7 dias.
+            {t.rich("portalDesc", { b: (c) => <strong className="text-[#0F1A2E]">{c}</strong> })}
           </p>
         </div>
       </section>
@@ -272,9 +276,9 @@ export function LinksHub({
       {/* ── Dica WhatsApp ── */}
       <section>
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <p className="text-[12px] font-medium text-[#0F1A2E] mb-[4px]">💡 Dica</p>
+          <p className="text-[12px] font-medium text-[#0F1A2E] mb-[4px]">{t("tipTitle")}</p>
           <p className="text-[12px] text-[#6B6A66] leading-relaxed">
-            Copie o link de agendamento e envie por WhatsApp, e-mail ou coloque na bio do Instagram. Seus pacientes agendam sem precisar ligar.
+            {t("tipDesc")}
           </p>
         </div>
       </section>
