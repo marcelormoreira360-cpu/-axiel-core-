@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import type { TreatmentPlan, TreatmentPlanStep } from "@/services/treatment-plan-service";
 import {
@@ -13,15 +14,15 @@ import {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  active:    { label: "Ativo",     color: "bg-[#E1F5EE] text-[#085041]" },
-  paused:    { label: "Pausado",   color: "bg-[#FFF3E0] text-amber-700" },
-  completed: { label: "Concluído", color: "bg-[#E8F0FE] text-[#3B6BE4]" },
-  cancelled: { label: "Cancelado", color: "bg-[#F4F3EF] text-[#A09E98]" },
+const STATUS_COLORS: Record<string, string> = {
+  active:    "bg-[#E1F5EE] text-[#085041]",
+  paused:    "bg-[#FFF3E0] text-amber-700",
+  completed: "bg-[#E8F0FE] text-[#3B6BE4]",
+  cancelled: "bg-[#F4F3EF] text-[#A09E98]",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso + "T12:00:00").toLocaleDateString(locale, {
     day: "numeric", month: "short",
   });
 }
@@ -37,6 +38,8 @@ function StepRow({
   patientId: string;
   planActive: boolean;
 }) {
+  const t = useTranslations("patientPanels.treatmentPlan");
+  const locale = useLocale();
   const [optimistic, setOptimistic] = useState(step.is_completed);
   const [deleting, setDeleting] = useState(false);
 
@@ -78,7 +81,7 @@ function StepRow({
           <p className="text-[11px] text-[#A09E98] mt-[1px]">{step.description}</p>
         )}
         {step.due_date && !optimistic && (
-          <p className="text-[10px] text-[#D3D1C7] mt-[1px]">Até {formatDate(step.due_date)}</p>
+          <p className="text-[10px] text-[#D3D1C7] mt-[1px]">{t("stepUntil", { date: formatDate(step.due_date, locale) })}</p>
         )}
       </div>
 
@@ -108,6 +111,7 @@ function AddStepForm({
   nextIndex: number;
   onClose: () => void;
 }) {
+  const t = useTranslations("patientPanels.treatmentPlan");
   async function submit(formData: FormData) {
     await addPlanStepAction(formData);
     onClose();
@@ -124,7 +128,7 @@ function AddStepForm({
         name="title"
         required
         autoFocus
-        placeholder="Descrição da etapa..."
+        placeholder={t("stepForm.placeholder")}
         className="w-full px-[9px] py-[6px] rounded-[7px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
       />
       <div className="flex gap-[6px]">
@@ -137,7 +141,7 @@ function AddStepForm({
           type="submit"
           className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[7px] px-[12px] py-[6px] transition shrink-0"
         >
-          Adicionar
+          {t("stepForm.add")}
         </button>
         <button
           type="button"
@@ -160,6 +164,7 @@ function CreatePlanForm({
   patientId: string;
   onClose: () => void;
 }) {
+  const t = useTranslations("patientPanels.treatmentPlan.createForm");
   async function submit(formData: FormData) {
     await createTreatmentPlanAction(formData);
     onClose();
@@ -168,7 +173,7 @@ function CreatePlanForm({
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[11px] bg-[#FAFAF8] border-b border-black/[.06]">
-        <p className="text-[12px] font-medium text-[#0F1A2E]">Novo plano de tratamento</p>
+        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -178,29 +183,29 @@ function CreatePlanForm({
         <input type="hidden" name="patient_id" value={patientId} />
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Título do plano *</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("planTitle")}</label>
           <input
             type="text"
             name="title"
             required
             autoFocus
-            placeholder="Ex: Protocolo de ansiedade e sono, Equilíbrio hormonal..."
+            placeholder={t("planTitlePlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Objetivo terapêutico</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("goal")}</label>
           <textarea
             name="goal"
             rows={2}
-            placeholder="Descreva o resultado esperado ao final do tratamento..."
+            placeholder={t("goalPlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] resize-none transition"
           />
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Previsão de conclusão</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("targetEnd")}</label>
           <input
             type="date"
             name="target_end_at"
@@ -213,7 +218,7 @@ function CreatePlanForm({
             type="submit"
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
-            Criar plano
+            {t("create")}
           </button>
         </div>
       </form>
@@ -224,6 +229,8 @@ function CreatePlanForm({
 // ── Plan card ─────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string }) {
+  const t = useTranslations("patientPanels.treatmentPlan");
+  const locale = useLocale();
   const [addingStep, setAddingStep] = useState(false);
   const [expanded, setExpanded] = useState(plan.status === "active");
   const [changingStatus, setChangingStatus] = useState(false);
@@ -231,7 +238,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
   const done  = plan.steps.filter((s) => s.is_completed).length;
   const total = plan.steps.length;
   const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
-  const badge = STATUS_LABELS[plan.status] ?? STATUS_LABELS.active;
+  const badgeColor = STATUS_COLORS[plan.status] ?? STATUS_COLORS.active;
   const isActive = plan.status === "active";
 
   async function handleStatus(status: "active" | "paused" | "completed" | "cancelled") {
@@ -250,12 +257,12 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-[7px] mb-[3px]">
-              <span className={`text-[9px] font-semibold px-[7px] py-[2px] rounded-full ${badge.color}`}>
-                {badge.label}
+              <span className={`text-[9px] font-semibold px-[7px] py-[2px] rounded-full ${badgeColor}`}>
+                {t(`status.${plan.status}`)}
               </span>
               {plan.target_end_at && isActive && (
                 <span className="text-[10px] text-[#A09E98]">
-                  até {formatDate(plan.target_end_at)}
+                  {t("until", { date: formatDate(plan.target_end_at, locale) })}
                 </span>
               )}
             </div>
@@ -278,7 +285,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
         {total > 0 && (
           <div className="mt-[10px]">
             <div className="flex items-center justify-between mb-[4px]">
-              <span className="text-[10px] text-[#A09E98]">{done}/{total} etapas</span>
+              <span className="text-[10px] text-[#A09E98]">{t("stepsProgress", { done, total })}</span>
               <span className="text-[10px] font-medium text-[#0F6E56]">{pct}%</span>
             </div>
             <div className="h-[5px] bg-[#F4F3EF] rounded-full overflow-hidden">
@@ -303,7 +310,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
             </div>
           ) : (
             <p className="text-[12px] text-[#D3D1C7] px-[8px] py-[4px]">
-              Nenhuma etapa ainda. Adicione abaixo.
+              {t("noSteps")}
             </p>
           )}
 
@@ -322,7 +329,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
                 onClick={() => setAddingStep(true)}
                 className="flex items-center gap-[5px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F6E56] transition mt-[6px] px-[8px]"
               >
-                <Plus className="h-3 w-3" /> Adicionar etapa
+                <Plus className="h-3 w-3" /> {t("addStep")}
               </button>
             )
           )}
@@ -336,7 +343,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
                 onClick={() => handleStatus("completed")}
                 className="text-[10px] font-medium text-[#3B6BE4] border border-[#3B6BE4]/30 hover:bg-[#E8F0FE] rounded-[6px] px-[10px] py-[5px] transition"
               >
-                Marcar concluído
+                {t("markCompleted")}
               </button>
               <button
                 type="button"
@@ -344,7 +351,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
                 onClick={() => handleStatus("paused")}
                 className="text-[10px] font-medium text-amber-700 border border-amber-200 hover:bg-[#FFF3E0] rounded-[6px] px-[10px] py-[5px] transition"
               >
-                Pausar
+                {t("pause")}
               </button>
             </div>
           )}
@@ -356,7 +363,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
                 onClick={() => handleStatus("active")}
                 className="text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[5px] transition"
               >
-                Reativar
+                {t("reactivate")}
               </button>
             </div>
           )}
@@ -375,6 +382,7 @@ export function PatientTreatmentPlanPanel({
   plans: TreatmentPlan[];
   patientId: string;
 }) {
+  const t = useTranslations("patientPanels.treatmentPlan");
   const [creating, setCreating] = useState(false);
 
   const activePlan   = plans.find((p) => p.status === "active");
@@ -387,8 +395,8 @@ export function PatientTreatmentPlanPanel({
         <div className="flex items-center gap-[6px]">
           <ClipboardList className="h-3.5 w-3.5 text-[#A09E98]" />
           <p className="text-[11px] font-medium text-[#6B6A66]">
-            Plano de tratamento
-            {activePlan && <span className="text-[#0F6E56] ml-[4px]">· ativo</span>}
+            {t("title")}
+            {activePlan && <span className="text-[#0F6E56] ml-[4px]">{t("activeSuffix")}</span>}
           </p>
         </div>
         {!creating && !activePlan && (
@@ -397,7 +405,7 @@ export function PatientTreatmentPlanPanel({
             onClick={() => setCreating(true)}
             className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
           >
-            <Plus className="h-3 w-3" /> Criar plano
+            <Plus className="h-3 w-3" /> {t("createPlan")}
           </button>
         )}
         {!creating && activePlan && (
@@ -406,7 +414,7 @@ export function PatientTreatmentPlanPanel({
             onClick={() => setCreating(true)}
             className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
           >
-            <Plus className="h-3 w-3" /> Novo plano
+            <Plus className="h-3 w-3" /> {t("newPlan")}
           </button>
         )}
       </div>
@@ -419,7 +427,7 @@ export function PatientTreatmentPlanPanel({
       {/* Empty state */}
       {plans.length === 0 && !creating && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">Nenhum plano de tratamento criado ainda.</p>
+          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
         </div>
       )}
 
@@ -431,7 +439,7 @@ export function PatientTreatmentPlanPanel({
         <div className="space-y-[4px]">
           {otherPlans.length > 0 && (
             <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">
-              Anteriores
+              {t("previous")}
             </p>
           )}
           {otherPlans.map((plan) => (

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, Pill, Leaf, X, StopCircle, Printer } from "lucide-react";
 import type { Prescription } from "@/services/exams-service";
 import {
@@ -11,9 +12,11 @@ import {
 } from "@/app/patients/[id]/prescriptions/actions";
 
 function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: string }) {
+  const t = useTranslations("patientPanels.prescriptions");
+  const locale = useLocale();
   const isMed = item.type === "medication";
   const since = item.start_date
-    ? new Date(item.start_date + "T12:00:00").toLocaleDateString("pt-BR", { day: "numeric", month: "short" })
+    ? new Date(item.start_date + "T12:00:00").toLocaleDateString(locale, { day: "numeric", month: "short" })
     : null;
 
   return (
@@ -32,7 +35,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
       <div className="flex-1 min-w-0">
         <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{item.name}</p>
         <p className="text-[11px] text-[#A09E98] mt-[1px]">
-          {[item.dosage, item.frequency, since ? `desde ${since}` : null]
+          {[item.dosage, item.frequency, since ? t("since", { date: since }) : null]
             .filter(Boolean)
             .join(" · ")}
         </p>
@@ -43,7 +46,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
           <form action={deactivatePrescriptionAction.bind(null, item.id, patientId)}>
             <button
               type="submit"
-              title="Encerrar"
+              title={t("endTitle")}
               className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-amber-500 transition"
             >
               <StopCircle className="h-3.5 w-3.5" />
@@ -52,7 +55,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
           <form action={deletePrescriptionAction.bind(null, item.id, patientId)}>
             <button
               type="submit"
-              title="Remover"
+              title={t("removeTitle")}
               className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
             >
               <X className="h-3 w-3" />
@@ -65,6 +68,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
 }
 
 function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const t = useTranslations("patientPanels.prescriptions.form");
   const [type, setType] = useState<"medication" | "supplement">("supplement");
 
   async function submit(formData: FormData) {
@@ -75,7 +79,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
-        <p className="text-[12px] font-medium text-[#0F1A2E]">Novo item</p>
+        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E]">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -87,53 +91,53 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
 
         {/* Type toggle */}
         <div className="flex gap-[6px]">
-          {(["supplement", "medication"] as const).map((t) => (
+          {(["supplement", "medication"] as const).map((pt) => (
             <button
-              key={t}
+              key={pt}
               type="button"
-              onClick={() => setType(t)}
+              onClick={() => setType(pt)}
               className={[
                 "flex items-center gap-[5px] text-[11px] font-medium rounded-[7px] px-[10px] py-[6px] border transition",
-                type === t
-                  ? t === "supplement"
+                type === pt
+                  ? pt === "supplement"
                     ? "bg-[#E1F5EE] border-[#0F6E56]/30 text-[#085041]"
                     : "bg-[#FFF3E0] border-amber-300 text-amber-700"
                   : "bg-[#FAFAF8] border-black/[.08] text-[#A09E98]",
               ].join(" ")}
             >
-              {t === "supplement" ? <Leaf className="h-3 w-3" /> : <Pill className="h-3 w-3" />}
-              {t === "supplement" ? "Suplemento" : "Medicamento"}
+              {pt === "supplement" ? <Leaf className="h-3 w-3" /> : <Pill className="h-3 w-3" />}
+              {pt === "supplement" ? t("supplement") : t("medication")}
             </button>
           ))}
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Nome *</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("name")}</label>
           <input
             type="text"
             name="name"
             required
-            placeholder={type === "supplement" ? "Ex: Vitamina D3, Magnésio..." : "Ex: Levotiroxina, Metformina..."}
+            placeholder={type === "supplement" ? t("supplementPlaceholder") : t("medicationPlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-[8px]">
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Dosagem</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("dosage")}</label>
             <input
               type="text"
               name="dosage"
-              placeholder="Ex: 2000 UI, 500mg..."
+              placeholder={t("dosagePlaceholder")}
               className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Frequência</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("frequency")}</label>
             <input
               type="text"
               name="frequency"
-              placeholder="Ex: 1x ao dia, 2x..."
+              placeholder={t("frequencyPlaceholder")}
               className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
@@ -141,7 +145,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
 
         <div className="grid grid-cols-2 gap-[8px]">
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Início</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("start")}</label>
             <input
               type="date"
               name="start_date"
@@ -150,11 +154,11 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Observações</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("notes")}</label>
             <input
               type="text"
               name="notes"
-              placeholder="Com alimentação..."
+              placeholder={t("notesPlaceholder")}
               className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
@@ -165,7 +169,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
             type="submit"
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
-            Salvar
+            {t("save")}
           </button>
         </div>
       </form>
@@ -180,6 +184,7 @@ export function PatientPrescriptionsPanel({
   prescriptions: Prescription[];
   patientId: string;
 }) {
+  const t = useTranslations("patientPanels.prescriptions");
   const [adding, setAdding] = useState(false);
 
   const active = prescriptions.filter((p) => p.is_active);
@@ -191,7 +196,7 @@ export function PatientPrescriptionsPanel({
     <div className="space-y-[8px]">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-medium text-[#6B6A66]">
-          Medicamentos e suplementos · {active.length} ativos
+          {t("title")} · {t("activeCount", { count: active.length })}
         </p>
         <div className="flex items-center gap-[10px]">
           {active.length > 0 && (
@@ -200,7 +205,7 @@ export function PatientPrescriptionsPanel({
               target="_blank" rel="noopener noreferrer"
               className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
             >
-              <Printer className="h-3 w-3" /> Imprimir
+              <Printer className="h-3 w-3" /> {t("print")}
             </Link>
           )}
           {!adding && (
@@ -209,7 +214,7 @@ export function PatientPrescriptionsPanel({
               onClick={() => setAdding(true)}
               className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
             >
-              <Plus className="h-3 w-3" /> Adicionar
+              <Plus className="h-3 w-3" /> {t("add")}
             </button>
           )}
         </div>
@@ -219,25 +224,25 @@ export function PatientPrescriptionsPanel({
 
       {active.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">Nenhum item prescrito ainda.</p>
+          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-[4px]">
           {meds.length > 0 && (
             <div className="space-y-[4px]">
-              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">Medicamentos</p>
+              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">{t("medications")}</p>
               {meds.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
             </div>
           )}
           {supps.length > 0 && (
             <div className="space-y-[4px] mt-[8px]">
-              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">Suplementos</p>
+              <p className="text-[10px] font-medium text-[#A09E98] uppercase tracking-[.06em] px-[2px]">{t("supplements")}</p>
               {supps.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
             </div>
           )}
           {inactive.length > 0 && (
             <div className="space-y-[4px] mt-[8px]">
-              <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">Encerrados</p>
+              <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
               {inactive.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
             </div>
           )}

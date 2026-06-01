@@ -6,6 +6,7 @@
  * and key stats. Pure server component — data passed from page.
  */
 
+import { useTranslations } from "next-intl";
 import type { PatientEngagement } from "@/services/patient-intelligence-service";
 
 interface Props {
@@ -47,6 +48,7 @@ function ScoreRing({ score }: { score: number }) {
 }
 
 export function PatientIntelligenceStrip({ engagement }: Props) {
+  const t = useTranslations("patientPanels.intelligenceStrip");
   const {
     score,
     churnRisk,
@@ -71,7 +73,7 @@ export function PatientIntelligenceStrip({ engagement }: Props) {
       <div className="flex items-center gap-[10px]">
         <ScoreRing score={score} />
         <div>
-          <p className="text-[10px] text-[#A09E98] tracking-[.05em] uppercase">Engajamento</p>
+          <p className="text-[10px] text-[#A09E98] tracking-[.05em] uppercase">{t("engagement")}</p>
           <p className="text-[12px] font-medium text-[#0F1A2E]">{score}/100</p>
         </div>
       </div>
@@ -91,28 +93,28 @@ export function PatientIntelligenceStrip({ engagement }: Props) {
       {/* Key stats */}
       <div className="flex items-center gap-[20px] flex-wrap">
         <div className="text-center">
-          <p className="text-[10px] text-[#A09E98] tracking-[.04em]">ÚLT. SESSÃO</p>
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em]">{t("lastSession")}</p>
           <p className="text-[12px] font-medium text-[#0F1A2E]">
             {daysSinceLastSession === null
               ? "—"
               : daysSinceLastSession === 0
-              ? "Hoje"
+              ? t("today")
               : daysSinceLastSession === 1
-              ? "Ontem"
-              : `${daysSinceLastSession}d atrás`}
+              ? t("yesterday")
+              : t("daysAgo", { days: daysSinceLastSession })}
           </p>
         </div>
 
         <div className="text-center">
-          <p className="text-[10px] text-[#A09E98] tracking-[.04em]">90 DIAS</p>
+          <p className="text-[10px] text-[#A09E98] tracking-[.04em]">{t("days90")}</p>
           <p className="text-[12px] font-medium text-[#0F1A2E]">
-            {sessionsLast90Days} {sessionsLast90Days === 1 ? "sessão" : "sessões"}
+            {t("sessions", { count: sessionsLast90Days })}
           </p>
         </div>
 
         {attendanceRate !== null && (
           <div className="text-center">
-            <p className="text-[10px] text-[#A09E98] tracking-[.04em]">COMPAREC.</p>
+            <p className="text-[10px] text-[#A09E98] tracking-[.04em]">{t("attendance")}</p>
             <p className="text-[12px] font-medium text-[#0F1A2E]">
               {Math.round(attendanceRate * 100)}%
             </p>
@@ -129,8 +131,8 @@ export function PatientIntelligenceStrip({ engagement }: Props) {
             churnRisk === "high" ? "text-red-500" : "text-orange-500",
           ].join(" ")}>
             {churnRisk === "high"
-              ? "⚠ Paciente inativo — considere um follow-up."
-              : "Considere reagendar em breve."}
+              ? t("churnHigh")
+              : t("churnMedium")}
           </p>
         </>
       )}

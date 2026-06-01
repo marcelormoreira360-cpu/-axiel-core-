@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, Package, X, StopCircle, Trash2, RefreshCw } from "lucide-react";
 import type { PatientPackage } from "@/services/package-service";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/app/patients/[id]/packages/actions";
 
 function ProgressRing({ used, total }: { used: number; total: number }) {
+  const t = useTranslations("patientPanels.packages");
   const pct = Math.min(used / total, 1);
   const remaining = total - used;
   const isOver = used > total;
@@ -37,13 +39,13 @@ function ProgressRing({ used, total }: { used: number; total: number }) {
       <div>
         <p className="text-[13px] font-medium text-[#0F1A2E]">
           {isOver
-            ? `${used - total} sessão(ões) além do pacote`
+            ? t("over", { count: used - total })
             : remaining === 0
-            ? "Pacote completo"
-            : `${remaining} sessão(ões) restante${remaining !== 1 ? "s" : ""}`}
+            ? t("complete")
+            : t("remaining", { count: remaining })}
         </p>
         <p className="text-[11px] text-[#A09E98] mt-[1px]">
-          {used} de {total} sessões utilizadas
+          {t("used", { used, total })}
         </p>
       </div>
     </div>
@@ -51,7 +53,9 @@ function ProgressRing({ used, total }: { used: number; total: number }) {
 }
 
 function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: string }) {
-  const since = new Date(pkg.start_date + "T12:00:00").toLocaleDateString("pt-BR", {
+  const t = useTranslations("patientPanels.packages");
+  const locale = useLocale();
+  const since = new Date(pkg.start_date + "T12:00:00").toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
   });
 
@@ -70,11 +74,11 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
               {pkg.name}
               {pkg.auto_renew && (
                 <span className="inline-flex items-center gap-[3px] text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-full px-[6px] py-[2px]">
-                  <RefreshCw className="h-2 w-2" /> auto
+                  <RefreshCw className="h-2 w-2" /> {t("auto")}
                 </span>
               )}
             </p>
-            <p className="text-[11px] text-[#A09E98]">Início: {since}</p>
+            <p className="text-[11px] text-[#A09E98]">{t("start", { date: since })}</p>
           </div>
         </div>
         {pkg.is_active && (
@@ -82,7 +86,7 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
             <form action={deactivatePackageAction.bind(null, pkg.id, patientId)}>
               <button
                 type="submit"
-                title="Encerrar pacote"
+                title={t("endTitle")}
                 className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-amber-500 transition"
               >
                 <StopCircle className="h-3.5 w-3.5" />
@@ -91,7 +95,7 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
             <form action={deletePackageAction.bind(null, pkg.id, patientId)}>
               <button
                 type="submit"
-                title="Remover"
+                title={t("removeTitle")}
                 className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
               >
                 <Trash2 className="h-3 w-3" />
@@ -126,6 +130,7 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
 }
 
 function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const t = useTranslations("patientPanels.packages.form");
   const [autoRenew, setAutoRenew] = useState(false);
 
   async function submit(formData: FormData) {
@@ -136,7 +141,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
-        <p className="text-[12px] font-medium text-[#0F1A2E]">Novo pacote</p>
+        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E]">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -147,19 +152,19 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
         <input type="hidden" name="auto_renew" value={autoRenew ? "true" : "false"} />
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Nome do pacote *</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("name")}</label>
           <input
             type="text"
             name="name"
             required
-            placeholder="Ex: Pacote 10 sessões, Programa Detox..."
+            placeholder={t("namePlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div className="grid grid-cols-2 gap-[8px]">
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Total de sessões *</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("total")}</label>
             <input
               type="number"
               name="sessions_total"
@@ -170,7 +175,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Data de início *</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("startDate")}</label>
             <input
               type="date"
               name="start_date"
@@ -182,11 +187,11 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Observações</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("notes")}</label>
           <input
             type="text"
             name="notes"
-            placeholder="Ex: Pago, validade 6 meses..."
+            placeholder={t("notesPlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
@@ -197,7 +202,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
         >
           <div className="flex items-center gap-[7px]">
             <RefreshCw className="h-3 w-3 text-[#0F6E56]" />
-            <span className="text-[12px] text-[#0F1A2E]">Renovar automaticamente</span>
+            <span className="text-[12px] text-[#0F1A2E]">{t("autoRenew")}</span>
           </div>
           <div className={[
             "w-8 h-4 rounded-full transition-colors duration-200 relative",
@@ -215,7 +220,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
             type="submit"
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
-            Salvar pacote
+            {t("save")}
           </button>
         </div>
       </form>
@@ -230,6 +235,7 @@ export function PatientPackagePanel({
   packages: PatientPackage[];
   patientId: string;
 }) {
+  const t = useTranslations("patientPanels.packages");
   const [adding, setAdding] = useState(false);
 
   const active = packages.filter((p) => p.is_active);
@@ -239,7 +245,7 @@ export function PatientPackagePanel({
     <div className="space-y-[8px]">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-medium text-[#6B6A66]">
-          Pacotes de sessão · {active.length} ativo{active.length !== 1 ? "s" : ""}
+          {t("title")} · {t("activeCount", { count: active.length })}
         </p>
         {!adding && (
           <button
@@ -247,7 +253,7 @@ export function PatientPackagePanel({
             onClick={() => setAdding(true)}
             className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
           >
-            <Plus className="h-3 w-3" /> Adicionar
+            <Plus className="h-3 w-3" /> {t("add")}
           </button>
         )}
       </div>
@@ -256,7 +262,7 @@ export function PatientPackagePanel({
 
       {active.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">Nenhum pacote ativo.</p>
+          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-[8px]">
@@ -266,7 +272,7 @@ export function PatientPackagePanel({
 
       {inactive.length > 0 && (
         <div className="space-y-[8px] mt-[4px]">
-          <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">Encerrados</p>
+          <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
           {inactive.map((p) => <PackageCard key={p.id} pkg={p} patientId={patientId} />)}
         </div>
       )}

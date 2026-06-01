@@ -2,14 +2,9 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import type { PatientDocument } from "@/services/patient-document-service";
 import { deleteDocumentAction } from "@/app/patients/[id]/documentos/actions";
-
-const SOURCE_LABELS: Record<PatientDocument["source"], string> = {
-  clinic:  "Clínica",
-  intake:  "Paciente",
-  portal:  "Portal",
-};
 
 const SOURCE_COLORS: Record<PatientDocument["source"], string> = {
   clinic:  "bg-[#E6F1FB] text-[#0C447C]",
@@ -52,8 +47,8 @@ function FileTypeIcon({ type }: { type: PatientDocument["file_type"] }) {
   );
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
+function formatDate(value: string, locale: string) {
+  return new Date(value).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 }
 
 function fmtSize(bytes: number | null) {
@@ -70,11 +65,13 @@ interface Props {
 }
 
 export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props) {
+  const t = useTranslations("patientPanels.documents");
+  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   function handleDelete(docId: string, fileName: string) {
-    if (!confirm(`Excluir "${fileName}"?`)) return;
+    if (!confirm(t("confirmDelete", { name: fileName }))) return;
     startTransition(async () => {
       await deleteDocumentAction(docId, patientId);
       router.refresh();
@@ -85,11 +82,9 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
     <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05]">
         <div>
-          <p className="text-[13px] font-semibold text-[#0F1A2E]">Documentos</p>
+          <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("title")}</p>
           <p className="text-[11px] text-[#A09E98] mt-0.5">
-            {documents.length === 0
-              ? "Nenhum documento enviado"
-              : `${documents.length} arquivo${documents.length !== 1 ? "s" : ""}`}
+            {documents.length === 0 ? t("none") : t("count", { count: documents.length })}
           </p>
         </div>
         {intakeUrl && (
@@ -103,7 +98,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
             </svg>
-            Link do paciente
+            {t("patientLink")}
           </a>
         )}
       </div>
@@ -117,9 +112,9 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
             </svg>
           </div>
           <p className="text-[13px] text-[#A09E98]">
-            Nenhum documento ainda.
+            {t("emptyTitle")}
             {intakeUrl && (
-              <> Compartilhe o <a href={intakeUrl} target="_blank" className="text-[#0B1F3A] underline underline-offset-2">link do paciente</a> para receber arquivos.</>
+              <> {t("emptyShareBefore")} <a href={intakeUrl} target="_blank" className="text-[#0B1F3A] underline underline-offset-2">{t("emptyLinkText")}</a> {t("emptyShareAfter")}</>
             )}
           </p>
         </div>
@@ -134,12 +129,12 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{doc.file_name}</p>
                 <p className="text-[11px] text-[#A09E98]">
-                  {formatDate(doc.created_at)}{fmtSize(doc.file_size)}
+                  {formatDate(doc.created_at, locale)}{fmtSize(doc.file_size)}
                 </p>
               </div>
 
               <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium shrink-0 ${SOURCE_COLORS[doc.source]}`}>
-                {SOURCE_LABELS[doc.source]}
+                {t(`source.${doc.source}`)}
               </span>
 
               <a
@@ -147,7 +142,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
                 target="_blank"
                 rel="noopener noreferrer"
                 className="shrink-0 text-[#A09E98] hover:text-[#0B1F3A] transition"
-                title="Baixar"
+                title={t("download")}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -159,7 +154,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
                 onClick={() => handleDelete(doc.id, doc.file_name)}
                 disabled={isPending}
                 className="shrink-0 text-[#A09E98] hover:text-red-500 transition disabled:opacity-40"
-                title="Excluir"
+                title={t("delete")}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6"/>

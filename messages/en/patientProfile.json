@@ -1,0 +1,66 @@
+{
+  "back": "Patients",
+  "patientSince": "Patient since {since}",
+  "age": " · {age, plural, one {# year old} other {# years old}}",
+  "profileTag": "Integrative",
+  "actions": {
+    "exportPdf": "Export PDF summary",
+    "edit": "Edit patient",
+    "intake": "Intake",
+    "chart": "Medical record",
+    "schedule": "Schedule session",
+    "startTelehealth": "Start telehealth",
+    "telehealth": "Telehealth"
+  },
+  "stats": {
+    "sessions": "SESSIONS",
+    "lastSession": "Last: {date}",
+    "noSessions": "No sessions yet",
+    "yearly": "Yearly",
+    "monthly": "Monthly",
+    "intake": "INTAKE",
+    "forms": "forms",
+    "aiInsights": "AI INSIGHTS",
+    "evolutions": "PROGRESS NOTES",
+    "reviews": "REVIEWS",
+    "pending": "pend."
+  },
+  "quickActions": {
+    "intakeForms": "Intake forms",
+    "fillForm": "Fill out form",
+    "healthAgent": "AI Health Agent",
+    "evolution": "Clinical progress",
+    "portal": "Patient portal",
+    "portalMessages": "Portal messages"
+  },
+  "history": {
+    "title": "Session history",
+    "viewAll": "view all",
+    "empty": "No sessions yet.",
+    "scheduleFirst": "Schedule first session",
+    "minutes": "{count} min"
+  },
+  "insight": {
+    "latest": "Latest insight",
+    "final": "Final",
+    "inReview": "In review",
+    "aiDisclaimer": "AI-generated · not medical advice",
+    "none": "No insights yet",
+    "noneHelp": "Complete the intake and at least one session to generate the first AI insight.",
+    "generateFirst": "Generate first Insight",
+    "all": "All insights",
+    "viewAll": "view all"
+  },
+  "nextStep": {
+    "pending": "{count, plural, one {# insight awaiting review} other {# insights awaiting review}}",
+    "title": "Next step",
+    "review": "Review",
+    "viewInsight": "View insight"
+  },
+  "assessments": {
+    "title": "Completed forms",
+    "count": "{count, plural, one {# result} other {# results}}",
+    "fill": "Fill out",
+    "empty": "No forms filled out yet."
+  }
+}

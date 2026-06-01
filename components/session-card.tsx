@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 import type { PatientSnapshotData } from "@/components/patient-snapshot";
@@ -22,7 +23,8 @@ export function SessionCard({
   session: ScheduleSession;
   onOpen: (session: ScheduleSession) => void;
 }) {
-  const patientName = session.patients?.full_name ?? "Paciente";
+  const t = useTranslations("schedule.card");
+  const patientName = session.patients?.full_name ?? t("patientFallback");
   const sessionCount = session.previousSessions.length + 1;
   const hasFinalInsight = session.latestInsightStatus === "final";
 
@@ -39,9 +41,9 @@ export function SessionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-[6px]">
               <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{patientName}</p>
-              <span className="text-[10px] text-[#A09E98] shrink-0">· Sessão {sessionCount}</span>
+              <span className="text-[10px] text-[#A09E98] shrink-0">{t("sessionNum", { count: sessionCount })}</span>
             </div>
-            <p className="text-[11px] text-[#A09E98] mt-[1px]">{formatTime(session.starts_at)} · {session.duration_minutes} min</p>
+            <p className="text-[11px] text-[#A09E98] mt-[1px]">{t("meta", { time: formatTime(session.starts_at), minutes: session.duration_minutes })}</p>
           </div>
 
           {/* Insight badge */}
@@ -51,7 +53,7 @@ export function SessionCard({
               ? "bg-[#E1F5EE] text-[#085041]"
               : "bg-[#FAEEDA] text-[#633806]",
           ].join(" ")}>
-            {hasFinalInsight ? "Insight" : "Pendente"}
+            {hasFinalInsight ? t("insight") : t("pending")}
           </span>
         </div>
 
@@ -66,7 +68,7 @@ export function SessionCard({
               className="inline-flex items-center gap-[4px] text-[10px] font-medium text-[#2A7BC1] bg-[#EAF3FB] hover:bg-[#d6eaf8] rounded-full px-[8px] py-[3px] transition"
             >
               <Video className="h-2.5 w-2.5" />
-              Teleconsulta
+              {t("telehealth")}
             </a>
           </div>
         )}

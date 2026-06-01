@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import type { PatientPackage } from "@/services/package-service";
 
 /**
@@ -11,6 +12,7 @@ export function SessionPackageBadge({
 }: {
   packages: PatientPackage[];
 }) {
+  const t = useTranslations("patientPanels.sessionBadge");
   const activePackage = packages.find((p) => p.is_active) ?? null;
   if (!activePackage) return null;
 
@@ -25,7 +27,7 @@ export function SessionPackageBadge({
   return (
     <div className="flex flex-col gap-[3px]">
       <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041] inline-flex w-fit">
-        Sessão {sessionInPackage} · Pacote {packageNumber}
+        {t("label", { session: sessionInPackage, pkg: packageNumber })}
       </span>
       <p className="text-[10px] text-[#A09E98] truncate">{activePackage.name}</p>
       <div className="mt-[2px] h-[3px] bg-[#E1F5EE] rounded-full overflow-hidden w-full">
@@ -40,7 +42,7 @@ export function SessionPackageBadge({
         />
       </div>
       <p className="text-[9px] text-[#A09E98]">
-        {activePackage.sessions_used} de {activePackage.sessions_total} sessões usadas
+        {t("used", { used: activePackage.sessions_used, total: activePackage.sessions_total })}
       </p>
     </div>
   );

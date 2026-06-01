@@ -1,0 +1,66 @@
+{
+  "back": "Pacientes",
+  "patientSince": "Paciente desde {since}",
+  "age": " · {age, plural, one {# ano} other {# anos}}",
+  "profileTag": "Integrativo",
+  "actions": {
+    "exportPdf": "Exportar resumo PDF",
+    "edit": "Editar paciente",
+    "intake": "Intake",
+    "chart": "Prontuário",
+    "schedule": "Agendar sessão",
+    "startTelehealth": "Iniciar teleconsulta",
+    "telehealth": "Teleconsulta"
+  },
+  "stats": {
+    "sessions": "SESSÕES",
+    "lastSession": "Última: {date}",
+    "noSessions": "Nenhuma sessão ainda",
+    "yearly": "Anual",
+    "monthly": "Mensal",
+    "intake": "ANAMNESE",
+    "forms": "forms.",
+    "aiInsights": "INSIGHTS IA",
+    "evolutions": "EVOLUÇÕES",
+    "reviews": "REVISÕES",
+    "pending": "pend."
+  },
+  "quickActions": {
+    "intakeForms": "Formulários de anamnese",
+    "fillForm": "Preencher formulário",
+    "healthAgent": "Agente de Saúde IA",
+    "evolution": "Evolução clínica",
+    "portal": "Portal do paciente",
+    "portalMessages": "Mensagens do portal"
+  },
+  "history": {
+    "title": "Histórico de sessões",
+    "viewAll": "ver todas",
+    "empty": "Nenhuma sessão ainda.",
+    "scheduleFirst": "Agendar primeira sessão",
+    "minutes": "{count} min"
+  },
+  "insight": {
+    "latest": "Último insight",
+    "final": "Final",
+    "inReview": "Em revisão",
+    "aiDisclaimer": "Gerado por IA · não é conselho médico",
+    "none": "Nenhum insight ainda",
+    "noneHelp": "Complete a anamnese e ao menos uma sessão para gerar o primeiro insight de IA.",
+    "generateFirst": "Gerar primeiro Insight",
+    "all": "Todos os insights",
+    "viewAll": "ver todos"
+  },
+  "nextStep": {
+    "pending": "{count, plural, one {# insight aguardando revisão} other {# insights aguardando revisão}}",
+    "title": "Próximo passo",
+    "review": "Revisar",
+    "viewInsight": "Ver insight"
+  },
+  "assessments": {
+    "title": "Formulários aplicados",
+    "count": "{count, plural, one {# resultado} other {# resultados}}",
+    "fill": "Preencher",
+    "empty": "Nenhum formulário preenchido ainda."
+  }
+}

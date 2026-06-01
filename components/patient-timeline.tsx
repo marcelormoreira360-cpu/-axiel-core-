@@ -9,16 +9,8 @@
  */
 
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import type { TimelineEvent, TimelineEventType } from "@/services/patient-intelligence-service";
-
-const TYPE_LABELS: Record<TimelineEventType, string> = {
-  appointment:  "Sessão",
-  session_note: "Nota",
-  insight:      "Insight IA",
-  form:         "Formulário",
-  exam:         "Exame",
-  prescription: "Prescrição",
-};
 
 const TYPE_ICON: Record<TimelineEventType, string> = {
   appointment:  "M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z",
@@ -29,16 +21,12 @@ const TYPE_ICON: Record<TimelineEventType, string> = {
   prescription: "M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18",
 };
 
-function formatMonth(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+function formatMonth(isoDate: string, locale: string): string {
+  return new Date(isoDate).toLocaleDateString(locale, { month: "long", year: "numeric" });
 }
 
-function formatDay(isoDate: string): string {
-  return new Date(isoDate).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-}
-
-function formatTime(isoDate: string): string {
-  return new Date(isoDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function formatDay(isoDate: string, locale: string): string {
+  return new Date(isoDate).toLocaleDateString(locale, { day: "numeric", month: "short" });
 }
 
 interface Props {
@@ -48,12 +36,14 @@ interface Props {
 }
 
 export function PatientTimeline({ events, limit = 12 }: Props) {
+  const t = useTranslations("patientPanels.timeline");
+  const locale = useLocale();
   const visible = events.slice(0, limit);
 
   if (visible.length === 0) {
     return (
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[20px]">
-        <p className="text-[12px] text-[#A09E98] text-center">Nenhum evento registrado ainda.</p>
+        <p className="text-[12px] text-[#A09E98] text-center">{t("empty")}</p>
       </div>
     );
   }
@@ -61,7 +51,7 @@ export function PatientTimeline({ events, limit = 12 }: Props) {
   // Group by month
   const groups: Map<string, TimelineEvent[]> = new Map();
   for (const ev of visible) {
-    const month = formatMonth(ev.date);
+    const month = formatMonth(ev.date, locale);
     if (!groups.has(month)) groups.set(month, []);
     groups.get(month)!.push(ev);
   }
@@ -70,18 +60,18 @@ export function PatientTimeline({ events, limit = 12 }: Props) {
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.06]">
         <div>
-          <p className="text-[13px] font-medium text-[#0F1A2E]">Jornada do paciente</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{t("title")}</p>
           <p className="text-[11px] text-[#A09E98] mt-[1px]">
-            {events.length} {events.length === 1 ? "evento" : "eventos"} registrados
+            {t("count", { count: events.length })}
           </p>
         </div>
         <div className="flex gap-[5px] flex-wrap">
-          {(["appointment", "insight", "form", "exam"] as TimelineEventType[]).map((t) => (
+          {(["appointment", "insight", "form", "exam"] as TimelineEventType[]).map((type) => (
             <span
-              key={t}
+              key={type}
               className="text-[10px] px-[7px] py-[2px] bg-[#F4F3EF] text-[#6B6A66] rounded-full"
             >
-              {TYPE_LABELS[t]}
+              {t(`types.${type}`)}
             </span>
           ))}
         </div>
@@ -132,7 +122,7 @@ export function PatientTimeline({ events, limit = 12 }: Props) {
                             {ev.title}
                           </p>
                           <span className="text-[10px] text-[#A09E98] shrink-0 tabular-nums">
-                            {formatDay(ev.date)}
+                            {formatDay(ev.date, locale)}
                           </span>
                         </div>
                         {ev.subtitle && (
@@ -164,7 +154,7 @@ export function PatientTimeline({ events, limit = 12 }: Props) {
 
         {events.length > limit && (
           <p className="text-[11px] text-center text-[#A09E98] pt-1">
-            + {events.length - limit} eventos anteriores
+            {t("more", { count: events.length - limit })}
           </p>
         )}
       </div>

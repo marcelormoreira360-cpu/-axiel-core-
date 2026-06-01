@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { AppointmentForm, type ClinicUserOption } from "@/components/appointment-form";
@@ -15,6 +16,7 @@ export default async function NewAppointmentPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
+  const t = await getTranslations("schedule");
   const defaultPatientId = typeof sp.patient_id === "string" ? sp.patient_id : undefined;
 
   const [profile, patients, sessionTypes, clinic] = await Promise.all([
@@ -104,14 +106,14 @@ export default async function NewAppointmentPage({
           <ArrowLeft className="h-3.5 w-3.5" />
         </Link>
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Agendar sessão</h1>
-          <p className="text-[12px] text-[#A09E98] mt-[1px]">Paciente, tratamento, data e horário</p>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("new.title")}</h1>
+          <p className="text-[12px] text-[#A09E98] mt-[1px]">{t("new.subtitle")}</p>
         </div>
       </div>
 
       {!profile?.clinic_id ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <p className="text-[13px] text-[#A09E98]">Usuário precisa estar vinculado a uma clínica.</p>
+          <p className="text-[13px] text-[#A09E98]">{t("page.noClinic")}</p>
         </div>
       ) : (
         <AppointmentForm patients={patients} sessionTypes={sessionTypes} action={createSessionAction} clinicUsers={clinicUsers} defaultPatientId={defaultPatientId} />

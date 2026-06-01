@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { AiInsightReviewCard } from "@/components/ai-insight-review-card";
 import { getPatientById } from "@/services/patient-service";
@@ -34,19 +35,21 @@ function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function formatDate(value?: string | null) {
+function formatDate(value: string | null | undefined, locale: string) {
   if (!value) return "—";
-  return new Date(value).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+  return new Date(value).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }
 
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+function statusClasses(status: string) {
+  if (status === "active") return "bg-[#E1F5EE] text-[#085041]";
+  if (status === "archived") return "bg-[#F4F3EF] text-[#A09E98]";
+  return "bg-[#FAEEDA] text-[#633806]";
 }
 
-function statusBadge(status: string) {
-  if (status === "active") return { label: "Ativo", classes: "bg-[#E1F5EE] text-[#085041]" };
-  if (status === "archived") return { label: "Arquivado", classes: "bg-[#F4F3EF] text-[#A09E98]" };
-  return { label: "Inativo", classes: "bg-[#FAEEDA] text-[#633806]" };
+function statusKey(status: string): "active" | "inactive" | "archived" {
+  if (status === "active") return "active";
+  if (status === "archived") return "archived";
+  return "inactive";
 }
 
 export default async function PatientProfilePage({ params }: { params: Promise<{ id: string }> }) {
@@ -56,6 +59,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id ?? undefined);
   if (!patient) notFound();
+
+  const t = await getTranslations("patientProfile");
+  const tStatus = await getTranslations("patients.list.status");
+  const locale = await getLocale();
 
   const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, activeSubscriptionResult] = await Promise.all([
     getAppointmentsByPatient(id),
@@ -95,8 +102,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
-  const badge = statusBadge(patient.status);
-  const since = new Date(patient.created_at).toLocaleDateString([], { month: "short", year: "numeric" });
+  const since = new Date(patient.created_at).toLocaleDateString(locale, { month: "short", year: "numeric" });
 
   // Pacote ativo — usado para exibir o badge no card de sessões
   const activePackage = packages.find((p) => p.is_active) ?? null;
@@ -124,7 +130,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        Pacientes
+        {t("back")}
       </Link>
 
       {/* ── Patient header ── */}
@@ -135,18 +141,18 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <div className="flex-1 min-w-0">
           <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E] truncate">{patient.full_name}</p>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            Paciente desde {since}
+            {t("patientSince", { since })}
             {patient.date_of_birth ? (() => {
               const dob = new Date(patient.date_of_birth);
               const today = new Date();
               let age = today.getFullYear() - dob.getFullYear();
               if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
-              return ` · ${age} anos`;
+              return t("age", { age });
             })() : ""}
           </p>
           <div className="flex gap-[6px] mt-[6px]">
-            <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${badge.classes}`}>{badge.label}</span>
-            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">Integrativo</span>
+            <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
+            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
           </div>
         </div>
         <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
@@ -163,35 +169,35 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             target="_blank"
             rel="noopener noreferrer"
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Exportar resumo PDF"
+            title={t("actions.exportPdf")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </a>
           <Link
             href={`/patients/${patient.id}/edit`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Editar paciente"
+            title={t("actions.edit")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </Link>
           <Link
             href={`/patients/${patient.id}/intake`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Intake"
+            title={t("actions.intake")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
           </Link>
           <Link
             href={`/patients/${patient.id}/prontuario`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Prontuário"
+            title={t("actions.chart")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           </Link>
           <Link
             href={`/schedule/new?patient_id=${patient.id}`}
             className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title="Agendar sessão"
+            title={t("actions.schedule")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
           </Link>
@@ -199,10 +205,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <Link
               href={`/teleconsulta/${nextSession.id}`}
               className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-[#0F6E56] text-white text-[11px] font-medium hover:bg-[#085041] transition"
-              title="Iniciar teleconsulta"
+              title={t("actions.startTelehealth")}
             >
               <svg className="w-[12px] h-[12px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>
-              Teleconsulta
+              {t("actions.telehealth")}
             </Link>
           )}
         </div>
@@ -218,10 +224,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <div className="p-[20px] lg:border-r border-black/[.05]">
           {/* Sessions count */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[13px] mb-3">
-            <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">SESSÕES</p>
+            <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{t("stats.sessions")}</p>
             <p className="text-[30px] font-medium tracking-[-0.04em] text-[#0F1A2E] leading-none">{appointments.length}</p>
             <p className="text-[11px] text-[#0F6E56] mt-[4px]">
-              {lastSession ? `Última: ${formatDate(lastSession.starts_at)}` : "Nenhuma sessão ainda"}
+              {lastSession ? t("stats.lastSession", { date: formatDate(lastSession.starts_at, locale) }) : t("stats.noSessions")}
             </p>
             {(activePackage || activeSub) && (
               <div className="mt-[8px] pt-[8px] border-t border-black/[.06] space-y-2">
@@ -239,7 +245,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                       {activeSub.status === "past_due" ? "⚠️ " : "↻ "}
                       {activeSub.plan_name as string}
                       {" · "}
-                      {(activeSub.billing_interval as string) === "yearly" ? "Anual" : "Mensal"}
+                      {(activeSub.billing_interval as string) === "yearly" ? t("stats.yearly") : t("stats.monthly")}
                     </span>
                   </div>
                 )}
@@ -250,23 +256,23 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           {/* Mini stats */}
           <div className="grid grid-cols-2 gap-2">
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">ANAMNESE</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">{t("stats.intake")}</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">
-                {responses.length}<span className="text-[10px] text-[#A09E98] font-normal"> forms.</span>
+                {responses.length}<span className="text-[10px] text-[#A09E98] font-normal"> {t("stats.forms")}</span>
               </p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">INSIGHTS IA</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">{t("stats.aiInsights")}</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">{aiInsights.length}</p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">EVOLUÇÕES</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">{t("stats.evolutions")}</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">{sessionRecords.length}</p>
             </div>
             <div className="bg-[#F4F3EF] rounded-lg p-[10px]">
-              <p className="text-[9px] text-[#A09E98] mb-[3px]">REVISÕES</p>
+              <p className="text-[9px] text-[#A09E98] mb-[3px]">{t("stats.reviews")}</p>
               <p className="text-[14px] font-medium text-[#0F1A2E]">
-                {pendingReviews}<span className="text-[10px] text-[#A09E98] font-normal"> pend.</span>
+                {pendingReviews}<span className="text-[10px] text-[#A09E98] font-normal"> {t("stats.pending")}</span>
               </p>
             </div>
           </div>
@@ -277,14 +283,14 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               href={`/patients/${patient.id}/intake`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Formulários de anamnese</span>
+              <span>{t("quickActions.intakeForms")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/forms/new`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Preencher formulário</span>
+              <span>{t("quickActions.fillForm")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
@@ -298,28 +304,28 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               href={`/patients/${patient.id}/health-agent`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Agente de Saúde IA</span>
+              <span>{t("quickActions.healthAgent")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/evolution`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Evolução clínica</span>
+              <span>{t("quickActions.evolution")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/portal-link`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Portal do paciente</span>
+              <span>{t("quickActions.portal")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/messages`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>Mensagens do portal</span>
+              <span>{t("quickActions.portalMessages")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
           </div>
@@ -328,18 +334,18 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         {/* Col 2 — session timeline */}
         <div className="p-[20px] lg:border-r border-black/[.05]">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[12px] font-medium text-[#0F1A2E]">Histórico de sessões</p>
-            <Link href="/schedule" className="text-[11px] text-[#0F6E56] hover:underline">ver todas</Link>
+            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("history.title")}</p>
+            <Link href="/schedule" className="text-[11px] text-[#0F6E56] hover:underline">{t("history.viewAll")}</Link>
           </div>
 
           {appointments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-[12px] text-[#6B6A66]">Nenhuma sessão ainda.</p>
+              <p className="text-[12px] text-[#6B6A66]">{t("history.empty")}</p>
               <Link
                 href={`/schedule/new?patient_id=${patient.id}`}
                 className="mt-3 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-3 py-1.5 rounded-lg transition"
               >
-                Agendar primeira sessão
+                {t("history.scheduleFirst")}
               </Link>
             </div>
           ) : (
@@ -353,7 +359,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                     )}
                   </div>
                   <div className="pb-3 min-w-0 flex-1">
-                    <p className="text-[9px] text-[#A09E98]">{formatDate(appt.starts_at)}</p>
+                    <p className="text-[9px] text-[#A09E98]">{formatDate(appt.starts_at, locale)}</p>
                     <div className="flex items-center gap-2">
                       <Link href={`/schedule/${appt.id}/session`} className="text-[11px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] transition">
                         {getTerm("session")} {appointments.length - i}
@@ -363,12 +369,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                           href={`/teleconsulta/${appt.id}`}
                           className="text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] hover:bg-[#0F6E56] hover:text-white px-[6px] py-[2px] rounded-full transition"
                         >
-                          Teleconsulta
+                          {t("actions.telehealth")}
                         </Link>
                       )}
                     </div>
                     <p className="text-[10px] text-[#A09E98]">
-                      {appt.duration_minutes} min{appt.notes ? ` · ${appt.notes.slice(0, 30)}` : ""}
+                      {t("history.minutes", { count: appt.duration_minutes })}{appt.notes ? ` · ${appt.notes.slice(0, 30)}` : ""}
                     </p>
                   </div>
                 </div>
@@ -383,10 +389,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <div className="bg-[#F0FAF6] border border-[#9FE1CB] rounded-[12px] p-[14px]">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <svg className="w-[14px] h-[14px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span className="text-[10px] font-medium text-[#0F6E56] tracking-[.06em] uppercase">Último insight</span>
+                <span className="text-[10px] font-medium text-[#0F6E56] tracking-[.06em] uppercase">{t("insight.latest")}</span>
               </div>
               <span className={`text-[10px] px-2 py-[2px] rounded-full inline-block mb-[10px] ${latestInsight.review_status === "final" ? "bg-[#E1F5EE] text-[#085041]" : "bg-[#FAEEDA] text-[#633806]"}`}>
-                {latestInsight.review_status === "final" ? "Final" : "Em revisão"}
+                {latestInsight.review_status === "final" ? t("insight.final") : t("insight.inReview")}
               </span>
               {latestInsight.output?.structured_summary?.overview && (
                 <div className="flex gap-[7px] items-start mb-[7px]">
@@ -406,24 +412,24 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               )}
               <div className="mt-3 pt-[10px] border-t border-[#9FE1CB] flex items-center gap-[5px]">
                 <svg className="w-[13px] h-[13px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span className="text-[10px] text-[#0F6E56]">Gerado por IA · não é conselho médico</span>
+                <span className="text-[10px] text-[#0F6E56]">{t("insight.aiDisclaimer")}</span>
               </div>
             </div>
           ) : (
             <div className="bg-[#F4F3EF] rounded-[12px] p-[14px] h-full flex flex-col">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <svg className="w-[14px] h-[14px] text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span className="text-[10px] font-medium text-[#A09E98] tracking-[.06em] uppercase">Nenhum insight ainda</span>
+                <span className="text-[10px] font-medium text-[#A09E98] tracking-[.06em] uppercase">{t("insight.none")}</span>
               </div>
               <p className="text-[11px] text-[#6B6A66] leading-relaxed mb-4">
-                Complete a anamnese e ao menos uma sessão para gerar o primeiro insight de IA.
+                {t("insight.noneHelp")}
               </p>
               <form action={generateAction}>
                 <button
                   type="submit"
                   className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-3 py-1.5 rounded-lg"
                 >
-                  Gerar primeiro Insight
+                  {t("insight.generateFirst")}
                 </button>
               </form>
             </div>
@@ -433,9 +439,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           {aiInsights.length > 0 && (
             <div className="mt-4">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-medium text-[#0F1A2E]">Todos os insights</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
                 <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
-                  ver todos
+                  {t("insight.viewAll")}
                 </Link>
               </div>
               <div className="space-y-2">
@@ -459,8 +465,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <div className="flex-1 min-w-0">
             <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806]" : "text-[#085041]"].join(" ")}>
               {pendingReviews > 0
-                ? `${pendingReviews} insight${pendingReviews > 1 ? "s" : ""} aguardando revisão`
-                : "Próximo passo"
+                ? t("nextStep.pending", { count: pendingReviews })
+                : t("nextStep.title")
               }
             </p>
             {pendingReviews === 0 && latestInsight?.output?.structured_summary?.current_status && (
@@ -478,7 +484,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                 : "bg-[#0F6E56] text-white hover:bg-[#085041]",
             ].join(" ")}
           >
-            {pendingReviews > 0 ? "Revisar" : "Ver insight"}
+            {pendingReviews > 0 ? t("nextStep.review") : t("nextStep.viewInsight")}
           </Link>
         </div>
       )}
@@ -495,9 +501,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden mt-5">
         <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.06]">
           <div>
-            <p className="text-[13px] font-medium text-[#0F1A2E]">Formulários aplicados</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E]">{t("assessments.title")}</p>
             <p className="text-[11px] text-[#A09E98] mt-[1px]">
-              {assessmentResponses.length} {assessmentResponses.length === 1 ? "resultado" : "resultados"}
+              {t("assessments.count", { count: assessmentResponses.length })}
             </p>
           </div>
           <Link
@@ -505,19 +511,19 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             className="flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[10px] py-[5px] rounded-[6px]"
           >
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Preencher
+            {t("assessments.fill")}
           </Link>
         </div>
 
         {assessmentResponses.length === 0 ? (
           <div className="px-[16px] py-[14px]">
-            <p className="text-[12px] text-[#A09E98]">Nenhum formulário preenchido ainda.</p>
+            <p className="text-[12px] text-[#A09E98]">{t("assessments.empty")}</p>
           </div>
         ) : (
           <div className="divide-y divide-black/[.04]">
             {assessmentResponses.slice(0, 5).map((resp) => {
               const pct = resp.score_percentage ?? 0;
-              const filledDate = new Date(resp.filled_at).toLocaleDateString("pt-BR", {
+              const filledDate = new Date(resp.filled_at).toLocaleDateString(locale, {
                 day: "numeric",
                 month: "short",
                 year: "numeric",

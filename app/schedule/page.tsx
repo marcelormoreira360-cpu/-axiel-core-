@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
@@ -159,7 +160,9 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
-  const today = new Date().toLocaleDateString("pt-BR", {
+  const t = await getTranslations("schedule.page");
+  const locale = await getLocale();
+  const today = new Date().toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -172,9 +175,7 @@ export default async function SchedulePage() {
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] capitalize">{today}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {todayAppointments.length > 0
-              ? `${todayAppointments.length} ${todayAppointments.length === 1 ? "sessão" : "sessões"} hoje`
-              : "Nenhuma sessão agendada hoje"}
+            {t("todayCount", { count: todayAppointments.length })}
           </p>
         </div>
         {profile?.clinic_id && (
@@ -182,7 +183,7 @@ export default async function SchedulePage() {
             href="/schedule/new"
             className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
           >
-            + Agendar sessão
+            {t("newSession")}
           </Link>
         )}
       </div>
@@ -190,19 +191,19 @@ export default async function SchedulePage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-[10px] mb-[22px]">
         <div className="bg-[#0F1A2E] rounded-[10px] px-[14px] py-[12px]">
-          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-white/50 mb-[6px]">Hoje</p>
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-white/50 mb-[6px]">{t("statToday")}</p>
           <p className="text-[26px] font-semibold tracking-[-0.04em] leading-none text-white">
             {todayAppointments.length}
           </p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">
-          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">Próxima</p>
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">{t("statNext")}</p>
           <p className="text-[18px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">
             {nextSession ? formatTime(nextSession.starts_at) : "—"}
           </p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">
-          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">Reviews</p>
+          <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">{t("statReviews")}</p>
           <p className="text-[26px] font-semibold tracking-[-0.04em] leading-none text-[#0F1A2E]">
             {openReviews}
           </p>
@@ -211,7 +212,7 @@ export default async function SchedulePage() {
 
       {!profile?.clinic_id ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <p className="text-[13px] text-[#A09E98]">Usuário precisa estar vinculado a uma clínica.</p>
+          <p className="text-[13px] text-[#A09E98]">{t("noClinic")}</p>
         </div>
       ) : (
         <>

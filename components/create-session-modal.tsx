@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { X, Search, UserPlus, Settings2 } from "lucide-react";
 import type { Patient, SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
@@ -20,6 +21,8 @@ export function CreateSessionModal({
   onClose: () => void;
   action: (formData: FormData) => Promise<void>;
 }) {
+  const t = useTranslations("schedule.modal");
+  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
@@ -30,7 +33,7 @@ export function CreateSessionModal({
   const [newPhone, setNewPhone] = useState("");
   // If no session types are configured, fall back to a default 60-min slot
   const DEFAULT_TYPE: SessionType = {
-    id: "", clinic_id: "", name: "Sessão padrão", duration_minutes: 60,
+    id: "", clinic_id: "", name: t("defaultType"), duration_minutes: 60,
     price_cents: 0, is_active: true, is_online: false, is_recorded: false,
     created_at: "", updated_at: "",
   };
@@ -91,7 +94,7 @@ export function CreateSessionModal({
       {/* Backdrop */}
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={t("cancel")}
         onClick={onClose}
         className="absolute inset-0 bg-[#0F1A2E]/30 backdrop-blur-[2px]"
       />
@@ -113,12 +116,12 @@ export function CreateSessionModal({
         {/* Header */}
         <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Nova sessão</p>
+            <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("title")}</p>
             <h2 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] mt-[2px]">
               {slot.label}
               {slot.date && (
                 <span className="ml-2 text-[13px] font-normal text-[#A09E98]">
-                  {slot.date.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" })}
+                  {slot.date.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" })}
                 </span>
               )}
             </h2>
@@ -135,21 +138,21 @@ export function CreateSessionModal({
         {/* Patient section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-[6px]">
-            <label className="text-[11px] font-medium text-[#6B6A66]">Paciente</label>
+            <label className="text-[11px] font-medium text-[#6B6A66]">{t("patient")}</label>
             <div className="flex rounded-[7px] border border-black/[.08] overflow-hidden text-[11px]">
               <button
                 type="button"
                 onClick={switchToExisting}
                 className={`px-3 py-1 transition font-medium ${!isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
               >
-                Existente
+                {t("existing")}
               </button>
               <button
                 type="button"
                 onClick={switchToNew}
                 className={`px-3 py-1 transition font-medium ${isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
               >
-                + Novo
+                {t("new")}
               </button>
             </div>
           </div>
@@ -169,7 +172,7 @@ export function CreateSessionModal({
                       setSelectedPatient(null);
                     }
                   }}
-                  placeholder="Buscar paciente..."
+                  placeholder={t("searchPlaceholder")}
                   autoComplete="off"
                   className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
@@ -202,7 +205,7 @@ export function CreateSessionModal({
                       <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center shrink-0">
                         <UserPlus className="h-3 w-3 text-[#0F6E56]" />
                       </div>
-                      <p className="text-[12px] font-medium text-[#0F6E56]">Cadastrar como novo paciente</p>
+                      <p className="text-[12px] font-medium text-[#0F6E56]">{t("registerNew")}</p>
                     </button>
                   )}
                 </div>
@@ -230,7 +233,7 @@ export function CreateSessionModal({
                 type="text"
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nome completo *"
+                placeholder={t("namePlaceholder")}
                 className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
               <div className="grid grid-cols-2 gap-[6px]">
@@ -238,18 +241,18 @@ export function CreateSessionModal({
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  placeholder="E-mail"
+                  placeholder={t("emailPlaceholder")}
                   className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
                 <input
                   type="tel"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="Telefone"
+                  placeholder={t("phonePlaceholder")}
                   className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
-              <p className="text-[10px] text-[#A09E98]">Paciente criado e sessão agendada em um único passo.</p>
+              <p className="text-[10px] text-[#A09E98]">{t("newHint")}</p>
             </div>
           )}
         </div>
@@ -257,21 +260,21 @@ export function CreateSessionModal({
         {/* Treatment type */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-[6px]">
-            <label className="text-[11px] font-medium text-[#6B6A66]">Tipo de atendimento</label>
+            <label className="text-[11px] font-medium text-[#6B6A66]">{t("treatmentType")}</label>
             <button
               type="button"
               onClick={() => router.push("/settings/session-types")}
               className="flex items-center gap-[4px] text-[10px] text-[#A09E98] hover:text-[#0F6E56] transition"
             >
               <Settings2 className="h-3 w-3" />
-              Editar lista
+              {t("editList")}
             </button>
           </div>
           <div className="max-h-[200px] overflow-y-auto space-y-[5px] pr-[2px]">
             {sessionTypes.length === 0 ? (
               <div className="px-[12px] py-[9px] rounded-[8px] border border-[#0F6E56] bg-[#F0FAF6] flex items-center justify-between">
-                <span className="text-[12px] font-medium text-[#0F6E56]">Sessão padrão</span>
-                <span className="text-[11px] text-[#0F6E56]">60 min</span>
+                <span className="text-[12px] font-medium text-[#0F6E56]">{t("defaultType")}</span>
+                <span className="text-[11px] text-[#0F6E56]">{t("minutes", { count: 60 })}</span>
               </div>
             ) : sessionTypes.map((type) => {
               const isSelected = selectedType?.id === type.id;
@@ -291,7 +294,7 @@ export function CreateSessionModal({
                     {type.name}
                   </span>
                   <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
-                    {type.duration_minutes} min
+                    {t("minutes", { count: type.duration_minutes })}
                   </span>
                 </button>
               );
@@ -306,14 +309,14 @@ export function CreateSessionModal({
             onClick={onClose}
             className="flex-1 text-[12px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] transition"
           >
-            Cancelar
+            {t("cancel")}
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
             className="flex-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[8px] py-[9px] transition"
           >
-            {isPending ? "Salvando…" : "Confirmar"}
+            {isPending ? t("saving") : t("confirm")}
           </button>
         </div>
       </form>

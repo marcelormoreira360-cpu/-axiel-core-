@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Sparkles, AlertTriangle, CheckCircle2, Clock, Copy,
   Check, ChevronDown, ChevronUp, Loader2, RefreshCw,
@@ -43,12 +44,6 @@ function severityColor(s: Severity) {
   return "bg-[#F4F3EF] text-[#6B6A66] border-black/[.06]";
 }
 
-function severityLabel(s: Severity) {
-  if (s === "alta") return "Alta";
-  if (s === "media") return "Média";
-  return "Baixa";
-}
-
 function SectionHeader({ icon, title, count }: { icon: React.ReactNode; title: string; count?: number }) {
   return (
     <div className="flex items-center gap-[8px] mb-[10px]">
@@ -82,25 +77,26 @@ function CollapsibleCard({ children, defaultOpen = true }: { children: React.Rea
 }
 
 function PractitionerView({ report }: { report: PractitionerReport }) {
+  const t = useTranslations("patientPanels.healthAgent");
   return (
     <div className="space-y-[12px]">
       {/* Clinical summary */}
       <div className="bg-[#0F1A2E] rounded-[12px] px-[16px] py-[14px]">
-        <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40 mb-[6px]">Síntese clínica</p>
+        <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40 mb-[6px]">{t("practitioner.clinicalSummary")}</p>
         <p className="text-[13px] text-white leading-relaxed">{report.clinical_summary}</p>
       </div>
 
       {/* Priority findings */}
       {report.priority_findings?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<AlertTriangle className="h-3 w-3" />} title="Achados prioritários" count={report.priority_findings.length} />
+          <SectionHeader icon={<AlertTriangle className="h-3 w-3" />} title={t("practitioner.priorityFindings")} count={report.priority_findings.length} />
           <div className="space-y-[8px]">
             {report.priority_findings.map((f, i) => (
               <div key={i} className={`rounded-[8px] border px-[12px] py-[10px] ${severityColor(f.severity)}`}>
                 <div className="flex items-start justify-between gap-[8px]">
                   <p className="text-[12px] font-medium">{f.finding}</p>
                   <span className={`text-[9px] font-semibold uppercase tracking-[.06em] rounded-full px-[7px] py-[2px] border shrink-0 ${severityColor(f.severity)}`}>
-                    {severityLabel(f.severity)}
+                    {t(`severity.${f.severity}`)}
                   </span>
                 </div>
                 <p className="text-[11px] mt-[4px] opacity-80">{f.detail}</p>
@@ -113,7 +109,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
       {/* Interaction alerts */}
       {report.interaction_alerts?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<Pill className="h-3 w-3" />} title="Interações detectadas" count={report.interaction_alerts.length} />
+          <SectionHeader icon={<Pill className="h-3 w-3" />} title={t("practitioner.interactions")} count={report.interaction_alerts.length} />
           <div className="space-y-[8px]">
             {report.interaction_alerts.map((ia, i) => (
               <div key={i} className={`rounded-[8px] border px-[12px] py-[10px] ${severityColor(ia.severity)}`}>
@@ -122,7 +118,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
                   <span className="text-[10px] opacity-60">↔</span>
                   <span className="text-[11px] font-semibold">{ia.item_b}</span>
                   <span className={`ml-auto text-[9px] font-semibold uppercase tracking-[.06em] rounded-full px-[7px] py-[2px] border shrink-0 ${severityColor(ia.severity)}`}>
-                    {severityLabel(ia.severity)}
+                    {t(`severity.${ia.severity}`)}
                   </span>
                 </div>
                 <p className="text-[11px] opacity-80">{ia.interaction}</p>
@@ -138,7 +134,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
       {/* Exam analysis */}
       {report.exam_analysis?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<FlaskConical className="h-3 w-3" />} title="Análise de exames" count={report.exam_analysis.length} />
+          <SectionHeader icon={<FlaskConical className="h-3 w-3" />} title={t("practitioner.examAnalysis")} count={report.exam_analysis.length} />
           <div className="divide-y divide-black/[.04]">
             {report.exam_analysis.map((ea, i) => (
               <div key={i} className="py-[8px]">
@@ -163,7 +159,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
       {/* Protocol suggestions */}
       {report.protocol_suggestions?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<Target className="h-3 w-3" />} title="Sugestões de protocolo" count={report.protocol_suggestions.length} />
+          <SectionHeader icon={<Target className="h-3 w-3" />} title={t("practitioner.protocolSuggestions")} count={report.protocol_suggestions.length} />
           <div className="space-y-[8px]">
             {report.protocol_suggestions.map((ps, i) => (
               <div key={i} className="bg-[#FAFAF8] rounded-[8px] px-[12px] py-[10px]">
@@ -180,7 +176,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
       <div className="grid gap-[10px] sm:grid-cols-2">
         {report.monitoring_points?.length > 0 && (
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <SectionHeader icon={<Eye className="h-3 w-3" />} title="Pontos de monitoramento" />
+            <SectionHeader icon={<Eye className="h-3 w-3" />} title={t("practitioner.monitoring")} />
             <ul className="space-y-[5px]">
               {report.monitoring_points.map((m, i) => (
                 <li key={i} className="flex items-start gap-[6px]">
@@ -193,7 +189,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
         )}
         {report.next_session_focus && (
           <div className="bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[12px] px-[16px] py-[14px]">
-            <SectionHeader icon={<Clock className="h-3 w-3" />} title="Foco da próxima sessão" />
+            <SectionHeader icon={<Clock className="h-3 w-3" />} title={t("practitioner.nextSessionFocus")} />
             <p className="text-[13px] text-[#085041]">{report.next_session_focus}</p>
           </div>
         )}
@@ -203,6 +199,7 @@ function PractitionerView({ report }: { report: PractitionerReport }) {
 }
 
 function PatientView({ report }: { report: PatientReport }) {
+  const t = useTranslations("patientPanels.healthAgent");
   return (
     <div className="space-y-[12px]">
       {/* Greeting */}
@@ -214,7 +211,7 @@ function PatientView({ report }: { report: PatientReport }) {
       {/* Positive points */}
       {report.positive_points?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<CheckCircle2 className="h-3 w-3" />} title="Pontos positivos" />
+          <SectionHeader icon={<CheckCircle2 className="h-3 w-3" />} title={t("patient.positivePoints")} />
           <ul className="space-y-[6px]">
             {report.positive_points.map((p, i) => (
               <li key={i} className="flex items-start gap-[8px]">
@@ -229,14 +226,14 @@ function PatientView({ report }: { report: PatientReport }) {
       {/* Attention areas */}
       {report.attention_areas?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<AlertTriangle className="h-3 w-3" />} title="Áreas de atenção" />
+          <SectionHeader icon={<AlertTriangle className="h-3 w-3" />} title={t("patient.attentionAreas")} />
           <div className="space-y-[10px]">
             {report.attention_areas.map((aa, i) => (
               <div key={i} className="bg-[#FAFAF8] rounded-[10px] px-[14px] py-[12px]">
                 <p className="text-[13px] font-semibold text-[#0F1A2E] mb-[4px]">{aa.area}</p>
                 <p className="text-[12px] text-[#6B6A66] mb-[6px]">{aa.explanation}</p>
                 <div className="flex items-start gap-[6px]">
-                  <span className="text-[10px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-full px-[7px] py-[2px] shrink-0">O que fazer</span>
+                  <span className="text-[10px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-full px-[7px] py-[2px] shrink-0">{t("patient.whatToDo")}</span>
                   <p className="text-[12px] text-[#0F6E56]">{aa.action}</p>
                 </div>
               </div>
@@ -248,7 +245,7 @@ function PatientView({ report }: { report: PatientReport }) {
       {/* Next steps */}
       {report.next_steps?.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <SectionHeader icon={<Target className="h-3 w-3" />} title="Próximos passos" />
+          <SectionHeader icon={<Target className="h-3 w-3" />} title={t("patient.nextSteps")} />
           <ol className="space-y-[6px]">
             {report.next_steps.map((s, i) => (
               <li key={i} className="flex items-start gap-[10px]">
@@ -273,6 +270,7 @@ function PatientView({ report }: { report: PatientReport }) {
 }
 
 export function HealthAgentPanel({ patientId }: { patientId: string }) {
+  const t = useTranslations("patientPanels.healthAgent");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<Report | null>(null);
@@ -296,11 +294,11 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
         body: JSON.stringify({ patientId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro interno");
+      if (!res.ok) throw new Error(data.error ?? t("errors.internal"));
       setReport(data.report);
       setPatientName(data.patientName);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao gerar relatório");
+      setError(err instanceof Error ? err.message : t("errors.generate"));
     } finally {
       setLoading(false);
     }
@@ -327,12 +325,12 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
         body: JSON.stringify({ patientId, report, patientName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro ao enviar");
+      if (!res.ok) throw new Error(data.error ?? t("errors.send"));
       setter("sent");
       setTimeout(() => setter("idle"), 4000);
     } catch (err: unknown) {
       setter("error");
-      setWaError(err instanceof Error ? err.message : "Erro ao enviar WhatsApp");
+      setWaError(err instanceof Error ? err.message : t("errors.whatsapp"));
     }
   }
 
@@ -348,12 +346,12 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
         body: JSON.stringify({ patientId, report, patientName }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro ao enviar");
+      if (!res.ok) throw new Error(data.error ?? t("errors.send"));
       setSendStatus("sent");
       setTimeout(() => setSendStatus("idle"), 4000);
     } catch (err: unknown) {
       setSendStatus("error");
-      setSendError(err instanceof Error ? err.message : "Erro ao enviar email");
+      setSendError(err instanceof Error ? err.message : t("errors.email"));
     } finally {
       setSending(false);
     }
@@ -367,13 +365,13 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
       "",
       p.overall_message,
       "",
-      "✅ Pontos positivos:",
+      t("copyLabels.positive"),
       ...(p.positive_points ?? []).map((x) => `• ${x}`),
       "",
-      "📌 Áreas de atenção:",
+      t("copyLabels.attention"),
       ...(p.attention_areas ?? []).map((a) => `• ${a.area}: ${a.explanation}\n  → ${a.action}`),
       "",
-      "🎯 Próximos passos:",
+      t("copyLabels.nextSteps"),
       ...(p.next_steps ?? []).map((s, i) => `${i + 1}. ${s}`),
       "",
       p.encouragement,
@@ -391,13 +389,13 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
             <Sparkles className="h-4 w-4 text-[#0F6E56]" />
           </div>
           <div>
-            <p className="text-[13px] font-semibold text-[#0F1A2E]">Agente de Saúde</p>
-            <p className="text-[11px] text-[#A09E98]">Análise integrativa · Exames · Interações · Relatórios</p>
+            <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("intro.title")}</p>
+            <p className="text-[11px] text-[#A09E98]">{t("intro.subtitle")}</p>
           </div>
         </div>
 
         <p className="text-[12px] text-[#6B6A66] leading-relaxed mb-[14px]">
-          Analisa todos os dados do paciente — exames, medicamentos, suplementos, sessões e formulários — e gera um relatório técnico para você e um relatório simplificado para enviar ao paciente.
+          {t("intro.description")}
         </p>
 
         {error && (
@@ -415,12 +413,12 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Analisando dados do paciente…
+              {t("intro.analyzing")}
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4" />
-              Gerar análise e relatórios
+              {t("intro.generate")}
             </>
           )}
         </button>
@@ -436,7 +434,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
           <div className="w-7 h-7 rounded-[8px] bg-[#0F1A2E] flex items-center justify-center">
             <Sparkles className="h-3.5 w-3.5 text-[#0F6E56]" />
           </div>
-          <p className="text-[13px] font-semibold text-[#0F1A2E]">Relatório — {patientName}</p>
+          <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("report.title", { name: patientName })}</p>
         </div>
         <div className="flex items-center gap-[6px]">
           {view === "patient" && (
@@ -446,7 +444,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 type="button"
                 onClick={sendToPatient}
                 disabled={sending}
-                title="Enviar por email"
+                title={t("report.emailTitle")}
                 className={[
                   "flex items-center gap-[4px] text-[11px] font-medium rounded-[6px] px-[9px] py-[5px] border transition",
                   sendStatus === "sent"
@@ -457,7 +455,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 ].join(" ")}
               >
                 {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : sendStatus === "sent" ? <Check className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                {sending ? "…" : sendStatus === "sent" ? "Email enviado" : "Email"}
+                {sending ? "…" : sendStatus === "sent" ? t("report.emailSent") : t("report.email")}
               </button>
 
               {/* WhatsApp texto */}
@@ -465,7 +463,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 type="button"
                 onClick={() => sendWhatsApp(false)}
                 disabled={waText === "sending"}
-                title="Enviar via WhatsApp (texto)"
+                title={t("report.whatsappTitle")}
                 className={[
                   "flex items-center gap-[4px] text-[11px] font-medium rounded-[6px] px-[9px] py-[5px] border transition",
                   waText === "sent"
@@ -476,7 +474,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 ].join(" ")}
               >
                 {waText === "sending" ? <Loader2 className="h-3 w-3 animate-spin" /> : waText === "sent" ? <Check className="h-3 w-3" /> : <MessageCircle className="h-3 w-3" />}
-                {waText === "sending" ? "…" : waText === "sent" ? "Enviado" : "WhatsApp"}
+                {waText === "sending" ? "…" : waText === "sent" ? t("report.sent") : t("report.whatsapp")}
               </button>
 
               {/* WhatsApp voz */}
@@ -484,7 +482,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 type="button"
                 onClick={() => sendWhatsApp(true)}
                 disabled={waVoice === "sending"}
-                title="Enviar via WhatsApp (mensagem de voz)"
+                title={t("report.voiceTitle")}
                 className={[
                   "flex items-center gap-[4px] text-[11px] font-medium rounded-[6px] px-[9px] py-[5px] border transition",
                   waVoice === "sent"
@@ -495,7 +493,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
                 ].join(" ")}
               >
                 {waVoice === "sending" ? <Loader2 className="h-3 w-3 animate-spin" /> : waVoice === "sent" ? <Check className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
-                {waVoice === "sending" ? "…" : waVoice === "sent" ? "Enviado" : "Voz"}
+                {waVoice === "sending" ? "…" : waVoice === "sent" ? t("report.sent") : t("report.voice")}
               </button>
             </>
           )}
@@ -508,7 +506,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
             ].join(" ")}
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? "Copiado" : "Copiar"}
+            {copied ? t("report.copied") : t("report.copy")}
           </button>
           <button
             type="button"
@@ -517,7 +515,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
             className="flex items-center gap-[4px] text-[11px] font-medium text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[9px] py-[5px] transition disabled:opacity-40"
           >
             <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-            Atualizar
+            {t("report.refresh")}
           </button>
         </div>
       </div>
@@ -532,7 +530,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
             view === "practitioner" ? "bg-white text-[#0F1A2E] shadow-sm" : "text-[#A09E98] hover:text-[#6B6A66]",
           ].join(" ")}
         >
-          <Stethoscope className="h-3 w-3" /> Relatório clínico
+          <Stethoscope className="h-3 w-3" /> {t("report.clinicalView")}
         </button>
         <button
           type="button"
@@ -542,7 +540,7 @@ export function HealthAgentPanel({ patientId }: { patientId: string }) {
             view === "patient" ? "bg-white text-[#0F1A2E] shadow-sm" : "text-[#A09E98] hover:text-[#6B6A66]",
           ].join(" ")}
         >
-          <User className="h-3 w-3" /> Para o paciente
+          <User className="h-3 w-3" /> {t("report.patientView")}
         </button>
       </div>
 

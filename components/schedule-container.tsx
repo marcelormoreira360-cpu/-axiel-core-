@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import {
@@ -41,7 +42,7 @@ import type { Appointment } from "@/lib/types";
 
 type View = "dia" | "semana" | "mes";
 
-const WEEKDAY_LABELS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+const WEEKDAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 // ─── Time grid constants ──────────────────────────────────────────────────────
 const HOUR_HEIGHT  = 64;
@@ -656,6 +657,7 @@ function DroppableHourCell({
   onClick: () => void;
   children?: React.ReactNode;
 }) {
+  const t = useTranslations("schedule.calendar");
   const { setNodeRef, isOver } = useDroppable({ id, data: { date, hour } });
 
   return (
@@ -675,7 +677,7 @@ function DroppableHourCell({
         transition: "background 0.1s, border-color 0.1s",
       }}
       onClick={onClick}
-      title={`Agendar às ${String(hour).padStart(2, "0")}:00`}
+      title={t("scheduleAt", { time: `${String(hour).padStart(2, "0")}:00` })}
     >
       {children}
     </div>
@@ -1062,6 +1064,7 @@ function MonthView({
   navDate: Date;
   onDayClick: (date: Date) => void;
 }) {
+  const t            = useTranslations("schedule.calendar");
   const today        = new Date();
   const cells        = useMemo(() => getMonthGrid(navDate), [navDate]);
   const currentMonth = navDate.getMonth();
@@ -1069,12 +1072,12 @@ function MonthView({
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="grid grid-cols-7 border-b border-black/[.07]">
-        {WEEKDAY_LABELS.map((label) => (
+        {WEEKDAY_KEYS.map((key) => (
           <div
-            key={label}
+            key={key}
             className="py-[8px] text-center text-[9px] font-medium tracking-[.08em] uppercase text-[#A09E98] border-r border-black/[.05] last:border-r-0"
           >
-            {label}
+            {t(`weekdays.${key}`)}
           </div>
         ))}
       </div>
@@ -1151,6 +1154,8 @@ export function ScheduleContainer({
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
 }) {
+  const t = useTranslations("schedule.calendar");
+  const locale = useLocale();
   const [view, setView]                       = useState<View>("semana");
   const [navDate, setNavDate]                 = useState(new Date());
   const [selectedSlot, setSelectedSlot]       = useState<TimeSlot | null>(null);
@@ -1172,10 +1177,10 @@ export function ScheduleContainer({
 
   const navLabel = useMemo(() => {
     if (view === "dia") {
-      const t = new Date();
-      return isSameDay(navDate, t)
-        ? "Hoje"
-        : navDate.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
+      const now = new Date();
+      return isSameDay(navDate, now)
+        ? t("today")
+        : navDate.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
     }
     if (view === "semana") {
       const start = startOfWeek(navDate);
@@ -1183,7 +1188,7 @@ export function ScheduleContainer({
       return `${formatShortDate(start)} – ${formatShortDate(end)}`;
     }
     return formatMonthYear(navDate);
-  }, [view, navDate]);
+  }, [view, navDate, locale, t]);
 
   const showNav = true; // navigation always visible in all views
 
@@ -1256,7 +1261,7 @@ export function ScheduleContainer({
                 onClick={goToday}
                 className="ml-[4px] text-[11px] font-medium text-[#0F6E56] hover:underline"
               >
-                Hoje
+                {t("today")}
               </button>
             </>
           )}
@@ -1269,7 +1274,7 @@ export function ScheduleContainer({
               onChange={(e) => setFilterPractitionerId(e.target.value)}
               className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium outline-none focus:border-[#0F6E56]/40 transition"
             >
-              <option value="all">Todos</option>
+              <option value="all">{t("all")}</option>
               {practitioners.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
@@ -1288,7 +1293,7 @@ export function ScheduleContainer({
                     : "text-[#6B6A66] hover:text-[#0F1A2E]",
                 ].join(" ")}
               >
-                {v === "mes" ? "Mês" : v.charAt(0).toUpperCase() + v.slice(1)}
+                {t(`views.${v}`)}
               </button>
             ))}
           </div>

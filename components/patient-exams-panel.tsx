@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X } from "lucide-react";
 import type { PatientExam } from "@/services/exams-service";
 import { addExamAction, deleteExamAction } from "@/app/patients/[id]/exams/actions";
@@ -14,17 +15,20 @@ type ResultDraft = {
 };
 
 function StatusBadge({ status }: { status: string }) {
-  if (status === "high") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-red-50 text-red-500">Alto</span>;
-  if (status === "low") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-amber-50 text-amber-600">Baixo</span>;
-  if (status === "normal") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">Normal</span>;
+  const t = useTranslations("patientPanels.exams.status");
+  if (status === "high") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-red-50 text-red-500">{t("high")}</span>;
+  if (status === "low") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-amber-50 text-amber-600">{t("low")}</span>;
+  if (status === "normal") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">{t("normal")}</span>;
   return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#A09E98]">—</span>;
 }
 
 function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string }) {
+  const t = useTranslations("patientPanels.exams");
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const outOfRange = exam.exam_results.filter((r) => r.status === "high" || r.status === "low").length;
 
-  const formatted = new Date(exam.exam_date + "T12:00:00").toLocaleDateString("pt-BR", {
+  const formatted = new Date(exam.exam_date + "T12:00:00").toLocaleDateString(locale, {
     day: "numeric", month: "short", year: "numeric",
   });
 
@@ -42,9 +46,9 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
           <div>
             <p className="text-[13px] font-medium text-[#0F1A2E]">{formatted}</p>
             <p className="text-[11px] text-[#A09E98]">
-              {exam.lab_name ?? "Laboratório"} · {exam.exam_results.length} marcadores
+              {exam.lab_name ?? t("labFallback")} · {t("markers", { count: exam.exam_results.length })}
               {outOfRange > 0 && (
-                <span className="ml-[6px] text-red-500 font-medium">{outOfRange} fora do padrão</span>
+                <span className="ml-[6px] text-red-500 font-medium">{t("outOfRange", { count: outOfRange })}</span>
               )}
             </p>
           </div>
@@ -79,7 +83,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
                   </span>
                   {(r.ref_min != null || r.ref_max != null) && (
                     <span className="text-[10px] text-[#A09E98]">
-                      ref: {r.ref_min ?? "?"}–{r.ref_max ?? "?"} {r.unit}
+                      {t("ref")} {r.ref_min ?? "?"}–{r.ref_max ?? "?"} {r.unit}
                     </span>
                   )}
                   <StatusBadge status={r.status} />
@@ -98,6 +102,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
 }
 
 function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
+  const t = useTranslations("patientPanels.exams.form");
   const [results, setResults] = useState<ResultDraft[]>([
     { biomarker: "", value: "", unit: "", ref_min: "", ref_max: "" },
   ]);
@@ -132,7 +137,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
-        <p className="text-[12px] font-medium text-[#0F1A2E]">Novo exame</p>
+        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E]">
           <X className="h-3.5 w-3.5" />
         </button>
@@ -143,7 +148,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
 
         <div className="grid grid-cols-2 gap-[8px]">
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Data do exame</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("examDate")}</label>
             <input
               type="date"
               name="exam_date"
@@ -153,11 +158,11 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
             />
           </div>
           <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Laboratório</label>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("lab")}</label>
             <input
               type="text"
               name="lab_name"
-              placeholder="Ex: Fleury, Sabin..."
+              placeholder={t("labPlaceholder")}
               className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
@@ -165,12 +170,12 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
 
         {/* Biomarkers */}
         <div>
-          <p className="text-[10px] font-medium text-[#6B6A66] mb-[6px]">Marcadores</p>
+          <p className="text-[10px] font-medium text-[#6B6A66] mb-[6px]">{t("markers")}</p>
           <div className="space-y-[6px]">
             {/* Header */}
             <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_20px] gap-[4px] px-[2px]">
-              {["Biomarcador", "Valor", "Unidade", "Ref. mín", "Ref. máx", ""].map((h) => (
-                <p key={h} className="text-[9px] font-medium text-[#A09E98] uppercase tracking-[.06em]">{h}</p>
+              {[t("biomarker"), t("value"), t("unit"), t("refMin"), t("refMax"), ""].map((h, idx) => (
+                <p key={idx} className="text-[9px] font-medium text-[#A09E98] uppercase tracking-[.06em]">{h}</p>
               ))}
             </div>
             {results.map((row, i) => (
@@ -227,16 +232,16 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
             onClick={addRow}
             className="mt-[8px] flex items-center gap-[4px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition"
           >
-            <Plus className="h-3 w-3" /> Adicionar marcador
+            <Plus className="h-3 w-3" /> {t("addMarker")}
           </button>
         </div>
 
         <div>
-          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">Observações (opcional)</label>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("notes")}</label>
           <input
             type="text"
             name="notes"
-            placeholder="Contexto clínico relevante..."
+            placeholder={t("notesPlaceholder")}
             className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
@@ -246,7 +251,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
             type="submit"
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
-            Salvar exame
+            {t("save")}
           </button>
         </div>
       </form>
@@ -255,13 +260,14 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
 }
 
 export function PatientExamsPanel({ exams, patientId }: { exams: PatientExam[]; patientId: string }) {
+  const t = useTranslations("patientPanels.exams");
   const [adding, setAdding] = useState(false);
 
   return (
     <div className="space-y-[8px]">
       <div className="flex items-center justify-between">
         <p className="text-[11px] font-medium text-[#6B6A66]">
-          Exames laboratoriais · {exams.length}
+          {t("title")} · {exams.length}
         </p>
         {!adding && (
           <button
@@ -269,7 +275,7 @@ export function PatientExamsPanel({ exams, patientId }: { exams: PatientExam[]; 
             onClick={() => setAdding(true)}
             className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
           >
-            <Plus className="h-3 w-3" /> Novo exame
+            <Plus className="h-3 w-3" /> {t("newExam")}
           </button>
         )}
       </div>
@@ -278,7 +284,7 @@ export function PatientExamsPanel({ exams, patientId }: { exams: PatientExam[]; 
 
       {exams.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">Nenhum exame registrado ainda.</p>
+          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
         </div>
       ) : (
         exams.map((exam) => (

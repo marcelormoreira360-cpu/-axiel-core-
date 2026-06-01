@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { Mic, MicOff, Square, Loader2, Check, X, Pencil } from "lucide-react";
 import { appendPatientNoteAction } from "@/app/patients/[id]/quick-note/actions";
 
@@ -18,6 +19,8 @@ function formatElapsed(secs: number) {
 }
 
 export function QuickVoiceNote({ patientId, existingNotes }: Props) {
+  const t = useTranslations("patientPanels.voiceNote");
+  const locale = useLocale();
   const [state, setState] = useState<RecordingState>("idle");
   const [transcript, setTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +66,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     } catch {
-      setError("Microfone não disponível. Verifique as permissões do navegador.");
+      setError(t("micError"));
     }
   }
 
@@ -79,11 +82,11 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       fd.append("file", blob, "audio.webm");
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro na transcrição.");
+      if (!res.ok) throw new Error(data.error ?? t("transcribeError"));
       setTranscript(data.text ?? "");
       setState("review");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao transcrever.");
+      setError(err instanceof Error ? err.message : t("transcribeFail"));
       setState("idle");
     }
   }
@@ -95,7 +98,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
     const result = await appendPatientNoteAction(patientId, text);
     if (result.ok) {
       // Optimistically append to local notes display
-      const dateLabel = new Date().toLocaleString("pt-BR", {
+      const dateLabel = new Date().toLocaleString(locale, {
         day: "2-digit", month: "2-digit", year: "2-digit",
         hour: "2-digit", minute: "2-digit",
       });
@@ -105,7 +108,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       setState("saved");
       setTimeout(() => setState("idle"), 2000);
     } else {
-      setError(result.error ?? "Erro ao salvar.");
+      setError(result.error ?? t("saveError"));
       setState("review");
     }
   }
@@ -120,7 +123,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="text-[11px] font-medium text-[#A09E98] uppercase tracking-[.06em]">
-          Observações
+          {t("title")}
         </p>
 
         {/* Action area — right side */}
@@ -130,7 +133,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
             className="flex items-center gap-1.5 text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
           >
             <Mic className="w-3.5 h-3.5" />
-            Gravar nota
+            {t("record")}
           </button>
         )}
 
@@ -146,7 +149,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
               className="flex items-center gap-1 text-[11px] font-medium text-red-600 hover:text-red-700 transition"
             >
               <Square className="w-3 h-3 fill-current" />
-              Parar
+              {t("stop")}
             </button>
           </div>
         )}
@@ -154,14 +157,14 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
         {state === "transcribing" && (
           <div className="flex items-center gap-1.5 text-[11px] text-[#A09E98]">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Transcrevendo…
+            {t("transcribing")}
           </div>
         )}
 
         {state === "saved" && (
           <div className="flex items-center gap-1 text-[11px] text-[#0F6E56]">
             <Check className="w-3.5 h-3.5" />
-            Salvo
+            {t("saved")}
           </div>
         )}
       </div>
@@ -171,7 +174,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
         <div className="mb-3 space-y-2">
           <div className="flex items-start gap-1.5">
             <Pencil className="w-3.5 h-3.5 text-[#A09E98] mt-0.5 shrink-0" />
-            <p className="text-[11px] text-[#A09E98]">Revise e edite antes de salvar:</p>
+            <p className="text-[11px] text-[#A09E98]">{t("reviewHint")}</p>
           </div>
           <textarea
             value={transcript}
@@ -185,7 +188,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
               className="flex items-center gap-1 text-[11px] text-[#A09E98] hover:text-[#6B6A66] transition"
             >
               <X className="w-3.5 h-3.5" />
-              Cancelar
+              {t("cancel")}
             </button>
             <button
               onClick={saveNote}
@@ -193,7 +196,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
               className="flex items-center gap-1.5 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 disabled:cursor-not-allowed transition px-[10px] py-[5px] rounded-[6px]"
             >
               <Check className="w-3.5 h-3.5" />
-              Salvar nota
+              {t("save")}
             </button>
           </div>
         </div>
@@ -202,7 +205,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       {state === "saving" && (
         <div className="mb-3 flex items-center gap-1.5 text-[11px] text-[#A09E98]">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          Salvando…
+          {t("saving")}
         </div>
       )}
 
@@ -223,7 +226,7 @@ export function QuickVoiceNote({ patientId, existingNotes }: Props) {
       ) : (
         state === "idle" && (
           <p className="text-[12px] text-[#C4C2BC] italic">
-            Nenhuma observação registrada. Grave uma nota de voz para começar.
+            {t("empty")}
           </p>
         )
       )}

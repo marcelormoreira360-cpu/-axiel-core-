@@ -1,0 +1,236 @@
+{
+  "intelligenceStrip": {
+    "engagement": "Engagement",
+    "lastSession": "LAST SESSION",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{days}d ago",
+    "days90": "90 DAYS",
+    "sessions": "{count, plural, one {# session} other {# sessions}}",
+    "attendance": "ATTENDANCE",
+    "churnHigh": "⚠ Inactive patient — consider a follow-up.",
+    "churnMedium": "Consider rescheduling soon."
+  },
+  "timeline": {
+    "types": {
+      "appointment": "Session",
+      "session_note": "Note",
+      "insight": "AI Insight",
+      "form": "Form",
+      "exam": "Exam",
+      "prescription": "Prescription"
+    },
+    "title": "Patient journey",
+    "count": "{count, plural, one {# event recorded} other {# events recorded}}",
+    "empty": "No events recorded yet.",
+    "more": "+ {count} earlier events"
+  },
+  "sessionBadge": {
+    "label": "Session {session} · Package {pkg}",
+    "used": "{used} of {total} sessions used"
+  },
+  "waitlist": {
+    "added": "{name} added to the waitlist",
+    "onList": "On the waitlist",
+    "remove": "Remove from waitlist",
+    "removeTitle": "Remove from waitlist",
+    "adding": "Adding…",
+    "add": "Waitlist"
+  },
+  "exams": {
+    "title": "Lab tests",
+    "newExam": "New test",
+    "empty": "No tests recorded yet.",
+    "labFallback": "Lab",
+    "markers": "{count, plural, one {# marker} other {# markers}}",
+    "outOfRange": "{count} out of range",
+    "ref": "ref:",
+    "status": { "high": "High", "low": "Low", "normal": "Normal" },
+    "form": {
+      "title": "New test",
+      "examDate": "Test date",
+      "lab": "Lab",
+      "labPlaceholder": "e.g. Fleury, Sabin...",
+      "markers": "Markers",
+      "biomarker": "Biomarker",
+      "value": "Value",
+      "unit": "Unit",
+      "refMin": "Ref. min",
+      "refMax": "Ref. max",
+      "biomarkerPlaceholder": "e.g. TSH",
+      "addMarker": "Add marker",
+      "notes": "Notes (optional)",
+      "notesPlaceholder": "Relevant clinical context...",
+      "save": "Save test"
+    }
+  },
+  "prescriptions": {
+    "title": "Medications and supplements",
+    "activeCount": "{count, plural, one {# active} other {# active}}",
+    "print": "Print",
+    "add": "Add",
+    "empty": "No items prescribed yet.",
+    "since": "since {date}",
+    "medications": "Medications",
+    "supplements": "Supplements",
+    "ended": "Ended",
+    "endTitle": "End",
+    "removeTitle": "Remove",
+    "form": {
+      "title": "New item",
+      "supplement": "Supplement",
+      "medication": "Medication",
+      "name": "Name *",
+      "supplementPlaceholder": "e.g. Vitamin D3, Magnesium...",
+      "medicationPlaceholder": "e.g. Levothyroxine, Metformin...",
+      "dosage": "Dosage",
+      "dosagePlaceholder": "e.g. 2000 IU, 500mg...",
+      "frequency": "Frequency",
+      "frequencyPlaceholder": "e.g. once daily, 2x...",
+      "start": "Start",
+      "notes": "Notes",
+      "notesPlaceholder": "With food...",
+      "save": "Save"
+    }
+  },
+  "documents": {
+    "title": "Documents",
+    "none": "No documents uploaded",
+    "count": "{count, plural, one {# file} other {# files}}",
+    "patientLink": "Patient link",
+    "emptyTitle": "No documents yet.",
+    "emptyShareBefore": "Share the",
+    "emptyLinkText": "patient link",
+    "emptyShareAfter": "to receive files.",
+    "source": { "clinic": "Clinic", "intake": "Patient", "portal": "Portal" },
+    "download": "Download",
+    "delete": "Delete",
+    "confirmDelete": "Delete \"{name}\"?"
+  },
+  "voiceNote": {
+    "title": "Notes",
+    "record": "Record note",
+    "stop": "Stop",
+    "transcribing": "Transcribing…",
+    "saved": "Saved",
+    "reviewHint": "Review and edit before saving:",
+    "cancel": "Cancel",
+    "save": "Save note",
+    "saving": "Saving…",
+    "micError": "Microphone not available. Check your browser permissions.",
+    "transcribeError": "Transcription error.",
+    "transcribeFail": "Failed to transcribe.",
+    "saveError": "Failed to save.",
+    "empty": "No notes recorded. Record a voice note to get started."
+  },
+  "packages": {
+    "title": "Session packages",
+    "activeCount": "{count, plural, one {# active} other {# active}}",
+    "add": "Add",
+    "empty": "No active packages.",
+    "ended": "Ended",
+    "over": "{count, plural, one {# session over the package} other {# sessions over the package}}",
+    "complete": "Package complete",
+    "remaining": "{count, plural, one {# session remaining} other {# sessions remaining}}",
+    "used": "{used} of {total} sessions used",
+    "auto": "auto",
+    "start": "Start: {date}",
+    "endTitle": "End package",
+    "removeTitle": "Remove",
+    "form": {
+      "title": "New package",
+      "name": "Package name *",
+      "namePlaceholder": "e.g. 10-session package, Detox program...",
+      "total": "Total sessions *",
+      "totalPlaceholder": "10",
+      "startDate": "Start date *",
+      "notes": "Notes",
+      "notesPlaceholder": "e.g. Paid, valid 6 months...",
+      "autoRenew": "Auto-renew",
+      "save": "Save package"
+    }
+  },
+  "treatmentPlan": {
+    "title": "Treatment plan",
+    "activeSuffix": "· active",
+    "createPlan": "Create plan",
+    "newPlan": "New plan",
+    "empty": "No treatment plan created yet.",
+    "previous": "Previous",
+    "status": { "active": "Active", "paused": "Paused", "completed": "Completed", "cancelled": "Cancelled" },
+    "until": "by {date}",
+    "stepUntil": "By {date}",
+    "stepsProgress": "{done}/{total} steps",
+    "noSteps": "No steps yet. Add one below.",
+    "addStep": "Add step",
+    "markCompleted": "Mark completed",
+    "pause": "Pause",
+    "reactivate": "Reactivate",
+    "stepForm": {
+      "placeholder": "Step description...",
+      "add": "Add"
+    },
+    "createForm": {
+      "title": "New treatment plan",
+      "planTitle": "Plan title *",
+      "planTitlePlaceholder": "e.g. Anxiety & sleep protocol, Hormonal balance...",
+      "goal": "Therapeutic goal",
+      "goalPlaceholder": "Describe the expected outcome at the end of treatment...",
+      "targetEnd": "Target completion",
+      "create": "Create plan"
+    }
+  },
+  "healthAgent": {
+    "severity": { "alta": "High", "media": "Medium", "baixa": "Low" },
+    "practitioner": {
+      "clinicalSummary": "Clinical summary",
+      "priorityFindings": "Priority findings",
+      "interactions": "Detected interactions",
+      "examAnalysis": "Lab analysis",
+      "protocolSuggestions": "Protocol suggestions",
+      "monitoring": "Monitoring points",
+      "nextSessionFocus": "Next session focus"
+    },
+    "patient": {
+      "positivePoints": "Positive points",
+      "attentionAreas": "Areas of attention",
+      "whatToDo": "What to do",
+      "nextSteps": "Next steps"
+    },
+    "intro": {
+      "title": "Health Agent",
+      "subtitle": "Integrative analysis · Labs · Interactions · Reports",
+      "description": "Analyzes all of the patient's data — labs, medications, supplements, sessions and forms — and generates a technical report for you plus a simplified one to send to the patient.",
+      "analyzing": "Analyzing patient data…",
+      "generate": "Generate analysis and reports"
+    },
+    "report": {
+      "title": "Report — {name}",
+      "email": "Email",
+      "emailSent": "Email sent",
+      "emailTitle": "Send by email",
+      "whatsapp": "WhatsApp",
+      "whatsappTitle": "Send via WhatsApp (text)",
+      "voice": "Voice",
+      "voiceTitle": "Send via WhatsApp (voice message)",
+      "sent": "Sent",
+      "copy": "Copy",
+      "copied": "Copied",
+      "refresh": "Refresh",
+      "clinicalView": "Clinical report",
+      "patientView": "For the patient"
+    },
+    "errors": {
+      "internal": "Internal error",
+      "generate": "Error generating report",
+      "send": "Error sending",
+      "whatsapp": "Error sending WhatsApp",
+      "email": "Error sending email"
+    },
+    "copyLabels": {
+      "positive": "✅ Positive points:",
+      "attention": "📌 Areas of attention:",
+      "nextSteps": "🎯 Next steps:"
+    }
+  }
+}

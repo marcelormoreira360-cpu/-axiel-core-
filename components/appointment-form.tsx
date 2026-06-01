@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import type { Patient, SessionType, AppointmentSource } from "@/lib/types";
 
@@ -20,6 +21,7 @@ type Props = {
 };
 
 export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, defaultPatientId }: Props) {
+  const t = useTranslations("schedule.form");
   const [isPending, startTransition] = useTransition();
   const defaultPatient = defaultPatientId ? (patients.find((p) => p.id === defaultPatientId) ?? null) : null;
   const [query, setQuery] = useState(defaultPatient?.full_name ?? "");
@@ -30,16 +32,9 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
   const [isNewPatient, setIsNewPatient] = useState(patients.length === 0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const SOURCE_LABELS: Record<AppointmentSource, string> = {
-    direct:    "Direto / presencial",
-    referral:  "Indicação",
-    instagram: "Instagram",
-    facebook:  "Facebook",
-    google:    "Google",
-    website:   "Site",
-    package:   "Pacote ativo",
-    other:     "Outro",
-  };
+  const SOURCE_KEYS: AppointmentSource[] = [
+    "direct", "referral", "instagram", "facebook", "google", "website", "package", "other",
+  ];
 
   const filtered =
     query.trim().length > 0
@@ -85,21 +80,21 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
         {/* Toggle: existing / new */}
         <div className="flex items-center justify-between mb-[10px]">
-          <label className="text-[11px] font-medium text-[#6B6A66]">Paciente</label>
+          <label className="text-[11px] font-medium text-[#6B6A66]">{t("patient")}</label>
           <div className="flex rounded-[7px] border border-black/[.08] overflow-hidden text-[11px]">
             <button
               type="button"
               onClick={() => { setIsNewPatient(false); setSelectedPatient(null); setQuery(""); }}
               className={`px-3 py-1.5 transition font-medium ${!isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
             >
-              Existente
+              {t("existing")}
             </button>
             <button
               type="button"
               onClick={() => setIsNewPatient(true)}
               className={`px-3 py-1.5 transition font-medium ${isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
             >
-              + Novo
+              {t("new")}
             </button>
           </div>
         </div>
@@ -119,7 +114,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
                     setSelectedPatient(null);
                   }
                 }}
-                placeholder="Buscar paciente por nome ou e-mail..."
+                placeholder={t("searchPlaceholder")}
                 autoComplete="off"
                 className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
@@ -169,36 +164,36 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
           <div className="space-y-[8px]">
             <div>
               <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px] block">
-                Nome completo <span className="text-red-400">*</span>
+                {t("fullName")} <span className="text-red-400">*</span>
               </label>
               <input
                 name="new_patient_name"
                 required={isNewPatient}
-                placeholder="Ex: Maria da Silva"
+                placeholder={t("fullNamePlaceholder")}
                 className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div className="grid grid-cols-2 gap-[8px]">
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px] block">E-mail</label>
+                <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px] block">{t("email")}</label>
                 <input
                   name="new_patient_email"
                   type="email"
-                  placeholder="email@exemplo.com"
+                  placeholder={t("emailPlaceholder")}
                   className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px] block">Telefone</label>
+                <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px] block">{t("phone")}</label>
                 <input
                   name="new_patient_phone"
                   type="tel"
-                  placeholder="(11) 99999-9999"
+                  placeholder={t("phonePlaceholder")}
                   className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
             </div>
-            <p className="text-[10px] text-[#A09E98]">O paciente será cadastrado e a sessão agendada em um único passo.</p>
+            <p className="text-[10px] text-[#A09E98]">{t("newPatientHint")}</p>
           </div>
         )}
       </div>
@@ -206,7 +201,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
       {/* Treatment type */}
       {sessionTypes.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">Tipo de tratamento</label>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">{t("treatmentType")}</label>
           <div className="space-y-[5px]">
             {sessionTypes.map((type) => {
               const isSelected = selectedType?.id === type.id;
@@ -232,7 +227,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
                       </span>
                     )}
                     <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
-                      {type.duration_minutes} min
+                      {t("minutes", { count: type.duration_minutes })}
                     </span>
                   </div>
                 </button>
@@ -245,13 +240,13 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
       {/* Practitioner */}
       {clinicUsers && clinicUsers.length > 0 && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">Profissional responsável</label>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">{t("practitioner")}</label>
           <select
             value={selectedPractitionerId}
             onChange={(e) => setSelectedPractitionerId(e.target.value)}
             className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
           >
-            <option value="">— Nenhum (sem responsável definido) —</option>
+            <option value="">{t("noPractitioner")}</option>
             {clinicUsers.map((cu) => {
               const label = cu.display_name ?? cu.full_name ?? cu.user_id;
               return (
@@ -268,7 +263,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
         <div className="grid grid-cols-2 gap-[12px]">
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Data</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("date")}</label>
             <input
               name="date"
               type="date"
@@ -278,7 +273,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
             />
           </div>
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Horário</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("time")}</label>
             <input
               name="time"
               type="time"
@@ -292,9 +287,9 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
 
       {/* Origin */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-        <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">Origem do agendamento</label>
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[8px] block">{t("origin")}</label>
         <div className="grid grid-cols-2 gap-[5px]">
-          {(Object.keys(SOURCE_LABELS) as AppointmentSource[]).map((key) => (
+          {SOURCE_KEYS.map((key) => (
             <button
               key={key}
               type="button"
@@ -306,7 +301,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
                   : "border-black/[.08] text-[#6B6A66] hover:border-black/[.16]",
               ].join(" ")}
             >
-              {SOURCE_LABELS[key]}
+              {t(`sources.${key}`)}
             </button>
           ))}
         </div>
@@ -314,8 +309,8 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
 
       {/* Teleconsulta */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-        <label className="text-[11px] font-medium text-[#6B6A66] mb-[2px] block">Link de teleconsulta</label>
-        <p className="text-[10px] text-[#A09E98] mb-[8px]">Google Meet, Zoom, Whereby, Teams… (opcional)</p>
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[2px] block">{t("telehealth")}</label>
+        <p className="text-[10px] text-[#A09E98] mb-[8px]">{t("telehealthHint")}</p>
         <input
           name="video_url"
           type="url"
@@ -326,11 +321,11 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
 
       {/* Notes */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-        <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Observações</label>
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("notes")}</label>
         <textarea
           name="notes"
           rows={4}
-          placeholder="Nota interna sobre a sessão (opcional)."
+          placeholder={t("notesPlaceholder")}
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
@@ -340,7 +335,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
         disabled={!canSubmit}
         className="w-full text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[11px] transition"
       >
-        {isPending ? "Salvando…" : "Confirmar sessão"}
+        {isPending ? t("saving") : t("confirm")}
       </button>
     </form>
   );

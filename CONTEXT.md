@@ -95,6 +95,20 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - Datas/horas usam `useLocale()` (pt-BR/en) via toLocale*; moeda permanece BRL
   - Migration 049 APLICADA em produção (bfuulpvzedcrpmmjxles)
   - Validado: tsc limpo, paridade PT/EN (5 namespaces), ICU compila, sem literais PT acentuados nos arquivos migrados
+- ✅ i18n Fase 3a+3b (01/06/2026): módulo Pacientes
+  - Namespaces novos: `patients` (lista + novo), `patientProfile` (página do perfil), `patientPanels` (todos os painéis)
+  - 3a: app/patients/page.tsx, patients-client.tsx, patients/new/page.tsx (listas de país mantidas como dado)
+  - 3b-1: app/patients/[id]/page.tsx (perfil completo)
+  - 3b-2: 7 painéis + widgets — intelligence-strip, timeline, exams, prescriptions, package, treatment-plan, documents, health-agent, session-package-badge, waitlist-button, quick-voice-note
+  - getTerm() (terminologia sessão/insight) deixado como está; conteúdo gerado por IA no health-agent não é traduzido (é dado)
+  - Validado: tsc limpo, paridade PT/EN (8 namespaces), ICU compila
+  - **Pendente Fase 3**: 3d Tela de sessão
+- ✅ i18n Fase 3c (01/06/2026): módulo Agenda — namespace `schedule`
+  - 3c-1: app/schedule/page.tsx, schedule/new/page.tsx, appointment-form.tsx
+  - 3c-2: schedule-container.tsx (toolbar, navegação, views Dia/Semana/Mês, dias da semana via chaves), session-card, session-drawer (badge reusa common.appointmentStatus), create-session-modal
+  - Datas no calendário usam locale via toLocaleDateString; **follow-up conhecido**: modules/schedule/date-utils.ts (formatTime/formatShortDate/formatMonthYear/formatDayLabel) ainda hardcodam "pt-BR" — são helpers compartilhados, migrar com cuidado
+  - Mensagens de throw new Error (server actions) e confirmação WhatsApp deixadas em PT (não são UI; WhatsApp é voltado ao paciente)
+  - Validado: tsc limpo, paridade PT/EN (9 namespaces), ICU compila
 
 ---
 
