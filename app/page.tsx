@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ArrowRight, CalendarDays, MessageCircle, BarChart3, Users, Bot, Smartphone, Star, Check, ChevronDown } from "lucide-react";
 
 // ── SEO ───────────────────────────────────────────────────────────────────────
@@ -26,185 +27,47 @@ export const metadata: Metadata = {
   ],
 };
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const FEATURES = [
-  {
-    icon: CalendarDays,
-    title: "Agenda sem complicação",
-    text: "Crie sessões em segundos. Lembretes automáticos via WhatsApp no dia anterior — zero faltas, zero ligações manuais.",
-  },
-  {
-    icon: Users,
-    title: "Prontuário completo",
-    text: "Histórico, evolução, anamnese, exames e insights em uma única tela. Menos tempo de busca, mais tempo de atendimento.",
-  },
-  {
-    icon: Bot,
-    title: "IA que trabalha por você",
-    text: "Insights clínicos gerados automaticamente após cada sessão. Sugestões de próximo passo para cada paciente.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Automações de relacionamento",
-    text: "WhatsApp e email automáticos: confirmação, lembrete D-1, acompanhamento D+3 e reativação D+30.",
-  },
-  {
-    icon: Smartphone,
-    title: "Portal do paciente",
-    text: "Link personalizado para o paciente acompanhar sessões, evolução e pacote de tratamento.",
-  },
-  {
-    icon: BarChart3,
-    title: "Métricas que importam",
-    text: "Receita do mês, taxa de retorno, pacotes encerrando e alertas de biomarcadores direto no dashboard.",
-  },
+const FEATURE_ICONS = [CalendarDays, Users, Bot, MessageCircle, Smartphone, BarChart3];
+const INTEGRATION_META = [
+  { name: "WhatsApp Business", descKey: "whatsappDesc", bg: "#25D366", letter: "W" },
+  { name: "Stripe", descKey: "stripeDesc", bg: "#635BFF", letter: "S" },
+  { name: "Google Calendar", descKey: "googleDesc", bg: "#EA4335", letter: "G" },
+  { name: "Zoom", descKey: "zoomDesc", bg: "#2D8CFF", letter: "Z" },
+  { name: "OpenAI GPT-4o", descKey: "openaiDesc", bg: "#10A37F", letter: "AI" },
+  { name: "Supabase", descKey: "supabaseDesc", bg: "#3ECF8E", letter: "SB" },
 ];
-
-const STEPS = [
-  { n: "01", title: "Crie sua conta", text: "Configure a clínica em minutos: nome, tipos de sessão, horários de atendimento e link de agendamento." },
-  { n: "02", title: "Cadastre seus pacientes", text: "Importe ou cadastre manualmente. O sistema envia boas-vindas automáticas e cria o portal de cada paciente." },
-  { n: "03", title: "Deixe o sistema trabalhar", text: "Lembretes, acompanhamentos, relatórios e insights acontecem automaticamente. Você só cuida dos pacientes." },
-];
-
-const PLANS = [
-  {
-    name: "Starter",
-    price: "R$78",
-    period: "/mês",
-    description: "Para clínicas que estão começando a se organizar.",
-    features: ["Até 250 pacientes", "3 usuários", "Agenda e prontuário", "Automações WhatsApp", "10 formulários", "Portal do paciente básico"],
-    cta: "Começar agora",
-    highlighted: false,
-  },
-  {
-    name: "Professional",
-    price: "R$118",
-    period: "/mês",
-    description: "Para clínicas que querem o fluxo completo.",
-    features: ["Até 2.500 pacientes", "10 usuários", "Tudo do Starter", "Insights de IA", "Pacotes de tratamento", "Agendamento online", "Cobrança integrada (Stripe)", "Portal completo com identidade visual"],
-    cta: "Começar agora",
-    highlighted: true,
-  },
-  {
-    name: "Enterprise",
-    price: "Sob consulta",
-    period: "",
-    description: "Para redes e grupos com múltiplas unidades.",
-    features: ["Pacientes ilimitados", "Usuários ilimitados", "Multi-clínica", "Permissões avançadas", "Onboarding dedicado", "Suporte prioritário"],
-    cta: "Falar com a equipe",
-    highlighted: false,
-  },
-];
-
-const SPECIALTIES = [
-  "Fisioterapia", "Psicologia", "Nutrição", "Pilates Clínico",
-  "Osteopatia", "Acupuntura", "Wellness Center", "Clínica Integrativa",
-];
-
-const TESTIMONIALS = [
-  {
-    quote: "Antes eu usava três ferramentas diferentes — agenda, prontuário e WhatsApp manual. Com o AXIEL, tudo ficou em um lugar só. Minha taxa de faltas caiu 40% com os lembretes automáticos.",
-    name: "Dra. Fernanda Lopes",
-    role: "Fisioterapeuta · São Paulo, SP",
-    initials: "FL",
-    color: "#E1F5EE",
-    textColor: "#085041",
-  },
-  {
-    quote: "O portal do paciente foi um diferencial enorme. Meus pacientes conseguem ver a evolução deles, o histórico de sessões e o pacote — isso gera engajamento e fidelidade que eu não tinha antes.",
-    name: "Dr. Rodrigo Menezes",
-    role: "Médico Integrativo · Florianópolis, SC",
-    initials: "RM",
-    color: "#EEF2FF",
-    textColor: "#3730A3",
-  },
-  {
-    quote: "A IA que gera insights clínicos após cada sessão me economiza uns 20 minutos de documentação por dia. Parece pouco, mas são mais de 7 horas por mês — que eu uso para atender mais pacientes.",
-    name: "Camila Soares",
-    role: "Nutricionista Funcional · Curitiba, PR",
-    initials: "CS",
-    color: "#FFF7ED",
-    textColor: "#92400E",
-  },
-  {
-    quote: "Migrei de uma planilha para o AXIEL em um único dia. O onboarding é realmente simples. Em 30 minutos já tinha meus pacientes cadastrados e a agenda configurada.",
-    name: "Paulo Henrique Costa",
-    role: "Osteopata · Belo Horizonte, MG",
-    initials: "PC",
-    color: "#F0FDF4",
-    textColor: "#065F46",
-  },
-  {
-    quote: "O módulo financeiro resolveu minha dor crônica: saber exatamente quem pagou, quem deve e qual foi a receita do mês. Sem planilha, sem chute.",
-    name: "Dra. Aline Barbosa",
-    role: "Psicóloga · Rio de Janeiro, RJ",
-    initials: "AB",
-    color: "#FDF4FF",
-    textColor: "#6B21A8",
-  },
-  {
-    quote: "Meus pacientes adoram receber o lembrete pelo WhatsApp no dia anterior. Parece simples, mas o feedback deles é que isso passa uma imagem muito profissional da clínica.",
-    name: "Marcos Vieira",
-    role: "Acupunturista · Porto Alegre, RS",
-    initials: "MV",
-    color: "#FFF1F2",
-    textColor: "#9F1239",
-  },
-];
-
-const FAQ = [
-  {
-    q: "Preciso de cartão de crédito para começar?",
-    a: "Não. O período de teste de 14 dias é completamente grátis e não requer cartão de crédito. Você só paga se decidir continuar após o período de teste.",
-  },
-  {
-    q: "Posso migrar meus pacientes de outro sistema?",
-    a: "Sim. O AXIEL aceita importação via planilha (CSV/Excel) com nome, email, telefone e data de nascimento. Em minutos seus pacientes estão cadastrados.",
-  },
-  {
-    q: "O WhatsApp automático exige alguma conta business?",
-    a: "Sim, utilizamos a API oficial do WhatsApp Business (Meta). Ajudamos você a configurar durante o onboarding — é simples e a maioria das clínicas ativa em menos de uma hora.",
-  },
-  {
-    q: "Meus dados ficam seguros? Está de acordo com a LGPD?",
-    a: "Sim. Todos os dados são armazenados em servidores criptografados. Aplicamos controles de acesso por clínica, isolamento de dados entre contas e seguimos as diretrizes da LGPD.",
-  },
-  {
-    q: "Posso usar em vários dispositivos e computadores?",
-    a: "Sim. O AXIEL é 100% web — funciona em qualquer navegador, computador, tablet ou celular. Sem instalação.",
-  },
-  {
-    q: "E se eu precisar de ajuda ou tiver dúvidas?",
-    a: "Oferecemos suporte via chat e email. No plano Professional e acima, o suporte tem resposta prioritária. Também temos base de conhecimento com vídeos e tutoriais.",
-  },
-  {
-    q: "Posso cancelar a qualquer momento?",
-    a: "Sim, sem multa e sem burocracia. Você cancela diretamente nas configurações da conta. Seus dados ficam disponíveis por 30 dias após o cancelamento para exportação.",
-  },
-  {
-    q: "O sistema funciona para clínicas com vários profissionais?",
-    a: "Sim. Você pode convidar toda a equipe, definir permissões por cargo (dono, gestor, profissional, recepcionista) e cada um vê apenas o que precisa.",
-  },
-];
-
-const STATS = [
-  { value: "500+", label: "clínicas ativas" },
-  { value: "40%", label: "menos faltas com lembretes" },
-  { value: "7h", label: "economizadas/mês com IA" },
-  { value: "14 dias", label: "grátis para testar" },
-];
-
-const INTEGRATIONS = [
-  { name: "WhatsApp Business", desc: "Lembretes e automações", bg: "#25D366", letter: "W" },
-  { name: "Stripe", desc: "Cobranças e assinaturas", bg: "#635BFF", letter: "S" },
-  { name: "Google Calendar", desc: "Sincronização de agenda", bg: "#EA4335", letter: "G" },
-  { name: "Zoom", desc: "Teleconsultas integradas", bg: "#2D8CFF", letter: "Z" },
-  { name: "OpenAI GPT-4o", desc: "Insights e análise clínica", bg: "#10A37F", letter: "AI" },
-  { name: "Supabase", desc: "Dados seguros em tempo real", bg: "#3ECF8E", letter: "SB" },
+const TESTIMONIAL_META = [
+  { name: "Dra. Fernanda Lopes", initials: "FL", color: "#E1F5EE", textColor: "#085041" },
+  { name: "Dr. Rodrigo Menezes", initials: "RM", color: "#EEF2FF", textColor: "#3730A3" },
+  { name: "Camila Soares", initials: "CS", color: "#FFF7ED", textColor: "#92400E" },
+  { name: "Paulo Henrique Costa", initials: "PC", color: "#F0FDF4", textColor: "#065F46" },
+  { name: "Dra. Aline Barbosa", initials: "AB", color: "#FDF4FF", textColor: "#6B21A8" },
+  { name: "Marcos Vieira", initials: "MV", color: "#FFF1F2", textColor: "#9F1239" },
 ];
 
 // ── Dashboard mockup ───────────────────────────────────────────────────────────
-function DashboardMockup() {
+async function DashboardMockup() {
+  const t = await getTranslations("landing.mockup");
+  const navItems = [
+    { label: t("navDashboard"), active: true },
+    { label: t("navSchedule") },
+    { label: t("navPatients") },
+    { label: t("navForms") },
+    { label: t("navFinance") },
+    { label: t("navResults") },
+    { label: t("navAutomations") },
+  ];
+  const kpis = [
+    { label: t("kpiRevenue"), value: "R$12.480", sub: t("kpiRevenueSub"), color: "#0F6E56" },
+    { label: t("kpiSessions"), value: "87", sub: t("kpiSessionsSub"), color: "#3B82F6" },
+    { label: t("kpiReturn"), value: "76%", sub: t("kpiReturnSub"), color: "#8B5CF6" },
+    { label: t("kpiNew"), value: "14", sub: t("kpiNewSub"), color: "#F59E0B" },
+  ];
+  const sessions = [
+    { time: "09:00", name: "Ana Costa", type: t("typePhysio"), dot: "#0F6E56" },
+    { time: "10:30", name: "João Lima", type: t("typeNutrition"), dot: "#3B82F6" },
+    { time: "14:00", name: "Carla Souza", type: t("typePilates"), dot: "#8B5CF6" },
+  ];
   return (
     <div className="relative mx-auto max-w-4xl">
       {/* Browser chrome */}
@@ -218,7 +81,7 @@ function DashboardMockup() {
           </div>
           <div className="flex-1 max-w-xs mx-auto">
             <div className="bg-[#3A3A3C] rounded-md px-3 py-1 text-center">
-              <span className="text-[11px] text-white/40">app.axielcore.com/dashboard</span>
+              <span className="text-[11px] text-white/40">{t("url")}</span>
             </div>
           </div>
         </div>
@@ -230,15 +93,7 @@ function DashboardMockup() {
             <div className="px-2 pb-4 mb-2 border-b border-white/[.08]">
               <span className="text-[11px] font-semibold tracking-[0.2em] text-white/90">AXIEL CORE</span>
             </div>
-            {[
-              { label: "Dashboard", active: true },
-              { label: "Agenda" },
-              { label: "Pacientes" },
-              { label: "Formulários" },
-              { label: "Financeiro" },
-              { label: "Resultados" },
-              { label: "Automações" },
-            ].map((item) => (
+            {navItems.map((item) => (
               <div
                 key={item.label}
                 className={`px-3 py-2 rounded-lg text-[12px] font-medium ${
@@ -255,8 +110,8 @@ function DashboardMockup() {
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div>
-                <p className="text-[13px] font-semibold text-[#0F1A2E]">Bom dia, Dra. Fernanda 👋</p>
-                <p className="text-[11px] text-[#A09E98]">Quinta, 29 maio 2026</p>
+                <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("greeting")}</p>
+                <p className="text-[11px] text-[#A09E98]">{t("date")}</p>
               </div>
               <div className="flex gap-2">
                 <div className="w-7 h-7 rounded-full bg-[#E1F5EE] flex items-center justify-center">
@@ -268,12 +123,7 @@ function DashboardMockup() {
 
             {/* KPI row */}
             <div className="grid grid-cols-4 gap-3 mb-4">
-              {[
-                { label: "Receita do mês", value: "R$12.480", sub: "+18% vs. anterior", color: "#0F6E56" },
-                { label: "Sessões", value: "87", sub: "↑12 vs. mês passado", color: "#3B82F6" },
-                { label: "Taxa de retorno", value: "76%", sub: "Meta: 70% ✓", color: "#8B5CF6" },
-                { label: "Novos pacientes", value: "14", sub: "Este mês", color: "#F59E0B" },
-              ].map((kpi) => (
+              {kpis.map((kpi) => (
                 <div key={kpi.label} className="bg-white rounded-xl p-3 border border-black/[.06]">
                   <p className="text-[9px] text-[#A09E98] mb-1">{kpi.label.toUpperCase()}</p>
                   <p className="text-[18px] font-semibold leading-none" style={{ color: kpi.color }}>{kpi.value}</p>
@@ -286,12 +136,8 @@ function DashboardMockup() {
             <div className="grid grid-cols-2 gap-3">
               {/* Next sessions */}
               <div className="bg-white rounded-xl p-4 border border-black/[.06]">
-                <p className="text-[11px] font-semibold text-[#0F1A2E] mb-3">Próximas sessões</p>
-                {[
-                  { time: "09:00", name: "Ana Costa", type: "Fisioterapia", dot: "#0F6E56" },
-                  { time: "10:30", name: "João Lima", type: "Nutrição", dot: "#3B82F6" },
-                  { time: "14:00", name: "Carla Souza", type: "Pilates Clínico", dot: "#8B5CF6" },
-                ].map((s) => (
+                <p className="text-[11px] font-semibold text-[#0F1A2E] mb-3">{t("nextSessions")}</p>
+                {sessions.map((s) => (
                   <div key={s.name} className="flex items-center gap-2 py-1.5 border-b border-black/[.04] last:border-0">
                     <span className="text-[10px] text-[#A09E98] w-10 shrink-0">{s.time}</span>
                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: s.dot }} />
@@ -305,14 +151,14 @@ function DashboardMockup() {
               <div className="bg-[#F0FAF6] rounded-xl p-4 border border-[#9FE1CB]">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-[10px]">✦</span>
-                  <p className="text-[10px] font-semibold text-[#0F6E56] tracking-[.04em] uppercase">Insight IA — Ana Costa</p>
+                  <p className="text-[10px] font-semibold text-[#0F6E56] tracking-[.04em] uppercase">{t("insightLabel")}</p>
                 </div>
                 <p className="text-[11px] text-[#085041] leading-relaxed line-clamp-3">
-                  Progressão consistente nas últimas 4 semanas. Dor reduziu de 7/10 para 3/10. Recomendo avançar para protocolo de fase 2.
+                  {t("insightText")}
                 </p>
                 <div className="mt-3 flex gap-2">
-                  <span className="text-[10px] bg-[#0F6E56] text-white px-2 py-1 rounded-md">Aprovar</span>
-                  <span className="text-[10px] bg-white text-[#0F6E56] border border-[#9FE1CB] px-2 py-1 rounded-md">Ver completo</span>
+                  <span className="text-[10px] bg-[#0F6E56] text-white px-2 py-1 rounded-md">{t("approve")}</span>
+                  <span className="text-[10px] bg-white text-[#0F6E56] border border-[#9FE1CB] px-2 py-1 rounded-md">{t("viewFull")}</span>
                 </div>
               </div>
             </div>
@@ -324,15 +170,15 @@ function DashboardMockup() {
       <div className="absolute -bottom-4 -right-4 hidden md:flex items-center gap-2 bg-white border border-black/[.08] rounded-xl px-4 py-3 shadow-lg">
         <div className="w-8 h-8 rounded-full bg-[#E1F5EE] flex items-center justify-center text-base">✦</div>
         <div>
-          <p className="text-[12px] font-semibold text-[#0F1A2E]">Insight gerado</p>
-          <p className="text-[11px] text-[#A09E98]">Ana Costa · há 2min</p>
+          <p className="text-[12px] font-semibold text-[#0F1A2E]">{t("badgeInsight")}</p>
+          <p className="text-[11px] text-[#A09E98]">{t("badgeInsightSub")}</p>
         </div>
       </div>
       <div className="absolute -bottom-4 -left-4 hidden md:flex items-center gap-2 bg-white border border-black/[.08] rounded-xl px-4 py-3 shadow-lg">
         <div className="w-8 h-8 rounded-full bg-[#FFF8E7] flex items-center justify-center text-sm">📅</div>
         <div>
-          <p className="text-[12px] font-semibold text-[#0F1A2E]">Sessão confirmada</p>
-          <p className="text-[11px] text-[#A09E98]">WhatsApp enviado · agora</p>
+          <p className="text-[12px] font-semibold text-[#0F1A2E]">{t("badgeConfirmed")}</p>
+          <p className="text-[11px] text-[#A09E98]">{t("badgeConfirmedSub")}</p>
         </div>
       </div>
     </div>
@@ -340,7 +186,62 @@ function DashboardMockup() {
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function LandingPage() {
+export default async function LandingPage() {
+  const t = await getTranslations("landing");
+
+  const features = [
+    { icon: FEATURE_ICONS[0], title: t("features.scheduleTitle"), text: t("features.scheduleText") },
+    { icon: FEATURE_ICONS[1], title: t("features.recordsTitle"), text: t("features.recordsText") },
+    { icon: FEATURE_ICONS[2], title: t("features.aiTitle"), text: t("features.aiText") },
+    { icon: FEATURE_ICONS[3], title: t("features.automationTitle"), text: t("features.automationText") },
+    { icon: FEATURE_ICONS[4], title: t("features.portalTitle"), text: t("features.portalText") },
+    { icon: FEATURE_ICONS[5], title: t("features.metricsTitle"), text: t("features.metricsText") },
+  ];
+  const stats = [
+    { value: "500+", label: t("stats.clinics") },
+    { value: "40%", label: t("stats.lessNoShows") },
+    { value: "7h", label: t("stats.savedPerMonth") },
+    { value: t("stats.freeTrialValue"), label: t("stats.freeTrial") },
+  ];
+  const specialties = [
+    t("specialties.physio"), t("specialties.psychology"), t("specialties.nutrition"), t("specialties.pilates"),
+    t("specialties.osteopathy"), t("specialties.acupuncture"), t("specialties.wellness"), t("specialties.integrative"),
+  ];
+  const integrations = INTEGRATION_META.map((i) => ({ ...i, desc: t(`integrations.${i.descKey}`) }));
+  const steps = [
+    { n: "01", title: t("steps.step1Title"), text: t("steps.step1Text") },
+    { n: "02", title: t("steps.step2Title"), text: t("steps.step2Text") },
+    { n: "03", title: t("steps.step3Title"), text: t("steps.step3Text") },
+  ];
+  const automationItems = [
+    { label: t("automations.confirmLabel"), desc: t("automations.confirmDesc") },
+    { label: t("automations.d1Label"), desc: t("automations.d1Desc") },
+    { label: t("automations.d3Label"), desc: t("automations.d3Desc") },
+    { label: t("automations.d30Label"), desc: t("automations.d30Desc") },
+    { label: t("automations.packageLabel"), desc: t("automations.packageDesc") },
+  ];
+  const testimonials = TESTIMONIAL_META.map((m, i) => ({
+    ...m, quote: t(`testimonials.quote${i + 1}`), role: t(`testimonials.role${i + 1}`),
+  }));
+  const plans = [
+    {
+      name: "Starter", price: t("plans.starterPrice"), period: t("plans.perMonth"),
+      description: t("plans.starterDesc"), cta: t("plans.ctaStart"), highlighted: false,
+      features: [t("plans.starterF1"), t("plans.starterF2"), t("plans.starterF3"), t("plans.starterF4"), t("plans.starterF5"), t("plans.starterF6")],
+    },
+    {
+      name: "Professional", price: t("plans.professionalPrice"), period: t("plans.perMonth"),
+      description: t("plans.professionalDesc"), cta: t("plans.ctaStart"), highlighted: true,
+      features: [t("plans.professionalF1"), t("plans.professionalF2"), t("plans.professionalF3"), t("plans.professionalF4"), t("plans.professionalF5"), t("plans.professionalF6"), t("plans.professionalF7"), t("plans.professionalF8")],
+    },
+    {
+      name: "Enterprise", price: t("plans.enterprisePrice"), period: "",
+      description: t("plans.enterpriseDesc"), cta: t("plans.ctaContact"), highlighted: false,
+      features: [t("plans.enterpriseF1"), t("plans.enterpriseF2"), t("plans.enterpriseF3"), t("plans.enterpriseF4"), t("plans.enterpriseF5"), t("plans.enterpriseF6")],
+    },
+  ];
+  const faq = Array.from({ length: 8 }, (_, i) => ({ q: t(`faq.q${i + 1}`), a: t(`faq.a${i + 1}`) }));
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] text-[#0F1A2E]">
 
@@ -349,18 +250,18 @@ export default function LandingPage() {
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <span className="text-sm font-semibold tracking-[0.18em] text-[#0F1A2E]">AXIEL CORE</span>
           <nav className="hidden items-center gap-8 md:flex">
-            <a href="#funcionalidades" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Funcionalidades</a>
-            <a href="#como-funciona" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Como funciona</a>
-            <a href="#depoimentos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Depoimentos</a>
-            <a href="#planos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Planos</a>
+            <a href="#funcionalidades" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">{t("nav.features")}</a>
+            <a href="#como-funciona" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">{t("nav.howItWorks")}</a>
+            <a href="#depoimentos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">{t("nav.testimonials")}</a>
+            <a href="#planos" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">{t("nav.plans")}</a>
           </nav>
           <div className="flex items-center gap-3">
-            <Link href="/auth/login" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">Entrar</Link>
+            <Link href="/auth/login" className="text-sm text-black/55 hover:text-[#0F1A2E] transition">{t("nav.login")}</Link>
             <Link
               href="/onboarding"
               className="rounded-lg bg-[#0F1A2E] px-4 py-2 text-sm font-medium text-white hover:bg-black transition"
             >
-              Começar grátis
+              {t("nav.startFree")}
             </Link>
           </div>
         </div>
@@ -371,30 +272,30 @@ export default function LandingPage() {
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-[#0F6E56]/20 bg-[#E1F5EE] px-3 py-1.5">
             <Star className="h-3 w-3 text-[#0F6E56]" />
-            <span className="text-xs font-medium text-[#0F6E56]">Sistema clínico com IA — feito para saúde integrativa</span>
+            <span className="text-xs font-medium text-[#0F6E56]">{t("hero.badge")}</span>
           </div>
           <h1 className="text-5xl font-semibold leading-[1.08] tracking-[-0.03em] md:text-[64px]">
-            Gestão clínica<br />
-            <span className="text-[#0F6E56]">simples e inteligente.</span>
+            {t("hero.titleLine1")}<br />
+            <span className="text-[#0F6E56]">{t("hero.titleLine2")}</span>
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-relaxed text-black/55">
-            Agenda, prontuário, WhatsApp automático, portal do paciente e insights de IA — tudo integrado para fisioterapeutas, psicólogos, nutricionistas e clínicas de wellness.
+            {t("hero.subtitle")}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/onboarding"
               className="inline-flex items-center gap-2 rounded-lg bg-[#0F1A2E] px-6 py-3 text-sm font-medium text-white hover:bg-black transition"
             >
-              Criar conta grátis <ArrowRight className="h-4 w-4" />
+              {t("hero.ctaCreate")} <ArrowRight className="h-4 w-4" />
             </Link>
             <a
               href="#como-funciona"
               className="inline-flex items-center gap-2 rounded-lg border border-black/15 bg-white px-6 py-3 text-sm font-medium text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
             >
-              Ver como funciona
+              {t("hero.ctaHow")}
             </a>
           </div>
-          <p className="mt-5 text-xs text-black/35">14 dias grátis · Sem cartão de crédito · Cancele quando quiser</p>
+          <p className="mt-5 text-xs text-black/35">{t("hero.trialNote")}</p>
         </div>
       </section>
 
@@ -407,7 +308,7 @@ export default function LandingPage() {
       <section className="border-y border-black/[.06] bg-white py-10">
         <div className="mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {STATS.map((s) => (
+            {stats.map((s) => (
               <div key={s.label} className="text-center">
                 <p className="text-3xl font-semibold tracking-tight text-[#0F1A2E]">{s.value}</p>
                 <p className="mt-1 text-sm text-black/45">{s.label}</p>
@@ -421,8 +322,8 @@ export default function LandingPage() {
       <section className="border-b border-black/[.06] bg-[#FAFAF8] py-5">
         <div className="mx-auto max-w-6xl px-6">
           <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
-            <span className="text-xs font-medium text-black/35 whitespace-nowrap">Usado por profissionais de:</span>
-            {SPECIALTIES.map((s) => (
+            <span className="text-xs font-medium text-black/35 whitespace-nowrap">{t("specialties.usedBy")}</span>
+            {specialties.map((s) => (
               <span key={s} className="text-sm font-medium text-black/55">{s}</span>
             ))}
           </div>
@@ -432,11 +333,11 @@ export default function LandingPage() {
       {/* ── Funcionalidades ── */}
       <section id="funcionalidades" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-14 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Funcionalidades</p>
-          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Tudo que sua clínica precisa, em um só lugar.</h2>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("features.eyebrow")}</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">{t("features.title")}</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
+          {features.map((f) => (
             <div key={f.title} className="rounded-2xl border border-black/[.07] bg-white p-6 hover:border-black/15 transition">
               <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#E1F5EE]">
                 <f.icon className="h-5 w-5 text-[#0F6E56]" />
@@ -452,11 +353,11 @@ export default function LandingPage() {
       <section className="border-y border-black/[.06] bg-white py-20">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-12 text-center">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Integrações</p>
-            <h2 className="text-3xl font-semibold tracking-[-0.025em]">Conectado com as ferramentas que você já usa.</h2>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("integrations.eyebrow")}</p>
+            <h2 className="text-3xl font-semibold tracking-[-0.025em]">{t("integrations.title")}</h2>
           </div>
           <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
-            {INTEGRATIONS.map((int) => (
+            {integrations.map((int) => (
               <div key={int.name} className="flex flex-col items-center gap-3 rounded-2xl border border-black/[.07] bg-[#FAFAF8] p-5 text-center hover:border-black/15 transition">
                 <div
                   className="flex h-12 w-12 items-center justify-center rounded-xl text-white text-sm font-bold"
@@ -478,11 +379,11 @@ export default function LandingPage() {
       <section id="como-funciona" className="bg-[#0F1A2E] py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 max-w-xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#9FE1CB]">Como funciona</p>
-            <h2 className="text-4xl font-semibold tracking-[-0.025em] text-white">Pronto para usar em menos de um dia.</h2>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#9FE1CB]">{t("steps.eyebrow")}</p>
+            <h2 className="text-4xl font-semibold tracking-[-0.025em] text-white">{t("steps.title")}</h2>
           </div>
           <div className="grid gap-8 md:grid-cols-3">
-            {STEPS.map((step) => (
+            {steps.map((step) => (
               <div key={step.n}>
                 <span className="text-5xl font-semibold text-white/10">{step.n}</span>
                 <h3 className="mt-3 text-xl font-semibold text-white">{step.title}</h3>
@@ -498,22 +399,16 @@ export default function LandingPage() {
         <div className="rounded-3xl bg-[#E1F5EE] p-10 md:p-14">
           <div className="grid gap-10 md:grid-cols-2 md:items-center">
             <div>
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Automações</p>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("automations.eyebrow")}</p>
               <h2 className="text-3xl font-semibold tracking-[-0.025em] text-[#0F1A2E] md:text-4xl">
-                Seu paciente recebe a mensagem certa, na hora certa.
+                {t("automations.title")}
               </h2>
               <p className="mt-4 text-base leading-relaxed text-black/55">
-                Confirmação ao agendar, lembrete no dia anterior, acompanhamento 3 dias depois e reativação 30 dias após a última sessão — tudo automático via WhatsApp e email.
+                {t("automations.subtitle")}
               </p>
             </div>
             <div className="space-y-3">
-              {[
-                { label: "Confirmação imediata", desc: "Ao agendar — WhatsApp + email" },
-                { label: "Lembrete D-1", desc: "24h antes da sessão" },
-                { label: "Acompanhamento D+3", desc: "Como você está se sentindo?" },
-                { label: "Reativação D+30", desc: "Sugere o próximo agendamento" },
-                { label: "Pacote encerrando", desc: "Alerta quando restam ≤2 sessões" },
-              ].map((item) => (
+              {automationItems.map((item) => (
                 <div key={item.label} className="flex items-start gap-3 rounded-xl bg-white p-4">
                   <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#0F6E56]">
                     <Check className="h-3 w-3 text-white" />
@@ -532,28 +427,28 @@ export default function LandingPage() {
       {/* ── Depoimentos ── */}
       <section id="depoimentos" className="mx-auto max-w-6xl px-6 py-24">
         <div className="mb-14 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Depoimentos</p>
-          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Profissionais que transformaram sua clínica.</h2>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("testimonials.eyebrow")}</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">{t("testimonials.title")}</h2>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {TESTIMONIALS.map((t) => (
-            <div key={t.name} className="flex flex-col rounded-2xl border border-black/[.07] bg-white p-6 hover:border-black/15 transition">
+          {testimonials.map((tm) => (
+            <div key={tm.name} className="flex flex-col rounded-2xl border border-black/[.07] bg-white p-6 hover:border-black/15 transition">
               <div className="flex gap-0.5 mb-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <Star key={i} className="h-3.5 w-3.5 fill-[#F59E0B] text-[#F59E0B]" />
                 ))}
               </div>
-              <p className="flex-1 text-sm leading-relaxed text-black/65 mb-6">&ldquo;{t.quote}&rdquo;</p>
+              <p className="flex-1 text-sm leading-relaxed text-black/65 mb-6">&ldquo;{tm.quote}&rdquo;</p>
               <div className="flex items-center gap-3">
                 <div
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[12px] font-semibold"
-                  style={{ backgroundColor: t.color, color: t.textColor }}
+                  style={{ backgroundColor: tm.color, color: tm.textColor }}
                 >
-                  {t.initials}
+                  {tm.initials}
                 </div>
                 <div>
-                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{t.name}</p>
-                  <p className="text-[11px] text-black/40">{t.role}</p>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{tm.name}</p>
+                  <p className="text-[11px] text-black/40">{tm.role}</p>
                 </div>
               </div>
             </div>
@@ -564,12 +459,12 @@ export default function LandingPage() {
       {/* ── Planos ── */}
       <section id="planos" className="mx-auto max-w-6xl px-6 pb-24">
         <div className="mb-14 max-w-xl">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Planos</p>
-          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Simples. Sem surpresas.</h2>
-          <p className="mt-3 text-base text-black/55">14 dias grátis em qualquer plano. Sem cartão de crédito para começar.</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("plans.eyebrow")}</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">{t("plans.title")}</h2>
+          <p className="mt-3 text-base text-black/55">{t("plans.subtitle")}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-3">
-          {PLANS.map((plan) => (
+          {plans.map((plan) => (
             <div
               key={plan.name}
               className={`relative rounded-2xl p-7 flex flex-col ${
@@ -580,7 +475,7 @@ export default function LandingPage() {
             >
               {plan.highlighted && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-[#0F6E56] px-3 py-1 text-[11px] font-semibold text-white">Mais popular</span>
+                  <span className="rounded-full bg-[#0F6E56] px-3 py-1 text-[11px] font-semibold text-white">{t("plans.mostPopular")}</span>
                 </div>
               )}
               <div className="mb-6">
@@ -617,11 +512,11 @@ export default function LandingPage() {
       {/* ── FAQ ── */}
       <section className="mx-auto max-w-3xl px-6 pb-24">
         <div className="mb-14 text-center">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">Dúvidas frequentes</p>
-          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Respostas rápidas.</h2>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56]">{t("faq.eyebrow")}</p>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">{t("faq.title")}</h2>
         </div>
         <div className="space-y-2">
-          {FAQ.map((item) => (
+          {faq.map((item) => (
             <details key={item.q} className="group rounded-2xl border border-black/[.07] bg-white">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 select-none">
                 <span className="text-[15px] font-medium text-[#0F1A2E] leading-snug">{item.q}</span>
@@ -634,9 +529,9 @@ export default function LandingPage() {
           ))}
         </div>
         <p className="mt-10 text-center text-sm text-black/40">
-          Ainda tem dúvidas?{" "}
+          {t("faq.stillQuestions")}{" "}
           <a href="mailto:contato@axielcore.com" className="text-[#0F6E56] hover:underline">
-            Fale com a gente
+            {t("faq.talkToUs")}
           </a>
         </p>
       </section>
@@ -644,17 +539,17 @@ export default function LandingPage() {
       {/* ── CTA Final ── */}
       <section className="border-t border-black/[.06] bg-white py-24">
         <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-4xl font-semibold tracking-[-0.025em]">Pronto para transformar sua clínica?</h2>
+          <h2 className="text-4xl font-semibold tracking-[-0.025em]">{t("cta.title")}</h2>
           <p className="mt-4 text-lg text-black/55">
-            Comece hoje, sem compromisso. Configure tudo em menos de 30 minutos.
+            {t("cta.subtitle")}
           </p>
           <Link
             href="/onboarding"
             className="mt-8 inline-flex items-center gap-2 rounded-lg bg-[#0F1A2E] px-8 py-4 text-base font-medium text-white hover:bg-black transition"
           >
-            Criar conta grátis <ArrowRight className="h-4 w-4" />
+            {t("cta.button")} <ArrowRight className="h-4 w-4" />
           </Link>
-          <p className="mt-4 text-sm text-black/35">14 dias grátis · Sem cartão de crédito</p>
+          <p className="mt-4 text-sm text-black/35">{t("cta.trialNote")}</p>
         </div>
       </section>
 
@@ -662,12 +557,12 @@ export default function LandingPage() {
       <footer className="border-t border-black/[.06] py-10">
         <div className="mx-auto max-w-6xl px-6 flex flex-col items-center justify-between gap-6 md:flex-row">
           <span className="text-sm font-semibold tracking-[0.18em] text-[#0F1A2E]">AXIEL CORE</span>
-          <p className="text-sm text-black/35">© 2026 AXIEL Core. Todos os direitos reservados.</p>
+          <p className="text-sm text-black/35">{t("footer.rights")}</p>
           <div className="flex flex-wrap justify-center gap-6">
-            <Link href="/auth/login" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Entrar</Link>
-            <a href="mailto:contato@axielcore.com" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Contato</a>
-            <Link href="/privacidade" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Privacidade</Link>
-            <Link href="/termos" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">Termos de Uso</Link>
+            <Link href="/auth/login" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">{t("footer.login")}</Link>
+            <a href="mailto:contato@axielcore.com" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">{t("footer.contact")}</a>
+            <Link href="/privacidade" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">{t("footer.privacy")}</Link>
+            <Link href="/termos" className="text-sm text-black/45 hover:text-[#0F1A2E] transition">{t("footer.terms")}</Link>
           </div>
         </div>
       </footer>

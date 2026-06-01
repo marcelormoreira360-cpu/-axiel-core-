@@ -1,29 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Zap, Building2, Star, ArrowRight } from "lucide-react";
 import { AXIEL_PLANS, formatPlanPrice, type CurrencyCode, type PlanConfig } from "@/modules/billing/plan-config";
-
-// ─── Feature labels ────────────────────────────────────────────────────────────
-
-const FEATURE_LABELS: Record<string, string> = {
-  leads:                "CRM de leads e funil de pacientes",
-  schedule:             "Agenda + booking público",
-  forms:                "Formulários de anamnese",
-  patient_snapshot:     "Prontuário e snapshot clínico",
-  ai_insights:          "AI Insights clínicos",
-  patient_portal:       "Portal do paciente",
-  product_support:      "Venda de produtos e suplementos",
-  membership:           "Pacotes e assinaturas de sessão",
-  stripe_checkout:      "Checkout Stripe para pacientes",
-  follow_up_automation: "Follow-up automático (D-1, D+3, D+30)",
-  whatsapp_automation:  "WhatsApp automation",
-  audio_transcription:  "Gravação e transcrição de sessão (Whisper)",
-  advanced_reports:     "Relatórios avançados e repasse",
-  multi_clinic:         "Multi-unidade",
-  advanced_permissions: "Permissões avançadas de equipe",
-  white_label:          "White-label e integrações custom",
-};
 
 const CURRENCY_LABELS: Record<CurrencyCode, string> = {
   BRL: "🇧🇷 R$",
@@ -41,13 +21,14 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 // ─── Plan Card ─────────────────────────────────────────────────────────────────
 
 function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: CurrencyCode; appUrl: string }) {
+  const t = useTranslations("pricing");
   const isEnterprise = plan.slug === "enterprise";
-  const enabledFeatures = Object.entries(plan.features)
+  const enabledFeatureKeys = Object.entries(plan.features)
     .filter(([, v]) => v)
-    .map(([k]) => FEATURE_LABELS[k] ?? k);
+    .map(([k]) => k);
 
   const price = formatPlanPrice(plan, currency);
-  const suffix = currency === "BRL" ? "/mês" : currency === "USD" ? "/mo" : "/mois";
+  const suffix = currency === "BRL" ? t("perMonthBRL") : currency === "USD" ? t("perMonthUSD") : t("perMonthEUR");
 
   return (
     <div className={[
@@ -60,7 +41,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
       {plan.recommended && (
         <div className="absolute -top-[13px] left-1/2 -translate-x-1/2">
           <span className="bg-[#0F6E56] text-white text-[9px] font-bold uppercase tracking-[.12em] px-[12px] py-[4px] rounded-full shadow-sm">
-            Mais popular
+            {t("mostPopular")}
           </span>
         </div>
       )}
@@ -82,14 +63,14 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
       {/* Price */}
       <div className="mb-[24px]">
         {isEnterprise ? (
-          <p className="text-[28px] font-bold tracking-[-0.03em] text-[#0F1A2E]">Sob consulta</p>
+          <p className="text-[28px] font-bold tracking-[-0.03em] text-[#0F1A2E]">{t("custom")}</p>
         ) : (
           <div className="flex items-end gap-[4px]">
             <p className="text-[36px] font-bold tracking-[-0.04em] text-[#0F1A2E] leading-none">{price}</p>
             <p className="text-[12px] text-[#A09E98] mb-[5px]">{suffix}</p>
           </div>
         )}
-        <p className="text-[10px] text-[#C5C3BC] mt-[4px]">Cobrado mensalmente · Cancele quando quiser</p>
+        <p className="text-[10px] text-[#C5C3BC] mt-[4px]">{t("billedMonthly")}</p>
       </div>
 
       {/* Limits badges */}
@@ -97,20 +78,20 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
         <div className="flex flex-wrap gap-[5px] mb-[20px]">
           {plan.limits.patients !== null ? (
             <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[8px] py-[3px] rounded-full">
-              até {plan.limits.patients.toLocaleString("pt-BR")} pacientes
+              {t("upToPatients", { count: plan.limits.patients })}
             </span>
           ) : (
             <span className="text-[9px] font-medium bg-[#E1F5EE] text-[#0F6E56] px-[8px] py-[3px] rounded-full">
-              pacientes ilimitados
+              {t("unlimitedPatients")}
             </span>
           )}
           {plan.limits.users !== null ? (
             <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[8px] py-[3px] rounded-full">
-              {plan.limits.users} usuários
+              {t("usersCount", { count: plan.limits.users })}
             </span>
           ) : (
             <span className="text-[9px] font-medium bg-[#E1F5EE] text-[#0F6E56] px-[8px] py-[3px] rounded-full">
-              usuários ilimitados
+              {t("unlimitedUsers")}
             </span>
           )}
         </div>
@@ -118,10 +99,10 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
 
       {/* Features */}
       <ul className="flex flex-col gap-[9px] flex-1 mb-[24px]">
-        {enabledFeatures.map((f) => (
-          <li key={f} className="flex items-start gap-[8px]">
+        {enabledFeatureKeys.map((k) => (
+          <li key={k} className="flex items-start gap-[8px]">
             <Check className="h-[13px] w-[13px] text-[#0F6E56] shrink-0 mt-[1px]" />
-            <span className="text-[11px] text-[#4A4A44] leading-snug">{f}</span>
+            <span className="text-[11px] text-[#4A4A44] leading-snug">{t(`features.${k}`)}</span>
           </li>
         ))}
       </ul>
@@ -132,7 +113,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
           href="mailto:contato@axielcore.com?subject=Enterprise AXIEL"
           className="block text-center py-[11px] rounded-[10px] text-[12px] font-semibold text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#ECEAE4] transition"
         >
-          Falar com vendas →
+          {t("talkToSales")}
         </a>
       ) : (
         <a
@@ -144,7 +125,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
               : "bg-[#0F1A2E] text-white hover:bg-[#1a2d47]",
           ].join(" ")}
         >
-          Começar grátis por 14 dias →
+          {t("startTrial")}
         </a>
       )}
     </div>
@@ -173,6 +154,7 @@ const ALL_FEATURES = [
 ];
 
 function ComparisonTable() {
+  const t = useTranslations("pricing");
   const plans = Object.values(AXIEL_PLANS);
   let lastGroup = "";
 
@@ -182,7 +164,7 @@ function ComparisonTable() {
         <thead>
           <tr className="border-b border-black/[.06]">
             <th className="py-[12px] pr-[24px] text-[12px] font-semibold text-[#A09E98] uppercase tracking-[.08em] w-[40%]">
-              Recurso
+              {t("comparisonColFeature")}
             </th>
             {plans.map((p) => (
               <th key={p.slug} className="py-[12px] px-[12px] text-[12px] font-semibold text-[#0F1A2E] text-center">
@@ -201,13 +183,13 @@ function ComparisonTable() {
                 {showGroup && (
                   <tr key={`group-${group}`}>
                     <td colSpan={5} className="pt-[16px] pb-[4px] text-[9px] font-bold uppercase tracking-[.12em] text-[#C5C3BC]">
-                      {group}
+                      {t(`groups.${group}`)}
                     </td>
                   </tr>
                 )}
                 <tr key={key} className="border-b border-black/[.04] hover:bg-[#FAFAF8]">
                   <td className="py-[10px] pr-[24px] text-[12px] text-[#4A4A44]">
-                    {FEATURE_LABELS[key]}
+                    {t(`features.${key}`)}
                   </td>
                   {plans.map((p) => (
                     <td key={p.slug} className="py-[10px] px-[12px] text-center">
@@ -230,31 +212,10 @@ function ComparisonTable() {
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
-const FAQS = [
-  {
-    q: "O trial precisa de cartão de crédito?",
-    a: "Não. 14 dias grátis sem cartão. Você só insere dados de pagamento quando decidir continuar.",
-  },
-  {
-    q: "Posso mudar de plano depois?",
-    a: "Sim. Upgrade e downgrade a qualquer momento pelo portal Stripe, com cobrança proporcional imediata.",
-  },
-  {
-    q: "O que são AI Insights?",
-    a: "Análise automática do histórico do paciente — sessões, formulários, exames e vitais — com síntese estruturada revisável pelo profissional. Não substitui avaliação clínica.",
-  },
-  {
-    q: "O WhatsApp automation está incluso no Professional?",
-    a: "O envio manual de relatórios e confirmações de consulta está incluso. A automação completa (D-1, D+3, D+30 automático) está no Scale.",
-  },
-  {
-    q: "O Enterprise tem white-label?",
-    a: "Sim. No Enterprise você pode usar seu próprio domínio, logo e cores em toda a plataforma para seus pacientes.",
-  },
-];
-
 function FAQ() {
+  const t = useTranslations("pricing");
   const [open, setOpen] = useState<number | null>(null);
+  const FAQS = Array.from({ length: 5 }, (_, i) => ({ q: t(`faqQ${i + 1}`), a: t(`faqA${i + 1}`) }));
   return (
     <div className="divide-y divide-black/[.06]">
       {FAQS.map((item, i) => (
@@ -279,6 +240,7 @@ function FAQ() {
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export function PricingClient({ appUrl }: { appUrl: string }) {
+  const t = useTranslations("pricing");
   const [currency, setCurrency] = useState<CurrencyCode>("BRL");
   const plans = Object.values(AXIEL_PLANS);
 
@@ -292,7 +254,7 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
             href={`${appUrl}/auth/login`}
             className="text-[12px] font-semibold text-white bg-[#0F1A2E] hover:bg-[#1a2d47] px-[16px] py-[7px] rounded-[8px] transition"
           >
-            Entrar
+            {t("navLogin")}
           </a>
         </div>
       </nav>
@@ -302,19 +264,19 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
         {/* Hero */}
         <div className="text-center mb-[56px]">
           <p className="text-[10px] font-bold uppercase tracking-[.15em] text-[#0F6E56] mb-[12px]">
-            Pricing · Planos
+            {t("heroEyebrow")}
           </p>
           <h1 className="text-[40px] sm:text-[52px] font-bold tracking-[-0.035em] text-[#0F1A2E] leading-[1.1] mb-[16px]">
-            Infraestrutura premium<br className="hidden sm:block" /> para clínicas com IA
+            {t("heroTitleLine1")}<br className="hidden sm:block" /> {t("heroTitleLine2")}
           </h1>
           <p className="text-[15px] text-[#6B6A66] max-w-xl mx-auto leading-relaxed">
-            Do CRM ao AI Insights — tudo integrado. Sem cobrar por cada módulo separado.
+            {t("heroSubtitle")}
           </p>
 
           {/* Trial badge */}
           <div className="inline-flex items-center gap-[6px] mt-[20px] bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-full px-[14px] py-[6px]">
             <span className="w-[6px] h-[6px] rounded-full bg-[#0F6E56]" />
-            <span className="text-[11px] font-semibold text-[#0F6E56]">14 dias grátis · sem cartão · cancele quando quiser</span>
+            <span className="text-[11px] font-semibold text-[#0F6E56]">{t("heroTrialBadge")}</span>
           </div>
         </div>
 
@@ -349,19 +311,19 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
         {/* Add-ons */}
         <div className="mb-[80px]">
           <div className="text-center mb-[32px]">
-            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">Add-ons</p>
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">{t("addonsEyebrow")}</p>
             <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[#0F1A2E]">
-              Expanda conforme cresce
+              {t("addonsTitle")}
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-[12px]">
             {[
-              { name: "Usuário extra",          br: "R$ 29–49/mês",    us: "US$ 10–20/mo",  eu: "€10–15/mo"  },
-              { name: "Bloco de pacientes +500", br: "R$ 49–99/mês",    us: "US$ 20–40/mo",  eu: "€20–35/mo"  },
-              { name: "WhatsApp automation",     br: "R$ 79–149/mês",   us: "US$ 29–79/mo",  eu: "€29–69/mo"  },
-              { name: "AI Advanced Reports",     br: "R$ 97–197/mês",   us: "US$ 39–99/mo",  eu: "€39–89/mo"  },
-              { name: "White-label",             br: "R$ 500–1.500/mês",us: "US$ 300–1.500/mo", eu: "€300–1.200/mo" },
-              { name: "Onboarding premium",      br: "R$ 997 (único)",  us: "US$ 500 (once)",eu: "€500 (once)" },
+              { name: t("addonExtraUser"),     br: "R$ 29–49/mês",    us: "US$ 10–20/mo",  eu: "€10–15/mo"  },
+              { name: t("addonPatientBlock"),  br: "R$ 49–99/mês",    us: "US$ 20–40/mo",  eu: "€20–35/mo"  },
+              { name: t("addonWhatsapp"),      br: "R$ 79–149/mês",   us: "US$ 29–79/mo",  eu: "€29–69/mo"  },
+              { name: t("addonAiReports"),     br: "R$ 97–197/mês",   us: "US$ 39–99/mo",  eu: "€39–89/mo"  },
+              { name: t("addonWhiteLabel"),    br: "R$ 500–1.500/mês",us: "US$ 300–1.500/mo", eu: "€300–1.200/mo" },
+              { name: t("addonOnboarding"),    br: "R$ 997 (único)",  us: "US$ 500 (once)",eu: "€500 (once)" },
             ].map((addon) => (
               <div key={addon.name} className="bg-white border border-black/[.07] rounded-[14px] p-[16px] flex items-center justify-between gap-4">
                 <p className="text-[12px] font-semibold text-[#0F1A2E]">{addon.name}</p>
@@ -372,15 +334,15 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
             ))}
           </div>
           <p className="text-[11px] text-[#A09E98] text-center mt-[16px]">
-            Entre em contato para ativar add-ons · <a href="mailto:contato@axielcore.com" className="underline">contato@axielcore.com</a>
+            {t("addonsContactNote")}<a href="mailto:contato@axielcore.com" className="underline">contato@axielcore.com</a>
           </p>
         </div>
 
         {/* Comparison table */}
         <div className="mb-[80px]">
           <div className="text-center mb-[32px]">
-            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">Comparativo</p>
-            <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[#0F1A2E]">O que cada plano inclui</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">{t("comparisonEyebrow")}</p>
+            <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[#0F1A2E]">{t("comparisonTitle")}</h2>
           </div>
           <div className="bg-white border border-black/[.07] rounded-[16px] p-[24px]">
             <ComparisonTable />
@@ -390,8 +352,8 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
         {/* FAQ */}
         <div className="max-w-2xl mx-auto mb-[80px]">
           <div className="text-center mb-[32px]">
-            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">FAQ</p>
-            <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[#0F1A2E]">Perguntas frequentes</h2>
+            <p className="text-[10px] font-bold uppercase tracking-[.12em] text-[#A09E98] mb-[6px]">{t("faqEyebrow")}</p>
+            <h2 className="text-[24px] font-bold tracking-[-0.025em] text-[#0F1A2E]">{t("faqTitle")}</h2>
           </div>
           <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px]">
             <FAQ />
@@ -400,18 +362,18 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
 
         {/* Bottom CTA */}
         <div className="text-center bg-[#0F1A2E] rounded-[24px] p-[48px]">
-          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#0F6E56] mb-[12px]">Pronto para começar?</p>
+          <p className="text-[11px] font-bold uppercase tracking-[.12em] text-[#0F6E56] mb-[12px]">{t("ctaEyebrow")}</p>
           <h2 className="text-[28px] font-bold tracking-[-0.025em] text-white mb-[8px]">
-            14 dias grátis em qualquer plano
+            {t("ctaTitle")}
           </h2>
           <p className="text-[13px] text-white/50 mb-[28px]">
-            Sem cartão necessário. Comece em 2 minutos.
+            {t("ctaSubtitle")}
           </p>
           <a
             href={`${appUrl}/auth/login`}
             className="inline-block bg-[#0F6E56] hover:bg-[#0A5842] text-white text-[13px] font-semibold px-[28px] py-[12px] rounded-[10px] transition"
           >
-            Criar conta grátis →
+            {t("ctaButton")}
           </a>
         </div>
 
@@ -420,11 +382,11 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
       {/* Footer */}
       <footer className="border-t border-black/[.06] mt-[48px] py-[24px]">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[11px] text-[#A09E98]">© {new Date().getFullYear()} AXIEL Core · All rights reserved</p>
+          <p className="text-[11px] text-[#A09E98]">{t("footerRights", { year: new Date().getFullYear() })}</p>
           <div className="flex gap-[20px] text-[11px] text-[#A09E98]">
-            <a href="/termos" className="hover:text-[#6B6A66] transition">Termos</a>
-            <a href="/privacidade" className="hover:text-[#6B6A66] transition">Privacidade</a>
-            <a href="mailto:contato@axielcore.com" className="hover:text-[#6B6A66] transition">Contato</a>
+            <a href="/termos" className="hover:text-[#6B6A66] transition">{t("footerTerms")}</a>
+            <a href="/privacidade" className="hover:text-[#6B6A66] transition">{t("footerPrivacy")}</a>
+            <a href="mailto:contato@axielcore.com" className="hover:text-[#6B6A66] transition">{t("footerContact")}</a>
           </div>
         </div>
       </footer>

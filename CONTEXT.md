@@ -115,6 +115,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 5c (01/06/2026): Landing + Pricing — **namespaces `landing` e `pricing`**
+  - `app/page.tsx` reescrito com `getTranslations` (hero, stats, features, integrações, steps, automações, depoimentos, planos, FAQ, CTA, footer + DashboardMockup) — nomes próprios/valores mantidos como amostra
+  - `app/pricing/pricing-client.tsx` (cards, comparativo, add-ons, FAQ, CTA, footer) — `plan.name`/`description` vêm de `modules/billing/plan-config` (**ainda PT — follow-up**, como ROLE_LABELS); CURRENCY_LABELS mantidos
+  - Validado: tsc do código limpo, paridade PT/EN (21 namespaces), ICU compila
 - ✅ i18n Fase 5b (01/06/2026): Agendamento online — **namespace `booking`**
   - `app/book/[slug]/page.tsx` (fluxo público: profissional → serviço → data → horário → dados → confirmação)
   - STEP_LABELS → STEP_LABEL_KEYS resolvido via t; datas via useLocale; plurais/interpolação (minutes, continueWith, doneWith)
