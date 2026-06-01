@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { formatBRL } from "@/lib/finance-utils";
 import type { RepasseRule, RepasseEntry, ClinicProfessional } from "@/services/repasse-service";
 import {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function RepasseClient({ rules, history, professionals }: Props) {
+  const t = useTranslations("finance.repasse");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
     startTransition(async () => {
       const r = await saveRepasseRuleAction(fd);
       if (r.error) { setError(r.error); return; }
-      flash("Regra salva.");
+      flash(t("flashRuleSaved"));
       router.refresh();
     });
   }
@@ -53,7 +55,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
     startTransition(async () => {
       const r = await calculateRepasseAction(currentMonth);
       if (r.error) { setError(r.error); return; }
-      flash("Repasse calculado.");
+      flash(t("flashCalculated"));
       router.refresh();
     });
   }
@@ -62,7 +64,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
     startTransition(async () => {
       const r = await markRepassePaidAction(ledgerId);
       if (r.error) { setError(r.error); return; }
-      flash("Marcado como pago.");
+      flash(t("flashMarkedPaid"));
       router.refresh();
     });
   }
@@ -83,8 +85,8 @@ export function RepasseClient({ rules, history, professionals }: Props) {
       <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05]">
           <div>
-            <p className="text-[13px] font-semibold text-[#0F1A2E]">Regras de repasse</p>
-            <p className="text-[11px] text-[#A09E98] mt-0.5">Defina o percentual de cada profissional sobre os pagamentos recebidos.</p>
+            <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("rulesTitle")}</p>
+            <p className="text-[11px] text-[#A09E98] mt-0.5">{t("rulesDesc")}</p>
           </div>
         </div>
 
@@ -104,7 +106,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                     disabled={isPending}
                     className="text-[11px] text-red-400 hover:text-red-600 transition"
                   >
-                    Remover
+                    {t("remove")}
                   </button>
                 </div>
               </div>
@@ -115,19 +117,19 @@ export function RepasseClient({ rules, history, professionals }: Props) {
         {/* Add new rule */}
         {available.length > 0 && (
           <form onSubmit={handleSaveRule} className="px-5 py-4 border-t border-black/[.04] bg-[#FAFAF8]">
-            <p className="text-[11px] font-medium text-[#0F1A2E] mb-3">Adicionar profissional</p>
+            <p className="text-[11px] font-medium text-[#0F1A2E] mb-3">{t("addPro")}</p>
             <div className="flex items-end gap-3 flex-wrap">
               <div className="flex-1 min-w-[180px]">
-                <label className="text-[11px] text-[#A09E98] mb-1 block">Profissional</label>
+                <label className="text-[11px] text-[#A09E98] mb-1 block">{t("professional")}</label>
                 <select name="user_id" required className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none">
-                  <option value="">Selecione</option>
+                  <option value="">{t("select")}</option>
                   {available.map((p) => (
                     <option key={p.id} value={p.id}>{p.full_name ?? p.email ?? p.id}</option>
                   ))}
                 </select>
               </div>
               <div className="w-28">
-                <label className="text-[11px] text-[#A09E98] mb-1 block">Percentual (%)</label>
+                <label className="text-[11px] text-[#A09E98] mb-1 block">{t("percentage")}</label>
                 <input
                   name="percentage"
                   type="number"
@@ -144,7 +146,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                 disabled={isPending}
                 className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-medium text-white hover:bg-black transition disabled:opacity-50"
               >
-                Salvar
+                {t("save")}
               </button>
             </div>
           </form>
@@ -152,7 +154,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
 
         {available.length === 0 && rules.length === 0 && (
           <p className="px-5 py-4 text-[12px] text-[#A09E98]">
-            Nenhum profissional cadastrado na clínica ainda.
+            {t("noPros")}
           </p>
         )}
       </div>
@@ -162,9 +164,9 @@ export function RepasseClient({ rules, history, professionals }: Props) {
         <div className="rounded-2xl border border-black/[.07] bg-white p-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-[13px] font-semibold text-[#0F1A2E]">Calcular repasse do mês atual</p>
+              <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("calcTitle")}</p>
               <p className="text-[11px] text-[#A09E98] mt-0.5">
-                Calcula com base nos pagamentos recebidos em {currentMonth}.
+                {t("calcDesc", { month: currentMonth })}
               </p>
             </div>
             <button
@@ -172,7 +174,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
               disabled={isPending}
               className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-medium text-white hover:bg-black transition disabled:opacity-50"
             >
-              {isPending ? "Calculando..." : "Calcular agora"}
+              {isPending ? t("calculating") : t("calcNow")}
             </button>
           </div>
         </div>
@@ -182,18 +184,18 @@ export function RepasseClient({ rules, history, professionals }: Props) {
       {history.length > 0 && (
         <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
           <div className="px-5 py-4 border-b border-black/[.05]">
-            <p className="text-[13px] font-semibold text-[#0F1A2E]">Histórico de repasses</p>
+            <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("historyTitle")}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-black/[.05] bg-[#FAFAF8]">
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Profissional</th>
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Mês</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">Sessões</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">Receita bruta</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">Repasse</th>
-                  <th className="px-5 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-black/40">Status</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colPro")}</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colMonth")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colSessions")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colGross")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colRepasse")}</th>
+                  <th className="px-5 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colStatus")}</th>
                   <th className="px-5 py-2.5" />
                 </tr>
               </thead>
@@ -211,7 +213,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                           ? "bg-[#E1F5EE] text-[#0F6E56]"
                           : "bg-amber-50 text-amber-600"
                       }`}>
-                        {entry.status === "paid" ? "Pago" : "Pendente"}
+                        {entry.status === "paid" ? t("paid") : t("pending")}
                       </span>
                     </td>
                     <td className="px-5 py-3">
@@ -221,7 +223,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                           disabled={isPending}
                           className="text-[11px] font-medium text-[#0F6E56] hover:underline disabled:opacity-50"
                         >
-                          Marcar pago
+                          {t("markPaid")}
                         </button>
                       )}
                     </td>

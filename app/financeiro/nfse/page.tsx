@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Settings } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { redirect } from "next/navigation";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -10,6 +11,8 @@ import { NfseClient } from "./nfse-client";
 export default async function NfsePage() {
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
+  const t = await getTranslations("finance.nfse");
+  const locale = await getLocale();
 
   const [config, invoices, patients] = await Promise.all([
     getNfseConfig(clinic.id),
@@ -22,22 +25,22 @@ export default async function NfsePage() {
       <Shell>
         <div className="mb-7">
           <Link href="/financeiro" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
-            <ArrowLeft className="h-3.5 w-3.5" /> Financeiro
+            <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
           </Link>
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">NFS-e</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
         </div>
         <div className="rounded-2xl border border-black/[.07] bg-white p-8 text-center">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#F4F3EF]">
             <Settings className="h-6 w-6 text-[#A09E98]" />
           </div>
-          <p className="text-[14px] font-semibold text-[#0F1A2E]">NFe.io não configurado</p>
-          <p className="text-[12px] text-[#A09E98] mt-1 mb-5">Configure sua API Key e Company ID para emitir notas.</p>
+          <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("notConfigured")}</p>
+          <p className="text-[12px] text-[#A09E98] mt-1 mb-5">{t("notConfiguredDesc")}</p>
           <Link
             href="/settings/integrations/nfse"
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-5 py-2 text-[12px] font-medium text-white hover:bg-black transition"
           >
             <Settings className="h-3.5 w-3.5" />
-            Configurar NFe.io
+            {t("configure")}
           </Link>
         </div>
       </Shell>
@@ -56,16 +59,16 @@ export default async function NfsePage() {
         </Link>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Financeiro</p>
-            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">NFS-e</h1>
-            <p className="text-[12px] text-[#A09E98] mt-[2px]">Notas fiscais de serviço emitidas via NFe.io.</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
+            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+            <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
           </div>
           <Link
             href="/settings/integrations/nfse"
             className="flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition"
           >
             <Settings className="h-3.5 w-3.5" />
-            Configurações
+            {t("settings")}
           </Link>
         </div>
       </div>
@@ -73,9 +76,9 @@ export default async function NfsePage() {
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
-          { label: "Emitidas (total)", value: totalIssued },
-          { label: "Valor total emitido", value: (totalCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) },
-          { label: "Em processamento", value: totalProcessing },
+          { label: t("kpiIssued"), value: totalIssued },
+          { label: t("kpiTotal"), value: (totalCents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" }) },
+          { label: t("kpiProcessing"), value: totalProcessing },
         ].map((m) => (
           <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-4">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-1">{m.label}</p>

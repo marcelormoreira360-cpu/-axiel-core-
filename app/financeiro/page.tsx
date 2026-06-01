@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPatients } from "@/services/patient-service";
@@ -9,21 +10,27 @@ import {
   getUnpaidSessions,
   getMonthlyRevenue,
   formatBRL,
-  paymentMethodLabel,
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
 
-function delta(current: number, previous: number) {
+function delta(current: number, previous: number, vsPrev: string) {
   if (previous === 0) return current > 0 ? "+100%" : "—";
   const pct = Math.round(((current - previous) / previous) * 100);
-  return pct >= 0 ? `+${pct}% vs. mês anterior` : `${pct}% vs. mês anterior`;
+  return `${pct >= 0 ? "+" : ""}${pct}% ${vsPrev}`;
 }
+
+const KNOWN_METHODS = ["pix", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
 
 export default async function FinanceiroPage() {
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
+
+  const t = await getTranslations("finance.page");
+  const tm = await getTranslations("finance.methods");
+  const locale = await getLocale();
+  const methodLabel = (m: string) => (KNOWN_METHODS.includes(m) ? tm(m) : m);
 
   const [kpis, payments, unpaid, monthly, patients, cachedInsight] = await Promise.all([
     getFinanceKPIs(clinic.id),
@@ -40,28 +47,28 @@ export default async function FinanceiroPage() {
     <Shell>
       <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Módulo</p>
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Financeiro</h1>
-          <p className="text-[12px] text-[#A09E98] mt-[2px]">Faturamento, pagamentos e repasse de colaboradores.</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/financeiro/relatorio"
             className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
           >
-            Relatório →
+            {t("report")}
           </Link>
           <Link
             href="/financeiro/nfse"
             className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
           >
-            NFS-e →
+            {t("nfse")}
           </Link>
           <Link
             href="/financeiro/repasse"
             className="text-[12px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] px-3 py-1.5 rounded-lg transition"
           >
-            Repasse →
+            {t("repasse")}
           </Link>
           <FinanceiroDashboardClient
             patients={patients.map((p) => ({ id: p.id, full_name: p.full_name }))}
@@ -73,27 +80,27 @@ export default async function FinanceiroPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-5">
         {[
           {
-            label: "RECEITA DO MÊS",
+            label: t("kpiRevenue"),
             value: formatBRL(kpis.revenueThisMonth),
-            sub: delta(kpis.revenueThisMonth, kpis.revenueLastMonth),
+            sub: delta(kpis.revenueThisMonth, kpis.revenueLastMonth, t("vsPrev")),
             green: kpis.revenueThisMonth >= kpis.revenueLastMonth,
           },
           {
-            label: "PAGAMENTOS RECEBIDOS",
+            label: t("kpiPayments"),
             value: String(kpis.totalPaymentsThisMonth),
-            sub: "este mês",
+            sub: t("thisMonth"),
             green: false,
           },
           {
-            label: "TICKET MÉDIO",
+            label: t("kpiAvgTicket"),
             value: formatBRL(kpis.averageTicketCents),
-            sub: "por sessão este mês",
+            sub: t("perSession"),
             green: false,
           },
           {
-            label: "SESSÕES NÃO PAGAS",
+            label: t("kpiUnpaid"),
             value: String(unpaid.length),
-            sub: unpaid.length > 0 ? `~${formatBRL(unpaid.reduce((s, u) => s + u.price_cents, 0))} pendente` : "tudo em dia",
+            sub: unpaid.length > 0 ? t("pending", { amount: formatBRL(unpaid.reduce((s, u) => s + u.price_cents, 0)) }) : t("upToDate"),
             green: unpaid.length === 0,
           },
         ].map((m) => (
@@ -112,7 +119,7 @@ export default async function FinanceiroPage() {
 
           {/* Receita últimos 6 meses */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-4">Receita — últimos 6 meses</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] mb-4">{t("revenue6mo")}</p>
             <div className="flex items-end gap-2 h-24">
               {monthly.map((m) => (
                 <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
@@ -130,10 +137,10 @@ export default async function FinanceiroPage() {
           {/* Pagamentos recentes */}
           <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
-              <p className="text-[12px] font-medium text-[#0F1A2E]">Pagamentos recentes</p>
+              <p className="text-[12px] font-medium text-[#0F1A2E]">{t("recentPayments")}</p>
             </div>
             {payments.length === 0 ? (
-              <p className="px-4 py-6 text-[12px] text-[#A09E98]">Nenhum pagamento registrado ainda.</p>
+              <p className="px-4 py-6 text-[12px] text-[#A09E98]">{t("noPayments")}</p>
             ) : (
               <div className="divide-y divide-black/[.04]">
                 {payments.slice(0, 15).map((p) => (
@@ -141,13 +148,13 @@ export default async function FinanceiroPage() {
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{p.patient_name ?? "—"}</p>
                       <p className="text-[10px] text-[#A09E98]">
-                        {new Date(p.paid_at).toLocaleDateString("pt-BR")}
+                        {new Date(p.paid_at).toLocaleDateString(locale)}
                         {p.session_type_name ? ` · ${p.session_type_name}` : ""}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[13px] font-semibold text-[#0F1A2E]">{formatBRL(p.amount_cents)}</p>
-                      <p className="text-[10px] text-[#A09E98]">{paymentMethodLabel(p.payment_method)}</p>
+                      <p className="text-[10px] text-[#A09E98]">{methodLabel(p.payment_method)}</p>
                     </div>
                   </div>
                 ))}
@@ -165,9 +172,9 @@ export default async function FinanceiroPage() {
 
           {/* Por forma de pagamento */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-4">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-3">Por forma de pagamento</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] mb-3">{t("byMethod")}</p>
             {Object.keys(kpis.revenueThisMonthByMethod).length === 0 ? (
-              <p className="text-[11px] text-[#A09E98]">Nenhum dado este mês.</p>
+              <p className="text-[11px] text-[#A09E98]">{t("noMethodData")}</p>
             ) : (
               <div className="space-y-2">
                 {Object.entries(kpis.revenueThisMonthByMethod)
@@ -175,7 +182,7 @@ export default async function FinanceiroPage() {
                   .map(([method, cents]) => (
                     <div key={method}>
                       <div className="flex items-center justify-between mb-0.5">
-                        <p className="text-[11px] text-[#6B6A66]">{paymentMethodLabel(method as never)}</p>
+                        <p className="text-[11px] text-[#6B6A66]">{methodLabel(method)}</p>
                         <p className="text-[11px] font-medium text-[#0F1A2E]">{formatBRL(cents)}</p>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-[#F4F3EF]">
@@ -193,17 +200,17 @@ export default async function FinanceiroPage() {
           {/* Sessões não pagas */}
           <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
-              <p className="text-[12px] font-medium text-[#0F1A2E]">Sessões não pagas</p>
+              <p className="text-[12px] font-medium text-[#0F1A2E]">{t("unpaidTitle")}</p>
               {unpaid.length > 0 && (
                 <span className="text-[10px] font-medium bg-amber-50 text-amber-600 rounded-full px-2 py-0.5">{unpaid.length}</span>
               )}
             </div>
             {unpaid.length === 0 ? (
-              <p className="px-4 py-4 text-[11px] text-[#0F6E56]">✓ Todas as sessões foram pagas.</p>
+              <p className="px-4 py-4 text-[11px] text-[#0F6E56]">{t("allPaid")}</p>
             ) : (
               <div className="divide-y divide-black/[.04] max-h-72 overflow-y-auto">
                 {unpaid.slice(0, 10).map((u) => (
-                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} patients={patients.map((p) => ({ id: p.id, full_name: p.full_name }))} />
+                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} />
                 ))}
               </div>
             )}
@@ -218,17 +225,17 @@ export default async function FinanceiroPage() {
 // Inline client wrapper just for the "Cobrar" button on each unpaid row
 function FinanceiroUnpaidRow({
   session,
-  patients,
+  locale,
 }: {
   session: import("@/services/finance-service").UnpaidSession;
-  patients: { id: string; full_name: string }[];
+  locale: string;
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="flex-1 min-w-0">
         <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{session.patient_name}</p>
         <p className="text-[10px] text-[#A09E98]">
-          {new Date(session.starts_at).toLocaleDateString("pt-BR")}
+          {new Date(session.starts_at).toLocaleDateString(locale)}
           {session.session_type_name ? ` · ${session.session_type_name}` : ""}
         </p>
       </div>

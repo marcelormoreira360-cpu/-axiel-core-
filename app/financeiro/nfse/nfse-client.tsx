@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { FileText, RefreshCw, X, ExternalLink, Plus } from "lucide-react";
 import { formatBRL } from "@/lib/finance-utils";
 import { formatCpf, validateCpf } from "@/lib/utils";
@@ -14,14 +15,16 @@ interface Props {
   patients: { id: string; full_name: string; email: string | null; cpf?: string | null }[];
 }
 
-const STATUS_MAP = {
-  processing: { label: "Processando", cls: "bg-amber-50 text-amber-600" },
-  issued:     { label: "Emitida",     cls: "bg-[#E1F5EE] text-[#0F6E56]" },
-  cancelled:  { label: "Cancelada",  cls: "bg-[#F4F3EF] text-[#A09E98] line-through" },
-  error:      { label: "Erro",        cls: "bg-red-50 text-red-600" },
+const STATUS_CLS: Record<string, string> = {
+  processing: "bg-amber-50 text-amber-600",
+  issued:     "bg-[#E1F5EE] text-[#0F6E56]",
+  cancelled:  "bg-[#F4F3EF] text-[#A09E98] line-through",
+  error:      "bg-red-50 text-red-600",
 };
 
 export function NfseClient({ invoices, defaultServiceDescription, patients }: Props) {
+  const t = useTranslations("finance.nfse");
+  const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError]   = useState<string | null>(null);
@@ -40,7 +43,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
     setCpfValue(formatted);
     const digits = formatted.replace(/\D/g, "");
     if (digits.length === 11) {
-      setCpfError(validateCpf(digits) ? null : "CPF inválido");
+      setCpfError(validateCpf(digits) ? null : t("cpfInvalid"));
     } else {
       setCpfError(null);
     }
@@ -51,7 +54,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
     setError(null);
     const digits = cpfValue.replace(/\D/g, "");
     if (digits.length > 0 && !validateCpf(digits)) {
-      setError("CPF inválido. Verifique os dígitos informados.");
+      setError(t("cpfInvalidFull"));
       return;
     }
     const fd = new FormData(e.currentTarget);
@@ -60,7 +63,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
       if (r.error) { setError(r.error); return; }
       setShowModal(false);
       setCpfValue("");
-      flash("Nota fiscal enviada para emissão.");
+      flash(t("flashSent"));
       router.refresh();
     });
   }
@@ -74,11 +77,11 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
   }
 
   function handleCancel(localId: string) {
-    if (!confirm("Cancelar esta nota fiscal? Esta ação não pode ser desfeita.")) return;
+    if (!confirm(t("confirmCancel"))) return;
     startTransition(async () => {
       const r = await cancelNfseAction(localId);
       if (r.error) { setError(r.error); return; }
-      flash("Nota cancelada.");
+      flash(t("flashCancelled"));
       router.refresh();
     });
   }
@@ -98,38 +101,45 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
           className="flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-4 py-2 text-[12px] font-medium text-white hover:bg-black transition"
         >
           <Plus className="h-3.5 w-3.5" />
-          Emitir NFS-e
+          {t("emit")}
         </button>
       </div>
 
       {/* Invoices table */}
       <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
         <div className="px-5 py-4 border-b border-black/[.05]">
-          <p className="text-[13px] font-semibold text-[#0F1A2E]">Notas emitidas</p>
+          <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("issuedTitle")}</p>
         </div>
 
         {invoices.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">
             <FileText className="h-8 w-8 text-[#D3D1C7]" />
-            <p className="text-[12px] text-[#A09E98]">Nenhuma NFS-e emitida ainda.</p>
+            <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-black/[.05] bg-[#FAFAF8]">
-                  {["Data", "Tomador", "Valor", "Nº Nota", "Status", ""].map((h) => (
-                    <th key={h} className={`px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/40 ${h === "Valor" || h === "Nº Nota" ? "text-right" : "text-left"}`}>{h}</th>
+                  {[
+                    { label: t("colDate"), right: false },
+                    { label: t("colBorrower"), right: false },
+                    { label: t("colAmount"), right: true },
+                    { label: t("colNumber"), right: true },
+                    { label: t("colStatus"), right: false },
+                    { label: "", right: false },
+                  ].map((h, i) => (
+                    <th key={i} className={`px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/40 ${h.right ? "text-right" : "text-left"}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/[.04]">
                 {invoices.map((inv) => {
-                  const st = STATUS_MAP[inv.status] ?? STATUS_MAP.processing;
+                  const stCls = STATUS_CLS[inv.status] ?? STATUS_CLS.processing;
                   return (
                     <tr key={inv.id} className="hover:bg-[#FAFAF8] transition">
                       <td className="px-4 py-3 text-[12px] text-[#6B6A66] whitespace-nowrap">
-                        {new Date(inv.created_at).toLocaleDateString("pt-BR")}
+                        {new Date(inv.created_at).toLocaleDateString(locale)}
                       </td>
                       <td className="px-4 py-3 text-[12px] font-medium text-[#0F1A2E]">
                         {inv.borrower_name ?? "—"}
@@ -142,8 +152,8 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                         {inv.nfse_number ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${st.cls}`}>
-                          {st.label}
+                        <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${stCls}`}>
+                          {t(`status.${inv.status}`)}
                         </span>
                         {inv.status === "error" && inv.error_message && (
                           <p className="text-[10px] text-red-400 mt-0.5 max-w-[160px]">{inv.error_message}</p>
@@ -167,7 +177,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                               onClick={() => handleSync(inv.id)}
                               disabled={isPending}
                               className="flex items-center gap-1 text-[11px] text-[#A09E98] hover:text-[#0F1A2E] transition disabled:opacity-50"
-                              title="Atualizar status"
+                              title={t("syncTitle")}
                             >
                               <RefreshCw className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`} />
                             </button>
@@ -178,7 +188,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                               disabled={isPending}
                               className="text-[11px] text-red-400 hover:text-red-600 transition disabled:opacity-50"
                             >
-                              Cancelar
+                              {t("cancel")}
                             </button>
                           )}
                         </div>
@@ -197,7 +207,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
             <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.07]">
-              <p className="text-[14px] font-semibold text-[#0F1A2E]">Emitir NFS-e</p>
+              <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("modalTitle")}</p>
               <button onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
                 <X className="h-4 w-4" />
               </button>
@@ -210,13 +220,13 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Patient selector */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">Paciente (opcional)</label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("patientOpt")}</label>
                 <select
                   className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
                   value={selectedPatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
                 >
-                  <option value="">Selecionar paciente</option>
+                  <option value="">{t("selectPatient")}</option>
                   {patients.map((p) => (
                     <option key={p.id} value={p.id}>{p.full_name}</option>
                   ))}
@@ -226,13 +236,13 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Borrower name */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">Nome do tomador <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("borrowerName")} <span className="text-red-400">*</span></label>
                 <input
                   name="borrower_name"
                   required
                   defaultValue={selectedPatient?.full_name ?? ""}
                   key={selectedPatientId + "_name"}
-                  placeholder="Nome completo"
+                  placeholder={t("borrowerNamePlaceholder")}
                   className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
                 />
               </div>
@@ -240,7 +250,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
               <div className="grid grid-cols-2 gap-3">
                 {/* CPF */}
                 <div>
-                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">CPF (opcional)</label>
+                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("cpfOpt")}</label>
                   <input
                     name="borrower_cpf"
                     value={cpfValue}
@@ -253,13 +263,13 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                 </div>
                 {/* Email */}
                 <div>
-                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">E-mail (opcional)</label>
+                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("emailOpt")}</label>
                   <input
                     name="borrower_email"
                     type="email"
                     defaultValue={selectedPatient?.email ?? ""}
                     key={selectedPatientId + "_email"}
-                    placeholder="email@exemplo.com"
+                    placeholder={t("emailPlaceholder")}
                     className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
                   />
                 </div>
@@ -267,7 +277,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Amount */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">Valor (R$) <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("amount")} <span className="text-red-400">*</span></label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#6B6A66]">R$</span>
                   <input
@@ -280,12 +290,12 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                     className="w-full rounded-lg border border-black/15 pl-9 pr-3 py-2 text-sm focus:outline-none"
                   />
                 </div>
-                <p className="text-[10px] text-[#A09E98] mt-1">Ex: 200,00 para R$200,00</p>
+                <p className="text-[10px] text-[#A09E98] mt-1">{t("amountHint")}</p>
               </div>
 
               {/* Service description */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">Descrição do serviço</label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("serviceDesc")}</label>
                 <input
                   name="service_description"
                   defaultValue={defaultServiceDescription}
@@ -299,14 +309,14 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                   onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }}
                   className="flex-1 rounded-lg border border-black/15 py-2 text-[12px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
                 >
-                  Cancelar
+                  {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
                   className="flex-1 rounded-lg bg-[#0B1F3A] py-2 text-[12px] font-medium text-white hover:bg-black transition disabled:opacity-50"
                 >
-                  {isPending ? "Emitindo..." : "Emitir NFS-e"}
+                  {isPending ? t("emitting") : t("emit")}
                 </button>
               </div>
             </form>

@@ -115,7 +115,12 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
-  - **Pendente Fase 4**: 4b Financeiro, 4c Results/Relatórios/Analytics, 4d Configurações (~25 telas), 4e Automações
+- ✅ i18n Fase 4b (01/06/2026): módulo Financeiro — namespace `finance`
+  - 4b-1: financeiro/page.tsx, financeiro-dashboard-client, register-payment-modal, finance-ai-panel (formas de pagamento via finance.methods)
+  - 4b-2: repasse (page+client), nfse (page+client), relatorio/page (chrome)
+  - Datas via locale; **não migrado** (secundário): components/finance-report-client.tsx (conteúdo do /financeiro/relatorio)
+  - Validado: tsc do código limpo, paridade PT/EN (12 namespaces), ICU compila
+  - **Pendente Fase 4**: 4c Results/Relatórios/Analytics, 4d Configurações (~25 telas), 4e Automações; + finance-report-client
   - **Pendente geral**: Fases 5–6 (áreas públicas; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 3c (01/06/2026): módulo Agenda — namespace `schedule`
   - 3c-1: app/schedule/page.tsx, schedule/new/page.tsx, appointment-form.tsx
