@@ -54,5 +54,53 @@
     "import": "Import",
     "allImported": "✓ All available templates have been imported!",
     "close": "Close"
+  },
+  "builder": {
+    "typeLabels": {
+      "scale": "Scale (0–4)",
+      "yes_no": "Yes / No",
+      "text": "Free text",
+      "number": "Number"
+    },
+    "name": "Form name",
+    "nameRequired": "Form name *",
+    "namePlaceholder": "e.g. Metabolic Screening Questionnaire",
+    "description": "Description",
+    "descriptionPlaceholder": "Brief description of the form",
+    "descriptionPlaceholderShort": "Brief description",
+    "instructionsLabel": "Instructions (shown when filling out)",
+    "instructionsLabelShort": "Instructions",
+    "defaultInstructions": "Rate each symptom based on the last 30 days.",
+    "section": "Section {n}",
+    "sectionPlaceholder": "Section name (e.g. HEAD)",
+    "questionPlaceholder": "Question text",
+    "maxScore": "Max score:",
+    "maxScoreShort": "Max:",
+    "addQuestion": "Add question",
+    "addSection": "Add section",
+    "addSectionNew": "Add new section",
+    "summarySections": "{count, plural, one {# section} other {# sections}}",
+    "summaryQuestions": "{count, plural, one {# question} other {# questions}}",
+    "saving": "Saving…",
+    "create": "Create form"
+  },
+  "editor": {
+    "sectionsTitle": "Sections",
+    "existing": "existing",
+    "saveChanges": "Save changes"
+  },
+  "fill": {
+    "scale0": "Never or almost never",
+    "scale1": "Occasionally, mild effect",
+    "scale2": "Occasionally, severe effect",
+    "scale3": "Frequently, mild effect",
+    "scale4": "Frequently, severe effect",
+    "yes": "Yes",
+    "no": "No",
+    "total": "Grand total",
+    "notes": "Notes",
+    "notesPlaceholder": "Additional notes about this submission (optional).",
+    "saving": "Saving…",
+    "save": "Save results"
   }
 }

@@ -54,5 +54,53 @@
     "import": "Importar",
     "allImported": "✓ Todos os modelos disponíveis foram importados!",
     "close": "Fechar"
+  },
+  "builder": {
+    "typeLabels": {
+      "scale": "Escala (0–4)",
+      "yes_no": "Sim / Não",
+      "text": "Texto livre",
+      "number": "Número"
+    },
+    "name": "Nome do formulário",
+    "nameRequired": "Nome do formulário *",
+    "namePlaceholder": "Ex: Questionário de Rastreamento Metabólico",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Breve descrição do formulário",
+    "descriptionPlaceholderShort": "Breve descrição",
+    "instructionsLabel": "Instruções (exibidas ao preencher)",
+    "instructionsLabelShort": "Instruções",
+    "defaultInstructions": "Avalie cada sintoma com base no período dos últimos 30 dias.",
+    "section": "Seção {n}",
+    "sectionPlaceholder": "Nome da seção (ex: CABEÇA)",
+    "questionPlaceholder": "Texto da pergunta",
+    "maxScore": "Pontuação máx:",
+    "maxScoreShort": "Máx:",
+    "addQuestion": "Adicionar pergunta",
+    "addSection": "Adicionar seção",
+    "addSectionNew": "Adicionar nova seção",
+    "summarySections": "{count, plural, one {# seção} other {# seções}}",
+    "summaryQuestions": "{count, plural, one {# pergunta} other {# perguntas}}",
+    "saving": "Salvando…",
+    "create": "Criar formulário"
+  },
+  "editor": {
+    "sectionsTitle": "Seções",
+    "existing": "existente",
+    "saveChanges": "Salvar alterações"
+  },
+  "fill": {
+    "scale0": "Nunca ou quase nunca",
+    "scale1": "Ocasionalmente, efeito leve",
+    "scale2": "Ocasionalmente, efeito severo",
+    "scale3": "Frequentemente, efeito leve",
+    "scale4": "Frequentemente, efeito severo",
+    "yes": "Sim",
+    "no": "Não",
+    "total": "Total geral",
+    "notes": "Observações",
+    "notesPlaceholder": "Observações adicionais sobre este preenchimento (opcional).",
+    "saving": "Salvando…",
+    "save": "Salvar resultados"
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Plus, ChevronUp, ChevronDown, Trash2, GripVertical } from "lucide-react";
 import type { TemplateWithStructure } from "@/lib/types";
 import { updateFormAction } from "@/app/forms/[id]/edit/actions";
@@ -21,12 +22,7 @@ type SectionDraft = {
   questions: QuestionDraft[];
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  scale: "Escala (0–4)",
-  yes_no: "Sim / Não",
-  text: "Texto livre",
-  number: "Número",
-};
+const TYPE_KEYS = ["scale", "yes_no", "text", "number"] as const;
 
 function uid() {
   return Math.random().toString(36).slice(2);
@@ -49,6 +45,8 @@ function fromTemplate(template: TemplateWithStructure): SectionDraft[] {
 }
 
 export function AssessmentFormEditor({ template }: { template: TemplateWithStructure }) {
+  const t = useTranslations("forms.builder");
+  const tEditor = useTranslations("forms.editor");
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(template.name);
   const [description, setDescription] = useState(template.description ?? "");
@@ -184,7 +182,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
       {/* Metadata */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] space-y-[12px]">
         <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Nome do formulário</label>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("name")}</label>
           <input
             type="text"
             value={name}
@@ -193,17 +191,17 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
           />
         </div>
         <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Descrição</label>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("description")}</label>
           <input
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Breve descrição"
+            placeholder={t("descriptionPlaceholderShort")}
             className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
         <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">Instruções</label>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("instructionsLabelShort")}</label>
           <textarea
             value={instructions}
             onChange={(e) => setInstructions(e.target.value)}
@@ -216,7 +214,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
       {/* All sections (existing + new) */}
       {sections.length > 0 && (
         <div className="space-y-[8px]">
-          <p className="text-[11px] font-medium text-[#6B6A66]">Seções</p>
+          <p className="text-[11px] font-medium text-[#6B6A66]">{tEditor("sectionsTitle")}</p>
           {sections.map((section, si) => (
             <div key={section.tempId} className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
               <div className="flex items-center gap-[8px] px-[14px] py-[10px] border-b border-black/[.06] bg-[#FAFAF8]">
@@ -243,12 +241,12 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
                   type="text"
                   value={section.title}
                   onChange={(e) => updateSectionTitle(section.tempId, e.target.value)}
-                  placeholder="Nome da seção (ex: CABEÇA)"
+                  placeholder={t("sectionPlaceholder")}
                   className="flex-1 px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[12px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition uppercase"
                 />
                 {section.dbId && (
                   <span className="text-[9px] font-medium text-[#A09E98] shrink-0 bg-[#F4F3EF] rounded px-[5px] py-[2px]">
-                    existente
+                    {tEditor("existing")}
                   </span>
                 )}
                 <button
@@ -269,7 +267,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
                         type="text"
                         value={q.text}
                         onChange={(e) => updateQuestion(section.tempId, q.tempId, { text: e.target.value })}
-                        placeholder="Texto da pergunta"
+                        placeholder={t("questionPlaceholder")}
                         className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                       />
                       <div className="flex items-center gap-[8px]">
@@ -283,13 +281,13 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
                           }
                           className="px-[8px] py-[4px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none bg-white"
                         >
-                          {Object.entries(TYPE_LABELS).map(([val, label]) => (
-                            <option key={val} value={val}>{label}</option>
+                          {TYPE_KEYS.map((val) => (
+                            <option key={val} value={val}>{t(`typeLabels.${val}`)}</option>
                           ))}
                         </select>
                         {(q.type === "scale" || q.type === "number") && (
                           <div className="flex items-center gap-[4px]">
-                            <span className="text-[10px] text-[#A09E98]">Máx:</span>
+                            <span className="text-[10px] text-[#A09E98]">{t("maxScoreShort")}</span>
                             <input
                               type="number"
                               min={1}
@@ -334,7 +332,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
                   onClick={() => addQuestion(section.tempId)}
                   className="flex items-center gap-[5px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Adicionar pergunta
+                  <Plus className="h-3.5 w-3.5" /> {t("addQuestion")}
                 </button>
               </div>
             </div>
@@ -347,7 +345,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
         onClick={addSection}
         className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] border border-dashed border-black/[.15] rounded-[10px] px-[14px] py-[10px] w-full justify-center hover:border-[#0F6E56] hover:text-[#0F6E56] transition"
       >
-        <Plus className="h-3.5 w-3.5" /> Adicionar nova seção
+        <Plus className="h-3.5 w-3.5" /> {t("addSectionNew")}
       </button>
 
       <div className="flex items-center justify-end bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
@@ -356,7 +354,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
           disabled={!name.trim() || isPending}
           className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[8px] px-[16px] py-[8px] transition"
         >
-          {isPending ? "Salvando…" : "Salvar alterações"}
+          {isPending ? t("saving") : tEditor("saveChanges")}
         </button>
       </div>
     </form>

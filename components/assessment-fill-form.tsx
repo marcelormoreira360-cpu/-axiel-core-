@@ -1,15 +1,8 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import type { TemplateWithStructure, AssessmentQuestion } from "@/lib/types";
-
-const DEFAULT_SCALE_LABELS = [
-  "Nunca ou quase nunca",
-  "Ocasionalmente, efeito leve",
-  "Ocasionalmente, efeito severo",
-  "Frequentemente, efeito leve",
-  "Frequentemente, efeito severo",
-];
 
 function ScaleInput({
   question,
@@ -58,6 +51,7 @@ export function AssessmentFillForm({
   patientId: string;
   action: (formData: FormData) => Promise<void>;
 }) {
+  const t = useTranslations("forms.fill");
   const [isPending, startTransition] = useTransition();
   const [answers, setAnswers] = useState<Record<string, number | string | null>>({});
   const [notes, setNotes] = useState("");
@@ -104,7 +98,7 @@ export function AssessmentFillForm({
     });
   }
 
-  const scaleLabels = template.scale_labels ?? DEFAULT_SCALE_LABELS;
+  const scaleLabels = template.scale_labels ?? [t("scale0"), t("scale1"), t("scale2"), t("scale3"), t("scale4")];
 
   return (
     <form action={submit} className="space-y-[18px]">
@@ -162,8 +156,8 @@ export function AssessmentFillForm({
                       {q.question_type === "yes_no" && (
                         <div className="flex gap-[4px]">
                           {[
-                            { label: "Não", value: 0 },
-                            { label: "Sim", value: 1 },
+                            { label: t("no"), value: 0 },
+                            { label: t("yes"), value: 1 },
                           ].map((opt) => (
                             <button
                               key={opt.value}
@@ -220,7 +214,7 @@ export function AssessmentFillForm({
       <div className="bg-[#0F1A2E] rounded-[12px] px-[16px] py-[14px]">
         <div className="flex items-center justify-between mb-[10px]">
           <p className="text-[11px] font-medium tracking-[.08em] uppercase text-white/50">
-            Total geral
+            {t("total")}
           </p>
           <div className="flex items-baseline gap-[4px]">
             <span className="text-[28px] font-semibold text-white tracking-[-0.04em]">
@@ -243,13 +237,13 @@ export function AssessmentFillForm({
       {/* Notes */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
         <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">
-          Observações
+          {t("notes")}
         </label>
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
-          placeholder="Observações adicionais sobre este preenchimento (opcional)."
+          placeholder={t("notesPlaceholder")}
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
@@ -259,7 +253,7 @@ export function AssessmentFillForm({
         disabled={isPending}
         className="w-full text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[11px] transition"
       >
-        {isPending ? "Salvando…" : "Salvar resultados"}
+        {isPending ? t("saving") : t("save")}
       </button>
     </form>
   );

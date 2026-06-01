@@ -110,7 +110,13 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 - ✅ **Fase 3 COMPLETA** (Pacientes + Agenda + Sessões) — fluxo clínico principal 100% bilíngue
   - Namespaces i18n totais: common, nav, dashboard, auth, onboarding, patients, patientProfile, patientPanels, schedule, session
   - **Follow-ups conhecidos**: date-utils.ts (pt-BR fixo); mensagens de throw/WhatsApp em PT; escopar mensagens por rota no client; memoizar tooltip do revenue-chart
-  - **Pendente**: Fases 4–6 (Formulários, Financeiro, Results, Settings, Automações; áreas públicas; e-mails/PDF) + componentes secundários soltos
+- ✅ i18n Fase 4a (01/06/2026): módulo Formulários — namespace `forms`
+  - 4a-1: app/forms/page.tsx, new, [id], [id]/edit + botões delete/share/import
+  - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
+  - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
+  - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+  - **Pendente Fase 4**: 4b Financeiro, 4c Results/Relatórios/Analytics, 4d Configurações (~25 telas), 4e Automações
+  - **Pendente geral**: Fases 5–6 (áreas públicas; e-mails/PDF) + componentes secundários soltos
 - ✅ i18n Fase 3c (01/06/2026): módulo Agenda — namespace `schedule`
   - 3c-1: app/schedule/page.tsx, schedule/new/page.tsx, appointment-form.tsx
   - 3c-2: schedule-container.tsx (toolbar, navegação, views Dia/Semana/Mês, dias da semana via chaves), session-card, session-drawer (badge reusa common.appointmentStatus), create-session-modal
