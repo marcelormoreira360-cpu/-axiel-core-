@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import { useTranslations } from "next-intl";
 import { sendPortalAccessAction, type SendPortalAccessState } from "./actions";
 
 export function PortalAccessForm() {
+  const t = useTranslations("portal.login");
   const [state, formAction, isPending] = useActionState<SendPortalAccessState, FormData>(
     sendPortalAccessAction,
     null
@@ -23,13 +25,12 @@ export function PortalAccessForm() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-base font-semibold text-[#0F1A2E]">Verifique seu e-mail</h2>
+        <h2 className="text-base font-semibold text-[#0F1A2E]">{t("sentTitle")}</h2>
         <p className="text-sm text-black/50 leading-relaxed">
-          Se o endereço informado estiver cadastrado, você receberá um link de acesso em instantes.
-          O link expira em 24 horas.
+          {t("sentDesc")}
         </p>
         <p className="text-xs text-black/35 pt-2">
-          Não recebeu?{" "}
+          {t("notReceived")}{" "}
           <button
             type="button"
             className="text-[#0F6E56] font-medium hover:underline"
@@ -39,7 +40,7 @@ export function PortalAccessForm() {
               window.location.reload();
             }}
           >
-            Tentar novamente
+            {t("tryAgain")}
           </button>
         </p>
       </div>
@@ -50,7 +51,7 @@ export function PortalAccessForm() {
     <form action={formAction} className="space-y-4">
       <div className="space-y-1.5">
         <label htmlFor="email" className="block text-sm font-medium text-[#0F1A2E]">
-          E-mail
+          {t("emailLabel")}
         </label>
         <input
           id="email"
@@ -58,7 +59,7 @@ export function PortalAccessForm() {
           type="email"
           autoComplete="email"
           required
-          placeholder="seu@email.com"
+          placeholder={t("emailPlaceholder")}
           className="w-full rounded-xl border border-black/[.12] bg-white px-4 py-3 text-sm text-[#0F1A2E] placeholder-black/30 outline-none transition focus:border-[#0F6E56] focus:ring-2 focus:ring-[#0F6E56]/15 disabled:opacity-50"
           disabled={isPending}
         />
@@ -68,7 +69,7 @@ export function PortalAccessForm() {
         disabled={isPending}
         className="w-full rounded-xl bg-[#0F6E56] py-3 text-sm font-semibold text-white transition hover:bg-[#0a5b47] disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {isPending ? "Enviando…" : "Enviar link de acesso"}
+        {isPending ? t("sending") : t("sendLink")}
       </button>
     </form>
   );

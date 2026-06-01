@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { PatientPortalOffer } from "@/services/patient-portal-service";
 
 function formatCurrency(cents: number, currency: string) {
@@ -17,6 +18,7 @@ type PurchaseButtonProps = {
 };
 
 function PurchaseButton({ offer, rawToken }: PurchaseButtonProps) {
+  const t = useTranslations("portal.packages");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMembership = offer.offer_type === "membership";
@@ -38,17 +40,17 @@ function PurchaseButton({ offer, rawToken }: PurchaseButtonProps) {
 
       if (!res.ok) {
         const json = (await res.json()) as { error?: string };
-        throw new Error(json.error ?? "Erro ao iniciar pagamento.");
+        throw new Error(json.error ?? t("errStart"));
       }
 
       const { url } = (await res.json()) as { url: string };
       if (url) {
         window.location.href = url;
       } else {
-        throw new Error("URL de pagamento não retornada.");
+        throw new Error(t("errNoUrl"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao iniciar pagamento.");
+      setError(err instanceof Error ? err.message : t("errStart"));
       setLoading(false);
     }
   }
@@ -61,7 +63,7 @@ function PurchaseButton({ offer, rawToken }: PurchaseButtonProps) {
         disabled={loading}
         className="w-full rounded-xl bg-[#0F6E56] py-2.5 text-sm font-semibold text-white transition hover:bg-[#0a5b47] disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {loading ? "Redirecionando…" : isMembership ? "Assinar plano" : "Comprar"}
+        {loading ? t("redirecting") : isMembership ? t("subscribe") : t("buy")}
       </button>
       {error && (
         <p className="mt-2 text-xs text-red-500 text-center">{error}</p>
@@ -76,16 +78,21 @@ type PackagesSectionProps = {
 };
 
 export function PackagesSection({ offers, rawToken }: PackagesSectionProps) {
+  const t = useTranslations("portal.packages");
   if (offers.length === 0) return null;
+
+  const hasMembership = offers.some((o) => o.offer_type === "membership");
+  const hasNonMembership = offers.some((o) => o.offer_type !== "membership");
+  const sectionTitle = hasMembership && hasNonMembership
+    ? t("titleBoth")
+    : offers.every((o) => o.offer_type === "membership")
+    ? t("titlePlans")
+    : t("titlePackages");
 
   return (
     <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-3">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">
-        {offers.some((o) => o.offer_type === "membership") && offers.some((o) => o.offer_type !== "membership")
-          ? "Planos e pacotes"
-          : offers.every((o) => o.offer_type === "membership")
-          ? "Planos disponíveis"
-          : "Pacotes disponíveis"}
+        {sectionTitle}
       </p>
       <div className="space-y-3">
         {offers.map((offer) => (
@@ -101,7 +108,7 @@ export function PackagesSection({ offers, rawToken }: PackagesSectionProps) {
                 )}
                 {offer.number_of_sessions && (
                   <p className="mt-1 text-xs text-black/40">
-                    {offer.number_of_sessions} sessão{offer.number_of_sessions > 1 ? "ões" : ""}
+                    {t("sessions", { count: offer.number_of_sessions })}
                   </p>
                 )}
               </div>
@@ -110,7 +117,7 @@ export function PackagesSection({ offers, rawToken }: PackagesSectionProps) {
                   {formatCurrency(offer.price_cents, offer.currency || "BRL")}
                 </p>
                 {offer.offer_type === "membership" && (
-                  <p className="text-[10px] text-black/35">/ mês</p>
+                  <p className="text-[10px] text-black/35">{t("perMonth")}</p>
                 )}
               </div>
             </div>

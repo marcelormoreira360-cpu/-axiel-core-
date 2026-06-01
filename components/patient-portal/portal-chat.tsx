@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Send, Loader2, MessageCircle } from "lucide-react";
 
 interface PortalMessage {
@@ -17,23 +18,27 @@ interface PortalChatProps {
   patientName: string;
 }
 
-function formatTime(iso: string) {
+type ChatT = (k: string) => string;
+
+function formatTime(iso: string, locale: string) {
   const d = new Date(iso);
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDateGroup(iso: string) {
+function formatDateGroup(iso: string, locale: string, t: ChatT) {
   const d = new Date(iso);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (d.toDateString() === today.toDateString()) return "Hoje";
-  if (d.toDateString() === yesterday.toDateString()) return "Ontem";
-  return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long" });
+  if (d.toDateString() === today.toDateString()) return t("today");
+  if (d.toDateString() === yesterday.toDateString()) return t("yesterday");
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long" });
 }
 
 export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProps) {
+  const t = useTranslations("portal.chat");
+  const locale = useLocale();
   const [messages, setMessages] = useState<PortalMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -101,7 +106,7 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Erro ao enviar mensagem.");
+        setError(data.error ?? t("errSend"));
         // Remove optimistic message
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
         setInput(text);
@@ -112,7 +117,7 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
       const { message: real } = await res.json();
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? real : m)));
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("errConn"));
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setInput(text);
     } finally {
@@ -131,7 +136,7 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
   // Group messages by date
   const grouped: { date: string; msgs: PortalMessage[] }[] = [];
   for (const msg of messages) {
-    const label = formatDateGroup(msg.created_at);
+    const label = formatDateGroup(msg.created_at, locale, t);
     const last = grouped[grouped.length - 1];
     if (last && last.date === label) {
       last.msgs.push(msg);
@@ -156,8 +161,8 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
               <MessageCircle className="h-5 w-5" style={{ color: brandColor }} />
             </div>
             <div>
-              <p className="text-sm font-medium text-[#0F1A2E]">Nenhuma mensagem ainda</p>
-              <p className="text-xs text-black/40 mt-0.5">Envie uma mensagem para sua clínica</p>
+              <p className="text-sm font-medium text-[#0F1A2E]">{t("emptyTitle")}</p>
+              <p className="text-xs text-black/40 mt-0.5">{t("emptyDesc")}</p>
             </div>
           </div>
         ) : (
@@ -193,7 +198,7 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
                           isPatient ? "text-white/60" : "text-black/30",
                         ].join(" ")}
                       >
-                        {formatTime(msg.created_at)}
+                        {formatTime(msg.created_at, locale)}
                         {isPatient && msg.read_at && (
                           <span className="ml-1">✓✓</span>
                         )}
@@ -220,15 +225,15 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Escreva uma mensagem…"
+          placeholder={t("placeholder")}
           rows={1}
           maxLength={2000}
           className="flex-1 resize-none rounded-xl border border-black/[.10] px-3 py-2.5 text-sm text-[#0F1A2E] placeholder:text-black/30 focus:outline-none focus:border-black/25 leading-relaxed"
           style={{ minHeight: "42px", maxHeight: "120px" }}
           onInput={(e) => {
-            const t = e.currentTarget;
-            t.style.height = "auto";
-            t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+            const el = e.currentTarget;
+            el.style.height = "auto";
+            el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
           }}
         />
         <button
@@ -236,7 +241,7 @@ export function PortalChat({ rawToken, brandColor, patientName }: PortalChatProp
           disabled={!input.trim() || sending}
           className="shrink-0 h-[42px] w-[42px] rounded-xl flex items-center justify-center transition disabled:opacity-40"
           style={{ backgroundColor: brandColor }}
-          aria-label="Enviar mensagem"
+          aria-label={t("sendAria")}
         >
           {sending
             ? <Loader2 className="h-4 w-4 text-white animate-spin" />

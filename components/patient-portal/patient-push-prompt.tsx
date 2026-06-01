@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, BellOff, X } from "lucide-react";
 
 const VAPID_PUBLIC = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
@@ -27,6 +28,7 @@ function urlBase64ToUint8Array(b64: string): ArrayBuffer {
 type State = "idle" | "granted" | "denied" | "unsupported";
 
 export function PatientPushPrompt({ token }: { token: string }) {
+  const t = useTranslations("portal.push");
   const [state, setState] = useState<State>("idle");
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -123,11 +125,11 @@ export function PatientPushPrompt({ token }: { token: string }) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-[#E1F5EE] rounded-[8px] text-[11px] text-[#085041]">
         <Bell className="w-3.5 h-3.5 shrink-0" />
-        <span>Notificações ativadas</span>
+        <span>{t("enabled")}</span>
         <button
           onClick={handleDisable}
           className="ml-auto text-[#A09E98] hover:text-red-500 transition"
-          title="Desativar notificações"
+          title={t("disableTitle")}
         >
           <BellOff className="w-3.5 h-3.5" />
         </button>
@@ -141,22 +143,22 @@ export function PatientPushPrompt({ token }: { token: string }) {
       <div className="relative flex items-start gap-3 px-4 py-3 bg-[#FFF8E7] border border-[#F5C47F] rounded-[10px] text-[12px]">
         <Bell className="w-4 h-4 text-[#C97B1A] mt-[1px] shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-[#633806]">Ativar notificações</p>
+          <p className="font-medium text-[#633806]">{t("promptTitle")}</p>
           <p className="text-[#7C5B1A] mt-[1px] text-[11px]">
-            Receba alertas de consultas, lembretes e atualizações de saúde diretamente no seu dispositivo.
+            {t("promptDesc")}
           </p>
           <button
             onClick={handleEnable}
             disabled={loading}
             className="mt-2 px-3 py-1.5 bg-[#C97B1A] text-white rounded-[6px] text-[11px] font-medium hover:bg-[#a96315] transition disabled:opacity-50"
           >
-            {loading ? "Ativando…" : "Ativar notificações"}
+            {loading ? t("enabling") : t("enable")}
           </button>
         </div>
         <button
           onClick={dismiss}
           className="shrink-0 text-[#A09E98] hover:text-[#6B6A66] transition"
-          aria-label="Fechar"
+          aria-label={t("close")}
         >
           <X className="w-4 h-4" />
         </button>
@@ -169,7 +171,7 @@ export function PatientPushPrompt({ token }: { token: string }) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-[#F4F3EF] rounded-[8px] text-[11px] text-[#6B6A66]">
         <BellOff className="w-3.5 h-3.5 shrink-0" />
-        <span>Notificações bloqueadas. Ative nas configurações do navegador para receber alertas.</span>
+        <span>{t("denied")}</span>
       </div>
     );
   }

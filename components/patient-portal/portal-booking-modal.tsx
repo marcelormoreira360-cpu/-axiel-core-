@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { X, ChevronLeft, ChevronRight, Clock, Check } from "lucide-react";
 import type { PatientPortalSessionType } from "@/services/patient-portal-service";
 
@@ -34,6 +35,8 @@ export function PortalBookingModal({
   onClose,
   onSuccess,
 }: PortalBookingModalProps) {
+  const t = useTranslations("portal.booking");
+  const locale = useLocale();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedType, setSelectedType] = useState<PatientPortalSessionType | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -98,14 +101,14 @@ export function PortalBookingModal({
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Erro ao agendar. Tente novamente.");
+        setError(data.error ?? t("errBook"));
         return;
       }
 
       setStep(3);
       onSuccess(data.appointment_id as string, selectedSlot.iso);
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("errConn"));
     } finally {
       setBooking(false);
     }
@@ -117,9 +120,9 @@ export function PortalBookingModal({
   }
 
   const stepTitle =
-    step === 1 ? "Escolha o tipo de sessão"
-    : step === 2 ? "Escolha a data e horário"
-    : "Agendamento confirmado!";
+    step === 1 ? t("stepType")
+    : step === 2 ? t("stepDate")
+    : t("stepDone");
 
   return (
     <div
@@ -137,7 +140,7 @@ export function PortalBookingModal({
               <button
                 onClick={goBack}
                 className="p-1 rounded-lg hover:bg-black/[.05] transition"
-                aria-label="Voltar"
+                aria-label={t("back")}
               >
                 <ChevronLeft className="h-4 w-4 text-black/50" />
               </button>
@@ -147,7 +150,7 @@ export function PortalBookingModal({
           <button
             onClick={onClose}
             className="p-1 rounded-lg hover:bg-black/[.05] transition"
-            aria-label="Fechar"
+            aria-label={t("close")}
           >
             <X className="h-4 w-4 text-black/50" />
           </button>
@@ -172,7 +175,7 @@ export function PortalBookingModal({
                   <div className="flex items-center gap-3 mt-1">
                     <span className="flex items-center gap-1 text-xs text-black/40">
                       <Clock className="h-3 w-3" />
-                      {st.duration_minutes} min
+                      {st.duration_minutes} {t("minUnit")}
                     </span>
                     {st.price_cents > 0 && (
                       <span className="text-xs text-black/40">{fmt(st.price_cents)}</span>
@@ -201,7 +204,7 @@ export function PortalBookingModal({
 
               {/* Date picker */}
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40 mb-2">Data</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40 mb-2">{t("dateLabel")}</p>
                 <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
                   {days.map((d) => {
                     const isSelected = selectedDate?.toDateString() === d.toDateString();
@@ -218,7 +221,7 @@ export function PortalBookingModal({
                       >
                         <span className="text-sm font-semibold">{d.getDate()}</span>
                         <span className="mt-0.5 text-[10px] opacity-70">
-                          {d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")}
+                          {d.toLocaleDateString(locale, { weekday: "short" }).replace(".", "")}
                         </span>
                       </button>
                     );
@@ -230,16 +233,16 @@ export function PortalBookingModal({
               {selectedDate && (
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40 mb-2">
-                    Horário disponível
+                    {t("slotLabel")}
                   </p>
                   {loadingSlots ? (
                     <div className="flex items-center gap-2 text-xs text-black/40 py-2">
                       <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
-                      Buscando horários…
+                      {t("searching")}
                     </div>
                   ) : slots.length === 0 ? (
                     <p className="text-sm text-black/40 py-2">
-                      Nenhum horário disponível para este dia.
+                      {t("noSlots")}
                     </p>
                   ) : (
                     <div className="grid grid-cols-4 gap-2">
@@ -275,7 +278,7 @@ export function PortalBookingModal({
                 className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
                 style={{ backgroundColor: brandColor }}
               >
-                {booking ? "Agendando…" : "Confirmar agendamento"}
+                {booking ? t("booking") : t("confirm")}
               </button>
             </div>
           )}
@@ -290,28 +293,28 @@ export function PortalBookingModal({
                 <Check className="h-8 w-8" style={{ color: brandColor }} />
               </div>
               <div>
-                <p className="text-base font-semibold text-[#0F1A2E]">Agendamento confirmado!</p>
+                <p className="text-base font-semibold text-[#0F1A2E]">{t("doneTitle")}</p>
                 <p className="mt-1.5 text-sm text-black/50">
-                  {new Date(selectedSlot.iso).toLocaleDateString("pt-BR", {
+                  {new Date(selectedSlot.iso).toLocaleDateString(locale, {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
                   })}{" "}
-                  às{" "}
-                  {new Date(selectedSlot.iso).toLocaleTimeString("pt-BR", {
+                  {t("at")}{" "}
+                  {new Date(selectedSlot.iso).toLocaleTimeString(locale, {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </p>
                 <p className="mt-0.5 text-sm text-black/40">{selectedType.name}</p>
               </div>
-              <p className="text-xs text-black/35">Uma confirmação foi enviada pelo WhatsApp.</p>
+              <p className="text-xs text-black/35">{t("whatsappConfirm")}</p>
               <button
                 onClick={onClose}
                 className="w-full rounded-2xl py-3.5 text-sm font-semibold text-white transition"
                 style={{ backgroundColor: brandColor }}
               >
-                Fechar
+                {t("close")}
               </button>
             </div>
           )}

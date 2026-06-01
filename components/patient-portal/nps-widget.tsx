@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 
 interface NpsWidgetProps {
   appointmentId: string;
@@ -18,10 +19,10 @@ function scoreColor(score: number, selected: boolean): string {
   return "#0F6E56";                  // green — promoter
 }
 
-function scoreLabel(score: number): string {
-  if (score <= 6) return "😕 Pode melhorar";
-  if (score <= 8) return "😊 Boa";
-  return "🤩 Excelente!";
+function scoreLabelKey(score: number): string {
+  if (score <= 6) return "scoreLow";
+  if (score <= 8) return "scoreMid";
+  return "scoreHigh";
 }
 
 export function NpsWidget({
@@ -31,12 +32,14 @@ export function NpsWidget({
   brandColor,
   onSubmit,
 }: NpsWidgetProps) {
+  const t = useTranslations("portal.nps");
+  const locale = useLocale();
   const [selected, setSelected] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const dateLabel = new Date(sessionDate).toLocaleDateString("pt-BR", {
+  const dateLabel = new Date(sessionDate).toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -59,12 +62,12 @@ export function NpsWidget({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "Erro ao enviar avaliação.");
+        setError(data.error ?? t("errSubmit"));
         return;
       }
       onSubmit();
     } catch {
-      setError("Erro de conexão. Tente novamente.");
+      setError(t("errConn"));
     } finally {
       setSubmitting(false);
     }
@@ -74,14 +77,14 @@ export function NpsWidget({
     <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40">
-          Avalie sua sessão
+          {t("title")}
         </p>
         <p className="mt-1 text-sm text-[#0F1A2E] capitalize">{dateLabel}</p>
       </div>
 
       <div>
         <p className="text-xs text-black/50 mb-2">
-          De 0 a 10, como foi sua experiência?
+          {t("question")}
         </p>
 
         {/* Score buttons: 0-10 */}
@@ -107,7 +110,7 @@ export function NpsWidget({
 
         {selected !== null && (
           <p className="mt-2 text-xs font-medium" style={{ color: scoreColor(selected, true) }}>
-            {scoreLabel(selected)}
+            {t(scoreLabelKey(selected))}
           </p>
         )}
       </div>
@@ -118,7 +121,7 @@ export function NpsWidget({
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Quer nos contar mais? (opcional)"
+            placeholder={t("commentPlaceholder")}
             rows={2}
             maxLength={1000}
             className="w-full text-sm text-[#0F1A2E] bg-[#F8FAF9] border border-black/[.08] rounded-xl px-3 py-2 resize-none outline-none focus:border-black/20 transition placeholder:text-black/30"
@@ -135,13 +138,13 @@ export function NpsWidget({
           className="flex-1 rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ backgroundColor: brandColor }}
         >
-          {submitting ? "Enviando…" : "Enviar avaliação"}
+          {submitting ? t("sending") : t("submit")}
         </button>
         <button
           onClick={onSubmit}
           className="text-xs text-black/35 hover:text-black/50 transition"
         >
-          Agora não
+          {t("notNow")}
         </button>
       </div>
     </div>

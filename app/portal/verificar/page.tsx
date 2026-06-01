@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
   title: "Verifique seu e-mail | Portal do Paciente",
   robots: { index: false, follow: false },
 };
 
-export default function PortalVerificarPage() {
+export default async function PortalVerificarPage() {
+  const t = await getTranslations("portal.verificar");
   return (
     <main className="min-h-screen bg-[#F8FAF9] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-6 text-center">
@@ -28,14 +30,13 @@ export default function PortalVerificarPage() {
 
         <div className="bg-white rounded-2xl border border-black/[.07] p-8 space-y-3">
           <h1 className="text-xl font-semibold tracking-tight text-[#0F1A2E]">
-            Verifique seu e-mail
+            {t("title")}
           </h1>
           <p className="text-sm text-black/50 leading-relaxed">
-            Enviamos o link de acesso para o seu endereço de e-mail. O link expira em{" "}
-            <strong className="text-[#0F1A2E]">24 horas</strong>.
+            {t.rich("desc", { b: (c) => <strong className="text-[#0F1A2E]">{c}</strong> })}
           </p>
           <p className="text-xs text-black/35 pt-1">
-            Não compartilhe o link com ninguém.
+            {t("dontShare")}
           </p>
         </div>
 
@@ -43,7 +44,7 @@ export default function PortalVerificarPage() {
           href="/portal"
           className="inline-block text-sm font-medium text-[#0F6E56] hover:underline"
         >
-          ← Voltar ao portal
+          {t("back")}
         </Link>
       </div>
     </main>

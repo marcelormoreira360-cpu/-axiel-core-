@@ -115,6 +115,13 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 5a (01/06/2026): Portal do paciente — **namespace `portal`**
+  - Entrada: `app/portal/page.tsx`, `portal-access-form.tsx`, `verificar/page.tsx`
+  - Subcomponentes `components/patient-portal/*`: `patient-portal-dashboard.tsx` (1145 linhas — banners, próxima sessão, pacote/plano, insights, exames, protocolo, histórico sessões/pagamentos, agendamentos, intake, documentos, meus dados, LGPD), `portal-booking-modal.tsx`, `portal-chat.tsx`, `nps-widget.tsx`, `packages-section.tsx`, `patient-push-prompt.tsx`
+  - Datas via `useLocale`; plurais ICU (sessions, sessionsRemaining, sessionsLeftCycle, newMessages); rich text `<a>`/`<b>` (lgpdNote, lgpdFooter, verificar.desc)
+  - Detalhes: `formatDate/formatDateTime` recebem locale + conector "at"; estados de erro de upload/contato via boolean (não string-match); colisões de `t` evitadas (onInput → `el`)
+  - Validado: tsc do código limpo, paridade PT/EN (18 namespaces), ICU compila
+  - **Pendente Fase 5**: 5b book/[slug], 5c landing+pricing, 5d formulários públicos/join/teleconsulta/links, 5e jurídico
 - ✅ i18n Fase 4e (01/06/2026): módulo Automações — **namespace `automations`**
   - `automacoes/page.tsx` (hub + histórico de envios, datas via locale) + `components/automacoes-client.tsx` (KPIs, abas Regras/Histórico, RuleCard, CreateRuleForm — atenção: param do `.map((t)=>)` renomeado p/ `tabKey`) + `components/broadcast-whatsapp-modal.tsx` (segmentos, compose, preview, done)
   - `follow-ups/page.tsx` + `components/follow-up-form.tsx` e `components/follow-up-list.tsx` — **convertidos para async server components** com `getTranslations`
