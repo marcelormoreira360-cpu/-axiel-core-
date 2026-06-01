@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
@@ -12,12 +13,12 @@ interface Practitioner  { id: string; display_name: string; specialty: string | 
 
 type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
 
-const STEP_LABELS: Record<Exclude<Step, "done">, string> = {
-  profissional: "Profissional",
-  service:      "Serviço",
-  date:         "Data",
-  slot:         "Horário",
-  info:         "Seus dados",
+const STEP_LABEL_KEYS: Record<Exclude<Step, "done">, string> = {
+  profissional: "stepProfessional",
+  service:      "stepService",
+  date:         "stepDate",
+  slot:         "stepSlot",
+  info:         "stepInfo",
 };
 const ALL_STEPS: Step[] = ["profissional", "service", "date", "slot", "info", "done"];
 
@@ -36,6 +37,8 @@ function toDateStr(d: Date) {
 
 export default function BookingPage() {
   const { slug } = useParams<{ slug: string }>();
+  const t = useTranslations("booking");
+  const locale = useLocale();
 
   const [clinic, setClinic]               = useState<ClinicInfo | null>(null);
   const [sessionTypes, setSessionTypes]   = useState<SessionType[]>([]);
@@ -89,7 +92,7 @@ export default function BookingPage() {
           setStep("profissional");
         }
       })
-      .catch(() => setError("Não foi possível carregar as informações da clínica."));
+      .catch(() => setError(t("loadError")));
   }, [slug]);
 
   // Load slots when date changes
@@ -129,12 +132,12 @@ export default function BookingPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || !data.ok) { setError(data.error ?? "Erro ao agendar. Tente novamente."); return; }
+      if (!res.ok || !data.ok) { setError(data.error ?? t("errBook")); return; }
       const d = new Date(selectedSlot.iso);
       setAppointmentDate(
-        d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" }) +
-        " às " +
-        d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+        d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" }) +
+        ` ${t("at")} ` +
+        d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
       );
       setStep("done");
     });
@@ -170,7 +173,7 @@ export default function BookingPage() {
           {clinic.logo_url ? (
             <Image src={clinic.logo_url} alt={clinic.name} width={160} height={40} className="mx-auto mb-2 h-10 max-w-[160px] object-contain" />
           ) : (
-            <p className="text-[11px] font-medium tracking-[.12em] uppercase text-[#A09E98]">Agendamento online</p>
+            <p className="text-[11px] font-medium tracking-[.12em] uppercase text-[#A09E98]">{t("eyebrow")}</p>
           )}
           <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.02em] text-[#0F1A2E]">{clinic.name}</h1>
         </div>
@@ -199,7 +202,7 @@ export default function BookingPage() {
                       {done ? "✓" : i + 1}
                     </div>
                     <span className={`text-[11px] hidden sm:block ${active ? "text-[#0F1A2E] font-medium" : "text-[#A09E98]"}`}>
-                      {STEP_LABELS[s]}
+                      {t(STEP_LABEL_KEYS[s])}
                     </span>
                   </div>
                 </div>
@@ -211,7 +214,7 @@ export default function BookingPage() {
         {/* ── Step: profissional ── */}
         {step === "profissional" && (
           <div className="space-y-3">
-            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha o profissional</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">{t("chooseProfessional")}</p>
             {practitioners.map((p) => (
               <button
                 key={p.id}
@@ -242,12 +245,12 @@ export default function BookingPage() {
           <div className="space-y-3">
             {activeSteps.includes("profissional") && (
               <button onClick={() => setStep("profissional")} className="text-[12px] text-[#A09E98] hover:text-[#0F1A2E] mb-4 flex items-center gap-1">
-                ← Voltar
+                {t("back")}
               </button>
             )}
-            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha o serviço</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">{t("chooseService")}</p>
             {sessionTypes.length === 0 && (
-              <p className="text-[12px] text-[#A09E98]">Nenhum serviço disponível no momento.</p>
+              <p className="text-[12px] text-[#A09E98]">{t("noServices")}</p>
             )}
             {sessionTypes.map((st) => (
               <button
@@ -264,7 +267,7 @@ export default function BookingPage() {
                     <p className="text-[13px] font-semibold" style={{ color: accent }}>{fmt(st.price_cents, clinic?.currency)}</p>
                   )}
                 </div>
-                <p className="text-[12px] text-[#A09E98] mt-[2px]">{st.duration_minutes} minutos</p>
+                <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("minutes", { count: st.duration_minutes })}</p>
               </button>
             ))}
           </div>
@@ -274,9 +277,9 @@ export default function BookingPage() {
         {step === "date" && selectedType && (
           <div>
             <button onClick={() => setStep("service")} className="text-[12px] text-[#A09E98] hover:text-[#0F1A2E] mb-4 flex items-center gap-1">
-              ← Voltar
+              {t("back")}
             </button>
-            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Escolha a data</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">{t("chooseDate")}</p>
             <div className="bg-white border border-black/[.07] rounded-[12px] p-5">
               <div className="relative">
                 <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#A09E98]">
@@ -300,7 +303,7 @@ export default function BookingPage() {
                 />
               </div>
               {selectedDate && isDateDisabled(selectedDate) && (
-                <p className="text-[12px] text-red-500 mt-2">A clínica não atende neste dia.</p>
+                <p className="text-[12px] text-red-500 mt-2">{t("clinicClosedDay")}</p>
               )}
             </div>
             <button
@@ -309,7 +312,7 @@ export default function BookingPage() {
               className="mt-4 w-full disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
               style={{ background: accent }}
             >
-              Ver horários disponíveis
+              {t("seeSlots")}
             </button>
           </div>
         )}
@@ -318,11 +321,11 @@ export default function BookingPage() {
         {step === "slot" && selectedType && selectedDate && (
           <div>
             <button onClick={() => setStep("date")} className="text-[12px] text-[#A09E98] hover:text-[#0F1A2E] mb-4 flex items-center gap-1">
-              ← Voltar
+              {t("back")}
             </button>
-            <p className="text-[13px] font-medium text-[#0F1A2E] mb-1">Escolha o horário</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-1">{t("chooseSlot")}</p>
             <p className="text-[12px] text-[#A09E98] mb-4">
-              {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
+              {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })}
             </p>
             {loadingSlots ? (
               <div className="flex justify-center py-8">
@@ -330,9 +333,9 @@ export default function BookingPage() {
               </div>
             ) : slots.length === 0 ? (
               <div className="bg-white border border-black/[.07] rounded-[12px] p-5 text-center">
-                <p className="text-[13px] text-[#A09E98]">Sem horários disponíveis neste dia.</p>
+                <p className="text-[13px] text-[#A09E98]">{t("noSlots")}</p>
                 <button onClick={() => setStep("date")} className="mt-3 text-[12px] hover:underline" style={{ color: accent }}>
-                  Escolher outra data
+                  {t("chooseAnotherDate")}
                 </button>
               </div>
             ) : (
@@ -371,7 +374,7 @@ export default function BookingPage() {
                 className="mt-5 w-full text-white text-[13px] font-medium rounded-[10px] py-3 transition"
                 style={{ background: accent }}
               >
-                Continuar com {selectedSlot.time}
+                {t("continueWith", { time: selectedSlot.time })}
               </button>
             )}
           </div>
@@ -381,7 +384,7 @@ export default function BookingPage() {
         {step === "info" && selectedType && selectedSlot && (
           <div>
             <button onClick={() => setStep("slot")} className="text-[12px] text-[#A09E98] hover:text-[#0F1A2E] mb-4 flex items-center gap-1">
-              ← Voltar
+              {t("back")}
             </button>
 
             {/* Summary bar */}
@@ -392,7 +395,7 @@ export default function BookingPage() {
                   <p className="text-[11px]" style={{ color: accent, opacity: 0.8 }}>{selectedPractitioner.display_name}</p>
                 )}
                 <p className="text-[11px]" style={{ color: accent, opacity: 0.7 }}>
-                  {new Date(`${selectedDate}T12:00:00`).toLocaleDateString("pt-BR", { day: "numeric", month: "short" })} · {selectedSlot.time}
+                  {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short" })} · {selectedSlot.time}
                 </p>
               </div>
               {selectedType.price_cents > 0 && (
@@ -400,20 +403,20 @@ export default function BookingPage() {
               )}
             </div>
 
-            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">Seus dados</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E] mb-4">{t("yourData")}</p>
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">Nome completo *</label>
+                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">{t("fullName")}</label>
                 <input
                   value={fullName} onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Seu nome"
+                  placeholder={t("fullNamePlaceholder")}
                   className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition"
                   onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
                 />
               </div>
               <div>
-                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">WhatsApp *</label>
+                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">{t("whatsapp")}</label>
                 <input
                   value={phone} onChange={(e) => setPhone(e.target.value)}
                   placeholder="+55 11 99999-9999"
@@ -424,10 +427,10 @@ export default function BookingPage() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">E-mail</label>
+                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">{t("emailLabel")}</label>
                 <input
                   value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="seu@email.com"
+                  placeholder={t("emailPlaceholder")}
                   type="email"
                   className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition"
                   onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
@@ -435,11 +438,11 @@ export default function BookingPage() {
                 />
               </div>
               <div>
-                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">Observação (opcional)</label>
+                <label className="text-[11px] font-medium text-[#6B6A66] mb-1 block">{t("notesLabel")}</label>
                 <textarea
                   value={notes} onChange={(e) => setNotes(e.target.value)}
                   rows={3}
-                  placeholder="Informe sintomas, preferências ou qualquer informação relevante."
+                  placeholder={t("notesPlaceholder")}
                   className="w-full px-3 py-2.5 rounded-[8px] border border-black/[.10] text-[13px] outline-none transition resize-none"
                   onFocus={(e) => { e.currentTarget.style.borderColor = accent; }}
                   onBlur={(e) => { e.currentTarget.style.borderColor = ""; }}
@@ -455,11 +458,11 @@ export default function BookingPage() {
               className="mt-5 w-full disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
               style={{ background: accent }}
             >
-              {isPending ? "Confirmando…" : "Confirmar agendamento"}
+              {isPending ? t("confirming") : t("confirm")}
             </button>
 
             <p className="mt-3 text-[11px] text-[#A09E98] text-center">
-              Você receberá uma confirmação por WhatsApp.
+              {t("whatsappNote")}
             </p>
           </div>
         )}
@@ -472,15 +475,15 @@ export default function BookingPage() {
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             </div>
-            <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-2">Agendamento confirmado!</h2>
+            <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-2">{t("doneTitle")}</h2>
             <p className="text-[13px] text-[#6B6A66] mb-1">{selectedType?.name}</p>
             {selectedPractitioner && (
-              <p className="text-[12px] text-[#A09E98] mb-1">com {selectedPractitioner.display_name}</p>
+              <p className="text-[12px] text-[#A09E98] mb-1">{t("doneWith", { name: selectedPractitioner.display_name })}</p>
             )}
             <p className="text-[13px] font-medium text-[#0F1A2E] mb-6 capitalize">{appointmentDate}</p>
             <p className="text-[12px] text-[#A09E98]">
-              Uma confirmação foi enviada para o seu WhatsApp.<br />
-              Até lá!
+              {t("doneConfirmLine1")}<br />
+              {t("doneConfirmLine2")}
             </p>
           </div>
         )}

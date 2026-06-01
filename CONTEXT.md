@@ -115,6 +115,10 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - 4a-2: assessment-form-builder, assessment-form-editor (compartilham forms.builder), assessment-fill-form (forms.fill)
   - Conteúdo dos templates (nomes/perguntas/tags do catálogo) deixado como dado
   - Validado: tsc do código limpo, paridade PT/EN (11 namespaces), ICU compila
+- ✅ i18n Fase 5b (01/06/2026): Agendamento online — **namespace `booking`**
+  - `app/book/[slug]/page.tsx` (fluxo público: profissional → serviço → data → horário → dados → confirmação)
+  - STEP_LABELS → STEP_LABEL_KEYS resolvido via t; datas via useLocale; plurais/interpolação (minutes, continueWith, doneWith)
+  - Validado: tsc do código limpo, paridade PT/EN (19 namespaces), ICU compila
 - ✅ i18n Fase 5a (01/06/2026): Portal do paciente — **namespace `portal`**
   - Entrada: `app/portal/page.tsx`, `portal-access-form.tsx`, `verificar/page.tsx`
   - Subcomponentes `components/patient-portal/*`: `patient-portal-dashboard.tsx` (1145 linhas — banners, próxima sessão, pacote/plano, insights, exames, protocolo, histórico sessões/pagamentos, agendamentos, intake, documentos, meus dados, LGPD), `portal-booking-modal.tsx`, `portal-chat.tsx`, `nps-widget.tsx`, `packages-section.tsx`, `patient-push-prompt.tsx`
