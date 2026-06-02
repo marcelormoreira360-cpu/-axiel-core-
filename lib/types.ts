@@ -347,6 +347,8 @@ export type ActionSuggestion = {
   action_key: string;
   title: string;
   description: string | null;
+  content_key: string | null;
+  content_params: Record<string, string | number> | null;
   priority: ActionSuggestionPriority;
   category: ActionSuggestionCategory;
   status: ActionSuggestionStatus;

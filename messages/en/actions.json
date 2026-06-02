@@ -25,5 +25,52 @@
     "emptyText": "The system will surface the next steps as patients, leads, sessions, and follow-ups are added.",
     "viewAll": "View all next steps",
     "backToDashboard": "Back to dashboard"
+  },
+  "suggestions": {
+    "aiReviewNeedsChanges": {
+      "title": "Review AI insight for {name}",
+      "description": "Needs adjustment. Review the updated insight.",
+      "reason": "AI insights should be reviewed before becoming final."
+    },
+    "aiReviewReady": {
+      "title": "Review AI insight for {name}",
+      "description": "An insight is ready for review.",
+      "reason": "AI insights should be reviewed before becoming final."
+    },
+    "followUpDue": {
+      "title": "Follow up with {name}",
+      "description": "{text}",
+      "reason": "This follow-up is due now."
+    },
+    "followUpSoon": {
+      "title": "Follow up with {name}",
+      "description": "{text}",
+      "reason": "This follow-up is coming up soon."
+    },
+    "newLead": {
+      "title": "New lead ready to schedule",
+      "description": "{name}{complaint}. Give them one clear next step.",
+      "reason": "New leads should be contacted quickly while interest is fresh."
+    },
+    "leadReadyScheduled": {
+      "title": "This lead is ready to convert",
+      "description": "{name} is already scheduled. Give them one clear next step.",
+      "reason": "The lead is already warm in the pipeline."
+    },
+    "leadReadyContacted": {
+      "title": "This lead is ready to schedule",
+      "description": "{name} is already contacted. Give them one clear next step.",
+      "reason": "The lead is already warm in the pipeline."
+    },
+    "patientNoReturn30": {
+      "title": "This patient has not returned in 30 days",
+      "description": "{name} may need a simple check-in or next-session reminder.",
+      "reason": "Last recorded session was {days} days ago."
+    },
+    "patientNoSession": {
+      "title": "Give this patient a next step",
+      "description": "{name} is active but has no session on record yet.",
+      "reason": "Active patients should have a session, note, or follow-up path."
+    }
   }
 }

@@ -9,6 +9,13 @@ export async function ActionSuggestionCard({ action, compact = false }: { action
   const t = await getTranslations("actions");
   const isDone = action.status === "completed" || action.status === "ignored";
 
+  // Conteúdo localizado via content_key + params; fallback para o texto EN
+  // persistido (linhas antigas, anteriores à migration 050).
+  const params = (action.content_params ?? {}) as Record<string, string | number>;
+  const titleText = action.content_key ? t(`suggestions.${action.content_key}.title`, params) : action.title;
+  const descText = action.content_key ? t(`suggestions.${action.content_key}.description`, params) : action.description;
+  const reasonText = action.content_key ? t(`suggestions.${action.content_key}.reason`, params) : action.reason;
+
   return (
     <div className={cn("rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md", isDone && "opacity-60")}>
       <div className="flex items-start justify-between gap-3">
@@ -22,9 +29,9 @@ export async function ActionSuggestionCard({ action, compact = false }: { action
             )}>{t(`priority.${action.priority}`)}</span>
             <span className="rounded-full bg-axiel-soft px-3 py-1 text-xs font-semibold text-black/45">{t(`status.${action.status}`)}</span>
           </div>
-          <h3 className="mt-3 text-lg font-semibold tracking-tight">{action.title}</h3>
-          {action.description ? <p className="mt-1 text-sm leading-5 text-black/55">{action.description}</p> : null}
-          {!compact && action.reason ? <p className="mt-2 text-xs leading-5 text-black/40">{t("why")} {action.reason}</p> : null}
+          <h3 className="mt-3 text-lg font-semibold tracking-tight">{titleText}</h3>
+          {descText ? <p className="mt-1 text-sm leading-5 text-black/55">{descText}</p> : null}
+          {!compact && reasonText ? <p className="mt-2 text-xs leading-5 text-black/40">{t("why")} {reasonText}</p> : null}
         </div>
         {action.suggested_url ? (
           <Link href={action.suggested_url} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-axiel-soft transition hover:bg-black hover:text-white">

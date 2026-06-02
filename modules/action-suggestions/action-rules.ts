@@ -13,6 +13,10 @@ export type ActionSuggestionDraft = {
   action_key: string;
   title: string;
   description: string;
+  // i18n: chave de conteúdo + params, traduzidos no render (actions.suggestions.*).
+  // title/description/reason permanecem como fallback em EN.
+  content_key: string;
+  content_params: Record<string, string | number>;
   priority: "high" | "medium" | "low";
   category: "patient" | "lead" | "schedule" | "follow_up" | "system";
   entity_type: "patient" | "lead" | "appointment" | "follow_up" | "clinic" | null;
@@ -53,6 +57,8 @@ export function buildActionSuggestions(input: {
         action_key: `ai_review:${review.id}`,
         title: `Review AI insight for ${review.patient_name}`,
         description: review.review_status === "needs_changes" ? "Needs adjustment. Review the updated insight." : "An insight is ready for review.",
+        content_key: review.review_status === "needs_changes" ? "aiReviewNeedsChanges" : "aiReviewReady",
+        content_params: { name: review.patient_name },
         priority: review.review_status === "needs_changes" ? "high" : "medium",
         category: "patient",
         entity_type: "patient",
@@ -73,6 +79,8 @@ export function buildActionSuggestions(input: {
           action_key: `follow_up:${followUp.id}`,
           title: `Follow up with ${followUp.patients?.full_name ?? "this patient"}`,
           description: followUp.title,
+          content_key: daysUntilDue <= 0 ? "followUpDue" : "followUpSoon",
+          content_params: { name: followUp.patients?.full_name ?? "this patient", text: followUp.title },
           priority: daysUntilDue <= 0 ? "high" : "medium",
           category: "follow_up",
           entity_type: "follow_up",
@@ -92,6 +100,8 @@ export function buildActionSuggestions(input: {
         action_key: `new_lead:${lead.id}`,
         title: "New lead ready to schedule",
         description: `${lead.full_name}${lead.main_complaint ? ` — ${lead.main_complaint}` : ""}. Give them one clear next step.`,
+        content_key: "newLead",
+        content_params: { name: lead.full_name, complaint: lead.main_complaint ? ` — ${lead.main_complaint}` : "" },
         priority: "medium",
         category: "lead",
         entity_type: "lead",
@@ -110,6 +120,8 @@ export function buildActionSuggestions(input: {
         action_key: `lead_ready:${lead.id}:${lead.stage}`,
         title: lead.stage === "scheduled" ? "This lead is ready to convert" : "This lead is ready to schedule",
         description: `${lead.full_name} is already ${lead.stage.replaceAll("_", " ")}. Give them one clear next step.`,
+        content_key: lead.stage === "scheduled" ? "leadReadyScheduled" : "leadReadyContacted",
+        content_params: { name: lead.full_name },
         priority: lead.stage === "scheduled" ? "high" : "medium",
         category: "lead",
         entity_type: "lead",
@@ -132,6 +144,8 @@ export function buildActionSuggestions(input: {
           action_key: `patient_no_return_30:${patient.id}`,
           title: "This patient has not returned in 30 days",
           description: `${patient.full_name} may need a simple check-in or next-session reminder.`,
+          content_key: "patientNoReturn30",
+          content_params: { name: patient.full_name, days: daysSinceLastSession },
           priority: daysSinceLastSession >= 45 ? "high" : "medium",
           category: "patient",
           entity_type: "patient",
@@ -147,6 +161,8 @@ export function buildActionSuggestions(input: {
           action_key: `patient_no_session:${patient.id}`,
           title: "Give this patient a next step",
           description: `${patient.full_name} is active but has no session on record yet.`,
+          content_key: "patientNoSession",
+          content_params: { name: patient.full_name },
           priority: "low",
           category: "patient",
           entity_type: "patient",

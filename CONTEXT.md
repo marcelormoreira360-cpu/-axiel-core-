@@ -163,8 +163,12 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - `components/action-suggestion-card.tsx` agora **async server component** com `getTranslations`: prioridade, status, "Por quê:", botões Aceitar/Concluir/Ignorar/Concluída (o `title`/`description`/`reason` continuam vindo do gerador persistido — ver abaixo)
   - `components/action-suggestions-panel.tsx` (usado em leads/[id]) agora async: eyebrow, título, subtítulo, empty state, "Ver todos" — **removido `getTerm` daqui** (substituído por `actions.panel.*`)
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **32 namespaces**
-  - **Permanece como decisão de produto (não tradução simples)**:
-    - **Conteúdo gerado das sugestões** (`modules/action-suggestions/action-rules.ts`): títulos/descrições são gerados em EN e **persistidos no banco** (via `syncActionSuggestions`). Localizar exige reestruturar para guardar chave+params (mudança de dados) ou gerar por locale no sync.
+  - ✅ **Conteúdo gerado das sugestões reestruturado (content_key + params)** (01/06/2026):
+    - **Migration `050_action_suggestion_content.sql`** — adiciona `content_key text` + `content_params jsonb` em `action_suggestions`. ⚠️ **DEPENDÊNCIA DE DEPLOY**: o código agora envia essas colunas no `upsert` do `syncActionSuggestions`; **a migration 050 precisa estar aplicada em produção antes/junto deste deploy**, senão `/actions` e `/leads/[id]` quebram (coluna inexistente).
+    - `action-rules.ts`: cada draft emite `content_key` (aiReviewNeedsChanges/Ready, followUpDue/Soon, newLead, leadReadyScheduled/Contacted, patientNoReturn30, patientNoSession) + `content_params`; title/description/reason em EN mantidos como **fallback** para linhas antigas (pré-050).
+    - `action-suggestion-card.tsx` renderiza `t(\`suggestions.${content_key}.{title,description,reason}\`, params)` com fallback ao texto persistido quando `content_key` é null.
+    - Templates em `actions.suggestions.*` (PT/EN); `followUp*` usa `{text}` (título do follow-up = dado do usuário, passthrough).
+    - **Permanece como decisão de produto (não tradução simples)**:
     - **Glossário `getTerm`** (`modules/ui/terminology.ts`): termos fixos EN (Session/Insight/Next Step) com regra de compliance `PROHIBITED_UI_TERMS`; ainda usado em `app/patients/[id]/page.tsx`, `clinical-insight.tsx`, `guided-ai-insights-panel.tsx` **e nos prompts de IA** (`modules/ai-insights/governance.ts`, `guardrails.ts`). Traduzir afeta a camada de IA — manter EN é intencional.
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)

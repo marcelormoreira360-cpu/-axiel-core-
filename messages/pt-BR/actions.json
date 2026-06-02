@@ -25,5 +25,52 @@
     "emptyText": "O sistema vai destacar os próximos passos conforme pacientes, leads, sessões e follow-ups forem adicionados.",
     "viewAll": "Ver todos os próximos passos",
     "backToDashboard": "Voltar ao painel"
+  },
+  "suggestions": {
+    "aiReviewNeedsChanges": {
+      "title": "Revisar insight de IA de {name}",
+      "description": "Precisa de ajuste. Revise o insight atualizado.",
+      "reason": "Insights de IA devem ser revisados antes de virarem finais."
+    },
+    "aiReviewReady": {
+      "title": "Revisar insight de IA de {name}",
+      "description": "Um insight está pronto para revisão.",
+      "reason": "Insights de IA devem ser revisados antes de virarem finais."
+    },
+    "followUpDue": {
+      "title": "Fazer follow-up com {name}",
+      "description": "{text}",
+      "reason": "Este follow-up vence agora."
+    },
+    "followUpSoon": {
+      "title": "Fazer follow-up com {name}",
+      "description": "{text}",
+      "reason": "Este follow-up está chegando."
+    },
+    "newLead": {
+      "title": "Novo lead pronto para agendar",
+      "description": "{name}{complaint}. Dê um próximo passo claro.",
+      "reason": "Leads novos devem ser contatados rápido enquanto o interesse está fresco."
+    },
+    "leadReadyScheduled": {
+      "title": "Este lead está pronto para converter",
+      "description": "{name} já está agendado. Dê um próximo passo claro.",
+      "reason": "O lead já está aquecido no funil."
+    },
+    "leadReadyContacted": {
+      "title": "Este lead está pronto para agendar",
+      "description": "{name} já foi contatado. Dê um próximo passo claro.",
+      "reason": "O lead já está aquecido no funil."
+    },
+    "patientNoReturn30": {
+      "title": "Este paciente não retorna há 30 dias",
+      "description": "{name} pode precisar de um contato simples ou lembrete de próxima sessão.",
+      "reason": "A última sessão registrada foi há {days} dias."
+    },
+    "patientNoSession": {
+      "title": "Dê um próximo passo a este paciente",
+      "description": "{name} está ativo mas ainda não tem sessão registrada.",
+      "reason": "Pacientes ativos devem ter uma sessão, nota ou follow-up."
+    }
   }
 }
