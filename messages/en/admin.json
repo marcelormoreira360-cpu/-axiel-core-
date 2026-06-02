@@ -1,0 +1,31 @@
+{
+  "eyebrow": "Administration",
+  "audit": {
+    "title": "Audit Log",
+    "subtitle": "Tracking of all system actions — visible to administrators only.",
+    "statActions": "Recorded actions",
+    "statComms": "Communications",
+    "statLast": "Last action",
+    "tabAudit": "System actions",
+    "tabComm": "Communications",
+    "filterAction": "Filter action…",
+    "filter": "Filter",
+    "clear": "Clear",
+    "noComms": "No communications recorded.",
+    "pagination": "Page {page} of {pages} · {count} records",
+    "prev": "← Previous",
+    "next": "Next →",
+    "commCols": { "time": "Time", "channel": "Channel", "patient": "Patient", "to": "To", "type": "Type", "status": "Status", "provider": "Provider" }
+  },
+  "table": {
+    "empty": "No actions recorded with these filters.",
+    "system": "System",
+    "fields": "{count, plural, one {# field} other {# fields}}",
+    "cols": { "time": "Time", "user": "User", "action": "Action", "entity": "Entity", "entityId": "Entity ID", "details": "Details" }
+  },
+  "plans": {
+    "eyebrow": "Platform Admin",
+    "title": "Plans",
+    "subtitle": "Review the commercial plan structure for AXIEL clinics."
+  }
+}

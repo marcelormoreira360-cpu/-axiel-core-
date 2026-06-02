@@ -1,4 +1,10 @@
 {
+  "fillPicker": {
+    "pickTitle": "Select a form",
+    "fillSubtitle": "Fill in all sections",
+    "pickSubtitle": "Choose which form to apply",
+    "emptyHint": "No forms created yet. <a>Create a form</a>"
+  },
   "list": {
     "title": "Forms",
     "count": "{count, plural, one {# active template} other {# active templates}}",

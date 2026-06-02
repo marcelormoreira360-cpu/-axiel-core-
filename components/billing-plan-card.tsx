@@ -1,23 +1,12 @@
+import { getTranslations } from "next-intl/server";
 import { formatPlanPrice, type CurrencyCode, type PlanConfig } from "@/modules/billing/plan-config";
 
-const FEATURE_LABELS: Record<string, string> = {
-  leads:                "CRM de leads",
-  schedule:             "Agenda completa",
-  forms:                "Formulários de anamnese",
-  patient_snapshot:     "Snapshot do paciente",
-  ai_insights:          "Insights com IA",
-  patient_portal:       "Portal do paciente",
-  product_support:      "Venda de produtos",
-  membership:           "Pacotes e assinaturas",
-  stripe_checkout:      "Checkout Stripe p/ pacientes",
-  follow_up_automation: "Automação de follow-up",
-  whatsapp_automation:  "WhatsApp automático",
-  audio_transcription:  "Transcrição por voz (IA)",
-  advanced_reports:     "Relatórios avançados",
-  multi_clinic:         "Múltiplas unidades",
-  advanced_permissions: "Permissões avançadas",
-  white_label:          "White-label",
-};
+const FEATURE_KEYS = new Set([
+  "leads", "schedule", "forms", "patient_snapshot", "ai_insights", "patient_portal",
+  "product_support", "membership", "stripe_checkout", "follow_up_automation",
+  "whatsapp_automation", "audio_transcription", "advanced_reports", "multi_clinic",
+  "advanced_permissions", "white_label",
+]);
 
 type Props = {
   plan: PlanConfig;
@@ -25,10 +14,12 @@ type Props = {
   currency?: CurrencyCode;
 };
 
-export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Props) {
+export async function BillingPlanCard({ plan, current = false, currency = "BRL" }: Props) {
+  const t = await getTranslations("pricing.billingCard");
+  const tp = await getTranslations("pricing");
   const enabledFeatures = Object.entries(plan.features)
     .filter(([, enabled]) => enabled)
-    .map(([key]) => FEATURE_LABELS[key] ?? key.replaceAll("_", " "));
+    .map(([key]) => (FEATURE_KEYS.has(key) ? t(`features.${key}`) : key.replaceAll("_", " ")));
 
   const isEnterprise = plan.slug === "enterprise";
   const priceLabel = formatPlanPrice(plan, currency);
@@ -46,7 +37,7 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
       {plan.recommended && (
         <div className="absolute -top-[10px] left-1/2 -translate-x-1/2">
           <span className="bg-[#0F6E56] text-white text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full whitespace-nowrap">
-            Recomendado
+            {t("recommended")}
           </span>
         </div>
       )}
@@ -55,7 +46,7 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
       {current && (
         <div className="absolute -top-[10px] right-[14px]">
           <span className="bg-[#E1F5EE] text-[#0F6E56] text-[9px] font-bold uppercase tracking-wider px-[10px] py-[3px] rounded-full border border-[#0F6E56]/20 whitespace-nowrap">
-            Plano atual
+            {t("current")}
           </span>
         </div>
       )}
@@ -63,7 +54,7 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
       {/* Plan name + description */}
       <div className="mb-[14px]">
         <p className="text-[15px] font-semibold text-[#0F1A2E]">{plan.name}</p>
-        <p className="text-[11px] text-[#A09E98] mt-[2px] leading-snug">{plan.description}</p>
+        <p className="text-[11px] text-[#A09E98] mt-[2px] leading-snug">{tp(`planDesc.${plan.slug}`)}</p>
       </div>
 
       {/* Price */}
@@ -72,7 +63,7 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
           {priceLabel}
         </p>
         {!isEnterprise && (
-          <p className="text-[10px] text-[#A09E98] mt-[3px]">/mês · cobrado mensalmente</p>
+          <p className="text-[10px] text-[#A09E98] mt-[3px]">{t("perMonth")}</p>
         )}
       </div>
 
@@ -100,25 +91,25 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
       <div className="mb-[16px] flex flex-wrap gap-[6px]">
         {plan.limits.patients !== null ? (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            até {plan.limits.patients.toLocaleString("pt-BR")} pacientes
+            {t("upToPatients", { count: plan.limits.patients })}
           </span>
         ) : (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            pacientes ilimitados
+            {t("unlimitedPatients")}
           </span>
         )}
         {plan.limits.users !== null ? (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            {plan.limits.users} usuários
+            {t("usersCount", { count: plan.limits.users })}
           </span>
         ) : (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            usuários ilimitados
+            {t("unlimitedUsers")}
           </span>
         )}
         {plan.limits.locations !== null && (
           <span className="text-[9px] font-medium bg-[#F4F3EF] text-[#6B6A66] px-[7px] py-[3px] rounded-full">
-            {plan.limits.locations === 1 ? "1 unidade" : `${plan.limits.locations} unidades`}
+            {plan.limits.locations === 1 ? t("oneLocation") : t("locationsCount", { count: plan.limits.locations })}
           </span>
         )}
       </div>
@@ -126,14 +117,14 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
       {/* CTA */}
       {current ? (
         <div className="text-center py-[9px] rounded-[8px] text-[12px] font-medium text-[#0F6E56] bg-[#E1F5EE] border border-[#0F6E56]/20">
-          Plano atual
+          {t("current")}
         </div>
       ) : isEnterprise ? (
         <a
           href="mailto:contato@axiel.com.br?subject=Enterprise"
           className="block text-center py-[9px] rounded-[8px] text-[12px] font-medium text-[#0F1A2E] bg-white border border-black/[.10] hover:bg-[#F4F3EF] transition"
         >
-          Falar com vendas
+          {t("talkToSales")}
         </a>
       ) : (
         <form action="/api/stripe/checkout" method="POST">
@@ -147,7 +138,7 @@ export function BillingPlanCard({ plan, current = false, currency = "BRL" }: Pro
                 : "bg-[#0F1A2E] text-white hover:bg-[#1a2d47]",
             ].join(" ")}
           >
-            Assinar {plan.name}
+            {t("subscribe", { plan: plan.name })}
           </button>
         </form>
       )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import type { AuditLogRow } from "@/services/audit-service";
 
 const ACTION_COLORS: Record<string, { dot: string; badge: string }> = {
@@ -27,14 +28,15 @@ function getActionColor(action: string): keyof typeof ACTION_COLORS {
   return "gray";
 }
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
+function formatDateTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: "2-digit", month: "short",
     hour: "2-digit", minute: "2-digit", second: "2-digit",
   });
 }
 
 function MetadataCell({ metadata }: { metadata: Record<string, unknown> }) {
+  const t = useTranslations("admin.table");
   const [open, setOpen] = useState(false);
   const keys = Object.keys(metadata);
   if (keys.length === 0) return <span className="text-[#A09E98]">—</span>;
@@ -48,7 +50,7 @@ function MetadataCell({ metadata }: { metadata: Record<string, unknown> }) {
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={`transition-transform ${open ? "rotate-90" : ""}`}>
           <path d="M3 2l4 3-4 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        {keys.length} campo{keys.length > 1 ? "s" : ""}
+        {t("fields", { count: keys.length })}
       </button>
       {open && (
         <pre className="mt-2 text-[10px] text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.04] border border-black/[.07] dark:border-white/[.07] rounded-[6px] px-[8px] py-[6px] overflow-x-auto max-w-[260px]">
@@ -60,6 +62,8 @@ function MetadataCell({ metadata }: { metadata: Record<string, unknown> }) {
 }
 
 export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
+  const t = useTranslations("admin.table");
+  const locale = useLocale();
   if (rows.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -69,7 +73,7 @@ export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
             <path d="M6 6h6M6 9h6M6 12h4" stroke="#A09E98" strokeWidth="1.3" strokeLinecap="round"/>
           </svg>
         </div>
-        <p className="text-[13px] text-[#A09E98]">Nenhuma ação registrada com esses filtros.</p>
+        <p className="text-[13px] text-[#A09E98]">{t("empty")}</p>
       </div>
     );
   }
@@ -79,7 +83,7 @@ export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
       <table className="w-full text-[12px]">
         <thead>
           <tr className="border-b border-black/[.05] dark:border-white/[.05]">
-            {["Hora", "Usuário", "Ação", "Entidade", "ID da entidade", "Detalhes"].map((h) => (
+            {[t("cols.time"), t("cols.user"), t("cols.action"), t("cols.entity"), t("cols.entityId"), t("cols.details")].map((h) => (
               <th key={h} className="text-left text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] px-4 py-3 whitespace-nowrap">
                 {h}
               </th>
@@ -90,13 +94,13 @@ export function AuditLogTable({ rows }: { rows: AuditLogRow[] }) {
           {rows.map((row) => {
             const colorKey = getActionColor(row.action);
             const colors = ACTION_COLORS[colorKey];
-            const userName = row.users?.full_name ?? row.users?.email ?? "Sistema";
+            const userName = row.users?.full_name ?? row.users?.email ?? t("system");
 
             return (
               <tr key={row.id} className="hover:bg-[#FAFAF8] dark:hover:bg-white/[.02] transition group">
                 {/* Hora */}
                 <td className="px-4 py-[10px] text-[#A09E98] whitespace-nowrap font-mono text-[11px]">
-                  {formatDateTime(row.created_at)}
+                  {formatDateTime(row.created_at, locale)}
                 </td>
 
                 {/* Usuário */}

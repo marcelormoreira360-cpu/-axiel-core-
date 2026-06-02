@@ -169,6 +169,18 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
     - `action-suggestion-card.tsx` renderiza `t(\`suggestions.${content_key}.{title,description,reason}\`, params)` com fallback ao texto persistido quando `content_key` é null.
     - Templates em `actions.suggestions.*` (PT/EN); `followUp*` usa `{text}` (título do follow-up = dado do usuário, passthrough).
     - **Permanece como decisão de produto (não tradução simples)**:
+- 🧹 i18n — correções da auditoria (02/06/2026): **gaps achados na auditoria, todos corrigidos**
+  - **3 rotas de PDF/CSV/XLSX** que estavam 100% PT e EM USO: `app/api/reports/financeiro` (KPIs, por método, tabela), `app/api/reports/repasse`, `app/api/reports/paciente/[id]` (prontuário completo) — todas via `getServerT(locale,"pdf")`; **namespace `pdf` muito expandido** (`financeReport`, `repasse`, `record`, `paymentMethod`, mais `col.*`). Helpers `ptDate/ptDateTime` agora recebem locale.
+  - **Telas admin**: `app/admin/audit` + `components/audit-log-table.tsx` + `app/admin/plans` → **novo namespace `admin`** (datas via locale; `.map((t)` renomeado p/ `tab2`).
+  - `app/patients/[id]/forms/new` → `forms.fillPicker.*`.
+  - **CSV export de pacientes** (`app/api/patients/export`) → headers/datas via locale (`pdf.col.*`).
+  - **billing-plan-card.tsx** (usado em /billing e /onboarding/plan) → **`pricing.billingCard.*`** (features, limites, CTAs); virou async server component.
+  - **getTerm na UI de tráfego** (`app/patients/[id]/page.tsx`) → `common.terms` (session/insights). Helper `getTerm` permanece para a camada de IA.
+  - **Processo**: `scripts/verify-i18n.mjs` commitado; `package.json` → `typecheck` agora usa `tsconfig.check.json` (confiável), novo `verify:i18n`.
+  - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **33 namespaces**; rescan sem `pt-BR` hardcoded em UI.
+  - **Ainda em EN por design (camada de IA/compliance, não tradução simples)**:
+    - `components/clinical-insight.tsx` e `components/guided-ai-insights-panel.tsx` — componentes de **apresentação de insight de IA**, síncronos e usados em rota de PDF; têm copy própria em EN ("Key Notes", "What may be connected", "Patterns", "Placeholder"). Migrar exige torná-los async (impacto no render do PDF) — refactor à parte.
+    - Datas internas pt-BR fixas em contexto de IA / nota de webhook / título de broadcast (`session/actions.ts`, `health-agent`, `stripe/webhook`, `automacoes/broadcast`) — dados/prompt, não UI.
     - **Glossário `getTerm`** (`modules/ui/terminology.ts`): termos fixos EN (Session/Insight/Next Step) com regra de compliance `PROHIBITED_UI_TERMS`; ainda usado em `app/patients/[id]/page.tsx`, `clinical-insight.tsx`, `guided-ai-insights-panel.tsx` **e nos prompts de IA** (`modules/ai-insights/governance.ts`, `guardrails.ts`). Traduzir afeta a camada de IA — manter EN é intencional.
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)

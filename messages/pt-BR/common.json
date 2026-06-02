@@ -13,6 +13,13 @@
     "viewMore": "Ver mais",
     "viewAll": "Ver tudo"
   },
+  "terms": {
+    "insight": "Insight",
+    "insights": "Insights",
+    "insightsLower": "insights",
+    "session": "Sessão",
+    "nextSteps": "Próximos passos"
+  },
   "roles": {
     "admin": "Admin",
     "platform_admin": "Admin da plataforma",

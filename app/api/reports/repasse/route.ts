@@ -3,6 +3,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { getRepasseHistory } from "@/services/repasse-service";
 import { formatBRL } from "@/services/finance-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -35,10 +36,13 @@ export async function GET(req: Request) {
   const allHistory = await getRepasseHistory(clinic.id);
   const history    = month ? allHistory.filter((r) => r.period_month === month) : allHistory;
   const slug       = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const locale = await resolveClinicLocale(clinic.id);
+  const t = await getServerT(locale, "pdf");
+  const statusLabel = (s: string) => (s === "paid" ? t("repasse.statusPaid") : t("repasse.statusPending"));
 
   // ── CSV ──────────────────────────────────────────────────────────────────
   if (format === "csv") {
-    const headers = ["Período", "Profissional", "Sessões", "Receita bruta (R$)", "% Repasse", "Repasse (R$)", "Status"];
+    const headers = [t("repasse.colPeriod"), t("repasse.colProfessional"), t("repasse.colSessions"), t("repasse.colGross"), t("repasse.colPct"), t("repasse.colRepasse"), t("repasse.colStatus")];
     const rows = history.map((r) => {
       const pct = r.gross_revenue_cents > 0
         ? Math.round((r.repasse_cents / r.gross_revenue_cents) * 100)
@@ -50,7 +54,7 @@ export async function GET(req: Request) {
         (r.gross_revenue_cents / 100).toFixed(2).replace(".", ","),
         `${pct}%`,
         (r.repasse_cents / 100).toFixed(2).replace(".", ","),
-        r.status === "paid" ? "Pago" : "Pendente",
+        statusLabel(r.status),
       ];
     });
     const csv = [
@@ -79,19 +83,19 @@ export async function GET(req: Request) {
         receita:      r.gross_revenue_cents / 100,
         pct:          `${pct}%`,
         repasse:      r.repasse_cents / 100,
-        status:       r.status === "paid" ? "Pago" : "Pendente",
+        status:       statusLabel(r.status),
       };
     });
     const buf = await buildExcelBuffer([{
-      name: "Repasse",
+      name: t("repasse.title"),
       columns: [
-        { header: "Período",          key: "periodo",      width: 14 },
-        { header: "Profissional",     key: "profissional", width: 30 },
-        { header: "Sessões",          key: "sessoes",      width: 10 },
-        { header: "Receita bruta (R$)", key: "receita",   width: 18 },
-        { header: "% Repasse",        key: "pct",          width: 12 },
-        { header: "Repasse (R$)",     key: "repasse",      width: 16 },
-        { header: "Status",           key: "status",       width: 12 },
+        { header: t("repasse.colPeriod"),       key: "periodo",      width: 14 },
+        { header: t("repasse.colProfessional"), key: "profissional", width: 30 },
+        { header: t("repasse.colSessions"),     key: "sessoes",      width: 10 },
+        { header: t("repasse.colGross"),        key: "receita",      width: 18 },
+        { header: t("repasse.colPct"),          key: "pct",          width: 12 },
+        { header: t("repasse.colRepasse"),      key: "repasse",      width: 16 },
+        { header: t("repasse.colStatus"),       key: "status",       width: 12 },
       ],
       rows: xlsxRows,
     }]);
@@ -99,22 +103,22 @@ export async function GET(req: Request) {
   }
 
   // ── PDF (default) ─────────────────────────────────────────────────────────
-  const doc = new PDFDocument({ margin: 56, size: "A4", info: { Title: "Relatório de Repasse", Author: clinic.name } });
+  const doc = new PDFDocument({ margin: 56, size: "A4", info: { Title: t("repasse.title"), Author: clinic.name } });
 
   // Header
   doc.rect(0, 0, 595, 80).fill("#0F6E56");
   doc.fillColor("white").font("Helvetica-Bold").fontSize(18).text(clinic.name, 56, 24);
-  doc.fillColor("rgba(255,255,255,0.7)").font("Helvetica").fontSize(10).text("Relatório de Repasse Médico", 56, 48);
-  doc.fillColor("rgba(255,255,255,0.4)").fontSize(9).text(`Gerado em ${new Date().toLocaleString("pt-BR")}`, 56, 62);
+  doc.fillColor("rgba(255,255,255,0.7)").font("Helvetica").fontSize(10).text(t("repasse.titleFull"), 56, 48);
+  doc.fillColor("rgba(255,255,255,0.4)").fontSize(9).text(t("generatedAt", { date: new Date().toLocaleString(locale) }), 56, 62);
   doc.y = 100;
 
   if (month) {
-    doc.fillColor("#6b7280").font("Helvetica").fontSize(9).text(`PERÍODO: ${month}`, { characterSpacing: 0.5 });
+    doc.fillColor("#6b7280").font("Helvetica").fontSize(9).text(t("period", { label: month }), { characterSpacing: 0.5 });
     doc.moveDown(1);
   }
 
   if (history.length === 0) {
-    doc.fillColor("#9ca3af").font("Helvetica").fontSize(11).text("Nenhum repasse encontrado para o período selecionado.");
+    doc.fillColor("#9ca3af").font("Helvetica").fontSize(11).text(t("repasse.empty"));
   } else {
     // Group by period
     const byPeriod = history.reduce<Record<string, typeof history>>((acc, r) => {
@@ -132,18 +136,18 @@ export async function GET(req: Request) {
 
       // Summary
       doc.fillColor("#374151").font("Helvetica").fontSize(10)
-         .text(`Receita bruta: ${formatBRL(totalGross)}  ·  Total repasse: ${formatBRL(totalRepasse)}`);
+         .text(t("repasse.summary", { gross: formatBRL(totalGross), total: formatBRL(totalRepasse) }));
       doc.moveDown(0.5);
 
       // Table header
       const hY = doc.y;
       doc.rect(56, hY, 487, 18).fillColor("#f3f4f6").fill();
       [
-        { x: 56,  w: 160, label: "Profissional" },
-        { x: 220, w:  80, label: "Sessões" },
-        { x: 304, w: 110, label: "Receita bruta" },
+        { x: 56,  w: 160, label: t("repasse.colProfessional") },
+        { x: 220, w:  80, label: t("repasse.colSessions") },
+        { x: 304, w: 110, label: t("repasse.colGrossShort") },
         { x: 418, w:  60, label: "%" },
-        { x: 482, w:  80, label: "Repasse" },
+        { x: 482, w:  80, label: t("repasse.colRepasseShort") },
       ].forEach((c) => {
         doc.fillColor("#6b7280").font("Helvetica-Bold").fontSize(8)
            .text(c.label, c.x + 4, hY + 5, { width: c.w - 4 });
@@ -174,7 +178,7 @@ export async function GET(req: Request) {
 
   doc.moveDown(2);
   doc.fillColor("#d1d5db").font("Helvetica").fontSize(8)
-     .text(`${clinic.name} · Relatório gerado pelo AXIEL Core`, { align: "center" });
+     .text(t("generatedBy", { clinic: clinic.name }), { align: "center" });
 
   const buffer = await pdfToBuffer(doc);
 

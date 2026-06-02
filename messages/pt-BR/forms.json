@@ -1,4 +1,10 @@
 {
+  "fillPicker": {
+    "pickTitle": "Selecionar formulário",
+    "fillSubtitle": "Preencha todas as seções",
+    "pickSubtitle": "Escolha qual formulário aplicar",
+    "emptyHint": "Nenhum formulário criado ainda. <a>Criar formulário</a>"
+  },
   "list": {
     "title": "Formulários",
     "count": "{count, plural, one {# modelo ativo} other {# modelos ativos}}",

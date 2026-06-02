@@ -1,4 +1,5 @@
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -17,6 +18,8 @@ export async function GET() {
   }
 
   const clinicId = profile.clinic_id;
+  const locale = await resolveClinicLocale(clinicId);
+  const t = await getServerT(locale, "pdf");
 
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
@@ -38,15 +41,15 @@ export async function GET() {
   const today = new Date().toISOString().slice(0, 10);
 
   const csvHeaders = [
-    "Nome",
-    "Email",
-    "Telefone",
-    "Data de Nascimento",
-    "Cidade",
-    "Estado",
-    "Total de Sessões",
-    "Última Sessão",
-    "Cadastrado em",
+    t("col.name"),
+    t("col.email"),
+    t("col.phone"),
+    t("col.dob"),
+    t("col.city"),
+    t("col.state"),
+    t("col.totalSessions"),
+    t("col.lastSession"),
+    t("col.registered"),
   ];
 
   type AppointmentRow = { id: string; starts_at: string };
@@ -64,7 +67,7 @@ export async function GET() {
       appts.length > 0
         ? new Date(
             Math.max(...appts.map((a) => new Date(a.starts_at).getTime()))
-          ).toLocaleDateString("pt-BR")
+          ).toLocaleDateString(locale)
         : "";
 
     return [
@@ -72,13 +75,13 @@ export async function GET() {
       p.email ?? "",
       p.phone ?? "",
       p.date_of_birth
-        ? new Date(p.date_of_birth).toLocaleDateString("pt-BR")
+        ? new Date(p.date_of_birth).toLocaleDateString(locale)
         : "",
       p.city ?? "",
       p.state ?? "",
       totalSessions,
       lastSession,
-      new Date(p.created_at).toLocaleDateString("pt-BR"),
+      new Date(p.created_at).toLocaleDateString(locale),
     ];
   });
 

@@ -13,7 +13,6 @@ import { getPatientExams, getPatientPrescriptions } from "@/services/exams-servi
 import { getPatientPackages } from "@/services/package-service";
 import { getPatientTreatmentPlans } from "@/services/treatment-plan-service";
 import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
-import { getTerm } from "@/modules/ui/terminology";
 import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
@@ -62,6 +61,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   const t = await getTranslations("patientProfile");
   const tStatus = await getTranslations("patients.list.status");
+  const tc = await getTranslations("common.terms");
   const locale = await getLocale();
 
   const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, activeSubscriptionResult] = await Promise.all([
@@ -297,7 +297,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               href={`/patients/${patient.id}/insights`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
-              <span>AI {getTerm("insight", "lowerPlural")}</span>
+              <span>AI {tc("insightsLower")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
@@ -362,7 +362,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                     <p className="text-[9px] text-[#A09E98]">{formatDate(appt.starts_at, locale)}</p>
                     <div className="flex items-center gap-2">
                       <Link href={`/schedule/${appt.id}/session`} className="text-[11px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] transition">
-                        {getTerm("session")} {appointments.length - i}
+                        {tc("session")} {appointments.length - i}
                       </Link>
                       {i === 0 && (
                         <Link
