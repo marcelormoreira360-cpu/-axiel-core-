@@ -14,5 +14,34 @@
   "qaIntake": "Intake",
   "qaInsights": "AI Insights",
   "qaEvolution": "Evolução",
-  "qaForm": "Formulário"
+  "qaForm": "Formulário",
+  "video": {
+    "errorCreate": "Erro ao criar sala",
+    "errorUnknown": "Erro desconhecido",
+    "frameTitle": "Teleconsulta — {patient}",
+    "copyTitle": "Copiar link para o paciente",
+    "copied": "Copiado!",
+    "patientLink": "Link do paciente",
+    "endVideo": "Encerrar vídeo",
+    "withPatient": "Consulta com {patient}",
+    "clickToCreate": "Clique para criar a sala segura",
+    "creating": "Criando sala…",
+    "wait": "Aguarde…",
+    "retry": "Tentar novamente",
+    "start": "Iniciar videochamada",
+    "roomNote": "A sala é criada no momento da consulta com link privado e expira em 3 horas."
+  },
+  "notes": {
+    "micError": "Microfone não disponível. Verifique as permissões.",
+    "transcribeError": "Erro na transcrição",
+    "sessionNotes": "Notas da sessão",
+    "saving": "Salvando…",
+    "saved": "Salvo ✓",
+    "notesPlaceholder": "Observe e anote durante a consulta…",
+    "recordVoice": "Gravar voz",
+    "stop": "Parar",
+    "transcribing": "Transcrevendo…",
+    "keyObs": "Observações-chave",
+    "addObs": "Adicionar observação…"
+  }
 }

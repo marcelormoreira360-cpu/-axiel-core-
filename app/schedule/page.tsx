@@ -199,7 +199,7 @@ export default async function SchedulePage() {
         <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">{t("statNext")}</p>
           <p className="text-[18px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">
-            {nextSession ? formatTime(nextSession.starts_at) : "—"}
+            {nextSession ? formatTime(nextSession.starts_at, locale) : "—"}
           </p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">

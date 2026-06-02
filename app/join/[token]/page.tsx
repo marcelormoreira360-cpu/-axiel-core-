@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { getInviteByToken, acceptInvite, ROLE_LABELS } from "@/services/team-service";
+import { getInviteByToken, acceptInvite } from "@/services/team-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -15,6 +15,7 @@ async function getClinicName(clinicId: string): Promise<string> {
 export default async function JoinPage({ params }: Props) {
   const { token } = await params;
   const t = await getTranslations("join");
+  const tRoles = await getTranslations("common.roles");
 
   const invite = await getInviteByToken(token);
 
@@ -66,7 +67,7 @@ export default async function JoinPage({ params }: Props) {
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-1">{t("eyebrow")}</p>
         <h1 className="text-[20px] font-semibold text-[#0F1A2E] mb-1">{clinicName}</h1>
         <p className="text-[13px] text-[#6B6A66] mb-1">
-          {t.rich("invitedAs", { role: ROLE_LABELS[invite.role], b: (c) => <strong>{c}</strong> })}
+          {t.rich("invitedAs", { role: tRoles(invite.role), b: (c) => <strong>{c}</strong> })}
         </p>
         <p className="text-[12px] text-[#A09E98] mb-6">{invite.email}</p>
 

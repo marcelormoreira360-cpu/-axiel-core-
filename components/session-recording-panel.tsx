@@ -228,7 +228,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
             {patientName}
           </h1>
           <p className="text-[12px] text-white/40 mt-[2px] capitalize">
-            {t("meta", { date: sessionDate, time: formatTime(appointment.starts_at), minutes: appointment.duration_minutes })}
+            {t("meta", { date: sessionDate, time: formatTime(appointment.starts_at, locale), minutes: appointment.duration_minutes })}
           </p>
         </div>
         <div className="flex items-center gap-[8px] shrink-0">
@@ -554,7 +554,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-[11px] text-[#A09E98]">{t("start")}</span>
-                <span className="text-[11px] font-medium text-[#0F1A2E]">{formatTime(appointment.starts_at)}</span>
+                <span className="text-[11px] font-medium text-[#0F1A2E]">{formatTime(appointment.starts_at, locale)}</span>
               </div>
             </div>
           </div>

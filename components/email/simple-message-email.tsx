@@ -1,12 +1,18 @@
+import type { EmailT } from "./base-email";
+
 export function SimpleMessageEmail({
   body,
   clinicName,
+  t,
+  locale = "pt-BR",
 }: {
   body: string;
   clinicName?: string;
+  t: EmailT;
+  locale?: string;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang={locale}>
       <head><meta charSet="utf-8" /></head>
       <body style={{ margin: 0, padding: 0, backgroundColor: "#F8FAF9", fontFamily: "Arial, Helvetica, sans-serif" }}>
         <table width="100%" cellPadding={0} cellSpacing={0} style={{ backgroundColor: "#F8FAF9", padding: "32px 16px" }}>
@@ -48,7 +54,7 @@ export function SimpleMessageEmail({
                         textAlign: "center",
                       }}>
                         <p style={{ margin: 0, fontSize: 11, color: "#A09E98" }}>
-                          {clinicName ? `Mensagem enviada por ${clinicName}.` : "Esta mensagem foi enviada pela sua clínica."}
+                          {clinicName ? t("simple.footerSentBy", { clinic: clinicName }) : t("simple.footerGeneric")}
                         </p>
                       </td>
                     </tr>

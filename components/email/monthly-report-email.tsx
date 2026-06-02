@@ -5,6 +5,7 @@ import {
   EmailDivider,
   EmailInfoBox,
   EmailButton,
+  type EmailT,
 } from "@/components/email/base-email";
 
 export interface MonthlyReportEmailProps {
@@ -18,14 +19,16 @@ export interface MonthlyReportEmailProps {
     activePackages: number;
     inactivePatients: number;
   };
+  t: EmailT;
+  locale?: string;
 }
 
-const ROWS: Array<{ icon: string; label: string; key: keyof MonthlyReportEmailProps["metrics"] }> = [
-  { icon: "💰", label: "Receita no mês",                    key: "revenue" },
-  { icon: "📅", label: "Sessões realizadas",                 key: "sessions" },
-  { icon: "👤", label: "Novos pacientes no mês",             key: "newPatients" },
-  { icon: "📦", label: "Pacotes ativos",                     key: "activePackages" },
-  { icon: "💤", label: "Pacientes sem sessão há 30+ dias",   key: "inactivePatients" },
+const ROWS: Array<{ icon: string; labelKey: string; key: keyof MonthlyReportEmailProps["metrics"] }> = [
+  { icon: "💰", labelKey: "monthly.rowRevenue",  key: "revenue" },
+  { icon: "📅", labelKey: "monthly.rowSessions", key: "sessions" },
+  { icon: "👤", labelKey: "monthly.rowNew",      key: "newPatients" },
+  { icon: "📦", labelKey: "monthly.rowPackages", key: "activePackages" },
+  { icon: "💤", labelKey: "monthly.rowInactive", key: "inactivePatients" },
 ];
 
 export function MonthlyReportEmail({
@@ -33,24 +36,28 @@ export function MonthlyReportEmail({
   monthName,
   appUrl,
   metrics,
+  t,
+  locale,
 }: MonthlyReportEmailProps) {
   return (
     <BaseEmail
       clinicName={clinicName}
-      previewText={`Relatório de ${monthName} — ${clinicName}`}
+      previewText={t("monthly.preview", { month: monthName, clinic: clinicName })}
+      t={t}
+      locale={locale}
     >
-      <EmailHeading>Relatório de {monthName}</EmailHeading>
-      <EmailText>Confira os números de {clinicName} em {monthName}.</EmailText>
+      <EmailHeading>{t("monthly.heading", { month: monthName })}</EmailHeading>
+      <EmailText>{t("monthly.intro", { clinic: clinicName, month: monthName })}</EmailText>
 
       <EmailDivider />
 
       {/* Metrics table */}
       <table width="100%" cellPadding={0} cellSpacing={0} style={{ borderCollapse: "collapse", borderRadius: 10, overflow: "hidden", border: "1px solid #E8E6E0", marginBottom: 8 }}>
         <tbody>
-          {ROWS.map(({ icon, label, key }, i) => (
+          {ROWS.map(({ icon, labelKey, key }, i) => (
             <tr key={key} style={{ backgroundColor: i % 2 === 0 ? "#FAFAF8" : "#FFFFFF" }}>
               <td style={{ padding: "10px 16px", fontSize: 13, color: "#374151", borderBottom: "1px solid #F0EFEB" }}>
-                {icon} {label}
+                {t(labelKey)}
               </td>
               <td style={{ padding: "10px 16px", fontSize: 13, fontWeight: 700, color: "#0F1A2E", textAlign: "right", borderBottom: "1px solid #F0EFEB", whiteSpace: "nowrap" }}>
                 {String(metrics[key])}
@@ -64,20 +71,16 @@ export function MonthlyReportEmail({
       {metrics.inactivePatients > 0 && (
         <EmailInfoBox>
           <p style={{ margin: 0, fontSize: 13, color: "#0F6E56", lineHeight: 1.6 }}>
-            <strong>💡 Dica de reengajamento:</strong> Você tem{" "}
-            <strong>{metrics.inactivePatients} paciente{metrics.inactivePatients !== 1 ? "s" : ""}</strong> sem sessão há mais
-            de 30 dias. Uma mensagem personalizada pode ser a oportunidade de retomada do tratamento.
+            {t.rich("monthly.tipReengage", { count: metrics.inactivePatients, b: (c: React.ReactNode) => <strong>{c}</strong> })}
           </p>
         </EmailInfoBox>
       )}
 
-      <EmailButton href={`${appUrl}/results`}>Ver análise completa →</EmailButton>
+      <EmailButton href={`${appUrl}/results`}>{t("monthly.cta")}</EmailButton>
 
       <EmailDivider />
 
-      <EmailText muted>
-        Este relatório é enviado automaticamente no início de cada mês pelo AXIEL Core.
-      </EmailText>
+      <EmailText muted>{t("monthly.footerAuto")}</EmailText>
     </BaseEmail>
   );
 }

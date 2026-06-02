@@ -4,23 +4,30 @@ import {
   EmailText,
   EmailButton,
   EmailDivider,
+  type EmailT,
 } from "./base-email";
 
 interface Props {
   clinicName: string;
   patientFirstName: string;
   portalUrl?: string | null;
+  t: EmailT;
+  locale?: string;
 }
 
 export function PatientWelcomeEmail({
   clinicName,
   patientFirstName,
   portalUrl,
+  t,
+  locale,
 }: Props) {
   return (
     <BaseEmail
       clinicName={clinicName}
-      previewText={`Bem-vindo(a) à ${clinicName}! Seu cadastro foi criado.`}
+      previewText={t("welcome.preview", { clinic: clinicName })}
+      t={t}
+      locale={locale}
     >
       <div style={{ textAlign: "center", marginBottom: 28 }}>
         <div style={{
@@ -36,41 +43,33 @@ export function PatientWelcomeEmail({
         }}>
           👋
         </div>
-        <EmailHeading>Bem-vindo(a), {patientFirstName}!</EmailHeading>
+        <EmailHeading>{t("welcome.heading", { name: patientFirstName })}</EmailHeading>
         <EmailText muted>
-          Seu cadastro na <strong>{clinicName}</strong> foi criado com sucesso.
+          {t.rich("welcome.subtitle", { clinic: clinicName, b: (c: React.ReactNode) => <strong>{c}</strong> })}
         </EmailText>
       </div>
 
-      <EmailText>
-        Estamos felizes em ter você como paciente. Aqui você poderá acompanhar sua evolução,
-        histórico de sessões e muito mais.
-      </EmailText>
+      <EmailText>{t("welcome.intro")}</EmailText>
 
       {portalUrl && (
         <>
           <EmailText>
-            Acesse seu <strong>portal do paciente</strong> para ver seus agendamentos,
-            progresso e informações personalizadas:
+            {t.rich("welcome.portalIntro", { b: (c: React.ReactNode) => <strong>{c}</strong> })}
           </EmailText>
           <div style={{ textAlign: "center" }}>
             <EmailButton href={portalUrl}>
-              Acessar meu portal →
+              {t("welcome.portalCta")}
             </EmailButton>
           </div>
-          <EmailText muted>
-            Este link é exclusivo para você. Não compartilhe com outras pessoas.
-          </EmailText>
+          <EmailText muted>{t("welcome.portalNote")}</EmailText>
         </>
       )}
 
       <EmailDivider />
 
-      <EmailText>
-        Em caso de dúvidas ou para agendar sua primeira sessão, entre em contato com a clínica.
-      </EmailText>
+      <EmailText>{t("welcome.contact")}</EmailText>
 
-      <EmailText muted>Até breve! 🌿</EmailText>
+      <EmailText muted>{t("welcome.seeYou")}</EmailText>
     </BaseEmail>
   );
 }

@@ -14,5 +14,34 @@
   "qaIntake": "Intake",
   "qaInsights": "AI Insights",
   "qaEvolution": "Evolution",
-  "qaForm": "Form"
+  "qaForm": "Form",
+  "video": {
+    "errorCreate": "Error creating room",
+    "errorUnknown": "Unknown error",
+    "frameTitle": "Teleconsultation — {patient}",
+    "copyTitle": "Copy patient link",
+    "copied": "Copied!",
+    "patientLink": "Patient link",
+    "endVideo": "End video",
+    "withPatient": "Session with {patient}",
+    "clickToCreate": "Click to create the secure room",
+    "creating": "Creating room…",
+    "wait": "Please wait…",
+    "retry": "Try again",
+    "start": "Start video call",
+    "roomNote": "The room is created at the time of the consultation with a private link and expires in 3 hours."
+  },
+  "notes": {
+    "micError": "Microphone unavailable. Check permissions.",
+    "transcribeError": "Transcription error",
+    "sessionNotes": "Session notes",
+    "saving": "Saving…",
+    "saved": "Saved ✓",
+    "notesPlaceholder": "Observe and take notes during the consultation…",
+    "recordVoice": "Record voice",
+    "stop": "Stop",
+    "transcribing": "Transcribing…",
+    "keyObs": "Key observations",
+    "addObs": "Add observation…"
+  }
 }

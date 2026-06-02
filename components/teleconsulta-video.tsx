@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 interface TeleconsultaVideoProps {
   appointmentId: string;
@@ -15,6 +16,7 @@ type RoomState =
   | { status: "error"; message: string };
 
 export function TeleconsultaVideo({ appointmentId, patientName, displayName }: TeleconsultaVideoProps) {
+  const t = useTranslations("teleconsulta.video");
   const [room, setRoom] = useState<RoomState>({ status: "idle" });
   const [copied, setCopied] = useState(false);
 
@@ -33,10 +35,10 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
         body: JSON.stringify({ appointmentId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro ao criar sala");
+      if (!res.ok) throw new Error(data.error ?? t("errorCreate"));
       setRoom({ status: "ready", url: data.url });
     } catch (err) {
-      setRoom({ status: "error", message: err instanceof Error ? err.message : "Erro desconhecido" });
+      setRoom({ status: "error", message: err instanceof Error ? err.message : t("errorUnknown") });
     }
   }
 
@@ -53,7 +55,7 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
           src={callUrl}
           allow="camera; microphone; fullscreen; display-capture; autoplay"
           className="w-full h-full border-0"
-          title={`Teleconsulta — ${patientName}`}
+          title={t("frameTitle", { patient: patientName })}
         />
 
         {/* Top-right controls */}
@@ -62,14 +64,14 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
           <button
             onClick={() => copyLink(room.url)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur text-[11px] font-medium text-white/70 hover:text-white hover:bg-black/80 transition"
-            title="Copiar link para o paciente"
+            title={t("copyTitle")}
           >
             {copied ? (
               <>
                 <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
                   <path d="M2 6.5l3.5 3.5 5.5-6" stroke="#4ADE80" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span className="text-green-400">Copiado!</span>
+                <span className="text-green-400">{t("copied")}</span>
               </>
             ) : (
               <>
@@ -77,7 +79,7 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
                   <rect x="4.5" y="4.5" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2"/>
                   <path d="M4.5 8.5H3a1 1 0 01-1-1V3a1 1 0 011-1h4.5a1 1 0 011 1v1.5" stroke="currentColor" strokeWidth="1.2"/>
                 </svg>
-                Link do paciente
+                {t("patientLink")}
               </>
             )}
           </button>
@@ -86,7 +88,7 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
           <button
             onClick={() => setRoom({ status: "idle" })}
             className="w-8 h-8 rounded-lg bg-black/60 backdrop-blur flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition"
-            title="Encerrar vídeo"
+            title={t("endVideo")}
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
@@ -110,10 +112,10 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
       </div>
 
       <div className="text-center">
-        <p className="text-white text-[15px] font-medium mb-1">Consulta com {patientName}</p>
+        <p className="text-white text-[15px] font-medium mb-1">{t("withPatient", { patient: patientName })}</p>
         <p className="text-white/40 text-[12px]">
-          {room.status === "idle" && "Clique para criar a sala segura"}
-          {room.status === "loading" && "Criando sala…"}
+          {room.status === "idle" && t("clickToCreate")}
+          {room.status === "loading" && t("creating")}
           {room.status === "error" && room.message}
         </p>
       </div>
@@ -128,7 +130,7 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
             <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
               <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="1.5" strokeDasharray="28" strokeDashoffset="10"/>
             </svg>
-            Aguarde…
+            {t("wait")}
           </>
         ) : (
           <>
@@ -136,7 +138,7 @@ export function TeleconsultaVideo({ appointmentId, patientName, displayName }: T
               <path d="M10 5.5H4a1.5 1.5 0 00-1.5 1.5v4a1.5 1.5 0 001.5 1.5h6a1.5 1.5 0 001.5-1.5V7a1.5 1.5 0 00-1.5-1.5z" stroke="currentColor" strokeWidth="1.2"/>
               <path d="M11.5 7l3-1.5v5l-3-1.5V7z" stroke="currentColor" strokeWidth="1.2"/>
             </svg>
-            {room.status === "error" ? "Tentar novamente" : "Iniciar videochamada"}
+            {room.status === "error" ? t("retry") : t("start")}
           </>
         )}
       </button>

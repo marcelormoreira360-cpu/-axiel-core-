@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { sendAppointmentConfirmation } from "@/services/email-service";
+import { resolveClinicLocale } from "@/lib/email-i18n";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -121,6 +122,7 @@ export async function POST(req: NextRequest) {
       sessionTypeName: sessionType.name,
       startsAt: starts_at,
       portalUrl: portalLink ? `${appUrl}/p/${token}` : undefined,
+      locale: await resolveClinicLocale(link.clinic_id),
     });
   }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendPushToClinic } from "@/services/push-service";
 import { sendClinicMessageAlert } from "@/services/email-service";
+import { resolveClinicLocale } from "@/lib/email-i18n";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -129,6 +130,7 @@ export async function POST(req: NextRequest) {
     .map((cu) => (cu.users as unknown as { email: string } | null)?.email)
     .filter(Boolean) as string[];
 
+  const clinicLocale = await resolveClinicLocale(link.clinic_id);
   for (const email of emails) {
     void sendClinicMessageAlert({
       to: email,
@@ -136,6 +138,7 @@ export async function POST(req: NextRequest) {
       patientName,
       messagePreview: text,
       inboxUrl: `${appUrl}/patients/${link.patient_id}/messages`,
+      locale: clinicLocale,
     });
   }
 

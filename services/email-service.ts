@@ -1,12 +1,20 @@
 import { Resend } from "resend";
+import { getServerT } from "@/lib/email-i18n";
+import { isLocale, DEFAULT_LOCALE } from "@/i18n/locales";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
 
+type EmailT = Awaited<ReturnType<typeof getServerT>>;
+
+function htmlLang(locale: string | null | undefined) {
+  return isLocale(locale) ? locale : DEFAULT_LOCALE;
+}
+
 // ── Shared layout ─────────────────────────────────────────────────────────────
-function layout(body: string, clinicName = "Sua clínica"): string {
+function layout(body: string, clinicName: string, t: EmailT, locale: string): string {
   return `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${htmlLang(locale)}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -28,8 +36,8 @@ function layout(body: string, clinicName = "Sua clínica"): string {
         <tr>
           <td style="padding:20px 32px;border-top:1px solid rgba(0,0,0,0.06);">
             <p style="margin:0;font-size:11px;color:rgba(0,0,0,0.35);line-height:1.6;">
-              Este email foi enviado automaticamente. Por favor não responda a esta mensagem.<br/>
-              Seus dados são protegidos conforme a LGPD (Lei 13.709/2018).
+              ${t("footerAuto")}<br/>
+              ${t("footerLgpd")}
             </p>
           </td>
         </tr>
@@ -56,6 +64,7 @@ export async function sendAppointmentConfirmation({
   sessionTypeName,
   startsAt,
   portalUrl,
+  locale,
 }: {
   to: string;
   patientFirstName: string;
@@ -63,30 +72,33 @@ export async function sendAppointmentConfirmation({
   sessionTypeName: string;
   startsAt: string;
   portalUrl?: string;
+  locale?: string;
 }) {
+  const loc = htmlLang(locale);
+  const t = await getServerT(loc, "emails");
   const date = new Date(startsAt);
-  const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = date.toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
 
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">Agendamento confirmado ✅</p>
-    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">Olá, ${patientFirstName}! Seu agendamento foi confirmado com sucesso.</p>
+    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("confirm.title")}</p>
+    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">${t("confirm.greeting", { name: patientFirstName })}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:12px;padding:20px;margin-bottom:24px;">
       <tr><td>
-        <p style="margin:0 0 10px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,0,0,0.35);">Detalhes</p>
+        <p style="margin:0 0 10px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,0,0,0.35);">${t("confirm.details")}</p>
         <p style="margin:0 0 6px;font-size:14px;color:#0F1A2E;"><strong>📅</strong> ${dateStr}</p>
         <p style="margin:0 0 6px;font-size:14px;color:#0F1A2E;"><strong>🕐</strong> ${timeStr}</p>
         <p style="margin:0;font-size:14px;color:#0F1A2E;"><strong>🩺</strong> ${sessionTypeName}</p>
       </td></tr>
     </table>
-    ${portalUrl ? `<p style="margin:0 0 16px;font-size:14px;color:rgba(0,0,0,0.6);">Acesse seu portal para acompanhar seus agendamentos e enviar mensagens à clínica.</p>${ctaButton(portalUrl, "Acessar meu portal")}` : ""}
+    ${portalUrl ? `<p style="margin:0 0 16px;font-size:14px;color:rgba(0,0,0,0.6);">${t("confirm.portalText")}</p>${ctaButton(portalUrl, t("confirm.portalCta"))}` : ""}
   `;
 
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `✅ Agendamento confirmado — ${clinicName}`,
-    html: layout(body, clinicName),
+    subject: t("confirm.subject", { clinic: clinicName }),
+    html: layout(body, clinicName, t, loc),
   }).catch(() => { /* non-blocking */ });
 }
 
@@ -98,6 +110,7 @@ export async function sendAppointmentReminder({
   sessionTypeName,
   startsAt,
   portalUrl,
+  locale,
 }: {
   to: string;
   patientFirstName: string;
@@ -105,27 +118,30 @@ export async function sendAppointmentReminder({
   sessionTypeName: string;
   startsAt: string;
   portalUrl?: string;
+  locale?: string;
 }) {
+  const loc = htmlLang(locale);
+  const t = await getServerT(loc, "emails");
   const date = new Date(startsAt);
-  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
 
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">Lembrete de amanhã 🗓️</p>
-    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">Olá, ${patientFirstName}! Só lembrando que você tem uma sessão amanhã.</p>
+    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("reminder.title")}</p>
+    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">${t("reminder.greeting", { name: patientFirstName })}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:12px;padding:20px;margin-bottom:24px;">
       <tr><td>
         <p style="margin:0 0 6px;font-size:14px;color:#0F1A2E;"><strong>🕐</strong> ${timeStr}</p>
         <p style="margin:0;font-size:14px;color:#0F1A2E;"><strong>🩺</strong> ${sessionTypeName}</p>
       </td></tr>
     </table>
-    ${portalUrl ? ctaButton(portalUrl, "Ver no portal") : ""}
+    ${portalUrl ? ctaButton(portalUrl, t("reminder.cta")) : ""}
   `;
 
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `🗓️ Lembrete: sua sessão é amanhã — ${clinicName}`,
-    html: layout(body, clinicName),
+    subject: t("reminder.subject", { clinic: clinicName }),
+    html: layout(body, clinicName, t, loc),
   }).catch(() => { /* non-blocking */ });
 }
 
@@ -136,32 +152,36 @@ export async function sendClinicMessageAlert({
   patientName,
   messagePreview,
   inboxUrl,
+  locale,
 }: {
   to: string;
   clinicName: string;
   patientName: string;
   messagePreview: string;
   inboxUrl: string;
+  locale?: string;
 }) {
+  const loc = htmlLang(locale);
+  const t = await getServerT(loc, "emails");
   const preview = messagePreview.length > 200 ? messagePreview.slice(0, 197) + "…" : messagePreview;
 
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">Nova mensagem 💬</p>
-    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">O paciente <strong>${patientName}</strong> enviou uma mensagem pelo portal.</p>
+    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("clinicMsg.title")}</p>
+    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">${t.markup("clinicMsg.body", { name: patientName, b: (c) => `<strong>${c}</strong>` })}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:12px;padding:20px;margin-bottom:24px;">
       <tr><td>
         <p style="margin:0 0 6px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,0,0,0.35);">${patientName}</p>
         <p style="margin:0;font-size:14px;color:#0F1A2E;font-style:italic;">"${preview}"</p>
       </td></tr>
     </table>
-    ${ctaButton(inboxUrl, "Responder mensagem")}
+    ${ctaButton(inboxUrl, t("clinicMsg.cta"))}
   `;
 
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `💬 Nova mensagem de ${patientName} — ${clinicName}`,
-    html: layout(body, clinicName),
+    subject: t("clinicMsg.subject", { name: patientName, clinic: clinicName }),
+    html: layout(body, clinicName, t, loc),
   }).catch(() => { /* non-blocking */ });
 }
 
@@ -172,32 +192,36 @@ export async function sendPatientMessageAlert({
   clinicName,
   messagePreview,
   portalUrl,
+  locale,
 }: {
   to: string;
   patientFirstName: string;
   clinicName: string;
   messagePreview: string;
   portalUrl?: string;
+  locale?: string;
 }) {
+  const loc = htmlLang(locale);
+  const t = await getServerT(loc, "emails");
   const preview = messagePreview.length > 200 ? messagePreview.slice(0, 197) + "…" : messagePreview;
 
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">Você tem uma mensagem 💬</p>
-    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">Olá, ${patientFirstName}! ${clinicName} enviou uma mensagem para você.</p>
+    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("patientMsg.title")}</p>
+    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.5);">${t("patientMsg.body", { name: patientFirstName, clinic: clinicName })}</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:12px;padding:20px;margin-bottom:24px;">
       <tr><td>
         <p style="margin:0 0 6px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:rgba(0,0,0,0.35);">${clinicName}</p>
         <p style="margin:0;font-size:14px;color:#0F1A2E;font-style:italic;">"${preview}"</p>
       </td></tr>
     </table>
-    ${portalUrl ? ctaButton(portalUrl, "Ler e responder") : `<p style="margin:16px 0 0;font-size:13px;color:rgba(0,0,0,0.5);">Acesse seu portal usando o link que você recebeu anteriormente para responder.</p>`}
+    ${portalUrl ? ctaButton(portalUrl, t("patientMsg.cta")) : `<p style="margin:16px 0 0;font-size:13px;color:rgba(0,0,0,0.5);">${t("patientMsg.noPortalNote")}</p>`}
   `;
 
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `💬 Nova mensagem de ${clinicName}`,
-    html: layout(body, clinicName),
+    subject: t("patientMsg.subject", { clinic: clinicName }),
+    html: layout(body, clinicName, t, loc),
   }).catch(() => { /* non-blocking */ });
 }
 
@@ -208,25 +232,29 @@ export async function sendNpsRequest({
   clinicName,
   sessionTypeName,
   portalUrl,
+  locale,
 }: {
   to: string;
   patientFirstName: string;
   clinicName: string;
   sessionTypeName: string;
   portalUrl: string;
+  locale?: string;
 }) {
+  const loc = htmlLang(locale);
+  const t = await getServerT(loc, "emails");
   const body = `
-    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">Como foi sua sessão? ⭐</p>
-    <p style="margin:0 0 16px;font-size:14px;color:rgba(0,0,0,0.5);">Olá, ${patientFirstName}! Sua sessão de <strong>${sessionTypeName}</strong> em ${clinicName} foi concluída.</p>
-    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.6);">Sua opinião é muito importante para melhorarmos continuamente. Leva menos de 1 minuto!</p>
-    ${ctaButton(portalUrl, "Avaliar minha sessão")}
-    <p style="margin:16px 0 0;font-size:12px;color:rgba(0,0,0,0.35);">Ou acesse seu portal e clique em "Avaliar sessão".</p>
+    <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("nps.title")}</p>
+    <p style="margin:0 0 16px;font-size:14px;color:rgba(0,0,0,0.5);">${t.markup("nps.greeting", { name: patientFirstName, sessionType: sessionTypeName, clinic: clinicName, b: (c) => `<strong>${c}</strong>` })}</p>
+    <p style="margin:0 0 24px;font-size:14px;color:rgba(0,0,0,0.6);">${t("nps.sub")}</p>
+    ${ctaButton(portalUrl, t("nps.cta"))}
+    <p style="margin:16px 0 0;font-size:12px;color:rgba(0,0,0,0.35);">${t("nps.orNote")}</p>
   `;
 
   return resend.emails.send({
     from: FROM,
     to,
-    subject: `⭐ Como foi sua sessão? — ${clinicName}`,
-    html: layout(body, clinicName),
+    subject: t("nps.subject", { clinic: clinicName }),
+    html: layout(body, clinicName, t, loc),
   }).catch(() => { /* non-blocking */ });
 }

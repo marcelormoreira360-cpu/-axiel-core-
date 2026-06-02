@@ -1,0 +1,43 @@
+{
+  "period": "PERÍODO: {label}",
+  "generatedBy": "{clinic} · Relatório gerado pelo AXIEL Core",
+  "allPeriods": "Todos os períodos",
+  "range": "{from} a {to}",
+  "col": {
+    "date": "Data",
+    "time": "Hora",
+    "patient": "Paciente",
+    "name": "Nome",
+    "email": "E-mail",
+    "phone": "Telefone",
+    "sessionType": "Tipo de sessão",
+    "method": "Método",
+    "payment": "Pagamento",
+    "value": "Valor (R$)",
+    "status": "Status",
+    "dob": "Data de nasc.",
+    "registered": "Cadastrado",
+    "stage": "Etapa",
+    "source": "Origem",
+    "complaint": "Queixa",
+    "notes": "Notas",
+    "duration": "Duração (min)"
+  },
+  "finance": {
+    "title": "Relatório Financeiro — {label}",
+    "summary": "Total: {total} · {count, plural, one {# pagamento} other {# pagamentos}}",
+    "thisMonth": "Este mês",
+    "lastMonth": "Mês anterior",
+    "last3m": "Últimos 3 meses",
+    "last6m": "Últimos 6 meses",
+    "thisYear": "Este ano"
+  },
+  "payments": { "title": "Extrato de Pagamentos" },
+  "patients": { "title": "Lista de Pacientes" },
+  "leads": { "title": "Pipeline de Leads" },
+  "sessions": { "title": "Histórico de Sessões" },
+  "patientStatus": { "active": "Ativo", "inactive": "Inativo", "archived": "Arquivado" },
+  "sessionStatus": { "scheduled": "Agendada", "completed": "Realizada", "cancelled": "Cancelada", "no_show": "Não compareceu" },
+  "leadStage": { "new_lead": "Novo lead", "contacted": "Contatado", "scheduled": "Agendado", "converted_to_patient": "Convertido" },
+  "leadSource": { "website": "Website", "instagram": "Instagram", "facebook": "Facebook", "google": "Google", "referral": "Indicação", "other": "Outro" }
+}

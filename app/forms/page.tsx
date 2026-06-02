@@ -104,9 +104,9 @@ export default async function FormsPage() {
         </div>
       ) : (
         <div className="space-y-[8px]">
-          {templates.map((t) => (
+          {templates.map((tpl) => (
             <div
-              key={t.id}
+              key={tpl.id}
               className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] flex items-center justify-between"
             >
               <div className="flex items-center gap-[10px]">
@@ -114,30 +114,30 @@ export default async function FormsPage() {
                   <FileText className="h-4 w-4 text-[#A09E98]" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-medium text-[#0F1A2E]">{t.name}</p>
-                  {t.description && (
-                    <p className="text-[11px] text-[#A09E98] mt-[1px]">{t.description}</p>
+                  <p className="text-[13px] font-medium text-[#0F1A2E]">{tpl.name}</p>
+                  {tpl.description && (
+                    <p className="text-[11px] text-[#A09E98] mt-[1px]">{tpl.description}</p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-[6px]">
                 <DeleteTemplateButton
-                  action={deleteTemplateAction.bind(null, t.id)}
-                  templateName={t.name}
+                  action={deleteTemplateAction.bind(null, tpl.id)}
+                  templateName={tpl.name}
                 />
                 <Link
-                  href={`/forms/${t.id}/edit`}
+                  href={`/forms/${tpl.id}/edit`}
                   className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[10px] py-[5px] transition"
                 >
                   <Pencil className="h-3 w-3" /> {t("edit")}
                 </Link>
                 <ShareFormButton
-                  templateId={t.id}
-                  templateName={t.name}
+                  templateId={tpl.id}
+                  templateName={tpl.name}
                   patients={patients.map((p) => ({ id: p.id, full_name: p.full_name, email: p.email ?? null }))}
                 />
                 <Link
-                  href={`/forms/${t.id}`}
+                  href={`/forms/${tpl.id}`}
                   className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[6px] px-[10px] py-[5px] transition"
                 >
                   <ClipboardList className="h-3 w-3" /> {t("fill")}

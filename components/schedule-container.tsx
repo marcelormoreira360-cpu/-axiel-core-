@@ -84,6 +84,7 @@ function DraggableDayCard({
   onOpen: (s: ScheduleSession) => void;
   onResize?: (id: string, newDuration: number) => void;
 }) {
+  const locale = useLocale();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: session.id,
     data: { session },
@@ -155,7 +156,7 @@ function DraggableDayCard({
       {...attributes}
     >
       <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
-        {formatTime(session.starts_at)}
+        {formatTime(session.starts_at, locale)}
       </p>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
         {firstName}
@@ -224,6 +225,7 @@ function DayView({
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
+  const locale     = useLocale();
   const slots      = useMemo(() => buildDayTimeSlots(), []);
   const scrollRef  = useRef<HTMLDivElement>(null);
 
@@ -494,7 +496,7 @@ function DayView({
             }}
           >
             <p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>
-              {formatTime(activeSession.starts_at)}
+              {formatTime(activeSession.starts_at, locale)}
             </p>
             <p style={{ fontSize: 11, fontWeight: 500, color: "#C3EBDB", margin: "2px 0 0" }}>
               {(activeSession.patients?.full_name ?? "Paciente").split(" ")[0]}
@@ -526,6 +528,7 @@ function DraggableApptCard({
   isActive: boolean;
   onResize?: (id: string, newDuration: number) => void;
 }) {
+  const locale = useLocale();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appt.id,
     data: { appt },
@@ -598,7 +601,7 @@ function DraggableApptCard({
       {...attributes}
     >
       <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
-        {formatTime(appt.starts_at)}
+        {formatTime(appt.starts_at, locale)}
       </p>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
         {firstName}
@@ -705,6 +708,7 @@ function WeekView({
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
+  const locale   = useLocale();
   const today    = new Date();
   const weekDays = getWeekDays(navDate);
 
@@ -1031,7 +1035,7 @@ function WeekView({
           }}
         >
           <p style={{ fontSize: 10, fontWeight: 700, color: "#fff", margin: 0 }}>
-            {formatTime(activeAppt.starts_at)}
+            {formatTime(activeAppt.starts_at, locale)}
           </p>
           <p style={{ fontSize: 11, fontWeight: 500, color: "#C3EBDB", margin: "2px 0 0" }}>
             {(activeAppt.patients?.full_name ?? "Paciente").split(" ")[0]}
@@ -1065,6 +1069,7 @@ function MonthView({
   onDayClick: (date: Date) => void;
 }) {
   const t            = useTranslations("schedule.calendar");
+  const locale       = useLocale();
   const today        = new Date();
   const cells        = useMemo(() => getMonthGrid(navDate), [navDate]);
   const currentMonth = navDate.getMonth();
@@ -1114,7 +1119,7 @@ function MonthView({
                   key={appt.id}
                   className="text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-[3px] px-[4px] py-[1px] mb-[2px] truncate w-full"
                 >
-                  {formatTime(appt.starts_at)}{" "}
+                  {formatTime(appt.starts_at, locale)}{" "}
                   {appt.patients?.full_name?.split(" ")[0]}
                 </span>
               ))}
@@ -1185,9 +1190,9 @@ export function ScheduleContainer({
     if (view === "semana") {
       const start = startOfWeek(navDate);
       const end   = addDays(start, 6);
-      return `${formatShortDate(start)} – ${formatShortDate(end)}`;
+      return `${formatShortDate(start, locale)} – ${formatShortDate(end, locale)}`;
     }
-    return formatMonthYear(navDate);
+    return formatMonthYear(navDate, locale);
   }, [view, navDate, locale, t]);
 
   const showNav = true; // navigation always visible in all views

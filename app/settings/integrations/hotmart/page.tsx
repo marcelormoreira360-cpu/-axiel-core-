@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getHotmartToken, listRecentHotmartPurchases } from "@/services/hotmart-service";
@@ -27,6 +27,7 @@ function formatBRL(cents: number | null) {
 
 export default async function HotmartSettingsPage() {
   const t = await getTranslations("settings.hotmart");
+  const locale = await getLocale();
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
 
@@ -91,7 +92,7 @@ export default async function HotmartSettingsPage() {
                         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>{label}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-black/40">
-                        {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                        {new Date(p.created_at).toLocaleDateString(locale)}
                       </td>
                     </tr>
                   );

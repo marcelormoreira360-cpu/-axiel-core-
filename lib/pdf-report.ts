@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { getServerT } from "@/lib/email-i18n";
 
 export function pdfToBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -19,8 +20,10 @@ export async function buildTablePdf(opts: {
   clinicName: string;
   accentColor?: string;
   summary?: string;
+  locale?: string;
 }): Promise<Buffer> {
-  const { title, subtitle, periodLabel, headers, rows, clinicName, accentColor = "#0B1F3A", summary } = opts;
+  const { title, subtitle, periodLabel, headers, rows, clinicName, accentColor = "#0B1F3A", summary, locale } = opts;
+  const t = await getServerT(locale, "pdf");
   const doc = new PDFDocument({ margin: 40, size: "A4", info: { Title: title, Author: clinicName } });
 
   doc.rect(0, 0, 595, 72).fill(accentColor);
@@ -33,7 +36,7 @@ export async function buildTablePdf(opts: {
 
   if (periodLabel) {
     doc.fillColor("#6b7280").font("Helvetica").fontSize(9)
-       .text(`PERÍODO: ${periodLabel}`, { characterSpacing: 0.5 });
+       .text(t("period", { label: periodLabel }), { characterSpacing: 0.5 });
     doc.moveDown(0.8);
   }
 
@@ -67,7 +70,7 @@ export async function buildTablePdf(opts: {
     doc.moveDown(0.8);
   }
   doc.fillColor("#d1d5db").font("Helvetica").fontSize(8)
-     .text(`${clinicName} · Relatório gerado pelo AXIEL Core`, { align: "center" });
+     .text(t("generatedBy", { clinic: clinicName }), { align: "center" });
 
   return pdfToBuffer(doc);
 }

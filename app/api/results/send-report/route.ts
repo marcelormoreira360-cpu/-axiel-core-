@@ -6,6 +6,7 @@ import { getCurrentAuthUser } from "@/services/user-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export async function POST() {
   try {
@@ -27,7 +28,9 @@ export async function POST() {
     const startISO = firstOfLastMonth.toISOString();
     const endISO = firstOfThisMonth.toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const monthName = firstOfLastMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+    const locale = await resolveClinicLocale(clinic.id);
+    const t = await getServerT(locale, "emails");
+    const monthName = firstOfLastMonth.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
     const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes, paymentsRes] =
       await Promise.all([
@@ -80,7 +83,7 @@ export async function POST() {
     const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
     const revenueStr =
       revenueCents > 0
-        ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+        ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
         : "—";
 
     const html = await render(
@@ -95,6 +98,8 @@ export async function POST() {
           activePackages,
           inactivePatients: inactive,
         },
+        t,
+        locale,
       })
     );
 
@@ -102,7 +107,7 @@ export async function POST() {
     await resend.emails.send({
       from: DEFAULT_FROM_EMAIL,
       to: authUser.email,
-      subject: `Relatório ${monthName} — ${clinic.name}`,
+      subject: t("monthly.subject", { month: monthName, clinic: clinic.name }),
       html,
     });
 

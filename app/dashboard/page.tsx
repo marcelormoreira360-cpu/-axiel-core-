@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
-import { ROLE_LABELS } from "@/lib/team-utils";
 import { DashboardGreeting } from "./greeting";
 import { getClinicsForUser, getCurrentClinic } from "@/services/clinic-service";
 import { getAppointments } from "@/services/appointment-service";
@@ -92,7 +91,7 @@ export default async function Dashboard() {
   ];
 
   return (
-    <Shell userName={profile?.full_name} userRole={profile?.role ? ROLE_LABELS[profile.role] : undefined}>
+    <Shell userName={profile?.full_name} userRole={profile?.role ? tc(`roles.${profile.role}`) : undefined}>
 
       {/* ── Header ── */}
       <div className="flex items-start justify-between mb-[20px]">

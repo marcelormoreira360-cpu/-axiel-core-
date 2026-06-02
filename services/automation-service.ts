@@ -4,6 +4,7 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 import { sendNpsRequest } from "@/services/email-service";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -317,15 +318,17 @@ async function sendReminderEmail(
 ) {
   if (!patient.email) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
+  const locale = await resolveClinicLocale(fu.clinic_id);
+  const t = await getServerT(locale, "emails");
   const first = patient.full_name.split(" ")[0];
   const dateStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
-    : "data agendada";
+    ? new Date(appt.starts_at).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })
+    : t("apptReminder.fallbackDate");
   const timeStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    : "horário agendado";
+    ? new Date(appt.starts_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+    : t("apptReminder.fallbackTime");
 
-  const subject = `Lembrete: sua sessão é amanhã — ${timeStr}`;
+  const subject = t("apptReminder.subject", { time: timeStr });
   const bodyText = `Lembrete: sessão amanhã, ${dateStr} às ${timeStr}`;
   const { data: clinicRow } = await supabase.from("clinics").select("name, whatsapp_number").eq("id", fu.clinic_id).maybeSingle();
   const clinicName = (clinicRow?.name as string | null) ?? "sua clínica";
@@ -350,6 +353,8 @@ async function sendReminderEmail(
         durationMinutes,
         daysUntil: 1,
         whatsappUrl,
+        t,
+        locale,
       }),
     });
     await supabase.from("communication_logs").insert({
@@ -434,6 +439,7 @@ async function sendNpsEmail(
     clinicName: (clinicRow?.name as string | null) ?? "sua clínica",
     sessionTypeName,
     portalUrl,
+    locale: await resolveClinicLocale(fu.clinic_id),
   }).catch(() => { /* non-blocking */ });
 }
 
@@ -616,7 +622,11 @@ export async function sendAppointmentConfirmation(params: {
   if (patientEmail) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const fromAddress = DEFAULT_FROM_EMAIL;
-    const subject = `Sessão confirmada — ${dateStr} às ${timeStr}`;
+    const locale = await resolveClinicLocale(clinicId);
+    const t = await getServerT(locale, "emails");
+    const dateStrEmail = new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
+    const timeStrEmail = new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+    const subject = t("apptConfirm.subject", { date: dateStrEmail, time: timeStrEmail });
     const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
     const whatsappUrl = clinicRow?.whatsapp_number
       ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
@@ -631,10 +641,12 @@ export async function sendAppointmentConfirmation(params: {
         react: AppointmentConfirmationEmail({
           clinicName,
           patientFirstName: first,
-          dateStr,
-          timeStr,
+          dateStr: dateStrEmail,
+          timeStr: timeStrEmail,
           durationMinutes,
           whatsappUrl,
+          t,
+          locale,
         }),
       });
       await supabase.from("communication_logs").insert({

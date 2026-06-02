@@ -46,30 +46,30 @@ export function isSameDay(a: Date, b: Date) {
   );
 }
 
-export function formatTime(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
+export function formatTime(value: string, locale: string = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
-export function formatShortDate(date: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
+export function formatShortDate(date: Date, locale: string = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, {
     month: "short",
     day: "numeric",
   }).format(date);
 }
 
-export function formatDayLabel(date: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
+export function formatDayLabel(date: Date, locale: string = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
   }).format(date);
 }
 
-export function formatMonthYear(date: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
+export function formatMonthYear(date: Date, locale: string = "pt-BR") {
+  return new Intl.DateTimeFormat(locale, {
     month: "long",
     year: "numeric",
   }).format(date);

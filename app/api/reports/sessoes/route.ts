@@ -1,6 +1,7 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -10,16 +11,6 @@ function escCsv(val: string | number | null | undefined): string {
     return `"${s.replace(/"/g, '""')}"`;
   }
   return s;
-}
-
-function statusLabel(status: string) {
-  const map: Record<string, string> = {
-    scheduled: "Agendada",
-    completed: "Realizada",
-    cancelled: "Cancelada",
-    no_show:   "Não compareceu",
-  };
-  return map[status] ?? status;
 }
 
 export async function GET(req: Request) {
@@ -46,46 +37,50 @@ export async function GET(req: Request) {
   const appts = data ?? [];
 
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const locale = await resolveClinicLocale(clinic.id);
+  const t = await getServerT(locale, "pdf");
+  const statusLoc = (s: string) =>
+    (["scheduled", "completed", "cancelled", "no_show"] as string[]).includes(s) ? t(`sessionStatus.${s}`) : s;
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
     const periodLabel = from && to
-      ? `${new Date(from).toLocaleDateString("pt-BR")} a ${new Date(to).toLocaleDateString("pt-BR")}`
-      : "Todos os períodos";
-    const headers = ["Data", "Hora", "Paciente", "Tipo de sessão", "Status", "Valor (R$)"];
+      ? t("range", { from: new Date(from).toLocaleDateString(locale), to: new Date(to).toLocaleDateString(locale) })
+      : t("allPeriods");
+    const headers = [t("col.date"), t("col.time"), t("col.patient"), t("col.sessionType"), t("col.status"), t("col.value")];
     const pdfRows = appts.map((a) => {
       const patient = Array.isArray(a.patients) ? a.patients[0] : a.patients;
       const st      = Array.isArray(a.session_types) ? a.session_types[0] : a.session_types;
       const d       = new Date(a.starts_at);
       return [
-        d.toLocaleDateString("pt-BR"),
-        d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        d.toLocaleDateString(locale),
+        d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
         (patient as { full_name?: string } | null)?.full_name ?? "",
         (st as { name?: string } | null)?.name ?? "",
-        statusLabel(a.status ?? ""),
+        statusLoc(a.status ?? ""),
         (st as { price_cents?: number } | null)?.price_cents
           ? ((st as { price_cents: number }).price_cents / 100).toFixed(2).replace(".", ",")
           : "",
       ];
     });
-    const buf = await buildTablePdf({ title: "Histórico de Sessões", periodLabel, headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56" });
+    const buf = await buildTablePdf({ title: t("sessions.title"), periodLabel, headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56", locale });
     return pdfResponse(buf, `sessoes-${slug}.pdf`);
   }
 
-  const headers = ["Data", "Hora", "Paciente", "E-mail", "Telefone", "Tipo de sessão", "Duração (min)", "Status", "Valor (R$)", "Notas"];
+  const headers = [t("col.date"), t("col.time"), t("col.patient"), t("col.email"), t("col.phone"), t("col.sessionType"), t("col.duration"), t("col.status"), t("col.value"), t("col.notes")];
   const rows = appts.map((a) => {
     const patient = Array.isArray(a.patients) ? a.patients[0] : a.patients;
     const st      = Array.isArray(a.session_types) ? a.session_types[0] : a.session_types;
     const d       = new Date(a.starts_at);
     return [
-      d.toLocaleDateString("pt-BR"),
-      d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+      d.toLocaleDateString(locale),
+      d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
       (patient as { full_name?: string } | null)?.full_name ?? "",
       (patient as { email?: string }    | null)?.email ?? "",
       (patient as { phone?: string }    | null)?.phone ?? "",
       (st as { name?: string }          | null)?.name ?? "",
       String(a.duration_minutes ?? ""),
-      statusLabel(a.status ?? ""),
+      statusLoc(a.status ?? ""),
       (st as { price_cents?: number }   | null)?.price_cents
         ? ((st as { price_cents: number }).price_cents / 100).toFixed(2).replace(".", ",")
         : "",
@@ -99,14 +94,14 @@ export async function GET(req: Request) {
       const st      = Array.isArray(a.session_types) ? a.session_types[0] : a.session_types;
       const d       = new Date(a.starts_at);
       return {
-        data:     d.toLocaleDateString("pt-BR"),
-        hora:     d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
+        data:     d.toLocaleDateString(locale),
+        hora:     d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" }),
         paciente: (patient as { full_name?: string } | null)?.full_name ?? "",
         email:    (patient as { email?: string }    | null)?.email ?? "",
         telefone: (patient as { phone?: string }    | null)?.phone ?? "",
         tipo:     (st as { name?: string }          | null)?.name ?? "",
         duracao:  a.duration_minutes ?? "",
-        status:   statusLabel(a.status ?? ""),
+        status:   statusLoc(a.status ?? ""),
         valor:    (st as { price_cents?: number }   | null)?.price_cents
           ? (st as { price_cents: number }).price_cents / 100
           : "",
@@ -114,18 +109,18 @@ export async function GET(req: Request) {
       };
     });
     const buf = await buildExcelBuffer([{
-      name: "Sessões",
+      name: t("sessions.title"),
       columns: [
-        { header: "Data",          key: "data",     width: 14 },
-        { header: "Hora",          key: "hora",     width: 10 },
-        { header: "Paciente",      key: "paciente", width: 30 },
-        { header: "E-mail",        key: "email",    width: 28 },
-        { header: "Telefone",      key: "telefone", width: 18 },
-        { header: "Tipo de sessão",key: "tipo",     width: 24 },
-        { header: "Duração (min)", key: "duracao",  width: 14 },
-        { header: "Status",        key: "status",   width: 16 },
-        { header: "Valor (R$)",    key: "valor",    width: 14 },
-        { header: "Notas",         key: "notas",    width: 36 },
+        { header: t("col.date"),        key: "data",     width: 14 },
+        { header: t("col.time"),        key: "hora",     width: 10 },
+        { header: t("col.patient"),     key: "paciente", width: 30 },
+        { header: t("col.email"),       key: "email",    width: 28 },
+        { header: t("col.phone"),       key: "telefone", width: 18 },
+        { header: t("col.sessionType"), key: "tipo",     width: 24 },
+        { header: t("col.duration"),    key: "duracao",  width: 14 },
+        { header: t("col.status"),      key: "status",   width: 16 },
+        { header: t("col.value"),       key: "valor",    width: 14 },
+        { header: t("col.notes"),       key: "notas",    width: 36 },
       ],
       rows: xlsxRows,
     }]);

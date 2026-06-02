@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Mic, MicOff } from "lucide-react";
 
 type RecordingState = "idle" | "recording" | "transcribing";
@@ -22,6 +23,7 @@ export function TeleconsultaNotes({
   initialObservations,
   saveAction,
 }: TeleconsultaNotesProps) {
+  const t = useTranslations("teleconsulta.notes");
   const [notes, setNotes] = useState(initialNotes);
   const [observations, setObservations] = useState<string[]>(initialObservations);
   const [newObs, setNewObs] = useState("");
@@ -105,7 +107,7 @@ export function TeleconsultaNotes({
       setElapsedSeconds(0);
       timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     } catch {
-      setRecordingError("Microfone não disponível. Verifique as permissões.");
+      setRecordingError(t("micError"));
     }
   }
 
@@ -121,7 +123,7 @@ export function TeleconsultaNotes({
       fd.append("file", blob, "audio.webm");
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Erro na transcrição");
+      if (!res.ok) throw new Error(data.error ?? t("transcribeError"));
       const transcribed: string = data.text ?? "";
       const nextNotes = notes.trim()
         ? notes + "\n\n" + transcribed
@@ -135,7 +137,7 @@ export function TeleconsultaNotes({
         }
       }, 50);
     } catch (err: unknown) {
-      setRecordingError(err instanceof Error ? err.message : "Erro na transcrição");
+      setRecordingError(err instanceof Error ? err.message : t("transcribeError"));
     } finally {
       setRecordingState("idle");
     }
@@ -147,20 +149,20 @@ export function TeleconsultaNotes({
       <div>
         <div className="flex items-center justify-between mb-[6px]">
           <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] dark:text-[#6B6A66]">
-            Notas da sessão
+            {t("sessionNotes")}
           </p>
           <span className={`text-[10px] transition ${
             saveStatus === "saving" ? "text-[#A09E98]" :
             saveStatus === "saved"  ? "text-[#0F6E56]" : "text-transparent"
           }`}>
-            {saveStatus === "saving" ? "Salvando…" : "Salvo ✓"}
+            {saveStatus === "saving" ? t("saving") : t("saved")}
           </span>
         </div>
         <textarea
           ref={textareaRef}
           value={notes}
           onChange={(e) => handleNotesChange(e.target.value)}
-          placeholder="Observe e anote durante a consulta…"
+          placeholder={t("notesPlaceholder")}
           rows={7}
           className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[10px] px-[13px] py-[10px] resize-none outline-none focus:border-[#0F6E56] transition placeholder:text-[#C5C3BC] dark:placeholder:text-[#6B6A66] leading-relaxed"
         />
@@ -174,7 +176,7 @@ export function TeleconsultaNotes({
               className="flex items-center gap-[5px] text-[11px] font-medium text-white/50 border border-white/[.12] hover:border-white/25 hover:text-white/80 rounded-[7px] px-[10px] py-[6px] transition"
             >
               <Mic className="h-3 w-3" />
-              Gravar voz
+              {t("recordVoice")}
             </button>
           )}
 
@@ -185,14 +187,14 @@ export function TeleconsultaNotes({
               className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-red-500/80 hover:bg-red-500 rounded-[7px] px-[10px] py-[6px] transition animate-pulse"
             >
               <MicOff className="h-3 w-3" />
-              Parar · {formatElapsed(elapsedSeconds)}
+              {t("stop")} · {formatElapsed(elapsedSeconds)}
             </button>
           )}
 
           {recordingState === "transcribing" && (
             <div className="flex items-center gap-[6px] text-[11px] text-white/40 border border-white/[.08] rounded-[7px] px-[10px] py-[6px]">
               <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
-              Transcrevendo…
+              {t("transcribing")}
             </div>
           )}
 
@@ -205,7 +207,7 @@ export function TeleconsultaNotes({
       {/* Key observations */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] dark:text-[#6B6A66] mb-[8px]">
-          Observações-chave
+          {t("keyObs")}
         </p>
         <div className="flex flex-wrap gap-[6px] mb-[8px]">
           {observations.map((obs, i) => (
@@ -230,7 +232,7 @@ export function TeleconsultaNotes({
             value={newObs}
             onChange={(e) => setNewObs(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addObservation(); } }}
-            placeholder="Adicionar observação…"
+            placeholder={t("addObs")}
             className="flex-1 text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[6px] outline-none focus:border-[#0F6E56] transition placeholder:text-[#C5C3BC] dark:placeholder:text-[#6B6A66]"
           />
           <button

@@ -1,4 +1,10 @@
 {
+  "planDesc": {
+    "starter": "For solo practitioners and small clinics.",
+    "professional": "Complete clinical operations with AI.",
+    "scale": "For premium clinics and growing teams.",
+    "enterprise": "Multi-location, white-label and dedicated onboarding."
+  },
   "navLogin": "Log in",
   "heroEyebrow": "Pricing · Plans",
   "heroTitleLine1": "Premium infrastructure",

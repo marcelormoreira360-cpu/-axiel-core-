@@ -1,0 +1,104 @@
+{
+  "defaultClinic": "Sua clínica",
+  "footerAuto": "Este email foi enviado automaticamente. Por favor não responda a esta mensagem.",
+  "footerLgpd": "Seus dados são protegidos conforme a LGPD (Lei 13.709/2018).",
+  "rowDate": "📅 Data",
+  "rowTime": "🕐 Horário",
+  "rowDuration": "⏱ Duração",
+  "rowClinic": "🏥 Clínica",
+  "minutes": "{n} minutos",
+  "base": {
+    "footerSentBy": "Este e-mail foi enviado por <b>{clinic}</b> usando o AXIEL Core.",
+    "footerIgnore": "Se você não esperava este e-mail, pode ignorá-lo com segurança."
+  },
+  "welcome": {
+    "subject": "Bem-vindo(a) à {clinic}",
+    "preview": "Bem-vindo(a) à {clinic}! Seu cadastro foi criado.",
+    "heading": "Bem-vindo(a), {name}!",
+    "subtitle": "Seu cadastro na <b>{clinic}</b> foi criado com sucesso.",
+    "intro": "Estamos felizes em ter você como paciente. Aqui você poderá acompanhar sua evolução, histórico de sessões e muito mais.",
+    "portalIntro": "Acesse seu <b>portal do paciente</b> para ver seus agendamentos, progresso e informações personalizadas:",
+    "portalCta": "Acessar meu portal →",
+    "portalNote": "Este link é exclusivo para você. Não compartilhe com outras pessoas.",
+    "contact": "Em caso de dúvidas ou para agendar sua primeira sessão, entre em contato com a clínica.",
+    "seeYou": "Até breve! 🌿"
+  },
+  "apptConfirm": {
+    "subject": "Sessão confirmada — {date} às {time}",
+    "preview": "Sua sessão está confirmada — {date} às {time}",
+    "heading": "Sessão confirmada!",
+    "subtitle": "Olá, {name}. Sua sessão está agendada e confirmada.",
+    "rescheduleQ": "Precisa reagendar ou tem alguma dúvida?",
+    "rescheduleWhats": " Entre em contato pelo <a>WhatsApp da clínica</a>.",
+    "rescheduleNoWhats": " Entre em contato diretamente com a clínica.",
+    "seeYou": "Até lá! 🌿"
+  },
+  "apptReminder": {
+    "subject": "Lembrete: sua sessão é amanhã — {time}",
+    "fallbackDate": "data agendada",
+    "fallbackTime": "horário agendado",
+    "preview": "Lembrete: você tem uma sessão {when} às {time}",
+    "whenToday": "hoje",
+    "whenTomorrow": "amanhã",
+    "whenDays": "em {n} dias",
+    "heading": "Lembrete de sessão",
+    "subtitle": "Olá, {name}! Você tem uma sessão agendada <b>{when}</b>.",
+    "cancelNote": "Se precisar cancelar ou reagendar, avise com antecedência.",
+    "whatsCta": "Fale pelo WhatsApp →",
+    "seeYou": "Até lá! 🌿"
+  },
+  "monthly": {
+    "subject": "Relatório de {month} — {clinic}",
+    "preview": "Relatório de {month} — {clinic}",
+    "heading": "Relatório de {month}",
+    "intro": "Confira os números de {clinic} em {month}.",
+    "rowRevenue": "💰 Receita no mês",
+    "rowSessions": "📅 Sessões realizadas",
+    "rowNew": "👤 Novos pacientes no mês",
+    "rowPackages": "📦 Pacotes ativos",
+    "rowInactive": "💤 Pacientes sem sessão há 30+ dias",
+    "tipReengage": "<b>💡 Dica de reengajamento:</b> Você tem <b>{count, plural, one {# paciente} other {# pacientes}}</b> sem sessão há mais de 30 dias. Uma mensagem personalizada pode ser a oportunidade de retomada do tratamento.",
+    "cta": "Ver análise completa →",
+    "footerAuto": "Este relatório é enviado automaticamente no início de cada mês pelo AXIEL Core."
+  },
+  "simple": {
+    "defaultSubject": "Mensagem da sua clínica",
+    "footerSentBy": "Mensagem enviada por {clinic}.",
+    "footerGeneric": "Esta mensagem foi enviada pela sua clínica."
+  },
+  "confirm": {
+    "title": "Agendamento confirmado ✅",
+    "greeting": "Olá, {name}! Seu agendamento foi confirmado com sucesso.",
+    "details": "Detalhes",
+    "portalText": "Acesse seu portal para acompanhar seus agendamentos e enviar mensagens à clínica.",
+    "portalCta": "Acessar meu portal",
+    "subject": "✅ Agendamento confirmado — {clinic}"
+  },
+  "reminder": {
+    "title": "Lembrete de amanhã 🗓️",
+    "greeting": "Olá, {name}! Só lembrando que você tem uma sessão amanhã.",
+    "cta": "Ver no portal",
+    "subject": "🗓️ Lembrete: sua sessão é amanhã — {clinic}"
+  },
+  "clinicMsg": {
+    "title": "Nova mensagem 💬",
+    "body": "O paciente <b>{name}</b> enviou uma mensagem pelo portal.",
+    "cta": "Responder mensagem",
+    "subject": "💬 Nova mensagem de {name} — {clinic}"
+  },
+  "patientMsg": {
+    "title": "Você tem uma mensagem 💬",
+    "body": "Olá, {name}! {clinic} enviou uma mensagem para você.",
+    "cta": "Ler e responder",
+    "noPortalNote": "Acesse seu portal usando o link que você recebeu anteriormente para responder.",
+    "subject": "💬 Nova mensagem de {clinic}"
+  },
+  "nps": {
+    "title": "Como foi sua sessão? ⭐",
+    "greeting": "Olá, {name}! Sua sessão de <b>{sessionType}</b> em {clinic} foi concluída.",
+    "sub": "Sua opinião é muito importante para melhorarmos continuamente. Leva menos de 1 minuto!",
+    "cta": "Avaliar minha sessão",
+    "orNote": "Ou acesse seu portal e clique em \"Avaliar sessão\".",
+    "subject": "⭐ Como foi sua sessão? — {clinic}"
+  }
+}

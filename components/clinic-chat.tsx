@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useLocale } from "next-intl";
 import { Send, Loader2, MessageCircle } from "lucide-react";
 
 interface PortalMessage {
@@ -12,9 +13,9 @@ interface PortalMessage {
   created_at: string;
 }
 
-function formatTime(iso: string) {
+function formatTime(iso: string, locale: string = "pt-BR") {
   const d = new Date(iso);
-  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDateGroup(iso: string) {
@@ -34,6 +35,7 @@ interface ClinicChatProps {
 }
 
 export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
+  const locale = useLocale();
   const [messages, setMessages] = useState<PortalMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -186,7 +188,7 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
                           isClinic ? "text-white/50" : "text-black/30",
                         ].join(" ")}
                       >
-                        {formatTime(msg.created_at)}
+                        {formatTime(msg.created_at, locale)}
                         {isClinic && msg.read_at && (
                           <span className="ml-1 text-[#0F6E56]">✓✓</span>
                         )}

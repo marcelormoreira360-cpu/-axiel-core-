@@ -154,7 +154,7 @@ export default async function FinanceiroPage() {
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-[13px] font-semibold text-[#0F1A2E]">{formatBRL(p.amount_cents)}</p>
-                      <p className="text-[10px] text-[#A09E98]">{methodLabel(p.payment_method)}</p>
+                      <p className="text-[10px] text-[#A09E98]">{methodLabel(p.payment_method ?? "")}</p>
                     </div>
                   </div>
                 ))}

@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { PatientWelcomeEmail } from "@/components/email/patient-welcome-email";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import type { Patient } from "@/lib/types";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
@@ -14,6 +15,8 @@ export async function sendPatientWelcome(
   const clinicName = (clinic?.name as string | null) ?? "nossa clínica";
   const first = patient.full_name.split(" ")[0];
   const portalUrl = portalToken ? `${APP_URL}/p/${portalToken}` : null;
+  const locale = await resolveClinicLocale(patient.clinic_id);
+  const t = await getServerT(locale, "emails");
 
   if (patient.email) {
     const resend = new Resend(process.env.RESEND_API_KEY);
@@ -23,11 +26,13 @@ export async function sendPatientWelcome(
       await resend.emails.send({
         from: fromAddress,
         to: patient.email,
-        subject: `Bem-vindo(a) à ${clinicName}`,
+        subject: t("welcome.subject", { clinic: clinicName }),
         react: PatientWelcomeEmail({
           clinicName,
           patientFirstName: first,
           portalUrl,
+          t,
+          locale,
         }),
       });
     } catch (e) {

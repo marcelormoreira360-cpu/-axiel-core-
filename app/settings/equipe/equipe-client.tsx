@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { UserPlus, Mail, X } from "lucide-react";
-import { ROLE_LABELS, INVITABLE_ROLES, isManager } from "@/lib/team-utils";
+import { INVITABLE_ROLES, isManager } from "@/lib/team-utils";
 import type { TeamMember, TeamInvite } from "@/services/team-service";
 import {
   inviteMemberAction,
@@ -22,6 +22,7 @@ interface Props {
 }
 
 function RoleTag({ role }: { role: AppRole }) {
+  const tRoles = useTranslations("common.roles");
   const colors: Partial<Record<AppRole, string>> = {
     clinic_owner:    "bg-[#0B1F3A] text-white",
     clinic_manager:  "bg-[#E6F1FB] text-[#0C447C]",
@@ -31,7 +32,7 @@ function RoleTag({ role }: { role: AppRole }) {
   };
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${colors[role] ?? "bg-[#F4F3EF] text-[#6B6A66]"}`}>
-      {ROLE_LABELS[role]}
+      {tRoles(role)}
     </span>
   );
 }
@@ -43,6 +44,7 @@ function initials(name: string | null) {
 
 export function EquipeClient({ members, invites, currentUserId, currentUserRole }: Props) {
   const t = useTranslations("settings.equipe");
+  const tRoles = useTranslations("common.roles");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError]   = useState<string | null>(null);
@@ -145,7 +147,7 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
                     className="rounded-lg border border-black/15 px-2 py-1 text-[11px] focus:outline-none disabled:opacity-50"
                   >
                     {(["clinic_owner", ...INVITABLE_ROLES] as AppRole[]).map((r) => (
-                      <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                      <option key={r} value={r}>{tRoles(r)}</option>
                     ))}
                   </select>
                 ) : (
@@ -183,7 +185,7 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{inv.email}</p>
                   <p className="text-[11px] text-[#A09E98]">
-                    {ROLE_LABELS[inv.role]} · {t("awaitingAccept")}
+                    {tRoles(inv.role)} · {t("awaitingAccept")}
                   </p>
                 </div>
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
@@ -239,7 +241,7 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
                   className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
                 >
                   {INVITABLE_ROLES.map((r) => (
-                    <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                    <option key={r} value={r}>{tRoles(r)}</option>
                   ))}
                 </select>
               </div>

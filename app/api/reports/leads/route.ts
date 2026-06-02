@@ -1,7 +1,7 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getLeads } from "@/services/lead-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
-import type { LeadSource, LeadStage } from "@/lib/types";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -13,22 +13,6 @@ function escCsv(val: string | number | null | undefined): string {
   return s;
 }
 
-const SOURCE_LABELS: Record<LeadSource, string> = {
-  website:  "Website",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  google:   "Google",
-  referral: "Indicação",
-  other:    "Outro",
-};
-
-const STAGE_LABELS: Record<LeadStage, string> = {
-  new_lead:             "Novo lead",
-  contacted:            "Contatado",
-  scheduled:            "Agendado",
-  converted_to_patient: "Convertido",
-};
-
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
@@ -36,20 +20,26 @@ export async function GET(req: Request) {
   const format = new URL(req.url).searchParams.get("format") ?? "csv";
   const leads  = await getLeads(clinic.id);
   const slug   = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const locale = await resolveClinicLocale(clinic.id);
+  const t = await getServerT(locale, "pdf");
+  const stageLoc = (s: string | null | undefined) =>
+    s && (["new_lead", "contacted", "scheduled", "converted_to_patient"] as string[]).includes(s) ? t(`leadStage.${s}`) : (s ?? "");
+  const sourceLoc = (s: string | null | undefined) =>
+    s && (["website", "instagram", "facebook", "google", "referral", "other"] as string[]).includes(s) ? t(`leadSource.${s}`) : (s ?? "");
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
-    const headers = ["Nome", "E-mail", "Telefone", "Etapa", "Origem", "Queixa", "Cadastrado"];
+    const headers = [t("col.name"), t("col.email"), t("col.phone"), t("col.stage"), t("col.source"), t("col.complaint"), t("col.registered")];
     const pdfRows = leads.map((l) => [
       l.full_name ?? "",
       l.email ?? "",
       l.phone ?? "",
-      STAGE_LABELS[l.stage as LeadStage] ?? l.stage ?? "",
-      SOURCE_LABELS[l.source as LeadSource] ?? l.source ?? "",
+      stageLoc(l.stage),
+      sourceLoc(l.source),
       l.main_complaint ?? "",
-      new Date(l.created_at).toLocaleDateString("pt-BR"),
+      new Date(l.created_at).toLocaleDateString(locale),
     ]);
-    const buf = await buildTablePdf({ title: "Pipeline de Leads", headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#1E40AF" });
+    const buf = await buildTablePdf({ title: t("leads.title"), headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#1E40AF", locale });
     return pdfResponse(buf, `leads-${slug}.pdf`);
   }
 
@@ -58,23 +48,23 @@ export async function GET(req: Request) {
       nome:      l.full_name ?? "",
       email:     l.email ?? "",
       telefone:  l.phone ?? "",
-      etapa:     STAGE_LABELS[l.stage as LeadStage]    ?? l.stage ?? "",
-      origem:    SOURCE_LABELS[l.source as LeadSource] ?? l.source ?? "",
+      etapa:     stageLoc(l.stage),
+      origem:    sourceLoc(l.source),
       queixa:    l.main_complaint ?? "",
       notas:     l.notes ?? "",
-      cadastro:  new Date(l.created_at).toLocaleDateString("pt-BR"),
+      cadastro:  new Date(l.created_at).toLocaleDateString(locale),
     }));
     const buf = await buildExcelBuffer([{
-      name: "Leads",
+      name: t("leads.title"),
       columns: [
-        { header: "Nome",            key: "nome",     width: 30 },
-        { header: "E-mail",          key: "email",    width: 28 },
-        { header: "Telefone",        key: "telefone", width: 18 },
-        { header: "Etapa",           key: "etapa",    width: 18 },
-        { header: "Origem",          key: "origem",   width: 16 },
-        { header: "Queixa principal",key: "queixa",   width: 34 },
-        { header: "Notas",           key: "notas",    width: 36 },
-        { header: "Cadastrado em",   key: "cadastro", width: 16 },
+        { header: t("col.name"),      key: "nome",     width: 30 },
+        { header: t("col.email"),     key: "email",    width: 28 },
+        { header: t("col.phone"),     key: "telefone", width: 18 },
+        { header: t("col.stage"),     key: "etapa",    width: 18 },
+        { header: t("col.source"),    key: "origem",   width: 16 },
+        { header: t("col.complaint"), key: "queixa",   width: 34 },
+        { header: t("col.notes"),     key: "notas",    width: 36 },
+        { header: t("col.registered"),key: "cadastro", width: 16 },
       ],
       rows,
     }]);
@@ -82,16 +72,16 @@ export async function GET(req: Request) {
   }
 
   // CSV (default)
-  const headers = ["Nome", "E-mail", "Telefone", "Etapa", "Origem", "Queixa principal", "Notas", "Cadastrado em"];
+  const headers = [t("col.name"), t("col.email"), t("col.phone"), t("col.stage"), t("col.source"), t("col.complaint"), t("col.notes"), t("col.registered")];
   const rows = leads.map((l) => [
     l.full_name ?? "",
     l.email ?? "",
     l.phone ?? "",
-    STAGE_LABELS[l.stage as LeadStage]    ?? l.stage ?? "",
-    SOURCE_LABELS[l.source as LeadSource] ?? l.source ?? "",
+    stageLoc(l.stage),
+    sourceLoc(l.source),
     l.main_complaint ?? "",
     l.notes ?? "",
-    new Date(l.created_at).toLocaleDateString("pt-BR"),
+    new Date(l.created_at).toLocaleDateString(locale),
   ]);
 
   const csv = [

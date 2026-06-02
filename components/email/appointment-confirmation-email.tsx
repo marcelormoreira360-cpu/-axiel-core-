@@ -5,6 +5,7 @@ import {
   EmailInfoBox,
   EmailInfoRow,
   EmailDivider,
+  type EmailT,
 } from "./base-email";
 
 interface Props {
@@ -14,6 +15,8 @@ interface Props {
   timeStr: string;   // e.g. "10:00"
   durationMinutes: number;
   whatsappUrl?: string | null;
+  t: EmailT;
+  locale?: string;
 }
 
 export function AppointmentConfirmationEmail({
@@ -23,11 +26,15 @@ export function AppointmentConfirmationEmail({
   timeStr,
   durationMinutes,
   whatsappUrl,
+  t,
+  locale,
 }: Props) {
   return (
     <BaseEmail
       clinicName={clinicName}
-      previewText={`Sua sessão está confirmada — ${dateStr} às ${timeStr}`}
+      previewText={t("apptConfirm.preview", { date: dateStr, time: timeStr })}
+      t={t}
+      locale={locale}
     >
       {/* Icon + heading */}
       <div style={{ textAlign: "center", marginBottom: 24 }}>
@@ -44,38 +51,30 @@ export function AppointmentConfirmationEmail({
         }}>
           ✅
         </div>
-        <EmailHeading>Sessão confirmada!</EmailHeading>
-        <EmailText muted>
-          Olá, {patientFirstName}. Sua sessão está agendada e confirmada.
-        </EmailText>
+        <EmailHeading>{t("apptConfirm.heading")}</EmailHeading>
+        <EmailText muted>{t("apptConfirm.subtitle", { name: patientFirstName })}</EmailText>
       </div>
 
       {/* Session details */}
       <EmailInfoBox>
-        <EmailInfoRow label="📅 Data" value={dateStr} />
-        <EmailInfoRow label="🕐 Horário" value={timeStr} />
-        <EmailInfoRow label="⏱ Duração" value={`${durationMinutes} minutos`} />
-        <EmailInfoRow label="🏥 Clínica" value={clinicName} />
+        <EmailInfoRow label={t("rowDate")} value={dateStr} />
+        <EmailInfoRow label={t("rowTime")} value={timeStr} />
+        <EmailInfoRow label={t("rowDuration")} value={t("minutes", { n: durationMinutes })} />
+        <EmailInfoRow label={t("rowClinic")} value={clinicName} />
       </EmailInfoBox>
 
       <EmailDivider />
 
       <EmailText>
-        Precisa reagendar ou tem alguma dúvida?
-        {whatsappUrl ? (
-          <>
-            {" "}Entre em contato pelo{" "}
-            <a href={whatsappUrl} style={{ color: "#0F6E56", fontWeight: 600 }}>
-              WhatsApp da clínica
-            </a>
-            .
-          </>
-        ) : (
-          " Entre em contato diretamente com a clínica."
-        )}
+        {t("apptConfirm.rescheduleQ")}
+        {whatsappUrl
+          ? t.rich("apptConfirm.rescheduleWhats", {
+              a: (c: React.ReactNode) => <a href={whatsappUrl} style={{ color: "#0F6E56", fontWeight: 600 }}>{c}</a>,
+            })
+          : t("apptConfirm.rescheduleNoWhats")}
       </EmailText>
 
-      <EmailText muted>Até lá! 🌿</EmailText>
+      <EmailText muted>{t("apptConfirm.seeYou")}</EmailText>
     </BaseEmail>
   );
 }

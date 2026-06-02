@@ -56,7 +56,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
         </div>
         <div>
           <p className="text-[15px] font-semibold text-[#0F1A2E] leading-tight">{plan.name}</p>
-          <p className="text-[11px] text-[#A09E98] leading-tight mt-[1px]">{plan.description}</p>
+          <p className="text-[11px] text-[#A09E98] leading-tight mt-[1px]">{t(`planDesc.${plan.slug}`)}</p>
         </div>
       </div>
 

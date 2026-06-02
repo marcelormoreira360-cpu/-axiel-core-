@@ -1,6 +1,7 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPatients } from "@/services/patient-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -12,13 +13,6 @@ function escCsv(val: string | number | null | undefined): string {
   return s;
 }
 
-function statusLabel(status: string) {
-  if (status === "active")   return "Ativo";
-  if (status === "inactive") return "Inativo";
-  if (status === "archived") return "Arquivado";
-  return status;
-}
-
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
@@ -26,19 +20,23 @@ export async function GET(req: Request) {
   const format   = new URL(req.url).searchParams.get("format") ?? "csv";
   const patients = await getPatients();
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const locale = await resolveClinicLocale(clinic.id);
+  const t = await getServerT(locale, "pdf");
+  const statusLoc = (s: string) =>
+    (["active", "inactive", "archived"] as string[]).includes(s) ? t(`patientStatus.${s}`) : s;
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
-    const headers = ["Nome", "E-mail", "Telefone", "Data de nasc.", "Status", "Cadastrado"];
+    const headers = [t("col.name"), t("col.email"), t("col.phone"), t("col.dob"), t("col.status"), t("col.registered")];
     const pdfRows = patients.map((p) => [
       p.full_name,
       p.email ?? "",
       p.phone ?? "",
-      p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("pt-BR") : "",
-      statusLabel(p.status),
-      new Date(p.created_at).toLocaleDateString("pt-BR"),
+      p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+      statusLoc(p.status),
+      new Date(p.created_at).toLocaleDateString(locale),
     ]);
-    const buf = await buildTablePdf({ title: "Lista de Pacientes", headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56" });
+    const buf = await buildTablePdf({ title: t("patients.title"), headers, rows: pdfRows, clinicName: clinic.name, accentColor: "#0F6E56", locale });
     return pdfResponse(buf, `pacientes-${slug}.pdf`);
   }
 
@@ -47,21 +45,21 @@ export async function GET(req: Request) {
       nome:         p.full_name,
       email:        p.email ?? "",
       telefone:     p.phone ?? "",
-      nascimento:   p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("pt-BR") : "",
-      status:       statusLabel(p.status),
-      cadastrado:   new Date(p.created_at).toLocaleDateString("pt-BR"),
+      nascimento:   p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+      status:       statusLoc(p.status),
+      cadastrado:   new Date(p.created_at).toLocaleDateString(locale),
       observacoes:  p.notes ?? "",
     }));
     const buf = await buildExcelBuffer([{
-      name: "Pacientes",
+      name: t("patients.title"),
       columns: [
-        { header: "Nome",              key: "nome",        width: 30 },
-        { header: "E-mail",            key: "email",       width: 28 },
-        { header: "Telefone",          key: "telefone",    width: 18 },
-        { header: "Data de nascimento",key: "nascimento",  width: 20 },
-        { header: "Status",            key: "status",      width: 12 },
-        { header: "Cadastrado em",     key: "cadastrado",  width: 16 },
-        { header: "Observações",       key: "observacoes", width: 40 },
+        { header: t("col.name"),       key: "nome",        width: 30 },
+        { header: t("col.email"),      key: "email",       width: 28 },
+        { header: t("col.phone"),      key: "telefone",    width: 18 },
+        { header: t("col.dob"),        key: "nascimento",  width: 20 },
+        { header: t("col.status"),     key: "status",      width: 12 },
+        { header: t("col.registered"), key: "cadastrado",  width: 16 },
+        { header: t("col.notes"),      key: "observacoes", width: 40 },
       ],
       rows,
     }]);
@@ -69,14 +67,14 @@ export async function GET(req: Request) {
   }
 
   // CSV (default)
-  const headers = ["Nome", "E-mail", "Telefone", "Data de nascimento", "Status", "Cadastrado em", "Observações"];
+  const headers = [t("col.name"), t("col.email"), t("col.phone"), t("col.dob"), t("col.status"), t("col.registered"), t("col.notes")];
   const rows = patients.map((p) => [
     p.full_name,
     p.email ?? "",
     p.phone ?? "",
-    p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString("pt-BR") : "",
-    statusLabel(p.status),
-    new Date(p.created_at).toLocaleDateString("pt-BR"),
+    p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+    statusLoc(p.status),
+    new Date(p.created_at).toLocaleDateString(locale),
     p.notes ?? "",
   ]);
 

@@ -96,7 +96,7 @@ export function SessionDrawer({
                 </span>
               </div>
               <p className="text-[12px] text-[#A09E98] mt-[1px]">
-                {t("meta", { count: sessionCount, time: formatTime(session.starts_at), minutes: session.duration_minutes })}
+                {t("meta", { count: sessionCount, time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}
               </p>
             </div>
           </div>

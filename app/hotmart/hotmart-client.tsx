@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
+import { useLocale } from "next-intl";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import type { HotmartPurchaseFull } from "@/services/hotmart-service";
@@ -56,6 +57,7 @@ export function HotmartClient({
   defaultTo,
   defaultSearch,
 }: Props) {
+  const locale   = useLocale();
   const router   = useRouter();
   const pathname = usePathname();
   const sp       = useSearchParams();
@@ -185,7 +187,7 @@ export function HotmartClient({
                           </span>
                         </td>
                         <td className="px-4 py-3 text-[12px] text-black/40 whitespace-nowrap">
-                          {new Date(p.created_at).toLocaleDateString("pt-BR")}
+                          {new Date(p.created_at).toLocaleDateString(locale)}
                         </td>
                         <td className="px-4 py-3">
                           {p.patient_id ? (

@@ -1,4 +1,10 @@
 {
+  "planDesc": {
+    "starter": "Para profissionais solo e clínicas pequenas.",
+    "professional": "Operação clínica completa com IA.",
+    "scale": "Para clínicas premium e times em crescimento.",
+    "enterprise": "Multi-unidade, white-label e onboarding dedicado."
+  },
   "navLogin": "Entrar",
   "heroEyebrow": "Pricing · Planos",
   "heroTitleLine1": "Infraestrutura premium",

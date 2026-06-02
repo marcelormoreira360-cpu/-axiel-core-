@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { Loader2, TrendingUp, Users, Star, BarChart3, ChevronRight } from "lucide-react";
 import type { ProfessionalSummary } from "@/app/api/professionals/route";
 
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+function formatBRL(cents: number, locale: string) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(cents / 100);
 }
 
 function NpsBar({ value }: { value: number | null }) {
@@ -26,11 +27,10 @@ function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
-const ROLE_LABELS: Record<string, string> = {
-  clinic_owner: "Proprietário", staff: "Profissional", admin: "Admin",
-};
-
 export function ProfissionaisClient() {
+  const t = useTranslations("professionals.list");
+  const tRoles = useTranslations("common.roles");
+  const locale = useLocale();
   const [professionals, setProfessionals] = useState<ProfessionalSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -57,10 +57,11 @@ export function ProfissionaisClient() {
           <Users className="h-6 w-6 text-[#0F6E56]" />
         </div>
         <div>
-          <p className="text-sm font-medium text-[#0F1A2E]">Nenhum profissional cadastrado</p>
+          <p className="text-sm font-medium text-[#0F1A2E]">{t("empty")}</p>
           <p className="text-xs text-black/40 mt-0.5">
-            Convide membros da equipe em{" "}
-            <Link href="/settings/equipe" className="text-[#0F6E56] hover:underline">Configurações → Equipe</Link>
+            {t.rich("inviteHint", {
+              a: (c) => <Link href="/settings/equipe" className="text-[#0F6E56] hover:underline">{c}</Link>,
+            })}
           </p>
         </div>
       </div>
@@ -78,12 +79,12 @@ export function ProfissionaisClient() {
       {/* Team summary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: "Profissionais", value: String(professionals.length), icon: Users },
-          { label: "Sessões este mês", value: String(totalSessions), icon: BarChart3 },
-          { label: "Receita este mês", value: formatBRL(totalRevenue), icon: TrendingUp },
-          { label: "NPS médio equipe", value: teamAvgNps !== null ? teamAvgNps.toFixed(1) : "—", icon: Star },
-        ].map(({ label, value, icon: Icon }) => (
-          <div key={label} className="bg-white rounded-2xl border border-black/[.07] p-4">
+          { key: "professionals", label: t("kpiProfessionals"), value: String(professionals.length), icon: Users },
+          { key: "sessions", label: t("kpiSessions"), value: String(totalSessions), icon: BarChart3 },
+          { key: "revenue", label: t("kpiRevenue"), value: formatBRL(totalRevenue, locale), icon: TrendingUp },
+          { key: "nps", label: t("kpiNps"), value: teamAvgNps !== null ? teamAvgNps.toFixed(1) : "—", icon: Star },
+        ].map(({ key, label, value, icon: Icon }) => (
+          <div key={key} className="bg-white rounded-2xl border border-black/[.07] p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-black/35">{label}</p>
               <Icon className="h-3.5 w-3.5 text-black/20" />
@@ -115,7 +116,7 @@ export function ProfissionaisClient() {
                     {pro.displayName ?? pro.fullName}
                   </p>
                   <span className="shrink-0 text-[10px] text-black/35 bg-black/[.05] rounded-full px-2 py-0.5">
-                    {ROLE_LABELS[pro.role] ?? pro.role}
+                    {tRoles(pro.role)}
                   </span>
                 </div>
                 {pro.specialty && (
@@ -127,19 +128,19 @@ export function ProfissionaisClient() {
               <div className="hidden sm:flex items-center gap-6 shrink-0">
                 <div className="text-center">
                   <p className="text-[18px] font-semibold text-[#0F1A2E]">{pro.sessionsThisMonth}</p>
-                  <p className="text-[10px] text-black/35">sessões</p>
+                  <p className="text-[10px] text-black/35">{t("statSessions")}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[14px] font-semibold text-[#0F1A2E]">{formatBRL(pro.revenueThisMonth)}</p>
-                  <p className="text-[10px] text-black/35">receita</p>
+                  <p className="text-[14px] font-semibold text-[#0F1A2E]">{formatBRL(pro.revenueThisMonth, locale)}</p>
+                  <p className="text-[10px] text-black/35">{t("statRevenue")}</p>
                 </div>
                 <div className="text-center min-w-[80px]">
                   <NpsBar value={pro.avgNps} />
-                  <p className="text-[10px] text-black/35 mt-0.5">NPS</p>
+                  <p className="text-[10px] text-black/35 mt-0.5">{t("statNps")}</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[14px] font-semibold text-[#0F1A2E]">{pro.completionRate}%</p>
-                  <p className="text-[10px] text-black/35">conclusão</p>
+                  <p className="text-[10px] text-black/35">{t("statCompletion")}</p>
                 </div>
               </div>
 
@@ -149,7 +150,7 @@ export function ProfissionaisClient() {
       </div>
 
       <p className="text-center text-[11px] text-black/30">
-        Clique em um profissional para ver o relatório detalhado
+        {t("clickHint")}
       </p>
     </div>
   );

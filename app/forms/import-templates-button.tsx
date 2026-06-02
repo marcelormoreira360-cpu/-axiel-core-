@@ -91,25 +91,25 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
             )}
 
             <div className="space-y-[6px]">
-              {catalog.map((t) => {
-                const isDone = done.includes(t.key);
-                const isLoading = isPending && currentKey === t.key;
-                const entry = actionEntries.find((e) => e.key === t.key);
+              {catalog.map((tpl) => {
+                const isDone = done.includes(tpl.key);
+                const isLoading = isPending && currentKey === tpl.key;
+                const entry = actionEntries.find((e) => e.key === tpl.key);
                 return (
                   <div
-                    key={t.key}
+                    key={tpl.key}
                     className={`flex items-center gap-3 px-[12px] py-[10px] rounded-[10px] border transition ${
                       isDone ? "border-[#0F6E56]/20 bg-[#F0FAF6]" : "border-black/[.07] bg-white"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-[6px] mb-[2px]">
-                        <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{t.name}</p>
-                        <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-semibold ${TAG_COLORS[t.tag] ?? "bg-[#F4F3EF] text-[#6B6A66]"}`}>
-                          {t.tag}
+                        <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{tpl.name}</p>
+                        <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-semibold ${TAG_COLORS[tpl.tag] ?? "bg-[#F4F3EF] text-[#6B6A66]"}`}>
+                          {tpl.tag}
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#A09E98]">{t.description}</p>
+                      <p className="text-[11px] text-[#A09E98]">{tpl.description}</p>
                     </div>
 
                     {isDone ? (
@@ -120,7 +120,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
                       <button
                         type="button"
                         disabled={isPending || !entry}
-                        onClick={() => entry && handleImport(t.key, entry.action)}
+                        onClick={() => entry && handleImport(tpl.key, entry.action)}
                         className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[6px] px-[10px] py-[5px] transition"
                       >
                         {isLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}

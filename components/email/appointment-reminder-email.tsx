@@ -5,6 +5,7 @@ import {
   EmailInfoBox,
   EmailInfoRow,
   EmailDivider,
+  type EmailT,
 } from "./base-email";
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
   durationMinutes: number;
   daysUntil: number;    // 1 = tomorrow, 0 = today
   whatsappUrl?: string | null;
+  t: EmailT;
+  locale?: string;
 }
 
 export function AppointmentReminderEmail({
@@ -25,14 +28,18 @@ export function AppointmentReminderEmail({
   durationMinutes,
   daysUntil,
   whatsappUrl,
+  t,
+  locale,
 }: Props) {
-  const when = daysUntil === 0 ? "hoje" : daysUntil === 1 ? "amanhã" : `em ${daysUntil} dias`;
+  const when = daysUntil === 0 ? t("apptReminder.whenToday") : daysUntil === 1 ? t("apptReminder.whenTomorrow") : t("apptReminder.whenDays", { n: daysUntil });
   const emoji = daysUntil <= 1 ? "⏰" : "📅";
 
   return (
     <BaseEmail
       clinicName={clinicName}
-      previewText={`Lembrete: você tem uma sessão ${when} às ${timeStr}`}
+      previewText={t("apptReminder.preview", { when, time: timeStr })}
+      t={t}
+      locale={locale}
     >
       <div style={{ textAlign: "center", marginBottom: 24 }}>
         <div style={{
@@ -48,34 +55,34 @@ export function AppointmentReminderEmail({
         }}>
           {emoji}
         </div>
-        <EmailHeading>Lembrete de sessão</EmailHeading>
+        <EmailHeading>{t("apptReminder.heading")}</EmailHeading>
         <EmailText muted>
-          Olá, {patientFirstName}! Você tem uma sessão agendada <strong>{when}</strong>.
+          {t.rich("apptReminder.subtitle", { name: patientFirstName, when, b: (c: React.ReactNode) => <strong>{c}</strong> })}
         </EmailText>
       </div>
 
       <EmailInfoBox>
-        <EmailInfoRow label="📅 Data" value={dateStr} />
-        <EmailInfoRow label="🕐 Horário" value={timeStr} />
-        <EmailInfoRow label="⏱ Duração" value={`${durationMinutes} minutos`} />
-        <EmailInfoRow label="🏥 Clínica" value={clinicName} />
+        <EmailInfoRow label={t("rowDate")} value={dateStr} />
+        <EmailInfoRow label={t("rowTime")} value={timeStr} />
+        <EmailInfoRow label={t("rowDuration")} value={t("minutes", { n: durationMinutes })} />
+        <EmailInfoRow label={t("rowClinic")} value={clinicName} />
       </EmailInfoBox>
 
       <EmailDivider />
 
       <EmailText>
-        Se precisar cancelar ou reagendar, avise com antecedência.
+        {t("apptReminder.cancelNote")}
         {whatsappUrl && (
           <>
             {" "}
             <a href={whatsappUrl} style={{ color: "#0F6E56", fontWeight: 600 }}>
-              Fale pelo WhatsApp →
+              {t("apptReminder.whatsCta")}
             </a>
           </>
         )}
       </EmailText>
 
-      <EmailText muted>Até lá! 🌿</EmailText>
+      <EmailText muted>{t("apptReminder.seeYou")}</EmailText>
     </BaseEmail>
   );
 }

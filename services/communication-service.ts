@@ -1,6 +1,7 @@
 import { getResendClient, getDefaultEmailFrom } from "@/lib/resend";
 import { getTwilioClient, getTwilioFromNumber } from "@/lib/twilio";
 import { SimpleMessageEmail } from "@/components/email/simple-message-email";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import type { CommunicationChannel, CommunicationUseCase } from "@/modules/communications/templates";
 import { defaultCommunicationTemplates } from "@/modules/communications/templates";
 
@@ -157,11 +158,13 @@ export async function sendCommunication(input: {
   try {
     if (input.channel === "email") {
       const resend = getResendClient();
+      const locale = await resolveClinicLocale(input.clinic_id);
+      const t = await getServerT(locale, "emails");
       const result = await resend.emails.send({
         from: getDefaultEmailFrom(),
         to: [input.recipient],
-        subject: input.subject || "Message from your clinic",
-        react: SimpleMessageEmail({ body: input.body }),
+        subject: input.subject || t("simple.defaultSubject"),
+        react: SimpleMessageEmail({ body: input.body, t, locale }),
       });
 
       if (result.error) throw new Error(result.error.message || "Resend email failed.");

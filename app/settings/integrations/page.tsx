@@ -298,13 +298,13 @@ export default async function IntegrationsPage({
           </p>
           <div className="space-y-[6px] text-[12px] text-[#6B6A66] dark:text-[#9E9C97]">
             <p>{t.rich("googleSetup", {
-              appUrl: process.env.NEXT_PUBLIC_APP_URL,
+              appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
               b: (c) => <strong className="text-[#0F1A2E] dark:text-[#E8E6E2]">{c}</strong>,
               a: (c) => <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">{c}</a>,
               code: (c) => <code className="bg-white dark:bg-[#1C2333] px-1 rounded text-[11px]">{c}</code>,
             })}</p>
             <p>{t.rich("zoomSetup", {
-              appUrl: process.env.NEXT_PUBLIC_APP_URL,
+              appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "",
               b: (c) => <strong className="text-[#0F1A2E] dark:text-[#E8E6E2]">{c}</strong>,
               a: (c) => <a href="https://marketplace.zoom.us/develop/create" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline">{c}</a>,
               code: (c) => <code className="bg-white dark:bg-[#1C2333] px-1 rounded text-[11px]">{c}</code>,

@@ -6,6 +6,7 @@ import {
   Mic, MicOff, Copy, Check, PhoneOff, Loader2,
   ClipboardList, AlertCircle, CheckCircle2, Clock, Sparkles
 } from "lucide-react";
+import { useLocale } from "next-intl";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 
@@ -20,6 +21,7 @@ type Summary = {
 };
 
 export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
+  const locale = useLocale();
   const router = useRouter();
   const patientName = appointment.patients?.full_name ?? "Paciente";
 
@@ -277,7 +279,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
         <div className="flex items-center gap-[10px]">
           <span className="text-[12px] font-mono text-white/40">{formatDuration(callSeconds)}</span>
           <span className="text-[11px] text-[#A09E98]">
-            {formatTime(appointment.starts_at)} · {appointment.duration_minutes} min
+            {formatTime(appointment.starts_at, locale)} · {appointment.duration_minutes} min
           </span>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPaymentsWithPatients, paymentMethodLabel } from "@/services/finance-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import type { PaymentMethod } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -24,27 +25,29 @@ export async function GET(req: Request) {
 
   const payments = await getPaymentsWithPatients(clinic.id, { from, to, limit: 10000 });
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const locale = await resolveClinicLocale(clinic.id);
+  const t = await getServerT(locale, "pdf");
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
     const periodLabel = from && to
-      ? `${new Date(from).toLocaleDateString("pt-BR")} a ${new Date(to).toLocaleDateString("pt-BR")}`
-      : "Todos os períodos";
-    const headers = ["Data", "Paciente", "Tipo de sessão", "Método", "Valor (R$)"];
+      ? t("range", { from: new Date(from).toLocaleDateString(locale), to: new Date(to).toLocaleDateString(locale) })
+      : t("allPeriods");
+    const headers = [t("col.date"), t("col.patient"), t("col.sessionType"), t("col.method"), t("col.value")];
     const pdfRows = payments.map((p) => [
-      new Date(p.paid_at).toLocaleDateString("pt-BR"),
+      new Date(p.paid_at).toLocaleDateString(locale),
       p.patient_name ?? "",
       p.session_type_name ?? "",
       paymentMethodLabel(p.payment_method as PaymentMethod),
       (p.amount_cents / 100).toFixed(2).replace(".", ","),
     ]);
-    const buf = await buildTablePdf({ title: "Extrato de Pagamentos", periodLabel, headers, rows: pdfRows, clinicName: clinic.name });
+    const buf = await buildTablePdf({ title: t("payments.title"), periodLabel, headers, rows: pdfRows, clinicName: clinic.name, locale });
     return pdfResponse(buf, `pagamentos-${slug}.pdf`);
   }
 
   if (format === "xlsx") {
     const rows = payments.map((p) => ({
-      data:    new Date(p.paid_at).toLocaleDateString("pt-BR"),
+      data:    new Date(p.paid_at).toLocaleDateString(locale),
       paciente: p.patient_name ?? "",
       tipo:    p.session_type_name ?? "",
       metodo:  paymentMethodLabel(p.payment_method as PaymentMethod),
@@ -52,14 +55,14 @@ export async function GET(req: Request) {
       notas:   p.notes ?? "",
     }));
     const buf = await buildExcelBuffer([{
-      name: "Pagamentos",
+      name: t("payments.title"),
       columns: [
-        { header: "Data",              key: "data",     width: 14 },
-        { header: "Paciente",          key: "paciente", width: 30 },
-        { header: "Tipo de sessão",    key: "tipo",     width: 24 },
-        { header: "Forma de pagamento",key: "metodo",   width: 22 },
-        { header: "Valor (R$)",        key: "valor",    width: 14 },
-        { header: "Notas",             key: "notas",    width: 36 },
+        { header: t("col.date"),        key: "data",     width: 14 },
+        { header: t("col.patient"),     key: "paciente", width: 30 },
+        { header: t("col.sessionType"), key: "tipo",     width: 24 },
+        { header: t("col.payment"),     key: "metodo",   width: 22 },
+        { header: t("col.value"),       key: "valor",    width: 14 },
+        { header: t("col.notes"),       key: "notas",    width: 36 },
       ],
       rows,
     }]);
@@ -67,9 +70,9 @@ export async function GET(req: Request) {
   }
 
   // CSV (default)
-  const headers = ["Data", "Paciente", "Tipo de sessão", "Forma de pagamento", "Valor (R$)", "Notas"];
+  const headers = [t("col.date"), t("col.patient"), t("col.sessionType"), t("col.payment"), t("col.value"), t("col.notes")];
   const rows = payments.map((p) => [
-    new Date(p.paid_at).toLocaleDateString("pt-BR"),
+    new Date(p.paid_at).toLocaleDateString(locale),
     p.patient_name ?? "",
     p.session_type_name ?? "",
     paymentMethodLabel(p.payment_method as PaymentMethod),

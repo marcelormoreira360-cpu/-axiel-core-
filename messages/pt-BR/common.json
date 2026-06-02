@@ -13,6 +13,17 @@
     "viewMore": "Ver mais",
     "viewAll": "Ver tudo"
   },
+  "roles": {
+    "admin": "Admin",
+    "platform_admin": "Admin da plataforma",
+    "platform_support": "Suporte",
+    "clinic_owner": "Proprietário",
+    "clinic_manager": "Gestor",
+    "practitioner": "Profissional de saúde",
+    "front_desk": "Recepção",
+    "read_only_staff": "Visualizador",
+    "staff": "Equipe"
+  },
   "status": {
     "loading": "Carregando…",
     "saving": "Salvando…",

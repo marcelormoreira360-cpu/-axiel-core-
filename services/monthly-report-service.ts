@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export async function sendMonthlyReports(): Promise<{ sent: number; failed: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
@@ -16,7 +17,6 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
   const startISO = firstOfLastMonth.toISOString();
   const endISO = firstOfThisMonth.toISOString();
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const monthName = firstOfLastMonth.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
 
   const { data: clinics, error: clinicsError } = await supabase.from("clinics").select("id, name");
   if (clinicsError) throw clinicsError;
@@ -35,6 +35,10 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     const { data: authUser } = await supabase.auth.admin.getUserById(owners[0].id);
     const ownerEmail = authUser?.user?.email;
     if (!ownerEmail) return "skipped";
+
+    const locale = await resolveClinicLocale(clinic.id);
+    const t = await getServerT(locale, "emails");
+    const monthName = firstOfLastMonth.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
     // Compute metrics in parallel
     const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes, paymentsRes] = await Promise.all([
@@ -80,7 +84,7 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     const inactive = Math.max(0, totalActive - recentPatientIds.size);
     const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
     const revenueStr = revenueCents > 0
-      ? (revenueCents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
       : "—";
 
     const html = await render(
@@ -95,13 +99,15 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
           activePackages,
           inactivePatients: inactive,
         },
+        t,
+        locale,
       })
     );
 
     await resend.emails.send({
       from: fromAddress,
       to: ownerEmail,
-      subject: `Relatório ${monthName} — ${clinic.name}`,
+      subject: t("monthly.subject", { month: monthName, clinic: clinic.name }),
       html,
     });
 

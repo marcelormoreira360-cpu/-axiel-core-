@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 import type { PatientSnapshotData } from "@/components/patient-snapshot";
@@ -24,6 +24,7 @@ export function SessionCard({
   onOpen: (session: ScheduleSession) => void;
 }) {
   const t = useTranslations("schedule.card");
+  const locale = useLocale();
   const patientName = session.patients?.full_name ?? t("patientFallback");
   const sessionCount = session.previousSessions.length + 1;
   const hasFinalInsight = session.latestInsightStatus === "final";
@@ -43,7 +44,7 @@ export function SessionCard({
               <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{patientName}</p>
               <span className="text-[10px] text-[#A09E98] shrink-0">{t("sessionNum", { count: sessionCount })}</span>
             </div>
-            <p className="text-[11px] text-[#A09E98] mt-[1px]">{t("meta", { time: formatTime(session.starts_at), minutes: session.duration_minutes })}</p>
+            <p className="text-[11px] text-[#A09E98] mt-[1px]">{t("meta", { time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}</p>
           </div>
 
           {/* Insight badge */}

@@ -121,6 +121,36 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - Script de verificação atualizado para também validar ICU dentro de arrays
   - Validado: tsc do código limpo, paridade PT/EN (26 namespaces), ICU compila
   - **FASE 5 COMPLETA.** App inteiro (autenticado + público) bilíngue PT/EN
+- ✅ i18n Fase 6b (01/06/2026): Componentes React Email + pontos de render
+  - 6 componentes em `components/email/*.tsx` recebem `t: EmailT` + `locale`; `EmailT` (em base-email.tsx) retipado: call `(key, values)`, `rich` e `markup` com callbacks tipados (`chunks: ReactNode`/`string`) — elimina implicit-any
+  - `lib/email-i18n.ts`: `getServerT()` agora retorna `Promise<ServerT>` (= `EmailT`) via cast — antes devolvia o `Translator` cru do next-intl (chaves viravam `never`, quebrando todos os `t("...")`)
+  - Pontos de render migrados (passam `t`+`locale`, datas/moeda via locale, subjects via `t`): patient-welcome-service, monthly-report-service, automation-service (lembrete + confirmação; WhatsApp segue PT), communication-service, app/api/results/send-report
+  - Chaves novas em emails.json (PT+EN): `apptConfirm.subject`, `apptReminder.subject/fallbackDate/fallbackTime`, `monthly.subject`, `simple.defaultSubject`
+  - ⚠️ **DESCOBERTA IMPORTANTE**: `npx tsc --noEmit` estava **mascarando erros** — o arquivo gerado `.next/dev/types/validator.ts` tem erros de parse (TS1109) que faziam o tsc reportar só esses e NÃO checar o código-fonte (confirmado: erro proposital não era pego). As fases anteriores foram "validadas" com esse tsc quebrado.
+  - **Verificação confiável criada**: `tsconfig.check.json` (exclui `.next`, incremental off). Comando: `npx tsc -p tsconfig.check.json --noEmit`
+  - Ao rodar o tsc confiável, apareceram **7 erros latentes** de fases anteriores, todos corrigidos:
+    - `app/forms/page.tsx` e `app/forms/import-templates-button.tsx`: `.map((t) =>)` sombreava o tradutor `t` → `t("edit")`/`t("fill")`/`t("import")` chamavam o objeto template (bug de **runtime**). Param renomeado p/ `tpl`.
+    - `app/financeiro/page.tsx`: `methodLabel(p.payment_method)` com `string|null` → `?? ""`
+    - `app/settings/integrations/page.tsx`: `appUrl: process.env.NEXT_PUBLIC_APP_URL` (`string|undefined`) em `t.rich` → `?? ""`
+  - Validado com tsc confiável: **0 erros de código**; paridade PT/EN + ICU OK em **28 namespaces**
+  - **Pendente Fase 6**: 6c — PDFs e exportações (`lib/pdf-report.ts` + 5 rotas em `app/api/{finance/report,reports/*}`)
+- ✅ i18n Fase 6c (01/06/2026): PDFs e exportações — **namespace `pdf` expandido**
+  - `lib/pdf-report.ts`: `buildTablePdf` ganhou `locale?`; rótulo "PERÍODO" e rodapé "gerado pelo AXIEL Core" via `getServerT(locale,"pdf")`
+  - 5 rotas migradas (trilha PDF): `app/api/finance/report/pdf` + `app/api/reports/{pagamentos,pacientes,leads,sessoes}` — título, colunas, período, datas e enums (status de paciente/sessão, etapa/origem de lead) via `t`; `locale` passado ao `buildTablePdf`
+  - pdf.json: `allPeriods`, `range`, `col.*`, `finance.*` (título + summary com plural + labels de período), `payments/patients/leads/sessions.title`, `patientStatus`, `sessionStatus`, `leadStage`, `leadSource`
+  - **Fora de escopo (PT, follow-up)**: trilhas **CSV e XLSX** das mesmas rotas (decisão era "e-mails + PDFs"); `paymentMethodLabel` (de finance-service) ainda PT no PDF de pagamentos
+  - Validado com tsc confiável (`tsconfig.check.json`): **0 erros de código**; paridade PT/EN + ICU OK em **28 namespaces**
+  - **FASE 6 COMPLETA. Internacionalização PT-BR/EN do AXIEL Core concluída** (app autenticado + público + e-mails + PDFs)
+- 🧹 i18n — limpeza de resíduos (01/06/2026, em andamento):
+  - ✅ **ROLE_LABELS** centralizado em `common.roles` (PT+EN, 9 papéis). Migrados: equipe-client (RoleTag + selects + convites), dashboard (via `tc("roles.*")`), join/[token]. `ROLE_LABELS` em `lib/team-utils` permanece **só** para o e-mail de convite (team-service) — escopo de e-mail, follow-up.
+  - ✅ **plan-config descrições** → `pricing.planDesc.{starter,professional,scale,enterprise}` (nomes dos planos mantidos, são próprios). Migrado em `pricing-client.tsx`. Landing já usava `t()` próprio.
+  - ✅ **teleconsulta-video.tsx + teleconsulta-notes.tsx** migrados (namespaces `teleconsulta.video` / `teleconsulta.notes`)
+  - ✅ **Datas Hotmart**: settings/integrations/hotmart/page.tsx (getLocale) e app/hotmart/hotmart-client.tsx (useLocale)
+  - ✅ **date-utils.ts** locale-aware: 4 helpers (formatTime/formatShortDate/formatDayLabel/formatMonthYear) ganharam `locale?` (default pt-BR, sem regressão); callers passam locale — schedule/page, session-recording-panel, session-drawer, session-card, telehealth-room, clinic-chat (formatTime local também), schedule-container (5 sub-componentes com useLocale)
+  - ✅ **Exportações CSV/XLSX** das 4 rotas de relatório migradas (locale/t no topo; cabeçalhos via `col.*`, enums via maps `patientStatus`/`sessionStatus`/`leadStage`/`leadSource`, datas via locale)
+  - ✅ **Telas de profissionais** migradas — **novo namespace `professionals`** (`list` + `report`): profissionais-client.tsx e profissional-report-client.tsx (KPIs, períodos, status, tendência, tipos, NPS com plural ICU); param `.map((t)=>)` renomeado p/ `st`
+  - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **29 namespaces**
+  - **Follow-ups restantes (componentes maiores, fora do escopo de "resíduo")**: `telehealth-room.tsx` e `app/hotmart/hotmart-client.tsx` (só a data foi traduzida; têm outras strings PT — abas, status, botões); `clinic-chat.tsx` `formatDateGroup` ("Hoje"/"Ontem"); e-mail de convite de equipe (team-service usa ROLE_LABELS PT); `paymentMethodLabel` (finance-service) PT nos relatórios; `app/actions` Action Center (EN + getTerm); `modules/follow-ups` (MESSAGE_AUTOMATION_STATUS etc.)
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)
   - `app/p/[token]` (página de link expirado → portal.tokenExpired)

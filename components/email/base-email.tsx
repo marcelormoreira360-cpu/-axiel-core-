@@ -1,3 +1,18 @@
+// Translator escopado ao namespace "emails", repassado pelos serviços que
+// renderizam os e-mails (fora do request scope). Tipo estrutural para evitar
+// acoplamento ao generic do createTranslator.
+export type EmailT = {
+  (key: string, values?: Record<string, string | number | boolean | Date>): string;
+  rich: (
+    key: string,
+    values?: Record<string, React.ReactNode | ((chunks: React.ReactNode) => React.ReactNode)>,
+  ) => React.ReactNode;
+  markup: (
+    key: string,
+    values?: Record<string, string | number | boolean | ((chunks: string) => string)>,
+  ) => string;
+};
+
 /**
  * Base layout shared by all transactional emails.
  * Uses only inline styles — required for broad email client support.
@@ -5,14 +20,18 @@
 export function BaseEmail({
   clinicName,
   previewText,
+  t,
+  locale = "pt-BR",
   children,
 }: {
   clinicName: string;
   previewText?: string;
+  t: EmailT;
+  locale?: string;
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -72,8 +91,8 @@ export function BaseEmail({
                         textAlign: "center",
                       }}>
                         <p style={{ margin: 0, fontSize: 11, color: "#A09E98", lineHeight: 1.6 }}>
-                          Este e-mail foi enviado por <strong>{clinicName}</strong> usando o AXIEL Core.<br />
-                          Se você não esperava este e-mail, pode ignorá-lo com segurança.
+                          {t.rich("base.footerSentBy", { clinic: clinicName, b: (c: React.ReactNode) => <strong>{c}</strong> })}<br />
+                          {t("base.footerIgnore")}
                         </p>
                       </td>
                     </tr>

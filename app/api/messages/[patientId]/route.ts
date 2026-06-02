@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendPatientMessageAlert } from "@/services/email-service";
+import { resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
 
@@ -142,6 +143,7 @@ export async function POST(
       patientFirstName: (patientWithEmail.full_name as string).split(" ")[0],
       clinicName: (clinic?.name as string | null) ?? "Sua clínica",
       messagePreview: text,
+      locale: await resolveClinicLocale(clinicId),
     });
   }
 
