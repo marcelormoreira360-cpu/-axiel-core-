@@ -150,7 +150,14 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - ✅ **Exportações CSV/XLSX** das 4 rotas de relatório migradas (locale/t no topo; cabeçalhos via `col.*`, enums via maps `patientStatus`/`sessionStatus`/`leadStage`/`leadSource`, datas via locale)
   - ✅ **Telas de profissionais** migradas — **novo namespace `professionals`** (`list` + `report`): profissionais-client.tsx e profissional-report-client.tsx (KPIs, períodos, status, tendência, tipos, NPS com plural ICU); param `.map((t)=>)` renomeado p/ `st`
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **29 namespaces**
-  - **Follow-ups restantes (componentes maiores, fora do escopo de "resíduo")**: `telehealth-room.tsx` e `app/hotmart/hotmart-client.tsx` (só a data foi traduzida; têm outras strings PT — abas, status, botões); `clinic-chat.tsx` `formatDateGroup` ("Hoje"/"Ontem"); e-mail de convite de equipe (team-service usa ROLE_LABELS PT); `paymentMethodLabel` (finance-service) PT nos relatórios; `app/actions` Action Center (EN + getTerm); `modules/follow-ups` (MESSAGE_AUTOMATION_STATUS etc.)
+- 🧹 i18n — follow-ups maiores fechados (01/06/2026):
+  - ✅ **telehealth-room.tsx** migrado — novo `teleconsulta.room` (estados de gravação/transcrição/resumo IA, botões, erros)
+  - ✅ **app/hotmart/hotmart-client.tsx** migrado — **novo namespace `hotmart`** (abas de status, filtros, colunas, paginação com interpolação, estado vazio com `t.rich`)
+  - ✅ **clinic-chat.tsx** migrado — **novo namespace `clinicChat`** (formatDateGroup Hoje/Ontem via labels, placeholder, erros, footer; `onInput` param renomeado p/ `el`)
+  - ✅ **E-mail de convite de equipe** (team-service) — `emails.invite.*` via `getServerT`; papel via `getServerT(locale, "common")` → `SERVER_NS` agora inclui `common`
+  - ✅ **paymentMethodLabel** nos relatórios → `pdf.paymentMethod.*` (rota pagamentos usa map locale-aware; removido import do helper PT)
+  - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **31 namespaces**
+  - **Ainda fora de escopo (refactors à parte, não "resíduo i18n")**: `app/actions` Action Center (já em EN, usa sistema `getTerm`/terminologia) e `modules/follow-ups` (MESSAGE_AUTOMATION_STATUS / FOLLOW_UP_AI_LABEL) — exigem decisão sobre o sistema de terminologia, não tradução simples
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)
   - `app/p/[token]` (página de link expirado → portal.tokenExpired)

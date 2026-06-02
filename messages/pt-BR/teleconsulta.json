@@ -43,5 +43,33 @@
     "transcribing": "Transcrevendo…",
     "keyObs": "Observações-chave",
     "addObs": "Adicionar observação…"
+  },
+  "room": {
+    "patientFallback": "Paciente",
+    "errorCreate": "Erro ao criar sala",
+    "micError": "Microfone não disponível. Verifique as permissões.",
+    "transcribeError": "Erro na transcrição",
+    "summaryError": "Erro ao gerar resumo",
+    "processError": "Erro no processamento",
+    "summaryTitle": "Resumo da teleconsulta",
+    "summary": "Resumo",
+    "decisions": "Decisões",
+    "noDecisions": "Nenhuma decisão registrada.",
+    "pending": "Pendências",
+    "noPending": "Sem pendências.",
+    "nextSession": "Próxima sessão",
+    "clinicalNotes": "Notas clínicas",
+    "viewTranscript": "Ver transcrição completa",
+    "goToSession": "Ir para registro de sessão",
+    "title": "Teleconsulta",
+    "creatingRoom": "Criando sala segura…",
+    "patientLinkLabel": "Link do paciente:",
+    "copied": "Copiado",
+    "copy": "Copiar",
+    "recordCta": "Gravar relato para resumo IA",
+    "stopRecording": "Parar gravação",
+    "transcribing": "Transcrevendo…",
+    "summarizing": "Gerando resumo IA…",
+    "end": "Encerrar"
   }
 }

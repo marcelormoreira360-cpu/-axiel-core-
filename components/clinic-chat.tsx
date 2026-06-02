@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Send, Loader2, MessageCircle } from "lucide-react";
 
 interface PortalMessage {
@@ -18,15 +18,15 @@ function formatTime(iso: string, locale: string = "pt-BR") {
   return d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 
-function formatDateGroup(iso: string) {
+function formatDateGroup(iso: string, locale: string, labels: { today: string; yesterday: string }) {
   const d = new Date(iso);
   const today = new Date();
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
-  if (d.toDateString() === today.toDateString()) return "Hoje";
-  if (d.toDateString() === yesterday.toDateString()) return "Ontem";
-  return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+  if (d.toDateString() === today.toDateString()) return labels.today;
+  if (d.toDateString() === yesterday.toDateString()) return labels.yesterday;
+  return d.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 }
 
 interface ClinicChatProps {
@@ -36,6 +36,7 @@ interface ClinicChatProps {
 
 export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
   const locale = useLocale();
+  const t = useTranslations("clinicChat");
   const [messages, setMessages] = useState<PortalMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -95,7 +96,7 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error ?? "Erro ao enviar mensagem.");
+        setError(data.error ?? t("sendError"));
         setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
         setInput(text);
         return;
@@ -104,7 +105,7 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
       const { message: real } = await res.json();
       setMessages((prev) => prev.map((m) => (m.id === optimistic.id ? real : m)));
     } catch {
-      setError("Erro de conexão.");
+      setError(t("connError"));
       setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       setInput(text);
     } finally {
@@ -123,7 +124,7 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
   // Group by date
   const grouped: { date: string; msgs: PortalMessage[] }[] = [];
   for (const msg of messages) {
-    const label = formatDateGroup(msg.created_at);
+    const label = formatDateGroup(msg.created_at, locale, { today: t("today"), yesterday: t("yesterday") });
     const last = grouped[grouped.length - 1];
     if (last && last.date === label) {
       last.msgs.push(msg);
@@ -146,9 +147,9 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
               <MessageCircle className="h-5 w-5 text-[#0F6E56]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-[#0F1A2E]">Nenhuma mensagem ainda</p>
+              <p className="text-sm font-medium text-[#0F1A2E]">{t("empty")}</p>
               <p className="text-xs text-black/40 mt-0.5">
-                Inicie a conversa — o paciente verá no portal
+                {t("emptyHint")}
               </p>
             </div>
           </div>
@@ -215,22 +216,22 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={`Mensagem para ${patientName}…`}
+          placeholder={t("placeholder", { name: patientName })}
           rows={1}
           maxLength={2000}
           className="flex-1 resize-none rounded-xl border border-black/[.10] px-3 py-2.5 text-sm text-[#0F1A2E] placeholder:text-black/30 focus:outline-none focus:border-black/25 leading-relaxed bg-white"
           style={{ minHeight: "42px", maxHeight: "120px" }}
           onInput={(e) => {
-            const t = e.currentTarget;
-            t.style.height = "auto";
-            t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+            const el = e.currentTarget;
+            el.style.height = "auto";
+            el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
           }}
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || sending}
           className="shrink-0 h-[42px] w-[42px] rounded-xl flex items-center justify-center bg-[#0F1A2E] transition hover:bg-black disabled:opacity-40"
-          aria-label="Enviar"
+          aria-label={t("send")}
         >
           {sending
             ? <Loader2 className="h-4 w-4 text-white animate-spin" />
@@ -240,7 +241,7 @@ export function ClinicChat({ patientId, patientName }: ClinicChatProps) {
       </div>
 
       <p className="text-[10px] text-black/25 text-center pt-2">
-        Enter para enviar · Shift+Enter para nova linha · atualiza a cada 30s
+        {t("footer")}
       </p>
     </div>
   );

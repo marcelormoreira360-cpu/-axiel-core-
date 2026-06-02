@@ -43,5 +43,33 @@
     "transcribing": "Transcribing…",
     "keyObs": "Key observations",
     "addObs": "Add observation…"
+  },
+  "room": {
+    "patientFallback": "Patient",
+    "errorCreate": "Error creating room",
+    "micError": "Microphone unavailable. Check permissions.",
+    "transcribeError": "Transcription error",
+    "summaryError": "Error generating summary",
+    "processError": "Processing error",
+    "summaryTitle": "Teleconsultation summary",
+    "summary": "Summary",
+    "decisions": "Decisions",
+    "noDecisions": "No decisions recorded.",
+    "pending": "Pending items",
+    "noPending": "No pending items.",
+    "nextSession": "Next session",
+    "clinicalNotes": "Clinical notes",
+    "viewTranscript": "View full transcript",
+    "goToSession": "Go to session record",
+    "title": "Teleconsultation",
+    "creatingRoom": "Creating secure room…",
+    "patientLinkLabel": "Patient link:",
+    "copied": "Copied",
+    "copy": "Copy",
+    "recordCta": "Record notes for AI summary",
+    "stopRecording": "Stop recording",
+    "transcribing": "Transcribing…",
+    "summarizing": "Generating AI summary…",
+    "end": "End"
   }
 }

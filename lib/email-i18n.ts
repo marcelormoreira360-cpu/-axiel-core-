@@ -13,7 +13,7 @@ import type { EmailT } from "@/components/email/base-email";
 export type ServerT = EmailT;
 
 // Namespaces usados por e-mails e PDFs.
-const SERVER_NS = ["emails", "pdf"] as const;
+const SERVER_NS = ["emails", "pdf", "common"] as const;
 
 async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
   const entries = await Promise.all(

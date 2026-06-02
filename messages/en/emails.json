@@ -11,6 +11,13 @@
     "footerSentBy": "This email was sent by <b>{clinic}</b> using AXIEL Core.",
     "footerIgnore": "If you weren't expecting this email, you can safely ignore it."
   },
+  "invite": {
+    "subject": "Invitation to {clinic} — AXIEL Core",
+    "heading": "You've been invited to {clinic}",
+    "body": "Click the button below to accept the invitation and access AXIEL Core as <b>{role}</b>.",
+    "cta": "Accept invitation",
+    "footer": "If you weren't expecting this email, you can ignore it. The link expires in 7 days."
+  },
   "welcome": {
     "subject": "Welcome to {clinic}",
     "preview": "Welcome to {clinic}! Your account has been created.",

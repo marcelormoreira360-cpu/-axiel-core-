@@ -1,0 +1,11 @@
+{
+  "sendError": "Erro ao enviar mensagem.",
+  "connError": "Erro de conexão.",
+  "empty": "Nenhuma mensagem ainda",
+  "emptyHint": "Inicie a conversa — o paciente verá no portal",
+  "placeholder": "Mensagem para {name}…",
+  "send": "Enviar",
+  "footer": "Enter para enviar · Shift+Enter para nova linha · atualiza a cada 30s",
+  "today": "Hoje",
+  "yesterday": "Ontem"
+}

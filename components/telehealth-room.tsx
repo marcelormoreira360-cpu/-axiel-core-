@@ -6,7 +6,7 @@ import {
   Mic, MicOff, Copy, Check, PhoneOff, Loader2,
   ClipboardList, AlertCircle, CheckCircle2, Clock, Sparkles
 } from "lucide-react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 
@@ -22,8 +22,9 @@ type Summary = {
 
 export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
   const locale = useLocale();
+  const t = useTranslations("teleconsulta.room");
   const router = useRouter();
-  const patientName = appointment.patients?.full_name ?? "Paciente";
+  const patientName = appointment.patients?.full_name ?? t("patientFallback");
 
   const [roomUrl, setRoomUrl] = useState<string | null>(null);
   const [patientLink, setPatientLink] = useState<string | null>(null);
@@ -59,7 +60,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
         // Patient link is the same room URL
         setPatientLink(data.url);
       } catch (err: unknown) {
-        setRoomError(err instanceof Error ? err.message : "Erro ao criar sala");
+        setRoomError(err instanceof Error ? err.message : t("errorCreate"));
       } finally {
         setLoadingRoom(false);
       }
@@ -107,7 +108,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
       };
 
       recorder.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop());
+        stream.getTracks().forEach((track) => track.stop());
         await transcribeAndSummarize();
       };
 
@@ -117,7 +118,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
       setElapsedSeconds(0);
       timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     } catch {
-      setRecordingError("Microfone não disponível. Verifique as permissões.");
+      setRecordingError(t("micError"));
     }
   }
 
@@ -138,7 +139,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
 
       const tRes = await fetch("/api/transcribe", { method: "POST", body: fd });
       const tData = await tRes.json();
-      if (!tRes.ok) throw new Error(tData.error ?? "Erro na transcrição");
+      if (!tRes.ok) throw new Error(tData.error ?? t("transcribeError"));
 
       const transcribedText: string = tData.text ?? "";
       setTranscript(transcribedText);
@@ -151,12 +152,12 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
         body: JSON.stringify({ transcript: transcribedText, patientName }),
       });
       const sData = await sRes.json();
-      if (!sRes.ok) throw new Error(sData.error ?? "Erro ao gerar resumo");
+      if (!sRes.ok) throw new Error(sData.error ?? t("summaryError"));
 
       setSummary(sData as Summary);
       setRecordingState("idle");
     } catch (err: unknown) {
-      setRecordingError(err instanceof Error ? err.message : "Erro no processamento");
+      setRecordingError(err instanceof Error ? err.message : t("processError"));
       setRecordingState("idle");
     }
   }
@@ -176,14 +177,14 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
               <Sparkles className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">Resumo da teleconsulta</p>
+              <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">{t("summaryTitle")}</p>
               <p className="text-[16px] font-semibold text-white">{patientName}</p>
             </div>
           </div>
 
           {/* Resumo */}
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-            <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[8px]">Resumo</p>
+            <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[8px]">{t("summary")}</p>
             <p className="text-[13px] text-[#0F1A2E] leading-relaxed">{summary.resumo}</p>
           </div>
 
@@ -192,10 +193,10 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
             <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <CheckCircle2 className="h-3.5 w-3.5 text-[#0F6E56]" />
-                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Decisões</p>
+                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("decisions")}</p>
               </div>
               {summary.decisoes.length === 0 ? (
-                <p className="text-[12px] text-[#D3D1C7]">Nenhuma decisão registrada.</p>
+                <p className="text-[12px] text-[#D3D1C7]">{t("noDecisions")}</p>
               ) : (
                 <ul className="space-y-[6px]">
                   {summary.decisoes.map((d, i) => (
@@ -211,10 +212,10 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
             <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
               <div className="flex items-center gap-[6px] mb-[10px]">
                 <Clock className="h-3.5 w-3.5 text-[#E8A100]" />
-                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">Pendências</p>
+                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("pending")}</p>
               </div>
               {summary.pendencias.length === 0 ? (
-                <p className="text-[12px] text-[#D3D1C7]">Sem pendências.</p>
+                <p className="text-[12px] text-[#D3D1C7]">{t("noPending")}</p>
               ) : (
                 <ul className="space-y-[6px]">
                   {summary.pendencias.map((p, i) => (
@@ -230,14 +231,14 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
 
           {/* Próxima sessão */}
           <div className="bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[12px] px-[16px] py-[12px]">
-            <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[4px]">Próxima sessão</p>
+            <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[4px]">{t("nextSession")}</p>
             <p className="text-[13px] text-[#085041]">{summary.proxima_sessao}</p>
           </div>
 
           {/* Notas clínicas */}
           {summary.notas_clinicas && (
             <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[8px]">Notas clínicas</p>
+              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[8px]">{t("clinicalNotes")}</p>
               <p className="text-[12px] text-[#0F1A2E] leading-relaxed">{summary.notas_clinicas}</p>
             </div>
           )}
@@ -246,7 +247,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
           {transcript && (
             <details className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
               <summary className="text-[11px] font-medium text-[#A09E98] cursor-pointer select-none">
-                Ver transcrição completa
+                {t("viewTranscript")}
               </summary>
               <p className="text-[12px] text-[#6B6A66] leading-relaxed mt-[10px] whitespace-pre-wrap">{transcript}</p>
             </details>
@@ -260,7 +261,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
               className="flex-1 flex items-center justify-center gap-[6px] text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[10px] py-[12px] transition"
             >
               <ClipboardList className="h-4 w-4" />
-              Ir para registro de sessão
+              {t("goToSession")}
             </button>
           </div>
         </div>
@@ -273,7 +274,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
       {/* Top bar */}
       <div className="flex items-center justify-between px-[20px] py-[14px] border-b border-white/[.06]">
         <div>
-          <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">Teleconsulta</p>
+          <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">{t("title")}</p>
           <p className="text-[15px] font-semibold text-white">{patientName}</p>
         </div>
         <div className="flex items-center gap-[10px]">
@@ -290,7 +291,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-center">
               <Loader2 className="h-8 w-8 text-white/40 animate-spin mx-auto mb-[12px]" />
-              <p className="text-[13px] text-white/40">Criando sala segura…</p>
+              <p className="text-[13px] text-white/40">{t("creatingRoom")}</p>
             </div>
           </div>
         )}
@@ -299,7 +300,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
           <div className="absolute inset-0 flex items-center justify-center p-6">
             <div className="bg-white/5 border border-white/10 rounded-[12px] px-[24px] py-[20px] text-center max-w-[360px]">
               <AlertCircle className="h-8 w-8 text-red-400 mx-auto mb-[10px]" />
-              <p className="text-[14px] text-white mb-[6px]">Erro ao criar sala</p>
+              <p className="text-[14px] text-white mb-[6px]">{t("errorCreate")}</p>
               <p className="text-[12px] text-white/40">{roomError}</p>
             </div>
           </div>
@@ -320,7 +321,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
         {/* Patient link */}
         {patientLink && (
           <div className="flex items-center gap-[8px] bg-white/[.04] rounded-[10px] px-[12px] py-[9px]">
-            <p className="text-[11px] text-white/40 shrink-0">Link do paciente:</p>
+            <p className="text-[11px] text-white/40 shrink-0">{t("patientLinkLabel")}</p>
             <p className="text-[11px] text-white/60 font-mono flex-1 truncate">{patientLink}</p>
             <button
               type="button"
@@ -333,7 +334,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
               ].join(" ")}
             >
               {linkCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-              {linkCopied ? "Copiado" : "Copiar"}
+              {linkCopied ? t("copied") : t("copy")}
             </button>
           </div>
         )}
@@ -347,7 +348,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
               className="flex items-center gap-[6px] text-[12px] font-medium text-white/70 border border-white/[.12] hover:border-white/30 rounded-[8px] px-[12px] py-[8px] transition"
             >
               <Mic className="h-3.5 w-3.5" />
-              Gravar relato para resumo IA
+              {t("recordCta")}
             </button>
           )}
 
@@ -358,14 +359,14 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
               className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-red-500 hover:bg-red-600 rounded-[8px] px-[12px] py-[8px] transition animate-pulse"
             >
               <MicOff className="h-3.5 w-3.5" />
-              Parar gravação · {formatDuration(elapsedSeconds)}
+              {t("stopRecording")} · {formatDuration(elapsedSeconds)}
             </button>
           )}
 
           {(recordingState === "transcribing" || recordingState === "summarizing") && (
             <div className="flex items-center gap-[6px] text-[12px] text-white/40 border border-white/[.08] rounded-[8px] px-[12px] py-[8px]">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {recordingState === "transcribing" ? "Transcrevendo…" : "Gerando resumo IA…"}
+              {recordingState === "transcribing" ? t("transcribing") : t("summarizing")}
             </div>
           )}
 
@@ -380,7 +381,7 @@ export function TelehealthRoom({ appointment }: { appointment: Appointment }) {
             className="ml-auto flex items-center gap-[6px] text-[12px] font-medium text-white bg-red-600 hover:bg-red-700 rounded-[8px] px-[14px] py-[8px] transition"
           >
             <PhoneOff className="h-3.5 w-3.5" />
-            Encerrar
+            {t("end")}
           </button>
         </div>
       </div>

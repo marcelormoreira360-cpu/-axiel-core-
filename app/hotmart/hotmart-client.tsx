@@ -2,17 +2,17 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useTransition } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import type { HotmartPurchaseFull } from "@/services/hotmart-service";
 
 const STATUS_TABS = [
-  { key: "all",        label: "Todos" },
-  { key: "completed",  label: "Confirmadas" },
-  { key: "cancelled",  label: "Canceladas" },
-  { key: "refunded",   label: "Reembolsadas" },
-  { key: "chargeback", label: "Chargebacks" },
+  { key: "all",        labelKey: "tabAll" },
+  { key: "completed",  labelKey: "tabCompleted" },
+  { key: "cancelled",  labelKey: "tabCancelled" },
+  { key: "refunded",   labelKey: "tabRefunded" },
+  { key: "chargeback", labelKey: "tabChargeback" },
 ];
 
 const STATUS_STYLES: Record<string, string> = {
@@ -23,17 +23,9 @@ const STATUS_STYLES: Record<string, string> = {
   other:      "bg-[#F4F3EF] text-[#6B6A66]",
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  completed:  "Confirmada",
-  cancelled:  "Cancelada",
-  refunded:   "Reembolsada",
-  chargeback: "Chargeback",
-  other:      "Outro",
-};
-
-function formatBRL(cents: number | null) {
+function formatBRL(cents: number | null, locale: string) {
   if (!cents) return "—";
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" });
 }
 
 interface Props {
@@ -58,10 +50,22 @@ export function HotmartClient({
   defaultSearch,
 }: Props) {
   const locale   = useLocale();
+  const t        = useTranslations("hotmart");
   const router   = useRouter();
   const pathname = usePathname();
   const sp       = useSearchParams();
   const [, startTransition] = useTransition();
+
+  const statusLabel = (s: string) => {
+    const m: Record<string, string> = {
+      completed:  t("statusCompleted"),
+      cancelled:  t("statusCancelled"),
+      refunded:   t("statusRefunded"),
+      chargeback: t("statusChargeback"),
+      other:      t("statusOther"),
+    };
+    return m[s] ?? s;
+  };
 
   const push = useCallback(
     (params: Record<string, string>) => {
@@ -81,17 +85,17 @@ export function HotmartClient({
       <div className="bg-white border border-black/[.07] rounded-[12px] p-4 space-y-3">
         {/* Status tabs */}
         <div className="flex gap-1 flex-wrap">
-          {STATUS_TABS.map((t) => (
+          {STATUS_TABS.map((tab) => (
             <button
-              key={t.key}
-              onClick={() => push({ status: t.key })}
+              key={tab.key}
+              onClick={() => push({ status: tab.key })}
               className={`rounded-[6px] px-3 py-1.5 text-[12px] font-medium transition ${
-                defaultStatus === t.key
+                defaultStatus === tab.key
                   ? "bg-[#0F1A2E] text-white"
                   : "text-[#6B6A66] hover:bg-[#F4F3EF]"
               }`}
             >
-              {t.label}
+              {t(tab.labelKey)}
             </button>
           ))}
         </div>
@@ -102,7 +106,7 @@ export function HotmartClient({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#A09E98]" />
             <input
               type="text"
-              placeholder="Buscar por nome, e-mail ou produto..."
+              placeholder={t("searchPlaceholder")}
               defaultValue={defaultSearch}
               onKeyDown={(e) => { if (e.key === "Enter") push({ search: (e.target as HTMLInputElement).value }); }}
               onBlur={(e) => push({ search: e.target.value })}
@@ -110,7 +114,7 @@ export function HotmartClient({
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">De</label>
+            <label className="text-[11px] text-[#6B6A66]">{t("from")}</label>
             <input
               type="date"
               defaultValue={defaultFrom}
@@ -119,7 +123,7 @@ export function HotmartClient({
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">Até</label>
+            <label className="text-[11px] text-[#6B6A66]">{t("to")}</label>
             <input
               type="date"
               defaultValue={defaultTo}
@@ -134,10 +138,11 @@ export function HotmartClient({
       <div className="overflow-hidden rounded-[12px] border border-black/[.07] bg-white">
         {purchases.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <p className="text-[14px] font-medium text-[#0F1A2E]">Nenhuma compra encontrada</p>
+            <p className="text-[14px] font-medium text-[#0F1A2E]">{t("empty")}</p>
             <p className="text-[12px] text-[#A09E98] mt-1">
-              Configure o webhook da Hotmart em{" "}
-              <Link href="/settings/integrations/hotmart" className="underline">Configurações</Link>
+              {t.rich("emptyHint", {
+                a: (c) => <Link href="/settings/integrations/hotmart" className="underline">{c}</Link>,
+              })}
             </p>
           </div>
         ) : (
@@ -146,12 +151,12 @@ export function HotmartClient({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-black/[.06] bg-[#FAFAF8]">
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Comprador</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Produto</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Valor</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Status</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Data</th>
-                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">Paciente</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colBuyer")}</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colProduct")}</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colValue")}</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colStatus")}</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colDate")}</th>
+                    <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colPatient")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/[.04]">
@@ -176,14 +181,14 @@ export function HotmartClient({
                           )}
                         </td>
                         <td className="px-4 py-3 font-medium text-[13px] text-[#0F1A2E] whitespace-nowrap">
-                          {formatBRL(p.price_cents)}
+                          {formatBRL(p.price_cents, locale)}
                           {p.currency && p.currency !== "BRL" && (
                             <span className="text-[10px] text-black/30 ml-1">{p.currency}</span>
                           )}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${STATUS_STYLES[p.status] ?? STATUS_STYLES.other}`}>
-                            {STATUS_LABELS[p.status] ?? p.status}
+                            {statusLabel(p.status)}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-[12px] text-black/40 whitespace-nowrap">
@@ -195,7 +200,7 @@ export function HotmartClient({
                               href={`/patients/${p.patient_id}`}
                               className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:underline"
                             >
-                              {patientName ?? "Ver perfil"}
+                              {patientName ?? t("viewProfile")}
                               <ExternalLink className="h-3 w-3" />
                             </Link>
                           ) : (
@@ -213,7 +218,7 @@ export function HotmartClient({
             {totalPages > 1 && (
               <div className="flex items-center justify-between border-t border-black/[.06] px-4 py-3">
                 <p className="text-[11px] text-[#A09E98]">
-                  {total} compras · página {page} de {totalPages}
+                  {t("pagination", { total, page, pages: totalPages })}
                 </p>
                 <div className="flex gap-1">
                   <button

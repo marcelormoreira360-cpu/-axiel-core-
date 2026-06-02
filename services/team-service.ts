@@ -2,7 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { Resend } from "resend";
 import { randomUUID } from "crypto";
 import type { AppRole } from "@/lib/types";
-import { ROLE_LABELS } from "@/lib/team-utils";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { getBillingContext } from "@/services/billing-service";
 import { checkUsageLimit } from "@/modules/billing/feature-access";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -136,30 +136,32 @@ export async function inviteTeamMember(
 
   // Send email
   const joinUrl = `${APP_URL}/join/${token}`;
+  const locale = await resolveClinicLocale(clinicId);
+  const t = await getServerT(locale, "emails");
+  const tRoles = await getServerT(locale, "common");
+  const roleLabel = tRoles(`roles.${role}`);
 
   try {
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
       from:    DEFAULT_FROM_EMAIL,
       to:      email,
-      subject: `Convite para ${clinicName} — AXIEL Core`,
+      subject: t("invite.subject", { clinic: clinicName }),
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
           <h2 style="font-size:20px;font-weight:700;color:#0F1A2E;margin:0 0 8px">
-            Você foi convidado para ${clinicName}
+            ${t("invite.heading", { clinic: clinicName })}
           </h2>
           <p style="font-size:14px;color:#6B6A66;margin:0 0 24px">
-            Clique no botão abaixo para aceitar o convite e acessar o AXIEL Core como
-            <strong>${ROLE_LABELS[role]}</strong>.
+            ${t.markup("invite.body", { role: roleLabel, b: (c) => `<strong>${c}</strong>` })}
           </p>
           <a href="${joinUrl}"
              style="display:inline-block;background:#0B1F3A;color:white;text-decoration:none;
                     font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px">
-            Aceitar convite
+            ${t("invite.cta")}
           </a>
           <p style="font-size:12px;color:#A09E98;margin:24px 0 0">
-            Se não esperava este e-mail, pode ignorá-lo.
-            O link expira em 7 dias.
+            ${t("invite.footer")}
           </p>
         </div>
       `,

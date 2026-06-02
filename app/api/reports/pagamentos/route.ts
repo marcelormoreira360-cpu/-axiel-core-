@@ -1,8 +1,10 @@
 import { getCurrentClinic } from "@/services/clinic-service";
-import { getPaymentsWithPatients, paymentMethodLabel } from "@/services/finance-service";
+import { getPaymentsWithPatients } from "@/services/finance-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import type { PaymentMethod } from "@/lib/types";
+
+const PAYMENT_METHODS: PaymentMethod[] = ["pix", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
 
 export const runtime = "nodejs";
 
@@ -27,6 +29,8 @@ export async function GET(req: Request) {
   const slug = clinic.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const locale = await resolveClinicLocale(clinic.id);
   const t = await getServerT(locale, "pdf");
+  const methodLabel = (m: PaymentMethod | null | undefined) =>
+    m && (PAYMENT_METHODS as string[]).includes(m) ? t(`paymentMethod.${m}`) : "—";
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");
@@ -38,7 +42,7 @@ export async function GET(req: Request) {
       new Date(p.paid_at).toLocaleDateString(locale),
       p.patient_name ?? "",
       p.session_type_name ?? "",
-      paymentMethodLabel(p.payment_method as PaymentMethod),
+      methodLabel(p.payment_method as PaymentMethod),
       (p.amount_cents / 100).toFixed(2).replace(".", ","),
     ]);
     const buf = await buildTablePdf({ title: t("payments.title"), periodLabel, headers, rows: pdfRows, clinicName: clinic.name, locale });
@@ -50,7 +54,7 @@ export async function GET(req: Request) {
       data:    new Date(p.paid_at).toLocaleDateString(locale),
       paciente: p.patient_name ?? "",
       tipo:    p.session_type_name ?? "",
-      metodo:  paymentMethodLabel(p.payment_method as PaymentMethod),
+      metodo:  methodLabel(p.payment_method as PaymentMethod),
       valor:   (p.amount_cents / 100),
       notas:   p.notes ?? "",
     }));
@@ -75,7 +79,7 @@ export async function GET(req: Request) {
     new Date(p.paid_at).toLocaleDateString(locale),
     p.patient_name ?? "",
     p.session_type_name ?? "",
-    paymentMethodLabel(p.payment_method as PaymentMethod),
+    methodLabel(p.payment_method as PaymentMethod),
     (p.amount_cents / 100).toFixed(2).replace(".", ","),
     p.notes ?? "",
   ]);
