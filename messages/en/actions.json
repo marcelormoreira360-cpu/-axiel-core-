@@ -1,0 +1,29 @@
+{
+  "eyebrow": "ACTION CENTER",
+  "title": "What to do next",
+  "subtitle": "A simple list of actions the system suggests for the clinic.",
+  "activeTitle": "Active actions",
+  "viewMoreActive": "View {count} more active actions",
+  "emptyActiveTitle": "No actions right now",
+  "emptyActiveText": "Everything looks clear. AXIEL will suggest the next step when a patient, lead, review, or follow-up needs attention.",
+  "goToDashboard": "Go to dashboard",
+  "closedTitle": "Recently closed",
+  "viewMoreClosed": "View {count} more closed actions",
+  "completedHint": "Completed actions will appear here.",
+  "priority": { "high": "High", "medium": "Medium", "low": "Low" },
+  "status": { "pending": "Pending", "accepted": "Accepted", "completed": "Completed", "ignored": "Ignored" },
+  "why": "Why:",
+  "accept": "Accept",
+  "complete": "Complete",
+  "ignore": "Ignore",
+  "done": "Done",
+  "panel": {
+    "eyebrow": "GUIDED WORKFLOW",
+    "title": "Next Steps",
+    "subtitle": "Accept, ignore, or complete. AXIEL keeps track.",
+    "emptyTitle": "No next steps",
+    "emptyText": "The system will surface the next steps as patients, leads, sessions, and follow-ups are added.",
+    "viewAll": "View all next steps",
+    "backToDashboard": "Back to dashboard"
+  }
+}

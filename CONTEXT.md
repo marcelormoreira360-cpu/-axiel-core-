@@ -157,7 +157,15 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - ✅ **E-mail de convite de equipe** (team-service) — `emails.invite.*` via `getServerT`; papel via `getServerT(locale, "common")` → `SERVER_NS` agora inclui `common`
   - ✅ **paymentMethodLabel** nos relatórios → `pdf.paymentMethod.*` (rota pagamentos usa map locale-aware; removido import do helper PT)
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **31 namespaces**
-  - **Ainda fora de escopo (refactors à parte, não "resíduo i18n")**: `app/actions` Action Center (já em EN, usa sistema `getTerm`/terminologia) e `modules/follow-ups` (MESSAGE_AUTOMATION_STATUS / FOLLOW_UP_AI_LABEL) — exigem decisão sobre o sistema de terminologia, não tradução simples
+  - **Ainda fora de escopo (refactors à parte, não "resíduo i18n")**: `modules/follow-ups` (MESSAGE_AUTOMATION_STATUS / FOLLOW_UP_AI_LABEL)
+- 🧹 i18n — Action Center migrado (01/06/2026): **novo namespace `actions`**
+  - `app/actions/page.tsx` (eyebrow, título, seções, view-more com plural, empty states) via `getTranslations`
+  - `components/action-suggestion-card.tsx` agora **async server component** com `getTranslations`: prioridade, status, "Por quê:", botões Aceitar/Concluir/Ignorar/Concluída (o `title`/`description`/`reason` continuam vindo do gerador persistido — ver abaixo)
+  - `components/action-suggestions-panel.tsx` (usado em leads/[id]) agora async: eyebrow, título, subtítulo, empty state, "Ver todos" — **removido `getTerm` daqui** (substituído por `actions.panel.*`)
+  - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **32 namespaces**
+  - **Permanece como decisão de produto (não tradução simples)**:
+    - **Conteúdo gerado das sugestões** (`modules/action-suggestions/action-rules.ts`): títulos/descrições são gerados em EN e **persistidos no banco** (via `syncActionSuggestions`). Localizar exige reestruturar para guardar chave+params (mudança de dados) ou gerar por locale no sync.
+    - **Glossário `getTerm`** (`modules/ui/terminology.ts`): termos fixos EN (Session/Insight/Next Step) com regra de compliance `PROHIBITED_UI_TERMS`; ainda usado em `app/patients/[id]/page.tsx`, `clinical-insight.tsx`, `guided-ai-insights-panel.tsx` **e nos prompts de IA** (`modules/ai-insights/governance.ts`, `guardrails.ts`). Traduzir afeta a camada de IA — manter EN é intencional.
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)
   - `app/p/[token]` (página de link expirado → portal.tokenExpired)

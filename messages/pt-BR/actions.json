@@ -1,0 +1,29 @@
+{
+  "eyebrow": "CENTRAL DE AÇÕES",
+  "title": "O que fazer agora",
+  "subtitle": "Uma lista simples de ações que o sistema sugere para a clínica.",
+  "activeTitle": "Ações ativas",
+  "viewMoreActive": "Ver mais {count} ações ativas",
+  "emptyActiveTitle": "Nenhuma ação no momento",
+  "emptyActiveText": "Tudo certo por aqui. O AXIEL vai sugerir o próximo passo quando um paciente, lead, revisão ou follow-up precisar de atenção.",
+  "goToDashboard": "Ir para o painel",
+  "closedTitle": "Encerradas recentemente",
+  "viewMoreClosed": "Ver mais {count} ações encerradas",
+  "completedHint": "Ações concluídas aparecerão aqui.",
+  "priority": { "high": "Alta", "medium": "Média", "low": "Baixa" },
+  "status": { "pending": "Pendente", "accepted": "Aceita", "completed": "Concluída", "ignored": "Ignorada" },
+  "why": "Por quê:",
+  "accept": "Aceitar",
+  "complete": "Concluir",
+  "ignore": "Ignorar",
+  "done": "Concluída",
+  "panel": {
+    "eyebrow": "FLUXO GUIADO",
+    "title": "Próximos passos",
+    "subtitle": "Aceite, ignore ou conclua. O AXIEL acompanha.",
+    "emptyTitle": "Nenhum próximo passo",
+    "emptyText": "O sistema vai destacar os próximos passos conforme pacientes, leads, sessões e follow-ups forem adicionados.",
+    "viewAll": "Ver todos os próximos passos",
+    "backToDashboard": "Voltar ao painel"
+  }
+}
