@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import PDFDocument from "pdfkit";
 import { getClinicalInsight } from "@/services/insight-export-service";
 
@@ -37,6 +38,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const insight = await getClinicalInsight(id);
   if (!insight) notFound();
 
+  const t = await getTranslations("insights");
+  const locale = await getLocale();
+
   const patientName = insight.patient_overview.find((item) => item.title === "Patient")?.body ?? "patient";
   const doc = new PDFDocument({ margin: 56, size: "LETTER", info: { Title: insight.title, Author: "AXIEL Core" } });
 
@@ -44,34 +48,34 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   doc.moveDown(0.3);
   doc.font("Helvetica-Bold").fontSize(11).fillColor("#9a7b2f").text(insight.notice);
   doc.moveDown(0.5);
-  doc.font("Helvetica").fontSize(10).fillColor("#6b7280").text(`Created ${new Date(insight.generated_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`);
+  doc.font("Helvetica").fontSize(10).fillColor("#6b7280").text(t("createdAt", { date: new Date(insight.generated_at).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" }) }));
   doc.moveDown(1);
-  writeParagraph(doc, "This insight puts patient information in simple words. It is not a diagnosis. It is not a session plan. Please talk with the clinic if you have questions.");
+  writeParagraph(doc, t("pdf.disclaimer"));
 
-  writeSectionTitle(doc, "Patient Overview");
+  writeSectionTitle(doc, t("pdf.patientOverview"));
   insight.patient_overview.forEach((item) => {
     doc.font("Helvetica-Bold").fontSize(10.5).fillColor("#111827").text(`${item.title}: `, { continued: true });
     doc.font("Helvetica").fontSize(10.5).fillColor("#4b5563").text(item.body, { lineGap: 3 });
   });
 
-  writeSectionTitle(doc, "Key Notes");
+  writeSectionTitle(doc, t("keyNotes"));
   writeWrappedList(doc, insight.key_observations);
 
-  writeSectionTitle(doc, "What may be connected");
+  writeSectionTitle(doc, t("whatConnected"));
   insight.patterns.forEach((pattern) => {
     doc.font("Helvetica-Bold").fontSize(11).fillColor("#111827").text(pattern.title);
     writeParagraph(doc, pattern.body);
     doc.moveDown(0.4);
   });
 
-  writeSectionTitle(doc, "Next Steps");
+  writeSectionTitle(doc, t("nextSteps"));
   writeWrappedList(doc, insight.simple_next_steps);
 
-  writeSectionTitle(doc, "Final Note");
+  writeSectionTitle(doc, t("pdf.finalNote"));
   writeParagraph(doc, insight.closing_note);
 
   doc.moveDown(1.4);
-  doc.font("Helvetica").fontSize(9).fillColor("#9ca3af").text("AXIEL Core - Patient Insight", { align: "center" });
+  doc.font("Helvetica").fontSize(9).fillColor("#9ca3af").text(t("pdf.footer"), { align: "center" });
 
   const buffer = await pdfToBuffer(doc);
   const safeName = patientName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "patient";

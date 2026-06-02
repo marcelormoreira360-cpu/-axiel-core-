@@ -1,15 +1,17 @@
+import { getTranslations, getLocale } from "next-intl/server";
 import type { ClinicalInsight } from "@/modules/insights/clinical-insight";
 import { Card } from "@/components/card";
-import { getTerm } from "@/modules/ui/terminology";
 
-export function ClinicalInsightView({ insight }: { insight: ClinicalInsight }) {
+export async function ClinicalInsightView({ insight }: { insight: ClinicalInsight }) {
+  const t = await getTranslations("insights");
+  const locale = await getLocale();
   return (
     <div className="space-y-5">
       <Card className="bg-axiel-ink text-white">
-        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{getTerm("insight").toUpperCase()}</p>
+        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("label").toUpperCase()}</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{insight.title}</h1>
         <p className="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white/80">{insight.notice}</p>
-        <p className="mt-4 text-sm text-white/50">Created {new Date(insight.generated_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</p>
+        <p className="mt-4 text-sm text-white/50">{t("createdAt", { date: new Date(insight.generated_at).toLocaleString(locale, { dateStyle: "medium", timeStyle: "short" }) })}</p>
       </Card>
 
       <section className="grid gap-4 md:grid-cols-2">
@@ -22,7 +24,7 @@ export function ClinicalInsightView({ insight }: { insight: ClinicalInsight }) {
       </section>
 
       <Card>
-        <h2 className="text-2xl font-semibold">Key Notes</h2>
+        <h2 className="text-2xl font-semibold">{t("keyNotes")}</h2>
         <div className="mt-5 flex flex-wrap gap-3">
           {insight.key_observations.map((observation) => (
             <span key={observation} className="rounded-full bg-axiel-soft px-4 py-2 text-sm font-semibold text-black/65">
@@ -33,7 +35,7 @@ export function ClinicalInsightView({ insight }: { insight: ClinicalInsight }) {
       </Card>
 
       <Card>
-        <h2 className="text-2xl font-semibold">What may be connected</h2>
+        <h2 className="text-2xl font-semibold">{t("whatConnected")}</h2>
         <div className="mt-5 space-y-4">
           {insight.patterns.map((pattern) => (
             <div key={pattern.title} className="rounded-3xl bg-axiel-soft p-5">
@@ -45,7 +47,7 @@ export function ClinicalInsightView({ insight }: { insight: ClinicalInsight }) {
       </Card>
 
       <Card>
-        <h2 className="text-2xl font-semibold">{getTerm("nextStep", "plural")}</h2>
+        <h2 className="text-2xl font-semibold">{t("nextSteps")}</h2>
         <div className="mt-5 space-y-3">
           {insight.simple_next_steps.map((point) => (
             <p key={point} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md text-sm leading-6 text-black/65">

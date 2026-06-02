@@ -178,9 +178,14 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - **getTerm na UI de tráfego** (`app/patients/[id]/page.tsx`) → `common.terms` (session/insights). Helper `getTerm` permanece para a camada de IA.
   - **Processo**: `scripts/verify-i18n.mjs` commitado; `package.json` → `typecheck` agora usa `tsconfig.check.json` (confiável), novo `verify:i18n`.
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **33 namespaces**; rescan sem `pt-BR` hardcoded em UI.
-  - **Ainda em EN por design (camada de IA/compliance, não tradução simples)**:
-    - `components/clinical-insight.tsx` e `components/guided-ai-insights-panel.tsx` — componentes de **apresentação de insight de IA**, síncronos e usados em rota de PDF; têm copy própria em EN ("Key Notes", "What may be connected", "Patterns", "Placeholder"). Migrar exige torná-los async (impacto no render do PDF) — refactor à parte.
-    - Datas internas pt-BR fixas em contexto de IA / nota de webhook / título de broadcast (`session/actions.ts`, `health-agent`, `stripe/webhook`, `automacoes/broadcast`) — dados/prompt, não UI.
+- 🧹 i18n — componentes de insight de IA migrados (02/06/2026): **novo namespace `insights`**
+  - `components/clinical-insight.tsx` (ClinicalInsightView) e `components/guided-ai-insights-panel.tsx` → **async server components** com `getTranslations("insights")` (label, Notas-chave, O que pode estar conectado, Próximos passos, painel: Padrões/placeholder/etc.)
+  - `app/patients/[id]/reports/clinical-insight/page.tsx` (chrome: voltar, eyebrow, título, disclaimer, baixar PDF)
+  - `app/patients/[id]/reports/clinical-insight/pdf/route.ts` (route handler usa `getTranslations` + `getLocale` — o PDF monta com pdfkit, **não** renderiza React, então sem risco): seções, disclaimer, "Criado em", rodapé
+  - Descoberta: o PDF do insight **não** usa o componente React (pdfkit direto), então a migração async foi segura
+  - **Resultado**: `getTerm` agora existe SOMENTE na camada de IA (`modules/ai-insights/governance.ts`, `guardrails.ts`) + `modules/ui/terminology.ts` — **zero uso de `getTerm` na UI**. Toda a interface, e-mails, PDFs e exportações estão localizados.
+  - Validado: tsc confiável 0 erros; paridade PT/EN + ICU OK em **34 namespaces**
+  - **Único restante EN por design**: glossário `getTerm` nos prompts de IA (intencional) + datas internas em contexto de IA / nota de webhook / título de broadcast (`session/actions.ts`, `health-agent`, `stripe/webhook`, `automacoes/broadcast`) — dados/prompt, não UI.
     - **Glossário `getTerm`** (`modules/ui/terminology.ts`): termos fixos EN (Session/Insight/Next Step) com regra de compliance `PROHIBITED_UI_TERMS`; ainda usado em `app/patients/[id]/page.tsx`, `clinical-insight.tsx`, `guided-ai-insights-panel.tsx` **e nos prompts de IA** (`modules/ai-insights/governance.ts`, `guardrails.ts`). Traduzir afeta a camada de IA — manter EN é intencional.
 - ✅ i18n Fase 5d (01/06/2026): Formulários públicos, Join, Teleconsulta, Links — **namespaces `publicForm`, `join`, `links`, `teleconsulta` + `portal.tokenExpired`**
   - `app/f/[token]` + `components/public-assessment-form.tsx` (progress plural, yes/no, total, done); `DEFAULT_SCALE_LABELS` mantidos (default de conteúdo)

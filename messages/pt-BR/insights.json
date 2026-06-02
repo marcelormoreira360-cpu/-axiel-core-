@@ -1,0 +1,31 @@
+{
+  "label": "Insight",
+  "createdAt": "Criado em {date}",
+  "keyNotes": "Notas-chave",
+  "whatConnected": "O que pode estar conectado",
+  "nextSteps": "Próximos passos",
+  "page": {
+    "back": "Voltar ao paciente",
+    "eyebrow": "INSIGHT DO PACIENTE",
+    "title": "Insight do paciente",
+    "subtitle": "Um resumo simples do paciente, notas-chave e possíveis conexões. Sem diagnóstico. Sem plano de sessão.",
+    "downloadPdf": "Baixar PDF",
+    "disclaimer": "Este insight usa informações salvas do paciente e notas de sessão. É escrito em palavras simples para o paciente entender."
+  },
+  "pdf": {
+    "disclaimer": "Este insight coloca as informações do paciente em palavras simples. Não é um diagnóstico. Não é um plano de sessão. Converse com a clínica em caso de dúvidas.",
+    "patientOverview": "Visão geral do paciente",
+    "finalNote": "Nota final",
+    "footer": "AXIEL Core — Insight do Paciente"
+  },
+  "panel": {
+    "title": "Insights de IA",
+    "placeholder": "Placeholder",
+    "patterns": "Padrões",
+    "noPatternTitle": "Ainda sem padrão",
+    "noPatternText": "O sistema mostrará tendências simples quando houver mais dados.",
+    "nextSteps": "Próximos passos",
+    "keepUpdatedTitle": "Mantenha o registro atualizado",
+    "keepUpdatedText": "Adicione notas após a próxima interação para o painel guiar a equipe."
+  }
+}

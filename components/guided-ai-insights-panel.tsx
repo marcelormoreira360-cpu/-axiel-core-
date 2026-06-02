@@ -1,7 +1,7 @@
 import { Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/card";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
-import { getTerm } from "@/modules/ui/terminology";
 
 type InsightItem = {
   title: string;
@@ -16,13 +16,15 @@ type GuidedAiInsightsPanelProps = {
   compact?: boolean;
 };
 
-export function GuidedAiInsightsPanel({
-  title = `AI ${getTerm("insight", "plural")}`,
+export async function GuidedAiInsightsPanel({
+  title,
   summary,
   patterns = [],
   nextSteps = [],
   compact = false,
 }: GuidedAiInsightsPanelProps) {
+  const t = await getTranslations("insights.panel");
+  const heading = title ?? t("title");
   return (
     <Card className={compact ? "p-5" : "p-6"}>
       <div className="flex items-start gap-3">
@@ -31,9 +33,9 @@ export function GuidedAiInsightsPanel({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className={compact ? "text-xl font-semibold tracking-tight" : "text-2xl font-semibold tracking-tight"}>{title}</h2>
+            <h2 className={compact ? "text-xl font-semibold tracking-tight" : "text-2xl font-semibold tracking-tight"}>{heading}</h2>
             <span className="inline-flex w-fit items-center gap-2 rounded-full bg-axiel-soft px-3 py-1.5 text-xs font-semibold text-black/55">
-              <ShieldCheck className="h-3.5 w-3.5" /> Placeholder
+              <ShieldCheck className="h-3.5 w-3.5" /> {t("placeholder")}
             </span>
           </div>
           <p className="mt-2 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-semibold text-amber-900/80">{AI_INSIGHT_LABEL}</p>
@@ -43,9 +45,9 @@ export function GuidedAiInsightsPanel({
 
       <div className={compact ? "mt-4 grid gap-3" : "mt-5 grid gap-4 md:grid-cols-2"}>
         <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-          <p className="text-sm font-semibold text-black/80">Patterns</p>
+          <p className="text-sm font-semibold text-black/80">{t("patterns")}</p>
           <div className="mt-3 grid gap-3">
-            {(patterns.length ? patterns : [{ title: "No pattern yet", text: "The system will show simple trends when more data is available." }]).map((item) => (
+            {(patterns.length ? patterns : [{ title: t("noPatternTitle"), text: t("noPatternText") }]).map((item) => (
               <div key={`${item.title}-${item.text}`}>
                 <p className="text-sm font-semibold text-black/75">{item.title}</p>
                 <p className="mt-1 text-sm leading-5 text-black/50">{item.text}</p>
@@ -55,9 +57,9 @@ export function GuidedAiInsightsPanel({
         </div>
 
         <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-          <p className="text-sm font-semibold text-black/80">{getTerm("nextStep", "plural")}</p>
+          <p className="text-sm font-semibold text-black/80">{t("nextSteps")}</p>
           <div className="mt-3 grid gap-3">
-            {(nextSteps.length ? nextSteps : [{ title: "Keep the record updated", text: "Add notes after the next interaction so the dashboard can guide the team." }]).map((item) => (
+            {(nextSteps.length ? nextSteps : [{ title: t("keepUpdatedTitle"), text: t("keepUpdatedText") }]).map((item) => (
               <div key={`${item.title}-${item.text}`} className="flex gap-2">
                 <ArrowRight className="mt-0.5 h-4 w-4 shrink-0 text-axiel-gold" />
                 <div>
