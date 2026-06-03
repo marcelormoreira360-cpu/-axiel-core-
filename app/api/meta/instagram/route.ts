@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, getWhatsAppBotConfigByInstagramId } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
@@ -34,9 +34,10 @@ async function saveHistory(
   supabase: SupabaseAdmin,
   userId: string,
   id: string | null,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  clinicId?: string | null
 ) {
-  const payload = {
+  const payload: Record<string, unknown> = {
     phone: `ig_${userId}`,
     messages: messages.slice(-20),
     updated_at: new Date().toISOString(),
@@ -45,7 +46,10 @@ async function saveHistory(
     if (id) {
       await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
     } else {
-      await supabase.from("whatsapp_conversations").insert(payload);
+      // New row — clinic_id is required (NOT NULL). UPSERT on phone is safe
+      // against concurrent first messages from the same IG user.
+      if (clinicId) payload.clinic_id = clinicId;
+      await supabase.from("whatsapp_conversations").upsert(payload, { onConflict: "phone" });
     }
   } catch { /* non-blocking */ }
 }
@@ -140,9 +144,20 @@ export async function POST(req: NextRequest) {
     if (body.object !== "instagram") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
-    const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
 
     for (const entry of body.entry ?? []) {
+      // SEC-01: resolve the clinic from the Instagram account id (entry.id).
+      // No fallback to a hardcoded config — if no clinic has this IG id
+      // configured, skip the entry silently (never leak another clinic's data).
+      const igAccountId: string = entry.id ?? "";
+      if (!igAccountId) continue;
+
+      const botConfig = await getWhatsAppBotConfigByInstagramId(igAccountId).catch(() => null);
+      if (!botConfig) continue;
+
+      const clinicId = botConfig.clinic_id;
+      const systemPrompt = buildSystemPrompt(botConfig);
+
       for (const event of entry.messaging ?? []) {
         // Skip echoes (messages sent by the page itself)
         if (event.message?.is_echo) continue;
@@ -160,7 +175,7 @@ export async function POST(req: NextRequest) {
           await saveHistory(supabase, senderId, convId, [
             ...history,
             { role: "user", content: messageText },
-          ]);
+          ], clinicId);
           continue;
         }
 
@@ -171,7 +186,7 @@ export async function POST(req: NextRequest) {
           ...history,
           { role: "user", content: messageText },
           { role: "assistant", content: finalReply },
-        ]);
+        ], clinicId);
 
         await sendInstagramReply(senderId, finalReply);
       }

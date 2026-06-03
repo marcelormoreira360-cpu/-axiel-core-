@@ -178,6 +178,12 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - **getTerm na UI de tráfego** (`app/patients/[id]/page.tsx`) → `common.terms` (session/insights). Helper `getTerm` permanece para a camada de IA.
   - **Processo**: `scripts/verify-i18n.mjs` commitado; `package.json` → `typecheck` agora usa `tsconfig.check.json` (confiável), novo `verify:i18n`.
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **33 namespaces**; rescan sem `pt-BR` hardcoded em UI.
+- ✅ **Instagram bot multi-clínica (SEC-01)** (02/06/2026): rota do Instagram deixou de usar `IFWC_DEFAULT_CONFIG` hardcoded
+  - **Migration `051_whatsapp_meta_instagram_id.sql` APLICADA em produção (02/06/2026)** — coluna `meta_instagram_id text unique` + índice em `whatsapp_bot_configs`; RPC `upsert_whatsapp_bot_config` recriada com `p_meta_instagram_id` (12 args; assinatura antiga de 11 args dropada). ⚠️ **PENDENTE: deploy dos `.ts` na Vercel** (banco já tem a coluna; código que a usa ainda precisa subir).
+  - `services/whatsapp-bot-service.ts`: campo `meta_instagram_id` no tipo + `getWhatsAppBotConfigByInstagramId()` (admin client, sem fallback) + param no upsert/select
+  - `app/api/meta/instagram/route.ts`: resolve clínica por `entry.id` (IG account id); se nenhuma clínica casar → pula o entry silenciosamente (paridade SEC-01 com o WhatsApp); prompt por clínica; persiste `clinic_id` na conversa (`whatsapp_conversations.clinic_id` é NOT NULL — antes o INSERT do IG ia sem clinic_id e era um bug latente)
+  - UI: campo "Instagram Account ID" no `whatsapp-bot-form.tsx` + `actions.ts` salvando `meta_instagram_id`; i18n `settings.whatsapp.metaInstagramId(+Hint)` PT/EN
+  - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
 - 🧹 i18n — componentes de insight de IA migrados (02/06/2026): **novo namespace `insights`**
   - `components/clinical-insight.tsx` (ClinicalInsightView) e `components/guided-ai-insights-panel.tsx` → **async server components** com `getTranslations("insights")` (label, Notas-chave, O que pode estar conectado, Próximos passos, painel: Padrões/placeholder/etc.)
   - `app/patients/[id]/reports/clinical-insight/page.tsx` (chrome: voltar, eyebrow, título, disclaimer, baixar PDF)
@@ -263,7 +269,7 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
 | `app/api/health-agent/route.ts` | Análise clínica com GPT-4o |
 | `components/session-recording-panel.tsx` | Gravação de sessão + useActionState |
 | `app/schedule/[id]/session/actions.ts` | `saveSessionRecord` — Server Action |
-| `supabase/migrations/` | última aplicada = 047_broadcast_campaigns.sql (048_waitlist.sql e 049_user_preferred_locale.sql pendentes) |
+| `supabase/migrations/` | última aplicada = **051_whatsapp_meta_instagram_id.sql** (02/06/2026); deploy dos `.ts` do bot Instagram multi-clínica pendente na Vercel |
 | `i18n/` | locales.ts, get-locale.ts, request.ts — config do next-intl (sem locale na URL) |
 | `messages/{pt-BR,en}/` | JSONs de tradução por namespace (common, nav, dashboard…) |
 | `components/language-switcher.tsx` | Toggle PT/EN — chama Server Action setLocale |

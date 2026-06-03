@@ -443,6 +443,8 @@
     "twilioNumberHint": "Canal Twilio (legado). Deixe em branco se usar apenas a Meta API.",
     "metaPhoneId": "Meta Phone Number ID",
     "metaPhoneIdHint": "ID numérico do número na Meta for Developers → WhatsApp → API Setup. Necessário para o canal Meta API.",
+    "metaInstagramId": "Instagram Account ID",
+    "metaInstagramIdHint": "ID da conta do Instagram (Instagram Business Account). Necessário para o bot responder DMs do Instagram desta clínica.",
     "programTitle": "Programa / O que está incluído",
     "programDesc": "Descreva o que o paciente recebe no atendimento. O bot apresenta isso na Etapa 4.",
     "pricingTitle": "Investimento por localidade",

@@ -8,6 +8,7 @@ export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
   clinic_id: string;
   twilio_number: string | null;
   meta_phone_number_id: string | null;
+  meta_instagram_id: string | null;
   clinic_slug: string | null;
 };
 
@@ -58,6 +59,25 @@ export async function getWhatsAppBotConfigByMetaPhoneId(metaPhoneNumberId: strin
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
+// SEC-01 (Instagram): lookup by Meta Instagram account id — used by the Instagram
+// webhook to resolve clinic_id from the incoming entry.id. No fallback to a default
+// config: if no clinic matches, the webhook drops the message silently.
+// Uses admin client because webhooks run without a user session.
+export async function getWhatsAppBotConfigByInstagramId(metaInstagramId: string): Promise<WhatsAppBotConfig | null> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("whatsapp_bot_configs")
+    .select("*, clinics(slug)")
+    .eq("meta_instagram_id", metaInstagramId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!data) return null;
+  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+}
+
 export async function upsertWhatsAppBotConfig(
   clinicId: string,
   input: Partial<Omit<WhatsAppBotConfig, "id" | "clinic_id">>
@@ -80,13 +100,14 @@ export async function upsertWhatsAppBotConfig(
     p_is_active:           input.is_active ?? true,
     p_twilio_number:       input.twilio_number ?? null,
     p_meta_phone_number_id: input.meta_phone_number_id ?? null,
+    p_meta_instagram_id:   input.meta_instagram_id ?? null,
   });
   if (rpcError) throw rpcError;
 
   // Fetch the full updated row (includes meta_phone_number_id + clinic slug from DB)
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")
-    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, created_at, updated_at, clinics(slug)")
+    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, meta_instagram_id, created_at, updated_at, clinics(slug)")
     .eq("id", rpcId as string)
     .single();
   if (error) throw error;
