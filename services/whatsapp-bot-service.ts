@@ -1,7 +1,16 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PricingLocation, WhatsAppBotConfigFields } from "@/lib/whatsapp-bot-defaults";
 
 export type { PricingLocation, PricingPlan } from "@/lib/whatsapp-bot-defaults";
 export { IFWC_DEFAULT_CONFIG, buildSystemPrompt } from "@/lib/whatsapp-bot-defaults";
+
+// Busca o slug da clínica numa consulta separada — evita o join embutido
+// `clinics(slug)` do PostgREST, que exige uma FK que não existe porque
+// whatsapp_bot_configs.clinic_id é text e clinics.id é uuid (sem relação).
+async function fetchClinicSlug(supabase: SupabaseClient, clinicId: string): Promise<string | null> {
+  const { data } = await supabase.from("clinics").select("slug").eq("id", clinicId).maybeSingle();
+  return ((data as { slug?: string } | null)?.slug) ?? null;
+}
 
 export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
   id: string;
@@ -18,11 +27,11 @@ export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBo
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*, clinics(slug)")
+    .select("*")
     .eq("clinic_id", clinicId)
     .maybeSingle();
   if (!data) return null;
-  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
@@ -32,12 +41,12 @@ export async function getWhatsAppBotConfigByNumber(twilioNumber: string): Promis
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*, clinics(slug)")
+    .select("*")
     .eq("twilio_number", twilioNumber)
     .eq("is_active", true)
     .maybeSingle();
   if (!data) return null;
-  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
@@ -50,12 +59,12 @@ export async function getWhatsAppBotConfigByMetaPhoneId(metaPhoneNumberId: strin
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*, clinics(slug)")
+    .select("*")
     .eq("meta_phone_number_id", metaPhoneNumberId)
     .eq("is_active", true)
     .maybeSingle();
   if (!data) return null;
-  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
@@ -69,12 +78,12 @@ export async function getWhatsAppBotConfigByInstagramId(metaInstagramId: string)
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("whatsapp_bot_configs")
-    .select("*, clinics(slug)")
+    .select("*")
     .eq("meta_instagram_id", metaInstagramId)
     .eq("is_active", true)
     .maybeSingle();
   if (!data) return null;
-  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
@@ -107,11 +116,11 @@ export async function upsertWhatsAppBotConfig(
   // Fetch the full updated row (includes meta_phone_number_id + clinic slug from DB)
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")
-    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, meta_instagram_id, created_at, updated_at, clinics(slug)")
+    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, meta_instagram_id, created_at, updated_at")
     .eq("id", rpcId as string)
     .single();
   if (error) throw error;
-  const clinicSlug = (data.clinics as unknown as { slug: string } | null)?.slug ?? null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return {
     ...data,
     locations: (data.locations as PricingLocation[]) ?? [],
