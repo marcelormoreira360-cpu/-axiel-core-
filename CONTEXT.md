@@ -178,6 +178,14 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - **getTerm na UI de tráfego** (`app/patients/[id]/page.tsx`) → `common.terms` (session/insights). Helper `getTerm` permanece para a camada de IA.
   - **Processo**: `scripts/verify-i18n.mjs` commitado; `package.json` → `typecheck` agora usa `tsconfig.check.json` (confiável), novo `verify:i18n`.
   - Validado: tsc confiável **0 erros**; paridade PT/EN + ICU OK em **33 namespaces**; rescan sem `pt-BR` hardcoded em UI.
+- ✅ **Integração AXIEL Growth → Core (lado Core)** (02/06/2026): recebe lead quente do Growth
+  - **Migration `052_growth_integration.sql` PENDENTE** — tabela `clinic_integration_keys` (chave hasheada SHA-256 por clínica, RLS via `can_manage_clinic`) + colunas `score`/`growth_lead_id`/`warming_context` em `leads` + valor de enum `lead_source = 'axiel_growth'`. ⚠️ aplicar antes do deploy do código.
+  - `services/growth-integration-service.ts`: gerar/listar/revogar Integration Key; `resolveClinicByKey` (admin, sem fallback); `upsertGrowthLead` idempotente (por `growth_lead_id`, depois dedup por phone/email com `.eq()` — sem injeção em `.or()`)
+  - **Endpoint** `app/api/integrations/growth/lead/route.ts`: Bearer key → rate limit (`checkRateLimitDb`, 120/min) → resolve clínica → upsert; Idempotency-Key header; retorna `{clinic_id, lead_id, created}`
+  - UI: `components/growth-integration-card.tsx` em `Settings → Integrações` (gera/exibe-uma-vez/revoga chave + URL do endpoint); server actions `generateGrowthKeyAction`/`revokeGrowthKeyAction`; i18n `settings.integrations.growth*` PT/EN
+  - Mapeamento de stage Growth→Core: `scheduled`→scheduled, `patient`→converted_to_patient, demais→new_lead
+  - Spec completa em `AXIEL_GROWTH_INTEGRATION_SPEC.md` (v0.2). Pendente lado Growth: chamada de saída + retorno `patient_id`. Confirmado: AXIEL Health (schema Growth) = AXIEL Core
+  - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
 - ✅ **Instagram bot multi-clínica (SEC-01)** (02/06/2026): rota do Instagram deixou de usar `IFWC_DEFAULT_CONFIG` hardcoded
   - **Migration `051_whatsapp_meta_instagram_id.sql` APLICADA em produção (02/06/2026)** — coluna `meta_instagram_id text unique` + índice em `whatsapp_bot_configs`; RPC `upsert_whatsapp_bot_config` recriada com `p_meta_instagram_id` (12 args; assinatura antiga de 11 args dropada). ⚠️ **PENDENTE: deploy dos `.ts` na Vercel** (banco já tem a coluna; código que a usa ainda precisa subir).
   - `services/whatsapp-bot-service.ts`: campo `meta_instagram_id` no tipo + `getWhatsAppBotConfigByInstagramId()` (admin client, sem fallback) + param no upsert/select

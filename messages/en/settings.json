@@ -286,7 +286,16 @@
     "reviewPlaceholder": "https://g.page/r/xxxx/review",
     "reviewHint": "Paste the Google review link (find it in Google Business Profile → Get review link). Patients with a rating ≥ 4 will receive this link via WhatsApp automatically.",
     "copy": "Copy",
-    "copied": "Copied ✓"
+    "copied": "Copied ✓",
+    "growthTitle": "AXIEL Growth",
+    "growthDesc": "Receives hot leads captured and nurtured by AXIEL Growth.",
+    "growthEndpointLabel": "Endpoint URL (enter this in AXIEL Growth)",
+    "growthGenerate": "Generate key",
+    "growthGenerating": "Generating…",
+    "growthRevoke": "Revoke",
+    "growthKeyLabelPlaceholder": "Key name (e.g. Growth production)",
+    "growthKeyOnce": "Copy now — the key is shown only once:",
+    "growthHint": "Paste the generated key and the endpoint URL into AXIEL Growth's settings. When a lead gets hot, Growth sends it to Core automatically."
   },
   "hotmart": {
     "back": "Integrations",

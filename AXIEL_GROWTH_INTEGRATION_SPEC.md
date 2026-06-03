@@ -1,8 +1,18 @@
-# AXIEL Growth ⇄ AXIEL Core — Especificação de Integração (v0.1)
+# AXIEL Growth ⇄ AXIEL Core — Especificação de Integração (v0.2)
 
-> Rascunho. Os pontos marcados **[TBD — depende dos arquivos do Growth]** serão
-> preenchidos quando o schema/contrato do Growth for enviado.
-> Atualizado em: 02/06/2026
+> Atualizado em: 02/06/2026 — agora com o **schema real do Growth** (migrations 0001–0016).
+> Mudança v0.2: o Growth **já tem** os campos de handoff prontos (`leads.synced_to_health`,
+> `leads.axiel_health_patient_id`, `leads.score`, `leads.stage`, `leads.consent*`,
+> `tenants.axiel_health_org_id`). A integração no Core encaixa nesses campos.
+
+## 0. Reconciliação de nomes — ✅ CONFIRMADO (02/06/2026)
+
+O schema do Growth chama o produto clínico de **"AXIEL Health"**
+(`tenants.axiel_health_org_id`, `leads.axiel_health_patient_id`, `leads.synced_to_health`,
+`stage = 'patient'`). **AXIEL Health = AXIEL Core — é o mesmo produto** (nomes diferentes em
+cada base). Onde o schema do Growth diz "axiel_health", leia-se AXIEL Core.
+
+> Sugestão futura: padronizar o nome em algum momento para evitar confusão na manutenção.
 
 ---
 
@@ -26,14 +36,19 @@ Princípio: os dois produtos permanecem **independentes**. A integração é um 
 
 ---
 
-## 3. Modelo de identidade
+## 3. Modelo de identidade (mapeado ao schema real)
 
-1. No Core, cada clínica gera uma **Integration Key** em `Settings → Integrações → Axiel Growth`.
-2. A chave é guardada **hasheada** no Core (tabela `clinic_integration_keys`), mapeando `key_hash → clinic_id`.
-3. No Growth, o cliente cola essa chave na config da conta dele.
-4. Toda chamada do Growth para o Core envia a chave; o Core resolve a clínica a partir dela. Sem chave válida → 401, mensagem descartada.
+- **Growth**: tenant = `tenants.id`. Já tem coluna `tenants.axiel_health_org_id` reservada para guardar o **`clinic_id` do Core**.
+- **Core**: clínica = `clinics.id` (`clinic_id`).
 
-**[TBD]** Como o Growth identifica internamente cada conta de cliente (para amarrar 1 conta Growth ↔ 1 Integration Key do Core).
+Fluxo de pareamento (Integration Key, uma vez por cliente):
+1. No Core, a clínica gera uma **Integration Key** em `Settings → Integrações → Axiel Growth`.
+2. Core guarda a chave **hasheada** (`clinic_integration_keys.key_hash → clinic_id`).
+3. No Growth, o cliente cola a chave na config do tenant.
+4. Na 1ª chamada, o Core valida a chave, resolve o `clinic_id` e **devolve esse `clinic_id`**; o Growth grava em `tenants.axiel_health_org_id`. A partir daí o vínculo está fechado nos dois lados.
+5. Sem chave válida → 401, mensagem descartada (mesma postura SEC-01 do bot).
+
+> Vantagem: o Growth continua vendável sozinho (sem chave, só não sincroniza). A chave é o "plugue" pago.
 
 ---
 
@@ -47,32 +62,40 @@ Content-Type: application/json
 Idempotency-Key: <growth_lead_id>   # evita lead duplicado em retries
 ```
 
-### Payload (proposta — ajustar ao que o Growth já produz)
+### Payload (mapeado direto das colunas de `leads` do Growth)
 ```jsonc
 {
-  "growth_lead_id": "gr_abc123",        // id do lead no Growth (idempotência)
-  "captured_at": "2026-06-02T14:30:00Z",
-  "trigger": "messaged",                // "messaged" | "score_threshold"
-  "score": 82,                          // 0-100 (temperatura)
-  "contact": {
-    "full_name": "Maria S.",
-    "phone": "+5511999999999",          // chave de dedup (com email)
-    "email": "maria@exemplo.com"
-  },
-  "channel": "instagram",               // origem do aquecimento
-  "warming_context": {                  // o que o lead engajou
-    "utm": { "source": "ig", "campaign": "detox-junho" },
-    "engaged_content": ["post:123", "reel:456"],
-    "last_message": "Quero saber sobre a avaliação"
-  },
-  "consent": {                          // LGPD — obrigatório
+  "growth_lead_id": "<leads.id>",          // uuid do lead no Growth (idempotência)
+  "growth_tenant_id": "<tenants.id>",      // tenant do Growth (auditoria/checagem)
+  "name": "Maria S.",                      // leads.name
+  "email": "maria@exemplo.com",            // leads.email   (dedup)
+  "phone": "+5511999999999",               // leads.phone   (dedup)
+  "score": 82,                             // leads.score (0-100)
+  "stage": "hot",                          // leads.stage: captured|cold|warm|hot|scheduled|patient
+  "interest": "microfisioterapia",         // leads.interest
+  "pain": "enxaqueca crônica",             // leads.pain
+  "source_platform": "instagram",          // leads.source_platform
+  "consent": {                             // leads.consent / consent_text / consent_at
     "granted": true,
-    "purpose": "contact_and_care",
-    "timestamp": "2026-06-02T14:29:00Z",
-    "text_version": "v1"
+    "text": "Aceito ser contatado…",
+    "at": "2026-06-02T14:29:00Z"
   }
 }
 ```
+
+### Mapeamento Growth → Core (`leads` do Core)
+| Growth (`leads.*`) | Core (`leads.*`) |
+|---|---|
+| `id` | `growth_lead_id` (novo, único por clínica) |
+| `name` | `full_name` |
+| `email` / `phone` | `email` / `phone` (chave de dedup) |
+| `score` | `score` (novo) |
+| `stage` | `stage` (mapear — ver abaixo) + `warming_context.growth_stage` |
+| `interest` / `pain` | `warming_context` (jsonb) + resumo em `notes` |
+| `source_platform` | `source = 'axiel_growth'`; plataforma em `warming_context` |
+| `consent*` | `patient_consents` (registro de consentimento) |
+
+**Mapa de `stage`** (Growth → Core): `hot/scheduled` → entra como lead ativo no Core (stage inicial do Core, ex. `new_lead`); `patient` → não reenviar (já virou paciente). `captured/cold/warm` normalmente **não** são enviados (só "quente" cruza a ponte) — confirmar o gatilho (§7).
 
 ### Resposta do Core
 ```jsonc
@@ -97,8 +120,10 @@ Idempotency-Key: <growth_lead_id>   # evita lead duplicado em retries
 - **UI**: card "Axiel Growth" em `Settings → Integrações` (gerar/rotacionar Integration Key, ver status/last_used).
 - Migration única cobrindo tabela + colunas.
 
-### Fase 2 — feedback Core → Growth (bidirecional)
-Callback do Core quando o lead muda de desfecho (`virou_paciente`, `esfriou`, `perdido`) para o Growth recalibrar o score. Mesmo modelo de chave, sentido inverso.
+### Retorno Core → Growth (já previsto no schema do Growth)
+- **Imediato** (resposta do POST): Core devolve o `clinic_id` → Growth grava em `tenants.axiel_health_org_id`.
+- **Na conversão**: quando o lead vira paciente no Core, o Core avisa o Growth com o `patient_id` → Growth grava `leads.axiel_health_patient_id` e `synced_to_health = true` (a unique index `leads_tenant_patient_uq` garante 1 paciente ↔ 1 lead).
+- **Fase 2 (opcional)**: desfecho (`esfriou`/`perdido`) volta ao Growth para recalibrar o score. Mesmo modelo de chave, sentido inverso.
 
 ---
 
@@ -126,13 +151,18 @@ Callback do Core quando o lead muda de desfecho (`virou_paciente`, `esfriou`, `p
 
 ---
 
-## 7. O que falta receber do Growth (checklist)
+## 7. Status do que falta
 
-- [ ] Schema do banco do Growth (tabela de leads/contatos)
-- [ ] Type/interface do objeto "lead" ou um JSON de exemplo
-- [ ] Código do gatilho de "lead quente" (score/threshold)
-- [ ] Como o Growth identifica cada conta de cliente
-- [ ] Doc de API existente (se houver)
+Resolvido pelo schema do Growth:
+- [x] Schema do banco (recebido — migrations 0001–0016)
+- [x] Estrutura do lead (`public.leads`) e campos de handoff (`synced_to_health`, `axiel_health_patient_id`, `score`, `stage`, `consent*`)
+- [x] Como o Growth identifica cada cliente (`tenants` + `tenants.axiel_health_org_id`)
+
+Ainda preciso confirmar com você / com o lado Growth:
+- [x] **Nome confirmado**: AXIEL Health = AXIEL Core (§0)
+- [ ] **Gatilho do handoff**: o Growth dispara o envio quando `stage` vira `hot`? `scheduled`? Ou quando `inbox_messages.escalate = true`? (define o "quando")
+- [ ] **Código de saída do Growth**: existe já uma função no Growth que chama um endpoint externo quando o lead esquenta, ou isso precisa ser criado no lado Growth? (o schema tem o campo `synced_to_health`, mas a *chamada* é código de app, não está no SQL)
+- [ ] **Endereço/infra**: Growth e Core são projetos Supabase separados? (sim, pelo que parece — dois bancos distintos)
 
 ---
 

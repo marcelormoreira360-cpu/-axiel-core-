@@ -9,6 +9,8 @@ import { getIcalSecret } from "@/services/ical-service";
 import { IcalCopyButton } from "@/components/ical-copy-button";
 import { ZoomCredentialsForm } from "@/components/zoom-credentials-form";
 import { GoogleReviewUrlForm } from "@/components/google-review-url-form";
+import { GrowthIntegrationCard } from "@/components/growth-integration-card";
+import { listIntegrationKeys } from "@/services/growth-integration-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 
@@ -41,9 +43,10 @@ export default async function IntegrationsPage({
   const hasClinicZoomCreds = !!settingsJson.zoom;
   const googleReviewUrl = (settingsJson.google_review_url as string | null) ?? null;
 
-  const [googleStatus, icalSecret] = await Promise.all([
+  const [googleStatus, icalSecret, growthKeys] = await Promise.all([
     getGoogleIntegrationStatus(clinicId),
     getIcalSecret(clinicId),
+    listIntegrationKeys(clinicId),
   ]);
 
   const sp = await searchParams;
@@ -290,6 +293,12 @@ export default async function IntegrationsPage({
           </div>
           <GoogleReviewUrlForm current={googleReviewUrl} />
         </div>
+
+        {/* ── AXIEL Growth ── */}
+        <GrowthIntegrationCard
+          endpointUrl={`${appUrl}/api/integrations/growth/lead`}
+          keys={growthKeys}
+        />
 
         {/* Setup instructions */}
         <div className="bg-[#F4F3EF] dark:bg-white/[.03] border border-black/[.06] dark:border-white/[.06] rounded-[12px] p-[16px]">

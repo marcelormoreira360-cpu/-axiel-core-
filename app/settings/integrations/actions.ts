@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { saveClinicZoomCredentials, removeClinicZoomCredentials } from "@/services/zoom-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { generateIntegrationKey, revokeIntegrationKey } from "@/services/growth-integration-service";
 
 export async function saveZoomCredentialsAction(formData: FormData): Promise<{ ok: boolean; error: string | null }> {
   const profile = await getCurrentUserProfile();
@@ -76,4 +77,47 @@ export async function saveGoogleReviewUrlAction(formData: FormData): Promise<{ o
 
   revalidatePath("/settings/integrations");
   return { ok: true, error: null };
+}
+
+// ── AXIEL Growth — Integration Keys ───────────────────────────────────────────
+
+export async function generateGrowthKeyAction(
+  formData: FormData
+): Promise<{ ok: boolean; error: string | null; rawKey?: string }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
+  if (!["clinic_owner", "clinic_manager"].includes(profile.role ?? "")) {
+    return { ok: false, error: "Sem permissão." };
+  }
+
+  const label = String(formData.get("label") ?? "").trim() || null;
+
+  try {
+    const { rawKey } = await generateIntegrationKey(profile.clinic_id, label, profile.id ?? null);
+    revalidatePath("/settings/integrations");
+    return { ok: true, error: null, rawKey };
+  } catch {
+    return { ok: false, error: "Erro ao gerar a chave." };
+  }
+}
+
+export async function revokeGrowthKeyAction(
+  formData: FormData
+): Promise<{ ok: boolean; error: string | null }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
+  if (!["clinic_owner", "clinic_manager"].includes(profile.role ?? "")) {
+    return { ok: false, error: "Sem permissão." };
+  }
+
+  const keyId = String(formData.get("key_id") ?? "").trim();
+  if (!keyId) return { ok: false, error: "Chave inválida." };
+
+  try {
+    await revokeIntegrationKey(profile.clinic_id, keyId);
+    revalidatePath("/settings/integrations");
+    return { ok: true, error: null };
+  } catch {
+    return { ok: false, error: "Erro ao revogar a chave." };
+  }
 }

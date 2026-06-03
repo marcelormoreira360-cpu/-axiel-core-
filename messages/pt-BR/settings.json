@@ -286,7 +286,16 @@
     "reviewPlaceholder": "https://g.page/r/xxxx/review",
     "reviewHint": "Cole o link de avaliação do Google (encontre em Google Meu Negócio → Obter link para avaliação). Pacientes com nota ≥ 4 receberão este link pelo WhatsApp automaticamente.",
     "copy": "Copiar",
-    "copied": "Copiado ✓"
+    "copied": "Copiado ✓",
+    "growthTitle": "AXIEL Growth",
+    "growthDesc": "Recebe leads quentes captados e aquecidos pelo AXIEL Growth.",
+    "growthEndpointLabel": "URL do endpoint (informe no AXIEL Growth)",
+    "growthGenerate": "Gerar chave",
+    "growthGenerating": "Gerando…",
+    "growthRevoke": "Revogar",
+    "growthKeyLabelPlaceholder": "Nome da chave (ex.: Growth produção)",
+    "growthKeyOnce": "Copie agora — a chave só é exibida uma vez:",
+    "growthHint": "Cole a chave gerada e a URL do endpoint na configuração do AXIEL Growth. Quando um lead esquentar, o Growth o envia automaticamente para o Core."
   },
   "hotmart": {
     "back": "Integrações",
