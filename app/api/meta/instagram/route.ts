@@ -110,6 +110,25 @@ async function generateReply(
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
+// ─── Opt-out / human escalation detection ────────────────────────────────────
+// Meta App Review requires that users can easily opt out of automation and reach
+// a person. We detect clear "talk to a human" intents (PT/EN). Kept phrase-based
+// (and avoiding bare "stop/parar") to prevent false positives in a clinical chat
+// (e.g. "quero parar de sentir dor").
+const OPT_OUT_PATTERNS = [
+  "falar com atendente", "falar com um atendente", "falar com humano", "falar com um humano",
+  "falar com uma pessoa", "falar com alguem", "falar com a equipe", "falar com a recepcao",
+  "atendente", "atendimento humano", "quero um humano", "pessoa de verdade", "ser humano",
+  "talk to a human", "talk to a person", "talk to an agent", "speak to a human",
+  "speak to a person", "speak to an agent", "speak to someone", "real person",
+  "human agent", "live agent",
+];
+
+function isOptOutRequest(text: string): boolean {
+  const t = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return OPT_OUT_PATTERNS.some((p) => t.includes(p));
+}
+
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -176,6 +195,27 @@ export async function POST(req: NextRequest) {
             ...history,
             { role: "user", content: messageText },
           ], clinicId);
+          continue;
+        }
+
+        // Opt-out / human escalation (Meta App Review requirement): the patient
+        // can ask to talk to a person. We reply once, flag the conversation for a
+        // human to take over (bot_disabled), and stop auto-replying in this thread.
+        if (isOptOutRequest(messageText)) {
+          const handover = botConfig.language === "en-US"
+            ? "Of course! I'll let the team know and a person will reach out to you here shortly. 🙏"
+            : "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏";
+          await saveHistory(supabase, senderId, convId, [
+            ...history,
+            { role: "user", content: messageText },
+            { role: "assistant", content: handover },
+          ], clinicId);
+          await supabase
+            .from("whatsapp_conversations")
+            .update({ bot_disabled: true })
+            .eq("phone", `ig_${senderId}`)
+            .then(() => {}, () => {});
+          await sendInstagramReply(senderId, handover);
           continue;
         }
 
