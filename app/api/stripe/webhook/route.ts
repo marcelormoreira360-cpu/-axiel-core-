@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createLogger } from "@/lib/logger";
+import type { PaymentMethod } from "@/lib/types";
 
 const log = createLogger("stripe-webhook");
 
@@ -91,6 +92,109 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
   });
 }
 
+// ── Resolve o método de pagamento real (card/pix/boleto) ───────────────────────
+// O checkout não traz o método escolhido; é preciso ler o PaymentIntent/charge.
+async function resolveStripePaymentMethod(
+  session: Stripe.Checkout.Session,
+): Promise<PaymentMethod> {
+  const piId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : (session.payment_intent?.id ?? null);
+  if (!piId) return "credit_card";
+  try {
+    const pi = await stripe.paymentIntents.retrieve(piId, { expand: ["latest_charge"] });
+    const charge = pi.latest_charge as Stripe.Charge | null;
+    const type = charge?.payment_method_details?.type;
+    if (type === "pix") return "pix";
+    if (type === "boleto") return "boleto";
+    if (type === "card") return "credit_card";
+  } catch (error) {
+    log.warn("resolveStripePaymentMethod: falha ao buscar PaymentIntent", {
+      payment_intent: piId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+  return "credit_card";
+}
+
+// ── Registra o pagamento de um checkout JÁ confirmado (paid) ───────────────────
+// Chamado tanto em checkout.session.completed (cartão, síncrono) quanto em
+// checkout.session.async_payment_succeeded (pix/boleto, assíncrono).
+// Idempotente por stripe_payment_intent_id — eventos duplicados não duplicam linhas.
+async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
+  const type = session.metadata?.type;
+  if (type !== "session_payment" && type !== "patient_purchase") return;
+
+  const supabaseAdmin = createSupabaseAdminClient();
+  const paymentIntentId =
+    typeof session.payment_intent === "string"
+      ? session.payment_intent
+      : (session.payment_intent?.id ?? null);
+
+  // Idempotência: se já existe pagamento para este PaymentIntent, não reprocessa.
+  if (paymentIntentId) {
+    const { data: existing } = await supabaseAdmin
+      .from("patient_payments")
+      .select("id")
+      .eq("stripe_payment_intent_id", paymentIntentId)
+      .maybeSingle();
+    if (existing) return;
+  }
+
+  const method = await resolveStripePaymentMethod(session);
+
+  if (type === "session_payment") {
+    const { patient_id, clinic_id, appointment_id } = session.metadata ?? {};
+    await supabaseAdmin.from("patient_payments").insert({
+      clinic_id,
+      patient_id,
+      appointment_id,
+      amount_cents: session.amount_total ?? 0,
+      currency: session.currency?.toUpperCase() ?? "BRL",
+      payment_method: method,
+      paid_at: new Date().toISOString(),
+      status: "paid",
+      stripe_payment_intent_id: paymentIntentId,
+      notes: `Stripe session checkout ${session.id}`,
+    });
+    return;
+  }
+
+  // type === "patient_purchase"
+  const { patient_id, clinic_id, offer_id } = session.metadata ?? {};
+  const { data: offer } = await supabaseAdmin
+    .from("monetization_offers")
+    .select("name, number_of_sessions, price_cents")
+    .eq("id", offer_id)
+    .single();
+
+  if (!offer) return;
+
+  await supabaseAdmin.from("patient_packages").insert({
+    patient_id,
+    clinic_id,
+    name: offer.name,
+    sessions_total: (offer.number_of_sessions as number | null) ?? 1,
+    start_date: new Date().toISOString().slice(0, 10),
+    is_active: true,
+    notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
+  });
+
+  await supabaseAdmin.from("patient_payments").insert({
+    clinic_id,
+    patient_id,
+    patient_offer_id: offer_id,
+    amount_cents: (offer.price_cents as number) ?? session.amount_total ?? 0,
+    currency: session.currency?.toUpperCase() ?? "BRL",
+    payment_method: method,
+    paid_at: new Date().toISOString(),
+    status: "paid",
+    stripe_payment_intent_id: paymentIntentId,
+    notes: `Stripe checkout ${session.id}`,
+  });
+}
+
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -112,76 +216,21 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
 
-    // Handle patient per-session payment (Feature 2)
-    if (session.metadata?.type === "session_payment") {
-      const { patient_id, clinic_id, appointment_id } = session.metadata;
-      const supabaseAdmin = createSupabaseAdminClient();
-
-      const paymentIntentId =
-        typeof session.payment_intent === "string"
-          ? session.payment_intent
-          : (session.payment_intent?.id ?? null);
-
-      await supabaseAdmin.from("patient_payments").insert({
-        clinic_id,
-        patient_id,
-        appointment_id,
-        amount_cents: session.amount_total ?? 0,
-        currency: (session.currency?.toUpperCase() ?? "BRL"),
-        payment_method: "credit_card",
-        paid_at: new Date().toISOString(),
-        status: "paid",
-        stripe_payment_intent_id: paymentIntentId,
-        notes: `Stripe session checkout ${session.id}`,
-      });
-
-      return NextResponse.json({ received: true });
-    }
-
-    // Handle patient package purchase
-    if (session.metadata?.type === "patient_purchase") {
-      const { patient_id, clinic_id, offer_id } = session.metadata;
-
-      const supabaseAdmin = createSupabaseAdminClient();
-      const { data: offer } = await supabaseAdmin
-        .from("monetization_offers")
-        .select("name, number_of_sessions, price_cents")
-        .eq("id", offer_id)
-        .single();
-
-      if (offer) {
-        // Retrieve payment intent ID from the session for future refunds
-        const paymentIntentId =
-          typeof session.payment_intent === "string"
-            ? session.payment_intent
-            : (session.payment_intent?.id ?? null);
-
-        // Create patient package
-        await supabaseAdmin.from("patient_packages").insert({
-          patient_id,
-          clinic_id,
-          name: offer.name,
-          sessions_total: (offer.number_of_sessions as number | null) ?? 1,
-          start_date: new Date().toISOString().slice(0, 10),
-          is_active: true,
-          notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
-        });
-
-        // Create patient_payment record linked to this Stripe payment
-        await supabaseAdmin.from("patient_payments").insert({
-          clinic_id,
-          patient_id,
-          patient_offer_id: offer_id,
-          amount_cents: (offer.price_cents as number) ?? session.amount_total ?? 0,
-          currency: (session.currency?.toUpperCase() ?? "BRL"),
-          payment_method: "credit_card",
-          paid_at: new Date().toISOString(),
-          status: "paid",
-          stripe_payment_intent_id: paymentIntentId,
-          notes: `Stripe checkout ${session.id}`,
+    // Pagamento de sessão avulsa ou compra de pacote/oferta.
+    // ⚠️ Pix e Boleto são assíncronos: a sessão "completa" com payment_status
+    // diferente de "paid" (o cliente ainda vai pagar). Nesse caso NÃO registramos
+    // aqui — esperamos checkout.session.async_payment_succeeded.
+    // Cartão fecha como "paid" e é processado imediatamente.
+    if (session.metadata?.type === "session_payment" || session.metadata?.type === "patient_purchase") {
+      if (session.payment_status === "paid") {
+        await handleCheckoutSessionPaid(session);
+      } else {
+        log.info("checkout.session.completed: pagamento assíncrono pendente (pix/boleto)", {
+          session_id: session.id,
+          type: session.metadata?.type,
+          payment_status: session.payment_status,
         });
       }
-
       return NextResponse.json({ received: true });
     }
 
@@ -219,6 +268,24 @@ export async function POST(request: Request) {
       const subscription = await stripe.subscriptions.retrieve(String(session.subscription));
       await syncSubscription(subscription as StripeSubscriptionWithPeriod);
     }
+  }
+
+  // Pix/Boleto confirmados (assíncrono) — aqui o pagamento realmente entrou.
+  if (event.type === "checkout.session.async_payment_succeeded") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    await handleCheckoutSessionPaid(session);
+    return NextResponse.json({ received: true });
+  }
+
+  // Pix/Boleto que expiraram ou falharam — nada foi persistido como pago, então
+  // só registramos para visibilidade (a sessão permanece "não paga").
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    log.warn("checkout.session.async_payment_failed: pagamento pix/boleto não concluído", {
+      session_id: session.id,
+      type: session.metadata?.type,
+    });
+    return NextResponse.json({ received: true });
   }
 
   if (

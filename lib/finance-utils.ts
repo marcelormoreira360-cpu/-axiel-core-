@@ -9,6 +9,7 @@ export function formatBRL(cents: number) {
 export function paymentMethodLabel(method: PaymentMethod | null) {
   const map: Record<PaymentMethod, string> = {
     pix:         "PIX",
+    boleto:      "Boleto",
     credit_card: "Cartão de crédito",
     debit_card:  "Cartão de débito",
     cash:        "Dinheiro",

@@ -2,5 +2,7 @@ node_modules
 .next
 .env.local
 .env
+.env.backup
+*.backup
 .DS_Store
 .vercel

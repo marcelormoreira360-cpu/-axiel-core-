@@ -40,6 +40,7 @@ function isPublicPath(pathname: string) {
     pathname.startsWith("/book/") ||    // public online booking page
     pathname.startsWith("/f/") ||       // public assessment forms (token-based)
     pathname.startsWith("/portal") ||   // patient portal login & verification
+    pathname.startsWith("/pagamento") || // public payment confirmation page
     publicPrefixes.some((prefix) => pathname.startsWith(prefix))
   );
 }

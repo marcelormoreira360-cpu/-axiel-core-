@@ -26,6 +26,7 @@
   },
   "methods": {
     "pix": "PIX",
+    "boleto": "Boleto",
     "credit_card": "Credit card",
     "debit_card": "Debit card",
     "cash": "Cash",
@@ -42,9 +43,24 @@
     "date": "Payment date",
     "notes": "Notes",
     "notesPlaceholder": "Optional",
+    "status": "Status",
+    "statusPaid": "Received",
+    "statusPending": "Pending",
+    "statusHint": "Use \"Pending\" for Zelle/transfers not yet confirmed — then confirm them in the pending list.",
+    "proof": "Proof of payment (optional)",
+    "proofHint": "Image or PDF, up to 10MB.",
     "cancel": "Cancel",
     "saving": "Saving...",
     "submit": "Register payment"
+  },
+  "pending": {
+    "title": "Pending payments",
+    "empty": "✓ No payments awaiting confirmation.",
+    "confirm": "Confirm",
+    "confirming": "Confirming…",
+    "discard": "Discard",
+    "viewProof": "View proof",
+    "proofError": "Could not open the proof."
   },
   "ai": {
     "title": "AI Analysis",
@@ -168,5 +184,39 @@
     "amountHint": "e.g. 200,00 for R$200.00",
     "serviceDesc": "Service description",
     "emitting": "Issuing..."
+  },
+  "charge": {
+    "button": "Charge",
+    "generating": "Generating…",
+    "linkReady": "Payment link ready:",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "open": "Open",
+    "hint": "Send this link to the patient (WhatsApp, email). Accepts card, Pix and Boleto. The payment is recorded automatically.",
+    "error": "Could not generate the charge."
+  },
+  "chargeOffer": {
+    "title": "Charge a package or plan",
+    "selectPlaceholder": "Select an offer",
+    "perCycle": "cycle",
+    "generate": "Generate link",
+    "generating": "Generating…",
+    "linkReady": "Payment link ready:",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "open": "Open",
+    "hintOneTime": "One-time payment — accepts card, Pix and Boleto.",
+    "hintRecurring": "Recurring subscription — card only (Pix can't do recurring).",
+    "sendHint": "Send this link to the patient (WhatsApp, email). The payment is recorded automatically.",
+    "noOffers": "No active offers.",
+    "noOffersLink": "Create in Settings → Offers",
+    "error": "Could not generate the charge."
+  },
+  "paid": {
+    "title": "Payment received",
+    "subtitle": "Thank you! Your payment was processed successfully.",
+    "note": "Pix and Boleto may take a few moments to confirm. You can close this page now.",
+    "cancelled": "Payment not completed",
+    "cancelledNote": "The payment was cancelled. You can try again using the link sent by the clinic."
   }
 }

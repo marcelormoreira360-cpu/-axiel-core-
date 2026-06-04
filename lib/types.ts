@@ -301,9 +301,9 @@ export type SessionType = {
   updated_at: string;
 };
 
-export type PaymentMethod = "pix" | "credit_card" | "debit_card" | "cash" | "transfer" | "insurance" | "other";
+export type PaymentMethod = "pix" | "boleto" | "credit_card" | "debit_card" | "cash" | "transfer" | "insurance" | "other";
 
-export type PatientPaymentStatus = "paid" | "refunded" | "partially_refunded" | "failed";
+export type PatientPaymentStatus = "pending" | "paid" | "refunded" | "partially_refunded" | "failed";
 
 export type PatientPayment = {
   id: string;
@@ -323,6 +323,9 @@ export type PatientPayment = {
   status: PatientPaymentStatus;
   refunded_at: string | null;
   refund_amount_cents: number | null;
+  // Conciliação manual (migration 054)
+  proof_path: string | null;
+  confirmed_at: string | null;
 };
 
 export type WorkingHour = {

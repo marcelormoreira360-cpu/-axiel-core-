@@ -32,12 +32,14 @@ export async function getFinanceKPIs(clinicId: string): Promise<FinanceKPIs> {
       .from("patient_payments")
       .select("amount_cents, payment_method")
       .eq("clinic_id", clinicId)
+      .eq("status", "paid")            // pendentes não entram na receita
       .gte("paid_at", from)
       .lte("paid_at", to),
     supabase
       .from("patient_payments")
       .select("amount_cents")
       .eq("clinic_id", clinicId)
+      .eq("status", "paid")
       .gte("paid_at", prevFrom)
       .lte("paid_at", prevTo),
     supabase
@@ -231,13 +233,66 @@ export async function createPaymentAdmin(input: {
   paid_at: string;
   notes?: string | null;
   created_by?: string | null;
+  status?: PatientPayment["status"];
+  proof_path?: string | null;
 }) {
   const supabase = createSupabaseAdminClient();
+  const status = input.status ?? "paid";
   const { data, error } = await supabase
     .from("patient_payments")
-    .insert({ ...input, currency: "BRL" })
+    .insert({
+      ...input,
+      status,
+      currency: "BRL",
+      // Pagamento já recebido entra confirmado; pendente aguarda conciliação.
+      confirmed_at: status === "paid" ? input.paid_at : null,
+    })
     .select("*")
     .single();
   if (error) throw error;
   return data as PatientPayment;
+}
+
+// ── Pagamentos pendentes de conciliação (Zelle/transferência/dinheiro) ─────────
+
+export type PendingPayment = {
+  id: string;
+  patient_id: string;
+  patient_name: string | null;
+  amount_cents: number;
+  currency: string;
+  payment_method: PaymentMethod | null;
+  paid_at: string;
+  notes: string | null;
+  proof_path: string | null;
+};
+
+export async function getPendingPayments(clinicId: string): Promise<PendingPayment[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("patient_payments")
+    .select("id, patient_id, amount_cents, currency, payment_method, paid_at, notes, proof_path, patients(full_name)")
+    .eq("clinic_id", clinicId)
+    .eq("status", "pending")
+    .order("paid_at", { ascending: false })
+    .limit(50);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const patient = Array.isArray(row.patients) ? row.patients[0] : row.patients;
+    return {
+      id: row.id,
+      patient_id: row.patient_id,
+      patient_name: (patient as { full_name?: string } | null)?.full_name ?? null,
+      amount_cents: row.amount_cents,
+      currency: row.currency,
+      payment_method: row.payment_method,
+      paid_at: row.paid_at,
+      notes: row.notes,
+      proof_path: row.proof_path,
+    } as PendingPayment;
+  });
 }

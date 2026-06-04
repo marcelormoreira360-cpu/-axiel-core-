@@ -153,5 +153,5 @@
   "sessionStatus": { "scheduled": "Scheduled", "completed": "Completed", "cancelled": "Cancelled", "no_show": "No-show" },
   "leadStage": { "new_lead": "New lead", "contacted": "Contacted", "scheduled": "Scheduled", "converted_to_patient": "Converted" },
   "leadSource": { "website": "Website", "instagram": "Instagram", "facebook": "Facebook", "google": "Google", "referral": "Referral", "other": "Other" },
-  "paymentMethod": { "pix": "PIX", "credit_card": "Credit card", "debit_card": "Debit card", "cash": "Cash", "transfer": "Bank transfer", "insurance": "Health insurance", "other": "Other" }
+  "paymentMethod": { "pix": "PIX", "boleto": "Boleto", "credit_card": "Credit card", "debit_card": "Debit card", "cash": "Cash", "transfer": "Bank transfer", "insurance": "Health insurance", "other": "Other" }
 }

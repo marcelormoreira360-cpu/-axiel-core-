@@ -1,7 +1,7 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 29/05/2026 (5)
+> Atualizado em: 04/06/2026 (6)
 
 ---
 
@@ -188,6 +188,34 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
 - ✅ **Fix: migration 050 nunca aplicada em produção** (03/06/2026): `action_suggestions.content_key`/`content_params` não existiam no banco → `syncActionSuggestions` (chamado em `/leads/[id]` e `/actions`) lançava erro de coluna inexistente, quebrando **todas** as páginas de lead e o Action Center (não só os leads do Growth). Aplicada a `050_action_suggestion_content.sql` + `notify pgrst, 'reload schema'`. Lição: confirmar que TODA migration listada no repo está de fato aplicada em produção.
 - ✅ **Fix: salvar config do WhatsApp Bot quebrava (PGRST200)** (02/06/2026): `whatsapp_bot_configs.clinic_id` é **text** e `clinics.id` é **uuid** → não há FK entre eles, então o join embutido `clinics(slug)` do PostgREST falhava (`Could not find a relationship ... in schema cache`) e derrubava o `Save configuration`. Tentar converter a coluna esbarra na política RLS `clinic_own_whatsapp_config` (`clinic_id = (select users.clinic_id::text ...)`). **Solução pelo código** (sem mexer em coluna/política em produção): `services/whatsapp-bot-service.ts` agora busca o slug via `fetchClinicSlug()` em consulta separada nas 5 funções (get/getByNumber/getByMetaPhoneId/getByInstagramId/upsert) em vez do join `clinics(slug)`. Com isso o save passou a funcionar e o **Instagram Account ID `17841460053907081` (jifwcenter)** foi gravado. ⚠️ dívida técnica futura: padronizar `whatsapp_bot_configs.clinic_id` para uuid (exige dropar+recriar a policy).
+- ✅ **Recebimento de pacientes — Fase 3: conciliação manual (Zelle/transferência/dinheiro)** (04/06/2026):
+  - **Migration `054_patient_payments_pending_proof.sql` PENDENTE** — adiciona `'pending'` ao CHECK de `status` + colunas `proof_path` e `confirmed_at`. ⚠️ aplicar antes do deploy.
+  - `PatientPaymentStatus` ganhou `'pending'`; `PatientPayment` ganhou `proof_path`/`confirmed_at`.
+  - `register-payment-modal`: escolha **Recebido × Pendente** + upload de **comprovante** (imagem/PDF, ≤10MB → bucket `patient-docs` em `payment-proofs/`). `registerPaymentAction` agora trata status + upload.
+  - Novas actions: `confirmPaymentAction` (pendente→paid + `confirmed_at`) e `getPaymentProofUrlAction` (URL assinada do comprovante, escopada à clínica).
+  - `services/finance-service`: `getPendingPayments()`; **`getFinanceKPIs` agora conta só `status='paid'`** (pendentes não inflam a receita — antes contava tudo).
+  - UI: seção **"Pagamentos pendentes"** no `/financeiro` (`pending-payments.tsx`, client) com Confirmar + Ver comprovante; pendentes saem da lista de "recentes".
+  - **Recebimento de pacientes (Fases 1–3) COMPLETO**: Stripe (Pix/Boleto/Cartão) para sessão/pacote/mensalidade + cobrança pela clínica + conciliação manual.
+  - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
+- ✅ **Recebimento de pacientes — Fase 2: cobrança de pacote/mensalidade pela clínica** (04/06/2026):
+  - Nova rota staff `app/api/finance/charge-offer/route.ts`: `getCurrentClinic` + oferta/paciente escopados à clínica. `offer_type='session_package'` → checkout único (cartão/Pix/Boleto, metadata `patient_purchase`); `offer_type='membership'` → assinatura (mode subscription, **só cartão**, metadata `patient_subscription`, guarda assinatura ativa existente). **Reaproveita os handlers do webhook** — nenhuma mudança no webhook.
+  - `components/patient-charge-panel.tsx`: painel no perfil do paciente (após o de pacotes) — seleciona oferta ativa, gera link, copia/abre; mostra hint de método (único vs recorrente). Ofertas ativas buscadas via `getMonetizationOffers(clinic.id)` no `app/patients/[id]/page.tsx` (adicionado ao Promise.all).
+  - i18n `finance.chargeOffer` (PT/EN). `success_url`/`cancel_url` → `/pagamento/sucesso`.
+  - Obs: `monetization_offers.currency` default é **USD** — Pix/Boleto só aparecem se a oferta estiver em BRL (comportamento correto do helper por moeda).
+  - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
+  - Pendente: Fase 3 (conciliação manual de Zelle/transferência — status pendente/confirmado + comprovante no `register-payment-modal`).
+- ✅ **Recebimento de pacientes — Fase 1: Pix + Boleto + Cartão (Stripe)** (04/06/2026):
+  - **Descoberta**: já existia checkout de paciente pelo portal (`session-checkout`, `patient-checkout`, `patient-subscription`) + webhook gravando `patient_payments`. Faltava Pix/Boleto, tratamento assíncrono e cobrança pelo lado da clínica.
+  - `lib/stripe.ts`: helper `paymentMethodTypesForCurrency()` → BRL = `['card','pix','boleto']`, demais = `['card']`. Aplicado em `session-checkout` e `patient-checkout`.
+  - **Webhook corrigido (crítico)**: Pix/Boleto são **assíncronos**. `checkout.session.completed` agora só registra pagamento se `payment_status === 'paid'` (cartão); para pix/boleto espera **`checkout.session.async_payment_succeeded`** (novo handler) + `async_payment_failed` (log). Lógica de registro extraída para `handleCheckoutSessionPaid()` — **idempotente** por `stripe_payment_intent_id`. Método real (`pix`/`boleto`/`credit_card`) resolvido via `resolveStripePaymentMethod()` (lê o PaymentIntent/charge) em vez de hardcode `credit_card`.
+  - `PaymentMethod` enum (`lib/types`) ganhou **`boleto`**; rótulos em `lib/finance-utils`, `finance.methods` e `pdf.paymentMethod` (PT+EN).
+  - **Botão "Cobrar"** nas sessões não pagas (`/financeiro`): nova rota staff-autenticada `app/api/finance/charge-session/route.ts` (valida clínica, guarda "já pago", moeda da clínica) gera link de checkout; `charge-session-button.tsx` (client) gera/copia/abre o link. Página pública `app/pagamento/sucesso` (rota liberada no `middleware.ts`).
+  - **Recorrência**: Stripe não faz Pix recorrente → mensalidade segue **só cartão** (inalterada).
+  - **Migration `053_patient_payments_stripe_boleto.sql` APLICADA em produção (04/06/2026)**: descoberto que `patient_payments` em prod **não tinha** `stripe_payment_intent_id`/`refunded_at`/`refund_amount_cents` (a 005 usava `alter table if exists` antes do `create`, e a tabela já existia sem essas colunas — nunca houve pagamento Stripe real, então o erro só apareceu agora) **e** o CHECK de `payment_method` **não incluía `boleto`**. A 053 adiciona as colunas (idempotente), recria o CHECK com `boleto`, garante o CHECK de `status` e cria **índice ÚNICO parcial** em `stripe_payment_intent_id` (idempotência do webhook contra reentrega de evento). Verificação cruzada código×banco (information_schema) rodada nas 3 tabelas de pagamento (patient_payments/packages/subscriptions): **0 colunas faltando**.
+  - `.gitignore`: `.env.backup` + `*.backup` adicionados (estavam untracked, risco de commit de credenciais).
+  - ⚠️ **Dependências de produção restantes (fora do código)**: (1) **ativar Pix e Boleto no painel do Stripe** (conta BR — Pix p/ empresa BR pode ser invite-only), senão o checkout falha; (2) **registrar os eventos `checkout.session.async_payment_succeeded` e `async_payment_failed`** no endpoint do webhook no dashboard do Stripe.
+  - Pendente (próximas fases): cobrança de pacote/mensalidade pela clínica; conciliação manual de Zelle/transferência (status pendente/confirmado + comprovante no `register-payment-modal`).
+  - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
 - ✅ **Instagram: opt-out / escalonamento humano** (03/06/2026): requisito do Meta App Review. `app/api/meta/instagram/route.ts` detecta intenção de "falar com atendente/humano" (PT/EN, phrase-based, evitando "parar/stop" para não dar falso-positivo em contexto clínico) → responde uma vez avisando que a equipe assume, seta `bot_disabled=true` na conversa e para de auto-responder. Plano de produção em `INSTAGRAM_PRODUCAO_PLANO.md`.
 - ✅ **Instagram bot multi-clínica (SEC-01)** (02/06/2026): rota do Instagram deixou de usar `IFWC_DEFAULT_CONFIG` hardcoded
   - **Migration `051_whatsapp_meta_instagram_id.sql` APLICADA em produção (02/06/2026)** — coluna `meta_instagram_id text unique` + índice em `whatsapp_bot_configs`; RPC `upsert_whatsapp_bot_config` recriada com `p_meta_instagram_id` (12 args; assinatura antiga de 11 args dropada). ⚠️ **PENDENTE: deploy dos `.ts` na Vercel** (banco já tem a coluna; código que a usa ainda precisa subir).

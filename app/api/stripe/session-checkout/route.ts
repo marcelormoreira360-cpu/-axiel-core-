@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "node:crypto";
-import { stripe, getAppUrl } from "@/lib/stripe";
+import { stripe, getAppUrl, paymentMethodTypesForCurrency } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -103,6 +103,7 @@ export async function POST(request: Request) {
   // ── 6. Create Stripe checkout session ────────────────────────────────────────
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
+    payment_method_types: paymentMethodTypesForCurrency(currency),
     customer_email: (patient?.email as string | undefined) ?? undefined,
     line_items: [
       {

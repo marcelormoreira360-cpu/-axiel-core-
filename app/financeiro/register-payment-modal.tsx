@@ -130,6 +130,34 @@ export function RegisterPaymentModal({
             />
           </div>
 
+          {/* Situação: recebido x pendente (conciliação manual) */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("status")}</label>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm has-[:checked]:border-[#0F6E56] has-[:checked]:bg-[#0F6E56]/[.05] transition">
+                <input type="radio" name="status" value="paid" defaultChecked className="accent-[#0F6E56]" />
+                {t("statusPaid")}
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 transition">
+                <input type="radio" name="status" value="pending" className="accent-amber-500" />
+                {t("statusPending")}
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-[#A09E98]">{t("statusHint")}</p>
+          </div>
+
+          {/* Comprovante (opcional) */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("proof")}</label>
+            <input
+              name="proof"
+              type="file"
+              accept="image/*,application/pdf"
+              className="w-full text-sm text-[#6B6A66] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F4F3EF] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#0F1A2E] hover:file:bg-[#e9e8e3]"
+            />
+            <p className="mt-1 text-xs text-[#A09E98]">{t("proofHint")}</p>
+          </div>
+
           {error && <p className="text-sm text-red-500">{error}</p>}
 
           <div className="flex gap-3 pt-1">

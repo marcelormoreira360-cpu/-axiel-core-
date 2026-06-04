@@ -26,6 +26,7 @@
   },
   "methods": {
     "pix": "PIX",
+    "boleto": "Boleto",
     "credit_card": "Cartão de crédito",
     "debit_card": "Cartão de débito",
     "cash": "Dinheiro",
@@ -42,9 +43,24 @@
     "date": "Data do pagamento",
     "notes": "Observações",
     "notesPlaceholder": "Opcional",
+    "status": "Situação",
+    "statusPaid": "Recebido",
+    "statusPending": "Pendente",
+    "statusHint": "Use \"Pendente\" para Zelle/transferência ainda não confirmados — depois confirme na lista de pendentes.",
+    "proof": "Comprovante (opcional)",
+    "proofHint": "Imagem ou PDF, até 10MB.",
     "cancel": "Cancelar",
     "saving": "Salvando...",
     "submit": "Registrar pagamento"
+  },
+  "pending": {
+    "title": "Pagamentos pendentes",
+    "empty": "✓ Nenhum pagamento aguardando confirmação.",
+    "confirm": "Confirmar",
+    "confirming": "Confirmando…",
+    "discard": "Descartar",
+    "viewProof": "Ver comprovante",
+    "proofError": "Não foi possível abrir o comprovante."
   },
   "ai": {
     "title": "Análise IA",
@@ -168,5 +184,39 @@
     "amountHint": "Ex: 200,00 para R$200,00",
     "serviceDesc": "Descrição do serviço",
     "emitting": "Emitindo..."
+  },
+  "charge": {
+    "button": "Cobrar",
+    "generating": "Gerando…",
+    "linkReady": "Link de pagamento pronto:",
+    "copy": "Copiar link",
+    "copied": "Copiado!",
+    "open": "Abrir",
+    "hint": "Envie este link ao paciente (WhatsApp, e-mail). Aceita cartão, Pix e Boleto. O pagamento é registrado automaticamente.",
+    "error": "Não foi possível gerar a cobrança."
+  },
+  "chargeOffer": {
+    "title": "Cobrar pacote ou plano",
+    "selectPlaceholder": "Selecione uma oferta",
+    "perCycle": "ciclo",
+    "generate": "Gerar link",
+    "generating": "Gerando…",
+    "linkReady": "Link de pagamento pronto:",
+    "copy": "Copiar link",
+    "copied": "Copiado!",
+    "open": "Abrir",
+    "hintOneTime": "Pagamento único — aceita cartão, Pix e Boleto.",
+    "hintRecurring": "Assinatura recorrente — apenas cartão (Pix não permite recorrência).",
+    "sendHint": "Envie este link ao paciente (WhatsApp, e-mail). O pagamento é registrado automaticamente.",
+    "noOffers": "Nenhuma oferta ativa.",
+    "noOffersLink": "Criar em Configurações → Ofertas",
+    "error": "Não foi possível gerar a cobrança."
+  },
+  "paid": {
+    "title": "Pagamento recebido",
+    "subtitle": "Obrigado! Seu pagamento foi processado com sucesso.",
+    "note": "Pix e Boleto podem levar alguns instantes para confirmar. Você já pode fechar esta página.",
+    "cancelled": "Pagamento não concluído",
+    "cancelledNote": "O pagamento foi cancelado. Você pode tentar novamente pelo link enviado pela clínica."
   }
 }

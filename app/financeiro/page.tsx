@@ -9,9 +9,12 @@ import {
   getPaymentsWithPatients,
   getUnpaidSessions,
   getMonthlyRevenue,
+  getPendingPayments,
   formatBRL,
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
+import { ChargeSessionButton } from "./charge-session-button";
+import { PendingPayments } from "./pending-payments";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
 
@@ -21,7 +24,7 @@ function delta(current: number, previous: number, vsPrev: string) {
   return `${pct >= 0 ? "+" : ""}${pct}% ${vsPrev}`;
 }
 
-const KNOWN_METHODS = ["pix", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
+const KNOWN_METHODS = ["pix", "boleto", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
 
 export default async function FinanceiroPage() {
   const clinic = await getCurrentClinic();
@@ -32,14 +35,18 @@ export default async function FinanceiroPage() {
   const locale = await getLocale();
   const methodLabel = (m: string) => (KNOWN_METHODS.includes(m) ? tm(m) : m);
 
-  const [kpis, payments, unpaid, monthly, patients, cachedInsight] = await Promise.all([
+  const [kpis, payments, unpaid, monthly, patients, cachedInsight, pending] = await Promise.all([
     getFinanceKPIs(clinic.id),
     getPaymentsWithPatients(clinic.id, { limit: 30 }),
     getUnpaidSessions(clinic.id),
     getMonthlyRevenue(clinic.id),
     getPatients(),
     getLatestFinanceInsight(clinic.id),
+    getPendingPayments(clinic.id),
   ]);
+
+  // Pendentes têm seção própria; não aparecem na lista de "recentes"
+  const confirmedPayments = payments.filter((p) => p.status !== "pending");
 
   const maxMonthly = Math.max(...monthly.map((m) => m.cents), 1);
 
@@ -139,11 +146,11 @@ export default async function FinanceiroPage() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
               <p className="text-[12px] font-medium text-[#0F1A2E]">{t("recentPayments")}</p>
             </div>
-            {payments.length === 0 ? (
+            {confirmedPayments.length === 0 ? (
               <p className="px-4 py-6 text-[12px] text-[#A09E98]">{t("noPayments")}</p>
             ) : (
               <div className="divide-y divide-black/[.04]">
-                {payments.slice(0, 15).map((p) => (
+                {confirmedPayments.slice(0, 15).map((p) => (
                   <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition">
                     <div className="flex-1 min-w-0">
                       <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{p.patient_name ?? "—"}</p>
@@ -216,6 +223,9 @@ export default async function FinanceiroPage() {
             )}
           </div>
 
+          {/* Pagamentos pendentes de conciliação */}
+          <PendingPayments payments={pending} locale={locale} />
+
         </div>
       </div>
     </Shell>
@@ -231,19 +241,24 @@ function FinanceiroUnpaidRow({
   locale: string;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3">
-      <div className="flex-1 min-w-0">
-        <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{session.patient_name}</p>
-        <p className="text-[10px] text-[#A09E98]">
-          {new Date(session.starts_at).toLocaleDateString(locale)}
-          {session.session_type_name ? ` · ${session.session_type_name}` : ""}
-        </p>
-      </div>
-      <div className="text-right">
+    <div className="px-4 py-3">
+      <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{session.patient_name}</p>
+          <p className="text-[10px] text-[#A09E98]">
+            {new Date(session.starts_at).toLocaleDateString(locale)}
+            {session.session_type_name ? ` · ${session.session_type_name}` : ""}
+          </p>
+        </div>
         {session.price_cents > 0 && (
-          <p className="text-[12px] font-semibold text-amber-600">{formatBRL(session.price_cents)}</p>
+          <p className="shrink-0 text-[12px] font-semibold text-amber-600">{formatBRL(session.price_cents)}</p>
         )}
       </div>
+      {session.price_cents > 0 && (
+        <div className="mt-1.5">
+          <ChargeSessionButton appointmentId={session.appointment_id} />
+        </div>
+      )}
     </div>
   );
 }

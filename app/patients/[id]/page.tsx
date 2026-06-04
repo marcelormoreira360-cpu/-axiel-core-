@@ -17,6 +17,8 @@ import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
+import { PatientChargePanel } from "@/components/patient-charge-panel";
+import { getMonetizationOffers } from "@/services/monetization-service";
 import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
@@ -64,7 +66,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const tc = await getTranslations("common.terms");
   const locale = await getLocale();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, activeSubscriptionResult] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, offers, activeSubscriptionResult] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
@@ -75,6 +77,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     getPatientPackages(id),
     getPatientDocuments(id),
     getPatientTreatmentPlans(id),
+    getMonetizationOffers(clinic?.id),
     createSupabaseAdminClient()
       .from("patient_subscriptions")
       .select("id, plan_name, status, amount_cents, currency, billing_interval, current_period_end, cancel_at_period_end")
@@ -570,6 +573,23 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Pacotes de sessão */}
       <div className="mt-[18px]">
         <PatientPackagePanel packages={packages} patientId={id} />
+      </div>
+
+      {/* Cobrança (pacote / mensalidade) */}
+      <div className="mt-[18px]">
+        <PatientChargePanel
+          patientId={id}
+          offers={offers
+            .filter((o) => o.is_active && o.price_cents > 0)
+            .map((o) => ({
+              id: o.id,
+              name: o.name,
+              price_cents: o.price_cents,
+              currency: o.currency,
+              offer_type: o.offer_type,
+              number_of_sessions: o.number_of_sessions,
+            }))}
+        />
       </div>
 
       {/* Exames laboratoriais */}
