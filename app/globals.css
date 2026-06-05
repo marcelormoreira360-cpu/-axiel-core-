@@ -63,9 +63,27 @@ body {
 .dark .border-black\/\[\.12\]  { border-color: rgba(255,255,255,0.12); }
 
 /* Tailwind opacity text utilities */
+.dark .text-black\/70  { color: rgba(232,230,226,0.78); }
+.dark .text-black\/65  { color: rgba(232,230,226,0.72); }
+.dark .text-black\/60  { color: rgba(232,230,226,0.66); }
 .dark .text-black\/55  { color: rgba(232,230,226,0.60); }
 .dark .text-black\/50  { color: rgba(232,230,226,0.55); }
-.dark .text-black\/35  { color: rgba(232,230,226,0.40); }
+.dark .text-black\/45  { color: rgba(232,230,226,0.52); }
+.dark .text-black\/40  { color: rgba(232,230,226,0.48); }
+.dark .text-black\/35  { color: rgba(232,230,226,0.42); }
+.dark .text-black\/30  { color: rgba(232,230,226,0.38); }
+.dark .text-black\/25  { color: rgba(232,230,226,0.32); }
+
+/* Custom Tailwind theme colors (axiel.*) — cards, borders, page bg */
+.dark .bg-axiel-surface          { background-color: #161B26; }
+.dark .bg-axiel-background       { background-color: #0E1117; }
+.dark .bg-axiel-sidebar          { background-color: #0B0F17; }
+.dark .border-axiel-line         { border-color: rgba(255,255,255,0.08); }
+.dark .hover\:bg-axiel-background:hover { background-color: rgba(255,255,255,0.04); }
+.dark .text-axiel-text-primary,
+.dark .text-axiel-ink            { color: #E8E6E2; }
+.dark .text-axiel-text-secondary { color: #9E9C97; }
+.dark .text-axiel-text-muted     { color: #6B6A66; }
 
 /* Input fields */
 .dark input, .dark textarea, .dark select {
