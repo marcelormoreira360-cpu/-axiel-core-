@@ -101,29 +101,36 @@ export async function POST(request: Request) {
   const appUrl = getAppUrl();
 
   // 6. Cria a sessão de checkout
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    // Métodos dinâmicos (ver session-checkout): Stripe decide pelo painel + moeda.
-    customer_email: (patient?.email as string | undefined) ?? undefined,
-    line_items: [
-      {
-        price_data: {
-          currency,
-          product_data: { name: sessionType.name },
-          unit_amount: sessionType.price_cents,
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      // Métodos dinâmicos (ver session-checkout): Stripe decide pelo painel + moeda.
+      customer_email: (patient?.email as string | undefined) ?? undefined,
+      line_items: [
+        {
+          price_data: {
+            currency,
+            product_data: { name: sessionType.name },
+            unit_amount: sessionType.price_cents,
+          },
+          quantity: 1,
         },
-        quantity: 1,
+      ],
+      success_url: `${appUrl}/pagamento/sucesso`,
+      cancel_url: `${appUrl}/pagamento/sucesso?status=cancelado`,
+      metadata: {
+        type: "session_payment",
+        patient_id: appointment.patient_id as string,
+        clinic_id: clinic.id,
+        appointment_id,
       },
-    ],
-    success_url: `${appUrl}/pagamento/sucesso`,
-    cancel_url: `${appUrl}/pagamento/sucesso?status=cancelado`,
-    metadata: {
-      type: "session_payment",
-      patient_id: appointment.patient_id as string,
-      clinic_id: clinic.id,
-      appointment_id,
-    },
-  });
+    });
 
-  return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: session.url });
+  } catch (e) {
+    // Surfacing the real Stripe reason (chave inválida, conta restrita, URL inválida, método/moeda…)
+    const msg = e instanceof Error ? e.message : "Erro ao criar cobrança no Stripe.";
+    console.error("[charge-session] Stripe error:", msg);
+    return NextResponse.json({ error: `Stripe: ${msg}` }, { status: 502 });
+  }
 }
