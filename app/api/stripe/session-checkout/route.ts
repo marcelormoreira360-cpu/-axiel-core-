@@ -83,13 +83,16 @@ export async function POST(request: Request) {
   // ── 4. Fetch clinic settings for currency ────────────────────────────────────
   const { data: clinicSettings } = await supabase
     .from("clinic_settings")
-    .select("settings")
+    .select("default_currency, settings")
     .eq("clinic_id", link.clinic_id)
     .maybeSingle();
 
+  // Fonte única = coluna default_currency (igual getClinicCurrency); JSON é fallback legado.
   const currency = (
-    (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string | undefined
-  )?.toLowerCase() ?? "brl";
+    (clinicSettings?.default_currency as string | null) ??
+    ((clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string | undefined) ??
+    "BRL"
+  ).toLowerCase();
 
   // ── 5. Fetch patient email for Stripe prefill ─────────────────────────────────
   const { data: patient } = await supabase
