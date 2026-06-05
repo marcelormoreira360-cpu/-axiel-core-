@@ -14,7 +14,7 @@ import {
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
 import { ChargeSessionButton } from "./charge-session-button";
-import { AsaasPixButton } from "./asaas-pix-button";
+import { AsaasChargeButton } from "./asaas-pix-button";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { PendingPayments } from "./pending-payments";
 import { FinanceAIPanel } from "./finance-ai-panel";
@@ -260,8 +260,9 @@ function FinanceiroUnpaidRow({
         )}
       </div>
       {session.price_cents > 0 && (
-        <div className="mt-1.5 flex items-start justify-end gap-1.5">
-          {asaasEnabled && <AsaasPixButton appointmentId={session.appointment_id} />}
+        <div className="mt-1.5 flex items-start justify-end gap-1.5 flex-wrap">
+          {asaasEnabled && <AsaasChargeButton appointmentId={session.appointment_id} billingType="PIX" />}
+          {asaasEnabled && <AsaasChargeButton appointmentId={session.appointment_id} billingType="BOLETO" />}
           <ChargeSessionButton appointmentId={session.appointment_id} />
         </div>
       )}

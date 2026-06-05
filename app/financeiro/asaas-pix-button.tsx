@@ -3,14 +3,24 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
-// Botão "Pix" (via Asaas) numa sessão não paga: gera a cobrança Pix e devolve o
-// link da página de pagamento (invoiceUrl) para a clínica enviar ao paciente.
-export function AsaasPixButton({ appointmentId }: { appointmentId: string }) {
+type BillingType = "PIX" | "BOLETO";
+
+// Botão de cobrança via Asaas (Pix ou Boleto) numa sessão não paga: gera a
+// cobrança e devolve o link da página de pagamento (invoiceUrl).
+export function AsaasChargeButton({
+  appointmentId,
+  billingType,
+}: {
+  appointmentId: string;
+  billingType: BillingType;
+}) {
   const t = useTranslations("finance.charge");
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const label = billingType === "BOLETO" ? t("boleto") : t("pix");
 
   async function generate() {
     setLoading(true);
@@ -19,7 +29,7 @@ export function AsaasPixButton({ appointmentId }: { appointmentId: string }) {
       const res = await fetch("/api/asaas/charge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ appointment_id: appointmentId }),
+        body: JSON.stringify({ appointment_id: appointmentId, billing_type: billingType }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
@@ -48,7 +58,7 @@ export function AsaasPixButton({ appointmentId }: { appointmentId: string }) {
   if (url) {
     return (
       <div className="mt-1 w-full">
-        <p className="text-[10px] text-[#A09E98] mb-1">{t("pixLinkReady")}</p>
+        <p className="text-[10px] text-[#A09E98] mb-1">{label} ·  {t("linkReady")}</p>
         <div className="flex items-center gap-1.5">
           <input
             readOnly
@@ -82,7 +92,7 @@ export function AsaasPixButton({ appointmentId }: { appointmentId: string }) {
         disabled={loading}
         className="text-[10px] font-medium text-[#0B1F3A] border border-[#0B1F3A]/20 bg-[#0B1F3A]/[.04] hover:bg-[#0B1F3A]/[.08] disabled:opacity-50 rounded-md px-2.5 py-1 transition"
       >
-        {loading ? t("generating") : t("pix")}
+        {loading ? t("generating") : label}
       </button>
       {error && <p className="text-[9px] text-rose-500 mt-1">{error}</p>}
     </div>

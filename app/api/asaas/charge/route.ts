@@ -3,12 +3,13 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { isAsaasConfigured } from "@/lib/asaas";
-import { ensureAsaasCustomer, createAsaasPixCharge } from "@/services/asaas-service";
+import { ensureAsaasCustomer, createAsaasCharge, type AsaasBillingType } from "@/services/asaas-service";
 
 export const runtime = "nodejs";
 
 type RequestBody = {
   appointment_id: string;
+  billing_type?: AsaasBillingType;
 };
 
 // POST /api/asaas/charge
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
   }
 
   const { appointment_id } = body;
+  const billingType: AsaasBillingType = body.billing_type === "BOLETO" ? "BOLETO" : "PIX";
   if (!appointment_id) {
     return NextResponse.json({ error: "appointment_id obrigatório." }, { status: 400 });
   }
@@ -80,9 +82,14 @@ export async function POST(request: Request) {
   try {
     const customerId = await ensureAsaasCustomer(patient);
 
-    const dueDate = new Date().toISOString().slice(0, 10); // hoje (Pix paga na hora)
-    const { asaasPaymentId, invoiceUrl } = await createAsaasPixCharge({
+    // Pix vence hoje; boleto damos 3 dias.
+    const due = new Date();
+    if (billingType === "BOLETO") due.setDate(due.getDate() + 3);
+    const dueDate = due.toISOString().slice(0, 10);
+
+    const { asaasPaymentId, invoiceUrl } = await createAsaasCharge({
       customerId,
+      billingType,
       amountCents: sessionType.price_cents,
       dueDate,
       externalReference: appointment_id,
@@ -96,7 +103,7 @@ export async function POST(request: Request) {
       appointment_id,
       amount_cents: sessionType.price_cents,
       currency: "BRL",
-      payment_method: "pix",
+      payment_method: billingType === "BOLETO" ? "boleto" : "pix",
       status: "pending",
       paid_at: new Date().toISOString(),
       asaas_payment_id: asaasPaymentId,

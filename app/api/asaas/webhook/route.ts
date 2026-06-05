@@ -14,6 +14,8 @@ type AsaasWebhook = {
     value?: number;
     externalReference?: string;
     status?: string;
+    subscription?: string;
+    billingType?: string;
   };
 };
 
@@ -51,18 +53,50 @@ export async function POST(request: Request) {
 
     if (existing) {
       if (existing.status !== "paid") {
+        // não sobrescreve payment_method — já foi gravado certo na criação (pix/boleto)
         await supabase
           .from("patient_payments")
-          .update({ status: "paid", payment_method: "pix", paid_at: nowIso, confirmed_at: nowIso })
+          .update({ status: "paid", paid_at: nowIso, confirmed_at: nowIso })
           .eq("id", existing.id as string);
       }
-    } else {
-      // Sem registro pendente (ex.: cobrança criada fora do painel) — loga para conferência.
-      log.warn("asaas webhook: pagamento confirmado sem patient_payments correspondente", {
-        asaas_payment_id: asaasPaymentId,
-        external_reference: body.payment?.externalReference,
-      });
+      return NextResponse.json({ received: true });
     }
+
+    // Pagamento de assinatura recorrente: não há linha pendente pré-criada.
+    const asaasSubId = body.payment?.subscription;
+    if (asaasSubId) {
+      const { data: sub } = await supabase
+        .from("patient_subscriptions")
+        .select("clinic_id, patient_id")
+        .eq("asaas_subscription_id", asaasSubId)
+        .maybeSingle();
+      if (sub) {
+        const method = body.payment?.billingType === "BOLETO" ? "boleto" : "pix";
+        await supabase.from("patient_payments").insert({
+          clinic_id: sub.clinic_id,
+          patient_id: sub.patient_id,
+          amount_cents: Math.round((body.payment?.value ?? 0) * 100),
+          currency: "BRL",
+          payment_method: method,
+          status: "paid",
+          paid_at: nowIso,
+          confirmed_at: nowIso,
+          asaas_payment_id: asaasPaymentId,
+          notes: `Mensalidade Asaas (assinatura ${asaasSubId})`,
+        });
+        await supabase
+          .from("patient_subscriptions")
+          .update({ status: "active", updated_at: nowIso })
+          .eq("asaas_subscription_id", asaasSubId);
+        return NextResponse.json({ received: true });
+      }
+    }
+
+    // Sem registro pendente e sem assinatura — loga para conferência.
+    log.warn("asaas webhook: pagamento confirmado sem patient_payments correspondente", {
+      asaas_payment_id: asaasPaymentId,
+      external_reference: body.payment?.externalReference,
+    });
     return NextResponse.json({ received: true });
   }
 

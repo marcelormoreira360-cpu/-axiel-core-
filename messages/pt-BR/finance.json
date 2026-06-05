@@ -188,6 +188,7 @@
   "charge": {
     "button": "Cobrar",
     "pix": "Pix",
+    "boleto": "Boleto",
     "pixLinkReady": "Link Pix pronto:",
     "generating": "Gerando…",
     "linkReady": "Link de pagamento pronto:",
@@ -201,7 +202,9 @@
     "title": "Cobrar pacote ou plano",
     "selectPlaceholder": "Selecione uma oferta",
     "perCycle": "ciclo",
-    "generate": "Gerar link",
+    "pix": "Pix",
+    "boleto": "Boleto",
+    "generate": "Cartão",
     "generating": "Gerando…",
     "linkReady": "Link de pagamento pronto:",
     "copy": "Copiar link",

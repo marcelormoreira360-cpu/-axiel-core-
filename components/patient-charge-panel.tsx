@@ -27,9 +27,11 @@ function formatMoney(cents: number, currency: string, locale: string) {
 export function PatientChargePanel({
   patientId,
   offers,
+  asaasEnabled = false,
 }: {
   patientId: string;
   offers: ChargeableOffer[];
+  asaasEnabled?: boolean;
 }) {
   const t = useTranslations("finance.chargeOffer");
   const locale = useLocale();
@@ -41,16 +43,17 @@ export function PatientChargePanel({
 
   const current = offers.find((o) => o.id === selected) ?? null;
 
-  async function generate() {
+  // endpoint = /api/finance/charge-offer (Stripe/cartão) ou /api/asaas/charge-offer
+  async function run(endpoint: string, billingType?: "PIX" | "BOLETO") {
     if (!selected) return;
     setLoading(true);
     setError(null);
     setUrl(null);
     try {
-      const res = await fetch("/api/finance/charge-offer", {
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ patient_id: patientId, offer_id: selected }),
+        body: JSON.stringify({ patient_id: patientId, offer_id: selected, ...(billingType ? { billing_type: billingType } : {}) }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok || !data.url) {
@@ -64,6 +67,8 @@ export function PatientChargePanel({
       setLoading(false);
     }
   }
+
+  const generate = () => run("/api/finance/charge-offer");
 
   async function copy() {
     if (!url) return;
@@ -152,19 +157,35 @@ export function PatientChargePanel({
                 <p className="text-[9px] text-[#A09E98] mt-1">{t("sendHint")}</p>
               </div>
             ) : (
-              <div className="flex items-center justify-between">
-                {error ? (
-                  <p className="text-[10px] text-rose-500">{error}</p>
-                ) : (
-                  <span />
-                )}
-                <button
-                  onClick={generate}
-                  disabled={!selected || loading}
-                  className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[16px] py-[8px] transition"
-                >
-                  {loading ? t("generating") : t("generate")}
-                </button>
+              <div>
+                {error && <p className="text-[10px] text-rose-500 mb-1.5">{error}</p>}
+                <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                  {asaasEnabled && (
+                    <>
+                      <button
+                        onClick={() => run("/api/asaas/charge-offer", "PIX")}
+                        disabled={!selected || loading}
+                        className="text-[11px] font-medium text-[#0B1F3A] border border-[#0B1F3A]/20 bg-[#0B1F3A]/[.04] hover:bg-[#0B1F3A]/[.08] disabled:opacity-50 rounded-md px-2.5 py-1.5 transition"
+                      >
+                        {t("pix")}
+                      </button>
+                      <button
+                        onClick={() => run("/api/asaas/charge-offer", "BOLETO")}
+                        disabled={!selected || loading}
+                        className="text-[11px] font-medium text-[#0B1F3A] border border-[#0B1F3A]/20 bg-[#0B1F3A]/[.04] hover:bg-[#0B1F3A]/[.08] disabled:opacity-50 rounded-md px-2.5 py-1.5 transition"
+                      >
+                        {t("boleto")}
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={generate}
+                    disabled={!selected || loading}
+                    className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[14px] py-[7px] transition"
+                  >
+                    {loading ? t("generating") : t("generate")}
+                  </button>
+                </div>
               </div>
             )}
           </>

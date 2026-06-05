@@ -188,6 +188,7 @@
   "charge": {
     "button": "Charge",
     "pix": "Pix",
+    "boleto": "Boleto",
     "pixLinkReady": "Pix link ready:",
     "generating": "Generating…",
     "linkReady": "Payment link ready:",
@@ -201,7 +202,9 @@
     "title": "Charge a package or plan",
     "selectPlaceholder": "Select an offer",
     "perCycle": "cycle",
-    "generate": "Generate link",
+    "pix": "Pix",
+    "boleto": "Boleto",
+    "generate": "Card",
     "generating": "Generating…",
     "linkReady": "Payment link ready:",
     "copy": "Copy link",

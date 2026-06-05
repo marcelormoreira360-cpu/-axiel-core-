@@ -19,6 +19,7 @@ import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-p
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
 import { getMonetizationOffers } from "@/services/monetization-service";
+import { isAsaasConfigured } from "@/lib/asaas";
 import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
@@ -579,6 +580,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       <div className="mt-[18px]">
         <PatientChargePanel
           patientId={id}
+          asaasEnabled={isAsaasConfigured()}
           offers={offers
             .filter((o) => o.is_active && o.price_cents > 0)
             .map((o) => ({
