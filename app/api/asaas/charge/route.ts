@@ -25,6 +25,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
+  // Pix/Boleto (Asaas) só existem em BRL/Brasil. Bloqueia clínicas USD/EUR.
+  if ((await (await import("@/services/finance-service")).getClinicCurrency(clinic.id)) !== "BRL") {
+    return NextResponse.json({ error: "Pix/Boleto disponível apenas para clínicas em BRL." }, { status: 400 });
+  }
+
   if (!(await checkRateLimitDb(`asaas-charge:${clinic.id}`, 60, 60_000))) {
     return NextResponse.json({ error: "Muitas requisições. Tente novamente em instantes." }, { status: 429 });
   }

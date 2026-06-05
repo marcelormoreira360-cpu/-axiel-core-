@@ -10,3 +10,10 @@ export async function requireFinanceAccess(): Promise<void> {
     redirect("/dashboard");
   }
 }
+
+// Versão para route handlers de API: retorna true/false em vez de redirecionar.
+// Use para gatear endpoints que expõem dados financeiros (relatórios/PDF).
+export async function isFinanceApiAllowed(): Promise<boolean> {
+  const profile = await getCurrentUserProfile();
+  return !!profile && isManager(profile.role);
+}

@@ -80,13 +80,16 @@ export async function POST(request: Request) {
   // 4. Moeda da clínica (define se Pix/Boleto entram)
   const { data: clinicSettings } = await supabase
     .from("clinic_settings")
-    .select("settings")
+    .select("default_currency, settings")
     .eq("clinic_id", clinic.id)
     .maybeSingle();
 
+  // Fonte única = coluna default_currency; JSON é fallback legado.
   const currency = (
-    (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string | undefined
-  )?.toLowerCase() ?? "brl";
+    (clinicSettings?.default_currency as string | null) ??
+    ((clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string | undefined) ??
+    "BRL"
+  ).toLowerCase();
 
   // 5. E-mail do paciente (prefill no checkout)
   const { data: patient } = await supabase

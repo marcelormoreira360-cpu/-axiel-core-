@@ -51,6 +51,12 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Financeiro restrito a dono/admin — também no endpoint, não só na UI.
+  const { isFinanceApiAllowed } = await import("@/lib/require-finance-access");
+  if (!(await isFinanceApiAllowed())) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const { data: profile } = await supabase
     .from("users")
     .select("clinic_id")
