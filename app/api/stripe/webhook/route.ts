@@ -247,6 +247,17 @@ export async function POST(request: Request) {
     // diferente de "paid" (o cliente ainda vai pagar). Nesse caso NÃO registramos
     // aqui — esperamos checkout.session.async_payment_succeeded.
     // Cartão fecha como "paid" e é processado imediatamente.
+    // Pedido de produtos (cartão) — dá baixa no pedido
+    if (session.metadata?.type === "product_order") {
+      if (session.payment_status === "paid" && session.metadata.order_id) {
+        const paymentIntentId =
+          typeof session.payment_intent === "string" ? session.payment_intent : (session.payment_intent?.id ?? null);
+        const { markProductOrderPaid } = await import("@/services/product-order-service");
+        await markProductOrderPaid(session.metadata.order_id, { stripePaymentIntentId: paymentIntentId });
+      }
+      return NextResponse.json({ received: true });
+    }
+
     if (session.metadata?.type === "session_payment" || session.metadata?.type === "patient_purchase") {
       if (session.payment_status === "paid") {
         await handleCheckoutSessionPaid(session);

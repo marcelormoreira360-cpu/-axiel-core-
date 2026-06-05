@@ -3,6 +3,9 @@ import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { isAsaasConfigured } from "@/lib/asaas";
+import { OrderChargeButtons } from "./order-charge-buttons";
+import { OrderDeliverButton } from "./order-deliver-button";
 
 type DbOrder = {
   id: string;
@@ -63,6 +66,7 @@ async function getProductOrders(): Promise<DbOrder[]> {
 
 export default async function ProductOrdersPage() {
   const orders = await getProductOrders();
+  const asaasEnabled = isAsaasConfigured();
 
   return (
     <Shell>
@@ -86,6 +90,12 @@ export default async function ProductOrdersPage() {
             </p>
           </div>
         </div>
+        <Link
+          href="/products/orders/new"
+          className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-lg px-3 py-1.5 transition"
+        >
+          + Novo pedido
+        </Link>
       </div>
 
       {orders.length === 0 ? (
@@ -130,6 +140,20 @@ export default async function ProductOrdersPage() {
 
               {/* Date */}
               <p className="text-[10px] text-[#A09E98] mt-[6px]">{formatDate(order.created_at)}</p>
+
+              {/* Cobrança (pedidos não pagos) */}
+              {order.payment_status !== "paid" && order.status !== "canceled" && order.total_cents > 0 && (
+                <div className="mt-[10px] pt-[10px] border-t border-black/[.05]">
+                  <OrderChargeButtons orderId={order.id} asaasEnabled={asaasEnabled} />
+                </div>
+              )}
+
+              {/* Fulfillment (pago, ainda não entregue) */}
+              {order.payment_status === "paid" && order.status === "paid" && (
+                <div className="mt-[10px] pt-[10px] border-t border-black/[.05]">
+                  <OrderDeliverButton orderId={order.id} />
+                </div>
+              )}
             </div>
           ))}
         </div>

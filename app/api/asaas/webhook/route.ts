@@ -62,6 +62,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ received: true });
     }
 
+    // Pedido de produtos (cobrado via /api/asaas/charge-order)
+    const { data: order } = await supabase
+      .from("product_orders")
+      .select("id")
+      .eq("asaas_payment_id", asaasPaymentId)
+      .maybeSingle();
+    if (order) {
+      const { markProductOrderPaid } = await import("@/services/product-order-service");
+      await markProductOrderPaid(order.id as string);
+      return NextResponse.json({ received: true });
+    }
+
     // Pagamento de assinatura recorrente: não há linha pendente pré-criada.
     const asaasSubId = body.payment?.subscription;
     if (asaasSubId) {

@@ -195,7 +195,13 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - **Migration `062_asaas_subscription_id.sql` APLICADA**: `patient_subscriptions.asaas_subscription_id` + índice único.
   - Webhook Asaas: trata **pagamento recorrente** (sem linha pendente pré-criada → acha assinatura por `asaas_subscription_id`, grava `patient_payments` paid + ativa a assinatura); não sobrescreve mais `payment_method` (preserva pix/boleto).
   - Validado: tsc confiável 0 erros; verify:i18n paridade PT/EN OK.
-  - **Pendente (decisão)**: `product_orders` — feature de produtos **sem fluxo de criação** (página `/products/orders` só lê, nada cria pedido). Ligar = construir do zero, projeto à parte.
+  - **Feature de Produtos (do zero, por fases)** — plano em `PRODUTOS_FEATURE_PLANO.md`:
+    - **Fase 1** (migration **063** aplicada): `product_order_items` (itens do pedido, RLS) + `product_orders.asaas_payment_id`.
+    - **Fase 2**: `services/product-order-service.ts` (`createProductOrder` com snapshot de preço/nome + totais; `getProductOrders`; `getProductOrderById` com itens; `cancelProductOrder`) + server actions `createProductOrderAction`/`cancelProductOrderAction`.
+    - **Fase 3** (UI): `app/products/orders/new` (página) + `new-order-form.tsx` (carrinho: paciente opcional, selecionar produtos+qtd, taxa, totais) → cria via action. Botão "+ Novo pedido" em `/products/orders`. (PT-hardcoded, como o resto de Produtos.)
+    - **Fase 4** (cobrança): rotas `/api/asaas/charge-order` (Pix/Boleto) e `/api/stripe/order-checkout` (cartão). Webhook Asaas dá baixa por `asaas_payment_id`; webhook Stripe trata `type=product_order` → `payment_status/status='paid'`. UI: botões Cartão·Pix·Boleto por pedido não pago em `/products/orders` (`order-charge-buttons.tsx`). Venda avulsa (sem paciente) = só cartão.
+    - **Fase 5** (fulfillment): `markProductOrderPaid` (service, idempotente — usado pelos 2 webhooks; **baixa estoque** dos itens ao pagar); `markOrderDelivered` + action + botão "Marcar entregue" nos pedidos pagos.
+    - **FEATURE DE PRODUTOS COMPLETA**: cadastrar produto → criar pedido (carrinho) → cobrar (cartão/Pix/Boleto) → webhook dá baixa + estoque → marcar entregue.
 - ✅ **Pix via Asaas — Plano B implementado (sandbox-ready)** (05/06/2026): Stripe marcou Pix como **Ineligible** pra conta US (clínica = categoria proibida), então Pix vai por gateway BR.
   - **Migration `061_asaas_pix_fields.sql` APLICADA**: `patients.cpf`, `patients.asaas_customer_id`, `patient_payments.asaas_payment_id` + índice único parcial.
   - `lib/asaas.ts` (cliente HTTP: `ASAAS_API_KEY`, `ASAAS_BASE_URL` default sandbox, `asaasFetch`, `isAsaasConfigured`) + `services/asaas-service.ts` (`ensureAsaasCustomer` — exige CPF; `createAsaasPixCharge` → `invoiceUrl`).
