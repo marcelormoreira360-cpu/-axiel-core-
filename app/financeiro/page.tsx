@@ -267,8 +267,9 @@ function FinanceiroUnpaidRow({
       </div>
       {session.price_cents > 0 && (
         <div className="mt-1.5 flex items-start justify-end gap-1.5 flex-wrap">
-          {asaasEnabled && <AsaasChargeButton appointmentId={session.appointment_id} billingType="PIX" />}
-          {asaasEnabled && <AsaasChargeButton appointmentId={session.appointment_id} billingType="BOLETO" />}
+          {/* Pix/Boleto só existem em BRL (Asaas/Brasil). Em USD/EUR só cartão (Stripe). */}
+          {asaasEnabled && currency.toUpperCase() === "BRL" && <AsaasChargeButton appointmentId={session.appointment_id} billingType="PIX" />}
+          {asaasEnabled && currency.toUpperCase() === "BRL" && <AsaasChargeButton appointmentId={session.appointment_id} billingType="BOLETO" />}
           <ChargeSessionButton appointmentId={session.appointment_id} />
         </div>
       )}

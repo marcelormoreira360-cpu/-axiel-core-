@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { CreditCard, RefreshCw } from "lucide-react";
+import { useClinicCurrency } from "@/components/currency-provider";
 
 export type ChargeableOffer = {
   id: string;
@@ -35,6 +36,8 @@ export function PatientChargePanel({
 }) {
   const t = useTranslations("finance.chargeOffer");
   const locale = useLocale();
+  // Pix/Boleto (Asaas) só existem em BRL/Brasil; em USD/EUR só cartão.
+  const isBRL = useClinicCurrency().toUpperCase() === "BRL";
   const [selected, setSelected] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
@@ -160,7 +163,7 @@ export function PatientChargePanel({
               <div>
                 {error && <p className="text-[10px] text-rose-500 mb-1.5">{error}</p>}
                 <div className="flex items-center justify-end gap-1.5 flex-wrap">
-                  {asaasEnabled && (
+                  {asaasEnabled && isBRL && (
                     <>
                       <button
                         onClick={() => run("/api/asaas/charge-offer", "PIX")}
