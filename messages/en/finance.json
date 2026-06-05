@@ -187,6 +187,8 @@
   },
   "charge": {
     "button": "Charge",
+    "pix": "Pix",
+    "pixLinkReady": "Pix link ready:",
     "generating": "Generating…",
     "linkReady": "Payment link ready:",
     "copy": "Copy link",

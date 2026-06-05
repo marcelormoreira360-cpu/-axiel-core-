@@ -17,6 +17,7 @@ function makePatient(overrides: Partial<Patient> = {}): Patient {
     last_name: "Silva",
     email: null,
     phone: null,
+    cpf: null,
     date_of_birth: null,
     status: "active",
     notes: null,

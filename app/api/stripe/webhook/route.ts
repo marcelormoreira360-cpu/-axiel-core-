@@ -146,7 +146,7 @@ async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
 
   if (type === "session_payment") {
     const { patient_id, clinic_id, appointment_id } = session.metadata ?? {};
-    await supabaseAdmin.from("patient_payments").insert({
+    const { error } = await supabaseAdmin.from("patient_payments").insert({
       clinic_id,
       patient_id,
       appointment_id,
@@ -158,6 +158,11 @@ async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
       stripe_payment_intent_id: paymentIntentId,
       notes: `Stripe session checkout ${session.id}`,
     });
+    if (error) {
+      // Re-throw → webhook devolve 500, Stripe re-tenta; a idempotência evita duplicar.
+      log.error("handleCheckoutSessionPaid: falha ao inserir session_payment", error, { session_id: session.id });
+      throw error;
+    }
     return;
   }
 
@@ -169,19 +174,17 @@ async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
     .eq("id", offer_id)
     .single();
 
-  if (!offer) return;
+  if (!offer) {
+    log.error("handleCheckoutSessionPaid: oferta não encontrada — pagamento recebido sem registro", new Error("offer not found"), {
+      session_id: session.id,
+      offer_id,
+    });
+    throw new Error(`patient_purchase: offer ${offer_id} not found for session ${session.id}`);
+  }
 
-  await supabaseAdmin.from("patient_packages").insert({
-    patient_id,
-    clinic_id,
-    name: offer.name,
-    sessions_total: (offer.number_of_sessions as number | null) ?? 1,
-    start_date: new Date().toISOString().slice(0, 10),
-    is_active: true,
-    notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
-  });
-
-  await supabaseAdmin.from("patient_payments").insert({
+  // Pagamento PRIMEIRO: é a âncora de idempotência (stripe_payment_intent_id).
+  // Se falhar → throw → Stripe re-tenta; a checagem no topo evita duplicar.
+  const { error: payError } = await supabaseAdmin.from("patient_payments").insert({
     clinic_id,
     patient_id,
     patient_offer_id: offer_id,
@@ -193,6 +196,29 @@ async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
     stripe_payment_intent_id: paymentIntentId,
     notes: `Stripe checkout ${session.id}`,
   });
+  if (payError) {
+    log.error("handleCheckoutSessionPaid: falha ao inserir patient_payment (purchase)", payError, { session_id: session.id });
+    throw payError;
+  }
+
+  // Pacote DEPOIS: pagamento já está registrado (âncora setada). Se falhar aqui,
+  // apenas logamos — não relança, senão o retry pularia via idempotência e o
+  // pacote ficaria faltando de qualquer forma. Caso raro e recuperável.
+  const { error: pkgError } = await supabaseAdmin.from("patient_packages").insert({
+    patient_id,
+    clinic_id,
+    name: offer.name,
+    sessions_total: (offer.number_of_sessions as number | null) ?? 1,
+    start_date: new Date().toISOString().slice(0, 10),
+    is_active: true,
+    notes: `Comprado online em ${new Date().toLocaleDateString("pt-BR")}`,
+  });
+  if (pkgError) {
+    log.error("handleCheckoutSessionPaid: pagamento registrado mas falhou ao criar patient_package", pkgError, {
+      session_id: session.id,
+      stripe_payment_intent_id: paymentIntentId,
+    });
+  }
 }
 
 export async function POST(request: Request) {
@@ -397,6 +423,33 @@ export async function POST(request: Request) {
         })
         .eq("stripe_payment_intent_id", paymentIntentId);
     }
+  }
+
+  // ── Checkout expirado (Pix/Boleto não pago a tempo) — só observabilidade ─────
+  if (event.type === "checkout.session.expired") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    log.info("checkout.session.expired: cobrança não paga dentro do prazo", {
+      session_id: session.id,
+      type: session.metadata?.type,
+      payment_status: session.payment_status,
+    });
+    return NextResponse.json({ received: true });
+  }
+
+  // ── Disputa / chargeback aberto — alerta para a equipe (sem mudar status) ────
+  if (event.type === "charge.dispute.created") {
+    const dispute = event.data.object as Stripe.Dispute;
+    const paymentIntentId =
+      typeof dispute.payment_intent === "string"
+        ? dispute.payment_intent
+        : (dispute.payment_intent?.id ?? null);
+    log.warn("charge.dispute.created: disputa aberta pelo cliente", {
+      dispute_id: dispute.id,
+      payment_intent: paymentIntentId,
+      amount: dispute.amount,
+      reason: dispute.reason,
+    });
+    return NextResponse.json({ received: true });
   }
 
   return NextResponse.json({ received: true });

@@ -14,6 +14,8 @@ import {
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
 import { ChargeSessionButton } from "./charge-session-button";
+import { AsaasPixButton } from "./asaas-pix-button";
+import { isAsaasConfigured } from "@/lib/asaas";
 import { PendingPayments } from "./pending-payments";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
@@ -33,6 +35,7 @@ export default async function FinanceiroPage() {
   const t = await getTranslations("finance.page");
   const tm = await getTranslations("finance.methods");
   const locale = await getLocale();
+  const asaasPix = isAsaasConfigured();
   const methodLabel = (m: string) => (KNOWN_METHODS.includes(m) ? tm(m) : m);
 
   const [kpis, payments, unpaid, monthly, patients, cachedInsight, pending] = await Promise.all([
@@ -217,7 +220,7 @@ export default async function FinanceiroPage() {
             ) : (
               <div className="divide-y divide-black/[.04] max-h-72 overflow-y-auto">
                 {unpaid.slice(0, 10).map((u) => (
-                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} />
+                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} asaasEnabled={asaasPix} />
                 ))}
               </div>
             )}
@@ -236,9 +239,11 @@ export default async function FinanceiroPage() {
 function FinanceiroUnpaidRow({
   session,
   locale,
+  asaasEnabled,
 }: {
   session: import("@/services/finance-service").UnpaidSession;
   locale: string;
+  asaasEnabled: boolean;
 }) {
   return (
     <div className="px-4 py-3">
@@ -255,7 +260,8 @@ function FinanceiroUnpaidRow({
         )}
       </div>
       {session.price_cents > 0 && (
-        <div className="mt-1.5">
+        <div className="mt-1.5 flex items-start justify-end gap-1.5">
+          {asaasEnabled && <AsaasPixButton appointmentId={session.appointment_id} />}
           <ChargeSessionButton appointmentId={session.appointment_id} />
         </div>
       )}

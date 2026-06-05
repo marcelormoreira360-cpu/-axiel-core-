@@ -139,6 +139,7 @@ export async function calculateMonthRepasse(
     .from("patient_payments")
     .select("amount_cents, appointments(created_by)")
     .eq("clinic_id", clinicId)
+    .eq("status", "paid")          // só pagamentos confirmados entram no repasse (exclui pending/refunded/failed)
     .gte("paid_at", from)
     .lte("paid_at", to)
     .limit(10000);

@@ -28,6 +28,8 @@ const publicPrefixes = [
   "/api/stripe/patient-checkout",      // portal package purchase (token-authenticated)
   "/api/stripe/session-checkout",      // portal session payment (token-authenticated)
   "/api/stripe/patient-subscription",  // portal recurring plan checkout (token-authenticated)
+  "/api/stripe/webhook",               // Stripe webhook (valida assinatura; sem sessão)
+  "/api/asaas/webhook",                // Asaas webhook (valida token; sem sessão)
 ];
 
 function isPublicPath(pathname: string) {

@@ -58,6 +58,7 @@ export async function getPatientCount(
 export async function createPatient(input: Pick<Patient, "clinic_id" | "full_name" | "email" | "phone" | "notes"> & {
   first_name?: string | null;
   last_name?: string | null;
+  cpf?: string | null;
   address_line?: string | null;
   city?: string | null;
   state?: string | null;
@@ -83,7 +84,7 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
 
 export async function updatePatient(
   patientId: string,
-  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "date_of_birth" | "notes" | "status">>
+  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "notes" | "status">>
 ): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

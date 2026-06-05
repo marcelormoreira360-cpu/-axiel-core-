@@ -27,16 +27,9 @@ export function getAppUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 }
 
-// ── Métodos de pagamento por moeda ──────────────────────────────────
-// Pix e Boleto são exclusivos do Brasil (BRL); outras moedas → só cartão.
-// ⚠️ Pix e Boleto precisam estar ATIVADOS no painel do Stripe (conta BR),
-// senão o checkout falha ao criar a sessão.
-// Importante: Pix e Boleto são assíncronos — o pagamento só é confirmado
-// no evento checkout.session.async_payment_succeeded (ver webhook).
-export function paymentMethodTypesForCurrency(
-  currency: string | null | undefined,
-): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
-  const cur = (currency ?? "brl").toLowerCase();
-  if (cur === "brl") return ["card", "pix", "boleto"];
-  return ["card"];
-}
+// Métodos de pagamento: usamos os MÉTODOS DINÂMICOS do Stripe (não fixamos
+// payment_method_types nos checkouts). O Stripe mostra automaticamente o que
+// estiver ativado no painel, conforme a moeda — cartão sempre; Pix/Boleto
+// aparecem sozinhos quando ativados em BRL. Assim, ativar o Pix no Brasil não
+// exige mudança de código, e nada quebra onde o Pix não está disponível (US/USD).
+// Pix/Boleto são assíncronos: confirmação via checkout.session.async_payment_succeeded.

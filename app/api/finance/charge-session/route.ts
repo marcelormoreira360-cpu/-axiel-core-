@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { stripe, getAppUrl, paymentMethodTypesForCurrency } from "@/lib/stripe";
+import { stripe, getAppUrl } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   // 6. Cria a sessão de checkout
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    payment_method_types: paymentMethodTypesForCurrency(currency),
+    // Métodos dinâmicos (ver session-checkout): Stripe decide pelo painel + moeda.
     customer_email: (patient?.email as string | undefined) ?? undefined,
     line_items: [
       {

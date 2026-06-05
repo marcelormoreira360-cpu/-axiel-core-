@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { registerPaymentAction } from "./actions";
 
-const METHOD_KEYS = ["pix", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"] as const;
+const METHOD_KEYS = ["pix", "boleto", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"] as const;
 
 interface Props {
   patients: { id: string; full_name: string }[];

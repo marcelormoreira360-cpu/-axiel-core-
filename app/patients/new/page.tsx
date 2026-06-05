@@ -157,6 +157,10 @@ export default async function NewPatientPage({
                   />
                 </div>
               </label>
+              <label className="grid gap-2 text-sm font-semibold">
+                {t("cpf")}
+                <input name="cpf" className={inputCls} placeholder={t("cpfPlaceholder")} />
+              </label>
             </div>
           </section>
 

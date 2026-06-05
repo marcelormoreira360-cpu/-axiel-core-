@@ -187,6 +187,8 @@
   },
   "charge": {
     "button": "Cobrar",
+    "pix": "Pix",
+    "pixLinkReady": "Link Pix pronto:",
     "generating": "Gerando…",
     "linkReady": "Link de pagamento pronto:",
     "copy": "Copiar link",

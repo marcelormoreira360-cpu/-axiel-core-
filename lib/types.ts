@@ -56,6 +56,7 @@ export type Patient = {
   last_name: string | null;
   email: string | null;
   phone: string | null;
+  cpf: string | null;
   date_of_birth: string | null;
   status: "active" | "inactive" | "archived";
   notes: string | null;
@@ -326,6 +327,8 @@ export type PatientPayment = {
   // Conciliação manual (migration 054)
   proof_path: string | null;
   confirmed_at: string | null;
+  // Pix via Asaas (migration 061)
+  asaas_payment_id: string | null;
 };
 
 export type WorkingHour = {

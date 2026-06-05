@@ -33,6 +33,25 @@ export async function emitNfseAction(
 
   const amountCents = Math.round(amountReais * 100);
 
+  // ── Se houver pagamento vinculado, ele precisa existir, ser da clínica e estar
+  //    confirmado (paid). NFSe avulsa (sem vínculo) continua permitida. ──────────
+  if (patientPaymentId) {
+    const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+    const supabase = await createSupabaseServerClient();
+    const { data: payment } = await supabase
+      .from("patient_payments")
+      .select("status")
+      .eq("id", patientPaymentId)
+      .eq("clinic_id", clinic.id)
+      .maybeSingle();
+    if (!payment) {
+      return { error: "Pagamento vinculado não encontrado." };
+    }
+    if (payment.status !== "paid") {
+      return { error: "Só é possível emitir NFS-e para pagamento confirmado (status pago)." };
+    }
+  }
+
   // ── CPF validation ──────────────────────────────────────────────────────────
   let borrowerCpf: string | undefined;
   if (borrowerCpfRaw) {

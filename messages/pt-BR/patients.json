@@ -49,6 +49,8 @@
     "emailPlaceholder": "email@exemplo.com",
     "phone": "Telefone / WhatsApp",
     "phonePlaceholder": "(00) 90000-0000",
+    "cpf": "CPF",
+    "cpfPlaceholder": "000.000.000-00",
     "addressLine": "Rua, número e complemento",
     "addressLinePlaceholder": "Rua das Flores, 123 — Apto 4B",
     "zip": "Código postal",

@@ -66,6 +66,18 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
+          {/* CPF (necessário para cobrança Pix via Asaas) */}
+          <div>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">CPF</label>
+            <input
+              type="text"
+              name="cpf"
+              defaultValue={patient.cpf ?? ""}
+              placeholder="000.000.000-00"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            />
+          </div>
+
           {/* Data de nascimento e status */}
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
