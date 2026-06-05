@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { getPaymentsWithPatients, formatBRL } from "@/services/finance-service";
+import { getPaymentsWithPatients, getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
@@ -38,6 +39,7 @@ function escCsv(val: string | number | null | undefined): string {
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
+  const __cur = await getClinicCurrency(clinic.id);
 
   const locale = await resolveClinicLocale(clinic.id);
   const t = await getServerT(locale, "pdf");
@@ -141,9 +143,9 @@ export async function GET(req: Request) {
   const kpiY = doc.y;
   const kpiW = (595 - 112 - 16) / 3;
   [
-    { label: t("financeReport.kpiRevenue"), value: formatBRL(totalCents) },
+    { label: t("financeReport.kpiRevenue"), value: formatMoney(totalCents, __cur, locale) },
     { label: t("financeReport.kpiPayments"), value: String(payments.length) },
-    { label: t("financeReport.kpiAvg"), value: formatBRL(avgCents) },
+    { label: t("financeReport.kpiAvg"), value: formatMoney(avgCents, __cur, locale) },
   ].forEach((kpi, i) => {
     const x = 56 + i * (kpiW + 8);
     doc.rect(x, kpiY, kpiW, 56).fillColor("#f9fafb").fill();
@@ -163,7 +165,7 @@ export async function GET(req: Request) {
     doc.font("Helvetica").fontSize(10).fillColor("#374151")
        .text(methodLabel(method), 56, doc.y, { continued: true, width: 200 });
     doc.fillColor("#111827").font("Helvetica-Bold").fontSize(10)
-       .text(formatBRL(cents), { continued: true, width: 120, align: "right" });
+       .text(formatMoney(cents, __cur, locale), { continued: true, width: 120, align: "right" });
     doc.fillColor("#9ca3af").font("Helvetica").fontSize(9)
        .text(`  ${pct}%`, { width: 60 });
     doc.moveDown(0.3);
@@ -196,7 +198,7 @@ export async function GET(req: Request) {
       doc.text(p.session_type_name ?? "—", 308, rowY, { width: 126 });
       doc.text(methodLabel(p.payment_method), 442, rowY, { width: 56 });
       doc.fillColor("#111827").font("Helvetica-Bold").fontSize(9)
-         .text(formatBRL(p.amount_cents), 506, rowY, { width: 56, align: "right" });
+         .text(formatMoney(p.amount_cents, __cur, locale), 506, rowY, { width: 56, align: "right" });
       doc.y = rowY + 16;
     });
 

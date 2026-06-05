@@ -10,15 +10,17 @@ import {
   getUnpaidSessions,
   getMonthlyRevenue,
   getPendingPayments,
-  formatBRL,
 } from "@/services/finance-service";
 import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
 import { ChargeSessionButton } from "./charge-session-button";
 import { AsaasChargeButton } from "./asaas-pix-button";
 import { isAsaasConfigured } from "@/lib/asaas";
+import { requireFinanceAccess } from "@/lib/require-finance-access";
 import { PendingPayments } from "./pending-payments";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
 
 function delta(current: number, previous: number, vsPrev: string) {
   if (previous === 0) return current > 0 ? "+100%" : "—";
@@ -29,7 +31,9 @@ function delta(current: number, previous: number, vsPrev: string) {
 const KNOWN_METHODS = ["pix", "boleto", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
 
 export default async function FinanceiroPage() {
+  await requireFinanceAccess();
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
   if (!clinic) redirect("/dashboard");
 
   const t = await getTranslations("finance.page");
@@ -91,7 +95,7 @@ export default async function FinanceiroPage() {
         {[
           {
             label: t("kpiRevenue"),
-            value: formatBRL(kpis.revenueThisMonth),
+            value: formatMoney(kpis.revenueThisMonth, __cur, locale),
             sub: delta(kpis.revenueThisMonth, kpis.revenueLastMonth, t("vsPrev")),
             green: kpis.revenueThisMonth >= kpis.revenueLastMonth,
           },
@@ -103,14 +107,14 @@ export default async function FinanceiroPage() {
           },
           {
             label: t("kpiAvgTicket"),
-            value: formatBRL(kpis.averageTicketCents),
+            value: formatMoney(kpis.averageTicketCents, __cur, locale),
             sub: t("perSession"),
             green: false,
           },
           {
             label: t("kpiUnpaid"),
             value: String(unpaid.length),
-            sub: unpaid.length > 0 ? t("pending", { amount: formatBRL(unpaid.reduce((s, u) => s + u.price_cents, 0)) }) : t("upToDate"),
+            sub: unpaid.length > 0 ? t("pending", { amount: formatMoney(unpaid.reduce((s, u) => s + u.price_cents, 0), __cur, locale) }) : t("upToDate"),
             green: unpaid.length === 0,
           },
         ].map((m) => (
@@ -136,7 +140,7 @@ export default async function FinanceiroPage() {
                   <div
                     className="w-full rounded-t-md bg-[#0B1F3A] transition-all"
                     style={{ height: `${Math.round((m.cents / maxMonthly) * 80)}px`, minHeight: m.cents > 0 ? "4px" : "0" }}
-                    title={formatBRL(m.cents)}
+                    title={formatMoney(m.cents, __cur, locale)}
                   />
                   <p className="text-[9px] text-[#A09E98] capitalize">{m.label}</p>
                 </div>
@@ -163,7 +167,7 @@ export default async function FinanceiroPage() {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[13px] font-semibold text-[#0F1A2E]">{formatBRL(p.amount_cents)}</p>
+                      <p className="text-[13px] font-semibold text-[#0F1A2E]">{formatMoney(p.amount_cents, __cur, locale)}</p>
                       <p className="text-[10px] text-[#A09E98]">{methodLabel(p.payment_method ?? "")}</p>
                     </div>
                   </div>
@@ -193,7 +197,7 @@ export default async function FinanceiroPage() {
                     <div key={method}>
                       <div className="flex items-center justify-between mb-0.5">
                         <p className="text-[11px] text-[#6B6A66]">{methodLabel(method)}</p>
-                        <p className="text-[11px] font-medium text-[#0F1A2E]">{formatBRL(cents)}</p>
+                        <p className="text-[11px] font-medium text-[#0F1A2E]">{formatMoney(cents, __cur, locale)}</p>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-[#F4F3EF]">
                         <div
@@ -220,7 +224,7 @@ export default async function FinanceiroPage() {
             ) : (
               <div className="divide-y divide-black/[.04] max-h-72 overflow-y-auto">
                 {unpaid.slice(0, 10).map((u) => (
-                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} asaasEnabled={asaasPix} />
+                  <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} currency={__cur} asaasEnabled={asaasPix} />
                 ))}
               </div>
             )}
@@ -239,10 +243,12 @@ export default async function FinanceiroPage() {
 function FinanceiroUnpaidRow({
   session,
   locale,
+  currency,
   asaasEnabled,
 }: {
   session: import("@/services/finance-service").UnpaidSession;
   locale: string;
+  currency: string;
   asaasEnabled: boolean;
 }) {
   return (
@@ -256,7 +262,7 @@ function FinanceiroUnpaidRow({
           </p>
         </div>
         {session.price_cents > 0 && (
-          <p className="shrink-0 text-[12px] font-semibold text-amber-600">{formatBRL(session.price_cents)}</p>
+          <p className="shrink-0 text-[12px] font-semibold text-amber-600">{formatMoney(session.price_cents, currency, locale)}</p>
         )}
       </div>
       {session.price_cents > 0 && (

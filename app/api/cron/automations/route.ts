@@ -21,13 +21,15 @@ export async function GET(request: Request) {
   if (guard.skipped) return NextResponse.json({ ok: true, skipped: true });
 
   try {
-    const [automations, packageAlerts, dunning] = await Promise.all([
+    const { processReassessments } = await import("@/services/onboarding-assessment-service");
+    const [automations, packageAlerts, dunning, reassessments] = await Promise.all([
       processAutomations(),
       checkLowPackageNotifications(),
       processDunning(),
+      processReassessments(),
     ]);
 
-    const result = { automations, packageAlerts, dunning };
+    const result = { automations, packageAlerts, dunning, reassessments };
     await guard.finish(result as Record<string, unknown>);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {

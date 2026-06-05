@@ -2,13 +2,14 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { formatBRL } from "@/lib/finance-utils";
 import { confirmPaymentAction, getPaymentProofUrlAction, discardPendingPaymentAction } from "./actions";
 import type { PendingPayment } from "@/services/finance-service";
+import { useFormatMoney } from "@/components/currency-provider";
 
 const KNOWN_METHODS = ["pix", "boleto", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"];
 
 function PendingRow({ payment, locale }: { payment: PendingPayment; locale: string }) {
+  const money = useFormatMoney();
   const t = useTranslations("finance.pending");
   const tm = useTranslations("finance.methods");
   const [isPending, startTransition] = useTransition();
@@ -47,7 +48,7 @@ function PendingRow({ payment, locale }: { payment: PendingPayment; locale: stri
             {new Date(payment.paid_at).toLocaleDateString(locale)} · {methodLabel(payment.payment_method)}
           </p>
         </div>
-        <p className="shrink-0 text-[12px] font-semibold text-amber-600">{formatBRL(payment.amount_cents)}</p>
+        <p className="shrink-0 text-[12px] font-semibold text-amber-600">{money(payment.amount_cents)}</p>
       </div>
       <div className="mt-1.5 flex items-center justify-end gap-1.5">
         {payment.proof_path && (

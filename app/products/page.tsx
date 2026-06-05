@@ -3,11 +3,12 @@ import { Package } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { EmptyState } from "@/components/empty-state";
 import { getProducts } from "@/services/product-service";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
+import { getLocale } from "next-intl/server";
 import { toggleProductActiveAction } from "./actions";
 
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-}
 
 function avgPriceCents(products: { price_cents: number }[]) {
   if (products.length === 0) return 0;
@@ -15,6 +16,9 @@ function avgPriceCents(products: { price_cents: number }[]) {
 }
 
 export default async function ProductsPage() {
+  const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
+  const __loc = await getLocale();
   const products = await getProducts();
   const activeProducts = products.filter((p) => p.is_active);
   const avg = avgPriceCents(products);
@@ -54,7 +58,7 @@ export default async function ProductsPage() {
             {[
               { label: "Total de produtos", value: products.length, accent: true },
               { label: "Ativos", value: activeProducts.length, accent: false },
-              { label: "Valor médio", value: formatBRL(avg), accent: false },
+              { label: "Valor médio", value: formatMoney(avg, __cur, __loc), accent: false },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -119,7 +123,7 @@ export default async function ProductsPage() {
                 {/* Price + inventory row */}
                 <div className="flex items-center justify-between">
                   <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
-                    {formatBRL(product.price_cents)}
+                    {formatMoney(product.price_cents, __cur, __loc)}
                   </p>
                   <div className="flex items-center gap-[5px]">
                     <span

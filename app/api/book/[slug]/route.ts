@@ -176,6 +176,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   if (apptError) return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
 
+  // Questionários automáticos na 1ª sessão (fire-and-forget; usa admin client)
+  import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
+    sendOnboardingAssessments({ id: appointment.id, clinic_id: appointment.clinic_id, patient_id: appointment.patient_id }).catch(() => {})
+  );
+
   // ── Zoom meeting (non-blocking) ─────────────────────────────────────────────
   // If the session type is online, create a Zoom meeting and store the URLs.
   // The join_url is returned to the patient so the booking page can display it.

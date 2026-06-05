@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
+import type { AssessmentProgress } from "@/services/assessment-progress-service";
 
 export type PatientPortalIntakeItem = {
   label: string;
@@ -130,6 +131,8 @@ export type PatientPortalData = {
   whatsappUrl: string | null;
   availableOffers: PatientPortalOffer[];
   intakeResponses: PatientPortalIntakeItem[];
+  pendingAssessments: { name: string }[];
+  assessmentProgress: AssessmentProgress[];
   documents: PatientPortalDocument[];
   sessionTypes: PatientPortalSessionType[];
   unreadClinicMessages: number;
@@ -659,6 +662,44 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     };
   });
 
+  // Questionários pendentes (convites de avaliação não respondidos e não expirados)
+  const { data: pendingInvites } = await supabase
+    .from("assessment_invitations")
+    .select("id, assessment_templates(name)")
+    .eq("patient_id", link.patient_id)
+    .eq("clinic_id", link.clinic_id)
+    .is("completed_at", null)
+    .gt("expires_at", now);
+  const pendingAssessments = (pendingInvites ?? []).map((i) => {
+    const tpl = Array.isArray(i.assessment_templates) ? i.assessment_templates[0] : i.assessment_templates;
+    return { name: (tpl as { name?: string } | null)?.name ?? "Questionário" };
+  });
+
+  // Evolução dos questionários (série de pontuações por template, cronológica)
+  const { data: progressRows } = await supabase
+    .from("assessment_responses")
+    .select("template_id, total_score, score_percentage, created_at, assessment_templates(name)")
+    .eq("patient_id", link.patient_id)
+    .eq("clinic_id", link.clinic_id)
+    .order("created_at", { ascending: true });
+  const progressMap = new Map<string, AssessmentProgress>();
+  for (const r of progressRows ?? []) {
+    const tid = r.template_id as string;
+    if (!tid) continue;
+    const tpl = Array.isArray(r.assessment_templates) ? r.assessment_templates[0] : r.assessment_templates;
+    let entry = progressMap.get(tid);
+    if (!entry) {
+      entry = { template_id: tid, template_name: (tpl as { name?: string } | null)?.name ?? "Questionário", points: [], baseline: null, latest: null, deltaPct: null, count: 0 };
+      progressMap.set(tid, entry);
+    }
+    entry.points.push({ date: r.created_at as string, score_percentage: Number(r.score_percentage ?? 0), total_score: Number(r.total_score ?? 0) });
+  }
+  const assessmentProgress: AssessmentProgress[] = [...progressMap.values()].map((e) => {
+    const baseline = e.points.length ? e.points[0].score_percentage : null;
+    const latest = e.points.length ? e.points[e.points.length - 1].score_percentage : null;
+    return { ...e, baseline, latest, deltaPct: baseline != null && latest != null ? Math.round((latest - baseline) * 10) / 10 : null, count: e.points.length };
+  });
+
   return {
     link: link as PatientPortalLink,
     patient: patient as PatientPortalData["patient"],
@@ -671,6 +712,8 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     whatsappUrl: createWhatsAppUrl(whatsappNumber),
     availableOffers,
     intakeResponses,
+    pendingAssessments,
+    assessmentProgress,
     documents,
     sessionTypes,
     unreadClinicMessages: unreadCount ?? 0,

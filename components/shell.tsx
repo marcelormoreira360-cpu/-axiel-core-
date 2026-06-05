@@ -14,6 +14,9 @@ import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 import { getClinicSubscription } from "@/services/billing-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { getLocale } from "next-intl/server";
+import { CurrencyProvider } from "@/components/currency-provider";
 
 export async function Shell({
   children,
@@ -36,16 +39,21 @@ export async function Shell({
   let cookieStore: Awaited<ReturnType<typeof cookies>>;
   let clinic: Awaited<ReturnType<typeof getCurrentClinic>> = null;
 
+  let profile: Awaited<ReturnType<typeof import("@/services/user-service").getCurrentUserProfile>> = null;
   try {
-    [clinics, cookieStore, clinic] = await Promise.all([
+    const userService = await import("@/services/user-service");
+    [clinics, cookieStore, clinic, profile] = await Promise.all([
       getClinicsForUser().catch(() => []),
       cookies(),
       getCurrentClinic().catch(() => null),
+      userService.getCurrentUserProfile().catch(() => null),
     ]);
   } catch (e) {
     throw e;
   }
   const activeClinicId = cookieStore!.get(ACTIVE_CLINIC_COOKIE)?.value ?? clinics[0]?.id ?? "";
+  const { isManager } = await import("@/lib/team-utils");
+  const canSeeFinance = profile ? isManager(profile.role) : false;
 
   // ── Trial / billing status ──────────────────────────────────────────────────
   // Fetch subscription lightly (React.cache deduplicates if already called).
@@ -66,6 +74,12 @@ export async function Shell({
   const logoUrl = clinic?.logo_url ?? null;
   const primaryColor = clinic?.primary_color ?? "#0F6E56";
   const clinicName = clinic?.name ?? "AXIEL";
+
+  // Moeda da clínica (BRL/USD/EUR) — vem da config da clínica, não do idioma.
+  const [clinicCurrency, shellLocale] = await Promise.all([
+    clinicId ? getClinicCurrency(clinicId).catch(() => "BRL") : Promise.resolve("BRL"),
+    getLocale().catch(() => "pt-BR"),
+  ]);
 
   return (
     <div className="flex min-h-screen bg-[#FAFAF8] dark:bg-[#0E1117]">
@@ -100,7 +114,7 @@ export async function Shell({
           <SearchTriggerButton />
         </div>
 
-        <SidebarNavigation />
+        <SidebarNavigation canSeeFinance={canSeeFinance} />
 
         {/* User */}
         <div className="mt-auto px-[14px] pt-3 border-t border-black/[.08] dark:border-white/[.08]">
@@ -153,7 +167,7 @@ export async function Shell({
             <SignOutButton />
           </div>
         </div>
-        <MobileNav />
+        <MobileNav canSeeFinance={canSeeFinance} />
       </div>
 
       {/* ── Page content ── */}
@@ -191,7 +205,9 @@ export async function Shell({
         )}
 
         <div className={fullWidth ? "px-4 py-4 lg:px-6 lg:py-5" : "mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8"}>
-          {children}
+          <CurrencyProvider currency={clinicCurrency} locale={shellLocale}>
+            {children}
+          </CurrencyProvider>
         </div>
       </main>
 

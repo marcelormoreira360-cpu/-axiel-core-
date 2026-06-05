@@ -8,6 +8,21 @@ import { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, month
 
 export { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, monthKey } from "@/lib/finance-utils";
 
+// ── Moeda da clínica ──────────────────────────────────────────────
+// Moeda padrão da clínica (BRL/USD/EUR), de clinic_settings. Cached por request.
+export async function getClinicCurrency(clinicId: string): Promise<string> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("default_currency, settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const fromCol = (data?.default_currency as string | null) ?? null;
+  const fromJson = ((data?.settings as Record<string, unknown> | null)?.default_currency as string | undefined) ?? null;
+  return (fromCol || fromJson || "BRL").toUpperCase();
+}
+
 // ── KPIs ─────────────────────────────────────────────────────────
 
 export type FinanceKPIs = {
@@ -238,12 +253,13 @@ export async function createPaymentAdmin(input: {
 }) {
   const supabase = createSupabaseAdminClient();
   const status = input.status ?? "paid";
+  const currency = await getClinicCurrency(input.clinic_id);
   const { data, error } = await supabase
     .from("patient_payments")
     .insert({
       ...input,
       status,
-      currency: "BRL",
+      currency,
       // Pagamento já recebido entra confirmado; pendente aguarda conciliação.
       confirmed_at: status === "paid" ? input.paid_at : null,
     })

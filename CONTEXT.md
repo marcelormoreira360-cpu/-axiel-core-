@@ -1,7 +1,22 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 04/06/2026 (6)
+> Atualizado em: 05/06/2026 (7)
+
+## ⚠️ Moeda por clínica/região (NÃO por idioma) — concluído 05/06
+
+A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nunca do idioma. O locale (next-intl) só formata separadores.
+
+- **Fonte**: `getClinicCurrency(clinicId)` em `services/finance-service.ts`. Formatador puro: `formatMoney(cents, currency, locale)` em `lib/finance-utils.ts`.
+- **Client**: `components/currency-provider.tsx` (`CurrencyProvider` + hooks `useFormatMoney()` / `useClinicCurrency()`). Já injetado no `Shell` (apps autenticadas) e na página `/p/[token]` (portal). Componentes client chamam `const money = useFormatMoney(); money(cents)` — sem prop-threading.
+- **Server**: páginas usam `getClinicCurrency(clinic.id)` + `formatMoney(cents, cur, locale)` direto.
+- **Criação de registros** grava na moeda da clínica: `createPaymentAdmin`, ofertas (`createMonetizationOffer`), produtos (`createProduct`).
+- **BRL fixo é legítimo** apenas em: rotas Asaas (`/api/asaas/*` — gateway brasileiro, Pix/Boleto só existem em BRL), o param `order.currency` em produtos, e o default do `CurrencyProvider`.
+- ~30 superfícies convertidas (financeiro, relatórios, produtos, hotmart, assinaturas, ofertas, dashboard, portal, e-mails, prompt da IA de finanças). Validado: `tsc -p tsconfig.check.json` = 0, `verify-i18n.mjs` = 0.
+
+## Financeiro restrito a dono/admin — concluído
+
+`lib/require-finance-access.ts` (`requireFinanceAccess()` → redirect se não `isManager`). Guard em `/financeiro` + repasse/nfse/relatorio. Sidebar/MobileNav recebem `canSeeFinance` do `Shell`. "Cliente" = outra clínica que usa o AXIEL (SaaS).
 
 ---
 
@@ -188,6 +203,22 @@ SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA
   - Validado: tsc confiável **0 erros**; verify:i18n paridade PT/EN OK (34 namespaces)
 - ✅ **Fix: migration 050 nunca aplicada em produção** (03/06/2026): `action_suggestions.content_key`/`content_params` não existiam no banco → `syncActionSuggestions` (chamado em `/leads/[id]` e `/actions`) lançava erro de coluna inexistente, quebrando **todas** as páginas de lead e o Action Center (não só os leads do Growth). Aplicada a `050_action_suggestion_content.sql` + `notify pgrst, 'reload schema'`. Lição: confirmar que TODA migration listada no repo está de fato aplicada em produção.
 - ✅ **Fix: salvar config do WhatsApp Bot quebrava (PGRST200)** (02/06/2026): `whatsapp_bot_configs.clinic_id` é **text** e `clinics.id` é **uuid** → não há FK entre eles, então o join embutido `clinics(slug)` do PostgREST falhava (`Could not find a relationship ... in schema cache`) e derrubava o `Save configuration`. Tentar converter a coluna esbarra na política RLS `clinic_own_whatsapp_config` (`clinic_id = (select users.clinic_id::text ...)`). **Solução pelo código** (sem mexer em coluna/política em produção): `services/whatsapp-bot-service.ts` agora busca o slug via `fetchClinicSlug()` em consulta separada nas 5 funções (get/getByNumber/getByMetaPhoneId/getByInstagramId/upsert) em vez do join `clinics(slug)`. Com isso o save passou a funcionar e o **Instagram Account ID `17841460053907081` (jifwcenter)** foi gravado. ⚠️ dívida técnica futura: padronizar `whatsapp_bot_configs.clinic_id` para uuid (exige dropar+recriar a policy).
+- ✅ **Financeiro restrito a dono/gestor/admin + fundação de moeda por clínica** (05/06/2026):
+  - **Acesso**: `lib/require-finance-access.ts` (`isManager` = clinic_owner/clinic_manager/admin) nas 4 páginas (`/financeiro`, repasse, nfse, relatorio → redirect /dashboard). Sidebar/MobileNav filtram o item `/financeiro` via `canSeeFinance` (Shell busca `getCurrentUserProfile().role`). Colaborador comum não vê o Financeiro.
+  - **Moeda**: `formatMoney(cents, currency, locale)` em `lib/finance-utils` + `getClinicCurrency(clinicId)` em `finance-service` (lê `clinic_settings.default_currency`). Decisão: **moeda por clínica/região** (não por idioma). Seletor já existe em Settings → Regional.
+  - **PENDENTE (refactor coeso)**: ~28 telas ainda usam `formatBRL` fixo → converter para `formatMoney(moeda da clínica)`. Sem visível hoje (clínica = BRL); necessário quando uma clínica for USD/EUR.
+- ✅ **Questionários automáticos na 1ª sessão + motor de progresso** (05/06/2026) — plano em `QUESTIONARIOS_AUTO_PLANO.md`:
+  - **Migration `064`**: `assessment_templates.send_on_first_appointment` (flag). Checkbox "Enviar na primeira sessão" no editor de formulário (`assessment-form-editor` + `forms/[id]/edit/actions`), i18n `forms.builder.sendOnFirst`.
+  - **`services/onboarding-assessment-service.ts`** (`sendOnboardingAssessments`, admin client): se 1ª sessão → cria convites dos templates marcados + envia link por **WhatsApp** (`sendWhatsAppText`) e **e-mail** (`email-service.sendSimpleEmail`, novo helper genérico). Idempotente (não reenvia convite aberto).
+  - **Gatilhos**: `createAppointment` (side-effect) **e** booking público `app/api/book/[slug]` (após o insert; usa admin client). A pontuação/% já era automática no submit do form → cai na ficha.
+  - **Portal**: seção "Questionários pendentes" no `patient-portal-dashboard` (PatientPortalData.pendingAssessments) — informativo (link seguro vai por WhatsApp/e-mail; fill nativo no portal = follow-up).
+  - **Motor de progresso (fundação)**: `services/assessment-progress-service.ts` — `getAssessmentProgress(patientId, templateId)` (série de % + baseline + latest + deltaPct) e `getPatientAssessmentProgress`. Base para mostrar "variou X% desde o início" (UI = próxima fase).
+  - Validado: tsc confiável 0 erros; verify:i18n paridade PT/EN OK.
+  - **Fase 2 (progresso + reavaliação)**: `onboarding-assessment-service` refatorado → `sendAssessmentsToPatient` (reutilizável); action `resendAssessmentAction` (reavaliar = reenvia template). `PatientAssessmentProgressPanel` na ficha (`/patients/[id]`): série de % em mini-barras, delta em pts, contagem, botão **Reavaliar** por template (usa `getPatientAssessmentProgress`).
+  - **Fase 3 (insight de IA pós-entrada, semiautomático)**: ao completar os questionários de entrada, o sistema sugere ao clínico gerar o insight (governança: rascunho→revisão, NÃO auto-publica ao paciente). Regra `onboardingInsightReady` em `action-rules.ts` + `getPatientsNeedingOnboardingInsight` (pacientes com resposta a template onboarding e sem ai_insight) plugado em `app/actions/page.tsx` + i18n `actions.suggestions.onboardingInsightReady`. Some sozinho quando o insight é gerado.
+  - **Fase 4 (progresso no portal)**: seção "Sua evolução" no `patient-portal-dashboard` — série de % por questionário (mini-barras, baseline→último), framing neutro. `PatientPortalData.assessmentProgress` computado inline (admin client, sem sessão) reusando o tipo `AssessmentProgress`. i18n `portal.dashboard.progressTitle/progressHint`.
+  - **Fase 5 (reavaliação automática por cadência)**: migration **065** `assessment_templates.reassessment_interval_days` (0=off). Campo no editor (`forms.builder.reassessLabel`). `processReassessments()` (admin client, idempotente, 50/template/run — pacientes ativos cuja última resposta passou do intervalo e sem convite aberto) plugado no cron diário `/api/cron/automations`. O gráfico de progresso enche sozinho.
+  - **Pendente (opcional)**: fill nativo de questionário no portal (decisão: manter também o link WhatsApp/e-mail para quem não acessa o portal).
 - ✅ **Asaas — extensões: Boleto + oferta/pacote + mensalidade recorrente** (05/06/2026):
   - `asaas-service` generalizado: `createAsaasCharge(billingType: PIX|BOLETO)`, `createAsaasSubscription` (busca a 1ª invoiceUrl). `AsaasBillingType`.
   - Rota `/api/asaas/charge` aceita `billing_type` (Pix/Boleto); grava `payment_method` certo. Botão Pix **e** Boleto nas sessões não pagas (`AsaasChargeButton` genérico).

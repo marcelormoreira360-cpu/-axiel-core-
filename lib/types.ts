@@ -424,6 +424,8 @@ export type AssessmentTemplate = {
   instructions: string | null;
   scale_labels: string[] | null;
   is_active: boolean;
+  send_on_first_appointment: boolean;
+  reassessment_interval_days: number;
   created_at: string;
   updated_at: string;
 };

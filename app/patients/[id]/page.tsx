@@ -20,6 +20,8 @@ import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
 import { getMonetizationOffers } from "@/services/monetization-service";
 import { isAsaasConfigured } from "@/lib/asaas";
+import { getPatientAssessmentProgress } from "@/services/assessment-progress-service";
+import { PatientAssessmentProgressPanel } from "@/components/patient-assessment-progress-panel";
 import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
@@ -91,6 +93,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   ]);
 
   const activeSub = activeSubscriptionResult.data;
+  const assessmentProgress = await getPatientAssessmentProgress(id);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -565,6 +568,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           </div>
         )}
       </div>
+
+      {/* Evolução dos questionários */}
+      {assessmentProgress.length > 0 && (
+        <div className="mt-[18px]">
+          <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
+        </div>
+      )}
 
       {/* Plano de tratamento */}
       <div className="mt-[18px]">

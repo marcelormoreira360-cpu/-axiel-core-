@@ -108,8 +108,9 @@ function QuietItem({ href, label }: { href: string; label: string }) {
   );
 }
 
-export function SidebarNavigation() {
+export function SidebarNavigation({ canSeeFinance = true }: { canSeeFinance?: boolean }) {
   const t = useTranslations("nav");
+  const items = mainNav.filter((i) => i.href !== "/financeiro" || canSeeFinance);
   return (
     <>
       {/* Principal */}
@@ -118,7 +119,7 @@ export function SidebarNavigation() {
           {t("sections.main")}
         </p>
         <nav className="flex flex-col gap-[2px]">
-          {mainNav.map((item) => (
+          {items.map((item) => (
             <NavItem
               key={item.href}
               href={item.href}
@@ -171,11 +172,12 @@ export function SidebarNavigation() {
   );
 }
 
-export function MobileNav() {
+export function MobileNav({ canSeeFinance = true }: { canSeeFinance?: boolean }) {
   const t = useTranslations("nav");
+  const items = mainNav.filter((i) => i.href !== "/financeiro" || canSeeFinance);
   return (
     <nav className="mt-3 grid grid-cols-5 gap-1.5">
-      {mainNav.map((item) => (
+      {items.map((item) => (
         <Link
           key={item.href}
           href={item.href}

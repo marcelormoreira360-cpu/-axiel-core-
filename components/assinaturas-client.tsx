@@ -4,12 +4,12 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, CreditCard, AlertCircle, CheckCircle2, PauseCircle, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import type { PatientSubscriptionRow } from "@/app/api/subscriptions/route";
+import { useLocale } from "next-intl";
+import { formatMoney } from "@/lib/finance-utils";
+import { useFormatMoney } from "@/components/currency-provider";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function formatBRL(cents: number, currency = "BRL") {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(cents / 100);
-}
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
@@ -46,6 +46,8 @@ function StatusBadge({ status }: { status: string }) {
 type Stats = { total: number; activeCount: number; pastDueCount: number; mrr: number };
 
 export function AssinaturasClient() {
+  const money = useFormatMoney();
+  const locale = useLocale();
   const [rows, setRows] = useState<PatientSubscriptionRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,7 +75,7 @@ export function AssinaturasClient() {
             { label: "Total",          value: String(stats.total),       icon: CreditCard, color: "#0F1A2E" },
             { label: "Ativos",         value: String(stats.activeCount), icon: CheckCircle2, color: "#0F6E56" },
             { label: "Em atraso",      value: String(stats.pastDueCount), icon: AlertCircle, color: "#D97706" },
-            { label: "MRR estimado",   value: formatBRL(stats.mrr),      icon: CreditCard, color: "#3B82F6" },
+            { label: "MRR estimado",   value: money(stats.mrr),      icon: CreditCard, color: "#3B82F6" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-black/[.07] p-4">
               <div className="flex items-center justify-between mb-2">
@@ -161,7 +163,7 @@ export function AssinaturasClient() {
                   {/* Amount */}
                   <div>
                     <p className="text-[13px] font-medium text-[#0F1A2E]">
-                      {formatBRL(row.amountCents, row.currency)}
+                      {formatMoney(row.amountCents, row.currency, locale)}
                     </p>
                   </div>
 

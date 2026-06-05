@@ -7,9 +7,12 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { getNfseConfig, listNfseInvoices } from "@/services/nfse-service";
 import { getPatients } from "@/services/patient-service";
 import { NfseClient } from "./nfse-client";
+import { getClinicCurrency } from "@/services/finance-service";
 
 export default async function NfsePage() {
+  await (await import("@/lib/require-finance-access")).requireFinanceAccess();
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
   if (!clinic) redirect("/dashboard");
   const t = await getTranslations("finance.nfse");
   const locale = await getLocale();
@@ -77,7 +80,7 @@ export default async function NfsePage() {
       <div className="grid grid-cols-3 gap-3 mb-5">
         {[
           { label: t("kpiIssued"), value: totalIssued },
-          { label: t("kpiTotal"), value: (totalCents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" }) },
+          { label: t("kpiTotal"), value: (totalCents / 100).toLocaleString(locale, { style: "currency", currency: __cur }) },
           { label: t("kpiProcessing"), value: totalProcessing },
         ].map((m) => (
           <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-4">

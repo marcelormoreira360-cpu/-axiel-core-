@@ -4,14 +4,15 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { createProductOrderAction } from "./actions";
+import { useFormatMoney } from "@/components/currency-provider";
 
 type Product = { id: string; name: string; price_cents: number };
 type Patient = { id: string; full_name: string };
 type CartLine = { product_id: string; name: string; unit_price_cents: number; quantity: number };
 
-const brl = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function NewOrderForm({ products, patients }: { products: Product[]; patients: Patient[] }) {
+  const money = useFormatMoney();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [patientId, setPatientId] = useState("");
@@ -87,7 +88,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
             className="flex-1 px-3 py-2 rounded-lg border border-axiel-line text-[13px] outline-none focus:border-[#0F6E56] bg-axiel-surface"
           >
             <option value="">Selecione um produto…</option>
-            {products.map((p) => <option key={p.id} value={p.id}>{p.name} — {brl(p.price_cents)}</option>)}
+            {products.map((p) => <option key={p.id} value={p.id}>{p.name} — {money(p.price_cents)}</option>)}
           </select>
           <button
             onClick={addProduct}
@@ -106,7 +107,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
             <div key={l.product_id} className="flex items-center gap-3 px-4 py-3 border-b border-axiel-line last:border-b-0">
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{l.name}</p>
-                <p className="text-[11px] text-[#A09E98]">{brl(l.unit_price_cents)} cada</p>
+                <p className="text-[11px] text-[#A09E98]">{money(l.unit_price_cents)} cada</p>
               </div>
               <input
                 type="number"
@@ -115,7 +116,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
                 onChange={(e) => setQty(l.product_id, parseInt(e.target.value || "1", 10))}
                 className="w-16 px-2 py-1 rounded-md border border-axiel-line text-[13px] text-center outline-none focus:border-[#0F6E56] bg-axiel-surface"
               />
-              <p className="w-24 text-right text-[13px] font-semibold text-[#0F1A2E]">{brl(l.unit_price_cents * l.quantity)}</p>
+              <p className="w-24 text-right text-[13px] font-semibold text-[#0F1A2E]">{money(l.unit_price_cents * l.quantity)}</p>
               <button onClick={() => remove(l.product_id)} className="text-[#D3D1C7] hover:text-rose-500 transition">
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -149,9 +150,9 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
 
       {/* Totais */}
       <div className="border-t border-axiel-line pt-4 space-y-1">
-        <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Subtotal</span><span>{brl(subtotal)}</span></div>
-        {taxCents > 0 && <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Taxa/frete</span><span>{brl(taxCents)}</span></div>}
-        <div className="flex justify-between text-[15px] font-semibold text-[#0F1A2E]"><span>Total</span><span>{brl(total)}</span></div>
+        <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Subtotal</span><span>{money(subtotal)}</span></div>
+        {taxCents > 0 && <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Taxa/frete</span><span>{money(taxCents)}</span></div>}
+        <div className="flex justify-between text-[15px] font-semibold text-[#0F1A2E]"><span>Total</span><span>{money(total)}</span></div>
       </div>
 
       {error && <p className="text-[13px] text-rose-500">{error}</p>}

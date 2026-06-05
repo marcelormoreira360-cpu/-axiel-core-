@@ -13,10 +13,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { FinanceReportData } from "@/app/api/finance/report/route";
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
-}
+import { useFormatMoney, useClinicCurrency } from "@/components/currency-provider";
 
 function formatDate(iso: string, locale: string) {
   return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
@@ -49,14 +46,13 @@ interface MonthlyTooltipProps {
 }
 
 function MonthlyTooltip({ active, payload, label }: MonthlyTooltipProps) {
+  const money = useFormatMoney();
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border border-black/[.08] rounded-xl shadow-sm px-3 py-2">
       <p className="text-[11px] font-semibold text-black/40 mb-0.5">{label}</p>
       <p className="text-[13px] font-semibold text-[#0F1A2E]">
-        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-          (payload[0].value ?? 0) / 100
-        )}
+        {money(payload[0].value ?? 0)}
       </p>
     </div>
   );
@@ -90,6 +86,8 @@ function exportCSV(data: FinanceReportData, t: ReportT, locale: string) {
 export function FinanceReportClient() {
   const t = useTranslations("finance.report");
   const locale = useLocale();
+  const money = useFormatMoney();
+  const currency = useClinicCurrency();
   const PERIODS = [
     { value: "this_month", label: t("periodThisMonth") },
     { value: "last_month", label: t("periodLastMonth") },
@@ -178,7 +176,7 @@ export function FinanceReportClient() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <KpiCard
               label={t("kpiRevenue")}
-              value={formatBRL(data.totalRevenueCents)}
+              value={money(data.totalRevenueCents)}
               icon={TrendingUp}
             />
             <KpiCard
@@ -188,7 +186,7 @@ export function FinanceReportClient() {
             />
             <KpiCard
               label={t("kpiAvgTicket")}
-              value={formatBRL(data.avgTicketCents)}
+              value={money(data.avgTicketCents)}
               icon={BarChart3}
             />
             <KpiCard
@@ -225,9 +223,9 @@ export function FinanceReportClient() {
                   />
                   <YAxis
                     tickFormatter={(v: number) =>
-                      new Intl.NumberFormat("pt-BR", {
+                      new Intl.NumberFormat(locale, {
                         style: "currency",
-                        currency: "BRL",
+                        currency,
                         notation: "compact",
                         maximumFractionDigits: 0,
                       }).format(v / 100)
@@ -275,7 +273,7 @@ export function FinanceReportClient() {
                             {st.sessionTypeName}
                           </span>
                           <span className="text-[12px] text-black/60 shrink-0">
-                            {formatBRL(st.totalCents)}
+                            {money(st.totalCents)}
                             <span className="text-black/35 ml-1">({pct}%)</span>
                           </span>
                         </div>
@@ -286,7 +284,7 @@ export function FinanceReportClient() {
                           />
                         </div>
                         <p className="text-[10px] text-black/35 mt-0.5">
-                          {t("typeStats", { count: st.count, avg: formatBRL(st.avgTicketCents) })}
+                          {t("typeStats", { count: st.count, avg: money(st.avgTicketCents) })}
                         </p>
                       </div>
                     );
@@ -310,7 +308,7 @@ export function FinanceReportClient() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between">
                             <span className="text-[12px] font-medium text-[#0F1A2E] truncate">{p.patientName}</span>
-                            <span className="text-[12px] text-black/60 shrink-0 ml-2">{formatBRL(p.totalCents)}</span>
+                            <span className="text-[12px] text-black/60 shrink-0 ml-2">{money(p.totalCents)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <div className="flex-1 h-1 rounded-full bg-black/[.06]">
@@ -358,7 +356,7 @@ export function FinanceReportClient() {
                         <td className="px-5 py-3 text-black/55 hidden sm:table-cell">{p.sessionTypeName}</td>
                         <td className="px-5 py-3 text-black/55 hidden md:table-cell">{p.method}</td>
                         <td className="px-5 py-3 text-right font-semibold text-[#0F1A2E]">
-                          {formatBRL(p.amountCents)}
+                          {money(p.amountCents)}
                         </td>
                       </tr>
                     ))}
@@ -369,7 +367,7 @@ export function FinanceReportClient() {
                         {t("total")}
                       </td>
                       <td className="px-5 py-3 text-right font-bold text-[#0F1A2E]">
-                        {formatBRL(data.totalRevenueCents)}
+                        {money(data.totalRevenueCents)}
                       </td>
                     </tr>
                   </tfoot>

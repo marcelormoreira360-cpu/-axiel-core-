@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBusinessAnalytics } from "@/services/business-analytics-service";
 import { ResultsInsights } from "@/components/results-insights";
+import { getClinicCurrency } from "@/services/finance-service";
 
 const ResultsChart = dynamic(
   () => import("@/components/results-chart").then((m) => m.ResultsChart),
@@ -34,9 +35,10 @@ export default async function ResultsPage({
 
   const t = await getTranslations("results.page");
   const locale = await getLocale();
-  const fmt = (cents: number) => (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" });
+  const fmt = (cents: number) => (cents / 100).toLocaleString(locale, { style: "currency", currency: __cur });
 
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
   const data = clinic ? await getBusinessAnalytics(clinic.id, months) : null;
 
   if (!data) {

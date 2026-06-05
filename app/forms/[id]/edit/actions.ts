@@ -28,6 +28,9 @@ export async function updateFormAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   const instructions = String(formData.get("instructions") ?? "").trim() || null;
+  const sendOnFirst = String(formData.get("send_on_first_appointment") ?? "") === "true";
+  const reassessDaysRaw = parseInt(String(formData.get("reassessment_interval_days") ?? "0"), 10);
+  const reassessDays = isNaN(reassessDaysRaw) || reassessDaysRaw < 0 ? 0 : reassessDaysRaw;
 
   if (!name || !templateId) throw new Error("Dados obrigatórios ausentes");
 
@@ -40,7 +43,7 @@ export async function updateFormAction(formData: FormData) {
   // Update template metadata
   await supabase
     .from("assessment_templates")
-    .update({ name, description, instructions })
+    .update({ name, description, instructions, send_on_first_appointment: sendOnFirst, reassessment_interval_days: reassessDays })
     .eq("id", templateId);
 
   // Delete removed questions first (avoids FK issues)

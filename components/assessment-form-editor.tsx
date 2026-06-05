@@ -51,6 +51,8 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
   const [name, setName] = useState(template.name);
   const [description, setDescription] = useState(template.description ?? "");
   const [instructions, setInstructions] = useState(template.instructions ?? "");
+  const [sendOnFirst, setSendOnFirst] = useState(template.send_on_first_appointment);
+  const [reassessDays, setReassessDays] = useState(template.reassessment_interval_days ?? 0);
   const [sections, setSections] = useState<SectionDraft[]>(() => fromTemplate(template));
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
   const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
@@ -170,6 +172,8 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
         }))
       )
     );
+    formData.set("send_on_first_appointment", sendOnFirst ? "true" : "false");
+    formData.set("reassessment_interval_days", String(reassessDays || 0));
     formData.set("deleted_section_ids", JSON.stringify(deletedSectionIds));
     formData.set("deleted_question_ids", JSON.stringify(deletedQuestionIds));
     startTransition(async () => {
@@ -208,6 +212,29 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
             rows={2}
             className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition resize-none"
           />
+        </div>
+        <label className="flex items-start gap-[8px] cursor-pointer select-none pt-[2px]">
+          <input
+            type="checkbox"
+            checked={sendOnFirst}
+            onChange={(e) => setSendOnFirst(e.target.checked)}
+            className="mt-[2px] accent-[#0F6E56]"
+          />
+          <span>
+            <span className="text-[13px] font-medium text-[#0F1A2E] block">{t("sendOnFirst")}</span>
+            <span className="text-[11px] text-[#A09E98] block">{t("sendOnFirstHint")}</span>
+          </span>
+        </label>
+        <div>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("reassessLabel")}</label>
+          <input
+            type="number"
+            min={0}
+            value={reassessDays}
+            onChange={(e) => setReassessDays(Math.max(0, parseInt(e.target.value || "0", 10)))}
+            className="w-[120px] px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+          />
+          <p className="text-[11px] text-[#A09E98] mt-[4px]">{t("reassessHint")}</p>
         </div>
       </div>
 

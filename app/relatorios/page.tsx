@@ -1,6 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { getFinanceKPIs, formatBRL } from "@/services/finance-service";
+import { getFinanceKPIs, getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
+import { getLocale } from "next-intl/server";
 import { getLeadStageCounts, getPatientCounts } from "@/services/stats-service";
 import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 import { getReportTimeSeries } from "@/services/report-service";
@@ -24,6 +26,8 @@ function deltaLabel(current: number, prev: number, t: DeltaT): { text: string; u
 export default async function RelatoriosPage() {
   const t = await getTranslations("reports.page");
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
+  const __loc = await getLocale();
 
   const [financeKPIs, dashKPIs, leadCounts, patientCounts, timeSeries] = await Promise.all([
     clinic ? getFinanceKPIs(clinic.id) : null,
@@ -60,7 +64,7 @@ export default async function RelatoriosPage() {
   const kpis = [
     {
       label: t("kpiRevenue"),
-      value: financeKPIs ? formatBRL(financeKPIs.revenueThisMonth) : "—",
+      value: financeKPIs ? formatMoney(financeKPIs.revenueThisMonth, __cur, __loc) : "—",
       sub: revDelta?.text ?? "—",
       up: revDelta?.up,
     },

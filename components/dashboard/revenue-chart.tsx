@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { useClinicCurrency } from "@/components/currency-provider";
 import {
   ComposedChart,
   Area,
@@ -18,14 +19,22 @@ interface Props {
   data: RevenuePoint[];
 }
 
-function fmtBRL(cents: number) {
-  if (cents >= 100000) {
-    return `R$${(cents / 100000).toFixed(1)}k`.replace(".", ",");
+// Formata na moeda da clínica; usa notação compacta para valores grandes (eixo/header).
+function fmtMoney(cents: number, currency: string, locale: string) {
+  const big = cents >= 100000;
+  try {
+    return (cents / 100).toLocaleString(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+      ...(big ? { notation: "compact" as const } : {}),
+    });
+  } catch {
+    return `${(cents / 100).toFixed(0)} ${currency}`;
   }
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 }
 
-function makeTooltip(labels: { revenue: string; sessions: string }) {
+function makeTooltip(labels: { revenue: string; sessions: string }, fmt: (c: number) => string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
@@ -37,7 +46,7 @@ function makeTooltip(labels: { revenue: string; sessions: string }) {
         <div className="flex items-center gap-2 mb-[3px]">
           <span className="w-2 h-2 rounded-full bg-[#0F6E56]" />
           <span className="text-[#6B6A66]">{labels.revenue}:</span>
-          <span className="font-semibold text-[#0F1A2E]">{fmtBRL(revenue)}</span>
+          <span className="font-semibold text-[#0F1A2E]">{fmt(revenue)}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-[#2D8CFF]/70" />
@@ -51,7 +60,10 @@ function makeTooltip(labels: { revenue: string; sessions: string }) {
 
 export function RevenueChart({ data }: Props) {
   const t = useTranslations("dashboard.chart");
-  const CustomTooltip = makeTooltip({ revenue: t("revenue"), sessions: t("sessions") });
+  const locale = useLocale();
+  const currency = useClinicCurrency();
+  const fmt = (c: number) => fmtMoney(c, currency, locale);
+  const CustomTooltip = makeTooltip({ revenue: t("revenue"), sessions: t("sessions") }, fmt);
   const totalRevenue = data.reduce((s, d) => s + d.revenue, 0);
   const totalSessions = data.reduce((s, d) => s + d.sessions, 0);
   const hasData = totalRevenue > 0 || totalSessions > 0;
@@ -65,7 +77,7 @@ export function RevenueChart({ data }: Props) {
             {t("title", { count: data.length })}
           </p>
           <p className="text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-            {fmtBRL(totalRevenue)}
+            {fmt(totalRevenue)}
           </p>
         </div>
         <div className="flex items-center gap-[14px] text-[11px] text-[#A09E98] mt-[4px]">
@@ -103,7 +115,7 @@ export function RevenueChart({ data }: Props) {
               tick={{ fontSize: 10, fill: "#A09E98" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => fmtBRL(v)}
+              tickFormatter={(v) => fmt(v)}
             />
             <YAxis
               yAxisId="sessions"

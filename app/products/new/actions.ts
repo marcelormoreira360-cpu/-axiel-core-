@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createProduct } from "@/services/product-service";
+import { getClinicCurrency } from "@/services/finance-service";
 
 const ProductSchema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres").max(200),
@@ -63,7 +64,7 @@ export async function createProductAction(formData: FormData) {
     description: data.description || null,
     price_cents: priceCents,
     cost_cents: parseBRLtoCents(data.cost_brl),
-    currency: "BRL",
+    currency: await getClinicCurrency(clinic.id),
     sku: data.sku || null,
     inventory_quantity: data.inventory_quantity,
     safety_notes: data.safety_notes || null,

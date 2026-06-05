@@ -14,6 +14,7 @@ import {
 } from "@/services/monetization-service";
 import { OfferList } from "@/components/offer-list";
 import type { MonetizationOfferType } from "@/lib/types";
+import { getClinicCurrency } from "@/services/finance-service";
 
 export default async function OffersPage() {
   const t = await getTranslations("settings");
@@ -47,7 +48,7 @@ export default async function OffersPage() {
       name,
       offer_type,
       price_cents,
-      currency: "BRL",
+      currency: await getClinicCurrency(p.clinic_id),
       number_of_sessions,
       description,
       billing_interval,

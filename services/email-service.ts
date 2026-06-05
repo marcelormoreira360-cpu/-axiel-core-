@@ -5,6 +5,11 @@ import { isLocale, DEFAULT_LOCALE } from "@/i18n/locales";
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
 
+// Envio simples e genérico (assunto + HTML), para fluxos avulsos.
+export async function sendSimpleEmail(input: { to: string; subject: string; html: string }): Promise<void> {
+  await resend.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
+}
+
 type EmailT = Awaited<ReturnType<typeof getServerT>>;
 
 function htmlLang(locale: string | null | undefined) {

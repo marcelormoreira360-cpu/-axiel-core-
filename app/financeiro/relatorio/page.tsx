@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { FinanceReportClient } from "@/components/finance-report-client";
 
 export default async function FinanceReportPage() {
+  await (await import("@/lib/require-finance-access")).requireFinanceAccess();
   const t = await getTranslations("finance.report");
   return (
     <Shell>

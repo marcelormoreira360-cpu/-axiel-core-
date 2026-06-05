@@ -6,6 +6,8 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { getHotmartToken, listRecentHotmartPurchases } from "@/services/hotmart-service";
 import { HotmartForm } from "./hotmart-form";
 import { redirect } from "next/navigation";
+import { getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
 
 const STATUS_COLORS: Record<string, string> = {
   completed: "bg-[#E1F5EE] text-[#0F6E56]",
@@ -20,15 +22,12 @@ const STATUS_KEYS: Record<string, string> = {
   chargeback: "statusChargeback",
 };
 
-function formatBRL(cents: number | null) {
-  if (!cents) return "—";
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
 
 export default async function HotmartSettingsPage() {
   const t = await getTranslations("settings.hotmart");
   const locale = await getLocale();
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
   if (!clinic) redirect("/dashboard");
 
   const [hottok, purchases] = await Promise.all([
@@ -87,7 +86,7 @@ export default async function HotmartSettingsPage() {
                         <p className="text-xs text-black/40">{p.buyer_email}</p>
                       </td>
                       <td className="px-4 py-3 text-[#0F1A2E]">{p.product_name}</td>
-                      <td className="px-4 py-3 font-medium text-[#0F1A2E]">{formatBRL(p.price_cents)}</td>
+                      <td className="px-4 py-3 font-medium text-[#0F1A2E]">{p.price_cents == null ? "—" : formatMoney(p.price_cents, __cur, locale)}</td>
                       <td className="px-4 py-3">
                         <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${color}`}>{label}</span>
                       </td>

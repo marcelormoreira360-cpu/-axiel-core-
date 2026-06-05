@@ -37,6 +37,11 @@
       "description": "Um insight está pronto para revisão.",
       "reason": "Insights de IA devem ser revisados antes de virarem finais."
     },
+    "onboardingInsightReady": {
+      "title": "Gerar insight de entrada para {name}",
+      "description": "O paciente respondeu os questionários de entrada. Gere o insight de IA (rascunho) para revisar antes da 1ª sessão.",
+      "reason": "Os questionários de entrada já estão respondidos; o insight ajuda a preparar a primeira sessão."
+    },
     "followUpDue": {
       "title": "Fazer follow-up com {name}",
       "description": "{text}",

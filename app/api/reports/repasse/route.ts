@@ -1,7 +1,8 @@
 import PDFDocument from "pdfkit";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getRepasseHistory } from "@/services/repasse-service";
-import { formatBRL } from "@/services/finance-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
@@ -28,6 +29,7 @@ function escCsv(val: string | number | null | undefined): string {
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
+  const __cur = await getClinicCurrency(clinic.id);
 
   const url    = new URL(req.url);
   const month  = url.searchParams.get("month")  ?? undefined; // e.g. "2025-06"
@@ -136,7 +138,7 @@ export async function GET(req: Request) {
 
       // Summary
       doc.fillColor("#374151").font("Helvetica").fontSize(10)
-         .text(t("repasse.summary", { gross: formatBRL(totalGross), total: formatBRL(totalRepasse) }));
+         .text(t("repasse.summary", { gross: formatMoney(totalGross, __cur, locale), total: formatMoney(totalRepasse, __cur, locale) }));
       doc.moveDown(0.5);
 
       // Table header
@@ -161,12 +163,12 @@ export async function GET(req: Request) {
         doc.fillColor("#374151").font("Helvetica").fontSize(9)
            .text(r.professional_name ?? "—", 60, rowY, { width: 156 });
         doc.text(String(r.sessions_count), 224, rowY, { width: 76, align: "right" });
-        doc.text(formatBRL(r.gross_revenue_cents), 308, rowY, { width: 106, align: "right" });
+        doc.text(formatMoney(r.gross_revenue_cents, __cur, locale), 308, rowY, { width: 106, align: "right" });
         const pct = totalGross > 0 ? Math.round((r.repasse_cents / r.gross_revenue_cents) * 100) : 0;
         doc.text(`${pct}%`, 422, rowY, { width: 56, align: "right" });
         doc.fillColor(r.status === "paid" ? "#0F6E56" : "#d97706")
            .font("Helvetica-Bold").fontSize(9)
-           .text(formatBRL(r.repasse_cents), 486, rowY, { width: 56, align: "right" });
+           .text(formatMoney(r.repasse_cents, __cur, locale), 486, rowY, { width: 56, align: "right" });
 
         doc.y = rowY + 16;
       });

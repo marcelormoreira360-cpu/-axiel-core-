@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
+import { useClinicCurrency } from "@/components/currency-provider";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, BarChart,
@@ -10,16 +12,25 @@ import type {
   MethodBreakdown, ServiceBreakdownItem, SourceBreakdownItem,
 } from "@/services/report-service";
 
-// ── Formatters ──────────────────────────────────────────────────────────────
+// ── Formatters (moeda da clínica) ─────────────────────────────────────────────
 
-function fmtBRL(cents: number) {
-  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function fmtBRL(cents: number, currency: string, locale: string) {
+  try {
+    return (cents / 100).toLocaleString(locale, { style: "currency", currency });
+  } catch {
+    return `${(cents / 100).toFixed(2)} ${currency}`;
+  }
 }
 
-function fmtBRLShort(cents: number) {
-  const v = cents / 100;
-  if (v >= 1000) return `R$ ${(v / 1000).toFixed(1)}k`;
-  return `R$ ${v.toFixed(0)}`;
+function fmtBRLShort(cents: number, currency: string, locale: string) {
+  try {
+    return (cents / 100).toLocaleString(locale, {
+      style: "currency", currency, maximumFractionDigits: cents / 100 >= 1000 ? 1 : 0,
+      ...(cents / 100 >= 1000 ? { notation: "compact" as const } : {}),
+    });
+  } catch {
+    return `${(cents / 100).toFixed(0)} ${currency}`;
+  }
 }
 
 // ── ProgressBar (used for breakdowns) ────────────────────────────────────────
@@ -62,6 +73,8 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ── Main chart: Revenue bars + Sessions line ─────────────────────────────────
 
 function MainChart({ data }: { data: MonthlyPoint[] }) {
+  const currency = useClinicCurrency();
+  const locale = useLocale();
   const maxRevenue = Math.max(...data.map((d) => d.revenue_cents), 1);
 
   return (
@@ -80,7 +93,7 @@ function MainChart({ data }: { data: MonthlyPoint[] }) {
           tick={{ fontSize: 10, fill: "#A09E98" }}
           axisLine={false}
           tickLine={false}
-          tickFormatter={fmtBRLShort}
+          tickFormatter={(v) => fmtBRLShort(v as number, currency, locale)}
           width={52}
           domain={[0, maxRevenue * 1.15]}
         />
@@ -101,7 +114,7 @@ function MainChart({ data }: { data: MonthlyPoint[] }) {
             color: "#0F1A2E",
           }}
           formatter={(value, name) => {
-            if (name === "revenue_cents") return [fmtBRL(value as number), "Receita"];
+            if (name === "revenue_cents") return [fmtBRL(value as number, currency, locale), "Receita"];
             if (name === "sessions") return [value, "Sessões"];
             return [value, name];
           }}
@@ -189,6 +202,8 @@ function NewPatientsChart({ data }: { data: MonthlyPoint[] }) {
 // ── Breakdown sections ────────────────────────────────────────────────────────
 
 function PaymentMethodSection({ methods }: { methods: MethodBreakdown[] }) {
+  const currency = useClinicCurrency();
+  const locale = useLocale();
   if (methods.length === 0) {
     return <p className="text-[12px] text-[#D3D1C7]">Nenhum pagamento registrado.</p>;
   }
@@ -201,7 +216,7 @@ function PaymentMethodSection({ methods }: { methods: MethodBreakdown[] }) {
           label={m.label}
           value={m.amount_cents}
           max={maxVal}
-          sub={`${fmtBRL(m.amount_cents)} · ${m.count}x`}
+          sub={`${fmtBRL(m.amount_cents, currency, locale)} · ${m.count}x`}
           color="#0F6E56"
         />
       ))}
@@ -256,6 +271,8 @@ function SourcesSection({ sources }: { sources: SourceBreakdownItem[] }) {
 type Period = 3 | 6 | 12;
 
 export function RelatoriosCharts({ data }: { data: ReportTimeSeries }) {
+  const currency = useClinicCurrency();
+  const locale = useLocale();
   const [period, setPeriod] = useState<Period>(6);
 
   const sliced = data.monthly.slice(-period);
@@ -292,7 +309,7 @@ export function RelatoriosCharts({ data }: { data: ReportTimeSeries }) {
           ))}
         </div>
         <div className="flex gap-[14px] text-[11px] text-[#A09E98]">
-          <span><span className="font-semibold text-[#0F6E56]">{fmtBRL(totalRevenue)}</span> receita</span>
+          <span><span className="font-semibold text-[#0F6E56]">{fmtBRL(totalRevenue, currency, locale)}</span> receita</span>
           <span><span className="font-semibold text-[#2A7BC1]">{totalSessions}</span> sessões</span>
           <span><span className="font-semibold text-[#7B5EA7]">{totalPatients}</span> novos pacientes</span>
         </div>

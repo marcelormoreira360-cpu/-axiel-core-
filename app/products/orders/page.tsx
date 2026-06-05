@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { OrderChargeButtons } from "./order-charge-buttons";
 import { OrderDeliverButton } from "./order-deliver-button";
+import { formatMoney } from "@/lib/finance-utils";
 
 type DbOrder = {
   id: string;
@@ -41,7 +42,7 @@ const PAYMENT_STATUS_LABELS: Record<DbOrder["payment_status"], string> = {
 };
 
 function formatBRL(cents: number, currency: string) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(cents / 100);
+  return formatMoney(cents, currency, "pt-BR");
 }
 
 function formatDate(value: string) {

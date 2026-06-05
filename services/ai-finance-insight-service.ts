@@ -3,9 +3,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import {
   getFinanceKPIs,
   getMonthlyRevenue,
-  formatBRL,
+  getClinicCurrency,
   paymentMethodLabel,
 } from "./finance-service";
+import { formatMoney } from "@/lib/finance-utils";
 import { getRepasseHistory } from "./repasse-service";
 import type { PaymentMethod } from "@/lib/types";
 
@@ -54,11 +55,13 @@ export async function getLatestFinanceInsight(
 export async function generateFinanceInsight(
   clinicId: string,
 ): Promise<FinanceAIInsight> {
-  const [kpis, monthly, repasse] = await Promise.all([
+  const [kpis, monthly, repasse, __cur] = await Promise.all([
     getFinanceKPIs(clinicId),
     getMonthlyRevenue(clinicId),
     getRepasseHistory(clinicId),
+    getClinicCurrency(clinicId),
   ]);
+  const formatBRL = (c: number) => formatMoney(c, __cur, "pt-BR");
 
   // Build context strings
   const delta =

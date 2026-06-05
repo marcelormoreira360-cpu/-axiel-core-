@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import type { Patient, SessionType, AppointmentSource } from "@/lib/types";
+import { useFormatMoney } from "@/components/currency-provider";
 
 export interface ClinicUserOption {
   user_id: string;
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, defaultPatientId }: Props) {
+  const money = useFormatMoney();
   const t = useTranslations("schedule.form");
   const [isPending, startTransition] = useTransition();
   const defaultPatient = defaultPatientId ? (patients.find((p) => p.id === defaultPatientId) ?? null) : null;
@@ -223,7 +225,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
                   <div className="flex items-center gap-[8px]">
                     {type.price_cents > 0 && (
                       <span className={`text-[11px] font-medium ${isSelected ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
-                        {(type.price_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        {money(type.price_cents)}
                       </span>
                     )}
                     <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>

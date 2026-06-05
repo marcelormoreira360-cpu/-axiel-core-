@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import type { HotmartPurchaseFull } from "@/services/hotmart-service";
+import { useFormatMoney } from "@/components/currency-provider";
 
 const STATUS_TABS = [
   { key: "all",        labelKey: "tabAll" },
@@ -23,10 +24,6 @@ const STATUS_STYLES: Record<string, string> = {
   other:      "bg-[#F4F3EF] text-[#6B6A66]",
 };
 
-function formatBRL(cents: number | null, locale: string) {
-  if (!cents) return "—";
-  return (cents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" });
-}
 
 interface Props {
   purchases: HotmartPurchaseFull[];
@@ -49,6 +46,7 @@ export function HotmartClient({
   defaultTo,
   defaultSearch,
 }: Props) {
+  const money = useFormatMoney();
   const locale   = useLocale();
   const t        = useTranslations("hotmart");
   const router   = useRouter();
@@ -181,7 +179,7 @@ export function HotmartClient({
                           )}
                         </td>
                         <td className="px-4 py-3 font-medium text-[13px] text-[#0F1A2E] whitespace-nowrap">
-                          {formatBRL(p.price_cents, locale)}
+                          {p.price_cents == null ? "—" : money(p.price_cents)}
                           {p.currency && p.currency !== "BRL" && (
                             <span className="text-[10px] text-black/30 ml-1">{p.currency}</span>
                           )}

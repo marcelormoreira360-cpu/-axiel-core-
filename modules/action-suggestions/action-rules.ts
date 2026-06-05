@@ -45,9 +45,30 @@ export function buildActionSuggestions(input: {
   appointments: Appointment[];
   followUps: FollowUp[];
   aiReviews?: PendingAiReviewActionInput[];
+  onboardingInsightReady?: { patient_id: string; patient_name: string }[];
 }): ActionSuggestionDraft[] {
   const now = new Date();
   const drafts: ActionSuggestionDraft[] = [];
+
+  // Paciente terminou os questionários de entrada → sugerir gerar o insight de IA
+  (input.onboardingInsightReady ?? [])
+    .slice(0, 8)
+    .forEach((p) => {
+      drafts.push({
+        clinic_id: input.clinicId,
+        action_key: `onboarding_insight:${p.patient_id}`,
+        title: `Gerar insight de entrada para ${p.patient_name}`,
+        description: "O paciente respondeu os questionários de entrada. Gere o insight de IA (rascunho) para revisar antes da 1ª sessão.",
+        content_key: "onboardingInsightReady",
+        content_params: { name: p.patient_name },
+        priority: "medium",
+        category: "patient",
+        entity_type: "patient",
+        entity_id: p.patient_id,
+        suggested_url: `/patients/${p.patient_id}`,
+        reason: "Os questionários de entrada já estão respondidos; o insight ajuda a preparar a primeira sessão.",
+      });
+    });
 
   (input.aiReviews ?? [])
     .slice(0, 8)

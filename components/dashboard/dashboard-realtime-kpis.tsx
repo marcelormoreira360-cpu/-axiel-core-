@@ -5,8 +5,9 @@ import { useLocale, useTranslations } from "next-intl";
 import { ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { refreshDashboardData } from "@/app/dashboard/actions";
-import { sessionsDelta, revenueDelta, formatBRL } from "@/modules/dashboard/dashboard-kpis-utils";
+import { sessionsDelta, revenueDelta } from "@/modules/dashboard/dashboard-kpis-utils";
 import type { DashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
+import { useFormatMoney } from "@/components/currency-provider";
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ function deltaColor(current: number, previous: number) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount }: Props) {
+  const money = useFormatMoney();
   const t = useTranslations("dashboard.kpis");
   const locale = useLocale();
   const [kpis, setKpis] = useState<DashboardKPIs>(initialKpis);
@@ -127,7 +129,7 @@ export function DashboardRealtimeKpis({ clinicId, initialKpis, initialTodayCount
       <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[14px] py-[13px]">
         <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("revenue")}</p>
         <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2] transition-opacity ${isPending ? "opacity-50" : ""}`}>
-          {formatBRL(kpis.revenueThisMonth)}
+          {money(kpis.revenueThisMonth)}
         </p>
         <div className="flex items-center gap-[3px] mt-[4px]">
           <DeltaIcon current={kpis.revenueThisMonth} previous={kpis.revenueLastMonth} />

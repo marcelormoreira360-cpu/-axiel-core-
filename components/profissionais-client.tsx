@@ -5,10 +5,8 @@ import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { Loader2, TrendingUp, Users, Star, BarChart3, ChevronRight } from "lucide-react";
 import type { ProfessionalSummary } from "@/app/api/professionals/route";
+import { useFormatMoney } from "@/components/currency-provider";
 
-function formatBRL(cents: number, locale: string) {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(cents / 100);
-}
 
 function NpsBar({ value }: { value: number | null }) {
   if (value === null) return <span className="text-black/30 text-[12px]">—</span>;
@@ -28,6 +26,7 @@ function initials(name: string) {
 }
 
 export function ProfissionaisClient() {
+  const money = useFormatMoney();
   const t = useTranslations("professionals.list");
   const tRoles = useTranslations("common.roles");
   const locale = useLocale();
@@ -81,7 +80,7 @@ export function ProfissionaisClient() {
         {[
           { key: "professionals", label: t("kpiProfessionals"), value: String(professionals.length), icon: Users },
           { key: "sessions", label: t("kpiSessions"), value: String(totalSessions), icon: BarChart3 },
-          { key: "revenue", label: t("kpiRevenue"), value: formatBRL(totalRevenue, locale), icon: TrendingUp },
+          { key: "revenue", label: t("kpiRevenue"), value: money(totalRevenue), icon: TrendingUp },
           { key: "nps", label: t("kpiNps"), value: teamAvgNps !== null ? teamAvgNps.toFixed(1) : "—", icon: Star },
         ].map(({ key, label, value, icon: Icon }) => (
           <div key={key} className="bg-white rounded-2xl border border-black/[.07] p-4">
@@ -131,7 +130,7 @@ export function ProfissionaisClient() {
                   <p className="text-[10px] text-black/35">{t("statSessions")}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[14px] font-semibold text-[#0F1A2E]">{formatBRL(pro.revenueThisMonth, locale)}</p>
+                  <p className="text-[14px] font-semibold text-[#0F1A2E]">{money(pro.revenueThisMonth)}</p>
                   <p className="text-[10px] text-black/35">{t("statRevenue")}</p>
                 </div>
                 <div className="text-center min-w-[80px]">

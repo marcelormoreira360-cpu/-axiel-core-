@@ -5,6 +5,7 @@ import { useState, useTransition, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus, MessageCircle, ChevronDown, ChevronUp, Receipt, Trash2 } from "lucide-react";
 import { type PatientPortalData } from "@/services/patient-portal-service";
+import { useFormatMoney } from "@/components/currency-provider";
 import { PackagesSection } from "./packages-section";
 import { PortalBookingModal } from "./portal-booking-modal";
 import { NpsWidget } from "./nps-widget";
@@ -207,9 +208,10 @@ function PaySessionButton({
   brandColor: string;
 }) {
   const t = useTranslations("portal.dashboard");
+  const money = useFormatMoney();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const formatted = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(priceCents / 100);
+  const formatted = money(priceCents);
 
   async function handlePay() {
     setLoading(true);
@@ -902,6 +904,53 @@ export function PatientPortalDashboard({
                 </div>
               ))}
             </div>
+          </Section>
+        )}
+
+        {/* Questionários pendentes */}
+        {data.pendingAssessments.length > 0 && (
+          <Section title={t("pendingAssessmentsTitle")}>
+            <ul className="space-y-2">
+              {data.pendingAssessments.map((q, idx) => (
+                <li key={idx} className="flex items-center gap-2 text-sm text-[#0F1A2E]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  {q.name}
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-black/40 mt-3">{t("pendingAssessmentsHint")}</p>
+          </Section>
+        )}
+
+        {/* Sua evolução nos questionários */}
+        {data.assessmentProgress.some((p) => p.count > 0) && (
+          <Section title={t("progressTitle")}>
+            <div className="space-y-4">
+              {data.assessmentProgress.filter((p) => p.count > 0).map((p, idx) => {
+                const max = Math.max(...p.points.map((pt) => pt.score_percentage), 1);
+                return (
+                  <div key={idx}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-medium text-[#0F1A2E]">{p.template_name}</span>
+                      {p.count > 1 && <span className="text-xs text-black/40">{p.baseline}% → {p.latest}%</span>}
+                    </div>
+                    <div className="flex items-end gap-1.5 h-14">
+                      {p.points.map((pt, i) => (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                          <div
+                            className="w-full rounded-t bg-[#0F6E56]/70"
+                            style={{ height: `${Math.max(4, Math.round((pt.score_percentage / max) * 44))}px` }}
+                            title={`${pt.score_percentage}%`}
+                          />
+                          <span className="text-[9px] text-black/35">{new Date(pt.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-black/40 mt-3">{t("progressHint")}</p>
           </Section>
         )}
 

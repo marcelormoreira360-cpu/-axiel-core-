@@ -12,6 +12,7 @@ import { RepasseClient } from "./repasse-client";
 import { redirect } from "next/navigation";
 
 export default async function RepassePage() {
+  await (await import("@/lib/require-finance-access")).requireFinanceAccess();
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
   const t = await getTranslations("finance.repasse");

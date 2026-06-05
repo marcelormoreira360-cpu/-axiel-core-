@@ -3,7 +3,6 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { formatBRL } from "@/lib/finance-utils";
 import type { RepasseRule, RepasseEntry, ClinicProfessional } from "@/services/repasse-service";
 import {
   saveRepasseRuleAction,
@@ -11,6 +10,7 @@ import {
   calculateRepasseAction,
   markRepassePaidAction,
 } from "./actions";
+import { useFormatMoney } from "@/components/currency-provider";
 
 interface Props {
   rules: RepasseRule[];
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export function RepasseClient({ rules, history, professionals }: Props) {
+  const money = useFormatMoney();
   const t = useTranslations("finance.repasse");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -205,8 +206,8 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                     <td className="px-5 py-3 text-[12px] font-medium text-[#0F1A2E]">{entry.professional_name ?? "—"}</td>
                     <td className="px-5 py-3 text-[12px] text-[#6B6A66]">{entry.period_month}</td>
                     <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E]">{entry.sessions_count}</td>
-                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E]">{formatBRL(entry.gross_revenue_cents)}</td>
-                    <td className="px-5 py-3 text-[13px] font-semibold text-right text-[#0F6E56]">{formatBRL(entry.repasse_cents)}</td>
+                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E]">{money(entry.gross_revenue_cents)}</td>
+                    <td className="px-5 py-3 text-[13px] font-semibold text-right text-[#0F6E56]">{money(entry.repasse_cents)}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${
                         entry.status === "paid"

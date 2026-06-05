@@ -4,10 +4,10 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { FileText, RefreshCw, X, ExternalLink, Plus } from "lucide-react";
-import { formatBRL } from "@/lib/finance-utils";
 import { formatCpf, validateCpf } from "@/lib/utils";
 import type { NfseInvoice } from "@/services/nfse-service";
 import { emitNfseAction, syncNfseAction, cancelNfseAction } from "./actions";
+import { useFormatMoney } from "@/components/currency-provider";
 
 interface Props {
   invoices: NfseInvoice[];
@@ -23,6 +23,7 @@ const STATUS_CLS: Record<string, string> = {
 };
 
 export function NfseClient({ invoices, defaultServiceDescription, patients }: Props) {
+  const money = useFormatMoney();
   const t = useTranslations("finance.nfse");
   const locale = useLocale();
   const router = useRouter();
@@ -146,7 +147,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                         {inv.borrower_cpf && <span className="text-[10px] text-[#A09E98] ml-1">({inv.borrower_cpf})</span>}
                       </td>
                       <td className="px-4 py-3 text-[12px] font-semibold text-right text-[#0F1A2E]">
-                        {formatBRL(inv.amount_cents)}
+                        {money(inv.amount_cents)}
                       </td>
                       <td className="px-4 py-3 text-[12px] text-right text-[#6B6A66]">
                         {inv.nfse_number ?? "—"}

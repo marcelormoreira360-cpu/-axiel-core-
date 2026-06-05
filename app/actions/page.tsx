@@ -11,14 +11,15 @@ import { getAppointments } from "@/services/appointment-service";
 import { getPendingFollowUps } from "@/services/follow-up-service";
 import { getActionSuggestions, syncActionSuggestions } from "@/services/action-suggestion-service";
 import { buildActionSuggestions } from "@/modules/action-suggestions/action-rules";
+import { getPatientsNeedingOnboardingInsight } from "@/services/onboarding-insight-suggestion-service";
 
 export default async function ActionsPage() {
   const t = await getTranslations("actions");
   const clinic = await getCurrentClinic();
 
   if (clinic) {
-    const [patients, leads, appointments, followUps] = await Promise.all([getPatients(), getLeads(), getAppointments(), getPendingFollowUps()]);
-    await syncActionSuggestions(buildActionSuggestions({ clinicId: clinic.id, patients, leads, appointments, followUps }));
+    const [patients, leads, appointments, followUps, onboardingInsightReady] = await Promise.all([getPatients(), getLeads(), getAppointments(), getPendingFollowUps(), getPatientsNeedingOnboardingInsight(clinic.id)]);
+    await syncActionSuggestions(buildActionSuggestions({ clinicId: clinic.id, patients, leads, appointments, followUps, onboardingInsightReady }));
   }
 
   const actions = await getActionSuggestions({ clinicId: clinic?.id, status: ["pending", "accepted", "completed", "ignored"], limit: 50 });

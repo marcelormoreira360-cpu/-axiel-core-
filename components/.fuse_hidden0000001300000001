@@ -5,6 +5,10 @@ import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
 
+function money(cents: number) {
+  return (cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
 interface Props {
   sessionTypes: SessionType[];
   createAction: (fd: FormData) => Promise<void>;

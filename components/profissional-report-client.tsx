@@ -4,10 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Loader2, TrendingUp, Calendar, Star, CheckCircle2 } from "lucide-react";
 import type { ProfessionalReport } from "@/app/api/professionals/[id]/report/route";
+import { useFormatMoney } from "@/components/currency-provider";
 
-function formatBRL(cents: number, locale: string) {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(cents / 100);
-}
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -24,6 +22,7 @@ const PERIODS = [
 interface Props { professionalId: string }
 
 export function ProfissionalReportClient({ professionalId }: Props) {
+  const money = useFormatMoney();
   const t = useTranslations("professionals.report");
   const tRoles = useTranslations("common.roles");
   const locale = useLocale();
@@ -115,7 +114,7 @@ export function ProfissionalReportClient({ professionalId }: Props) {
             {[
               { key: "completed", label: t("kpiCompleted"), value: String(report.completed), sub: t("kpiCompletedSub", { count: report.totalSessions }), icon: Calendar },
               { key: "rate", label: t("kpiCompletionRate"),  value: `${report.completionRate}%`, sub: t("kpiCompletionSub", { count: report.noShow }), icon: CheckCircle2 },
-              { key: "revenue", label: t("kpiRevenue"),      value: formatBRL(report.totalRevenueCents, locale), sub: t("kpiRevenueSub", { value: formatBRL(report.avgTicketCents, locale) }), icon: TrendingUp },
+              { key: "revenue", label: t("kpiRevenue"),      value: money(report.totalRevenueCents), sub: t("kpiRevenueSub", { value: money(report.avgTicketCents) }), icon: TrendingUp },
               { key: "nps", label: t("kpiNps"),              value: report.avgNps !== null ? report.avgNps.toFixed(1) : "—", sub: report.npsIndex !== null ? t("kpiNpsIndex", { value: `${report.npsIndex > 0 ? "+" : ""}${report.npsIndex}` }) : t("kpiNpsRatings", { count: report.npsTotal }), icon: Star },
             ].map(({ key, label, value, sub, icon: Icon }) => (
               <div key={key} className="bg-white rounded-2xl border border-black/[.07] p-4">
@@ -158,7 +157,7 @@ export function ProfissionalReportClient({ professionalId }: Props) {
                       <span className="text-[11px] text-black/50 capitalize">{m.month}</span>
                       <div className="flex items-baseline gap-3">
                         <span className="text-[11px] font-medium text-[#0F1A2E]">{t("sessionsCount", { count: m.sessions })}</span>
-                        <span className="text-[11px] text-black/40">{formatBRL(m.revenueCents, locale)}</span>
+                        <span className="text-[11px] text-black/40">{money(m.revenueCents)}</span>
                       </div>
                     </div>
                     <div className="flex gap-1">
@@ -183,7 +182,7 @@ export function ProfissionalReportClient({ professionalId }: Props) {
                       <div className="flex items-baseline justify-between mb-1">
                         <span className="text-[12px] font-medium text-[#0F1A2E] truncate max-w-[55%]">{st.name}</span>
                         <span className="text-[12px] text-black/55 shrink-0">
-                          {st.count}× · {formatBRL(st.revenueCents, locale)}
+                          {st.count}× · {money(st.revenueCents)}
                         </span>
                       </div>
                       <div className="h-1.5 rounded-full bg-black/[.06]">

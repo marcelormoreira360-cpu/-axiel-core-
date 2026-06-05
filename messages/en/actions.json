@@ -37,6 +37,11 @@
       "description": "An insight is ready for review.",
       "reason": "AI insights should be reviewed before becoming final."
     },
+    "onboardingInsightReady": {
+      "title": "Generate entry insight for {name}",
+      "description": "The patient answered the intake questionnaires. Generate the AI insight (draft) to review before the first session.",
+      "reason": "The intake questionnaires are answered; the insight helps prepare the first session."
+    },
     "followUpDue": {
       "title": "Follow up with {name}",
       "description": "{text}",

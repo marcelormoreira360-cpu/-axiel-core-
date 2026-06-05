@@ -86,6 +86,10 @@ export async function createAppointment(input: {
   import("@/services/automation-service").then(({ scheduleAutomations }) =>
     scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {})
   );
+  // Questionários automáticos na 1ª sessão (fire-and-forget)
+  import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
+    sendOnboardingAssessments({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id }).catch(() => {})
+  );
 
   return appt;
 }

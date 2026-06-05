@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import nextDynamic from "next/dynamic";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { PatientPortalDashboard } from "@/components/patient-portal/patient-portal-dashboard";
 import { getPatientPortalDataByToken } from "@/services/patient-portal-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { CurrencyProvider } from "@/components/currency-provider";
 
 const PatientPushPrompt = nextDynamic(
   () => import("@/components/patient-portal/patient-push-prompt").then((m) => m.PatientPushPrompt),
@@ -63,15 +65,20 @@ export default async function PublicPatientDashboardPage({
   const paymentSuccess = resolvedSearch.pagamento === "sucesso";
   const subscriptionSuccess = resolvedSearch.assinatura === "sucesso";
 
+  const clinicCurrency = await getClinicCurrency(data.clinic.id);
+  const portalLocale = await getLocale();
+
   return (
     <>
-      <PatientPortalDashboard
-        data={data}
-        rawToken={token}
-        purchaseSuccess={purchaseSuccess}
-        paymentSuccess={paymentSuccess}
-        subscriptionSuccess={subscriptionSuccess}
-      />
+      <CurrencyProvider currency={clinicCurrency} locale={portalLocale}>
+        <PatientPortalDashboard
+          data={data}
+          rawToken={token}
+          purchaseSuccess={purchaseSuccess}
+          paymentSuccess={paymentSuccess}
+          subscriptionSuccess={subscriptionSuccess}
+        />
+      </CurrencyProvider>
       {/* Push notification prompt — rendered outside the dashboard scroll so it's always visible */}
       <div className="fixed bottom-4 left-4 right-4 max-w-sm mx-auto z-40 pointer-events-none">
         <div className="pointer-events-auto">

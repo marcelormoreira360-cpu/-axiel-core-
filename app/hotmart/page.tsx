@@ -5,6 +5,9 @@ import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getHotmartKPIs, listHotmartPurchases } from "@/services/hotmart-service";
 import { HotmartClient } from "./hotmart-client";
+import { getClinicCurrency } from "@/services/finance-service";
+import { formatMoney } from "@/lib/finance-utils";
+import { getLocale } from "next-intl/server";
 
 export default async function HotmartPage({
   searchParams,
@@ -12,6 +15,8 @@ export default async function HotmartPage({
   searchParams: Promise<{ status?: string; from?: string; to?: string; search?: string; page?: string }>;
 }) {
   const clinic = await getCurrentClinic();
+  const __cur = await getClinicCurrency(clinic?.id ?? "");
+  const __loc = await getLocale();
   if (!clinic) redirect("/dashboard");
 
   const sp     = await searchParams;
@@ -52,7 +57,7 @@ export default async function HotmartPage({
         <div className="bg-white border border-black/[.07] rounded-[12px] p-4">
           <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98]">Receita total</p>
           <p className="text-[22px] font-semibold text-[#0F1A2E] mt-1">
-            {(kpis.total_revenue_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+            {formatMoney(kpis.total_revenue_cents, __cur, __loc)}
           </p>
           <p className="text-[11px] text-[#A09E98] mt-0.5">compras confirmadas</p>
         </div>

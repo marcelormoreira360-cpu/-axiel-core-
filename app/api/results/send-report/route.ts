@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getClinicCurrency } from "@/services/finance-service";
 import { getCurrentAuthUser } from "@/services/user-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -29,6 +30,7 @@ export async function POST() {
     const endISO = firstOfThisMonth.toISOString();
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const locale = await resolveClinicLocale(clinic.id);
+    const __cur = await getClinicCurrency(clinic.id);
     const t = await getServerT(locale, "emails");
     const monthName = firstOfLastMonth.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
@@ -83,7 +85,7 @@ export async function POST() {
     const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
     const revenueStr =
       revenueCents > 0
-        ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: "BRL" })
+        ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: __cur })
         : "—";
 
     const html = await render(
