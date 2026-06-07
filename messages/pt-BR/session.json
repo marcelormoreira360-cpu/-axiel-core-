@@ -9,7 +9,9 @@
     "lastForm": "Último formulário aplicado",
     "formFallback": "Formulário",
     "intake": "Anamnese",
-    "intakeCount": "({count, plural, one {# resposta} other {# respostas}})"
+    "intakeCount": "({count, plural, one {# resposta} other {# respostas}})",
+    "chiefComplaint": "Queixa principal",
+    "caseSummary": "Resumo do caso"
   },
   "panel": {
     "patientFallback": "Paciente",
@@ -45,16 +47,44 @@
     "start": "Início",
     "minutes": "{count} min",
     "soap": {
-      "subjective": { "label": "S — Subjetivo", "placeholder": "Queixas, sintomas e percepções relatadas pelo paciente..." },
-      "objective": { "label": "O — Objetivo", "placeholder": "Achados clínicos: exame físico, sinais vitais, testes aplicados..." },
-      "assessment_note": { "label": "A — Avaliação", "placeholder": "Hipótese diagnóstica, análise clínica, evolução do quadro..." },
-      "plan": { "label": "P — Plano", "placeholder": "Conduta terapêutica, prescrições, orientações, próximos passos..." }
+      "subjective": {
+        "label": "S — Subjetivo",
+        "placeholder": "Queixas, sintomas e percepções relatadas pelo paciente..."
+      },
+      "objective": {
+        "label": "O — Objetivo",
+        "placeholder": "Achados clínicos: exame físico, sinais vitais, testes aplicados..."
+      },
+      "assessment_note": {
+        "label": "A — Avaliação",
+        "placeholder": "Hipótese diagnóstica, análise clínica, evolução do quadro..."
+      },
+      "plan": {
+        "label": "P — Plano",
+        "placeholder": "Conduta terapêutica, prescrições, orientações, próximos passos..."
+      }
     },
     "vitals": {
-      "dor": { "label": "Dor", "low": "Sem dor", "high": "Intensa" },
-      "energia": { "label": "Energia", "low": "Exausto", "high": "Plena" },
-      "humor": { "label": "Humor", "low": "Ruim", "high": "Ótimo" },
-      "sono": { "label": "Sono", "low": "Péssimo", "high": "Ótimo" }
+      "dor": {
+        "label": "Dor",
+        "low": "Sem dor",
+        "high": "Intensa"
+      },
+      "energia": {
+        "label": "Energia",
+        "low": "Exausto",
+        "high": "Plena"
+      },
+      "humor": {
+        "label": "Humor",
+        "low": "Ruim",
+        "high": "Ótimo"
+      },
+      "sono": {
+        "label": "Sono",
+        "low": "Péssimo",
+        "high": "Ótimo"
+      }
     }
   }
 }

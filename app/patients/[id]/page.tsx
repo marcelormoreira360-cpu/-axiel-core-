@@ -30,6 +30,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
+import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { WaitlistButton } from "@/components/waitlist-button";
@@ -223,6 +224,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Intelligence strip ── */}
       <PatientIntelligenceStrip engagement={engagement} />
+
+      {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
+      <PatientCaseSummaryCard
+        patientId={patient.id}
+        chiefComplaint={patient.chief_complaint}
+        caseSummary={patient.case_summary}
+      />
 
       {/* ── 3-column body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-t-0 border-black/[.07] rounded-b-[12px] overflow-hidden mb-5">

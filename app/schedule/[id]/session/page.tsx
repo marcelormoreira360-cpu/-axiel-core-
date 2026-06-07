@@ -7,6 +7,7 @@ import { SessionRecordingPanel } from "@/components/session-recording-panel";
 import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
 import { getAppointmentById } from "@/services/appointment-service";
+import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
@@ -27,12 +28,13 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const t = await getTranslations("session.page");
   const locale = await getLocale();
 
-  const [record, recordings, intakeResponses, assessmentResponses, prevRecords] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
     getPatientIntakeResponses(appointment.patient_id),
     getPatientAssessmentResponses(appointment.patient_id),
     getSessionRecordsByPatient(appointment.patient_id),
+    getPatientById(appointment.patient_id),
   ]);
 
   const patientName =
@@ -92,6 +94,24 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
           startsAt={appointment.starts_at}
           patientName={patientName}
         />
+      )}
+
+      {/* Queixa principal + resumo do caso — fixos em toda sessão (Feature 2) */}
+      {(patient?.chief_complaint || patient?.case_summary) && (
+        <div className="mb-5 bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[12px] p-[15px]">
+          {patient?.chief_complaint && (
+            <div className="mb-[8px]">
+              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("chiefComplaint")}</p>
+              <p className="text-[14px] font-medium text-[#0F1A2E]">{patient.chief_complaint}</p>
+            </div>
+          )}
+          {patient?.case_summary && (
+            <div>
+              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("caseSummary")}</p>
+              <p className="text-[12px] text-[#3A4A42] leading-relaxed whitespace-pre-wrap">{patient.case_summary}</p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Contexto do paciente — anamnese, assessments, última sessão */}

@@ -60,6 +60,8 @@ export type Patient = {
   date_of_birth: string | null;
   status: "active" | "inactive" | "archived";
   notes: string | null;
+  chief_complaint: string | null;
+  case_summary: string | null;
   address_line: string | null;
   city: string | null;
   state: string | null;

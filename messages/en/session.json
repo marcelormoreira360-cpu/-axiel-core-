@@ -9,7 +9,9 @@
     "lastForm": "Last form completed",
     "formFallback": "Form",
     "intake": "Intake",
-    "intakeCount": "({count, plural, one {# answer} other {# answers}})"
+    "intakeCount": "({count, plural, one {# answer} other {# answers}})",
+    "chiefComplaint": "Chief complaint",
+    "caseSummary": "Case summary"
   },
   "panel": {
     "patientFallback": "Patient",
@@ -45,16 +47,44 @@
     "start": "Start",
     "minutes": "{count} min",
     "soap": {
-      "subjective": { "label": "S — Subjective", "placeholder": "Complaints, symptoms and perceptions reported by the patient..." },
-      "objective": { "label": "O — Objective", "placeholder": "Clinical findings: physical exam, vitals, tests applied..." },
-      "assessment_note": { "label": "A — Assessment", "placeholder": "Diagnostic hypothesis, clinical analysis, progress of the condition..." },
-      "plan": { "label": "P — Plan", "placeholder": "Therapeutic plan, prescriptions, guidance, next steps..." }
+      "subjective": {
+        "label": "S — Subjective",
+        "placeholder": "Complaints, symptoms and perceptions reported by the patient..."
+      },
+      "objective": {
+        "label": "O — Objective",
+        "placeholder": "Clinical findings: physical exam, vitals, tests applied..."
+      },
+      "assessment_note": {
+        "label": "A — Assessment",
+        "placeholder": "Diagnostic hypothesis, clinical analysis, progress of the condition..."
+      },
+      "plan": {
+        "label": "P — Plan",
+        "placeholder": "Therapeutic plan, prescriptions, guidance, next steps..."
+      }
     },
     "vitals": {
-      "dor": { "label": "Pain", "low": "No pain", "high": "Severe" },
-      "energia": { "label": "Energy", "low": "Exhausted", "high": "Full" },
-      "humor": { "label": "Mood", "low": "Bad", "high": "Great" },
-      "sono": { "label": "Sleep", "low": "Poor", "high": "Great" }
+      "dor": {
+        "label": "Pain",
+        "low": "No pain",
+        "high": "Severe"
+      },
+      "energia": {
+        "label": "Energy",
+        "low": "Exhausted",
+        "high": "Full"
+      },
+      "humor": {
+        "label": "Mood",
+        "low": "Bad",
+        "high": "Great"
+      },
+      "sono": {
+        "label": "Sleep",
+        "low": "Poor",
+        "high": "Great"
+      }
     }
   }
 }

@@ -62,5 +62,19 @@
     "count": "{count, plural, one {# resultado} other {# resultados}}",
     "fill": "Preencher",
     "empty": "Nenhum formulário preenchido ainda."
+  },
+  "caseSummary": {
+    "title": "Resumo do caso",
+    "chiefLabel": "Queixa principal",
+    "chiefPlaceholder": "Ex.: Fadiga e dores articulares há 6 meses",
+    "summaryLabel": "Resumo / andamento do tratamento",
+    "summaryPlaceholder": "Histórico, hipóteses e evolução ao longo das sessões…",
+    "edit": "Editar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "saved": "Salvo",
+    "empty": "Sem resumo ainda. Clique em editar para registrar a queixa principal e o caso.",
+    "errorSave": "Não foi possível salvar. Tente novamente."
   }
 }

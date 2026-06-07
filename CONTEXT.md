@@ -20,6 +20,19 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Resumo do caso + queixa principal — Feature 2 (07/06)
+
+Queixa principal fixa e resumo do caso sempre à vista (ficha + toda sessão).
+
+- **Migration `067_patient_case_summary.sql` APLICADA** — `patients.chief_complaint text` + `patients.case_summary text`.
+- **Tipos**: `Patient` ganhou os 2 campos; `updatePatient` Pick estendido. Fixtures de teste atualizados (action-rules, ai-placeholder).
+- **Action** `app/patients/[id]/case-summary/actions.ts` (`saveCaseSummaryAction`, escopo de clínica via `updatePatient`, `revalidatePath`).
+- **Card editável** `components/patient-case-summary-card.tsx` (client, `useActionState`, edição inline) na ficha logo após o `PatientIntelligenceStrip`.
+- **Sessão**: bloco fixo (queixa principal + resumo) no topo de `schedule/[id]/session` — sempre visível; página passou a buscar `getPatientById`.
+- i18n: `patientProfile.caseSummary.*` e `session.page.chiefComplaint/caseSummary` (PT/EN).
+- Validado: `tsc -p tsconfig.check.json` = 0; `verify-i18n.mjs` paridade OK.
+- **Próxima**: Feature 3 (testes clínicos presenciais na 1ª sessão).
+
 ## ✅ Grau de disfunção configurável — Feature 1 (07/06)
 
 Fluxo comercial: o **motor** é o produto; os questionários (QRM, Q-SNA…) são dados por clínica. Cada template agora tem uma régua de interpretação própria.

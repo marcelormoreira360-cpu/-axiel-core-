@@ -62,5 +62,19 @@
     "count": "{count, plural, one {# result} other {# results}}",
     "fill": "Fill out",
     "empty": "No forms filled out yet."
+  },
+  "caseSummary": {
+    "title": "Case summary",
+    "chiefLabel": "Chief complaint",
+    "chiefPlaceholder": "E.g.: Fatigue and joint pain for 6 months",
+    "summaryLabel": "Summary / treatment progress",
+    "summaryPlaceholder": "History, hypotheses and evolution across sessions…",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "saved": "Saved",
+    "empty": "No summary yet. Click edit to record the chief complaint and the case.",
+    "errorSave": "Could not save. Please try again."
   }
 }
