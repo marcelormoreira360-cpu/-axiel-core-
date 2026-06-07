@@ -205,6 +205,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         appointment={appointment}
         record={record}
         saved={saved === "1"}
+        suggestedTests={
+          (prevRecords.find((r) => r.appointment_id !== id && (r.clinical_tests?.length ?? 0) > 0)
+            ?.clinical_tests ?? [])
+            .map((ct) => ct.name)
+            .filter(Boolean)
+        }
       />
 
       {/* Zoom cloud recordings */}

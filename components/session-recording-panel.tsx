@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useActionState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
-import type { Appointment, SessionRecord } from "@/lib/types";
+import type { Appointment, SessionRecord, ClinicalTestResult } from "@/lib/types";
 import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
@@ -11,11 +11,19 @@ import { SessionInsightGenerator } from "@/components/session-insight-generator"
 type RecordingState = "idle" | "recording" | "transcribing";
 type NoteMode = "livre" | "soap";
 
+type ClinicalTestDraft = ClinicalTestResult & { tempId: string };
+
 type Props = {
   appointment: Appointment;
   record: SessionRecord | null;
   saved?: boolean;
+  /** Nomes de testes da última sessão (carry-forward) quando esta ainda não tem. */
+  suggestedTests?: string[];
 };
+
+function uid() {
+  return Math.random().toString(36).slice(2);
+}
 
 type VitalKey = "dor" | "energia" | "humor" | "sono";
 
@@ -33,10 +41,19 @@ const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan
   { key: "plan",            short: "P" },
 ];
 
-export function SessionRecordingPanel({ appointment, record, saved }: Props) {
+export function SessionRecordingPanel({ appointment, record, saved, suggestedTests = [] }: Props) {
   const t = useTranslations("session.panel");
   const locale = useLocale();
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
+
+  const [clinicalTests, setClinicalTests] = useState<ClinicalTestDraft[]>(() => {
+    const existing = record?.clinical_tests ?? [];
+    if (existing.length > 0) {
+      return existing.map((tst) => ({ ...tst, tempId: uid() }));
+    }
+    // Carry-forward: repete os nomes da última sessão com resultado em branco.
+    return suggestedTests.map((name) => ({ tempId: uid(), name, result: "", notes: "" }));
+  });
 
   const [saveState, saveAction] = useActionState<SaveSessionState, FormData>(saveSessionRecord, null);
   const [mode, setMode] = useState<NoteMode>(initialMode);
@@ -70,6 +87,10 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
 
   const patientName = appointment.patients?.full_name ?? t("patientFallback");
   const observationsValue = useMemo(() => JSON.stringify(observations), [observations]);
+  const clinicalTestsValue = useMemo(
+    () => JSON.stringify(clinicalTests.map(({ name, result, notes }) => ({ name, result, notes }))),
+    [clinicalTests],
+  );
 
   const sessionDate = new Date(appointment.starts_at).toLocaleDateString(locale, {
     weekday: "long",
@@ -108,6 +129,18 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
 
   function removeObservation(i: number) {
     setObservations((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function addClinicalTest() {
+    setClinicalTests((prev) => [...prev, { tempId: uid(), name: "", result: "", notes: "" }]);
+  }
+
+  function updateClinicalTest(tempId: string, patch: Partial<ClinicalTestResult>) {
+    setClinicalTests((prev) => prev.map((tst) => (tst.tempId === tempId ? { ...tst, ...patch } : tst)));
+  }
+
+  function removeClinicalTest(tempId: string) {
+    setClinicalTests((prev) => prev.filter((tst) => tst.tempId !== tempId));
   }
 
   function formatElapsed(secs: number) {
@@ -212,6 +245,7 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
       <input type="hidden" name="patient_id" value={appointment.patient_id} />
       <input type="hidden" name="clinic_id" value={appointment.clinic_id} />
       <input type="hidden" name="key_observations" value={observationsValue} />
+      <input type="hidden" name="clinical_tests" value={clinicalTestsValue} />
       <input type="hidden" name="soap_mode" value={mode === "soap" ? "1" : "0"} />
       {/* Vitals hidden inputs */}
       {VITALS_CONFIG.map(({ key }) => (
@@ -530,6 +564,65 @@ export function SessionRecordingPanel({ appointment, record, saved }: Props) {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Testes clínicos presenciais (Feature 3) */}
+          <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+            <div className="mb-[10px]">
+              <label className="text-[11px] font-medium text-[#6B6A66] block">{t("clinicalTestsTitle")}</label>
+              <p className="text-[10px] text-[#A09E98] mt-[2px]">{t("clinicalTestsHint")}</p>
+            </div>
+
+            <div className="space-y-[8px]">
+              {clinicalTests.length === 0 ? (
+                <p className="text-[12px] text-[#D3D1C7] px-[2px]">{t("noClinicalTests")}</p>
+              ) : (
+                clinicalTests.map((tst) => (
+                  <div key={tst.tempId} className="bg-[#FAFAF8] rounded-[8px] px-[10px] py-[8px]">
+                    <div className="flex items-start gap-[6px]">
+                      <div className="flex-1 space-y-[5px]">
+                        <input
+                          type="text"
+                          value={tst.name}
+                          onChange={(e) => updateClinicalTest(tst.tempId, { name: e.target.value })}
+                          placeholder={t("clinicalTestName")}
+                          className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[12px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                        />
+                        <input
+                          type="text"
+                          value={tst.result}
+                          onChange={(e) => updateClinicalTest(tst.tempId, { result: e.target.value })}
+                          placeholder={t("clinicalTestResult")}
+                          className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                        />
+                        <input
+                          type="text"
+                          value={tst.notes ?? ""}
+                          onChange={(e) => updateClinicalTest(tst.tempId, { notes: e.target.value })}
+                          placeholder={t("clinicalTestNotes")}
+                          className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-[#6B6A66] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeClinicalTest(tst.tempId)}
+                        className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 transition shrink-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={addClinicalTest}
+              className="mt-[10px] flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t("addClinicalTest")}
+            </button>
           </div>
 
           {/* AI Insight generator */}

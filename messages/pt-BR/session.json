@@ -85,6 +85,13 @@
         "low": "Péssimo",
         "high": "Ótimo"
       }
-    }
+    },
+    "clinicalTestsTitle": "Testes clínicos presenciais",
+    "clinicalTestsHint": "Repetem os nomes da última sessão para comparar a evolução.",
+    "clinicalTestName": "Nome do teste",
+    "clinicalTestResult": "Resultado",
+    "clinicalTestNotes": "Observação (opcional)",
+    "addClinicalTest": "Adicionar teste",
+    "noClinicalTests": "Nenhum teste registrado nesta sessão."
   }
 }

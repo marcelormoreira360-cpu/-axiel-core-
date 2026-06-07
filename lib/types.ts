@@ -170,6 +170,13 @@ export type SessionVitals = {
   sono?: number | null;     // 1–5 (1=péssimo, 5=ótimo)
 };
 
+// Teste clínico presencial registrado na sessão (Feature 3).
+export type ClinicalTestResult = {
+  name: string;
+  result: string;
+  notes?: string;
+};
+
 export type SessionRecord = {
   id: string;
   clinic_id: string;
@@ -186,6 +193,8 @@ export type SessionRecord = {
   plan: string | null;
   // Patient-reported vitals
   vitals: SessionVitals | null;
+  // Testes clínicos presenciais (Feature 3)
+  clinical_tests: ClinicalTestResult[] | null;
   created_at: string;
   updated_at: string;
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;

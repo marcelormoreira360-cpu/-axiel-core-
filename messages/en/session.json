@@ -85,6 +85,13 @@
         "low": "Poor",
         "high": "Great"
       }
-    }
+    },
+    "clinicalTestsTitle": "In-person clinical tests",
+    "clinicalTestsHint": "Names carry over from the last session so you can compare progress.",
+    "clinicalTestName": "Test name",
+    "clinicalTestResult": "Result",
+    "clinicalTestNotes": "Note (optional)",
+    "addClinicalTest": "Add test",
+    "noClinicalTests": "No tests recorded in this session."
   }
 }

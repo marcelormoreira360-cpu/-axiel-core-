@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { upsertSessionRecord } from "@/services/session-recording-service";
 import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
 import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
-import type { AiInsight } from "@/lib/types";
+import type { AiInsight, ClinicalTestResult } from "@/lib/types";
 
 export type SaveSessionState = { error?: string } | null;
 
@@ -49,6 +49,24 @@ export async function saveSessionRecord(
     keyObservations = [];
   }
 
+  // Testes clínicos presenciais (Feature 3): só linhas com nome preenchido
+  let clinicalTests: ClinicalTestResult[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("clinical_tests") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      clinicalTests = parsed
+        .filter((r): r is { name: unknown; result?: unknown; notes?: unknown } => !!r && typeof r === "object")
+        .map((r) => ({
+          name: String(r.name ?? "").trim(),
+          result: String(r.result ?? "").trim(),
+          notes: String(r.notes ?? "").trim() || undefined,
+        }))
+        .filter((r) => r.name);
+    }
+  } catch {
+    clinicalTests = [];
+  }
+
   if (!appointmentId || !patientId || !clinicId) {
     return { error: "Informações da sessão estão incompletas. Recarregue a página." };
   }
@@ -66,6 +84,7 @@ export async function saveSessionRecord(
       assessment_note: assessmentNote,
       plan,
       vitals:          hasVitals ? vitals : null,
+      clinical_tests:  clinicalTests.length ? clinicalTests : null,
     });
   } catch (err: unknown) {
     console.error("[saveSessionRecord] upsert failed:", err);

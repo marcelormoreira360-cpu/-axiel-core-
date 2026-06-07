@@ -20,6 +20,18 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Testes clínicos presenciais — Feature 3 (07/06)
+
+Espaço na sessão para registrar os testes presenciais (bateria própria da clínica, sem catálogo fixo).
+
+- **Migration `068_session_clinical_tests.sql` APLICADA** — `session_records.clinical_tests jsonb` (array de `{name, result, notes?}`).
+- **Tipo** `ClinicalTestResult` + `SessionRecord.clinical_tests`. `upsertSessionRecord` e `saveSessionRecord` (parse/sanitize: só linhas com `name`) gravam o campo.
+- **Painel** (`session-recording-panel`): seção "Testes clínicos presenciais" no painel direito (linhas repetíveis nome/resultado/observação), serializada em hidden input.
+- **Carry-forward**: a página da sessão passa `suggestedTests` (nomes do último `session_record` com testes, de outro agendamento); se a sessão atual ainda não tem testes, as linhas vêm pré-preenchidas com esses nomes e resultado em branco — vira a "bateria padrão" sem precisar de tela de configuração.
+- i18n `session.panel.clinicalTests*`/`clinicalTest*` (PT/EN).
+- Validado: `tsc -p tsconfig.check.json` = 0; `verify-i18n.mjs` paridade OK.
+- **As 3 features do fluxo comercial estão concluídas** (grau de disfunção · resumo do caso · testes presenciais).
+
 ## ✅ Resumo do caso + queixa principal — Feature 2 (07/06)
 
 Queixa principal fixa e resumo do caso sempre à vista (ficha + toda sessão).
