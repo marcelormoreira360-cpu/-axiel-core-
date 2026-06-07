@@ -11,25 +11,86 @@
     "auditBadge": "Admin",
     "auditText": "Full history of system actions and sent communications.",
     "items": {
-      "profile": { "title": "My profile", "text": "Update your name, email and login password." },
-      "equipe": { "title": "Team", "text": "Invite practitioners, manage roles and clinic access." },
-      "practitioners": { "title": "Practitioners", "text": "Public profile, specialty and schedule for each practitioner." },
-      "branding": { "title": "Branding", "text": "Your clinic's logo and primary color on the portal and booking pages." },
-      "regional": { "title": "Regional", "text": "Default timezone and currency used across the platform." },
-      "clinic": { "title": "Clinic setup", "text": "Clinic profile and basic settings." },
-      "integrations": { "title": "Integrations", "text": "Google Calendar, Zoom and iCal feed for Apple Calendar." },
-      "lgpd": { "title": "Privacy & data protection", "text": "Manage patient data deletion requests (right to be forgotten)." },
-      "usage": { "title": "Account usage", "text": "Patients, users and resources consumed on the current plan." },
-      "sessionTypes": { "title": "Session types", "text": "Modalities, durations, prices and Zoom setup per type." },
-      "offers": { "title": "Offers & packages", "text": "Create session packages and monthly plans visible in the patient portal." },
-      "lembretes": { "title": "Automatic reminders", "text": "Configure appointment reminders via WhatsApp and email." },
-      "whatsapp": { "title": "WhatsApp Bot", "text": "Configure the AI assistant: name, program, prices and language." },
-      "voice": { "title": "AI calls", "text": "AI answers calls in Portuguese and English with a neural voice. Same persona as the WhatsApp Bot." },
-      "intake": { "title": "Intake forms", "text": "Questions patients answer before the appointment." },
-      "monetization": { "title": "Packages", "text": "Session packages and membership plans." },
-      "followUps": { "title": "Follow-ups", "text": "Manual reminders and follow-up messages." },
-      "getStarted": { "title": "Setup checklist", "text": "Simplified onboarding flow." },
-      "billing": { "title": "Billing", "text": "Subscription, trial period, upgrades and invoices." }
+      "profile": {
+        "title": "My profile",
+        "text": "Update your name, email and login password."
+      },
+      "equipe": {
+        "title": "Team",
+        "text": "Invite practitioners, manage roles and clinic access."
+      },
+      "practitioners": {
+        "title": "Practitioners",
+        "text": "Public profile, specialty and schedule for each practitioner."
+      },
+      "branding": {
+        "title": "Branding",
+        "text": "Your clinic's logo and primary color on the portal and booking pages."
+      },
+      "regional": {
+        "title": "Regional",
+        "text": "Default timezone and currency used across the platform."
+      },
+      "clinic": {
+        "title": "Clinic setup",
+        "text": "Clinic profile and basic settings."
+      },
+      "integrations": {
+        "title": "Integrations",
+        "text": "Google Calendar, Zoom and iCal feed for Apple Calendar."
+      },
+      "lgpd": {
+        "title": "Privacy & data protection",
+        "text": "Manage patient data deletion requests (right to be forgotten)."
+      },
+      "usage": {
+        "title": "Account usage",
+        "text": "Patients, users and resources consumed on the current plan."
+      },
+      "sessionTypes": {
+        "title": "Session types",
+        "text": "Modalities, durations, prices and Zoom setup per type."
+      },
+      "offers": {
+        "title": "Offers & packages",
+        "text": "Create session packages and monthly plans visible in the patient portal."
+      },
+      "lembretes": {
+        "title": "Automatic reminders",
+        "text": "Configure appointment reminders via WhatsApp and email."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Bot",
+        "text": "Configure the AI assistant: name, program, prices and language."
+      },
+      "voice": {
+        "title": "AI calls",
+        "text": "AI answers calls in Portuguese and English with a neural voice. Same persona as the WhatsApp Bot."
+      },
+      "intake": {
+        "title": "Intake forms",
+        "text": "Questions patients answer before the appointment."
+      },
+      "monetization": {
+        "title": "Packages",
+        "text": "Session packages and membership plans."
+      },
+      "followUps": {
+        "title": "Follow-ups",
+        "text": "Manual reminders and follow-up messages."
+      },
+      "getStarted": {
+        "title": "Setup checklist",
+        "text": "Simplified onboarding flow."
+      },
+      "billing": {
+        "title": "Billing",
+        "text": "Subscription, trial period, upgrades and invoices."
+      },
+      "clinicalTests": {
+        "title": "Clinical tests",
+        "text": "Battery of in-person tests applied in sessions."
+      }
     }
   },
   "profile": {
@@ -505,5 +566,17 @@
     "afterDesc": "Call the purchased number — the AI will answer immediately using the persona and sales flow configured in <a>WhatsApp Bot</a>.",
     "personaTitle": "Call persona",
     "personaDesc": "The AI on calls uses exactly the same configuration as the WhatsApp Bot (name, specialty, methodology, prices). To change what it says, edit it in <a>Settings → WhatsApp Bot</a>."
+  },
+  "clinicalTests": {
+    "title": "In-person clinical tests",
+    "subtitle": "Set up the battery of tests your clinic runs in sessions. They show up ready to fill on the session screen.",
+    "label": "Test battery",
+    "placeholder": "Test name (e.g., Romberg, grip strength)",
+    "add": "Add test",
+    "save": "Save catalog",
+    "saving": "Saving…",
+    "saved": "Catalog saved",
+    "empty": "No tests in the catalog yet.",
+    "errorSave": "Could not save. Please try again."
   }
 }

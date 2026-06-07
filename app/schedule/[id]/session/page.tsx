@@ -8,6 +8,7 @@ import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
 import { getAppointmentById } from "@/services/appointment-service";
 import { getPatientById } from "@/services/patient-service";
+import { getClinicalTestCatalog } from "@/services/clinic-service";
 import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
@@ -28,14 +29,22 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const t = await getTranslations("session.page");
   const locale = await getLocale();
 
-  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
     getPatientIntakeResponses(appointment.patient_id),
     getPatientAssessmentResponses(appointment.patient_id),
     getSessionRecordsByPatient(appointment.patient_id),
     getPatientById(appointment.patient_id),
+    getClinicalTestCatalog(appointment.clinic_id),
   ]);
+
+  // Sugestão de testes na sessão: catálogo da clínica + bateria da última sessão (dedup)
+  const carryForwardTests = (prevRecords.find((r) => r.appointment_id !== id && (r.clinical_tests?.length ?? 0) > 0)
+    ?.clinical_tests ?? [])
+    .map((ct) => ct.name)
+    .filter(Boolean);
+  const suggestedTests = [...new Set([...testCatalog, ...carryForwardTests])];
 
   const patientName =
     (Array.isArray(appointment.patients)
@@ -220,12 +229,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         appointment={appointment}
         record={record}
         saved={saved === "1"}
-        suggestedTests={
-          (prevRecords.find((r) => r.appointment_id !== id && (r.clinical_tests?.length ?? 0) > 0)
-            ?.clinical_tests ?? [])
-            .map((ct) => ct.name)
-            .filter(Boolean)
-        }
+        suggestedTests={suggestedTests}
       />
 
       {/* Zoom cloud recordings */}

@@ -163,6 +163,20 @@ export async function getClinicSettings(clinicId: string): Promise<{
   };
 }
 
+// ── Catálogo de testes clínicos presenciais (Feature 3 — bateria da clínica) ────
+export async function getClinicalTestCatalog(clinicId: string): Promise<string[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  const raw = (data?.settings as Record<string, unknown> | null)?.clinical_test_catalog;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((x): x is string => typeof x === "string" && x.trim().length > 0).map((x) => x.trim());
+}
+
 export async function updateClinicSettings(clinicId: string, input: {
   timezone?: string;
   default_currency?: string;

@@ -20,6 +20,13 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Faixas por seção do Q-SNA + catálogo de testes (07/06)
+
+- **Q-SNA faixas por seção** (dado): `section_bands` proporcionais por dimensão (max ~20) — 0–7 Equilibrado, 8–13 Disfunção moderada, 14+ Disfunção acentuada. Ajustável no editor de formulário.
+- **Catálogo de testes clínicos** (Configurações): `clinic_settings.settings.clinical_test_catalog` (array de nomes; sem migration). Helper `getClinicalTestCatalog(clinicId)` em `clinic-service`. Action `app/settings/clinical-tests/actions.ts` (guard owner/manager/admin, dedup, max 100). Página `app/settings/clinical-tests/page.tsx` + `components/clinical-tests-catalog-form.tsx` (editor de lista). Card no hub (`settings/page.tsx`, key `clinicalTests`). i18n `settings.clinicalTests.*` + `settings.hub.items.clinicalTests`.
+- **Sessão usa o catálogo**: `schedule/[id]/session` mescla catálogo da clínica + carry-forward (dedup) em `suggestedTests` → linhas prontas para preencher em toda sessão.
+- Validado: tsc 0 erros; verify-i18n paridade OK.
+
 ## ✅ Grau + testes no prontuário/PDF e contexto da sessão (07/06)
 
 - **PDF do prontuário** (`app/api/reports/paciente/[id]/route.ts`): seção de assessments agora mostra o **grau de disfunção** (via `gradeTotal` + `scoring_config`, na cor da faixa) além do % e seções; seção de notas de sessão lista os **testes clínicos presenciais** (nome: resultado (obs)) e passou a incluir registros que só têm testes (filtro atualizado). i18n `pdf.record.gradeLabel`/`clinicalTests` (PT/EN).

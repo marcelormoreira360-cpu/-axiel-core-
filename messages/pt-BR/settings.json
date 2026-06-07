@@ -11,25 +11,86 @@
     "auditBadge": "Admin",
     "auditText": "Histórico completo de ações do sistema e comunicações enviadas.",
     "items": {
-      "profile": { "title": "Meu perfil", "text": "Atualize seu nome, email e senha de acesso." },
-      "equipe": { "title": "Equipe", "text": "Convide profissionais, gerencie cargos e acesso à clínica." },
-      "practitioners": { "title": "Profissionais", "text": "Perfil público, especialidade e agenda de cada profissional." },
-      "branding": { "title": "Identidade visual", "text": "Logo e cor primária da sua clínica no portal e agendamento." },
-      "regional": { "title": "Regional", "text": "Fuso horário e moeda padrão usados em toda a plataforma." },
-      "clinic": { "title": "Configuração da clínica", "text": "Perfil e configurações básicas da clínica." },
-      "integrations": { "title": "Integrações", "text": "Google Calendar, Zoom e feed iCal para Apple Calendar." },
-      "lgpd": { "title": "Privacidade e LGPD", "text": "Gerencie solicitações de exclusão de dados dos pacientes (direito ao esquecimento)." },
-      "usage": { "title": "Uso da conta", "text": "Pacientes, usuários e recursos consumidos no plano atual." },
-      "sessionTypes": { "title": "Tipos de sessão", "text": "Modalidades, durações, preços e configuração de Zoom por tipo." },
-      "offers": { "title": "Ofertas e pacotes", "text": "Crie pacotes de sessões e planos mensais visíveis no portal do paciente." },
-      "lembretes": { "title": "Lembretes automáticos", "text": "Configure envio de lembretes de consulta por WhatsApp e e-mail." },
-      "whatsapp": { "title": "WhatsApp Bot", "text": "Configure o assistente de IA: nome, programa, preços e idioma." },
-      "voice": { "title": "Ligações com IA", "text": "IA atende ligações em português e inglês com voz neural. Mesmo persona do WhatsApp Bot." },
-      "intake": { "title": "Formulários de intake", "text": "Perguntas que pacientes respondem antes do atendimento." },
-      "monetization": { "title": "Pacotes", "text": "Pacotes de sessões e planos de adesão." },
-      "followUps": { "title": "Acompanhamentos", "text": "Lembretes manuais e mensagens de acompanhamento." },
-      "getStarted": { "title": "Checklist de configuração", "text": "Fluxo de onboarding simplificado." },
-      "billing": { "title": "Cobrança", "text": "Assinatura, período de teste, upgrades e faturas." }
+      "profile": {
+        "title": "Meu perfil",
+        "text": "Atualize seu nome, email e senha de acesso."
+      },
+      "equipe": {
+        "title": "Equipe",
+        "text": "Convide profissionais, gerencie cargos e acesso à clínica."
+      },
+      "practitioners": {
+        "title": "Profissionais",
+        "text": "Perfil público, especialidade e agenda de cada profissional."
+      },
+      "branding": {
+        "title": "Identidade visual",
+        "text": "Logo e cor primária da sua clínica no portal e agendamento."
+      },
+      "regional": {
+        "title": "Regional",
+        "text": "Fuso horário e moeda padrão usados em toda a plataforma."
+      },
+      "clinic": {
+        "title": "Configuração da clínica",
+        "text": "Perfil e configurações básicas da clínica."
+      },
+      "integrations": {
+        "title": "Integrações",
+        "text": "Google Calendar, Zoom e feed iCal para Apple Calendar."
+      },
+      "lgpd": {
+        "title": "Privacidade e LGPD",
+        "text": "Gerencie solicitações de exclusão de dados dos pacientes (direito ao esquecimento)."
+      },
+      "usage": {
+        "title": "Uso da conta",
+        "text": "Pacientes, usuários e recursos consumidos no plano atual."
+      },
+      "sessionTypes": {
+        "title": "Tipos de sessão",
+        "text": "Modalidades, durações, preços e configuração de Zoom por tipo."
+      },
+      "offers": {
+        "title": "Ofertas e pacotes",
+        "text": "Crie pacotes de sessões e planos mensais visíveis no portal do paciente."
+      },
+      "lembretes": {
+        "title": "Lembretes automáticos",
+        "text": "Configure envio de lembretes de consulta por WhatsApp e e-mail."
+      },
+      "whatsapp": {
+        "title": "WhatsApp Bot",
+        "text": "Configure o assistente de IA: nome, programa, preços e idioma."
+      },
+      "voice": {
+        "title": "Ligações com IA",
+        "text": "IA atende ligações em português e inglês com voz neural. Mesmo persona do WhatsApp Bot."
+      },
+      "intake": {
+        "title": "Formulários de intake",
+        "text": "Perguntas que pacientes respondem antes do atendimento."
+      },
+      "monetization": {
+        "title": "Pacotes",
+        "text": "Pacotes de sessões e planos de adesão."
+      },
+      "followUps": {
+        "title": "Acompanhamentos",
+        "text": "Lembretes manuais e mensagens de acompanhamento."
+      },
+      "getStarted": {
+        "title": "Checklist de configuração",
+        "text": "Fluxo de onboarding simplificado."
+      },
+      "billing": {
+        "title": "Cobrança",
+        "text": "Assinatura, período de teste, upgrades e faturas."
+      },
+      "clinicalTests": {
+        "title": "Testes clínicos",
+        "text": "Bateria de testes presenciais aplicados nas sessões."
+      }
     }
   },
   "profile": {
@@ -505,5 +566,17 @@
     "afterDesc": "Ligue para o número comprado — a IA vai atender imediatamente usando a persona e o fluxo de vendas configurados em <a>WhatsApp Bot</a>.",
     "personaTitle": "Persona das ligações",
     "personaDesc": "A IA nas ligações usa exatamente a mesma configuração do WhatsApp Bot (nome, especialidade, metodologia, preços). Para alterar o que ela fala, edite em <a>Configurações → WhatsApp Bot</a>."
+  },
+  "clinicalTests": {
+    "title": "Testes clínicos presenciais",
+    "subtitle": "Cadastre a bateria de testes que a clínica aplica nas sessões. Eles aparecem prontos para preencher na tela de sessão.",
+    "label": "Testes da bateria",
+    "placeholder": "Nome do teste (ex.: Romberg, força de preensão)",
+    "add": "Adicionar teste",
+    "save": "Salvar catálogo",
+    "saving": "Salvando…",
+    "saved": "Catálogo salvo",
+    "empty": "Nenhum teste no catálogo ainda.",
+    "errorSave": "Não foi possível salvar. Tente novamente."
   }
 }

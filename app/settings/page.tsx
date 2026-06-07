@@ -19,6 +19,7 @@ const SETTINGS_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/lgpd", key: "lgpd" },
   { href: "/settings/usage", key: "usage" },
   { href: "/settings/session-types", key: "sessionTypes" },
+  { href: "/settings/clinical-tests", key: "clinicalTests" },
   { href: "/settings/offers", key: "offers" },
   { href: "/settings/lembretes", key: "lembretes" },
   { href: "/settings/whatsapp", key: "whatsapp" },
