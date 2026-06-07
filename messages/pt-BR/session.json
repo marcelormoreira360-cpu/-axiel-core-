@@ -11,7 +11,8 @@
     "intake": "Anamnese",
     "intakeCount": "({count, plural, one {# resposta} other {# respostas}})",
     "chiefComplaint": "Queixa principal",
-    "caseSummary": "Resumo do caso"
+    "caseSummary": "Resumo do caso",
+    "lastSessionTests": "Testes da última sessão"
   },
   "panel": {
     "patientFallback": "Paciente",

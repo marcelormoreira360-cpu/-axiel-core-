@@ -137,6 +137,21 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
               </div>
             )}
 
+            {/* Testes clínicos da última sessão */}
+            {prevRecords.length > 0 && ((prevRecords[0].clinical_tests as { name: string; result: string; notes?: string }[] | null) ?? []).length > 0 && (
+              <div>
+                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastSessionTests")}</p>
+                <div className="space-y-[3px]">
+                  {((prevRecords[0].clinical_tests as { name: string; result: string; notes?: string }[] | null) ?? []).slice(0, 6).map((ct, i) => (
+                    <div key={i} className="flex gap-[6px] flex-wrap">
+                      <span className="text-[10px] text-[#A09E98]">{ct.name}:</span>
+                      <span className="text-[10px] text-[#0F1A2E]">{ct.result || "—"}{ct.notes ? ` (${ct.notes})` : ""}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Assessment mais recente */}
             {assessmentResponses.length > 0 && (
               <div>

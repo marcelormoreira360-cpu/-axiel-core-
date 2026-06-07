@@ -11,7 +11,8 @@
     "intake": "Intake",
     "intakeCount": "({count, plural, one {# answer} other {# answers}})",
     "chiefComplaint": "Chief complaint",
-    "caseSummary": "Case summary"
+    "caseSummary": "Case summary",
+    "lastSessionTests": "Last session tests"
   },
   "panel": {
     "patientFallback": "Patient",

@@ -64,10 +64,18 @@
     "last6m": "Últimos 6 meses",
     "thisYear": "Este ano"
   },
-  "payments": { "title": "Extrato de Pagamentos" },
-  "patients": { "title": "Lista de Pacientes" },
-  "leads": { "title": "Pipeline de Leads" },
-  "sessions": { "title": "Histórico de Sessões" },
+  "payments": {
+    "title": "Extrato de Pagamentos"
+  },
+  "patients": {
+    "title": "Lista de Pacientes"
+  },
+  "leads": {
+    "title": "Pipeline de Leads"
+  },
+  "sessions": {
+    "title": "Histórico de Sessões"
+  },
   "record": {
     "notFound": "Paciente não encontrado",
     "title": "Prontuário Completo — {name}",
@@ -147,11 +155,43 @@
     "pattern": "Padrão: {title}",
     "reviewerNote": "Nota do profissional: ",
     "moreInsights": "({count} insights adicionais não exibidos)",
-    "footer": "{clinic} · Prontuário gerado pelo AXIEL Core · Documento confidencial — não substitui avaliação clínica"
+    "footer": "{clinic} · Prontuário gerado pelo AXIEL Core · Documento confidencial — não substitui avaliação clínica",
+    "gradeLabel": "Grau",
+    "clinicalTests": "Testes clínicos presenciais"
   },
-  "patientStatus": { "active": "Ativo", "inactive": "Inativo", "archived": "Arquivado" },
-  "sessionStatus": { "scheduled": "Agendada", "completed": "Realizada", "cancelled": "Cancelada", "no_show": "Não compareceu" },
-  "leadStage": { "new_lead": "Novo lead", "contacted": "Contatado", "scheduled": "Agendado", "converted_to_patient": "Convertido" },
-  "leadSource": { "website": "Website", "instagram": "Instagram", "facebook": "Facebook", "google": "Google", "referral": "Indicação", "other": "Outro" },
-  "paymentMethod": { "pix": "PIX", "boleto": "Boleto", "credit_card": "Cartão de crédito", "debit_card": "Cartão de débito", "cash": "Dinheiro", "transfer": "Transferência", "insurance": "Plano de saúde", "other": "Outro" }
+  "patientStatus": {
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "archived": "Arquivado"
+  },
+  "sessionStatus": {
+    "scheduled": "Agendada",
+    "completed": "Realizada",
+    "cancelled": "Cancelada",
+    "no_show": "Não compareceu"
+  },
+  "leadStage": {
+    "new_lead": "Novo lead",
+    "contacted": "Contatado",
+    "scheduled": "Agendado",
+    "converted_to_patient": "Convertido"
+  },
+  "leadSource": {
+    "website": "Website",
+    "instagram": "Instagram",
+    "facebook": "Facebook",
+    "google": "Google",
+    "referral": "Indicação",
+    "other": "Outro"
+  },
+  "paymentMethod": {
+    "pix": "PIX",
+    "boleto": "Boleto",
+    "credit_card": "Cartão de crédito",
+    "debit_card": "Cartão de débito",
+    "cash": "Dinheiro",
+    "transfer": "Transferência",
+    "insurance": "Plano de saúde",
+    "other": "Outro"
+  }
 }

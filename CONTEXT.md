@@ -20,6 +20,12 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Grau + testes no prontuário/PDF e contexto da sessão (07/06)
+
+- **PDF do prontuário** (`app/api/reports/paciente/[id]/route.ts`): seção de assessments agora mostra o **grau de disfunção** (via `gradeTotal` + `scoring_config`, na cor da faixa) além do % e seções; seção de notas de sessão lista os **testes clínicos presenciais** (nome: resultado (obs)) e passou a incluir registros que só têm testes (filtro atualizado). i18n `pdf.record.gradeLabel`/`clinicalTests` (PT/EN).
+- **Contexto da sessão** (`schedule/[id]/session`): bloco "Testes da última sessão" no painel de contexto (até 6, de `prevRecords[0].clinical_tests`). i18n `session.page.lastSessionTests`.
+- Validado: tsc 0 erros; verify-i18n paridade OK.
+
 ## 🐞 BUGFIX crítico: assert_same_clinic() quebrava inserts — Feature follow-up (07/06)
 
 - **Migration `069_fix_assert_same_clinic_leads_field.sql` APLICADA**. A função tinha `ELSIF tg_table_name = 'leads' AND new.converted_patient_id IS NOT NULL` — em PL/pgSQL a referência ao campo é resolvida mesmo quando `tg_table_name <> 'leads'`, então **qualquer INSERT** nas tabelas avaliadas depois desse ELSIF (intake_questions, intake_responses, **session_records**, **follow_ups**, patient_offers, ai_insights, ai_requests) falhava com `record "new" has no field "converted_patient_id"`. Trigger está nessas 9 tabelas. Correção: aninhar a checagem do campo dentro do branch `'leads'`. Comportamento preservado.

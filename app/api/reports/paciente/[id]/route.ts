@@ -7,6 +7,7 @@ import { getAiInsightsByPatient } from "@/services/ai-insight-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { computePatientEngagement } from "@/services/patient-intelligence-service";
+import { gradeTotal } from "@/lib/assessment-grading";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
@@ -248,7 +249,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   // ── Session notes (SOAP) ──────────────────────────────────────────────────────
   const recordsWithNotes = sessionRecords.filter(
-    (r) => r.notes || r.subjective || r.objective || r.assessment_note || r.plan
+    (r) => r.notes || r.subjective || r.objective || r.assessment_note || r.plan || (r.clinical_tests?.length ?? 0) > 0
   );
 
   if (recordsWithNotes.length > 0) {
@@ -300,6 +301,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         }
       }
 
+      // Testes clínicos presenciais (Feature 3)
+      if (rec.clinical_tests?.length) {
+        pageBreakIfNeeded(doc, 720);
+        doc.moveDown(0.2);
+        doc.fillColor("#374151").font("Helvetica-Bold").fontSize(8).text(`${t("record.clinicalTests")}:`, 60, doc.y);
+        rec.clinical_tests.forEach((ct) => {
+          pageBreakIfNeeded(doc, 740);
+          const line = `${ct.name}: ${ct.result || "—"}${ct.notes ? ` (${ct.notes})` : ""}`;
+          doc.fillColor("#4b5563").font("Helvetica").fontSize(8).text(line, 66, doc.y, { width: 468, lineGap: 1 });
+        });
+      }
+
       doc.moveDown(0.5);
     });
 
@@ -328,17 +341,27 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
         ? t("record.score", { pct, total: resp.total_score ?? "?", max: resp.max_possible_score ?? "?" })
         : t("record.noScore");
 
+      const grade = gradeTotal(Number(resp.total_score ?? 0), resp.assessment_templates?.scoring_config ?? null);
+
       doc.fillColor("#111827").font("Helvetica-Bold").fontSize(9).text(name, 60, rowY, { width: 260 });
       doc.fillColor("#374151").font("Helvetica").fontSize(8).text(ptDate(resp.filled_at, locale), 330, rowY, { width: 100 });
       doc.fillColor(pct != null && pct >= 70 ? "#991b1b" : pct != null && pct >= 40 ? "#92400e" : "#065f46")
         .font("Helvetica-Bold").fontSize(9).text(score, 440, rowY, { width: 100 });
 
-      // Section scores
-      if (resp.section_scores && Object.keys(resp.section_scores).length > 0) {
-        const sections = Object.values(resp.section_scores);
-        const sectionText = sections.map((s) => `${s.title}: ${s.score}/${s.max}`).join("  ·  ");
-        doc.fillColor("#9ca3af").font("Helvetica").fontSize(7.5)
-          .text(sectionText, 60, rowY + 11, { width: 474 });
+      // Grau de disfunção (Feature 1) + section scores
+      const sectionText = resp.section_scores && Object.keys(resp.section_scores).length > 0
+        ? Object.values(resp.section_scores).map((s) => `${s.title}: ${s.score}/${s.max}`).join("  ·  ")
+        : "";
+
+      if (grade) {
+        doc.fillColor(grade.color).font("Helvetica-Bold").fontSize(7.5)
+          .text(`${t("record.gradeLabel")}: ${grade.label}`, 60, rowY + 11, { continued: !!sectionText, width: 474 });
+        if (sectionText) {
+          doc.fillColor("#9ca3af").font("Helvetica").fontSize(7.5).text(`   ·   ${sectionText}`, { continued: false, width: 474 });
+        }
+        doc.y = rowY + 24;
+      } else if (sectionText) {
+        doc.fillColor("#9ca3af").font("Helvetica").fontSize(7.5).text(sectionText, 60, rowY + 11, { width: 474 });
         doc.y = rowY + 24;
       } else {
         doc.y = rowY + 22;
