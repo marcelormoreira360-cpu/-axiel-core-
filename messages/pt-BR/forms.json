@@ -92,7 +92,17 @@
     "summarySections": "{count, plural, one {# seção} other {# seções}}",
     "summaryQuestions": "{count, plural, one {# pergunta} other {# perguntas}}",
     "saving": "Salvando…",
-    "create": "Criar formulário"
+    "create": "Criar formulário",
+    "scoringTitle": "Grau de disfunção (faixas)",
+    "scoringHint": "Defina as faixas de pontuação que classificam o grau de disfunção. É por formulário — cada clínica usa as próprias.",
+    "scoringTotal": "Faixas do total",
+    "scoringSection": "Faixas por seção",
+    "scoringFlagItem": "Sinalizar itens que atingem a pontuação máxima",
+    "bandMin": "De",
+    "bandMax": "Até",
+    "bandLabelPlaceholder": "Rótulo (ex.: Disfunção leve)",
+    "bandMaxHint": "vazio = sem limite",
+    "addBand": "Adicionar faixa"
   },
   "editor": {
     "sectionsTitle": "Seções",

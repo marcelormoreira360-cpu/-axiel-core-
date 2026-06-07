@@ -92,7 +92,17 @@
     "summarySections": "{count, plural, one {# section} other {# sections}}",
     "summaryQuestions": "{count, plural, one {# question} other {# questions}}",
     "saving": "Saving…",
-    "create": "Create form"
+    "create": "Create form",
+    "scoringTitle": "Dysfunction grade (bands)",
+    "scoringHint": "Define the score ranges that classify the dysfunction grade. It's per form — each clinic sets their own.",
+    "scoringTotal": "Total bands",
+    "scoringSection": "Section bands",
+    "scoringFlagItem": "Flag items that reach the maximum score",
+    "bandMin": "From",
+    "bandMax": "To",
+    "bandLabelPlaceholder": "Label (e.g., Mild dysfunction)",
+    "bandMaxHint": "empty = no limit",
+    "addBand": "Add band"
   },
   "editor": {
     "sectionsTitle": "Sections",

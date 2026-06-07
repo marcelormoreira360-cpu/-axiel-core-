@@ -3,8 +3,17 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, ChevronUp, ChevronDown, Trash2, GripVertical } from "lucide-react";
-import type { TemplateWithStructure } from "@/lib/types";
+import type { TemplateWithStructure, ScoreBand } from "@/lib/types";
+import { normalizeScoringConfig } from "@/lib/assessment-grading";
 import { updateFormAction } from "@/app/forms/[id]/edit/actions";
+
+const BAND_COLORS = ["#0F6E56", "#C7A008", "#D97A1A", "#C0392B", "#2A7BC1", "#7B5EA7"];
+
+type BandDraft = ScoreBand & { tempId: string };
+
+function bandsFromConfig(bands: ScoreBand[]): BandDraft[] {
+  return bands.map((b) => ({ ...b, tempId: Math.random().toString(36).slice(2) }));
+}
 
 type QuestionDraft = {
   tempId: string;
@@ -56,6 +65,11 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
   const [sections, setSections] = useState<SectionDraft[]>(() => fromTemplate(template));
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
   const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
+
+  const initialConfig = normalizeScoringConfig(template.scoring_config);
+  const [totalBands, setTotalBands] = useState<BandDraft[]>(() => bandsFromConfig(initialConfig.total_bands));
+  const [sectionBands, setSectionBands] = useState<BandDraft[]>(() => bandsFromConfig(initialConfig.section_bands));
+  const [flagItemMax, setFlagItemMax] = useState<boolean>(initialConfig.flag_item_max);
 
   function addSection() {
     setSections((prev) => [...prev, { tempId: uid(), title: "", questions: [] }]);
@@ -149,6 +163,84 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
     });
   }
 
+  function addBand(setter: React.Dispatch<React.SetStateAction<BandDraft[]>>, list: BandDraft[]) {
+    const lastMax = list.length ? list[list.length - 1].max : null;
+    const nextMin = lastMax == null ? 0 : Number(lastMax) + 1;
+    setter((prev) => [
+      ...prev,
+      { tempId: uid(), min: nextMin, max: null, label: "", color: BAND_COLORS[prev.length % BAND_COLORS.length] },
+    ]);
+  }
+
+  function updateBand(
+    setter: React.Dispatch<React.SetStateAction<BandDraft[]>>,
+    tempId: string,
+    patch: Partial<ScoreBand>,
+  ) {
+    setter((prev) => prev.map((b) => (b.tempId === tempId ? { ...b, ...patch } : b)));
+  }
+
+  function removeBand(setter: React.Dispatch<React.SetStateAction<BandDraft[]>>, tempId: string) {
+    setter((prev) => prev.filter((b) => b.tempId !== tempId));
+  }
+
+  function renderBandRows(bands: BandDraft[], setter: React.Dispatch<React.SetStateAction<BandDraft[]>>) {
+    return (
+      <div className="space-y-[6px]">
+        {bands.map((b) => (
+          <div key={b.tempId} className="flex items-center gap-[6px]">
+            <input
+              type="color"
+              value={b.color}
+              onChange={(e) => updateBand(setter, b.tempId, { color: e.target.value })}
+              className="h-7 w-7 rounded border border-black/[.10] shrink-0 cursor-pointer"
+              aria-label="cor"
+            />
+            <input
+              type="number"
+              value={b.min}
+              onChange={(e) => updateBand(setter, b.tempId, { min: Number(e.target.value) })}
+              placeholder={t("bandMin")}
+              className="w-16 px-[6px] py-[5px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none"
+              aria-label={t("bandMin")}
+            />
+            <span className="text-[10px] text-[#A09E98]">–</span>
+            <input
+              type="number"
+              value={b.max ?? ""}
+              onChange={(e) => updateBand(setter, b.tempId, { max: e.target.value === "" ? null : Number(e.target.value) })}
+              placeholder="∞"
+              title={t("bandMaxHint")}
+              className="w-16 px-[6px] py-[5px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none"
+              aria-label={t("bandMax")}
+            />
+            <input
+              type="text"
+              value={b.label}
+              onChange={(e) => updateBand(setter, b.tempId, { label: e.target.value })}
+              placeholder={t("bandLabelPlaceholder")}
+              className="flex-1 px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            />
+            <button
+              type="button"
+              onClick={() => removeBand(setter, b.tempId)}
+              className="w-5 h-5 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 shrink-0"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => addBand(setter, bands)}
+          className="flex items-center gap-[5px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition"
+        >
+          <Plus className="h-3.5 w-3.5" /> {t("addBand")}
+        </button>
+      </div>
+    );
+  }
+
   function submit(formData: FormData) {
     formData.set("template_id", template.id);
     formData.set("name", name);
@@ -176,6 +268,21 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
     formData.set("reassessment_interval_days", String(reassessDays || 0));
     formData.set("deleted_section_ids", JSON.stringify(deletedSectionIds));
     formData.set("deleted_question_ids", JSON.stringify(deletedQuestionIds));
+    const serializeBands = (bands: BandDraft[]) =>
+      bands.map(({ tempId: _tempId, ...b }) => ({
+        min: Number(b.min) || 0,
+        max: b.max === null || (b.max as unknown as string) === "" ? null : Number(b.max),
+        label: b.label,
+        color: b.color,
+      }));
+    formData.set(
+      "scoring_config",
+      JSON.stringify({
+        total_bands: serializeBands(totalBands),
+        section_bands: serializeBands(sectionBands),
+        flag_item_max: flagItemMax,
+      })
+    );
     startTransition(async () => {
       await updateFormAction(formData);
     });
@@ -236,6 +343,31 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
           />
           <p className="text-[11px] text-[#A09E98] mt-[4px]">{t("reassessHint")}</p>
         </div>
+      </div>
+
+      {/* Grau de disfunção — faixas configuráveis (Feature 1) */}
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] space-y-[12px]">
+        <div>
+          <p className="text-[12px] font-medium text-[#0F1A2E]">{t("scoringTitle")}</p>
+          <p className="text-[11px] text-[#A09E98] mt-[2px]">{t("scoringHint")}</p>
+        </div>
+        <div>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("scoringTotal")}</label>
+          {renderBandRows(totalBands, setTotalBands)}
+        </div>
+        <div>
+          <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("scoringSection")}</label>
+          {renderBandRows(sectionBands, setSectionBands)}
+        </div>
+        <label className="flex items-start gap-[8px] cursor-pointer select-none pt-[2px]">
+          <input
+            type="checkbox"
+            checked={flagItemMax}
+            onChange={(e) => setFlagItemMax(e.target.checked)}
+            className="mt-[2px] accent-[#0F6E56]"
+          />
+          <span className="text-[13px] text-[#0F1A2E]">{t("scoringFlagItem")}</span>
+        </label>
       </div>
 
       {/* All sections (existing + new) */}

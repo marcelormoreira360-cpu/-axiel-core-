@@ -20,6 +20,19 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Grau de disfunção configurável — Feature 1 (07/06)
+
+Fluxo comercial: o **motor** é o produto; os questionários (QRM, Q-SNA…) são dados por clínica. Cada template agora tem uma régua de interpretação própria.
+
+- **Migration `066_template_scoring_bands.sql` APLICADA** — coluna `assessment_templates.scoring_config jsonb`: `{ total_bands[], section_bands[], flag_item_max }`. Cada faixa = `{min, max|null, label, color}` (`max:null` = aberto, ex.: 106+).
+- **Tipos** `ScoreBand`/`ScoringConfig` em `lib/types.ts`. **Helper puro** `lib/assessment-grading.ts` (`gradeTotal`, `gradeSection`, `isItemFlagged`, `normalizeScoringConfig`).
+- **Editor** (`assessment-form-editor` + `forms/[id]/edit/actions`): bloco "Grau de disfunção (faixas)" — edita faixas de total e de seção (min/máx/rótulo/cor) + checkbox "sinalizar itens na pontuação máxima". i18n `forms.builder.scoring*`/`band*` (PT/EN).
+- **Exibição**: `assessment-progress-service` agora retorna `grade` (faixa do total), `sectionGrades` (faixa por seção, maior 1º), `flaggedCount` (itens no máx) e `latestTotal` da última resposta. Mostrado no `patient-assessment-progress-panel` (ficha) e badge no contexto da sessão (`schedule/[id]/session`). `getPatientAssessmentResponses` passou a trazer `assessment_templates(scoring_config)`.
+- **Portal**: mantém enquadramento neutro — campos novos preenchidos com defaults, **sem** rótulo clínico ao paciente.
+- **Pré-configurado (clínica IFWC)**: Q-SNA total 0-35/36-70/71-105/106+ (sem faixa de seção — aula não define limite por dimensão); QRM total ≤20 sem disfunção / >20 em disfunção, seção ≥10 disfunção; ambos com flag de item=máx.
+- Validado: `tsc -p tsconfig.check.json` = 0; `verify-i18n.mjs` paridade PT/EN OK.
+- **Próximas**: Feature 2 (resumo do caso + queixa principal fixa), Feature 3 (testes clínicos presenciais na 1ª sessão).
+
 ## O que é
 
 SaaS para clínicas integrativas. Um workspace completo: agenda, prontuário, IA, faturamento, formulários, teleconsulta, automações.

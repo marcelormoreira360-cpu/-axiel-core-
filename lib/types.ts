@@ -416,6 +416,21 @@ export type CommunicationLog = {
 
 export type QuestionType = 'scale' | 'yes_no' | 'text' | 'number' | 'single_choice';
 
+// Faixa de interpretação de pontuação (grau de disfunção). max=null → sem limite superior.
+export type ScoreBand = {
+  min: number;
+  max: number | null;
+  label: string;
+  color: string;
+};
+
+// Configuração de pontuação por template (Feature 1 — grau de disfunção configurável).
+export type ScoringConfig = {
+  total_bands: ScoreBand[];   // faixas sobre o total
+  section_bands: ScoreBand[]; // faixas aplicadas à pontuação de cada seção
+  flag_item_max: boolean;     // sinaliza itens que atingem a pontuação máxima
+};
+
 export type AssessmentTemplate = {
   id: string;
   clinic_id: string;
@@ -423,6 +438,7 @@ export type AssessmentTemplate = {
   description: string | null;
   instructions: string | null;
   scale_labels: string[] | null;
+  scoring_config: ScoringConfig | null;
   is_active: boolean;
   send_on_first_appointment: boolean;
   reassessment_interval_days: number;
@@ -462,7 +478,7 @@ export type AssessmentResponse = {
   section_scores: Record<string, { title: string; score: number; max: number }> | null;
   notes: string | null;
   created_at: string;
-  assessment_templates?: { name: string } | null;
+  assessment_templates?: { name: string; scoring_config?: ScoringConfig | null } | null;
 };
 
 export type AssessmentAnswer = {

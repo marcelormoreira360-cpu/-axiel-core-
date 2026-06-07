@@ -689,7 +689,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     const tpl = Array.isArray(r.assessment_templates) ? r.assessment_templates[0] : r.assessment_templates;
     let entry = progressMap.get(tid);
     if (!entry) {
-      entry = { template_id: tid, template_name: (tpl as { name?: string } | null)?.name ?? "Questionário", points: [], baseline: null, latest: null, deltaPct: null, count: 0 };
+      entry = { template_id: tid, template_name: (tpl as { name?: string } | null)?.name ?? "Questionário", points: [], baseline: null, latest: null, deltaPct: null, count: 0, latestTotal: null, grade: null, sectionGrades: [], flaggedCount: 0 };
       progressMap.set(tid, entry);
     }
     entry.points.push({ date: r.created_at as string, score_percentage: Number(r.score_percentage ?? 0), total_score: Number(r.total_score ?? 0) });
@@ -697,7 +697,8 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   const assessmentProgress: AssessmentProgress[] = [...progressMap.values()].map((e) => {
     const baseline = e.points.length ? e.points[0].score_percentage : null;
     const latest = e.points.length ? e.points[e.points.length - 1].score_percentage : null;
-    return { ...e, baseline, latest, deltaPct: baseline != null && latest != null ? Math.round((latest - baseline) * 10) / 10 : null, count: e.points.length };
+    const latestTotal = e.points.length ? e.points[e.points.length - 1].total_score : null;
+    return { ...e, baseline, latest, deltaPct: baseline != null && latest != null ? Math.round((latest - baseline) * 10) / 10 : null, count: e.points.length, latestTotal };
   });
 
   return {

@@ -37,6 +37,44 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
         )}
       </div>
 
+      {/* Grau de disfunção (última resposta) */}
+      {item.grade && (
+        <div className="flex items-center flex-wrap gap-[6px] mb-[8px]">
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-medium rounded-full px-[8px] py-[2px]"
+            style={{ color: item.grade.color, backgroundColor: `${item.grade.color}1A` }}
+          >
+            {item.grade.label}
+            {item.latestTotal != null && <span className="opacity-70">· {item.latestTotal} pts</span>}
+          </span>
+          {item.flaggedCount > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C0392B] bg-[#C0392B]/10 rounded-full px-[8px] py-[2px]">
+              {item.flaggedCount} {item.flaggedCount === 1 ? "item no máximo" : "itens no máximo"}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Seções em destaque (maior pontuação primeiro) */}
+      {item.sectionGrades.length > 0 && (
+        <div className="flex flex-wrap gap-[4px] mb-[8px]">
+          {item.sectionGrades.slice(0, 4).map((s, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-1 text-[9px] rounded px-[6px] py-[2px] border"
+              style={
+                s.band
+                  ? { color: s.band.color, borderColor: `${s.band.color}40`, backgroundColor: `${s.band.color}0D` }
+                  : { color: "#6B6A66", borderColor: "rgba(0,0,0,.08)" }
+              }
+              title={s.band?.label ?? undefined}
+            >
+              {s.title} {s.score}{s.max ? `/${s.max}` : ""}
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Série (mini barras) */}
       {item.points.length > 0 && (
         <div className="flex items-end gap-[3px] h-12 mb-[6px]">

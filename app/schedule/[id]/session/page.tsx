@@ -11,6 +11,7 @@ import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/ser
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
+import { gradeTotal } from "@/lib/assessment-grading";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -125,6 +126,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                   const pct = resp.score_percentage ?? 0;
                   const name = resp.assessment_templates?.name ?? t("formFallback");
                   const filledDate = new Date(resp.filled_at).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+                  const grade = gradeTotal(Number(resp.total_score ?? 0), resp.assessment_templates?.scoring_config ?? null);
                   return (
                     <div className="flex items-center gap-[10px]">
                       <div className="flex-1 min-w-0">
@@ -132,6 +134,14 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                         <p className="text-[10px] text-[#A09E98]">{filledDate}</p>
                       </div>
                       <div className="flex items-center gap-[6px] shrink-0">
+                        {grade && (
+                          <span
+                            className="text-[10px] font-medium rounded-full px-[8px] py-[2px]"
+                            style={{ color: grade.color, backgroundColor: `${grade.color}1A` }}
+                          >
+                            {grade.label}
+                          </span>
+                        )}
                         <div className="w-[60px] h-[4px] bg-[#E5E3DC] rounded-full overflow-hidden">
                           <div
                             className={["h-full rounded-full", pct >= 70 ? "bg-[#FF6B4A]" : pct >= 40 ? "bg-[#F5A623]" : "bg-[#0F6E56]"].join(" ")}

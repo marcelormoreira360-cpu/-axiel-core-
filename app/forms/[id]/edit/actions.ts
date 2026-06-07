@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { normalizeScoringConfig } from "@/lib/assessment-grading";
+import type { ScoreBand, ScoringConfig } from "@/lib/types";
 
 type QuestionPayload = {
   dbId: string | null;
@@ -38,12 +40,37 @@ export async function updateFormAction(formData: FormData) {
   const deletedSectionIds: string[] = JSON.parse(String(formData.get("deleted_section_ids") ?? "[]"));
   const deletedQuestionIds: string[] = JSON.parse(String(formData.get("deleted_question_ids") ?? "[]"));
 
+  // Faixas de grau de disfunção (Feature 1). Normaliza para evitar lixo no banco.
+  let scoringConfig: ScoringConfig | null = null;
+  try {
+    const raw = JSON.parse(String(formData.get("scoring_config") ?? "null"));
+    if (raw) {
+      const norm = normalizeScoringConfig(raw);
+      const sanitize = (bands: ScoreBand[]) =>
+        bands
+          .filter((b) => b && b.label?.trim())
+          .map((b) => ({
+            min: Number(b.min) || 0,
+            max: b.max === null || b.max === undefined || String(b.max) === "" ? null : Number(b.max),
+            label: b.label.trim(),
+            color: b.color || "#0F6E56",
+          }));
+      scoringConfig = {
+        total_bands: sanitize(norm.total_bands),
+        section_bands: sanitize(norm.section_bands),
+        flag_item_max: norm.flag_item_max,
+      };
+    }
+  } catch {
+    scoringConfig = null;
+  }
+
   const supabase = await createSupabaseServerClient();
 
   // Update template metadata
   await supabase
     .from("assessment_templates")
-    .update({ name, description, instructions, send_on_first_appointment: sendOnFirst, reassessment_interval_days: reassessDays })
+    .update({ name, description, instructions, send_on_first_appointment: sendOnFirst, reassessment_interval_days: reassessDays, scoring_config: scoringConfig })
     .eq("id", templateId);
 
   // Delete removed questions first (avoids FK issues)

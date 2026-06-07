@@ -49,7 +49,7 @@ export async function getPatientAssessmentResponses(
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
     .from("assessment_responses")
-    .select("*, assessment_templates(name)")
+    .select("*, assessment_templates(name, scoring_config)")
     .eq("patient_id", patientId)
     .order("created_at", { ascending: false });
   return (data ?? []) as AssessmentResponse[];
