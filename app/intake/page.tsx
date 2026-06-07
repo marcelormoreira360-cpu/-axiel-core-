@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ClipboardList, FilePlus2 } from "lucide-react";
+import { getTranslations } from "next-intl/server";
+import { ClipboardList, FilePlus2, Pencil } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
@@ -11,6 +13,7 @@ import type { IntakeQuestionType } from "@/lib/types";
 
 export default async function IntakePage() {
   const profile = await getCurrentUserProfile();
+  const ti = await getTranslations("intake");
   const [forms, activeForm] = await Promise.all([getIntakeForms(profile?.clinic_id ?? undefined), getActiveIntakeForm(profile?.clinic_id ?? undefined)]);
 
   async function createIntakeAction(formData: FormData) {
@@ -53,6 +56,14 @@ export default async function IntakePage() {
           </div>
           <p className="mt-3 text-2xl font-semibold">{activeForm?.name ?? "Nenhum formulário ainda"}</p>
           <p className="mt-1 text-sm text-white/45">{activeForm ? `${activeForm.intake_questions.length} perguntas` : "Crie seu primeiro formulário abaixo"}</p>
+          {activeForm && (
+            <Link
+              href={`/intake/${activeForm.id}/edit`}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white hover:bg-white/20 transition"
+            >
+              <Pencil className="h-3.5 w-3.5" /> {ti("editQuestions")}
+            </Link>
+          )}
         </Card>
       </section>
 
@@ -77,7 +88,12 @@ export default async function IntakePage() {
                   <h3 className="font-semibold">{form.name}</h3>
                   <p className="mt-1 text-sm text-black/50">{form.description ?? "No description"}</p>
                 </div>
-                <span className="rounded-full bg-axiel-soft px-3 py-1 text-xs font-medium">{form.is_active ? "Active" : "Inactive"}</span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <span className="rounded-full bg-axiel-soft px-3 py-1 text-xs font-medium">{form.is_active ? "Active" : "Inactive"}</span>
+                  <Link href={`/intake/${form.id}/edit`} className="inline-flex items-center gap-1.5 rounded-lg border border-axiel-line px-3 py-1.5 text-sm font-semibold text-black/65 hover:bg-axiel-soft transition">
+                    <Pencil className="h-3.5 w-3.5" /> {ti("editQuestions")}
+                  </Link>
+                </div>
               </Card>
             )}
           />

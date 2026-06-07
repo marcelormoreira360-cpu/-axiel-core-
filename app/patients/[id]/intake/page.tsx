@@ -1,16 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { PatientIntakeForm } from "@/components/patient-intake-form";
 import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentUserProfile } from "@/services/user-service";
 import { getActiveIntakeForm, getPatientIntakeResponses, savePatientIntakeResponses } from "@/services/intake-service";
 
 export default async function PatientIntakePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const ti = await getTranslations("intake");
   const clinic = await getCurrentClinic();
+  const profile = await getCurrentUserProfile();
+  const canEditForm = ["clinic_owner", "clinic_manager", "admin"].includes(profile?.role ?? "");
   const patient = await getPatientById(id, clinic?.id); // A-06
   const activeForm = patient ? await getActiveIntakeForm(patient.clinic_id) : null;
   const existingResponses = patient ? await getPatientIntakeResponses(patient.id) : [];
@@ -43,8 +48,20 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
         <Link href={patient ? `/patients/${patient.id}` : "/patients"} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
           <ArrowLeft className="h-4 w-4" /> Back to profile
         </Link>
-        <h1 className="mt-6 text-4xl font-semibold tracking-tight md:text-5xl">Patient intake</h1>
-        <p className="mt-3 text-black/55">{patient?.full_name ?? "Patient"}</p>
+        <div className="mt-6 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">Patient intake</h1>
+            <p className="mt-3 text-black/55">{patient?.full_name ?? "Patient"}</p>
+          </div>
+          {canEditForm && activeForm && (
+            <Link
+              href={`/intake/${activeForm.id}/edit`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65 hover:bg-axiel-soft transition"
+            >
+              <Pencil className="h-3.5 w-3.5" /> {ti("editQuestions")}
+            </Link>
+          )}
+        </div>
       </header>
 
       {!patient ? (

@@ -1,0 +1,27 @@
+{
+  "editTitle": "Editar formulário de intake",
+  "editSubtitle": "Defina as perguntas que o paciente responde antes ou durante a avaliação. Edite à vontade.",
+  "back": "Voltar",
+  "nameLabel": "Nome do formulário",
+  "descLabel": "Descrição",
+  "descPlaceholder": "Breve descrição (opcional)",
+  "questions": "Perguntas",
+  "questionPlaceholder": "Escreva uma pergunta",
+  "addQuestion": "Adicionar pergunta",
+  "required": "Obrigatória",
+  "save": "Salvar formulário",
+  "saving": "Salvando…",
+  "saved": "Formulário salvo",
+  "errorSave": "Não foi possível salvar. Tente novamente.",
+  "empty": "Nenhuma pergunta ainda. Adicione uma ou comece de um modelo.",
+  "startFromTemplate": "Começar de um modelo",
+  "templateHint": "Carregar um modelo substitui as perguntas atuais por uma base que você pode editar.",
+  "editQuestions": "Editar perguntas",
+  "types": {
+    "short_text": "Texto curto",
+    "long_text": "Texto longo",
+    "number": "Número",
+    "date": "Data",
+    "yes_no": "Sim / Não"
+  }
+}

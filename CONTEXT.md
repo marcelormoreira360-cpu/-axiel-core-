@@ -20,6 +20,18 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Editor de formulário de intake + modelos prontos (07/06)
+
+O terapeuta agora controla as perguntas do intake (edição em lugar, sem duplicar) e pode partir de um modelo.
+
+- **Service** `intake-service`: `getIntakeFormWithQuestionsById` + `updateIntakeFormWithQuestions` (diff: update form, delete removidas por id, upsert/insert; preserva ids → não quebra `intake_responses`).
+- **Editor** `components/intake-form-editor.tsx` (client): editar/adicionar/remover/reordenar perguntas, tipo (short_text/long_text/number/date/yes_no) e obrigatória; **"Começar de um modelo"** carrega presets (substitui perguntas) e o terapeuta edita.
+- **Modelos** `modules/intake/templates.ts`: 5 presets (integrativa, nutrição, fisioterapia, saúde mental, wellness).
+- **Página** `app/intake/[id]/edit/page.tsx` + `actions.ts` (guard owner/manager/admin).
+- **Atalhos** "Editar perguntas": na tela `/patients/[id]/intake` (gestores) e nos cards de `/intake` (ativo + salvos).
+- **i18n**: novo namespace `intake` (PT/EN) registrado em `i18n/request.ts` (agora 35 namespaces). Obs: o restante da página `/intake` (títulos "Intake forms"/"Saved forms") segue em EN hardcoded — follow-up.
+- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces).
+
 ## ✅ Faixas por seção do Q-SNA + catálogo de testes (07/06)
 
 - **Q-SNA faixas por seção** (dado): `section_bands` proporcionais por dimensão (max ~20) — 0–7 Equilibrado, 8–13 Disfunção moderada, 14+ Disfunção acentuada. Ajustável no editor de formulário.

@@ -1,0 +1,27 @@
+{
+  "editTitle": "Edit intake form",
+  "editSubtitle": "Define the questions the patient answers before or during the assessment. Edit freely.",
+  "back": "Back",
+  "nameLabel": "Form name",
+  "descLabel": "Description",
+  "descPlaceholder": "Short description (optional)",
+  "questions": "Questions",
+  "questionPlaceholder": "Write a question",
+  "addQuestion": "Add question",
+  "required": "Required",
+  "save": "Save form",
+  "saving": "Saving…",
+  "saved": "Form saved",
+  "errorSave": "Could not save. Please try again.",
+  "empty": "No questions yet. Add one or start from a template.",
+  "startFromTemplate": "Start from a template",
+  "templateHint": "Loading a template replaces the current questions with a base you can edit.",
+  "editQuestions": "Edit questions",
+  "types": {
+    "short_text": "Short answer",
+    "long_text": "Long answer",
+    "number": "Number",
+    "date": "Date",
+    "yes_no": "Yes / No"
+  }
+}
