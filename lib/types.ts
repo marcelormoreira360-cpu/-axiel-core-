@@ -120,7 +120,7 @@ export type Appointment = {
   session_types?: Pick<SessionType, "id" | "name" | "duration_minutes" | "price_cents"> | null;
 };
 
-export type IntakeQuestionType = "short_text" | "long_text" | "number" | "date" | "yes_no";
+export type IntakeQuestionType = "short_text" | "long_text" | "number" | "date" | "yes_no" | "body_map";
 
 export type IntakeForm = {
   id: string;
@@ -177,6 +177,12 @@ export type ClinicalTestResult = {
   notes?: string;
 };
 
+// Anotação em mapa anatômico na sessão (corpo/coluna/visceras).
+export type BodyMapNote = {
+  map: string;
+  notes: string;
+};
+
 export type SessionRecord = {
   id: string;
   clinic_id: string;
@@ -195,6 +201,8 @@ export type SessionRecord = {
   vitals: SessionVitals | null;
   // Testes clínicos presenciais (Feature 3)
   clinical_tests: ClinicalTestResult[] | null;
+  // Anotações em mapa anatômico
+  body_map_notes: BodyMapNote[] | null;
   created_at: string;
   updated_at: string;
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;

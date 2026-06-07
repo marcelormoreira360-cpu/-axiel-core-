@@ -20,6 +20,18 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## ✅ Mapa anatômico (corpo/coluna/vísceras) — intake + sessão (07/06)
+
+Campo de mapa anatômico com imagem + anotação em texto (v1), no questionário e na sessão.
+
+- **Migration `070_body_map_field.sql` APLICADA**: `intake_question_type` ganhou valor `body_map`; `session_records.body_map_notes jsonb`.
+- **Imagens**: `public/anatomy/{corpo,coluna,visceras}.png` — **PLACEHOLDERS gerados** (substituir pelos pôsteres reais com os mesmos nomes). Registro em `modules/intake/anatomy-maps.ts` (`anatomyMapSrc`, `ANATOMY_MAP_KEYS`).
+- **Intake**: tipo de pergunta "Mapa anatômico" no editor (escolhe o mapa, guardado em `intake_questions.placeholder`); fill (`patient-intake-form`) mostra a imagem + textarea de anotação. `updateIntakeFormWithQuestions`/action passam `placeholder`.
+- **Sessão**: bloco "Mapa anatômico" no `session-recording-panel` (escolher mapa + nota, lista; mostra a imagem); `BodyMapNote[]` em `session_records.body_map_notes`; action/service gravam.
+- i18n: `intake.types.body_map`/`maps.*`/`chooseMap`; `session.panel.bodyMap*`/`maps.*` (PT/EN).
+- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces).
+- **PENDENTE (usuário)**: enviar os arquivos reais das 3 imagens para substituir os placeholders em `public/anatomy/`.
+
 ## ✅ Editor de formulário de intake + modelos prontos (07/06)
 
 O terapeuta agora controla as perguntas do intake (edição em lugar, sem duplicar) e pode partir de um modelo.

@@ -57,7 +57,7 @@ export async function updateIntakeFormWithQuestions(input: {
   form_id: string;
   name: string;
   description?: string | null;
-  questions: Array<{ dbId: string | null; label: string; question_type: IntakeQuestionType; is_required: boolean; display_order: number }>;
+  questions: Array<{ dbId: string | null; label: string; question_type: IntakeQuestionType; is_required: boolean; display_order: number; placeholder?: string | null }>;
   deleted_question_ids: string[];
 }): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
@@ -85,10 +85,11 @@ export async function updateIntakeFormWithQuestions(input: {
   for (const q of input.questions) {
     const label = q.label.trim();
     if (!label) continue;
+    const placeholder = q.placeholder?.trim() || null;
     if (q.dbId) {
       await supabase
         .from("intake_questions")
-        .update({ label, question_type: q.question_type, is_required: q.is_required, display_order: q.display_order })
+        .update({ label, question_type: q.question_type, is_required: q.is_required, display_order: q.display_order, placeholder })
         .eq("id", q.dbId);
     } else {
       await supabase.from("intake_questions").insert({
@@ -98,6 +99,7 @@ export async function updateIntakeFormWithQuestions(input: {
         question_type: q.question_type,
         is_required: q.is_required,
         display_order: q.display_order,
+        placeholder,
       });
     }
   }

@@ -1,4 +1,5 @@
 import type { IntakeFormWithQuestions, IntakeResponse } from "@/lib/types";
+import { anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 
 type Props = {
   form: IntakeFormWithQuestions;
@@ -33,7 +34,19 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
               </label>
               <input type="hidden" name="question_id" value={question.id} />
 
-              {question.question_type === "long_text" ? (
+              {question.question_type === "body_map" ? (
+                <div className="mt-2">
+                  {anatomyMapSrc(question.placeholder) && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={anatomyMapSrc(question.placeholder) as string}
+                      alt={question.label}
+                      className="mb-3 w-full max-w-md rounded-2xl border border-axiel-line"
+                    />
+                  )}
+                  <textarea name={`answer_${question.id}`} rows={4} defaultValue={value} required={question.is_required} placeholder="Descreva os pontos/regiões (ex.: pontos 11, 12 — lombar)" className={`${baseClass} resize-none`} />
+                </div>
+              ) : question.question_type === "long_text" ? (
                 <textarea name={`answer_${question.id}`} rows={5} defaultValue={value} required={question.is_required} className={`${baseClass} resize-none`} />
               ) : question.question_type === "yes_no" ? (
                 <select name={`answer_${question.id}`} defaultValue={value} required={question.is_required} className={baseClass}>

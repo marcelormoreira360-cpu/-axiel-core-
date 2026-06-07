@@ -3,8 +3,9 @@
 import { useMemo, useRef, useState, useActionState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
-import type { Appointment, SessionRecord, ClinicalTestResult } from "@/lib/types";
+import type { Appointment, SessionRecord, ClinicalTestResult, BodyMapNote } from "@/lib/types";
 import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
+import { ANATOMY_MAP_KEYS, anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
@@ -12,6 +13,7 @@ type RecordingState = "idle" | "recording" | "transcribing";
 type NoteMode = "livre" | "soap";
 
 type ClinicalTestDraft = ClinicalTestResult & { tempId: string };
+type BodyMapDraft = BodyMapNote & { tempId: string };
 
 type Props = {
   appointment: Appointment;
@@ -46,6 +48,9 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   const locale = useLocale();
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
 
+  const [bodyMaps, setBodyMaps] = useState<BodyMapDraft[]>(() =>
+    (record?.body_map_notes ?? []).map((b) => ({ ...b, tempId: uid() })),
+  );
   const [clinicalTests, setClinicalTests] = useState<ClinicalTestDraft[]>(() => {
     const existing = record?.clinical_tests ?? [];
     if (existing.length > 0) {
@@ -90,6 +95,10 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   const clinicalTestsValue = useMemo(
     () => JSON.stringify(clinicalTests.map(({ name, result, notes }) => ({ name, result, notes }))),
     [clinicalTests],
+  );
+  const bodyMapsValue = useMemo(
+    () => JSON.stringify(bodyMaps.map(({ map, notes }) => ({ map, notes }))),
+    [bodyMaps],
   );
 
   const sessionDate = new Date(appointment.starts_at).toLocaleDateString(locale, {
@@ -141,6 +150,16 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
 
   function removeClinicalTest(tempId: string) {
     setClinicalTests((prev) => prev.filter((tst) => tst.tempId !== tempId));
+  }
+
+  function addBodyMap() {
+    setBodyMaps((prev) => [...prev, { tempId: uid(), map: "", notes: "" }]);
+  }
+  function updateBodyMap(tempId: string, patch: Partial<BodyMapNote>) {
+    setBodyMaps((prev) => prev.map((b) => (b.tempId === tempId ? { ...b, ...patch } : b)));
+  }
+  function removeBodyMap(tempId: string) {
+    setBodyMaps((prev) => prev.filter((b) => b.tempId !== tempId));
   }
 
   function formatElapsed(secs: number) {
@@ -246,6 +265,7 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
       <input type="hidden" name="clinic_id" value={appointment.clinic_id} />
       <input type="hidden" name="key_observations" value={observationsValue} />
       <input type="hidden" name="clinical_tests" value={clinicalTestsValue} />
+      <input type="hidden" name="body_map_notes" value={bodyMapsValue} />
       <input type="hidden" name="soap_mode" value={mode === "soap" ? "1" : "0"} />
       {/* Vitals hidden inputs */}
       {VITALS_CONFIG.map(({ key }) => (
@@ -622,6 +642,58 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
               className="mt-[10px] flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
             >
               <Plus className="h-3.5 w-3.5" /> {t("addClinicalTest")}
+            </button>
+          </div>
+
+          {/* Mapa anatômico */}
+          <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+            <label className="text-[11px] font-medium text-[#6B6A66] block mb-[10px]">{t("bodyMapTitle")}</label>
+            <div className="space-y-[10px]">
+              {bodyMaps.length === 0 ? (
+                <p className="text-[12px] text-[#D3D1C7] px-[2px]">{t("bodyMapEmpty")}</p>
+              ) : (
+                bodyMaps.map((b) => (
+                  <div key={b.tempId} className="bg-[#FAFAF8] rounded-[8px] px-[10px] py-[8px]">
+                    <div className="flex items-center gap-[6px] mb-[6px]">
+                      <select
+                        value={b.map}
+                        onChange={(e) => updateBodyMap(b.tempId, { map: e.target.value })}
+                        className="flex-1 px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none bg-white"
+                      >
+                        <option value="">{t("bodyMapChoose")}</option>
+                        {ANATOMY_MAP_KEYS.map((k) => (
+                          <option key={k} value={k}>{t(`maps.${k}`)}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => removeBodyMap(b.tempId)}
+                        className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 transition shrink-0"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {anatomyMapSrc(b.map) && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={anatomyMapSrc(b.map) as string} alt={b.map} className="mb-[6px] w-full max-w-[260px] rounded-[8px] border border-black/[.08]" />
+                    )}
+                    <textarea
+                      value={b.notes}
+                      onChange={(e) => updateBodyMap(b.tempId, { notes: e.target.value })}
+                      rows={2}
+                      placeholder={t("bodyMapNotesPlaceholder")}
+                      className="w-full resize-none rounded-[6px] border border-black/[.10] px-[8px] py-[6px] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                    />
+                  </div>
+                ))
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={addBodyMap}
+              className="mt-[10px] flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            >
+              <Plus className="h-3.5 w-3.5" /> {t("bodyMapAdd")}
             </button>
           </div>
 

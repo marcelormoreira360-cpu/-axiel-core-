@@ -93,6 +93,16 @@
     "clinicalTestResult": "Result",
     "clinicalTestNotes": "Note (optional)",
     "addClinicalTest": "Add test",
-    "noClinicalTests": "No tests recorded in this session."
+    "noClinicalTests": "No tests recorded in this session.",
+    "bodyMapTitle": "Anatomical map",
+    "bodyMapEmpty": "No map added.",
+    "bodyMapChoose": "Choose map",
+    "bodyMapAdd": "Add map",
+    "bodyMapNotesPlaceholder": "Note the points/regions (e.g., 11, 12 — lower back)",
+    "maps": {
+      "corpo": "Body (muscular)",
+      "coluna": "Spine",
+      "visceras": "Viscera"
+    }
   }
 }

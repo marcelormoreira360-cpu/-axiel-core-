@@ -22,6 +22,13 @@
     "long_text": "Long answer",
     "number": "Number",
     "date": "Date",
-    "yes_no": "Yes / No"
+    "yes_no": "Yes / No",
+    "body_map": "Anatomical map"
+  },
+  "chooseMap": "Choose map",
+  "maps": {
+    "corpo": "Body (muscular)",
+    "coluna": "Spine",
+    "visceras": "Viscera"
   }
 }

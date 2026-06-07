@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { upsertSessionRecord } from "@/services/session-recording-service";
 import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
 import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
-import type { AiInsight, ClinicalTestResult } from "@/lib/types";
+import type { AiInsight, ClinicalTestResult, BodyMapNote } from "@/lib/types";
 
 export type SaveSessionState = { error?: string } | null;
 
@@ -67,6 +67,20 @@ export async function saveSessionRecord(
     clinicalTests = [];
   }
 
+  // Anotações de mapa anatômico: só linhas com nota preenchida
+  let bodyMapNotes: BodyMapNote[] = [];
+  try {
+    const parsed = JSON.parse(String(formData.get("body_map_notes") ?? "[]"));
+    if (Array.isArray(parsed)) {
+      bodyMapNotes = parsed
+        .filter((r): r is { map: unknown; notes?: unknown } => !!r && typeof r === "object")
+        .map((r) => ({ map: String(r.map ?? "").trim(), notes: String(r.notes ?? "").trim() }))
+        .filter((r) => r.map && r.notes);
+    }
+  } catch {
+    bodyMapNotes = [];
+  }
+
   if (!appointmentId || !patientId || !clinicId) {
     return { error: "Informações da sessão estão incompletas. Recarregue a página." };
   }
@@ -85,6 +99,7 @@ export async function saveSessionRecord(
       plan,
       vitals:          hasVitals ? vitals : null,
       clinical_tests:  clinicalTests.length ? clinicalTests : null,
+      body_map_notes:  bodyMapNotes.length ? bodyMapNotes : null,
     });
   } catch (err: unknown) {
     console.error("[saveSessionRecord] upsert failed:", err);

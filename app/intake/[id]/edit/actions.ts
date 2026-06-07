@@ -21,7 +21,7 @@ export async function updateIntakeFormAction(formData: FormData): Promise<Intake
   const description = String(formData.get("description") ?? "").trim() || null;
   if (!formId || !name) return { error: "Dados obrigatórios ausentes." };
 
-  let questions: { dbId: string | null; label: string; question_type: IntakeQuestionType; is_required: boolean; display_order: number }[] = [];
+  let questions: { dbId: string | null; label: string; question_type: IntakeQuestionType; is_required: boolean; display_order: number; placeholder: string | null }[] = [];
   let deletedIds: string[] = [];
   try {
     const rawQ = JSON.parse(String(formData.get("questions") ?? "[]"));
@@ -35,6 +35,7 @@ export async function updateIntakeFormAction(formData: FormData): Promise<Intake
           question_type: VALID_TYPES.includes(q.question_type as IntakeQuestionType) ? (q.question_type as IntakeQuestionType) : "long_text",
           is_required: q.is_required === true,
           display_order: typeof q.display_order === "number" ? q.display_order : i,
+          placeholder: typeof q.placeholder === "string" && q.placeholder.trim() ? q.placeholder.trim() : null,
         }))
         .filter((q) => q.label);
     }

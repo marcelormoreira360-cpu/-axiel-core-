@@ -6,6 +6,7 @@ export const questionTypeLabels: Record<IntakeQuestionType, string> = {
   number: "Number",
   date: "Date",
   yes_no: "Yes / No",
+  body_map: "Anatomical map",
 };
 
 export const questionTypeOptions: { value: IntakeQuestionType; label: string }[] = [
@@ -14,4 +15,5 @@ export const questionTypeOptions: { value: IntakeQuestionType; label: string }[]
   { value: "number", label: "Number" },
   { value: "date", label: "Date" },
   { value: "yes_no", label: "Yes / No" },
+  { value: "body_map", label: "Anatomical map" },
 ];

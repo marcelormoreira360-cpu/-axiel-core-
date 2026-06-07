@@ -1,4 +1,4 @@
-import type { SessionRecord, SessionVitals, ClinicalTestResult } from "@/lib/types";
+import type { SessionRecord, SessionVitals, ClinicalTestResult, BodyMapNote } from "@/lib/types";
 
 const SESSION_SELECT =
   "*, appointments(id, starts_at, duration_minutes, notes), patients(id, full_name, email, phone, status)";
@@ -30,6 +30,7 @@ export async function upsertSessionRecord(input: {
   plan?: string | null;
   vitals?: SessionVitals | null;
   clinical_tests?: ClinicalTestResult[] | null;
+  body_map_notes?: BodyMapNote[] | null;
 }): Promise<SessionRecord> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -59,6 +60,7 @@ export async function upsertSessionRecord(input: {
         plan:             input.plan ?? null,
         vitals:           input.vitals ?? null,
         clinical_tests:   input.clinical_tests ?? null,
+        body_map_notes:   input.body_map_notes ?? null,
         created_by:       user?.id ?? null,
       },
       { onConflict: "appointment_id" },

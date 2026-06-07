@@ -93,6 +93,16 @@
     "clinicalTestResult": "Resultado",
     "clinicalTestNotes": "Observação (opcional)",
     "addClinicalTest": "Adicionar teste",
-    "noClinicalTests": "Nenhum teste registrado nesta sessão."
+    "noClinicalTests": "Nenhum teste registrado nesta sessão.",
+    "bodyMapTitle": "Mapa anatômico",
+    "bodyMapEmpty": "Nenhum mapa adicionado.",
+    "bodyMapChoose": "Escolha o mapa",
+    "bodyMapAdd": "Adicionar mapa",
+    "bodyMapNotesPlaceholder": "Anote os pontos/regiões (ex.: 11, 12 — lombar)",
+    "maps": {
+      "corpo": "Corpo (muscular)",
+      "coluna": "Coluna",
+      "visceras": "Vísceras"
+    }
   }
 }

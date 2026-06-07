@@ -5,9 +5,10 @@ import { useTranslations } from "next-intl";
 import { Plus, ChevronUp, ChevronDown, Trash2, Check, AlertCircle, Wand2 } from "lucide-react";
 import type { IntakeFormWithQuestions, IntakeQuestionType } from "@/lib/types";
 import { INTAKE_TEMPLATES } from "@/modules/intake/templates";
+import { ANATOMY_MAP_KEYS } from "@/modules/intake/anatomy-maps";
 import { updateIntakeFormAction, type IntakeEditState } from "@/app/intake/[id]/edit/actions";
 
-const TYPE_KEYS: IntakeQuestionType[] = ["short_text", "long_text", "number", "date", "yes_no"];
+const TYPE_KEYS: IntakeQuestionType[] = ["short_text", "long_text", "number", "date", "yes_no", "body_map"];
 
 type QDraft = {
   tempId: string;
@@ -15,6 +16,7 @@ type QDraft = {
   label: string;
   question_type: IntakeQuestionType;
   is_required: boolean;
+  placeholder: string;
 };
 
 function uid() {
@@ -33,6 +35,7 @@ export function IntakeFormEditor({ form }: { form: IntakeFormWithQuestions }) {
       label: q.label,
       question_type: q.question_type,
       is_required: q.is_required,
+      placeholder: q.placeholder ?? "",
     })),
   );
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
@@ -43,7 +46,7 @@ export function IntakeFormEditor({ form }: { form: IntakeFormWithQuestions }) {
   }
 
   function addQuestion() {
-    setQuestions((prev) => [...prev, { tempId: uid(), label: "", question_type: "long_text", is_required: false }]);
+    setQuestions((prev) => [...prev, { tempId: uid(), label: "", question_type: "long_text", is_required: false, placeholder: "" }]);
   }
   function removeQuestion(tempId: string) {
     setQuestions((prev) => {
@@ -71,7 +74,7 @@ export function IntakeFormEditor({ form }: { form: IntakeFormWithQuestions }) {
     // marca as perguntas existentes para exclusão e substitui pelo modelo
     setQuestions((prev) => {
       prev.forEach(markDeleted);
-      return tpl.questions.map((q) => ({ tempId: uid(), label: q.label, question_type: q.question_type, is_required: q.is_required }));
+      return tpl.questions.map((q) => ({ tempId: uid(), label: q.label, question_type: q.question_type, is_required: q.is_required, placeholder: "" }));
     });
     if (!name.trim() || form.intake_questions.length === 0) setName(tpl.name);
   }
@@ -90,6 +93,7 @@ export function IntakeFormEditor({ form }: { form: IntakeFormWithQuestions }) {
           label: q.label,
           question_type: q.question_type,
           is_required: q.is_required,
+          placeholder: q.question_type === "body_map" ? q.placeholder : "",
           display_order: i,
         })),
       ),
@@ -177,6 +181,18 @@ export function IntakeFormEditor({ form }: { form: IntakeFormWithQuestions }) {
                   />
                   {t("required")}
                 </label>
+                {q.question_type === "body_map" && (
+                  <select
+                    value={q.placeholder}
+                    onChange={(e) => update(q.tempId, { placeholder: e.target.value })}
+                    className="px-[8px] py-[4px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none bg-white"
+                  >
+                    <option value="">{t("chooseMap")}</option>
+                    {ANATOMY_MAP_KEYS.map((k) => (
+                      <option key={k} value={k}>{t(`maps.${k}`)}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-[2px] mt-[2px] shrink-0">
