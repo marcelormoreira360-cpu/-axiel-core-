@@ -20,6 +20,11 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 
 ---
 
+## 🐞 BUGFIX crítico: assert_same_clinic() quebrava inserts — Feature follow-up (07/06)
+
+- **Migration `069_fix_assert_same_clinic_leads_field.sql` APLICADA**. A função tinha `ELSIF tg_table_name = 'leads' AND new.converted_patient_id IS NOT NULL` — em PL/pgSQL a referência ao campo é resolvida mesmo quando `tg_table_name <> 'leads'`, então **qualquer INSERT** nas tabelas avaliadas depois desse ELSIF (intake_questions, intake_responses, **session_records**, **follow_ups**, patient_offers, ai_insights, ai_requests) falhava com `record "new" has no field "converted_patient_id"`. Trigger está nessas 9 tabelas. Correção: aninhar a checagem do campo dentro do branch `'leads'`. Comportamento preservado.
+- **Limpeza de intake** (problema original): a clínica IFWC tinha 3 `intake_forms` ativos e vazios (2 "Starter Patient Intake" + "Anamnese Integrativa"), todos com 0 perguntas/0 respostas → tela "Patient intake" abria em branco. Removidos os 2 duplicados; "Anamnese Integrativa" populada com 8 perguntas-padrão (long_text). Agora há 1 formulário ativo preenchível pelo terapeuta em `/patients/[id]/intake`.
+
 ## ✅ Testes clínicos presenciais — Feature 3 (07/06)
 
 Espaço na sessão para registrar os testes presenciais (bateria própria da clínica, sem catálogo fixo).
