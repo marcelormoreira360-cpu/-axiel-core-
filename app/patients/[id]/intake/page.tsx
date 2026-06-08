@@ -46,12 +46,12 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
     <Shell>
       <header className="mb-8 pt-4">
         <Link href={patient ? `/patients/${patient.id}` : "/patients"} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
-          <ArrowLeft className="h-4 w-4" /> Back to profile
+          <ArrowLeft className="h-4 w-4" /> {ti("back")}
         </Link>
         <div className="mt-6 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">Patient intake</h1>
-            <p className="mt-3 text-black/55">{patient?.full_name ?? "Patient"}</p>
+            <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{ti("fillTitle")}</h1>
+            <p className="mt-3 text-black/55">{patient?.full_name ?? ti("patientFallback")}</p>
           </div>
           {canEditForm && activeForm && (
             <Link
@@ -65,15 +65,15 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
       </header>
 
       {!patient ? (
-        <Card>Patient not found.</Card>
+        <Card>{ti("patientFallback")}</Card>
       ) : !activeForm ? (
         <Card>
-          <h2 className="text-xl font-semibold">No active intake form</h2>
-          <p className="mt-2 text-black/55">Create an intake form first, then return to this patient.</p>
-          <Link href="/intake" className="mt-5 inline-flex rounded-lg bg-axiel-blue px-5 py-3 text-sm font-semibold text-white shadow-md">Create intake form</Link>
+          <h2 className="text-xl font-semibold">{ti("fillNoForm")}</h2>
+          <p className="mt-2 text-black/55">{ti("fillNoFormText")}</p>
+          <Link href="/intake" className="mt-5 inline-flex rounded-lg bg-axiel-blue px-5 py-3 text-sm font-semibold text-white shadow-md">{ti("fillCreate")}</Link>
         </Card>
       ) : (
-        <PatientIntakeForm form={activeForm} existingResponses={existingResponses} action={saveResponsesAction} />
+        <PatientIntakeForm form={activeForm} existingResponses={existingResponses} action={saveResponsesAction} mapNotesPlaceholder={ti("mapNotesPlaceholder")} />
       )}
     </Shell>
   );

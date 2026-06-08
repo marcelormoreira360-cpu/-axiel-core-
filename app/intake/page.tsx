@@ -43,19 +43,19 @@ export default async function IntakePage() {
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">PATIENT INTAKE</p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Intake forms</h1>
-        <p className="mt-3 max-w-2xl text-black/55">Crie perguntas simples uma vez. Use-as com todos os pacientes desta clínica.</p>
+        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{ti("hubEyebrow")}</p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{ti("hubTitle")}</h1>
+        <p className="mt-3 max-w-2xl text-black/55">{ti("hubSubtitle")}</p>
       </header>
 
       <section className="mb-6">
         <Card className="bg-axiel-ink text-white max-w-sm">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-white/55">Formulário ativo</p>
+            <p className="text-sm text-white/55">{ti("activeForm")}</p>
             <ClipboardList className="h-5 w-5 text-white/40" />
           </div>
-          <p className="mt-3 text-2xl font-semibold">{activeForm?.name ?? "Nenhum formulário ainda"}</p>
-          <p className="mt-1 text-sm text-white/45">{activeForm ? `${activeForm.intake_questions.length} perguntas` : "Crie seu primeiro formulário abaixo"}</p>
+          <p className="mt-3 text-2xl font-semibold">{activeForm?.name ?? ti("activeNone")}</p>
+          <p className="mt-1 text-sm text-white/45">{activeForm ? ti("questionsCount", { count: activeForm.intake_questions.length }) : ti("createFirst")}</p>
           {activeForm && (
             <Link
               href={`/intake/${activeForm.id}/edit`}
@@ -68,28 +68,28 @@ export default async function IntakePage() {
       </section>
 
       {!profile?.clinic_id ? (
-        <Card>This user needs to be assigned to a clinic before creating intake forms.</Card>
+        <Card>{ti("fillNoFormText")}</Card>
       ) : (
         <IntakeFormBuilder action={createIntakeAction} />
       )}
 
       <section className="mt-8">
-        <h2 className="mb-3 text-xl font-semibold">Saved forms</h2>
+        <h2 className="mb-3 text-xl font-semibold">{ti("savedForms")}</h2>
         {forms.length === 0 ? (
-          <EmptyState icon={<FilePlus2 className="h-7 w-7" />} title="No intake forms yet" text="Create your first intake form so every patient starts with a clear first step." href="/intake" action="Create intake form" />
+          <EmptyState icon={<FilePlus2 className="h-7 w-7" />} title={ti("savedEmptyTitle")} text={ti("savedEmptyText")} href="/intake" action={ti("savedEmptyAction")} />
         ) : (
           <LimitedList
             items={forms}
             className="grid gap-3"
-            detailsLabel={`View ${Math.max(forms.length - 5, 0)} more forms`}
+            detailsLabel={ti("viewMore", { count: Math.max(forms.length - 5, 0) })}
             renderItem={(form) => (
               <Card key={form.id} className="flex items-center justify-between gap-4 p-5">
                 <div>
                   <h3 className="font-semibold">{form.name}</h3>
-                  <p className="mt-1 text-sm text-black/50">{form.description ?? "No description"}</p>
+                  <p className="mt-1 text-sm text-black/50">{form.description ?? ti("noDescription")}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
-                  <span className="rounded-full bg-axiel-soft px-3 py-1 text-xs font-medium">{form.is_active ? "Active" : "Inactive"}</span>
+                  <span className="rounded-full bg-axiel-soft px-3 py-1 text-xs font-medium">{form.is_active ? ti("statusActive") : ti("statusInactive")}</span>
                   <Link href={`/intake/${form.id}/edit`} className="inline-flex items-center gap-1.5 rounded-lg border border-axiel-line px-3 py-1.5 text-sm font-semibold text-black/65 hover:bg-axiel-soft transition">
                     <Pencil className="h-3.5 w-3.5" /> {ti("editQuestions")}
                   </Link>

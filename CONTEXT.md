@@ -32,6 +32,13 @@ Campo de mapa anatômico com imagem + anotação em texto (v1), no questionário
 - i18n: `intake.types.body_map`/`maps.*`/`chooseMap`; `session.panel.bodyMap*`/`maps.*` (PT/EN).
 - Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces). Imagens reais conferidas (PNG válidos, ~1,6–1,9 MB cada).
 
+## ✅ i18n da tela de intake + correção de duplicados/mapa (08/06)
+
+- **Tela `/intake` e construtor traduzidos** (eram EN hardcoded): `app/intake/page.tsx`, `components/intake-form-builder.tsx`, `app/patients/[id]/intake/page.tsx` (título/voltar/sem-form) e `patient-intake-form` (placeholder do mapa via prop). Chaves novas em `intake` (hub*, saved*, status*, questionN, saveForm, fill*, questionsCount, viewMore, mapNotesPlaceholder).
+- **Correção de dados**: o botão "Save intake form" da tela antiga criava **formulário novo** (duplicado) e virava o ativo (em EN). Desativado o duplicado "Patient Intake"; **Anamnese Integrativa** voltou a ser o único ativo. Limpo `placeholder` solto numa pergunta de texto. Adicionada 1 pergunta `body_map` funcional (placeholder=corpo) na Anamnese.
+- ⚠️ **Nota**: a tela antiga `/intake` (IntakeFormBuilder) ainda **cria** formulário novo a cada save — ideal no futuro é unificar com o editor em lugar para não gerar duplicados.
+- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces).
+
 ## ✅ Editor de formulário de intake + modelos prontos (07/06)
 
 O terapeuta agora controla as perguntas do intake (edição em lugar, sem duplicar) e pode partir de um modelo.

@@ -5,13 +5,14 @@ type Props = {
   form: IntakeFormWithQuestions;
   existingResponses?: IntakeResponse[];
   action: (formData: FormData) => Promise<void>;
+  mapNotesPlaceholder?: string;
 };
 
 function getExistingAnswer(questionId: string, responses: IntakeResponse[]) {
   return responses.find((response) => response.question_id === questionId)?.answer ?? "";
 }
 
-export function PatientIntakeForm({ form, existingResponses = [], action }: Props) {
+export function PatientIntakeForm({ form, existingResponses = [], action, mapNotesPlaceholder }: Props) {
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-8">
       <div className="mb-8">
@@ -44,7 +45,7 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
                       className="mb-3 w-full max-w-md rounded-2xl border border-axiel-line"
                     />
                   )}
-                  <textarea name={`answer_${question.id}`} rows={4} defaultValue={value} required={question.is_required} placeholder="Descreva os pontos/regiões (ex.: pontos 11, 12 — lombar)" className={`${baseClass} resize-none`} />
+                  <textarea name={`answer_${question.id}`} rows={4} defaultValue={value} required={question.is_required} placeholder={mapNotesPlaceholder ?? ""} className={`${baseClass} resize-none`} />
                 </div>
               ) : question.question_type === "long_text" ? (
                 <textarea name={`answer_${question.id}`} rows={5} defaultValue={value} required={question.is_required} className={`${baseClass} resize-none`} />
