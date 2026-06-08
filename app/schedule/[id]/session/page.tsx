@@ -14,6 +14,7 @@ import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { gradeTotal } from "@/lib/assessment-grading";
+import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -209,7 +210,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                 <div className="space-y-[4px]">
                   {intakeResponses.slice(0, 3).map((r) => {
                     const label = r.intake_questions?.label;
-                    const answer = typeof r.answer === "string" ? r.answer : r.answer != null ? JSON.stringify(r.answer) : null;
+                    const answer = formatIntakeAnswerSummary(r.answer);
                     if (!label || !answer) return null;
                     return (
                       <div key={r.id} className="flex gap-[6px] flex-wrap">

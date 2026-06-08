@@ -4,12 +4,14 @@ export type AnatomyMapKey = "corpo" | "coluna" | "visceras" | "sna";
 
 export const ANATOMY_MAP_KEYS: AnatomyMapKey[] = ["corpo", "coluna", "visceras", "sna"];
 
-// Nome real do arquivo em public/anatomy/ (o servidor diferencia maiúsculas/minúsculas).
+// Nome real do arquivo em public/anatomy/ — DEVE bater EXATAMENTE com o que está
+// versionado no git (a Vercel/Linux diferencia maiúsculas de minúsculas).
+// Conferido via `git ls-files`: corpo/visceras/sna são minúsculos; Vertebras é maiúsculo.
 const MAP_FILES: Record<AnatomyMapKey, string> = {
-  corpo: "Corpo.png",
+  corpo: "corpo.png",
   coluna: "Vertebras.png",
-  visceras: "Visceras.png",
-  sna: "SNA.png",
+  visceras: "visceras.png",
+  sna: "sna.png",
 };
 
 export function anatomyMapSrc(key: string | null | undefined): string | null {
