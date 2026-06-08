@@ -76,10 +76,10 @@ export function BodyMapInput({ src, markers, notes, onChange, readOnly }: InputP
           <div
             ref={ref}
             onPointerDown={addMarker}
-            className={`relative inline-block max-w-full rounded-[10px] border border-black/[.10] overflow-hidden ${readOnly ? "" : "cursor-crosshair touch-none"}`}
+            className={`relative block w-full max-w-[640px] rounded-[10px] border border-black/[.10] overflow-hidden ${readOnly ? "" : "cursor-crosshair touch-none"}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="" className="block w-full max-w-[340px] select-none" draggable={false} />
+            <img src={src} alt="" className="block w-full select-none" draggable={false} />
             {markers.map((m, i) => (
               <button
                 key={i}
