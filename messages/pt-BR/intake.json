@@ -55,5 +55,7 @@
   "fillCreate": "Criar formulário de intake",
   "patientFallback": "Paciente",
   "mapNotesPlaceholder": "Descreva os pontos/regiões (ex.: 11, 12 — lombar)",
-  "viewMore": "Ver mais {count} formulários"
+  "viewMore": "Ver mais {count} formulários",
+  "mapHint": "Clique no mapa para marcar os pontos.",
+  "mapClear": "Remover marca"
 }

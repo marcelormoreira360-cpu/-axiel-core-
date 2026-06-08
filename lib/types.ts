@@ -177,10 +177,17 @@ export type ClinicalTestResult = {
   notes?: string;
 };
 
+// Marcador em mapa anatômico (coordenadas em % da imagem).
+export type BodyMapMarker = {
+  x: number;
+  y: number;
+};
+
 // Anotação em mapa anatômico na sessão (corpo/coluna/visceras).
 export type BodyMapNote = {
   map: string;
   notes: string;
+  markers?: BodyMapMarker[];
 };
 
 export type SessionRecord = {

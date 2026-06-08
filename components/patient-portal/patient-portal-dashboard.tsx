@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus, MessageCircle, ChevronDown, ChevronUp, Receipt, Trash2 } from "lucide-react";
 import { type PatientPortalData } from "@/services/patient-portal-service";
 import { useFormatMoney } from "@/components/currency-provider";
+import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 import { PackagesSection } from "./packages-section";
 import { PortalBookingModal } from "./portal-booking-modal";
 import { NpsWidget } from "./nps-widget";
@@ -961,7 +962,7 @@ export function PatientPortalDashboard({
               {data.intakeResponses.map((item, idx) => (
                 <div key={idx} className="border-b border-black/[.05] pb-3 last:border-0 last:pb-0">
                   <p className="text-xs font-semibold text-black/40 mb-0.5">{item.label}</p>
-                  <p className="text-sm text-[#0F1A2E]">{item.answer}</p>
+                  <p className="text-sm text-[#0F1A2E]">{formatIntakeAnswerSummary(item.answer)}</p>
                 </div>
               ))}
             </div>

@@ -6,6 +6,7 @@ import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord, ClinicalTestResult, BodyMapNote } from "@/lib/types";
 import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
 import { ANATOMY_MAP_KEYS, anatomyMapSrc } from "@/modules/intake/anatomy-maps";
+import { BodyMapInput } from "@/components/body-map-input";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
@@ -97,7 +98,7 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
     [clinicalTests],
   );
   const bodyMapsValue = useMemo(
-    () => JSON.stringify(bodyMaps.map(({ map, notes }) => ({ map, notes }))),
+    () => JSON.stringify(bodyMaps.map(({ map, notes, markers }) => ({ map, notes, markers: markers ?? [] }))),
     [bodyMaps],
   );
 
@@ -673,16 +674,14 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
                         <X className="h-3 w-3" />
                       </button>
                     </div>
-                    {anatomyMapSrc(b.map) && (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={anatomyMapSrc(b.map) as string} alt={b.map} className="mb-[6px] w-full max-w-[260px] rounded-[8px] border border-black/[.08]" />
-                    )}
-                    <textarea
-                      value={b.notes}
-                      onChange={(e) => updateBodyMap(b.tempId, { notes: e.target.value })}
-                      rows={2}
-                      placeholder={t("bodyMapNotesPlaceholder")}
-                      className="w-full resize-none rounded-[6px] border border-black/[.10] px-[8px] py-[6px] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                    <BodyMapInput
+                      src={anatomyMapSrc(b.map)}
+                      markers={b.markers ?? []}
+                      notes={b.notes}
+                      onChange={(m, n) => updateBodyMap(b.tempId, { markers: m, notes: n })}
+                      hint={t("bodyMapHint")}
+                      notesPlaceholder={t("bodyMapNotesPlaceholder")}
+                      clearLabel={t("bodyMapClear")}
                     />
                   </div>
                 ))

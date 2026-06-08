@@ -55,5 +55,7 @@
   "fillCreate": "Create intake form",
   "patientFallback": "Patient",
   "mapNotesPlaceholder": "Describe the points/regions (e.g., 11, 12 — lower back)",
-  "viewMore": "View {count} more forms"
+  "viewMore": "View {count} more forms",
+  "mapHint": "Click the map to mark the points.",
+  "mapClear": "Remove marker"
 }

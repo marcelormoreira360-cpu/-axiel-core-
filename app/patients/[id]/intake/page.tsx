@@ -73,7 +73,7 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
           <Link href="/intake" className="mt-5 inline-flex rounded-lg bg-axiel-blue px-5 py-3 text-sm font-semibold text-white shadow-md">{ti("fillCreate")}</Link>
         </Card>
       ) : (
-        <PatientIntakeForm form={activeForm} existingResponses={existingResponses} action={saveResponsesAction} mapNotesPlaceholder={ti("mapNotesPlaceholder")} />
+        <PatientIntakeForm form={activeForm} existingResponses={existingResponses} action={saveResponsesAction} mapNotesPlaceholder={ti("mapNotesPlaceholder")} mapHint={ti("mapHint")} mapClearLabel={ti("mapClear")} />
       )}
     </Shell>
   );

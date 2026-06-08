@@ -73,9 +73,17 @@ export async function saveSessionRecord(
     const parsed = JSON.parse(String(formData.get("body_map_notes") ?? "[]"));
     if (Array.isArray(parsed)) {
       bodyMapNotes = parsed
-        .filter((r): r is { map: unknown; notes?: unknown } => !!r && typeof r === "object")
-        .map((r) => ({ map: String(r.map ?? "").trim(), notes: String(r.notes ?? "").trim() }))
-        .filter((r) => r.map && r.notes);
+        .filter((r): r is { map: unknown; notes?: unknown; markers?: unknown } => !!r && typeof r === "object")
+        .map((r) => ({
+          map: String(r.map ?? "").trim(),
+          notes: String(r.notes ?? "").trim(),
+          markers: Array.isArray(r.markers)
+            ? r.markers
+                .filter((m): m is { x: number; y: number } => !!m && typeof (m as { x: unknown }).x === "number" && typeof (m as { y: unknown }).y === "number")
+                .map((m) => ({ x: m.x, y: m.y }))
+            : [],
+        }))
+        .filter((r) => r.map && (r.notes || r.markers.length > 0));
     }
   } catch {
     bodyMapNotes = [];

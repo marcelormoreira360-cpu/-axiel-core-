@@ -32,6 +32,15 @@ Campo de mapa anatômico com imagem + anotação em texto (v1), no questionário
 - i18n: `intake.types.body_map`/`maps.*`/`chooseMap`; `session.panel.bodyMap*`/`maps.*` (PT/EN).
 - Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces). Imagens reais conferidas (PNG válidos, ~1,6–1,9 MB cada).
 
+## ✅ Mapa anatômico interativo — marcação por pinos (v2) (08/06)
+
+- **Componente** `components/body-map-input.tsx`: `BodyMapInput` (controlado) — clicar na imagem adiciona pino numerado (coord % relativa), clicar no pino remove; textarea de notas; modo `readOnly`. `BodyMapField` (wrapper p/ formulário, hidden input com JSON `{markers,notes}`).
+- **Intake**: `patient-intake-form` usa `BodyMapField` no campo `body_map` (answer = JSON). `BodyMapMarker {x,y}` em `lib/types`.
+- **Sessão**: `session-recording-panel` usa `BodyMapInput`; `BodyMapNote` ganhou `markers?`; action/service parseiam markers.
+- **Exibição legível**: `lib/intake-answer.ts` `formatIntakeAnswerSummary` (JSON → "N pontos marcados — notas") aplicado no contexto da sessão (top-3 anamnese) e no portal (info de saúde), evitando JSON cru.
+- i18n: `intake.mapHint/mapClear`, `session.panel.bodyMapHint/bodyMapClear` (PT/EN).
+- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces).
+
 ## ✅ i18n da tela de intake + correção de duplicados/mapa (08/06)
 
 - **Tela `/intake` e construtor traduzidos** (eram EN hardcoded): `app/intake/page.tsx`, `components/intake-form-builder.tsx`, `app/patients/[id]/intake/page.tsx` (título/voltar/sem-form) e `patient-intake-form` (placeholder do mapa via prop). Chaves novas em `intake` (hub*, saved*, status*, questionN, saveForm, fill*, questionsCount, viewMore, mapNotesPlaceholder).

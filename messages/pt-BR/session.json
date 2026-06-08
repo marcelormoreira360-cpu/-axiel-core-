@@ -104,6 +104,8 @@
       "coluna": "Coluna",
       "visceras": "Vísceras",
       "sna": "Sistema nervoso autônomo"
-    }
+    },
+    "bodyMapHint": "Clique no mapa para marcar os pontos.",
+    "bodyMapClear": "Remover marca"
   }
 }

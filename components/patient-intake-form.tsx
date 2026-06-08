@@ -1,18 +1,21 @@
 import type { IntakeFormWithQuestions, IntakeResponse } from "@/lib/types";
 import { anatomyMapSrc } from "@/modules/intake/anatomy-maps";
+import { BodyMapField } from "@/components/body-map-input";
 
 type Props = {
   form: IntakeFormWithQuestions;
   existingResponses?: IntakeResponse[];
   action: (formData: FormData) => Promise<void>;
   mapNotesPlaceholder?: string;
+  mapHint?: string;
+  mapClearLabel?: string;
 };
 
 function getExistingAnswer(questionId: string, responses: IntakeResponse[]) {
   return responses.find((response) => response.question_id === questionId)?.answer ?? "";
 }
 
-export function PatientIntakeForm({ form, existingResponses = [], action, mapNotesPlaceholder }: Props) {
+export function PatientIntakeForm({ form, existingResponses = [], action, mapNotesPlaceholder, mapHint, mapClearLabel }: Props) {
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-8">
       <div className="mb-8">
@@ -37,15 +40,14 @@ export function PatientIntakeForm({ form, existingResponses = [], action, mapNot
 
               {question.question_type === "body_map" ? (
                 <div className="mt-2">
-                  {anatomyMapSrc(question.placeholder) && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={anatomyMapSrc(question.placeholder) as string}
-                      alt={question.label}
-                      className="mb-3 w-full max-w-md rounded-2xl border border-axiel-line"
-                    />
-                  )}
-                  <textarea name={`answer_${question.id}`} rows={4} defaultValue={value} required={question.is_required} placeholder={mapNotesPlaceholder ?? ""} className={`${baseClass} resize-none`} />
+                  <BodyMapField
+                    name={`answer_${question.id}`}
+                    src={anatomyMapSrc(question.placeholder)}
+                    defaultValue={value}
+                    hint={mapHint ?? ""}
+                    notesPlaceholder={mapNotesPlaceholder ?? ""}
+                    clearLabel={mapClearLabel ?? ""}
+                  />
                 </div>
               ) : question.question_type === "long_text" ? (
                 <textarea name={`answer_${question.id}`} rows={5} defaultValue={value} required={question.is_required} className={`${baseClass} resize-none`} />

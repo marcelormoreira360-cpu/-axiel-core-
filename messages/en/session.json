@@ -104,6 +104,8 @@
       "coluna": "Spine",
       "visceras": "Viscera",
       "sna": "Autonomic nervous system"
-    }
+    },
+    "bodyMapHint": "Click the map to mark the points.",
+    "bodyMapClear": "Remove marker"
   }
 }
