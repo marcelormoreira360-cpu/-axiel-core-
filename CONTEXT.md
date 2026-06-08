@@ -25,12 +25,12 @@ A moeda é da **clínica** (`clinic_settings.default_currency`: BRL/USD/EUR), nu
 Campo de mapa anatômico com imagem + anotação em texto (v1), no questionário e na sessão.
 
 - **Migration `070_body_map_field.sql` APLICADA**: `intake_question_type` ganhou valor `body_map`; `session_records.body_map_notes jsonb`.
-- **Imagens**: `public/anatomy/{corpo,coluna,visceras}.png` — **PLACEHOLDERS gerados** (substituir pelos pôsteres reais com os mesmos nomes). Registro em `modules/intake/anatomy-maps.ts` (`anatomyMapSrc`, `ANATOMY_MAP_KEYS`).
+- **Imagens REAIS recebidas** (08/06) em `public/anatomy/`: `Corpo.png`, `Vertebras.png`, `Visceras.png`, `SNA.png`. Registro em `modules/intake/anatomy-maps.ts` mapeia chave→arquivo real (`MAP_FILES`: corpo→Corpo.png, coluna→Vertebras.png, visceras→Visceras.png, sna→SNA.png) — necessário porque o sandbox não pode renomear no FS case-insensitive do macOS e o servidor (Linux) diferencia maiúsculas. Sobra um `coluna.png` (placeholder 7KB) não usado — pode apagar.
+- **4º mapa adicionado**: Sistema Nervoso Autônomo (`sna`).
 - **Intake**: tipo de pergunta "Mapa anatômico" no editor (escolhe o mapa, guardado em `intake_questions.placeholder`); fill (`patient-intake-form`) mostra a imagem + textarea de anotação. `updateIntakeFormWithQuestions`/action passam `placeholder`.
 - **Sessão**: bloco "Mapa anatômico" no `session-recording-panel` (escolher mapa + nota, lista; mostra a imagem); `BodyMapNote[]` em `session_records.body_map_notes`; action/service gravam.
 - i18n: `intake.types.body_map`/`maps.*`/`chooseMap`; `session.panel.bodyMap*`/`maps.*` (PT/EN).
-- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces).
-- **PENDENTE (usuário)**: enviar os arquivos reais das 3 imagens para substituir os placeholders em `public/anatomy/`.
+- Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces). Imagens reais conferidas (PNG válidos, ~1,6–1,9 MB cada).
 
 ## ✅ Editor de formulário de intake + modelos prontos (07/06)
 
