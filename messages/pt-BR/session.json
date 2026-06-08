@@ -102,7 +102,8 @@
     "maps": {
       "corpo": "Corpo (muscular)",
       "coluna": "Coluna",
-      "visceras": "Vísceras"
+      "visceras": "Vísceras",
+      "sna": "Sistema nervoso autônomo"
     }
   }
 }

@@ -1,8 +1,8 @@
 // Mapas anatômicos disponíveis como campo de questionário e anotação na sessão.
 // As imagens ficam em public/anatomy/. Os rótulos são traduzidos via i18n (intake.maps.*).
-export type AnatomyMapKey = "corpo" | "coluna" | "visceras";
+export type AnatomyMapKey = "corpo" | "coluna" | "visceras" | "sna";
 
-export const ANATOMY_MAP_KEYS: AnatomyMapKey[] = ["corpo", "coluna", "visceras"];
+export const ANATOMY_MAP_KEYS: AnatomyMapKey[] = ["corpo", "coluna", "visceras", "sna"];
 
 export function anatomyMapSrc(key: string | null | undefined): string | null {
   if (!key) return null;

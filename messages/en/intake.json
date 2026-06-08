@@ -29,6 +29,7 @@
   "maps": {
     "corpo": "Body (muscular)",
     "coluna": "Spine",
-    "visceras": "Viscera"
+    "visceras": "Viscera",
+    "sna": "Autonomic nervous system"
   }
 }
