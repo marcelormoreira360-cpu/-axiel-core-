@@ -679,9 +679,6 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
                       markers={b.markers ?? []}
                       notes={b.notes}
                       onChange={(m, n) => updateBodyMap(b.tempId, { markers: m, notes: n })}
-                      hint={t("bodyMapHint")}
-                      notesPlaceholder={t("bodyMapNotesPlaceholder")}
-                      clearLabel={t("bodyMapClear")}
                     />
                   </div>
                 ))

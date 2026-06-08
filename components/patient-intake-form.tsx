@@ -6,16 +6,13 @@ type Props = {
   form: IntakeFormWithQuestions;
   existingResponses?: IntakeResponse[];
   action: (formData: FormData) => Promise<void>;
-  mapNotesPlaceholder?: string;
-  mapHint?: string;
-  mapClearLabel?: string;
 };
 
 function getExistingAnswer(questionId: string, responses: IntakeResponse[]) {
   return responses.find((response) => response.question_id === questionId)?.answer ?? "";
 }
 
-export function PatientIntakeForm({ form, existingResponses = [], action, mapNotesPlaceholder, mapHint, mapClearLabel }: Props) {
+export function PatientIntakeForm({ form, existingResponses = [], action }: Props) {
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-8">
       <div className="mb-8">
@@ -44,9 +41,6 @@ export function PatientIntakeForm({ form, existingResponses = [], action, mapNot
                     name={`answer_${question.id}`}
                     src={anatomyMapSrc(question.placeholder)}
                     defaultValue={value}
-                    hint={mapHint ?? ""}
-                    notesPlaceholder={mapNotesPlaceholder ?? ""}
-                    clearLabel={mapClearLabel ?? ""}
                   />
                 </div>
               ) : question.question_type === "long_text" ? (

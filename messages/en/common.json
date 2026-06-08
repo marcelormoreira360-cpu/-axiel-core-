@@ -74,5 +74,15 @@
     "subtitle": "Get alerts for patient messages",
     "unsupported": "Push notifications are not supported in this browser.",
     "disable": "Disable"
+  },
+  "bodyMap": {
+    "hint": "Click the map to mark. Drag a pin to reposition.",
+    "notesPlaceholder": "General notes (optional)",
+    "point": "Point",
+    "remove": "Remove",
+    "levelMild": "Mild",
+    "levelModerate": "Moderate",
+    "levelSevere": "Severe",
+    "pointNote": "Point description"
   }
 }

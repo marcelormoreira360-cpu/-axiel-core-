@@ -79,8 +79,12 @@ export async function saveSessionRecord(
           notes: String(r.notes ?? "").trim(),
           markers: Array.isArray(r.markers)
             ? r.markers
-                .filter((m): m is { x: number; y: number } => !!m && typeof (m as { x: unknown }).x === "number" && typeof (m as { y: unknown }).y === "number")
-                .map((m) => ({ x: m.x, y: m.y }))
+                .filter((m): m is { x: number; y: number; label?: unknown; intensity?: unknown } => !!m && typeof (m as { x: unknown }).x === "number" && typeof (m as { y: unknown }).y === "number")
+                .map((m) => {
+                  const intensity = m.intensity === 1 || m.intensity === 3 ? m.intensity : 2;
+                  const label = typeof m.label === "string" ? m.label.trim() : "";
+                  return { x: m.x, y: m.y, intensity: intensity as 1 | 2 | 3, ...(label ? { label } : {}) };
+                })
             : [],
         }))
         .filter((r) => r.map && (r.notes || r.markers.length > 0));

@@ -32,6 +32,10 @@ Campo de mapa anatômico com imagem + anotação em texto (v1), no questionário
 - i18n: `intake.types.body_map`/`maps.*`/`chooseMap`; `session.panel.bodyMap*`/`maps.*` (PT/EN).
 - Validado: tsc 0 erros; verify-i18n paridade OK (35 namespaces). Imagens reais conferidas (PNG válidos, ~1,6–1,9 MB cada).
 
+## ✅ Marcação do mapa — melhorias (v2.1) (08/06)
+
+`BodyMapMarker` ganhou `label?` e `intensity?` (1 leve/2 moderada/3 forte → cor do pino). `body-map-input.tsx` reescrito: clicar adiciona pino; **arrastar** reposiciona (pointer capture); lista de pontos abaixo com seletor de **intensidade** (3 cores) e **descrição por ponto**; + campo de notas gerais. Rótulos centralizados em `common.bodyMap.*` (componente auto-traduz; removidos props de label dos callers). Action de sessão preserva label+intensity dos markers.
+
 ## 🐞 Fix: imagem do mapa 404 na Vercel (case) (08/06)
 
 `anatomy-maps.ts` apontava para `Corpo.png/Visceras.png/SNA.png` (maiúsculos), mas o git versionou `corpo.png/visceras.png/sna.png` (minúsculos) + `Vertebras.png` (a coluna). No macOS (case-insensitive) parecia ok; na Vercel (Linux) dava 404. `MAP_FILES` corrigido para os nomes EXATOS do `git ls-files`. **Lição**: o nome real é o do git, não o do Finder.

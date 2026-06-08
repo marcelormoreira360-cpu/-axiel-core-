@@ -74,5 +74,15 @@
     "subtitle": "Receba alertas de mensagens de pacientes",
     "unsupported": "Notificações push não suportadas neste navegador.",
     "disable": "Desativar"
+  },
+  "bodyMap": {
+    "hint": "Clique no mapa para marcar. Arraste um pino para reposicionar.",
+    "notesPlaceholder": "Observações gerais (opcional)",
+    "point": "Ponto",
+    "remove": "Remover",
+    "levelMild": "Leve",
+    "levelModerate": "Moderada",
+    "levelSevere": "Forte",
+    "pointNote": "Descrição do ponto"
   }
 }

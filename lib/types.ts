@@ -178,9 +178,12 @@ export type ClinicalTestResult = {
 };
 
 // Marcador em mapa anatômico (coordenadas em % da imagem).
+// intensity: 1 leve · 2 moderada · 3 forte (define a cor do pino).
 export type BodyMapMarker = {
   x: number;
   y: number;
+  label?: string;
+  intensity?: 1 | 2 | 3;
 };
 
 // Anotação em mapa anatômico na sessão (corpo/coluna/visceras).
