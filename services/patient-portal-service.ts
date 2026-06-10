@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 export type PatientPortalIntakeItem = {
   label: string;
@@ -122,7 +123,15 @@ export type PatientPortalData = {
     zip_code: string | null;
     country: string | null;
   };
-  clinic: { id: string; name: string; slug: string; logo_url: string | null; primary_color: string | null };
+  clinic: {
+    id: string;
+    name: string;
+    slug: string;
+    logo_url: string | null;
+    primary_color: string | null;
+    /** PLG: false quando a clínica tem white_label (Enterprise) — oculta o rodapé "Powered by AXIEL" */
+    show_powered_by?: boolean;
+  };
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
   upcomingAppointments: PatientPortalSessionItem[];
@@ -367,7 +376,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   }
 
   const now = new Date().toISOString();
-  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }, { data: sessionTypesData }, { data: paymentsData }, { data: feedbackData }, { count: unreadCount }, { data: activeSubscriptionData }] = await Promise.all([
+  const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }, { data: sessionTypesData }, { data: paymentsData }, { data: feedbackData }, { count: unreadCount }, { data: activeSubscriptionData }, { data: clinicSubscription }] = await Promise.all([
     supabase.from("patients").select("id, full_name, status, email, phone, date_of_birth, address_line, city, state, zip_code, country").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, slug, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
@@ -468,9 +477,20 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    // PLG: plano da clínica para decidir se o rodapé "Powered by AXIEL" aparece
+    supabase
+      .from("subscriptions")
+      .select("plans(code, slug)")
+      .eq("clinic_id", link.clinic_id)
+      .maybeSingle(),
   ]);
 
   if (!patient || !clinic) return null;
+
+  // PLG: oculta o "Powered by AXIEL" para clínicas com white_label (Enterprise)
+  const clinicPlans = clinicSubscription?.plans as { code?: string | null; slug?: string | null } | null;
+  const clinicPlanSlug = clinicPlans?.code ?? clinicPlans?.slug ?? "starter";
+  const showPoweredBy = !canUseFeature({ planSlug: clinicPlanSlug }, "white_label");
 
   // Additional data: all approved insights + exams + active prescriptions
   const [{ data: allInsightsRaw }, { data: examsRaw }, { data: prescriptionsRaw }] = await Promise.all([
@@ -704,7 +724,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   return {
     link: link as PatientPortalLink,
     patient: patient as PatientPortalData["patient"],
-    clinic: clinic as PatientPortalData["clinic"],
+    clinic: { ...(clinic as PatientPortalData["clinic"]), show_powered_by: showPoweredBy },
     latestInsight: insight,
     sessions,
     upcomingAppointments: upcomingMapped,

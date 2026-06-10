@@ -63,8 +63,24 @@ Bug corrigido no Growth: a chave não persistia por gap de permissão em `tenant
 
 ---
 
+## 💳 Pagamentos — status
+
+| Item | Status |
+|------|--------|
+| **Stripe** — pagamentos online, links de cobrança, assinaturas/recorrência | ✅ no ar |
+| **Asaas** — Pix e Boleto em BRL (rotas `/api/asaas/*`) | ✅ no ar |
+| **Tap to Phone** (cartão físico por aproximação no balcão) | 🔲 mapeado, NÃO implementado |
+
+**Presencial hoje:** coberto por Pix (Asaas) ou link de pagamento (Stripe) — paciente paga pelo próprio celular. Não precisa de maquininha para operar.
+
+**Tap to Phone** só ativar se aparecer demanda por cartão físico no balcão ou parcelamento no crédito na hora. Square e Stripe Tap **não funcionam no Brasil**. Quando for ativar: InfinitePay (principal, grátis) + Mercado Pago (backup). Detalhes e custo-benefício em `TAP_TO_PHONE_PLANO_B.md`.
+
+---
+
 ## 📁 Documentos de referência (na pasta do projeto)
 
 - `AXIEL_GROWTH_INTEGRATION_SPEC.md` — especificação completa da integração.
 - `COLAR_NO_AXIEL_GROWTH.md` — texto para pedir o código de envio ao Growth.
+- `TAP_TO_PHONE_PLANO_B.md` — decisão sobre pagamento presencial por aproximação (mapeado/plano B).
+- `ASAAS_PIX_PLANO_B.md` — Pix/Boleto via Asaas.
 - `CONTEXT.md` — histórico técnico do Core.

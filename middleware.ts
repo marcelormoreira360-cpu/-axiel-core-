@@ -15,6 +15,24 @@ function ensureLocaleCookie(request: NextRequest, response: NextResponse): NextR
   return response;
 }
 
+/**
+ * Programa de indicação: captura ?ref=CODIGO num cookie de 30 dias para o
+ * fluxo de signup/onboarding consumir depois (a clínica nasce no onboarding).
+ * Literal "AXIEL_REF" duplicado de services/referral-service.ts (REFERRAL_COOKIE)
+ * — o middleware (edge) não pode importar o service (supabase-admin/node:crypto).
+ */
+function ensureReferralCookie(request: NextRequest, response: NextResponse): NextResponse {
+  const ref = request.nextUrl.searchParams.get("ref");
+  if (ref && /^[a-zA-Z0-9]{6,12}$/.test(ref)) {
+    response.cookies.set("AXIEL_REF", ref.toUpperCase(), {
+      maxAge: 60 * 60 * 24 * 30, // 30 dias
+      path: "/",
+      sameSite: "lax",
+    });
+  }
+  return response;
+}
+
 const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade"];
 const publicPrefixes = [
   "/auth",
@@ -122,7 +140,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return ensureLocaleCookie(request, response);
+  return ensureReferralCookie(request, ensureLocaleCookie(request, response));
 }
 
 export const config = {

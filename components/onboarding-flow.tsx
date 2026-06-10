@@ -8,6 +8,7 @@ import {
   Dumbbell, Leaf, Sparkles, UserPlus, Heart, AlertCircle, Upload,
 } from "lucide-react";
 import { completeOnboardingAction } from "@/app/onboarding/actions";
+import { track } from "@/lib/analytics";
 
 // ── Step labels ───────────────────────────────────────────────────
 const STEPS = ["Perfil", "Nome", "Horários", "Equipe"];
@@ -104,7 +105,12 @@ export function OnboardingFlow() {
 
   // Navigate client-side on success (more reliable than server redirect with useActionState)
   useEffect(() => {
-    if (success) router.push("/onboarding/ready");
+    if (success) {
+      // Analytics: onboarding concluído — clínica criada com sucesso
+      track("onboarding_completed", { clinic_profile: clinicProfile, invited_staff: !!staffEmail.trim() });
+      router.push("/onboarding/ready");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- clinicProfile/staffEmail só são lidos no momento do sucesso
   }, [success, router]);
 
   return (

@@ -6,6 +6,7 @@ import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
+import { canUseFeature } from "@/modules/billing/feature-access";
 
 const log = createLogger("book");
 
@@ -25,15 +26,21 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
   if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
 
-  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }, { data: clinicSettings }] = await Promise.all([
+  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }, { data: clinicSettings }, { data: subscription }] = await Promise.all([
     supabase.from("session_types").select("id, name, duration_minutes, price_cents, is_online").eq("clinic_id", clinic.id).eq("is_active", true).order("name"),
     supabase.from("working_hours").select("day_of_week, opens_at, closes_at, is_open").eq("clinic_id", clinic.id),
     supabase.from("clinic_users").select("user_id, display_name, specialty, bio, users(full_name)").eq("clinic_id", clinic.id).eq("status", "active").eq("is_bookable", true),
     supabase.from("clinic_settings").select("settings").eq("clinic_id", clinic.id).maybeSingle(),
+    supabase.from("subscriptions").select("plans(code, slug)").eq("clinic_id", clinic.id).maybeSingle(),
   ]);
 
   // L-05: include the clinic's configured currency in the public response
   const currency = (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string ?? "BRL";
+
+  // PLG: rodapé "Powered by AXIEL" — oculto para clínicas com white_label (Enterprise)
+  const subscriptionPlans = subscription?.plans as { code?: string | null; slug?: string | null } | null;
+  const planSlug = subscriptionPlans?.code ?? subscriptionPlans?.slug ?? "starter";
+  const showPoweredBy = !canUseFeature({ planSlug }, "white_label");
 
   const practitioners = (practitionersRaw ?? []).map((p) => {
     const usersData = p.users as unknown as { full_name: string } | null;
@@ -45,7 +52,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     };
   });
 
-  return NextResponse.json({ clinic: { ...clinic, currency }, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
+  return NextResponse.json({ clinic: { ...clinic, currency, show_powered_by: showPoweredBy }, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
 }
 
 // POST /api/book/[slug] — create appointment (public)

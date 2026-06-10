@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Check, Zap, Building2, Star, ArrowRight } from "lucide-react";
 import { AXIEL_PLANS, formatPlanPrice, type CurrencyCode, type PlanConfig } from "@/modules/billing/plan-config";
+import { track } from "@/lib/analytics";
 
 const CURRENCY_LABELS: Record<CurrencyCode, string> = {
   BRL: "🇧🇷 R$",
@@ -111,6 +112,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
       {isEnterprise ? (
         <a
           href="mailto:contato@axielcore.com?subject=Enterprise AXIEL"
+          onClick={() => track("plan_selected", { plan: plan.slug, currency, source: "pricing" })}
           className="block text-center py-[11px] rounded-[10px] text-[12px] font-semibold text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#ECEAE4] transition"
         >
           {t("talkToSales")}
@@ -118,6 +120,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
       ) : (
         <a
           href={`${appUrl}/auth/login?plan=${plan.slug}`}
+          onClick={() => track("plan_selected", { plan: plan.slug, currency, source: "pricing" })}
           className={[
             "block text-center py-[11px] rounded-[10px] text-[12px] font-semibold transition",
             plan.recommended

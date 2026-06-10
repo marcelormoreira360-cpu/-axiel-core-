@@ -1,7 +1,36 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 05/06/2026 (7)
+> Atualizado em: 10/06/2026 (8)
+
+## ✅ Auditoria completa + correções + growth (10/06/2026)
+
+Relatório completo em `AUDITORIA_COMPLETA_2026-06-10.md`. Implementado nesta sessão:
+
+**Segurança (código):**
+- `app/api/whatsapp/send-voice`: áudio TTS movido do bucket público `media` (que **nem existia** em prod — feature estava quebrada) para `patient-docs` privado + `createSignedUrl` 24h + escopo `clinic_id` explícito.
+- `app/envio/[slug]/actions.ts`: allowlist MIME + magic bytes no upload público (PDF/JPG/PNG/WEBP/HEIC/texto, rejeita binário disfarçado); `.or()` com interpolação trocado por queries `.eq()/.in()` separadas (anti-injeção PostgREST).
+- `app/api/asaas/charge`: se o insert em `patient_payments` falhar, agora cancela a cobrança no Asaas (DELETE best-effort) e retorna 500 — antes enviava link Pix sem registro.
+
+**Banco (migrations 071–076 APLICADAS em produção 10/06):**
+- **071**: policies "service role full access" das tabelas LGPD (`patient_consents`, `data_deletion_requests`) estavam com `TO public USING (true)` = **acesso total para qualquer authenticated/anon**. Recriadas `TO service_role`. (Achado do advisor `rls_policy_always_true`.)
+- **072**: `search_path` fixo em 4 funções + REVOKE EXECUTE de `anon` em todas as SECURITY DEFINER.
+- **073**: 78 índices de FK criados (advisor `unindexed_foreign_keys`).
+- **074**: 25 policies em 19 tabelas reescritas com `(SELECT auth.uid())` via ALTER POLICY mecânico (advisor `auth_rls_initplan`). Verificado: 0 restantes.
+- **075**: CHECK de `communication_logs.use_case` ganhou `trial_expiry_d3/d1` **e `dunning`** (que o dunning-service já usava mas o constraint barrava — dedup do dunning estava quebrado).
+- **076**: programa de indicação (`clinics.referral_code` + `referred_by_clinic_id` + tabela `referral_conversions` com RLS; backfill de códigos feito).
+- Verificado também: migrations 048/052/054 (CONTEXT antigo dizia "pendentes") **já estavam aplicadas**.
+
+**CI**: `.github/workflows/ci.yml` — push/PR main: npm ci → typecheck (tsconfig.check.json) → verify:i18n → vitest.
+
+**E-mail de trial expirando (D-3/D-1)**: `services/trial-expiry-service.ts` (lê `subscriptions.trial_ends_at` + status trialing; dedup via `communication_logs` use_case `trial_expiry_*`; e-mail ao owner via template `components/email/trial-expiry-email.tsx`, i18n `emails.trialExpiry.*`). Plugado no cron diário `/api/cron/automations`.
+
+**Growth/PLG:**
+- **Powered by AXIEL**: `components/powered-by-axiel.tsx` no booking público (`/book/[slug]`) e no portal (`/p/[token]`), com UTM; oculto quando o plano tem feature `white_label` (flag `show_powered_by` resolvida no server).
+- **PostHog** (sem dependência npm — snippet inline): `components/analytics/posthog-provider.tsx` env-gated por `NEXT_PUBLIC_POSTHOG_KEY` (+ `NEXT_PUBLIC_POSTHOG_HOST`), montado no root layout; CSP atualizada; `lib/analytics.ts` (`track`/`identify`). Eventos: `signup_submitted`, `onboarding_completed`, `plan_selected` + identify no signup. **Pendente: criar conta PostHog e setar a env na Vercel.**
+- **Programa de indicação (1 mês grátis p/ ambos)**: `services/referral-service.ts`; middleware captura `?ref=` em cookie `AXIEL_REF` (30d); vínculo na criação da clínica (onboarding-service, try/catch isolado); desconto do indicado no checkout Stripe via `STRIPE_REFERRAL_COUPON_ID`; conversão+recompensa do indicador no webhook (`processReferralConversion`); card "Indique e ganhe" no dashboard (managers); namespace `referral` (36º). **Pendente: criar coupon no Stripe (100% off, duration once) e setar `STRIPE_REFERRAL_COUPON_ID`.**
+
+Validado: tsc confiável **0 erros**; verify:i18n **36 namespaces, paridade OK**. Pendências operacionais: env PostHog, coupon Stripe, e os itens MÉDIO do relatório de auditoria (rate limits do portal, iCal token, CSP nonce, etc.).
 
 ## ⚠️ Moeda por clínica/região (NÃO por idioma) — concluído 05/06
 

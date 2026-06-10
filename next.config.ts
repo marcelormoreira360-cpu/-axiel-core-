@@ -12,18 +12,20 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 // - script-src: 'unsafe-inline' required by Next.js inline hydration scripts.
 //   'unsafe-eval' required by some bundled libraries (e.g. Sentry replay).
 //   A nonce-based strict CSP is the next step but requires middleware changes.
-// - connect-src: Supabase REST + Realtime (wss), Sentry tunnel, Resend webhooks.
+// - connect-src: Supabase REST + Realtime (wss), Sentry tunnel, Resend webhooks,
+//   PostHog (us.i.posthog.com); script-src também libera us-assets.i.posthog.com
+//   (CDN do array.js carregado pelo snippet em components/analytics/posthog-provider.tsx).
 // - img-src: data: for Supabase TOTP QR codes; blob: for camera previews.
 // - media-src: blob: for MediaRecorder audio playback.
 const isDev = process.env.NODE_ENV !== "production";
 
 const csp = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://us.i.posthog.com https://us-assets.i.posthog.com",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://${supabaseHost} https://lh3.googleusercontent.com`,
-  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.sentry.io https://sentry.io`,
+  `connect-src 'self' https://${supabaseHost} wss://${supabaseHost} https://*.sentry.io https://sentry.io https://us.i.posthog.com https://us-assets.i.posthog.com`,
   "font-src 'self'",
   "media-src 'self' blob:",
   "frame-src 'none'",

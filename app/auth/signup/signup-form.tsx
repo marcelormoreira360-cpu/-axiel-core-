@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { track, identify } from "@/lib/analytics";
 
 interface SignupFormProps {
   inviteToken?: string;
@@ -60,6 +61,10 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
       setLoading(false);
       return;
     }
+
+    // Analytics: signup submetido com sucesso (identifica o usuário sem query extra)
+    if (data.user) identify(data.user.id, { email: data.user.email });
+    track("signup_submitted", { invited: !!inviteToken });
 
     // If there is an invite token, accept it via server action
     if (inviteToken && data.user) {

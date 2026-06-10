@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme-provider";
 import { PwaRegister } from "@/components/pwa-register";
+import { PostHogProvider } from "@/components/analytics/posthog-provider";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -38,6 +39,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <ThemeProvider>{children}</ThemeProvider>
         </NextIntlClientProvider>
         <PwaRegister />
+        {/* Analytics PostHog — só ativa quando NEXT_PUBLIC_POSTHOG_KEY existe */}
+        <PostHogProvider />
       </body>
     </html>
   );

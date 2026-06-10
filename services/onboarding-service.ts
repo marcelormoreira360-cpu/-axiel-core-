@@ -254,6 +254,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
   const workingHours = getWorkingHours(input.hoursPreset);
 
   let clinicId = profile.clinic_id;
+  let createdNewClinic = false;
 
   if (!clinicId) {
     // Try to find a clinic already owned by this user (handles partial-failure re-runs).
@@ -275,6 +276,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
       if (clinicError) throw new Error(clinicError.message ?? JSON.stringify(clinicError));
       clinicId = clinic.id;
+      createdNewClinic = true;
     }
 
     // Always ensure the user profile is linked (idempotent)
@@ -290,6 +292,27 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
       .from("clinics")
       .update({ clinic_profile: clinicProfile })
       .eq("id", clinicId);
+  }
+
+  // Programa de indicação: se a clínica acabou de nascer e há cookie AXIEL_REF
+  // (capturado pelo middleware em /auth/signup?ref=CODIGO), vincula a clínica
+  // indicadora + registra a conversão. Falha de referral NUNCA quebra o signup.
+  if (createdNewClinic && clinicId) {
+    try {
+      const { cookies } = await import("next/headers");
+      const { REFERRAL_COOKIE, resolveReferralCode, recordReferralSignup } = await import("@/services/referral-service");
+      const refCode = (await cookies()).get(REFERRAL_COOKIE)?.value;
+      if (refCode) {
+        const referrerClinicId = await resolveReferralCode(refCode);
+        if (referrerClinicId && referrerClinicId !== clinicId) {
+          await supabase
+            .from("clinics")
+            .update({ referred_by_clinic_id: referrerClinicId })
+            .eq("id", clinicId);
+          await recordReferralSignup(referrerClinicId, clinicId);
+        }
+      }
+    } catch { /* referral é best-effort — nunca bloqueia o onboarding */ }
   }
 
   const { error: settingsError } = await supabase.from("clinic_settings").upsert({

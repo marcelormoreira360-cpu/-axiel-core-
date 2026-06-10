@@ -107,5 +107,17 @@
     "cta": "Rate my session",
     "orNote": "Or access your portal and click \"Rate session\".",
     "subject": "⭐ How was your session? — {clinic}"
+  },
+  "trialExpiry": {
+    "subject3d": "⏳ Your free trial ends in 3 days — {clinic}",
+    "subject1d": "⚠️ Last day! Your free trial ends tomorrow — {clinic}",
+    "preview": "Your AXIEL Core free trial ends in {days, plural, one {# day} other {# days}}.",
+    "heading3d": "3 days left in your trial",
+    "heading1d": "Your trial ends tomorrow",
+    "intro": "{clinic}'s free trial of AXIEL Core ends on {date}.",
+    "body3d": "To keep appointments, patients and automations running without interruption, pick a plan before your trial ends. It takes less than 2 minutes.",
+    "body1d": "This is the final notice: after that date, your clinic's access will be suspended until a plan is subscribed. Your data is kept safe and everything resumes exactly where you left off.",
+    "cta": "Choose my plan →",
+    "footerAuto": "This notice is sent automatically by AXIEL Core during the trial period."
   }
 }

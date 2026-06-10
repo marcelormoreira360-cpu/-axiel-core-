@@ -22,14 +22,20 @@ export async function GET(request: Request) {
 
   try {
     const { processReassessments } = await import("@/services/onboarding-assessment-service");
-    const [automations, packageAlerts, dunning, reassessments] = await Promise.all([
+    const { processTrialExpiryEmails } = await import("@/services/trial-expiry-service");
+    const [automations, packageAlerts, dunning, reassessments, trialExpiry] = await Promise.all([
       processAutomations(),
       checkLowPackageNotifications(),
       processDunning(),
       processReassessments(),
+      // Isolado: falha no aviso de trial não derruba as demais automações
+      processTrialExpiryEmails().catch((error) => {
+        log.error("trialExpiry failed", error);
+        return { sent: 0, skipped: 0, failed: 0, error: String(error) };
+      }),
     ]);
 
-    const result = { automations, packageAlerts, dunning, reassessments };
+    const result = { automations, packageAlerts, dunning, reassessments, trialExpiry };
     await guard.finish(result as Record<string, unknown>);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {

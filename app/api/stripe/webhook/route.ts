@@ -84,6 +84,27 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
     status: subscription.status,
   });
 
+  // ── Programa de indicação ────────────────────────────────────────────────
+  // Quando a assinatura da clínica indicada vira ATIVA (paga, fora do trial):
+  // marca a conversão e recompensa o indicador com 1 mês grátis, aplicando o
+  // coupon STRIPE_REFERRAL_COUPON_ID na assinatura Stripe ativa dele.
+  // ⚠️ O coupon precisa ser criado no painel do Stripe (100% off, duration
+  // "once") e o ID setado na env. processReferralConversion nunca lança —
+  // se a aplicação do coupon falhar, só loga (recompensa manual depois) e a
+  // conversão fica em 'converted'.
+  if (subscription.status === "active") {
+    try {
+      const { processReferralConversion } = await import("@/services/referral-service");
+      await processReferralConversion(clinicId);
+    } catch (referralError) {
+      // Cinto e suspensório: referral jamais derruba o webhook de billing.
+      log.warn("syncSubscription: falha no processamento de referral", {
+        clinic_id: clinicId,
+        error: referralError instanceof Error ? referralError.message : String(referralError),
+      });
+    }
+  }
+
   await supabase.from("billing_events").insert({
     clinic_id: clinicId,
     external_subscription_id: subscription.id,

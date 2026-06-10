@@ -5,6 +5,7 @@ import { useState, useTransition, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { FileUp, FileText, Image, Pencil, Check, X, CalendarPlus, MessageCircle, ChevronDown, ChevronUp, Receipt, Trash2 } from "lucide-react";
 import { type PatientPortalData } from "@/services/patient-portal-service";
+import { PoweredByAxiel } from "@/components/powered-by-axiel";
 import { useFormatMoney } from "@/components/currency-provider";
 import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 import { PackagesSection } from "./packages-section";
@@ -1205,6 +1206,11 @@ export function PatientPortalDashboard({
             a: (c) => <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="underline hover:text-black/40 transition">{c}</a>,
           })}
         </p>
+
+        {/* Rodapé PLG — oculto para clínicas Enterprise com white_label */}
+        {data.clinic.show_powered_by !== false && (
+          <PoweredByAxiel variant="portal" locale={locale} />
+        )}
       </div>
     </div>
   );

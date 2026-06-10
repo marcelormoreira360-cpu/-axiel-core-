@@ -4,6 +4,46 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { uploadPatientDocument } from "@/services/patient-document-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 
+// ── Validação de upload (rota pública — allowlist + magic bytes) ──────────────
+const ALLOWED_UPLOAD_MIMES = new Set([
+  "application/pdf",
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "text/plain",
+]);
+
+function matchesMagicBytes(mime: string, buf: Buffer): boolean {
+  if (buf.length < 12) return false;
+  switch (mime) {
+    case "application/pdf":
+      return buf.subarray(0, 4).toString("latin1") === "%PDF";
+    case "image/jpeg":
+      return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+    case "image/png":
+      return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+    case "image/webp":
+      return buf.subarray(0, 4).toString("latin1") === "RIFF" &&
+             buf.subarray(8, 12).toString("latin1") === "WEBP";
+    case "image/heic":
+    case "image/heif":
+      return buf.subarray(4, 8).toString("latin1") === "ftyp";
+    case "text/plain":
+      // Sem magic bytes; rejeita se contiver bytes nulos (binário disfarçado)
+      return !buf.subarray(0, Math.min(buf.length, 8192)).includes(0);
+    default:
+      return false;
+  }
+}
+
+function isAllowedUpload(declaredMime: string, buf: Buffer): boolean {
+  const mime = (declaredMime || "").toLowerCase().split(";")[0].trim();
+  if (!ALLOWED_UPLOAD_MIMES.has(mime)) return false;
+  return matchesMagicBytes(mime, buf);
+}
+
 export async function lookupPatientAction(
   email: string,
   clinicId: string,
@@ -57,19 +97,30 @@ export async function submitIntakeAction(
     if (!emailRegex.test(email)) return { error: "E-mail inválido." };
 
     // Find existing patient by email OR phone (prevents duplicate records when
-    // the same person booked via phone and now sends documents with an email)
+    // the same person booked via phone and now sends documents with an email).
+    // Queries separadas com .eq() — nunca interpolar input no DSL .or() (injeção PostgREST).
     const normalizedPhone = phone ? phone.replace(/\D/g, "") : null;
-    const orFilter = [
-      `email.eq.${email}`,
-      ...(normalizedPhone ? [`phone.eq.${normalizedPhone}`, `phone.eq.${phone}`] : []),
-    ].join(",");
 
-    const { data: existing } = await supabase
-      .from("patients")
-      .select("id, email, phone")
-      .eq("clinic_id", clinicId)
-      .or(orFilter)
-      .maybeSingle();
+    let existing: { id: string; email: string | null; phone: string | null } | null = null;
+    {
+      const { data } = await supabase
+        .from("patients")
+        .select("id, email, phone")
+        .eq("clinic_id", clinicId)
+        .eq("email", email)
+        .maybeSingle();
+      existing = data ?? null;
+    }
+    if (!existing && normalizedPhone) {
+      const { data } = await supabase
+        .from("patients")
+        .select("id, email, phone")
+        .eq("clinic_id", clinicId)
+        .in("phone", [normalizedPhone, phone].filter(Boolean) as string[])
+        .limit(1)
+        .maybeSingle();
+      existing = data ?? null;
+    }
 
     if (existing) {
       patientId = existing.id;
@@ -108,6 +159,9 @@ export async function submitIntakeAction(
     }
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
+    if (!isAllowedUpload(file.type, buffer)) {
+      return { error: `Tipo de arquivo não permitido: "${file.name}". Envie PDF, imagem (JPG/PNG/WEBP/HEIC) ou texto.` };
+    }
     try {
       await uploadPatientDocument(
         buffer, file.name, file.type || "application/octet-stream",

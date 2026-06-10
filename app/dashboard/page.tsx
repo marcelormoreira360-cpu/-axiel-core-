@@ -19,6 +19,8 @@ const RevenueChart = dynamic(
   { loading: () => <div className="h-40 rounded-[12px] bg-black/[.03] animate-pulse" /> },
 );
 import { TodayAgenda } from "@/components/dashboard/today-agenda";
+import { ReferralCard } from "@/components/referral-card";
+import { isManager } from "@/lib/team-utils";
 import type { SetupTask } from "@/components/setup-progress-banner";
 
 async function getSetupTasks(clinic: { id: string; logo_url: string | null; primary_color: string | null }): Promise<SetupTask[]> {
@@ -144,6 +146,13 @@ export default async function Dashboard() {
           initialKpis={kpis}
           initialTodayCount={todayAppts.length}
         />
+      )}
+
+      {/* ── Indique e ganhe (programa de indicação — só gestores) ── */}
+      {clinic && profile?.role && isManager(profile.role) && (
+        <div className="mb-[14px]">
+          <ReferralCard clinicId={clinic.id} />
+        </div>
       )}
 
       {/* ── Chart + Agenda ── */}

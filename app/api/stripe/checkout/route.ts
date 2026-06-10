@@ -64,6 +64,33 @@ export async function POST(request: Request) {
     );
   }
 
+  // ── Programa de indicação: clínica indicada ganha 1 mês grátis na 1ª fatura ──
+  // ⚠️ O coupon precisa ser criado no painel do Stripe (100% off, duration "once")
+  // e o ID setado na env STRIPE_REFERRAL_COUPON_ID. Sem a env, nada muda.
+  // Nota: o Stripe NÃO permite `discounts` junto com `allow_promotion_codes` —
+  // quando o desconto de indicação se aplica, desligamos os promotion codes.
+  let referralDiscounts: { coupon: string }[] | undefined;
+  const referralCouponId = process.env.STRIPE_REFERRAL_COUPON_ID;
+  if (referralCouponId) {
+    try {
+      const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+      const { data: clinicRow } = await createSupabaseAdminClient()
+        .from("clinics")
+        .select("referred_by_clinic_id")
+        .eq("id", clinic.id)
+        .maybeSingle();
+      if (clinicRow?.referred_by_clinic_id) {
+        referralDiscounts = [{ coupon: referralCouponId }];
+      }
+    } catch (e) {
+      // Best-effort: falha aqui não pode impedir a assinatura.
+      log.warn("referral: falha ao checar referred_by_clinic_id — checkout segue sem desconto", {
+        clinic_id: clinic.id,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: existingSubscription?.external_customer_id ?? undefined,
@@ -71,7 +98,9 @@ export async function POST(request: Request) {
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: `${APP_URL}/billing/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${APP_URL}/billing`,
-    allow_promotion_codes: true,
+    ...(referralDiscounts
+      ? { discounts: referralDiscounts }
+      : { allow_promotion_codes: true }),
     subscription_data: {
       trial_period_days: plan.trial_days ?? undefined,
       metadata: {

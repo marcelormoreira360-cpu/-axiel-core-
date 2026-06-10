@@ -115,8 +115,19 @@ export async function POST(request: Request) {
       notes: `Cobrança Pix Asaas ${asaasPaymentId}`,
     });
     if (insErr) {
-      // Não bloqueia o link (a cobrança no Asaas já existe); o webhook reconcilia depois.
+      // CRÍTICO: sem registro local, o paciente pagaria uma cobrança "fantasma".
+      // Cancela a cobrança no Asaas (best-effort) e retorna erro — fix auditoria 10/06/2026.
       console.error("asaas/charge: falha ao gravar patient_payments pending", insErr);
+      try {
+        const { asaasFetch } = await import("@/lib/asaas");
+        await asaasFetch(`/payments/${asaasPaymentId}`, { method: "DELETE" });
+      } catch (cancelErr) {
+        console.error("asaas/charge: falha ao cancelar cobrança órfã", asaasPaymentId, cancelErr);
+      }
+      return NextResponse.json(
+        { error: "Erro ao registrar a cobrança. Nenhum link foi enviado — tente novamente." },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ url: invoiceUrl });

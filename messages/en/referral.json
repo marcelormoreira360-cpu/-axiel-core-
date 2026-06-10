@@ -1,0 +1,8 @@
+{
+  "title": "Refer a clinic, get 1 month free",
+  "description": "Share your link with another clinic: when they subscribe to a plan, you both get 1 month free.",
+  "copy": "Copy link",
+  "copied": "Copied!",
+  "statsSignedUp": "{count, plural, =0 {No signups} one {# signup} other {# signups}}",
+  "statsConverted": "{count, plural, =0 {none converted} one {# converted} other {# converted}}"
+}

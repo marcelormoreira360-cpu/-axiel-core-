@@ -4,11 +4,12 @@ import { useEffect, useState, useTransition } from "react";
 import { useParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
+import { PoweredByAxiel } from "@/components/powered-by-axiel";
 
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
 interface Slot          { time: string; iso: string; }
-interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; }
+interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; show_powered_by?: boolean; }
 interface Practitioner  { id: string; display_name: string; specialty: string | null; bio: string | null; }
 
 type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
@@ -489,6 +490,11 @@ export default function BookingPage() {
         )}
 
       </div>
+
+      {/* Rodapé PLG — oculto para clínicas Enterprise com white_label */}
+      {clinic.show_powered_by !== false && (
+        <PoweredByAxiel variant="booking" locale={locale} />
+      )}
     </div>
   );
 }
