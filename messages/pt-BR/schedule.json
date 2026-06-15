@@ -53,7 +53,8 @@
     "meta": "{time} · {minutes} min",
     "insight": "Insight",
     "pending": "Pendente",
-    "telehealth": "Teleconsulta"
+    "telehealth": "Teleconsulta",
+    "awaiting": "Aguardando"
   },
   "drawer": {
     "title": "Sessão de hoje",
@@ -80,8 +81,20 @@
     "today": "Hoje",
     "all": "Todos",
     "scheduleAt": "Agendar às {time}",
-    "views": { "dia": "Dia", "semana": "Semana", "mes": "Mês" },
-    "weekdays": { "mon": "Seg", "tue": "Ter", "wed": "Qua", "thu": "Qui", "fri": "Sex", "sat": "Sáb", "sun": "Dom" }
+    "views": {
+      "dia": "Dia",
+      "semana": "Semana",
+      "mes": "Mês"
+    },
+    "weekdays": {
+      "mon": "Seg",
+      "tue": "Ter",
+      "wed": "Qua",
+      "thu": "Qui",
+      "fri": "Sex",
+      "sat": "Sáb",
+      "sun": "Dom"
+    }
   },
   "modal": {
     "title": "Nova sessão",
@@ -100,6 +113,22 @@
     "minutes": "{count} min",
     "cancel": "Cancelar",
     "saving": "Salvando…",
-    "confirm": "Confirmar"
+    "confirm": "Confirmar",
+    "modeNow": "Confirmar agora",
+    "modeLink": "Enviar link",
+    "modeLinkHint": "O horário fica reservado como pendente e o paciente confirma pelo link.",
+    "sendLink": "Gerar link",
+    "linkError": "Não foi possível gerar o link.",
+    "linkReadyTitle": "Link de confirmação",
+    "linkReadyDesc": "Horário reservado. Envie o link para o paciente confirmar e completar o cadastro.",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "sendWhatsApp": "Enviar por WhatsApp",
+    "sendEmail": "Enviar por e-mail",
+    "emailSending": "Enviando…",
+    "emailSent": "E-mail enviado ✓",
+    "emailError": "Erro ao enviar",
+    "done": "Concluído",
+    "waMessage": "Olá! Reservei um horário para você. Confirme e complete seu cadastro aqui: {url}"
   }
 }

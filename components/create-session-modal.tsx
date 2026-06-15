@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { X, Search, UserPlus, Settings2 } from "lucide-react";
+import { X, Search, UserPlus, Settings2, Copy, Check, Link2, Mail } from "lucide-react";
 import type { Patient, SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
 import { buildStartsAtForToday, buildStartsAtForDate } from "@/modules/schedule/time-slots";
+
+type ConfirmLinkResult = { url?: string; phone?: string | null; email?: string | null; patientName?: string; error?: string };
 
 export function CreateSessionModal({
   slot,
@@ -14,12 +16,16 @@ export function CreateSessionModal({
   sessionTypes,
   onClose,
   action,
+  confirmLinkAction,
+  emailLinkAction,
 }: {
   slot: TimeSlot | null;
   patients: Patient[];
   sessionTypes: SessionType[];
   onClose: () => void;
   action: (formData: FormData) => Promise<void>;
+  confirmLinkAction?: (formData: FormData) => Promise<ConfirmLinkResult>;
+  emailLinkAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const t = useTranslations("schedule.modal");
   const locale = useLocale();
@@ -40,7 +46,50 @@ export function CreateSessionModal({
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? DEFAULT_TYPE);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Modo: confirmar agora (cria a sessão) x enviar link de confirmação ao paciente
+  const canSendLink = !!confirmLinkAction;
+  const [mode, setMode] = useState<"now" | "link">("now");
+  const [linkResult, setLinkResult] = useState<{ url: string; phone: string | null; email: string | null } | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [emailState, setEmailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+
   if (!slot) return null;
+
+  const dateLabel = slot.date
+    ? `${slot.date.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })} · ${slot.label}`
+    : slot.label;
+
+  async function copyLink(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = url; document.body.appendChild(el); el.select();
+      document.execCommand("copy"); document.body.removeChild(el);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  function openWhatsApp(phone: string, url: string) {
+    const digits = phone.replace(/\D/g, "");
+    const msg = t("waMessage", { url });
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+  }
+
+  function sendEmail(email: string, url: string) {
+    if (!emailLinkAction) return;
+    setEmailState("sending");
+    const fd = new FormData();
+    fd.set("email", email);
+    fd.set("url", url);
+    fd.set("date_label", dateLabel);
+    startTransition(async () => {
+      const res = await emailLinkAction(fd);
+      setEmailState(res.ok ? "sent" : "error");
+    });
+  }
 
   const filtered = query.trim().length > 0
     ? patients.filter((p) =>
@@ -69,6 +118,7 @@ export function CreateSessionModal({
 
   function submit(formData: FormData) {
     if (!selectedType) return;
+    setError(null);
     if (isNewPatient) {
       if (!newName.trim()) return;
       formData.set("new_patient_name", newName.trim());
@@ -79,6 +129,21 @@ export function CreateSessionModal({
       formData.set("patient_id", selectedPatient.id);
     }
     formData.set("duration_minutes", String(selectedType.duration_minutes));
+    if (selectedType.id) formData.set("session_type_id", selectedType.id);
+
+    if (mode === "link" && confirmLinkAction) {
+      startTransition(async () => {
+        const res = await confirmLinkAction(formData);
+        if (res.error || !res.url) {
+          setError(res.error ?? t("linkError"));
+          return;
+        }
+        setLinkResult({ url: res.url, phone: res.phone ?? null, email: res.email ?? null });
+        router.refresh();
+      });
+      return;
+    }
+
     startTransition(async () => {
       await action(formData);
       onClose();
@@ -99,6 +164,71 @@ export function CreateSessionModal({
         className="absolute inset-0 bg-[#0F1A2E]/30 backdrop-blur-[2px]"
       />
 
+      {linkResult ? (
+        <div className="relative w-full max-w-[420px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("linkReadyTitle")}</p>
+              <h2 className="text-[16px] font-medium tracking-[-0.02em] text-[#0F1A2E] mt-[2px] capitalize">{dateLabel}</h2>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          <p className="text-[12px] text-[#6B6A66] mb-3 leading-relaxed">{t("linkReadyDesc")}</p>
+
+          {/* Link + copiar */}
+          <div className="flex items-center gap-[6px] mb-3">
+            <span className="flex-1 text-[11px] font-mono text-[#6B6A66] bg-[#F4F3EF] rounded-[6px] px-[10px] py-[8px] truncate">
+              {linkResult.url}
+            </span>
+            <button
+              type="button"
+              onClick={() => copyLink(linkResult.url)}
+              className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[7px] px-[10px] py-[8px] transition shrink-0"
+            >
+              {copied ? <><Check className="h-3 w-3" />{t("copied")}</> : <><Copy className="h-3 w-3" />{t("copy")}</>}
+            </button>
+          </div>
+
+          {/* Envio rápido */}
+          <div className="space-y-[7px]">
+            {linkResult.phone && (
+              <button
+                type="button"
+                onClick={() => openWhatsApp(linkResult.phone!, linkResult.url)}
+                className="w-full flex items-center justify-center gap-[7px] text-[12px] font-medium text-white bg-[#25D366] hover:opacity-90 rounded-[8px] py-[9px] transition"
+              >
+                <Link2 className="h-3.5 w-3.5" />{t("sendWhatsApp")}
+              </button>
+            )}
+            {linkResult.email && (
+              <button
+                type="button"
+                disabled={emailState === "sending" || emailState === "sent"}
+                onClick={() => sendEmail(linkResult.email!, linkResult.url)}
+                className="w-full flex items-center justify-center gap-[7px] text-[12px] font-medium text-[#0F1A2E] border border-black/[.12] hover:bg-[#F4F3EF] disabled:opacity-50 rounded-[8px] py-[9px] transition"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {emailState === "sent" ? t("emailSent") : emailState === "sending" ? t("emailSending") : emailState === "error" ? t("emailError") : t("sendEmail")}
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full mt-4 text-[12px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] transition"
+          >
+            {t("done")}
+          </button>
+        </div>
+      ) : (
       <form
         action={submit}
         className="relative w-full max-w-[420px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-6"
@@ -302,6 +432,35 @@ export function CreateSessionModal({
           </div>
         </div>
 
+        {/* Mode toggle: confirmar agora x enviar link */}
+        {canSendLink && (
+          <div className="mb-4">
+            <div className="flex rounded-[8px] border border-black/[.08] overflow-hidden text-[11px]">
+              <button
+                type="button"
+                onClick={() => setMode("now")}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "now" ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+              >
+                {t("modeNow")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "link" ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+              >
+                {t("modeLink")}
+              </button>
+            </div>
+            {mode === "link" && (
+              <p className="text-[10px] text-[#A09E98] mt-[6px]">{t("modeLinkHint")}</p>
+            )}
+          </div>
+        )}
+
+        {error && (
+          <p className="text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px] mb-3">{error}</p>
+        )}
+
         {/* Actions */}
         <div className="flex gap-2">
           <button
@@ -316,10 +475,11 @@ export function CreateSessionModal({
             disabled={!canSubmit}
             className="flex-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[8px] py-[9px] transition"
           >
-            {isPending ? t("saving") : t("confirm")}
+            {isPending ? t("saving") : mode === "link" ? t("sendLink") : t("confirm")}
           </button>
         </div>
       </form>
+      )}
     </div>
   );
 }

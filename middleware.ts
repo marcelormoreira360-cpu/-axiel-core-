@@ -56,6 +56,8 @@ function isPublicPath(pathname: string) {
     publicRoutes.includes(pathname) ||
     pathname.startsWith("/p/") ||       // patient portal (magic link)
     pathname.startsWith("/envio/") ||   // public patient intake/upload
+    pathname.startsWith("/cadastro/") || // public patient self-registration
+    pathname.startsWith("/confirmar/") || // public appointment confirmation link
     pathname.startsWith("/join/") ||    // team invite accept
     pathname.startsWith("/book/") ||    // public online booking page
     pathname.startsWith("/f/") ||       // public assessment forms (token-based)

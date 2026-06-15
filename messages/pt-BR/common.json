@@ -59,7 +59,8 @@
     "confirmed": "Confirmado",
     "completed": "Realizado",
     "cancelled": "Cancelado",
-    "no_show": "Faltou"
+    "no_show": "Faltou",
+    "pending": "Aguardando confirmação"
   },
   "push": {
     "title": "Ativar notificações",

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Copy, Check, Calendar, FileText, UserCircle2, ExternalLink, Video, Save } from "lucide-react";
+import { Copy, Check, Calendar, FileText, UserCircle2, ExternalLink, Video, Save, UserPlus } from "lucide-react";
 
 interface Practitioner {
   user_id: string;
@@ -193,8 +193,9 @@ export function LinksHub({
   saveZoomUrlAction: (formData: FormData) => Promise<void>;
 }) {
   const t = useTranslations("links");
-  const bookingUrl = `${baseUrl}/book/${clinicSlug}`;
-  const intakeUrl  = `${baseUrl}/envio/${clinicSlug}`;
+  const bookingUrl  = `${baseUrl}/book/${clinicSlug}`;
+  const intakeUrl   = `${baseUrl}/envio/${clinicSlug}`;
+  const registerUrl = `${baseUrl}/cadastro/${clinicSlug}`;
 
   return (
     <div className="space-y-[22px]">
@@ -210,6 +211,12 @@ export function LinksHub({
             description={t("bookingDesc", { clinic: clinicName })}
             url={bookingUrl}
             badge={t("badgePrincipal")}
+          />
+          <LinkCard
+            icon={<UserPlus className="h-4 w-4 text-[#0F6E56]" />}
+            title={t("registerTitle")}
+            description={t("registerDesc")}
+            url={registerUrl}
           />
           <LinkCard
             icon={<FileText className="h-4 w-4 text-[#A09E98]" />}

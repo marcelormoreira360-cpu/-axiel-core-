@@ -53,7 +53,8 @@
     "meta": "{time} · {minutes} min",
     "insight": "Insight",
     "pending": "Pending",
-    "telehealth": "Telehealth"
+    "telehealth": "Telehealth",
+    "awaiting": "Awaiting"
   },
   "drawer": {
     "title": "Today's session",
@@ -80,8 +81,20 @@
     "today": "Today",
     "all": "All",
     "scheduleAt": "Schedule at {time}",
-    "views": { "dia": "Day", "semana": "Week", "mes": "Month" },
-    "weekdays": { "mon": "Mon", "tue": "Tue", "wed": "Wed", "thu": "Thu", "fri": "Fri", "sat": "Sat", "sun": "Sun" }
+    "views": {
+      "dia": "Day",
+      "semana": "Week",
+      "mes": "Month"
+    },
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    }
   },
   "modal": {
     "title": "New session",
@@ -100,6 +113,22 @@
     "minutes": "{count} min",
     "cancel": "Cancel",
     "saving": "Saving…",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "modeNow": "Confirm now",
+    "modeLink": "Send link",
+    "modeLinkHint": "The slot is held as pending and the patient confirms via the link.",
+    "sendLink": "Generate link",
+    "linkError": "Could not generate the link.",
+    "linkReadyTitle": "Confirmation link",
+    "linkReadyDesc": "Slot held. Send the link for the patient to confirm and complete their registration.",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "sendWhatsApp": "Send via WhatsApp",
+    "sendEmail": "Send via email",
+    "emailSending": "Sending…",
+    "emailSent": "Email sent ✓",
+    "emailError": "Send failed",
+    "done": "Done",
+    "waMessage": "Hi! I've reserved a time for you. Confirm and complete your registration here: {url}"
   }
 }

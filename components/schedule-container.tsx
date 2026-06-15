@@ -208,6 +208,8 @@ function DayView({
   patients,
   sessionTypes,
   createSessionAction,
+  confirmLinkAction,
+  emailLinkAction,
   onOpenSession,
   setSelectedSlot,
   selectedSlot,
@@ -219,6 +221,8 @@ function DayView({
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
+  confirmLinkAction?: ConfirmLinkAction;
+  emailLinkAction?: EmailLinkAction;
   onOpenSession: (s: ScheduleSession) => void;
   setSelectedSlot: (s: TimeSlot | null) => void;
   selectedSlot: TimeSlot | null;
@@ -512,6 +516,8 @@ function DayView({
         sessionTypes={sessionTypes}
         onClose={() => setSelectedSlot(null)}
         action={createSessionAction}
+        confirmLinkAction={confirmLinkAction}
+        emailLinkAction={emailLinkAction}
       />
     </>
   );
@@ -543,6 +549,8 @@ function DraggableApptCard({
   const name      = appt.patients?.full_name ?? "Paciente";
   const firstName = name.split(" ")[0];
   const isResizing = resizeDuration !== null;
+  const isPending = appt.status === "pending";
+  const accent = isPending ? "#8A5A06" : "#0F6E56";
 
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.stopPropagation(); // prevent dnd-kit from activating drag
@@ -585,8 +593,8 @@ function DraggableApptCard({
         top: top + 1,
         height: height - 2,
         zIndex: isDragging ? 50 : 10,
-        background: isActive ? "#C3EBDB" : "#E1F5EE",
-        border: `1px solid ${isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
+        background: isPending ? (isActive ? "#F6E3BC" : "#FAEEDA") : (isActive ? "#C3EBDB" : "#E1F5EE"),
+        border: `1px solid ${isPending ? (isActive || isResizing ? "rgba(217,164,65,0.6)" : "rgba(217,164,65,0.4)") : (isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)")}`,
         borderRadius: 6,
         padding: "4px 6px",
         overflow: "hidden",
@@ -600,7 +608,7 @@ function DraggableApptCard({
       {...listeners}
       {...attributes}
     >
-      <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+      <p style={{ fontSize: 10, fontWeight: 700, color: accent, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
         {formatTime(appt.starts_at, locale)}
       </p>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
@@ -696,6 +704,8 @@ function WeekView({
   patients,
   sessionTypes,
   createSessionAction,
+  confirmLinkAction,
+  emailLinkAction,
   onReschedule,
   onResizeDuration,
 }: {
@@ -705,6 +715,8 @@ function WeekView({
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
+  confirmLinkAction?: ConfirmLinkAction;
+  emailLinkAction?: EmailLinkAction;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
@@ -1052,6 +1064,8 @@ function WeekView({
       sessionTypes={sessionTypes}
       onClose={() => setSelectedSlot(null)}
       action={createSessionAction}
+      confirmLinkAction={confirmLinkAction}
+      emailLinkAction={emailLinkAction}
     />
     </>
   );
@@ -1138,12 +1152,17 @@ function MonthView({
 
 // ─── Main container ───────────────────────────────────────────────────────────
 
+export type ConfirmLinkAction = (formData: FormData) => Promise<{ url?: string; phone?: string | null; email?: string | null; patientName?: string; error?: string }>;
+export type EmailLinkAction = (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+
 export function ScheduleContainer({
   sessions,
   allAppointments,
   patients,
   sessionTypes,
   createSessionAction,
+  createConfirmationLinkAction,
+  emailConfirmationLinkAction,
   updateStatusAction,
   rescheduleAction,
   resizeDurationAction,
@@ -1154,6 +1173,8 @@ export function ScheduleContainer({
   patients: Patient[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
+  createConfirmationLinkAction?: ConfirmLinkAction;
+  emailConfirmationLinkAction?: EmailLinkAction;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
@@ -1313,6 +1334,8 @@ export function ScheduleContainer({
           patients={patients}
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
+          confirmLinkAction={createConfirmationLinkAction}
+          emailLinkAction={emailConfirmationLinkAction}
           onOpenSession={setSelectedSession}
           setSelectedSlot={setSelectedSlot}
           selectedSlot={selectedSlot}
@@ -1330,6 +1353,8 @@ export function ScheduleContainer({
           patients={patients}
           sessionTypes={sessionTypes}
           createSessionAction={createSessionAction}
+          confirmLinkAction={createConfirmationLinkAction}
+          emailLinkAction={emailConfirmationLinkAction}
           onReschedule={rescheduleAction}
           onResizeDuration={resizeDurationAction}
         />

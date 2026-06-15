@@ -28,13 +28,22 @@ export function SessionCard({
   const patientName = session.patients?.full_name ?? t("patientFallback");
   const sessionCount = session.previousSessions.length + 1;
   const hasFinalInsight = session.latestInsightStatus === "final";
+  const isAwaiting = session.status === "pending";
 
   return (
     <button type="button" onClick={() => onOpen(session)} className="block w-full text-left group">
-      <div className="bg-white border border-black/[.08] rounded-[10px] px-[13px] py-[11px] hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6] transition">
+      <div className={[
+        "border rounded-[10px] px-[13px] py-[11px] transition border-l-[3px]",
+        isAwaiting
+          ? "bg-[#FDF8EE] border-black/[.08] border-l-[#D9A441] hover:bg-[#FBF1DC]"
+          : "bg-white border-black/[.08] border-l-[#0F6E56]/0 hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6]",
+      ].join(" ")}>
         <div className="flex items-center gap-[10px]">
           {/* Avatar */}
-          <div className="w-8 h-8 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[11px] font-medium text-[#0F6E56] shrink-0">
+          <div className={[
+            "w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-medium shrink-0",
+            isAwaiting ? "bg-[#FAEEDA] text-[#8A5A06]" : "bg-[#E1F5EE] text-[#0F6E56]",
+          ].join(" ")}>
             {initials(patientName)}
           </div>
 
@@ -47,15 +56,21 @@ export function SessionCard({
             <p className="text-[11px] text-[#A09E98] mt-[1px]">{t("meta", { time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}</p>
           </div>
 
-          {/* Insight badge */}
-          <span className={[
-            "text-[10px] px-[7px] py-[2px] rounded-full shrink-0",
-            hasFinalInsight
-              ? "bg-[#E1F5EE] text-[#085041]"
-              : "bg-[#FAEEDA] text-[#633806]",
-          ].join(" ")}>
-            {hasFinalInsight ? t("insight") : t("pending")}
-          </span>
+          {/* Status / insight badge */}
+          {isAwaiting ? (
+            <span className="text-[10px] px-[7px] py-[2px] rounded-full shrink-0 bg-[#FAEEDA] text-[#8A5A06]">
+              {t("awaiting")}
+            </span>
+          ) : (
+            <span className={[
+              "text-[10px] px-[7px] py-[2px] rounded-full shrink-0",
+              hasFinalInsight
+                ? "bg-[#E1F5EE] text-[#085041]"
+                : "bg-[#FAEEDA] text-[#633806]",
+            ].join(" ")}>
+              {hasFinalInsight ? t("insight") : t("pending")}
+            </span>
+          )}
         </div>
 
         {/* Video link badge */}

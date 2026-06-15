@@ -1,7 +1,30 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 10/06/2026 (8)
+> Atualizado em: 15/06/2026 (10)
+
+## ✅ Link de confirmação de agendamento (terapeuta → paciente) (15/06/2026)
+
+O terapeuta clica num horário da agenda e, em vez de confirmar direto, pode **gerar um link** que reserva o horário como **pendente**; o paciente abre o link, completa os dados e **confirma o horário** que o profissional escolheu. Decisões do usuário: reserva **pendente**; envio por **copiar/WhatsApp/e-mail**; serve para **paciente novo e já cadastrado**.
+
+- **Migration `078_appointment_confirmation_links.sql` APLICADA em produção (15/06/2026)**: `appointments_status_check` recriado incluindo **`'pending'`**; colunas `confirm_token_hash` (índice único parcial), `confirm_expires_at`, `confirmed_at`; `NOTIFY pgrst`. `Appointment.status` (lib/types) += `'pending'`; `common.appointmentStatus.pending` (PT/EN).
+- **appointment-service**: `createPendingAppointmentWithToken` (status pending, **sem** os side-effects de confirmação — Zoom/Google/WhatsApp/questionários só rodam na confirmação), `getAppointmentByConfirmToken` (admin, valida expiração/status), `confirmAppointmentByToken` (enriquece paciente, status `confirmed`, `confirmed_at`, limpa token; idempotente via `.eq("status","pending")`). Token = `randomBytes(32)` + SHA-256.
+- **Modal da agenda** (`create-session-modal.tsx`): seletor **Confirmar agora × Enviar link**. No modo link, chama `createConfirmationLinkAction` (em `app/schedule/page.tsx`, retorna `{url,phone,email}`) e mostra painel com **Copiar / WhatsApp (wa.me) / E-mail** (`emailConfirmationLinkAction` via `sendSimpleEmail`). Props `confirmLinkAction`/`emailLinkAction` threadadas por `schedule-container` (DayView + WeekView).
+- **Página pública** `app/confirmar/[token]/` (page + confirm-client + actions): mostra clínica + horário proposto; paciente completa dados (mesmos campos do `/cadastro`, com endereço/bairro) + consentimentos (`data_processing` + `analytics_anonymized`, IP/UA) e confirma. Estados: inválido/expirado, sucesso. Rate limit `confirm-appt`. Rota liberada no `middleware.ts` (`/confirmar/`). Pós-confirmação dispara automações + questionários de entrada.
+- **i18n**: namespace novo `confirmBooking` (PT/EN) + chaves novas em `schedule.modal` → **39 namespaces**.
+- **Follow-ups concluídos (15/06)**: (1) **cor própria do horário pendente** — `session-card` (dia) e `DraggableApptCard` (semana) em **âmbar** + badge "Aguardando" (`schedule.card.awaiting`); (2) **integrações Zoom/Google na confirmação** — `runIntegrationsForAppointment(appointmentId)` exportado no appointment-service (carrega o appt joined + `createIntegrationsSideEffects`), disparado fire-and-forget na confirm action.
+- Validado: tsc confiável **0 erros**; verify:i18n **39 namespaces, paridade OK**; migration 078 aplicada e verificada. **Pendência operacional**: deploy dos `.ts` na Vercel.
+
+## ✅ Auto-cadastro do paciente + endereço + tendências anonimizadas (15/06/2026)
+
+Fluxo para o paciente preencher os próprios dados antes da 1ª consulta, alimentando um "produto de tendências" agregado e anonimizado. Decisões do usuário: granularidade **cidade + estado**; entrada = **paciente ativo direto** (sem fila de aprovação).
+
+- **Migration `077_self_register_and_trends.sql` APLICADA em produção (15/06/2026, projeto bfuulpvzedcrpmmjxles)**: `patients.neighborhood` (bairro); VIEW `patient_trends_agg` (`security_invoker=on` — ajustado para evitar o lint `security_definer_view`; `REVOKE` de anon/authenticated, só `postgres`/`service_role` têm grant) — agrega por state+city+faixa_etária só de pacientes com consentimento `analytics_anonymized` granted, `HAVING count(*) >= 5` (k-anonimato), **sem identificadores nem clinic_id**; `NOTIFY pgrst`. `consent_type` segue texto livre (novo valor `analytics_anonymized`, sem mudança de schema).
+- **Auto-cadastro público** `app/cadastro/[slug]/` (page + `register-client.tsx` + `actions.ts`): `submitSelfRegistrationAction` (admin client, rate limit `self-register:{clinicId}` 30/h, dedup por email→phone com `.eq()`, cria/atualiza paciente `status='active'` com endereço/bairro/CPF/DOB). Grava 2 consentimentos em `patient_consents` (`data_processing` obrigatório + `analytics_anonymized` opt-in) com IP/user-agent (`headers()`), source `onboarding`. Rota liberada no `middleware.ts` (`/cadastro/`).
+- **Tipos/serviço**: `Patient.neighborhood`; `createPatient`/`updatePatient` aceitam endereço completo + `neighborhood`; `anonymizePatient` zera `neighborhood`.
+- **Produto de tendências**: `services/patient-trends-service.ts` (`getPatientTrends` via admin client, KPIs + por faixa etária) + `app/trends/page.tsx` (guard `isManager`, só agregados, banner de privacidade, tabela por região). Link de auto-cadastro adicionado ao hub `/links` (`links.registerTitle/registerDesc`).
+- **i18n**: namespaces novos `publicRegister` e `trends` (PT/EN) → **38 namespaces**.
+- Validado: tsc confiável **0 erros**; verify:i18n **38 namespaces, paridade OK**; migration 077 aplicada + advisor de segurança sem alerta para a view. **Pendências operacionais**: deploy dos `.ts` na Vercel; (opcional) auto-preencher cidade/UF a partir do CEP (ViaCEP); adicionar `/trends` à sidebar.
 
 ## ✅ Auditoria completa + correções + growth (10/06/2026)
 

@@ -1,0 +1,17 @@
+{
+  "title": "Trends",
+  "subtitle": "Aggregated, anonymized view of patients who opted in to statistical use.",
+  "privacyBanner": "This data is fully anonymized: it includes only patients who consented, is aggregated by city, state and age band, and groups with fewer than 5 people are hidden to prevent re-identification. No individual data is shown.",
+  "emptyTitle": "Not enough data yet.",
+  "emptyDesc": "Trends appear once there are at least 5 consented patients in the same group (city + state + age band).",
+  "kpiConsented": "Consented patients",
+  "kpiCities": "Cities",
+  "kpiGroups": "Groups",
+  "byAge": "By age band",
+  "byRegion": "By region",
+  "colCity": "City",
+  "colState": "State",
+  "colAge": "Age band",
+  "colCount": "Patients",
+  "ageUnknown": "Not provided"
+}

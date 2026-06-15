@@ -12,6 +12,8 @@
   "bookingTitle": "Agendamento online",
   "bookingDesc": "Pacientes podem agendar uma sessão com {clinic} de forma automática.",
   "badgePrincipal": "Principal",
+  "registerTitle": "Auto-cadastro do paciente",
+  "registerDesc": "Link para o paciente preencher os próprios dados e endereço antes da primeira consulta.",
   "docsTitle": "Envio de documentos",
   "docsDesc": "Link para o paciente enviar exames, fichas e anamneses antes da consulta.",
   "zoomTitle": "Teleconsulta Zoom",

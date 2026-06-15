@@ -1,5 +1,10 @@
+import { createHash, randomBytes } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
+
+function hashConfirmToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
@@ -92,6 +97,148 @@ export async function createAppointment(input: {
   );
 
   return appt;
+}
+
+// ── Link de confirmação (agendamento pendente + token) ─────────────────────────
+
+/**
+ * Cria um agendamento PENDENTE que segura o horário e gera um token de confirmação.
+ * NÃO dispara os side-effects de confirmação (Zoom/Google/WhatsApp/questionários) —
+ * isso só acontece quando o paciente confirma via `confirmAppointmentByToken`.
+ */
+export async function createPendingAppointmentWithToken(input: {
+  clinic_id: string;
+  patient_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  session_type_id?: string | null;
+  practitioner_id?: string | null;
+  notes?: string | null;
+  expiresInDays?: number;
+}): Promise<{ appointmentId: string; token: string }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const token = randomBytes(32).toString("hex");
+  const expires = new Date(Date.now() + (input.expiresInDays ?? 7) * 86_400_000).toISOString();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .insert({
+      clinic_id: input.clinic_id,
+      patient_id: input.patient_id,
+      starts_at: input.starts_at,
+      duration_minutes: input.duration_minutes,
+      session_type_id: input.session_type_id ?? null,
+      practitioner_id: input.practitioner_id ?? null,
+      notes: input.notes ?? null,
+      source: "direct",
+      status: "pending",
+      confirm_token_hash: hashConfirmToken(token),
+      confirm_expires_at: expires,
+      created_by: user?.id ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) throw error ?? new Error("Falha ao criar agendamento pendente.");
+  return { appointmentId: data.id, token };
+}
+
+export type ConfirmAppointmentInfo = {
+  id: string;
+  clinic_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  status: string | null;
+  expired: boolean;
+  clinic: { name: string; logo_url: string | null; primary_color: string | null } | null;
+  patient: { id: string; full_name: string; email: string | null; phone: string | null } | null;
+  session_type_name: string | null;
+};
+
+/** Resolve um agendamento pelo token do link de confirmação (admin client, rota pública). */
+export async function getAppointmentByConfirmToken(token: string): Promise<ConfirmAppointmentInfo | null> {
+  if (!token) return null;
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("appointments")
+    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone), clinics(name, logo_url, primary_color), session_types(name)")
+    .eq("confirm_token_hash", hashConfirmToken(token))
+    .maybeSingle();
+  if (!data) return null;
+
+  const clinic = Array.isArray(data.clinics) ? data.clinics[0] : data.clinics;
+  const patient = Array.isArray(data.patients) ? data.patients[0] : data.patients;
+  const st = Array.isArray(data.session_types) ? data.session_types[0] : data.session_types;
+  const expired = data.confirm_expires_at ? new Date(data.confirm_expires_at as string).getTime() < Date.now() : false;
+
+  return {
+    id: data.id,
+    clinic_id: data.clinic_id,
+    starts_at: data.starts_at,
+    duration_minutes: data.duration_minutes,
+    status: data.status,
+    expired,
+    clinic: clinic ? { name: clinic.name, logo_url: clinic.logo_url ?? null, primary_color: clinic.primary_color ?? null } : null,
+    patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null } : null,
+    session_type_name: st?.name ?? null,
+  };
+}
+
+/**
+ * Confirma o agendamento: enriquece o paciente com os dados informados, vira
+ * status 'confirmed' e limpa o token. Idempotente via `.eq("status","pending")`.
+ */
+export async function confirmAppointmentByToken(
+  token: string,
+  patientFields: Partial<{
+    full_name: string; email: string | null; phone: string | null; cpf: string | null;
+    date_of_birth: string | null; address_line: string | null; neighborhood: string | null;
+    city: string | null; state: string | null; zip_code: string | null; country: string | null;
+  }>,
+): Promise<{ ok: boolean; error?: string; clinicId?: string; patientId?: string; appointmentId?: string; startsAt?: string }> {
+  const info = await getAppointmentByConfirmToken(token);
+  if (!info) return { ok: false, error: "Link inválido ou expirado." };
+  if (info.status !== "pending") return { ok: false, error: "Este agendamento já foi confirmado ou não está mais disponível." };
+  if (info.expired) return { ok: false, error: "Este link expirou. Solicite um novo à clínica." };
+
+  const supabase = createSupabaseAdminClient();
+
+  if (info.patient?.id) {
+    const cleaned = Object.fromEntries(Object.entries(patientFields).filter(([, v]) => v !== undefined));
+    await supabase
+      .from("patients")
+      .update({ ...cleaned, status: "active", updated_at: new Date().toISOString() })
+      .eq("id", info.patient.id)
+      .eq("clinic_id", info.clinic_id);
+  }
+
+  const { error } = await supabase
+    .from("appointments")
+    .update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirm_token_hash: null, confirm_expires_at: null })
+    .eq("id", info.id)
+    .eq("status", "pending");
+
+  if (error) return { ok: false, error: "Erro ao confirmar o horário. Tente novamente." };
+  return { ok: true, clinicId: info.clinic_id, patientId: info.patient?.id, appointmentId: info.id, startsAt: info.starts_at };
+}
+
+/**
+ * Roda as integrações (Google Calendar + Zoom, se a sessão for online) para um
+ * agendamento já existente — usado na confirmação por token, já que o agendamento
+ * pendente é criado sem disparar esses side-effects.
+ */
+export async function runIntegrationsForAppointment(appointmentId: string): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("appointments")
+    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes, price_cents)")
+    .eq("id", appointmentId)
+    .single();
+  if (!data) return;
+  await createIntegrationsSideEffects(data as Appointment);
 }
 
 async function createIntegrationsSideEffects(appt: Appointment) {

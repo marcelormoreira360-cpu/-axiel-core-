@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatients, createAppointment, updateAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatients, createAppointment, createPendingAppointmentWithToken, updateAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
+import { sendSimpleEmail } from "@/services/email-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatients, createPatient } from "@/services/patient-service";
@@ -142,6 +144,90 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  // Gera um link de confirmação: cria o agendamento como PENDENTE (segura o horário)
+  // e devolve a URL + contato do paciente para o terapeuta enviar (copiar/WhatsApp/e-mail).
+  async function createConfirmationLinkAction(
+    formData: FormData,
+  ): Promise<{ url?: string; phone?: string | null; email?: string | null; patientName?: string; error?: string }> {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) return { error: "Usuário sem clínica." };
+
+    const startsAt = String(formData.get("starts_at") ?? "");
+    const duration = Number(formData.get("duration_minutes") ?? 60);
+    const sessionTypeId = String(formData.get("session_type_id") ?? "") || null;
+
+    const newPatientName = String(formData.get("new_patient_name") ?? "").trim();
+    let patientId = String(formData.get("patient_id") ?? "").trim();
+    let phone: string | null = null;
+    let email: string | null = null;
+    let patientName = "";
+
+    if (newPatientName) {
+      const np = await createPatient({
+        clinic_id: profile.clinic_id,
+        full_name: newPatientName,
+        email: String(formData.get("new_patient_email") ?? "").trim() || null,
+        phone: String(formData.get("new_patient_phone") ?? "").trim() || null,
+        notes: null,
+      });
+      patientId = np.id; phone = np.phone; email = np.email; patientName = np.full_name;
+    } else if (patientId) {
+      const { getPatientById } = await import("@/services/patient-service");
+      const p = await getPatientById(patientId, profile.clinic_id);
+      if (!p) return { error: "Paciente não encontrado." };
+      phone = p.phone; email = p.email; patientName = p.full_name;
+    }
+
+    if (!patientId || !startsAt) return { error: "Paciente e horário são obrigatórios." };
+
+    const { token } = await createPendingAppointmentWithToken({
+      clinic_id: profile.clinic_id,
+      patient_id: patientId,
+      starts_at: startsAt,
+      duration_minutes: duration,
+      session_type_id: sessionTypeId,
+    });
+
+    const h = await headers();
+    const host = h.get("host") ?? "localhost:3000";
+    const proto = host.startsWith("localhost") ? "http" : "https";
+    const url = `${proto}://${host}/confirmar/${token}`;
+
+    revalidatePath("/schedule");
+    return { url, phone, email, patientName };
+  }
+
+  // Envia o link de confirmação por e-mail ao paciente.
+  async function emailConfirmationLinkAction(
+    formData: FormData,
+  ): Promise<{ ok: boolean; error?: string }> {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) return { ok: false, error: "Usuário sem clínica." };
+    const to = String(formData.get("email") ?? "").trim();
+    const url = String(formData.get("url") ?? "").trim();
+    const dateLabel = String(formData.get("date_label") ?? "").trim();
+    if (!to || !url) return { ok: false, error: "E-mail ou link ausente." };
+
+    const clinic = await getCurrentClinic();
+    const clinicName = clinic?.name ?? "Clínica";
+    try {
+      await sendSimpleEmail({
+        to,
+        subject: `Confirme seu agendamento — ${clinicName}`,
+        html:
+          `<p>Olá!</p>` +
+          `<p>A ${clinicName} reservou um horário para você${dateLabel ? `: <b>${dateLabel}</b>` : ""}.</p>` +
+          `<p>Confirme o horário e complete seu cadastro neste link:</p>` +
+          `<p><a href="${url}">${url}</a></p>`,
+      });
+      return { ok: true };
+    } catch {
+      return { ok: false, error: "Erro ao enviar e-mail." };
+    }
+  }
+
   async function updateStatusAction(id: string, status: string) {
     "use server";
     await updateAppointment(id, { status });
@@ -222,6 +308,8 @@ export default async function SchedulePage() {
             patients={patients}
             sessionTypes={sessionTypes}
             createSessionAction={createSessionAction}
+            createConfirmationLinkAction={createConfirmationLinkAction}
+            emailConfirmationLinkAction={emailConfirmationLinkAction}
             updateStatusAction={updateStatusAction}
             rescheduleAction={rescheduleAction}
             resizeDurationAction={resizeDurationAction}

@@ -12,6 +12,8 @@
   "bookingTitle": "Online booking",
   "bookingDesc": "Patients can book a session with {clinic} automatically.",
   "badgePrincipal": "Main",
+  "registerTitle": "Patient self-registration",
+  "registerDesc": "Link for the patient to fill in their own details and address before the first appointment.",
   "docsTitle": "Document upload",
   "docsDesc": "Link for the patient to send lab tests, forms and intake before the appointment.",
   "zoomTitle": "Zoom telehealth",

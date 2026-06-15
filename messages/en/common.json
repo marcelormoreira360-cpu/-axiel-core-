@@ -59,7 +59,8 @@
     "confirmed": "Confirmed",
     "completed": "Completed",
     "cancelled": "Cancelled",
-    "no_show": "No-show"
+    "no_show": "No-show",
+    "pending": "Awaiting confirmation"
   },
   "push": {
     "title": "Enable notifications",

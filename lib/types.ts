@@ -63,6 +63,7 @@ export type Patient = {
   chief_complaint: string | null;
   case_summary: string | null;
   address_line: string | null;
+  neighborhood: string | null;
   city: string | null;
   state: string | null;
   zip_code: string | null;
@@ -109,7 +110,7 @@ export type Appointment = {
   duration_minutes: number;
   notes: string | null;
   video_url: string | null;
-  status: "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show" | null;
+  status: "pending" | "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show" | null;
   zoom_meeting_id: string | null;
   zoom_join_url: string | null;
   zoom_start_url: string | null;
