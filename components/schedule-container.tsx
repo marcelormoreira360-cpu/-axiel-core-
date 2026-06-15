@@ -167,7 +167,7 @@ function DraggableDayCard({
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            if (window.confirm(t("deleteConfirm"))) onDelete(session.id);
+            onDelete(session.id);
           }}
           style={{
             position: "absolute", top: 2, right: 2, width: 16, height: 16,
@@ -663,7 +663,7 @@ function DraggableApptCard({
           onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            if (window.confirm(t("deleteConfirm"))) onDelete(appt.id);
+            onDelete(appt.id);
           }}
           style={{
             position: "absolute", top: 2, right: 2, width: 16, height: 16,
