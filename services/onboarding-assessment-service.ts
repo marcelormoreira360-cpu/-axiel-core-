@@ -10,7 +10,9 @@ export async function sendAssessmentsToPatient(input: {
   patientId: string;
   templateIds: string[];
   supabase?: SupabaseAdmin;
-}): Promise<{ sent: number; links: { name: string; url: string }[] }> {
+  /** Base absoluta para os links (ex.: derivada do host da requisição). Default: NEXT_PUBLIC_APP_URL. */
+  baseUrl?: string;
+}): Promise<{ sent: number; links: { name: string; url: string; token: string }[] }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
   if (!input.templateIds.length) return { sent: 0, links: [] };
 
@@ -29,8 +31,8 @@ export async function sendAssessmentsToPatient(input: {
     .maybeSingle();
   if (!patient) return { sent: 0, links: [] };
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const links: { name: string; url: string }[] = [];
+  const baseUrl = input.baseUrl || process.env.NEXT_PUBLIC_APP_URL || "";
+  const links: { name: string; url: string; token: string }[] = [];
 
   for (const tpl of templates) {
     // Idempotência: já existe convite aberto (não respondido, não expirado)?
@@ -53,7 +55,7 @@ export async function sendAssessmentsToPatient(input: {
       clinic_id: input.clinicId,
     });
     if (error) continue;
-    links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}` });
+    links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}`, token });
   }
 
   if (links.length === 0) return { sent: 0, links: [] };
@@ -90,7 +92,8 @@ export async function sendOnboardingAssessments(appt: {
   id: string;
   clinic_id: string;
   patient_id: string;
-}): Promise<{ links: { name: string; url: string }[] }> {
+  baseUrl?: string;
+}): Promise<{ links: { name: string; url: string; token: string }[] }> {
   const supabase = createSupabaseAdminClient();
 
   // É a primeira sessão? (só este agendamento existe para o paciente)
@@ -115,6 +118,7 @@ export async function sendOnboardingAssessments(appt: {
     patientId: appt.patient_id,
     templateIds: templates.map((t) => t.id as string),
     supabase,
+    baseUrl: appt.baseUrl,
   });
   return { links };
 }

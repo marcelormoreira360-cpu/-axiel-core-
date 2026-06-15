@@ -13,7 +13,7 @@ function clean(v: FormDataEntryValue | null, max = 200): string {
 
 export async function confirmAppointmentAction(
   formData: FormData,
-): Promise<{ error?: string; success?: boolean; questionnaires?: { name: string; url: string }[] }> {
+): Promise<{ error?: string; success?: boolean; questionnaires?: { name: string; token: string }[] }> {
   const token = clean(formData.get("token"), 128);
   if (!token) return { error: "Link inválido." };
 
@@ -83,17 +83,23 @@ export async function confirmAppointmentAction(
   }
 
   // Questionários de entrada: cria os convites, tenta WhatsApp/e-mail E devolve os
-  // links para exibir nesta tela (não depende da entrega externa funcionar).
-  let questionnaires: { name: string; url: string }[] = [];
+  // tokens para exibir/encadear nesta tela (não depende da entrega externa funcionar).
+  // baseUrl derivado do host da requisição → links sempre no domínio do Core
+  // (evita cair no NEXT_PUBLIC_APP_URL apontando para outro app).
+  let questionnaires: { name: string; token: string }[] = [];
   if (result.appointmentId) {
     try {
+      const fwdHost = h.get("x-forwarded-host") ?? h.get("host") ?? "";
+      const proto = h.get("x-forwarded-proto") ?? (fwdHost.startsWith("localhost") ? "http" : "https");
+      const baseUrl = fwdHost ? `${proto}://${fwdHost}` : "";
       const { sendOnboardingAssessments } = await import("@/services/onboarding-assessment-service");
       const r = await sendOnboardingAssessments({
         id: result.appointmentId,
         clinic_id: result.clinicId,
         patient_id: result.patientId,
+        baseUrl,
       });
-      questionnaires = r.links;
+      questionnaires = r.links.map((l) => ({ name: l.name, token: l.token }));
     } catch { /* não bloqueia a confirmação */ }
   }
 

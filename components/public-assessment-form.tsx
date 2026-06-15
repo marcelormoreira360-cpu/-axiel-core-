@@ -53,11 +53,15 @@ function ScaleInput({
 export function PublicAssessmentForm({
   template,
   token,
+  chain = [],
 }: {
   template: TemplateWithStructure;
   token: string;
+  /** Tokens dos próximos questionários (encadeamento Q1→Q2→…→fim). */
+  chain?: string[];
 }) {
   const t = useTranslations("publicForm");
+  const [advancing, setAdvancing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number | string | null>>({});
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -148,6 +152,15 @@ export function PublicAssessmentForm({
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body.error ?? t("errSave"));
+      }
+
+      // Encadeamento: se há próximos questionários, avança automaticamente.
+      if (chain.length > 0) {
+        const [next, ...rest] = chain;
+        const q = rest.length ? `?chain=${rest.join(",")}` : "";
+        setAdvancing(true);
+        window.location.href = `/f/${next}${q}`;
+        return;
       }
 
       setDone(true);
@@ -321,10 +334,10 @@ export function PublicAssessmentForm({
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || advancing}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
-        {submitting ? t("submitting") : t("submit")}
+        {submitting || advancing ? t("submitting") : chain.length > 0 ? t("next") : t("submit")}
       </button>
     </form>
   );

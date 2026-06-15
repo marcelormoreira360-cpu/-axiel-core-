@@ -15,5 +15,6 @@
   "errSave": "Error saving",
   "doneTitle": "Thank you!",
   "doneDesc": "Your answers were submitted successfully and are now in your clinical record.",
-  "totalScore": "Total score"
+  "totalScore": "Total score",
+  "next": "Save and continue"
 }

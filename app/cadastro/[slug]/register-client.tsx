@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { submitSelfRegistrationAction } from "./actions";
 
 export function RegisterClient({
@@ -52,6 +53,9 @@ export function RegisterClient({
   return (
     <main className="min-h-screen bg-[#F4F3EF] px-[16px] py-[36px]">
       <div className="w-full max-w-[560px] mx-auto">
+        <div className="flex justify-end mb-[10px]">
+          <LanguageSwitcher />
+        </div>
         {/* Cabeçalho da clínica */}
         <div className="text-center mb-[22px]">
           {logoUrl ? (

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, CalendarClock, Loader2, AlertCircle } from "lucide-react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { confirmAppointmentAction } from "./actions";
 
 export function ConfirmClient({
@@ -35,7 +36,7 @@ export function ConfirmClient({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [questionnaires, setQuestionnaires] = useState<{ name: string; url: string }[]>([]);
+  const [questionnaires, setQuestionnaires] = useState<{ name: string; token: string }[]>([]);
 
   const dateStr = startsAt
     ? new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -82,25 +83,33 @@ export function ConfirmClient({
           <p className="text-[13px] text-[#6B6A66] leading-relaxed mb-3">{t("doneDesc")}</p>
           <p className="text-[13px] font-medium text-[#0F1A2E] capitalize">{dateStr} · {timeStr}</p>
 
-          {questionnaires.length > 0 && (
-            <div className="mt-5 text-left border-t border-black/[.07] pt-4">
-              <p className="text-[13px] font-medium text-[#0F1A2E] mb-[2px]">{t("questionnairesTitle")}</p>
-              <p className="text-[12px] text-[#6B6A66] mb-3">{t("questionnairesHint")}</p>
-              <div className="space-y-[8px]">
-                {questionnaires.map((q) => (
-                  <a
-                    key={q.url}
-                    href={q.url}
-                    className="flex items-center justify-between gap-[10px] rounded-[9px] px-[12px] py-[10px] text-white text-[13px] font-medium"
-                    style={{ background: primaryColor }}
-                  >
-                    <span className="truncate">{q.name}</span>
-                    <span className="shrink-0 text-[12px] opacity-90">{t("openQuestionnaire")} →</span>
-                  </a>
-                ))}
+          {questionnaires.length > 0 && (() => {
+            const startUrl =
+              `/f/${questionnaires[0].token}` +
+              (questionnaires.length > 1
+                ? `?chain=${questionnaires.slice(1).map((q) => q.token).join(",")}`
+                : "");
+            return (
+              <div className="mt-5 text-left border-t border-black/[.07] pt-4">
+                <p className="text-[13px] font-medium text-[#0F1A2E] mb-[2px]">{t("questionnairesTitle")}</p>
+                <p className="text-[12px] text-[#6B6A66] mb-3">{t("questionnairesHint")}</p>
+                <ul className="mb-3 space-y-[4px]">
+                  {questionnaires.map((q, i) => (
+                    <li key={q.token} className="text-[12px] text-[#0F1A2E] flex items-center gap-[6px]">
+                      <span className="text-[#A09E98]">{i + 1}.</span> {q.name}
+                    </li>
+                  ))}
+                </ul>
+                <a
+                  href={startUrl}
+                  className="flex items-center justify-center gap-[7px] rounded-[9px] px-[14px] py-[11px] text-white text-[13px] font-medium"
+                  style={{ background: primaryColor }}
+                >
+                  {t("openQuestionnaire")} →
+                </a>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </main>
     );
@@ -109,6 +118,9 @@ export function ConfirmClient({
   return (
     <main className="min-h-screen bg-[#F4F3EF] px-[16px] py-[36px]">
       <div className="w-full max-w-[560px] mx-auto">
+        <div className="flex justify-end mb-[10px]">
+          <LanguageSwitcher />
+        </div>
         {/* Cabeçalho da clínica */}
         <div className="text-center mb-[20px]">
           {logoUrl ? (

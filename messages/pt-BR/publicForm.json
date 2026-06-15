@@ -15,5 +15,6 @@
   "errSave": "Erro ao salvar",
   "doneTitle": "Obrigado!",
   "doneDesc": "Suas respostas foram enviadas com sucesso e já estão na sua ficha clínica.",
-  "totalScore": "Pontuação total"
+  "totalScore": "Pontuação total",
+  "next": "Salvar e continuar"
 }

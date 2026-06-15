@@ -1,7 +1,15 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/06/2026 (11)
+> Atualizado em: 15/06/2026 (12)
+
+## ✅ Questionários: domínio correto, encadeamento, toggle PT/EN (15/06/2026)
+
+- **🐞 Link caía no app errado (login)**: os links de questionário eram montados com `NEXT_PUBLIC_APP_URL`, que no projeto Core na Vercel aponta para o **AXIEL Growth** (`growth.vercel.app`) → o paciente caía no login do Growth. `/f/[token]` no Core é público e abre direto (confirmado por fetch). Correção no código: `sendAssessmentsToPatient`/`sendOnboardingAssessments` aceitam `baseUrl`; a confirm action passa o **host da requisição**; a tela de confirmação usa link **relativo** (`/f/...`). ⚠️ **AÇÃO OPERACIONAL**: corrigir `NEXT_PUBLIC_APP_URL` do projeto Core na Vercel para o domínio do Core (senão os links de **WhatsApp/e-mail** e o cron de reavaliação continuam apontando errado).
+- **Encadeamento Q1→Q2→fim (sem login)**: `/f/[token]?chain=t2,t3` — ao enviar um questionário, avança automático para o próximo; o último finaliza. A tela de confirmação abre **um botão** que percorre todos. `public-assessment-form` ganhou prop `chain`; botão vira "Salvar e continuar" (`publicForm.next`).
+- **Toggle PT/EN** (`LanguageSwitcher`, que já funciona anônimo via cookie) nas 3 páginas públicas: `/cadastro/[slug]`, `/confirmar/[token]`, `/f/[token]`. Resolve a mistura de idiomas (antes o idioma vinha só do navegador).
+- ⚠️ **Nuance pendente**: o *conteúdo* dos questionários é por template (Q-SNA/Q.R.M. são PT). Paciente EN com UI EN ainda recebe o questionário PT. Parear versão EN dos templates por idioma = feature separada.
+- Validado: tsc **0 erros**; verify:i18n **39 namespaces, paridade OK**.
 
 ## ✅ Agenda — UX: excluir, arraste 30min, grade alinhada (15/06/2026)
 
