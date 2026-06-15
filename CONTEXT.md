@@ -9,6 +9,9 @@
 - **Arraste de 30 em 30 min**: `DroppableHourCell` virou célula de **meia hora** (prop `minute`, altura `HOUR_HEIGHT/2`); week e day renderizam 2 células/hora (`...__HH__MM` / `day__HH__MM`); `handleDragEnd` e `handleCellClick` parseiam o minuto.
 - **Grade alinhada**: na semana, adicionada **linha sólida na hora cheia** (alinhada ao rótulo) + meia-hora tracejada leve. Dia já tinha separador por hora.
 - Q-SNA e Q.R.M. marcados com `send_on_first_appointment=true` em produção (envio automático na 1ª sessão). Convites avulsos gerados p/ paciente "Dayane".
+- **🐞 Fix exclusão (causa raiz)**: o RLS de SELECT de `appointments` esconde linhas com `deleted_at IS NOT NULL`. O `softDeleteAppointment` (client de usuário) fazia UPDATE + `.select().single()`; o RETURNING era filtrado pelo RLS → PostgREST retornava erro e **dava rollback no UPDATE** (nada era excluído). Corrigido: `softDeleteAppointment(id, clinicId)` usa **admin client** escopado por `clinic_id` + `.maybeSingle()`. `deleteSessionAction` passa `profile.clinic_id`.
+- **Questionários na confirmação**: como WhatsApp Business não entrega texto livre a contato frio e os testes estavam sem e-mail/código de país, os links dos questionários de entrada agora aparecem **na tela de confirmação do paciente** (`confirmAppointmentAction` retorna `questionnaires`; `sendAssessmentsToPatient`/`sendOnboardingAssessments` retornam `links`).
+- Q-SNA e Q.R.M. com `send_on_first_appointment=true` (envio automático na 1ª sessão).
 - Validado: tsc **0 erros**; verify:i18n **39 namespaces, paridade OK**.
 
 ## ✅ Link de confirmação de agendamento (terapeuta → paciente) (15/06/2026)
