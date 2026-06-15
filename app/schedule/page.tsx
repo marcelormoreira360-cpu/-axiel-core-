@@ -238,7 +238,7 @@ export default async function SchedulePage() {
     "use server";
     const profile = await getCurrentUserProfile();
     if (!profile?.clinic_id) throw new Error("Usuário sem clínica.");
-    await softDeleteAppointment(id);
+    await softDeleteAppointment(id, profile.clinic_id);
     revalidatePath("/schedule");
   }
 

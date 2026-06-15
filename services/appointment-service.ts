@@ -307,17 +307,21 @@ async function createIntegrationsSideEffects(appt: Appointment) {
 
 // ── Soft delete ───────────────────────────────────────────────────────────────
 
-/** Exclui um agendamento da agenda (soft delete) e limpa Zoom/Google (best-effort). */
-export async function softDeleteAppointment(appointmentId: string): Promise<void> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+/**
+ * Exclui um agendamento da agenda (soft delete) e limpa Zoom/Google (best-effort).
+ * Usa admin client escopado por `clinicId` — a política RLS de SELECT esconde linhas
+ * com `deleted_at` preenchido, o que quebraria o RETURNING via client de usuário.
+ */
+export async function softDeleteAppointment(appointmentId: string, clinicId: string): Promise<void> {
+  const supabase = createSupabaseAdminClient();
 
   const { data, error } = await supabase
     .from("appointments")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", appointmentId)
+    .eq("clinic_id", clinicId)
     .select("clinic_id, google_event_id, zoom_meeting_id")
-    .single();
+    .maybeSingle();
   if (error) throw error;
 
   if (data?.google_event_id) {
