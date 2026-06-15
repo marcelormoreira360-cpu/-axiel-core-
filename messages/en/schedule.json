@@ -94,7 +94,9 @@
       "fri": "Fri",
       "sat": "Sat",
       "sun": "Sun"
-    }
+    },
+    "delete": "Delete",
+    "deleteConfirm": "Delete this appointment? This action cannot be undone."
   },
   "modal": {
     "title": "New session",

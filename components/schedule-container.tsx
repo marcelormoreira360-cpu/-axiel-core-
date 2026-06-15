@@ -78,13 +78,16 @@ function DraggableDayCard({
   isActive,
   onOpen,
   onResize,
+  onDelete,
 }: {
   session: ScheduleSession;
   isActive: boolean;
   onOpen: (s: ScheduleSession) => void;
   onResize?: (id: string, newDuration: number) => void;
+  onDelete?: (id: string) => Promise<void>;
 }) {
   const locale = useLocale();
+  const t = useTranslations("schedule.calendar");
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: session.id,
     data: { session },
@@ -155,6 +158,25 @@ function DraggableDayCard({
       {...listeners}
       {...attributes}
     >
+      {onDelete && (
+        <div
+          role="button"
+          aria-label={t("delete")}
+          title={t("delete")}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (window.confirm(t("deleteConfirm"))) onDelete(session.id);
+          }}
+          style={{
+            position: "absolute", top: 2, right: 2, width: 16, height: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 4, color: "#B42318", background: "rgba(255,255,255,0.75)",
+            fontSize: 13, lineHeight: 1, cursor: "pointer", zIndex: 30,
+          }}
+        >×</div>
+      )}
       <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
         {formatTime(session.starts_at, locale)}
       </p>
@@ -210,6 +232,7 @@ function DayView({
   createSessionAction,
   confirmLinkAction,
   emailLinkAction,
+  onDelete,
   onOpenSession,
   setSelectedSlot,
   selectedSlot,
@@ -223,6 +246,7 @@ function DayView({
   createSessionAction: (formData: FormData) => Promise<void>;
   confirmLinkAction?: ConfirmLinkAction;
   emailLinkAction?: EmailLinkAction;
+  onDelete?: (id: string) => Promise<void>;
   onOpenSession: (s: ScheduleSession) => void;
   setSelectedSlot: (s: TimeSlot | null) => void;
   selectedSlot: TimeSlot | null;
@@ -276,11 +300,12 @@ function DayView({
     const { active, over } = e;
     if (!over || !onReschedule) return;
 
-    // overId format: "day__HH"
+    // overId format: "day__HH__MM"
     const parts = String(over.id).split("__");
-    if (parts.length !== 2 || parts[0] !== "day") return;
+    if (parts.length !== 3 || parts[0] !== "day") return;
     const targetHour = parseInt(parts[1], 10);
-    if (isNaN(targetHour)) return;
+    const targetMin  = parseInt(parts[2], 10);
+    if (isNaN(targetHour) || isNaN(targetMin)) return;
 
     const sessionId = String(active.id);
     const s         = localSessions.find((x) => x.id === sessionId);
@@ -288,7 +313,7 @@ function DayView({
 
     const orig     = new Date(s.starts_at);
     const newStart = new Date(navDate);
-    newStart.setHours(targetHour, orig.getMinutes(), 0, 0);
+    newStart.setHours(targetHour, targetMin, 0, 0);
 
     if (newStart.getTime() === orig.getTime()) return;
 
@@ -391,21 +416,31 @@ function DayView({
             </div>
           )}
 
-          {/* Droppable hour cells */}
-          {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h) => (
-            <DroppableHourCell
-              key={`day-cell-${h}`}
-              id={`day__${h}`}
-              date={navDate}
-              hour={h}
-              onClick={() => {
-                if (!activeId) {
-                  const slot = slots.find((s) => s.hour === h);
-                  if (slot) setSelectedSlot(slot);
-                }
-              }}
-            />
-          ))}
+          {/* Droppable cells de 30 em 30 min */}
+          {HOUR_LABELS.slice(0, TOTAL_HOURS).flatMap((h) =>
+            [0, 30].map((m) => (
+              <DroppableHourCell
+                key={`day-cell-${h}-${m}`}
+                id={`day__${h}__${m}`}
+                date={navDate}
+                hour={h}
+                minute={m}
+                onClick={() => {
+                  if (!activeId) {
+                    const slotDate = new Date(navDate);
+                    slotDate.setHours(h, m, 0, 0);
+                    setSelectedSlot({
+                      label: `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`,
+                      hour: h,
+                      minute: m,
+                      isBusinessHour: h >= 8 && h <= 18,
+                      date: slotDate,
+                    });
+                  }
+                }}
+              />
+            )),
+          )}
 
           {/* Background slot rows (visual only) */}
           {slots.map((slot, i) => {
@@ -480,6 +515,7 @@ function DayView({
               isActive={activeId === s.id}
               onOpen={onOpenSession}
               onResize={handleResize}
+              onDelete={onDelete}
             />
           ))}
         </div>
@@ -529,12 +565,15 @@ function DraggableApptCard({
   appt,
   isActive,
   onResize,
+  onDelete,
 }: {
   appt: Appointment;
   isActive: boolean;
   onResize?: (id: string, newDuration: number) => void;
+  onDelete?: (id: string) => Promise<void>;
 }) {
   const locale = useLocale();
+  const t = useTranslations("schedule.calendar");
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: appt.id,
     data: { appt },
@@ -608,6 +647,25 @@ function DraggableApptCard({
       {...listeners}
       {...attributes}
     >
+      {onDelete && (
+        <div
+          role="button"
+          aria-label={t("delete")}
+          title={t("delete")}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (window.confirm(t("deleteConfirm"))) onDelete(appt.id);
+          }}
+          style={{
+            position: "absolute", top: 2, right: 2, width: 16, height: 16,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            borderRadius: 4, color: "#B42318", background: "rgba(255,255,255,0.75)",
+            fontSize: 13, lineHeight: 1, cursor: "pointer", zIndex: 30,
+          }}
+        >×</div>
+      )}
       <p style={{ fontSize: 10, fontWeight: 700, color: accent, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
         {formatTime(appt.starts_at, locale)}
       </p>
@@ -659,17 +717,19 @@ function DroppableHourCell({
   id,
   date,
   hour,
+  minute,
   onClick,
   children,
 }: {
   id: string;
   date: Date;
   hour: number;
+  minute: number;
   onClick: () => void;
   children?: React.ReactNode;
 }) {
   const t = useTranslations("schedule.calendar");
-  const { setNodeRef, isOver } = useDroppable({ id, data: { date, hour } });
+  const { setNodeRef, isOver } = useDroppable({ id, data: { date, hour, minute } });
 
   return (
     <div
@@ -678,8 +738,8 @@ function DroppableHourCell({
         position: "absolute",
         left: 0,
         right: 0,
-        top: (hour - START_HOUR) * HOUR_HEIGHT,
-        height: HOUR_HEIGHT,
+        top: (hour - START_HOUR) * HOUR_HEIGHT + (minute / 60) * HOUR_HEIGHT,
+        height: HOUR_HEIGHT / 2,
         background: isOver ? "rgba(15,110,86,0.06)" : "transparent",
         border: isOver ? "1px dashed rgba(15,110,86,0.35)" : "1px solid transparent",
         borderRadius: 4,
@@ -688,7 +748,7 @@ function DroppableHourCell({
         transition: "background 0.1s, border-color 0.1s",
       }}
       onClick={onClick}
-      title={t("scheduleAt", { time: `${String(hour).padStart(2, "0")}:00` })}
+      title={t("scheduleAt", { time: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}` })}
     >
       {children}
     </div>
@@ -706,6 +766,7 @@ function WeekView({
   createSessionAction,
   confirmLinkAction,
   emailLinkAction,
+  onDelete,
   onReschedule,
   onResizeDuration,
 }: {
@@ -717,6 +778,7 @@ function WeekView({
   createSessionAction: (formData: FormData) => Promise<void>;
   confirmLinkAction?: ConfirmLinkAction;
   emailLinkAction?: EmailLinkAction;
+  onDelete?: (id: string) => Promise<void>;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
 }) {
@@ -757,13 +819,14 @@ function WeekView({
     const { active, over } = e;
     if (!over || !onReschedule) return;
 
-    // overId format: "YYYY-MM-DDTHH:mm:ss.sssZ__HH"
+    // overId format: "YYYY-MM-DDTHH:mm:ss.sssZ__HH__MM"
     const parts = String(over.id).split("__");
-    if (parts.length !== 2) return;
-    const [dateIso, hourStr] = parts;
+    if (parts.length !== 3) return;
+    const [dateIso, hourStr, minStr] = parts;
     const targetDate = new Date(dateIso);
     const targetHour = parseInt(hourStr, 10);
-    if (isNaN(targetHour)) return;
+    const targetMin  = parseInt(minStr, 10);
+    if (isNaN(targetHour) || isNaN(targetMin)) return;
 
     const apptId    = String(active.id);
     const appt      = localAppts.find((a) => a.id === apptId);
@@ -771,7 +834,7 @@ function WeekView({
 
     const orig      = new Date(appt.starts_at);
     const newStart  = new Date(targetDate);
-    newStart.setHours(targetHour, orig.getMinutes(), 0, 0);
+    newStart.setHours(targetHour, targetMin, 0, 0);
 
     // Skip if same time
     if (newStart.getTime() === orig.getTime()) return;
@@ -811,14 +874,17 @@ function WeekView({
 
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
-  function handleCellClick(date: Date, hour: number) {
+  function handleCellClick(date: Date, hour: number, minute = 0) {
     const slotDate = new Date(date);
-    slotDate.setHours(hour, 0, 0, 0);
-    const slot = buildDayTimeSlots().find((s) => s.hour === hour);
-    if (slot) {
-      const adjusted: TimeSlot = { ...slot, date: slotDate };
-      setSelectedSlot(adjusted);
-    }
+    slotDate.setHours(hour, minute, 0, 0);
+    const adjusted: TimeSlot = {
+      label: `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`,
+      hour,
+      minute,
+      isBusinessHour: hour >= 8 && hour <= 18,
+      date: slotDate,
+    };
+    setSelectedSlot(adjusted);
   }
 
   return (
@@ -962,16 +1028,19 @@ function WeekView({
                   borderRight: "1px solid rgba(0,0,0,0.05)",
                 }}
               >
-                {/* Células clicáveis e droppable por hora */}
-                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h) => (
-                  <DroppableHourCell
-                    key={`cell-${h}`}
-                    id={`${date.toISOString()}__${h}`}
-                    date={date}
-                    hour={h}
-                    onClick={() => !activeId && handleCellClick(date, h)}
-                  />
-                ))}
+                {/* Células clicáveis e droppable de 30 em 30 min */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).flatMap((h) =>
+                  [0, 30].map((m) => (
+                    <DroppableHourCell
+                      key={`cell-${h}-${m}`}
+                      id={`${date.toISOString()}__${h}__${m}`}
+                      date={date}
+                      hour={h}
+                      minute={m}
+                      onClick={() => !activeId && handleCellClick(date, h, m)}
+                    />
+                  )),
+                )}
 
                 {/* Linha "agora" */}
                 {isCurrentWeek && colIdx === todayColIdx && nowOffset !== null && (
@@ -1000,7 +1069,22 @@ function WeekView({
                   </div>
                 )}
 
-                {/* Linhas 30 min (over the cells) */}
+                {/* Linha sólida na hora cheia (alinhada ao rótulo) */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
+                  <div
+                    key={`hr-${h}`}
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: i * HOUR_HEIGHT,
+                      borderTop: "1px solid rgba(0,0,0,0.08)",
+                      pointerEvents: "none",
+                      zIndex: 2,
+                    }}
+                  />
+                ))}
+                {/* Linha tracejada leve na meia hora */}
                 {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
                   <div
                     key={`hh-${h}`}
@@ -1009,7 +1093,7 @@ function WeekView({
                       left: 0,
                       right: 0,
                       top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
-                      borderTop: "1px dashed rgba(0,0,0,0.04)",
+                      borderTop: "1px dashed rgba(0,0,0,0.05)",
                       pointerEvents: "none",
                       zIndex: 2,
                     }}
@@ -1023,6 +1107,7 @@ function WeekView({
                     appt={appt}
                     isActive={activeId === appt.id}
                     onResize={handleResize}
+                    onDelete={onDelete}
                   />
                 ))}
               </div>
@@ -1164,6 +1249,7 @@ export function ScheduleContainer({
   createConfirmationLinkAction,
   emailConfirmationLinkAction,
   updateStatusAction,
+  deleteSessionAction,
   rescheduleAction,
   resizeDurationAction,
   practitioners,
@@ -1176,6 +1262,7 @@ export function ScheduleContainer({
   createConfirmationLinkAction?: ConfirmLinkAction;
   emailConfirmationLinkAction?: EmailLinkAction;
   updateStatusAction?: (id: string, status: string) => Promise<void>;
+  deleteSessionAction?: (id: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
@@ -1336,6 +1423,7 @@ export function ScheduleContainer({
           createSessionAction={createSessionAction}
           confirmLinkAction={createConfirmationLinkAction}
           emailLinkAction={emailConfirmationLinkAction}
+          onDelete={deleteSessionAction}
           onOpenSession={setSelectedSession}
           setSelectedSlot={setSelectedSlot}
           selectedSlot={selectedSlot}
@@ -1355,6 +1443,7 @@ export function ScheduleContainer({
           createSessionAction={createSessionAction}
           confirmLinkAction={createConfirmationLinkAction}
           emailLinkAction={emailConfirmationLinkAction}
+          onDelete={deleteSessionAction}
           onReschedule={rescheduleAction}
           onResizeDuration={resizeDurationAction}
         />

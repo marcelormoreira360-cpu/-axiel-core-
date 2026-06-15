@@ -1,7 +1,15 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/06/2026 (10)
+> Atualizado em: 15/06/2026 (11)
+
+## ✅ Agenda — UX: excluir, arraste 30min, grade alinhada (15/06/2026)
+
+- **Excluir pela agenda**: `softDeleteAppointment(id)` (appointment-service; seta `deleted_at` + limpa Zoom/Google) + filtro `.is("deleted_at", null)` em `getAppointments`. `deleteSessionAction` em `app/schedule/page.tsx`, threadada (ScheduleContainer → DayView/WeekView). Botão **"×"** (com `window.confirm`) no `DraggableDayCard` (dia) e `DraggableApptCard` (semana). i18n `schedule.calendar.delete/deleteConfirm`.
+- **Arraste de 30 em 30 min**: `DroppableHourCell` virou célula de **meia hora** (prop `minute`, altura `HOUR_HEIGHT/2`); week e day renderizam 2 células/hora (`...__HH__MM` / `day__HH__MM`); `handleDragEnd` e `handleCellClick` parseiam o minuto.
+- **Grade alinhada**: na semana, adicionada **linha sólida na hora cheia** (alinhada ao rótulo) + meia-hora tracejada leve. Dia já tinha separador por hora.
+- Q-SNA e Q.R.M. marcados com `send_on_first_appointment=true` em produção (envio automático na 1ª sessão). Convites avulsos gerados p/ paciente "Dayane".
+- Validado: tsc **0 erros**; verify:i18n **39 namespaces, paridade OK**.
 
 ## ✅ Link de confirmação de agendamento (terapeuta → paciente) (15/06/2026)
 

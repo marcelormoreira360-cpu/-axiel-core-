@@ -94,7 +94,9 @@
       "fri": "Sex",
       "sat": "Sáb",
       "sun": "Dom"
-    }
+    },
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir este agendamento? Esta ação não pode ser desfeita."
   },
   "modal": {
     "title": "Nova sessão",

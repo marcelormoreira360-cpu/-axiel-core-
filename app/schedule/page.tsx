@@ -6,7 +6,7 @@ import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatients, createAppointment, createPendingAppointmentWithToken, updateAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatients, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
 import { scheduleAutomations } from "@/services/automation-service";
@@ -234,6 +234,14 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  async function deleteSessionAction(id: string) {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) throw new Error("Usuário sem clínica.");
+    await softDeleteAppointment(id);
+    revalidatePath("/schedule");
+  }
+
   async function rescheduleAction(id: string, newStartsAt: string) {
     "use server";
     await updateAppointment(id, { starts_at: newStartsAt });
@@ -311,6 +319,7 @@ export default async function SchedulePage() {
             createConfirmationLinkAction={createConfirmationLinkAction}
             emailConfirmationLinkAction={emailConfirmationLinkAction}
             updateStatusAction={updateStatusAction}
+            deleteSessionAction={deleteSessionAction}
             rescheduleAction={rescheduleAction}
             resizeDurationAction={resizeDurationAction}
             practitioners={practitionerOptions}

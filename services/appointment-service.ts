@@ -35,6 +35,7 @@ export async function getAppointments(
   let query = supabase
     .from("appointments")
     .select("*, patients(id, full_name, email, phone, status)")
+    .is("deleted_at", null)
     .order("starts_at", { ascending: true });
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
@@ -301,6 +302,33 @@ async function createIntegrationsSideEffects(appt: Appointment) {
   if (Object.keys(updates).length > 0) {
     const supabase = createSupabaseAdminClient();
     await supabase.from("appointments").update(updates).eq("id", appt.id);
+  }
+}
+
+// ── Soft delete ───────────────────────────────────────────────────────────────
+
+/** Exclui um agendamento da agenda (soft delete) e limpa Zoom/Google (best-effort). */
+export async function softDeleteAppointment(appointmentId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", appointmentId)
+    .select("clinic_id, google_event_id, zoom_meeting_id")
+    .single();
+  if (error) throw error;
+
+  if (data?.google_event_id) {
+    import("@/services/google-calendar-service").then(({ deleteGoogleCalendarEvent }) =>
+      deleteGoogleCalendarEvent(data.clinic_id, data.google_event_id as string).catch(() => {}),
+    ).catch(() => {});
+  }
+  if (data?.zoom_meeting_id) {
+    import("@/services/zoom-service").then(({ deleteZoomMeeting }) =>
+      deleteZoomMeeting(data.clinic_id, data.zoom_meeting_id as string).catch(() => {}),
+    ).catch(() => {});
   }
 }
 
