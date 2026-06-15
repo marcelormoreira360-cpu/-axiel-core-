@@ -35,6 +35,7 @@ export function ConfirmClient({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [questionnaires, setQuestionnaires] = useState<{ name: string; url: string }[]>([]);
 
   const dateStr = startsAt
     ? new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -55,7 +56,7 @@ export function ConfirmClient({
     startTransition(async () => {
       const res = await confirmAppointmentAction(fd);
       if (res.error) setError(res.error);
-      else if (res.success) setDone(true);
+      else if (res.success) { setQuestionnaires(res.questionnaires ?? []); setDone(true); }
     });
   }
 
@@ -80,6 +81,26 @@ export function ConfirmClient({
           <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[6px]">{t("doneTitle")}</h1>
           <p className="text-[13px] text-[#6B6A66] leading-relaxed mb-3">{t("doneDesc")}</p>
           <p className="text-[13px] font-medium text-[#0F1A2E] capitalize">{dateStr} · {timeStr}</p>
+
+          {questionnaires.length > 0 && (
+            <div className="mt-5 text-left border-t border-black/[.07] pt-4">
+              <p className="text-[13px] font-medium text-[#0F1A2E] mb-[2px]">{t("questionnairesTitle")}</p>
+              <p className="text-[12px] text-[#6B6A66] mb-3">{t("questionnairesHint")}</p>
+              <div className="space-y-[8px]">
+                {questionnaires.map((q) => (
+                  <a
+                    key={q.url}
+                    href={q.url}
+                    className="flex items-center justify-between gap-[10px] rounded-[9px] px-[12px] py-[10px] text-white text-[13px] font-medium"
+                    style={{ background: primaryColor }}
+                  >
+                    <span className="truncate">{q.name}</span>
+                    <span className="shrink-0 text-[12px] opacity-90">{t("openQuestionnaire")} →</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
     );

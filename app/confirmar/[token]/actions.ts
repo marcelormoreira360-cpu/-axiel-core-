@@ -13,7 +13,7 @@ function clean(v: FormDataEntryValue | null, max = 200): string {
 
 export async function confirmAppointmentAction(
   formData: FormData,
-): Promise<{ error?: string; success?: boolean }> {
+): Promise<{ error?: string; success?: boolean; questionnaires?: { name: string; url: string }[] }> {
   const token = clean(formData.get("token"), 128);
   if (!token) return { error: "Link inválido." };
 
@@ -72,7 +72,7 @@ export async function confirmAppointmentAction(
     { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "analytics_anonymized", granted: consentAnalytics, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding" },
   ]);
 
-  // Side-effects pós-confirmação (fire-and-forget): integrações + automações + questionários
+  // Side-effects pós-confirmação (fire-and-forget): integrações + automações
   if (result.appointmentId && result.startsAt) {
     import("@/services/appointment-service").then(({ runIntegrationsForAppointment }) =>
       runIntegrationsForAppointment(result.appointmentId!).catch(() => {}),
@@ -80,10 +80,22 @@ export async function confirmAppointmentAction(
     import("@/services/automation-service").then(({ scheduleAutomations }) =>
       scheduleAutomations({ id: result.appointmentId!, clinic_id: result.clinicId!, patient_id: result.patientId!, starts_at: result.startsAt! }).catch(() => {}),
     ).catch(() => {});
-    import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
-      sendOnboardingAssessments({ id: result.appointmentId!, clinic_id: result.clinicId!, patient_id: result.patientId! }).catch(() => {}),
-    ).catch(() => {});
   }
 
-  return { success: true };
+  // Questionários de entrada: cria os convites, tenta WhatsApp/e-mail E devolve os
+  // links para exibir nesta tela (não depende da entrega externa funcionar).
+  let questionnaires: { name: string; url: string }[] = [];
+  if (result.appointmentId) {
+    try {
+      const { sendOnboardingAssessments } = await import("@/services/onboarding-assessment-service");
+      const r = await sendOnboardingAssessments({
+        id: result.appointmentId,
+        clinic_id: result.clinicId,
+        patient_id: result.patientId,
+      });
+      questionnaires = r.links;
+    } catch { /* não bloqueia a confirmação */ }
+  }
+
+  return { success: true, questionnaires };
 }

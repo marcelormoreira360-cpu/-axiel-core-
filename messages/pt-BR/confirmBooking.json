@@ -25,5 +25,8 @@
   "invalidTitle": "Link indisponível",
   "invalidDesc": "Este link de confirmação é inválido, já foi usado ou expirou. Solicite um novo à clínica.",
   "doneTitle": "Horário confirmado!",
-  "doneDesc": "Tudo certo. Seu agendamento está confirmado:"
+  "doneDesc": "Tudo certo. Seu agendamento está confirmado:",
+  "questionnairesTitle": "Responda seus questionários",
+  "questionnairesHint": "Antes da sua sessão, responda os questionários abaixo. Leva poucos minutos.",
+  "openQuestionnaire": "Responder"
 }

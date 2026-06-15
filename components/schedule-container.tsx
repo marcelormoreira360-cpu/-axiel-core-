@@ -295,6 +295,13 @@ function DayView({
     });
   }, [localSessions, onResizeDuration]);
 
+  const handleDelete = useCallback(async (id: string) => {
+    if (!onDelete) return;
+    const prev = localSessions;
+    setLocalSessions((cur) => cur.filter((x) => x.id !== id));
+    try { await onDelete(id); } catch { setLocalSessions(prev); }
+  }, [localSessions, onDelete]);
+
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
@@ -515,7 +522,7 @@ function DayView({
               isActive={activeId === s.id}
               onOpen={onOpenSession}
               onResize={handleResize}
-              onDelete={onDelete}
+              onDelete={onDelete ? handleDelete : undefined}
             />
           ))}
         </div>
@@ -814,6 +821,13 @@ function WeekView({
     });
   }, [localAppts, onResizeDuration]);
 
+  const handleDelete = useCallback(async (id: string) => {
+    if (!onDelete) return;
+    const prev = localAppts;
+    setLocalAppts((cur) => cur.filter((a) => a.id !== id));
+    try { await onDelete(id); } catch { setLocalAppts(prev); }
+  }, [localAppts, onDelete]);
+
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
@@ -1107,7 +1121,7 @@ function WeekView({
                     appt={appt}
                     isActive={activeId === appt.id}
                     onResize={handleResize}
-                    onDelete={onDelete}
+                    onDelete={onDelete ? handleDelete : undefined}
                   />
                 ))}
               </div>

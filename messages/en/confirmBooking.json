@@ -25,5 +25,8 @@
   "invalidTitle": "Link unavailable",
   "invalidDesc": "This confirmation link is invalid, already used or expired. Please request a new one from the clinic.",
   "doneTitle": "Time confirmed!",
-  "doneDesc": "All set. Your appointment is confirmed:"
+  "doneDesc": "All set. Your appointment is confirmed:",
+  "questionnairesTitle": "Answer your questionnaires",
+  "questionnairesHint": "Before your session, please answer the questionnaires below. It takes a few minutes.",
+  "openQuestionnaire": "Answer"
 }

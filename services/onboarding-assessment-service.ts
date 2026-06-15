@@ -10,9 +10,9 @@ export async function sendAssessmentsToPatient(input: {
   patientId: string;
   templateIds: string[];
   supabase?: SupabaseAdmin;
-}): Promise<{ sent: number }> {
+}): Promise<{ sent: number; links: { name: string; url: string }[] }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
-  if (!input.templateIds.length) return { sent: 0 };
+  if (!input.templateIds.length) return { sent: 0, links: [] };
 
   const { data: templates } = await supabase
     .from("assessment_templates")
@@ -20,14 +20,14 @@ export async function sendAssessmentsToPatient(input: {
     .eq("clinic_id", input.clinicId)
     .eq("is_active", true)
     .in("id", input.templateIds);
-  if (!templates?.length) return { sent: 0 };
+  if (!templates?.length) return { sent: 0, links: [] };
 
   const { data: patient } = await supabase
     .from("patients")
     .select("full_name, email, phone")
     .eq("id", input.patientId)
     .maybeSingle();
-  if (!patient) return { sent: 0 };
+  if (!patient) return { sent: 0, links: [] };
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const links: { name: string; url: string }[] = [];
@@ -56,7 +56,7 @@ export async function sendAssessmentsToPatient(input: {
     links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}` });
   }
 
-  if (links.length === 0) return { sent: 0 };
+  if (links.length === 0) return { sent: 0, links: [] };
 
   const phone = patient.phone as string | null;
   if (phone) {
@@ -80,16 +80,17 @@ export async function sendAssessmentsToPatient(input: {
     } catch { /* canal opcional */ }
   }
 
-  return { sent: links.length };
+  return { sent: links.length, links };
 }
 
 // Onboarding: ao marcar a PRIMEIRA sessão, envia os questionários marcados
-// (send_on_first_appointment). Fire-and-forget nos hooks de agendamento.
+// (send_on_first_appointment). Retorna os links gerados para também poderem ser
+// exibidos na tela (ex.: confirmação do paciente), além do envio WhatsApp/e-mail.
 export async function sendOnboardingAssessments(appt: {
   id: string;
   clinic_id: string;
   patient_id: string;
-}): Promise<void> {
+}): Promise<{ links: { name: string; url: string }[] }> {
   const supabase = createSupabaseAdminClient();
 
   // É a primeira sessão? (só este agendamento existe para o paciente)
@@ -99,7 +100,7 @@ export async function sendOnboardingAssessments(appt: {
     .eq("patient_id", appt.patient_id)
     .eq("clinic_id", appt.clinic_id)
     .is("deleted_at", null);
-  if ((count ?? 0) > 1) return;
+  if ((count ?? 0) > 1) return { links: [] };
 
   const { data: templates } = await supabase
     .from("assessment_templates")
@@ -107,14 +108,15 @@ export async function sendOnboardingAssessments(appt: {
     .eq("clinic_id", appt.clinic_id)
     .eq("is_active", true)
     .eq("send_on_first_appointment", true);
-  if (!templates?.length) return;
+  if (!templates?.length) return { links: [] };
 
-  await sendAssessmentsToPatient({
+  const { links } = await sendAssessmentsToPatient({
     clinicId: appt.clinic_id,
     patientId: appt.patient_id,
     templateIds: templates.map((t) => t.id as string),
     supabase,
   });
+  return { links };
 }
 
 // Reavaliação automática por cadência (chamado pelo cron diário). Para cada
