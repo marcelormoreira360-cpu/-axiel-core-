@@ -33,6 +33,7 @@ export function ConfirmClient({
 }) {
   const t = useTranslations("confirmBooking");
   const locale = useLocale();
+  const showCpf = locale === "pt-BR";
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -176,10 +177,12 @@ export function ConfirmClient({
                 <label className={labelCls} htmlFor="date_of_birth">{t("dob")}</label>
                 <input id="date_of_birth" name="date_of_birth" type="date" className={inputCls} />
               </div>
-              <div>
-                <label className={labelCls} htmlFor="cpf">{t("cpf")}</label>
-                <input id="cpf" name="cpf" maxLength={20} className={inputCls} inputMode="numeric" />
-              </div>
+              {showCpf && (
+                <div>
+                  <label className={labelCls} htmlFor="cpf">{t("cpf")}</label>
+                  <input id="cpf" name="cpf" maxLength={20} className={inputCls} inputMode="numeric" />
+                </div>
+              )}
             </div>
           </section>
 

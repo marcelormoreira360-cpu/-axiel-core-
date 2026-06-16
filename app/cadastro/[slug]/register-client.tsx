@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { submitSelfRegistrationAction } from "./actions";
@@ -18,6 +18,8 @@ export function RegisterClient({
   primaryColor: string;
 }) {
   const t = useTranslations("publicRegister");
+  const locale = useLocale();
+  const showCpf = locale === "pt-BR";
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -96,10 +98,12 @@ export function RegisterClient({
                 <label className={labelCls} htmlFor="date_of_birth">{t("dob")}</label>
                 <input id="date_of_birth" name="date_of_birth" type="date" className={inputCls} />
               </div>
-              <div>
-                <label className={labelCls} htmlFor="cpf">{t("cpf")}</label>
-                <input id="cpf" name="cpf" maxLength={20} className={inputCls} inputMode="numeric" />
-              </div>
+              {showCpf && (
+                <div>
+                  <label className={labelCls} htmlFor="cpf">{t("cpf")}</label>
+                  <input id="cpf" name="cpf" maxLength={20} className={inputCls} inputMode="numeric" />
+                </div>
+              )}
             </div>
           </section>
 
