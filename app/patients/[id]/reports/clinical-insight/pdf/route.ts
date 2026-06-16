@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import PDFDocument from "pdfkit";
 import { getClinicalInsight } from "@/services/insight-export-service";
+import { getLatestFinalAiInsight, getLatestAiInsight } from "@/services/ai-insight-service";
+import type { AiInsightOutput } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -21,6 +23,62 @@ function writeSectionTitle(doc: PDFKit.PDFDocument, title: string) {
 
 function writeParagraph(doc: PDFKit.PDFDocument, text: string, options?: PdfTextOptions) {
   doc.font("Helvetica").fontSize(10.5).fillColor("#4b5563").text(text, { lineGap: 4, ...options });
+}
+
+function writeListSection(doc: PDFKit.PDFDocument, title: string, items?: string[]) {
+  if (!items || items.length === 0) return;
+  doc.moveDown(0.5);
+  doc.font("Helvetica-Bold").fontSize(11).fillColor("#111827").text(title);
+  doc.moveDown(0.2);
+  writeWrappedList(doc, items);
+}
+
+function writeNeuroDocuments(doc: PDFKit.PDFDocument, output: AiInsightOutput) {
+  const mapa = output.mapa_integrativo;
+  const plano = output.plano_regulacao;
+  const sup = output.protocolo_suplementacao;
+  if (!mapa && !plano && !sup) return;
+
+  if (mapa) {
+    doc.addPage();
+    doc.font("Helvetica-Bold").fontSize(18).fillColor("#111827").text("Documento 1 — Mapa Integrativo Neuro ID 360");
+    writeListSection(doc, "Principais achados", mapa.principais_achados);
+    writeListSection(doc, "Padrões observados", mapa.padroes_observados);
+    if (mapa.leitura_integrativa?.trim()) { writeSectionTitle(doc, "Leitura integrativa"); writeParagraph(doc, mapa.leitura_integrativa); }
+    writeListSection(doc, "Achados funcionais", mapa.achados_funcionais);
+    writeListSection(doc, "Elementos biomecânicos", mapa.elementos_biomecanicos);
+    writeListSection(doc, "Elementos bioemocionais", mapa.elementos_bioemocionais);
+    writeListSection(doc, "Desregulação do sistema nervoso (SNA)", mapa.desregulacao_sna);
+    writeListSection(doc, "Possíveis fatores bioquímicos", mapa.fatores_bioquimicos);
+    writeListSection(doc, "Prioridades de atenção", mapa.prioridades_atencao);
+  }
+
+  if (plano) {
+    doc.addPage();
+    doc.font("Helvetica-Bold").fontSize(18).fillColor("#111827").text("Documento 2 — Plano Inicial de Regulação");
+    writeListSection(doc, "Próximos passos", plano.proximos_passos);
+    writeListSection(doc, "Orientações iniciais", plano.orientacoes_iniciais);
+    writeListSection(doc, "Recomendações de rotina", plano.recomendacoes_rotina);
+    writeListSection(doc, "Sugestões de regulação", plano.sugestoes_regulacao);
+    writeListSection(doc, "Exames complementares recomendados", plano.exames_complementares);
+    writeListSection(doc, "Prioridades", plano.prioridades);
+    if (plano.recomendacao_continuidade?.trim()) { writeSectionTitle(doc, "Recomendação de continuidade"); writeParagraph(doc, plano.recomendacao_continuidade); }
+  }
+
+  if (sup && (sup.itens.length > 0 || sup.observacoes_gerais.length > 0)) {
+    doc.addPage();
+    doc.font("Helvetica-Bold").fontSize(18).fillColor("#111827").text("Documento 3 — Protocolo de Suplementação");
+    doc.moveDown(0.2);
+    doc.font("Helvetica").fontSize(9).fillColor("#9a7b2f").text("Rascunho — exige aprovação do profissional.");
+    sup.itens.forEach((it) => {
+      doc.moveDown(0.4);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("#111827").text(it.nome);
+      if (it.dose_sugerida) writeParagraph(doc, `Dose sugerida: ${it.dose_sugerida}`);
+      if (it.objetivo) writeParagraph(doc, `Objetivo: ${it.objetivo}`);
+      if (it.observacao) writeParagraph(doc, `Obs.: ${it.observacao}`);
+    });
+    writeListSection(doc, "Observações gerais", sup.observacoes_gerais);
+  }
 }
 
 async function pdfToBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
@@ -73,6 +131,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
   writeSectionTitle(doc, t("pdf.finalNote"));
   writeParagraph(doc, insight.closing_note);
+
+  // Neuro ID 360 — anexa os 3 documentos do insight aprovado (quando presentes).
+  const raw = (await getLatestFinalAiInsight(id)) ?? (await getLatestAiInsight(id));
+  if (raw) writeNeuroDocuments(doc, (raw.final_output ?? raw.output) as AiInsightOutput);
 
   doc.moveDown(1.4);
   doc.font("Helvetica").fontSize(9).fillColor("#9ca3af").text(t("pdf.footer"), { align: "center" });

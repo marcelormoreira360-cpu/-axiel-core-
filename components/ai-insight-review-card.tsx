@@ -5,6 +5,7 @@ import { Badge, type BadgeStatus } from "@/components/status-badge";
 import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
+import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
 
 function insightOutput(insight: AiInsight) {
   return insight.final_output ?? insight.output;
@@ -43,6 +44,9 @@ export function AiInsightReviewCard({ patientId, insight }: { patientId: string;
       </div>
 
       <p className="line-clamp-3 text-sm leading-6 text-axiel-text-secondary">{shortSummary(insight)}</p>
+
+      {/* Neuro ID 360 — os 3 documentos (quando gerados) */}
+      <NeuroId360Documents output={output} />
 
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">
