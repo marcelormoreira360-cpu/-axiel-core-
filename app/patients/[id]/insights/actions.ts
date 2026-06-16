@@ -83,6 +83,18 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
   redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1${delivery}`);
 }
 
+export async function resendApprovedInsightAction(patientId: string) {
+  let delivery = "";
+  try {
+    const r = await sendApprovedInsightToPatient(patientId);
+    delivery = `&delivery=${encodeURIComponent(JSON.stringify(r))}`;
+  } catch (error) {
+    delivery = `&delivery=${encodeURIComponent(JSON.stringify({ email: "failed", whatsapp: "failed", emailError: describeError(error) }))}`;
+  }
+  revalidatePath(`/patients/${patientId}/insights`);
+  redirect(`/patients/${patientId}/insights?resent=1${delivery}`);
+}
+
 export async function requestAiInsightChangesAction(patientId: string, aiInsightId: string, formData: FormData) {
   try {
     await requestAiInsightChanges({

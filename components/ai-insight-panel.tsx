@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Brain, ChevronDown, RefreshCw, Sparkles } from "lucide-react";
+import { Brain, ChevronDown, RefreshCw, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { AiInsightReviewCard } from "@/components/ai-insight-review-card";
@@ -7,7 +7,7 @@ import type { AiInsight, Patient } from "@/lib/types";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { aiInsightStatusLabel } from "@/modules/ai-insights/status-labels";
 import type { AiValidationEvent } from "@/services/ai-insight-service";
-import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
+import { generateAiInsightAction, resendApprovedInsightAction } from "@/app/patients/[id]/insights/actions";
 
 function eventLabel(action: AiValidationEvent["action"]) {
   switch (action) {
@@ -38,7 +38,10 @@ export function AiInsightPanel({
   error?: string;
 }) {
   const generateAction = generateAiInsightAction.bind(null, patient.id);
+  const resendAction = resendApprovedInsightAction.bind(null, patient.id);
   const output = insight?.review_status === "final" && insight.final_output ? insight.final_output : insight?.output;
+  const isFinal = insight?.review_status === "final";
+  const hasContact = Boolean(patient.email || patient.phone);
 
   return (
     <div className="space-y-5">
@@ -56,11 +59,20 @@ export function AiInsightPanel({
               </p>
             </div>
           </div>
-          <form action={generateAction}>
-            <Button variant="secondary" className="min-h-12 px-5">
-              <RefreshCw className="h-4 w-4" /> Generate new draft
-            </Button>
-          </form>
+          <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            {isFinal ? (
+              <form action={resendAction}>
+                <Button variant="secondary" className="min-h-12 w-full px-5" disabled={!hasContact} title={hasContact ? undefined : "Paciente sem e-mail e sem telefone cadastrados"}>
+                  <Send className="h-4 w-4" /> Reenviar ao paciente
+                </Button>
+              </form>
+            ) : null}
+            <form action={generateAction}>
+              <Button variant="secondary" className="min-h-12 w-full px-5">
+                <RefreshCw className="h-4 w-4" /> Generate new draft
+              </Button>
+            </form>
+          </div>
         </div>
       </Card>
 
