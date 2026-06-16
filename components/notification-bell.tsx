@@ -22,7 +22,7 @@ const ITEMS: Array<{
   dot: string;
   Icon: React.ElementType;
 }> = [
-  { key: "insights",  href: "/ai-insights",    label: (n) => `${n} insight${n > 1 ? "s" : ""} aguardando review`,                            dot: "bg-[#0F6E56]",  Icon: BrainCircuit },
+  { key: "insights",  href: "/actions",        label: (n) => `${n} insight${n > 1 ? "s" : ""} aguardando review`,                            dot: "bg-[#0F6E56]",  Icon: BrainCircuit },
   { key: "lgpd",      href: "/settings/lgpd",  label: (n) => `${n} solicitaç${n > 1 ? "ões" : "ão"} LGPD pendente${n > 1 ? "s" : ""}`,       dot: "bg-red-500",    Icon: Shield },
   { key: "followups", href: "/patients",       label: (n) => `${n} follow-up${n > 1 ? "s" : ""} vencido${n > 1 ? "s" : ""}`,                 dot: "bg-amber-400",  Icon: CalendarClock },
   { key: "leads",     href: "/leads",          label: (n) => `${n} novo${n > 1 ? "s" : ""} lead${n > 1 ? "s" : ""} sem revisão`,              dot: "bg-indigo-400", Icon: UserRoundSearch },

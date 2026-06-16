@@ -24,7 +24,7 @@ const MORE_NAV = [
   { href: "/forms",        label: "Formulários" },
   { href: "/results",      label: "Resultados" },
   { href: "/analytics",    label: "Analytics" },
-  { href: "/ai-insights",  label: "AI Insights" },
+  { href: "/actions",      label: "AI Insights" },
   { href: "/settings",     label: "Configurações" },
 ];
 

@@ -297,13 +297,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           {/* Quick actions */}
           <div className="mt-3 flex flex-col gap-2">
             <Link
-              href={`/patients/${patient.id}/intake`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
-            >
-              <span>{t("quickActions.intakeForms")}</span>
-              <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </Link>
-            <Link
               href={`/patients/${patient.id}/forms/new`}
               className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
             >
