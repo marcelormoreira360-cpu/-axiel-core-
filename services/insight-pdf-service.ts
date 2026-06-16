@@ -54,8 +54,10 @@ function drawFooter(doc: Doc, brand: ClinicBrand) {
   doc.save();
   doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.6).strokeColor("#D9D6E4").stroke();
   if (tagline) {
+    // lineBreak:false é OBRIGATÓRIO: o texto fica abaixo da margem inferior; sem isso
+    // o pdfkit dispara paginação automática dentro do handler 'pageAdded' → recursão infinita.
     doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
-      .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4 });
+      .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
   }
   doc.restore();
 }
@@ -176,12 +178,21 @@ export async function buildNeuroId360Pdf(opts: {
     info: { Title: "Relatório Neuro ID 360", Author: brand.name ?? "AXIEL Core" },
   });
 
-  // Cabeçalho/rodapé em TODAS as páginas.
-  drawHeader(doc, logo);
-  drawFooter(doc, brand);
+  // Cabeçalho/rodapé em TODAS as páginas. Guarda de reentrância para nunca recursar.
+  let decorating = false;
+  const decorate = () => {
+    if (decorating) return;
+    decorating = true;
+    try {
+      drawHeader(doc, logo);
+      drawFooter(doc, brand);
+    } finally {
+      decorating = false;
+    }
+  };
+  decorate();
   doc.on("pageAdded", () => {
-    drawHeader(doc, logo);
-    drawFooter(doc, brand);
+    decorate();
     resetBody(doc);
   });
   resetBody(doc);
