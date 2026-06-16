@@ -47,11 +47,17 @@ export function AiInsightReviewCard({ patientId, insight }: { patientId: string;
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">
           {!isFinal && (
-            <VoiceDictation
-              name="reviewer_notes"
-              placeholder="Notas de revisão (opcional) — clique no 🎤 para ditar"
-              rows={2}
-            />
+            <>
+              <VoiceDictation
+                name="reviewer_notes"
+                placeholder="Notas de revisão (opcional) — clique no 🎤 para ditar"
+                rows={2}
+              />
+              <label className="flex items-start gap-2 text-xs text-axiel-text-secondary cursor-pointer">
+                <input type="checkbox" name="send_to_patient" defaultChecked className="mt-[2px] h-[14px] w-[14px] accent-[#0F6E56]" />
+                <span>Enviar o resumo ao paciente por e-mail e WhatsApp ao aprovar</span>
+              </label>
+            </>
           )}
           <ButtonPrimary type="submit" disabled={isFinal}>
             Approve

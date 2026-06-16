@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { approveAiInsightAsFinal, generateAndSaveAiInsight, requestAiInsightChanges } from "@/services/ai-insight-service";
+import { approveAiInsightAsFinal, generateAndSaveAiInsight, requestAiInsightChanges, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -57,6 +57,13 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
     body:  "Seu profissional revisou e aprovou um novo insight sobre sua saúde.",
     tag:   `insight-approved-${patientId}`,
   }).catch(() => {});
+
+  // Envio automático ao paciente (e-mail + WhatsApp) — só se o checkbox estiver marcado.
+  // Default: enviar (campo ausente quando desmarcado num <input type=checkbox>).
+  const sendToPatient = formData.get("send_to_patient");
+  if (sendToPatient === "on" || sendToPatient === "true") {
+    sendApprovedInsightToPatient(patientId).catch(() => {});
+  }
 
   redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1`);
 }

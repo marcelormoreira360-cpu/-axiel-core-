@@ -494,6 +494,57 @@ export async function approveAiInsightAsFinal(input: {
   return data as AiInsight;
 }
 
+/**
+ * Envia ao paciente (e-mail + WhatsApp, best-effort) o resumo do insight aprovado.
+ * Usa apenas a parte legível ao paciente (overview + status atual + nota de segurança),
+ * nunca os pontos técnicos de revisão do profissional. Chamado após a aprovação.
+ */
+export async function sendApprovedInsightToPatient(patientId: string): Promise<{ email: boolean; whatsapp: boolean }> {
+  const result = { email: false, whatsapp: false };
+  const insight = await getLatestFinalAiInsight(patientId);
+  if (!insight) return result;
+  const out = insight.final_output ?? insight.output;
+  const ss = out?.structured_summary;
+  if (!ss) return result;
+
+  const patient = await getPatientById(patientId);
+  if (!patient) return result;
+
+  const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
+  const paragraphs = [ss.overview, ss.current_status].filter((s): s is string => !!s && s.trim().length > 0);
+  if (paragraphs.length === 0) return result;
+  const safety = (out.safety_note ?? "").trim();
+
+  // E-mail
+  if (patient.email) {
+    try {
+      const { sendSimpleEmail } = await import("@/services/email-service");
+      const html =
+        `<p>Olá${firstName ? `, ${firstName}` : ""}!</p>` +
+        `<p>Seu profissional revisou e aprovou um resumo do seu acompanhamento:</p>` +
+        paragraphs.map((p) => `<p>${p}</p>`).join("") +
+        (safety ? `<p style="color:#6B6A66;font-size:12px;margin-top:16px">${safety}</p>` : "");
+      await sendSimpleEmail({ to: patient.email, subject: "Seu resumo de acompanhamento", html });
+      result.email = true;
+    } catch { /* canal opcional */ }
+  }
+
+  // WhatsApp
+  if (patient.phone) {
+    try {
+      const { sendWhatsAppText } = await import("@/services/whatsapp-service");
+      const body =
+        `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou um resumo do seu acompanhamento:\n\n` +
+        paragraphs.join("\n\n") +
+        (safety ? `\n\n${safety}` : "");
+      await sendWhatsAppText(patient.phone, body);
+      result.whatsapp = true;
+    } catch { /* canal opcional */ }
+  }
+
+  return result;
+}
+
 export async function requestAiInsightChanges(input: {
   aiInsightId: string;
   reviewerNotes?: string | null;
