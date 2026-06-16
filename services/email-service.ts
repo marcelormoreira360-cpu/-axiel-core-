@@ -6,8 +6,16 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
 
 // Envio simples e genérico (assunto + HTML), para fluxos avulsos.
+// O SDK do Resend NÃO lança exceção em erro de API — retorna { data, error }.
+// Sem checar `error`, um envio rejeitado seria reportado como "enviado".
 export async function sendSimpleEmail(input: { to: string; subject: string; html: string }): Promise<void> {
-  await resend.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY não configurada no ambiente.");
+  }
+  const { error } = await resend.emails.send({ from: FROM, to: input.to, subject: input.subject, html: input.html });
+  if (error) {
+    throw new Error(`Resend: ${error.message ?? "envio rejeitado"}${FROM.includes("resend.dev") ? " (remetente padrão resend.dev só entrega no e-mail dono da conta — verifique um domínio em RESEND_FROM_EMAIL)" : ""}`);
+  }
 }
 
 type EmailT = Awaited<ReturnType<typeof getServerT>>;
