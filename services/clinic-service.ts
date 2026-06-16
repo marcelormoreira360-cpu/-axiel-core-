@@ -35,13 +35,14 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
   return (data ?? []) as Clinic[];
 }
 
-const CLINIC_SELECT = "id, name, slug, logo_url, primary_color, clinic_profile, phone, contact_email, website, address_line, city, state, cnpj, description, status, created_at, updated_at";
+const CLINIC_SELECT = "id, name, slug, logo_url, primary_color, report_tagline, clinic_profile, phone, contact_email, website, address_line, city, state, cnpj, description, status, created_at, updated_at";
 
 export async function updateClinic(id: string, fields: {
   name?: string;
   slug?: string;
   logo_url?: string | null;
   primary_color?: string | null;
+  report_tagline?: string | null;
   clinic_profile?: string;
   phone?: string | null;
   contact_email?: string | null;

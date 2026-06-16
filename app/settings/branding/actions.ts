@@ -9,9 +9,10 @@ export async function saveBrandingAction(formData: FormData): Promise<{ error?: 
 
   const logo_url = (formData.get("logo_url") as string | null)?.trim() || null;
   const primary_color = (formData.get("primary_color") as string | null)?.trim() || null;
+  const report_tagline = (formData.get("report_tagline") as string | null)?.trim() || null;
 
   try {
-    await updateClinic(clinic.id, { logo_url, primary_color });
+    await updateClinic(clinic.id, { logo_url, primary_color, report_tagline });
     revalidatePath("/settings/branding");
     revalidatePath("/", "layout");
     return {};

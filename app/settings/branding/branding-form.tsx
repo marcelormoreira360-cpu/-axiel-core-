@@ -19,16 +19,18 @@ const PRESET_COLORS = [
 interface Props {
   currentLogoUrl: string | null;
   currentPrimaryColor: string | null;
+  currentReportTagline: string | null;
   clinicId: string;
 }
 
-export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: Props) {
+export function BrandingForm({ currentLogoUrl, currentPrimaryColor, currentReportTagline, clinicId }: Props) {
   const t = useTranslations("settings.branding");
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [color, setColor] = useState(currentPrimaryColor ?? "#0B1F3A");
   const [logoUrl, setLogoUrl] = useState(currentLogoUrl ?? "");
+  const [reportTagline, setReportTagline] = useState(currentReportTagline ?? "");
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentLogoUrl);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -85,6 +87,7 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
     const formData = new FormData();
     formData.set("logo_url", logoUrl);
     formData.set("primary_color", color);
+    formData.set("report_tagline", reportTagline);
     startTransition(async () => {
       const result = await saveBrandingAction(formData);
       if (result.error) { setError(result.error); return; }
@@ -196,6 +199,25 @@ export function BrandingForm({ currentLogoUrl, currentPrimaryColor, clinicId }: 
             {t("preview")}
           </div>
         </div>
+      </Card>
+
+      {/* Rodapé dos relatórios (tagline) */}
+      <Card className="p-6">
+        <h2 className="mb-1 text-lg font-semibold">{t("taglineTitle")}</h2>
+        <p className="mb-4 text-sm text-black/50">{t("taglineDesc")}</p>
+        <input
+          type="text"
+          value={reportTagline}
+          onChange={(e) => setReportTagline(e.target.value)}
+          placeholder={t("taglinePlaceholder")}
+          maxLength={120}
+          className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20"
+        />
+        {reportTagline.trim() && (
+          <div className="mt-3 rounded-lg border border-black/10 bg-[#F7F6F2] px-4 py-3 text-center">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-[#8C86A6]">{reportTagline.trim()}</span>
+          </div>
+        )}
       </Card>
 
       <div className="flex items-center gap-4">
