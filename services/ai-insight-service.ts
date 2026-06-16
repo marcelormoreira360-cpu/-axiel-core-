@@ -80,14 +80,17 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   const patient = await getPatientById(patientId);
   if (!patient) return null;
 
+  // Cada fonte é resiliente: se uma falhar (ex.: drift de schema), usa vazio
+  // em vez de derrubar toda a geração do relatório.
+  const safe = <T>(p: Promise<T[]>): Promise<T[]> => p.catch(() => [] as T[]);
   const [intakeResponses, appointments, sessionRecords, assessments, labExams, functionalExams, prescriptions] = await Promise.all([
-    getPatientIntakeResponses(patientId),
-    getAppointmentsByPatient(patientId),
-    getSessionRecordsByPatient(patientId),
-    getPatientAssessmentResponses(patientId),
-    getPatientExams(patientId),
-    getPatientFunctionalExams(patientId),
-    getPatientPrescriptions(patientId),
+    safe(getPatientIntakeResponses(patientId)),
+    safe(getAppointmentsByPatient(patientId)),
+    safe(getSessionRecordsByPatient(patientId)),
+    safe(getPatientAssessmentResponses(patientId)),
+    safe(getPatientExams(patientId)),
+    safe(getPatientFunctionalExams(patientId)),
+    safe(getPatientPrescriptions(patientId)),
   ]);
 
   return {

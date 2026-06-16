@@ -93,12 +93,12 @@ export async function getAssessmentProgress(
   if (last && config.flag_item_max) {
     const { data: answers } = await supabase
       .from("assessment_answers")
-      .select("score, assessment_questions(max_score)")
+      .select("value_number, assessment_questions(max_score)")
       .eq("response_id", last.id);
     for (const a of answers ?? []) {
       const q = (a as { assessment_questions?: { max_score?: number } | { max_score?: number }[] }).assessment_questions;
       const maxScore = Array.isArray(q) ? q[0]?.max_score : q?.max_score;
-      if (isItemFlagged(Number((a as { score?: number }).score ?? null), maxScore ?? null, config)) flaggedCount++;
+      if (isItemFlagged(Number((a as { value_number?: number }).value_number ?? null), maxScore ?? null, config)) flaggedCount++;
     }
   }
 
