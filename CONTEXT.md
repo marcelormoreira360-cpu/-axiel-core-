@@ -17,8 +17,12 @@ Plano completo em `NEURO_ID_360_PLANO.md` (4 fases). Fase 1 concluída:
 - `modules/ai-insights/insight-schema.ts`: shape + coerção dos 3 documentos. `guardrails.ts`: prompt reescrito (pt-BR) para gerar os 3 docs como **rascunho para revisão/aprovação profissional** (não diagnóstico, não prescrição definitiva); suplementação como doc 3 que exige aprovação humana explícita.
 - `services/ai-insight-service.ts`: `AiInsightInputSnapshot` + `buildAiInsightInput` agora alimentam a IA com **questionários (assessments), exames laboratoriais, exames funcionais e prescrições** (além de intake/sessões/histórico).
 - Compatível: telas/PDF antigos seguem lendo `structured_summary` (Fase 3 renderiza os 3 docs).
-- **Pendente Fase 4**: envio dos documentos ao paciente na aprovação.
 - Validado: tsc **0 erros**.
+
+### ✅ Fase 4 — Envio dos documentos na aprovação (15/06/2026) — NEURO ID 360 COMPLETO
+- `sendApprovedInsightToPatient` reescrito: `formatApprovedReport(out)` monta os 3 documentos (Mapa + Plano + Protocolo de Suplementação) em HTML + texto (fallback no resumo para insights antigos); envia por e-mail + WhatsApp. Como o envio só ocorre após APROVAÇÃO do profissional, a suplementação já passou por aprovação humana. Checkbox no card de revisão controla o envio (default ligado).
+- **Neuro ID 360 (Fases 1–4) COMPLETO**. Pendência operacional: deploy dos `.ts` na Vercel.
+- Validado: tsc **0 erros**; verify:i18n 39 namespaces OK.
 
 ### ✅ Fase 3 — Telas + PDF dos 3 documentos (15/06/2026)
 - `components/neuro-id-360-documents.tsx` (apresentacional, server-compat): renderiza Mapa Integrativo, Plano de Regulação e Protocolo de Suplementação (este em âmbar, com aviso "exige aprovação") quando presentes no `AiInsightOutput`.

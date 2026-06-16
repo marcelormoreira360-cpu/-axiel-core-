@@ -554,25 +554,94 @@ export async function approveAiInsightAsFinal(input: {
   return data as AiInsight;
 }
 
+function escHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Monta os 3 documentos do Neuro ID 360 em HTML + texto. Fallback no resumo se não houver docs. */
+function formatApprovedReport(out: AiInsightOutput): { html: string; text: string } | null {
+  const m = out.mapa_integrativo, p = out.plano_regulacao, s = out.protocolo_suplementacao;
+  const hasDocs = !!(m || p || s);
+
+  const htmlParts: string[] = [];
+  const textParts: string[] = [];
+  const secH = (title: string, items?: string[]) => {
+    if (!items?.length) return;
+    htmlParts.push(`<p style="font-weight:600;margin:12px 0 2px">${escHtml(title)}</p><ul>${items.map((i) => `<li>${escHtml(i)}</li>`).join("")}</ul>`);
+    textParts.push(`${title}:\n` + items.map((i) => `• ${i}`).join("\n"));
+  };
+  const parH = (title: string, text?: string) => {
+    if (!text?.trim()) return;
+    htmlParts.push(`<p style="font-weight:600;margin:12px 0 2px">${escHtml(title)}</p><p>${escHtml(text)}</p>`);
+    textParts.push(`${title}:\n${text}`);
+  };
+  const docTitle = (t: string) => { htmlParts.push(`<h2 style="margin-top:20px">${escHtml(t)}</h2>`); textParts.push(`\n=== ${t} ===`); };
+
+  if (m) {
+    docTitle("Mapa Integrativo Neuro ID 360");
+    secH("Principais achados", m.principais_achados);
+    secH("Padrões observados", m.padroes_observados);
+    parH("Leitura integrativa", m.leitura_integrativa);
+    secH("Achados funcionais", m.achados_funcionais);
+    secH("Elementos biomecânicos", m.elementos_biomecanicos);
+    secH("Elementos bioemocionais", m.elementos_bioemocionais);
+    secH("Desregulação do sistema nervoso", m.desregulacao_sna);
+    secH("Possíveis fatores bioquímicos", m.fatores_bioquimicos);
+    secH("Prioridades de atenção", m.prioridades_atencao);
+  }
+  if (p) {
+    docTitle("Plano Inicial de Regulação");
+    secH("Próximos passos", p.proximos_passos);
+    secH("Orientações iniciais", p.orientacoes_iniciais);
+    secH("Recomendações de rotina", p.recomendacoes_rotina);
+    secH("Sugestões de regulação", p.sugestoes_regulacao);
+    secH("Exames complementares recomendados", p.exames_complementares);
+    secH("Prioridades", p.prioridades);
+    parH("Recomendação de continuidade", p.recomendacao_continuidade);
+  }
+  if (s && (s.itens.length || s.observacoes_gerais.length)) {
+    docTitle("Protocolo de Suplementação");
+    s.itens.forEach((it) => {
+      const linhas = [it.dose_sugerida && `Dose sugerida: ${it.dose_sugerida}`, it.objetivo && `Objetivo: ${it.objetivo}`, it.observacao && `Obs.: ${it.observacao}`].filter(Boolean) as string[];
+      htmlParts.push(`<p style="margin:8px 0 2px"><b>${escHtml(it.nome)}</b><br>${linhas.map(escHtml).join("<br>")}</p>`);
+      textParts.push(`• ${it.nome}` + (linhas.length ? `\n  ${linhas.join("\n  ")}` : ""));
+    });
+    secH("Observações gerais", s.observacoes_gerais);
+  }
+
+  if (!hasDocs) {
+    // Fallback: resumo simples (insights antigos sem os documentos)
+    const ss = out.structured_summary;
+    const paras = [ss?.overview, ss?.current_status].filter((x): x is string => !!x && x.trim().length > 0);
+    if (paras.length === 0) return null;
+    return {
+      html: paras.map((x) => `<p>${escHtml(x)}</p>`).join(""),
+      text: paras.join("\n\n"),
+    };
+  }
+
+  return { html: htmlParts.join(""), text: textParts.join("\n\n") };
+}
+
 /**
- * Envia ao paciente (e-mail + WhatsApp, best-effort) o resumo do insight aprovado.
- * Usa apenas a parte legível ao paciente (overview + status atual + nota de segurança),
- * nunca os pontos técnicos de revisão do profissional. Chamado após a aprovação.
+ * Envia ao paciente (e-mail + WhatsApp, best-effort) os documentos do insight aprovado
+ * (Mapa Integrativo + Plano de Regulação + Protocolo de Suplementação). Como o envio só
+ * ocorre após a APROVAÇÃO do profissional, a suplementação já passou pela aprovação humana.
  */
 export async function sendApprovedInsightToPatient(patientId: string): Promise<{ email: boolean; whatsapp: boolean }> {
   const result = { email: false, whatsapp: false };
   const insight = await getLatestFinalAiInsight(patientId);
   if (!insight) return result;
-  const out = insight.final_output ?? insight.output;
-  const ss = out?.structured_summary;
-  if (!ss) return result;
+  const out = (insight.final_output ?? insight.output) as AiInsightOutput;
+  if (!out) return result;
 
   const patient = await getPatientById(patientId);
   if (!patient) return result;
 
+  const report = formatApprovedReport(out);
+  if (!report) return result;
+
   const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
-  const paragraphs = [ss.overview, ss.current_status].filter((s): s is string => !!s && s.trim().length > 0);
-  if (paragraphs.length === 0) return result;
   const safety = (out.safety_note ?? "").trim();
 
   // E-mail
@@ -581,10 +650,10 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<{
       const { sendSimpleEmail } = await import("@/services/email-service");
       const html =
         `<p>Olá${firstName ? `, ${firstName}` : ""}!</p>` +
-        `<p>Seu profissional revisou e aprovou um resumo do seu acompanhamento:</p>` +
-        paragraphs.map((p) => `<p>${p}</p>`).join("") +
-        (safety ? `<p style="color:#6B6A66;font-size:12px;margin-top:16px">${safety}</p>` : "");
-      await sendSimpleEmail({ to: patient.email, subject: "Seu resumo de acompanhamento", html });
+        `<p>Seu profissional revisou e aprovou o seu relatório de acompanhamento:</p>` +
+        report.html +
+        (safety ? `<p style="color:#6B6A66;font-size:12px;margin-top:16px">${escHtml(safety)}</p>` : "");
+      await sendSimpleEmail({ to: patient.email, subject: "Seu relatório de acompanhamento", html });
       result.email = true;
     } catch { /* canal opcional */ }
   }
@@ -594,8 +663,8 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<{
     try {
       const { sendWhatsAppText } = await import("@/services/whatsapp-service");
       const body =
-        `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou um resumo do seu acompanhamento:\n\n` +
-        paragraphs.join("\n\n") +
+        `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou o seu relatório de acompanhamento:\n` +
+        report.text +
         (safety ? `\n\n${safety}` : "");
       await sendWhatsAppText(patient.phone, body);
       result.whatsapp = true;

@@ -59,7 +59,7 @@ export function AiInsightReviewCard({ patientId, insight }: { patientId: string;
               />
               <label className="flex items-start gap-2 text-xs text-axiel-text-secondary cursor-pointer">
                 <input type="checkbox" name="send_to_patient" defaultChecked className="mt-[2px] h-[14px] w-[14px] accent-[#0F6E56]" />
-                <span>Enviar o resumo ao paciente por e-mail e WhatsApp ao aprovar</span>
+                <span>Enviar os documentos ao paciente por e-mail e WhatsApp ao aprovar</span>
               </label>
             </>
           )}
