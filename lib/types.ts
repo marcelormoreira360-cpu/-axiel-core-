@@ -245,28 +245,69 @@ export type FollowUp = {
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;
 };
 
-/** Neuro ID 360 — Documento 1: "o que foi identificado". */
-export type NeuroMapaIntegrativo = {
-  principais_achados: string[];
-  padroes_observados: string[];
-  leitura_integrativa: string;
-  achados_funcionais: string[];
-  elementos_biomecanicos: string[];
-  elementos_bioemocionais: string[];
-  desregulacao_sna: string[];
-  fatores_bioquimicos: string[];
-  prioridades_atencao: string[];
+/** Identificação do paciente exibida no topo dos relatórios. */
+export type NeuroIdentificacao = {
+  paciente?: string;
+  idade?: string;
+  sexo?: string;
+  peso?: string;
+  altura?: string;
+  local?: string;
+  data_avaliacoes?: string;
+  microfisioterapia?: string;
+  exame_cabelo?: string;
+  base_orientacao?: string;
 };
 
-/** Neuro ID 360 — Documento 2: "o que fazer agora" (rascunho para revisão profissional). */
+/** Item de seção com título em negrito + descrição (ex.: "Resultados encontrados"). */
+export type NeuroSecaoItem = { titulo: string; descricao: string };
+
+/**
+ * Neuro ID 360 — Documento 1: RELATÓRIO FUNCIONAL INTEGRADO ("o que foi identificado").
+ * Campos novos seguem o modelo-padrão; os antigos permanecem opcionais para
+ * compatibilidade com insights já gerados.
+ */
+export type NeuroMapaIntegrativo = {
+  identificacao?: NeuroIdentificacao;
+  exames_avaliados?: string;
+  resultados_encontrados?: NeuroSecaoItem[];
+  sintese_clinico_funcional?: string;
+  conclusao_funcional?: string;
+  fase_jornada?: string;
+  observacao?: string;
+  // Campos antigos (fallback)
+  principais_achados?: string[];
+  padroes_observados?: string[];
+  leitura_integrativa?: string;
+  achados_funcionais?: string[];
+  elementos_biomecanicos?: string[];
+  elementos_bioemocionais?: string[];
+  desregulacao_sna?: string[];
+  fatores_bioquimicos?: string[];
+  prioridades_atencao?: string[];
+};
+
+/**
+ * Neuro ID 360 — Documento 2: PLANO INTEGRATIVO NEURO ID ("o que fazer agora").
+ * Rascunho para revisão profissional.
+ */
 export type NeuroPlanoRegulacao = {
-  proximos_passos: string[];
-  orientacoes_iniciais: string[];
-  recomendacoes_rotina: string[];
-  sugestoes_regulacao: string[];
-  exames_complementares: string[];
-  prioridades: string[];
-  recomendacao_continuidade: string;
+  identificacao?: NeuroIdentificacao;
+  fase_jornada_nome?: string;
+  fase_jornada_justificativa?: string;
+  direcao_terapeutica?: string;
+  plano_inicial?: NeuroSecaoItem[];
+  acompanhamento_evolucao?: string;
+  proximo_passo?: string;
+  observacao?: string;
+  // Campos antigos (fallback)
+  proximos_passos?: string[];
+  orientacoes_iniciais?: string[];
+  recomendacoes_rotina?: string[];
+  sugestoes_regulacao?: string[];
+  exames_complementares?: string[];
+  prioridades?: string[];
+  recomendacao_continuidade?: string;
 };
 
 /** Neuro ID 360 — Documento 3: protocolo de suplementação (rascunho; exige aprovação humana). */

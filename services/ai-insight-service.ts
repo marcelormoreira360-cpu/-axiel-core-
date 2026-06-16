@@ -579,28 +579,40 @@ function formatApprovedReport(out: AiInsightOutput): { html: string; text: strin
     textParts.push(`${title}:\n${text}`);
   };
   const docTitle = (t: string) => { htmlParts.push(`<h2 style="margin-top:20px">${escHtml(t)}</h2>`); textParts.push(`\n=== ${t} ===`); };
+  const leadH = (title: string, items?: Array<{ titulo: string; descricao: string }>, numbered?: boolean) => {
+    const arr = (items ?? []).filter((it) => it.titulo || it.descricao);
+    if (!arr.length) return;
+    htmlParts.push(`<p style="font-weight:600;margin:12px 0 2px">${escHtml(title)}</p>` +
+      arr.map((it, i) => `<p style="margin:4px 0"><b>${escHtml((numbered ? `${i + 1}. ` : "") + it.titulo)}</b>${it.descricao ? ` — ${escHtml(it.descricao)}` : ""}</p>`).join(""));
+    textParts.push(`${title}:\n` + arr.map((it, i) => `${numbered ? `${i + 1}. ` : "• "}${it.titulo}${it.descricao ? ` — ${it.descricao}` : ""}`).join("\n"));
+  };
 
   if (m) {
-    docTitle("Mapa Integrativo Neuro ID 360");
-    secH("Principais achados", m.principais_achados);
-    secH("Padrões observados", m.padroes_observados);
-    parH("Leitura integrativa", m.leitura_integrativa);
-    secH("Achados funcionais", m.achados_funcionais);
-    secH("Elementos biomecânicos", m.elementos_biomecanicos);
-    secH("Elementos bioemocionais", m.elementos_bioemocionais);
-    secH("Desregulação do sistema nervoso", m.desregulacao_sna);
-    secH("Possíveis fatores bioquímicos", m.fatores_bioquimicos);
-    secH("Prioridades de atenção", m.prioridades_atencao);
+    docTitle("Relatório Funcional Integrado — Neuro ID");
+    parH("Exames e informações avaliadas", m.exames_avaliados ?? m.leitura_integrativa);
+    if (m.resultados_encontrados?.length) leadH("Resultados encontrados", m.resultados_encontrados);
+    else {
+      secH("Principais achados", m.principais_achados);
+      secH("Padrões observados", m.padroes_observados);
+      secH("Achados funcionais", m.achados_funcionais);
+      secH("Desregulação do sistema nervoso", m.desregulacao_sna);
+    }
+    parH("Síntese clínico-funcional", m.sintese_clinico_funcional);
+    parH("Conclusão funcional", m.conclusao_funcional);
+    parH("Fase na Jornada Neuro ID", m.fase_jornada);
   }
   if (p) {
-    docTitle("Plano Inicial de Regulação");
-    secH("Próximos passos", p.proximos_passos);
-    secH("Orientações iniciais", p.orientacoes_iniciais);
-    secH("Recomendações de rotina", p.recomendacoes_rotina);
-    secH("Sugestões de regulação", p.sugestoes_regulacao);
-    secH("Exames complementares recomendados", p.exames_complementares);
-    secH("Prioridades", p.prioridades);
-    parH("Recomendação de continuidade", p.recomendacao_continuidade);
+    docTitle("Plano Integrativo Neuro ID");
+    parH("Fase na Jornada Neuro ID", [p.fase_jornada_nome, p.fase_jornada_justificativa].filter(Boolean).join(" — ") || undefined);
+    parH("Direção terapêutica", p.direcao_terapeutica);
+    if (p.plano_inicial?.length) leadH("Plano integrativo inicial", p.plano_inicial, true);
+    else {
+      secH("Próximos passos", p.proximos_passos);
+      secH("Orientações iniciais", p.orientacoes_iniciais);
+      secH("Recomendações de rotina", p.recomendacoes_rotina);
+    }
+    parH("Acompanhamento da evolução", p.acompanhamento_evolucao);
+    parH("Próximo passo", p.proximo_passo);
   }
   if (s && (s.itens.length || s.observacoes_gerais.length)) {
     docTitle("Protocolo de Suplementação");
@@ -662,12 +674,24 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
   let pdfSignedUrl: string | null = null;
   const pdfFilename = `relatorio-neuro-id-360-${patientId.slice(0, 8)}.pdf`;
   try {
-    const { buildNeuroId360Pdf } = await import("@/services/insight-pdf-service");
-    pdfBuffer = await buildNeuroId360Pdf({ output: out, patientName: patient.full_name });
-
-    // Upload no bucket privado + URL assinada (o Twilio busca a mídia ao enviar).
     const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
     const admin = createSupabaseAdminClient();
+
+    // Marca da clínica para o PDF (logo, cor, rodapé configurável).
+    let clinicBrand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
+    try {
+      const { data: clinic } = await admin
+        .from("clinics")
+        .select("name, logo_url, primary_color, report_tagline")
+        .eq("id", insight.clinic_id)
+        .single();
+      if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
+    } catch { /* sem marca: usa defaults */ }
+
+    const { buildNeuroId360Pdf } = await import("@/services/insight-pdf-service");
+    pdfBuffer = await buildNeuroId360Pdf({ output: out, patientName: patient.full_name, clinic: clinicBrand });
+
+    // Upload no bucket privado + URL assinada (o Twilio busca a mídia ao enviar).
     const path = `reports/${patientId}/neuro-id-360-${insight.id}.pdf`;
     const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, {
       contentType: "application/pdf",

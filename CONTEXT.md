@@ -1,7 +1,24 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/06/2026 (13)
+> Atualizado em: 16/06/2026 (14)
+
+## ✅ Relatórios Neuro ID 360 — padrão único + entrega ao paciente (16/06/2026)
+
+**Envio ao paciente (e-mail + WhatsApp) após aprovação:**
+- `approveAiInsightAsFinal` faz UPDATE em `ai_insights` via client do usuário. Faltava **policy de UPDATE** → migration **084_ai_insights_update_policy** (`can_write_clinic_data`). Sem ela, o aprovar dava "Unknown error" (PGRST116, 0 linhas).
+- `sendApprovedInsightToPatient` agora retorna `InsightDeliveryResult` por canal (`sent|skipped_no_contact|failed|no_report` + erros), grava auditoria `ai_insight.report_sent`, e a action **aguarda** o resultado e mostra banner na tela de insights. Botão **"Reenviar ao paciente"** no painel (desabilita sem contato).
+- E-mail via Resend: `sendSimpleEmail` agora **propaga o erro real** do SDK (antes engolia) e suporta `attachments`. Exige `RESEND_API_KEY` válida + `RESEND_FROM_EMAIL` com domínio verificado (o padrão `onboarding@resend.dev` só entrega ao dono da conta).
+- WhatsApp via Twilio: envia o **PDF como mídia** (`sendWhatsAppMedia`) + texto. Limite de 1600 chars resolvido enviando o PDF, não texto. Sandbox exige `join` do número destino; `TWILIO_FROM_NUMBER=whatsapp:+14155238886`.
+
+**Padrão visual + estrutura ÚNICOS para todos os relatórios:**
+- `services/insight-pdf-service.ts` `buildNeuroId360Pdf({output, patientName, clinic})`: logo da clínica (de `clinics.logo_url`), barra superior em gradiente, fonte **serifada (Times)** justificada, título/subtítulo, tabela de Identificação, cabeçalhos de seção, **rodapé com tagline em todas as páginas** (configurável: migration **085 `clinics.report_tagline`**). PDF sobe no bucket `patient-docs` (URL assinada 7d) p/ anexo.
+- Estrutura nova (espelha os modelos oficiais Carla Bueno): **Doc 1 — Relatório Funcional Integrado** (`mapa_integrativo`: identificacao, exames_avaliados, resultados_encontrados[{titulo,descricao}], sintese_clinico_funcional, conclusao_funcional, fase_jornada, observacao). **Doc 2 — Plano Integrativo Neuro ID** (`plano_regulacao`: identificacao, fase_jornada_nome/justificativa, direcao_terapeutica, plano_inicial[{titulo,descricao}] numerado, acompanhamento_evolucao, proximo_passo). **Doc 3 — Protocolo de Suplementação** (inalterado, exige aprovação). Campos antigos mantidos opcionais (fallback).
+- `insight-schema.ts` (shape+coerce), `guardrails.ts` (prompt com tom "na prática", não-diagnóstico), `neuro-id-360-documents.tsx` (tela) e a rota `reports/clinical-insight/pdf` agora usam o **mesmo** gerador/estrutura.
+- Validado: tsc **0 erros**; verify:i18n **39 namespaces OK**; PDF gera (`%PDF-`).
+- ⚠️ Insights antigos usam campos antigos → PDF cai no fallback. Para ver o padrão novo, **gerar novo draft** e aprovar.
+
+---
 
 ## ✅ Neuro ID 360 — Fase 1: Exames funcionais (15/06/2026)
 

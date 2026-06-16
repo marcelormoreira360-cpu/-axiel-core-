@@ -1,6 +1,6 @@
-import type { AiInsightOutput } from "@/lib/types";
+import type { AiInsightOutput, NeuroIdentificacao, NeuroSecaoItem } from "@/lib/types";
 
-function Section({ title, items }: { title: string; items: string[] }) {
+function Section({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
   return (
     <div className="mb-3">
@@ -22,16 +22,61 @@ function Paragraph({ title, text }: { title: string; text?: string | null }) {
   return (
     <div className="mb-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6B6A66] mb-1">{title}</p>
-      <p className="text-[13px] leading-5 text-[#0F1A2E]">{text}</p>
+      <p className="text-[13px] leading-5 text-[#0F1A2E] text-justify">{text}</p>
+    </div>
+  );
+}
+
+function LeadItems({ title, items, numbered }: { title: string; items?: NeuroSecaoItem[]; numbered?: boolean }) {
+  const arr = (items ?? []).filter((it) => it.titulo || it.descricao);
+  if (arr.length === 0) return null;
+  return (
+    <div className="mb-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6B6A66] mb-1">{title}</p>
+      <div className="space-y-2">
+        {arr.map((it, i) => (
+          <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+            <span className="font-semibold">{numbered ? `${i + 1}. ` : ""}{it.titulo}</span>
+            {it.descricao ? <span className="text-[#4b5563]"> — {it.descricao}</span> : null}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Identificacao({ id, fallbackName }: { id?: NeuroIdentificacao; fallbackName?: string | null }) {
+  const rows: Array<[string, string | undefined]> = [
+    ["Paciente", id?.paciente ?? fallbackName ?? undefined],
+    ["Idade", id?.idade],
+    ["Sexo", id?.sexo],
+    ["Peso", id?.peso],
+    ["Altura", id?.altura],
+    ["Local", id?.local],
+    ["Data das avaliações", id?.data_avaliacoes],
+    ["Microfisioterapia", id?.microfisioterapia],
+    ["Exame de cabelo", id?.exame_cabelo],
+    ["Base da orientação", id?.base_orientacao],
+  ];
+  const filled = rows.filter(([, v]) => v && v.trim());
+  if (filled.length === 0) return null;
+  return (
+    <div className="mb-3 rounded-xl bg-[#F7F6F2] border border-black/[.05] px-3 py-2">
+      {filled.map(([k, v]) => (
+        <p key={k} className="text-[12px] leading-5 text-[#0F1A2E]">
+          <span className="font-semibold">{k}: </span>
+          <span className="text-[#4b5563]">{v}</span>
+        </p>
+      ))}
     </div>
   );
 }
 
 /**
- * Renderiza os 3 documentos do Neuro ID 360 quando presentes no output da IA.
- * Componente apenas de apresentação (server-compatible).
+ * Renderiza os documentos do Neuro ID 360 no padrão dos relatórios oficiais.
+ * Componente apenas de apresentação (server-compatible). Faz fallback p/ campos antigos.
  */
-export function NeuroId360Documents({ output }: { output: AiInsightOutput }) {
+export function NeuroId360Documents({ output, patientName }: { output: AiInsightOutput; patientName?: string | null }) {
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
@@ -43,30 +88,48 @@ export function NeuroId360Documents({ output }: { output: AiInsightOutput }) {
       {mapa && (
         <div className="rounded-2xl border border-black/[.08] bg-white p-5">
           <p className="text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-1">Documento 1</p>
-          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Mapa Integrativo Neuro ID 360</h3>
-          <Section title="Principais achados" items={mapa.principais_achados} />
-          <Section title="Padrões observados" items={mapa.padroes_observados} />
-          <Paragraph title="Leitura integrativa" text={mapa.leitura_integrativa} />
-          <Section title="Achados funcionais" items={mapa.achados_funcionais} />
-          <Section title="Elementos biomecânicos" items={mapa.elementos_biomecanicos} />
-          <Section title="Elementos bioemocionais" items={mapa.elementos_bioemocionais} />
-          <Section title="Desregulação do sistema nervoso (SNA)" items={mapa.desregulacao_sna} />
-          <Section title="Possíveis fatores bioquímicos" items={mapa.fatores_bioquimicos} />
-          <Section title="Prioridades de atenção" items={mapa.prioridades_atencao} />
+          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Relatório Funcional Integrado — Neuro ID</h3>
+          <Identificacao id={mapa.identificacao} fallbackName={patientName} />
+          <Paragraph title="Exames e informações avaliadas" text={mapa.exames_avaliados ?? mapa.leitura_integrativa} />
+          {mapa.resultados_encontrados && mapa.resultados_encontrados.length > 0 ? (
+            <LeadItems title="Resultados encontrados" items={mapa.resultados_encontrados} />
+          ) : (
+            <>
+              <Section title="Principais achados" items={mapa.principais_achados} />
+              <Section title="Padrões observados" items={mapa.padroes_observados} />
+              <Section title="Achados funcionais" items={mapa.achados_funcionais} />
+              <Section title="Desregulação do sistema nervoso (SNA)" items={mapa.desregulacao_sna} />
+            </>
+          )}
+          <Paragraph title="Síntese clínico-funcional" text={mapa.sintese_clinico_funcional} />
+          <Paragraph title="Conclusão funcional" text={mapa.conclusao_funcional} />
+          {mapa.fase_jornada && <Paragraph title="Fase na Jornada Neuro ID" text={mapa.fase_jornada} />}
         </div>
       )}
 
       {plano && (
         <div className="rounded-2xl border border-black/[.08] bg-white p-5">
           <p className="text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-1">Documento 2</p>
-          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Plano Inicial de Regulação</h3>
-          <Section title="Próximos passos" items={plano.proximos_passos} />
-          <Section title="Orientações iniciais" items={plano.orientacoes_iniciais} />
-          <Section title="Recomendações de rotina" items={plano.recomendacoes_rotina} />
-          <Section title="Sugestões de regulação" items={plano.sugestoes_regulacao} />
-          <Section title="Exames complementares recomendados" items={plano.exames_complementares} />
-          <Section title="Prioridades" items={plano.prioridades} />
-          <Paragraph title="Recomendação de continuidade" text={plano.recomendacao_continuidade} />
+          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Plano Integrativo Neuro ID</h3>
+          <Identificacao id={plano.identificacao} fallbackName={patientName} />
+          {(plano.fase_jornada_nome || plano.fase_jornada_justificativa) && (
+            <Paragraph
+              title="Fase na Jornada Neuro ID"
+              text={[plano.fase_jornada_nome, plano.fase_jornada_justificativa].filter(Boolean).join(" — ")}
+            />
+          )}
+          <Paragraph title="Direção terapêutica" text={plano.direcao_terapeutica} />
+          {plano.plano_inicial && plano.plano_inicial.length > 0 ? (
+            <LeadItems title="Plano integrativo inicial" items={plano.plano_inicial} numbered />
+          ) : (
+            <>
+              <Section title="Próximos passos" items={plano.proximos_passos} />
+              <Section title="Orientações iniciais" items={plano.orientacoes_iniciais} />
+              <Section title="Recomendações de rotina" items={plano.recomendacoes_rotina} />
+            </>
+          )}
+          <Paragraph title="Acompanhamento da evolução" text={plano.acompanhamento_evolucao} />
+          <Paragraph title="Próximo passo" text={plano.proximo_passo} />
         </div>
       )}
 
