@@ -8,10 +8,20 @@
 
 import { useTranslations } from "next-intl";
 import type { PatientEngagement } from "@/services/patient-intelligence-service";
+import type { PatientJourneyStage, JourneyStageTone } from "@/modules/patient-journey/stage";
 
 interface Props {
   engagement: PatientEngagement;
+  /** Etapa da jornada derivada (opcional — não quebra chamadas existentes). */
+  journey?: PatientJourneyStage;
 }
+
+const JOURNEY_TONE_CLASSES: Record<JourneyStageTone, string> = {
+  neutral:   "bg-[#F4F3EF] text-[#6B6A66]",
+  active:    "bg-[#E1F5EE] text-[#085041]",
+  attention: "bg-[#FFF8E7] text-[#633806]",
+  risk:      "bg-[#FEE2E2] text-[#991B1B]",
+};
 
 function ScoreRing({ score }: { score: number }) {
   const radius = 18;
@@ -47,7 +57,7 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-export function PatientIntelligenceStrip({ engagement }: Props) {
+export function PatientIntelligenceStrip({ engagement, journey }: Props) {
   const t = useTranslations("patientPanels.intelligenceStrip");
   const {
     score,
@@ -68,6 +78,22 @@ export function PatientIntelligenceStrip({ engagement }: Props) {
 
   return (
     <div className="bg-white border border-t-0 border-black/[.07] px-[22px] py-[14px] flex items-center gap-[18px] flex-wrap">
+
+      {/* Journey stage + next best action (derived, zero extra queries) */}
+      {journey && (
+        <>
+          <div className="flex items-center gap-[8px] min-w-0">
+            <span className="text-[10px] text-[#A09E98] tracking-[.05em] uppercase shrink-0">{t("journey.label")}</span>
+            <span className={`text-[11px] font-medium px-[8px] py-[3px] rounded-full shrink-0 ${JOURNEY_TONE_CLASSES[journey.tone]}`}>
+              {t(`journey.stage.${journey.stage}`)}
+            </span>
+            <span className="text-[11px] text-[#6B6A66] truncate">
+              → {t(`journey.next.${journey.stage}`)}
+            </span>
+          </div>
+          <div className="w-px h-8 bg-black/[.07] shrink-0 hidden sm:block" />
+        </>
+      )}
 
       {/* Engagement score ring */}
       <div className="flex items-center gap-[10px]">

@@ -1,4 +1,18 @@
 {
+  "financials": {
+    "eyebrow": "FINANCEIRO",
+    "title": "Financeiro do paciente",
+    "restricted": "Visível a gestores",
+    "empty": "Sem movimento financeiro ainda.",
+    "revenue": "Receita total",
+    "ltv": "Valor total (LTV)",
+    "avgTicket": "Ticket médio",
+    "payments": "Pagamentos",
+    "lastPayment": "Último pagamento",
+    "plans": "Planos aceitos",
+    "pending": "Pendente",
+    "refunded": "Estornado"
+  },
   "intelligenceStrip": {
     "engagement": "Engajamento",
     "lastSession": "ÚLT. SESSÃO",
@@ -9,7 +23,32 @@
     "sessions": "{count, plural, one {# sessão} other {# sessões}}",
     "attendance": "COMPAREC.",
     "churnHigh": "⚠ Paciente inativo — considere um follow-up.",
-    "churnMedium": "Considere reagendar em breve."
+    "churnMedium": "Considere reagendar em breve.",
+    "journey": {
+      "label": "JORNADA",
+      "stage": {
+        "novo": "Novo paciente",
+        "avaliacao_agendada": "Avaliação agendada",
+        "avaliado": "Avaliação realizada",
+        "plano_sugerido": "Plano sugerido",
+        "em_tratamento": "Em tratamento",
+        "reavaliacao": "Reavaliação",
+        "manutencao": "Manutenção",
+        "inativo": "Inativo",
+        "reativacao": "Reativação"
+      },
+      "next": {
+        "novo": "Agendar avaliação inicial",
+        "avaliacao_agendada": "Confirmar e preparar a avaliação",
+        "avaliado": "Apresentar o plano de cuidado",
+        "plano_sugerido": "Confirmar aceite e iniciar o plano",
+        "em_tratamento": "Registrar evolução e confirmar a próxima sessão",
+        "reavaliacao": "Reavaliar progresso e reforçar a percepção de melhora",
+        "manutencao": "Oferecer plano de manutenção",
+        "inativo": "Enviar mensagem de reativação",
+        "reativacao": "Reativar com foco em cuidado contínuo"
+      }
+    }
   },
   "timeline": {
     "types": {
@@ -190,6 +229,8 @@
       "goal": "Objetivo terapêutico",
       "goalPlaceholder": "Descreva o resultado esperado ao final do tratamento...",
       "targetEnd": "Previsão de conclusão",
+      "value": "Valor do plano",
+      "valuePlaceholder": "Ex: 1200 (opcional)",
       "create": "Criar plano"
     }
   },

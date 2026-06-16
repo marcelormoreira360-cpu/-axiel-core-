@@ -1,7 +1,47 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 16/06/2026 (14)
+> Atualizado em: 16/06/2026 (15)
+
+## ✅ Jornada do Paciente — Etapas 1, 3 e 4 (extensão, sem duplicar) (16/06/2026)
+
+Auditoria da "jornada do cliente" (relatório em `AUDITORIA_JORNADA_PACIENTE_2026-06-16.md`):
+~70% já existia, espalhado. Decisão: **estender o que há, não criar 5 tabelas novas**. As
+etapas implementadas hoje reaproveitam dados já carregados na ficha (zero query extra onde
+possível) e a jornada é sempre **derivada**, nunca digitada (preserva a fluidez).
+
+- **Etapa 1 — Etapa clínica derivada**: `modules/patient-journey/stage.ts` (novo) →
+  `derivePatientJourneyStage()` (função pura): deriva etapa (novo → avaliação agendada →
+  avaliado → plano sugerido → em tratamento → reavaliação → manutenção → inativo → reativação)
+  + próxima melhor ação, a partir de `appointments`, `treatment_plans.status`, `churnRisk`
+  (do `patient-intelligence-service`) e status do paciente/pacote/assinatura. Exibida no
+  `components/patient-intelligence-strip.tsx` (prop opcional `journey`, chip + próxima ação).
+  Ligada em `app/patients/[id]/page.tsx` com dados já em memória. i18n `patientPanels.intelligenceStrip.journey`.
+  ⚠️ Já existia `modules/patient-journey/` (snapshot-builder, master-flow com catálogo de
+  stages, timeline) — **não foi duplicado**; `stage.ts` complementa derivando a etapa atual.
+- **Etapa 3 — Financeiro por paciente (VIEW, sem tabela mantida)**: migration
+  **`086_patient_financials_view.sql` APLICADA**. View `patient_financials` com
+  `security_invoker=on` (RLS de clínica das tabelas-base aplica; `anon` sem SELECT,
+  `authenticated` com SELECT → sem alerta `security_definer_view`). Agrega de
+  `patient_payments` (status='paid') + `patient_offers`: receita, nº pagamentos, ticket médio,
+  LTV, 1º/último pagamento, pendente, estornado, planos ofertados/aceitos. Reconciliação
+  exata com a soma crua. Service `getPatientFinancials(patientId, clinicId)` + tipo
+  `PatientFinancials` em `finance-service.ts`.
+  - **Painel** `components/patient-financials-panel.tsx` na ficha, **gateado por gestor**
+    (`isManager(profile.role)`): o dado só é buscado e o painel só renderiza para gestores
+    (a view é visível a qualquer membro da clínica via RLS — a restrição "só gestor vê
+    financeiro" é da CAMADA DE APP, então qualquer surfacing precisa do guard). Moeda via
+    `useFormatMoney`. i18n `patientPanels.financials`.
+- **Etapa 4 — Valor do plano de cuidado**: migration **`087_treatment_plan_value.sql`
+  APLICADA** (`treatment_plans.plan_value_cents`, opcional, moeda da clínica). `TreatmentPlan`
+  type + `createTreatmentPlan` + action `createTreatmentPlanAction` (parse "300"/"300,50" →
+  centavos) + campo no form e exibição no card (`patient-treatment-plan-panel.tsx`, via
+  `useFormatMoney`). i18n `patientPanels.treatmentPlan.createForm.value`.
+- Validado: tsc confiável **0 erros**; verify:i18n **39 namespaces, paridade OK**; views/colunas
+  verificadas no banco; advisor de segurança sem alerta novo.
+- **Pendente da jornada (plano)**: Etapa 5 — indicação **paciente→paciente** (única tabela
+  nova de fato; o `referral_conversions`/`referral-service` atual é clínica→clínica).
+  **Pendência operacional**: deploy dos `.ts` na Vercel (migrations 086/087 já em produção).
 
 ## ✅ Relatórios Neuro ID 360 — padrão único + entrega ao paciente (16/06/2026)
 

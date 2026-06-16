@@ -23,6 +23,8 @@ export type TreatmentPlan = {
   status: TreatmentPlanStatus;
   started_at: string | null;
   target_end_at: string | null;
+  /** Valor do plano em centavos (moeda da clínica). Opcional. */
+  plan_value_cents: number | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -86,6 +88,7 @@ export async function createTreatmentPlan(input: {
   goal?: string | null;
   started_at?: string | null;
   target_end_at?: string | null;
+  plan_value_cents?: number | null;
   notes?: string | null;
 }): Promise<TreatmentPlan> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
@@ -94,15 +97,16 @@ export async function createTreatmentPlan(input: {
   const { data, error } = await supabase
     .from("treatment_plans")
     .insert({
-      clinic_id:     input.clinic_id,
-      patient_id:    input.patient_id,
-      created_by:    input.created_by ?? null,
-      title:         input.title,
-      goal:          input.goal ?? null,
-      started_at:    input.started_at ?? new Date().toISOString().split("T")[0],
-      target_end_at: input.target_end_at ?? null,
-      notes:         input.notes ?? null,
-      status:        "active",
+      clinic_id:        input.clinic_id,
+      patient_id:       input.patient_id,
+      created_by:       input.created_by ?? null,
+      title:            input.title,
+      goal:             input.goal ?? null,
+      started_at:       input.started_at ?? new Date().toISOString().split("T")[0],
+      target_end_at:    input.target_end_at ?? null,
+      plan_value_cents: input.plan_value_cents ?? null,
+      notes:            input.notes ?? null,
+      status:           "active",
     })
     .select("*, treatment_plan_steps(*)")
     .single();

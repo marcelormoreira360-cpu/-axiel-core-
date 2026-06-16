@@ -312,3 +312,60 @@ export async function getPendingPayments(clinicId: string): Promise<PendingPayme
     } as PendingPayment;
   });
 }
+
+// ── Financeiro por paciente (view patient_financials) ─────────────
+// Rollup por paciente: receita, ticket médio, LTV, nº de pagamentos, planos.
+// Lê a VIEW patient_financials (security_invoker → RLS de clínica aplica).
+// ⚠️ Exposição na UI deve ser restrita a gestores (requireFinanceAccess/isManager).
+export type PatientFinancials = {
+  patient_id: string;
+  total_revenue_cents: number;
+  payments_count: number;
+  average_ticket_cents: number;
+  lifetime_value_cents: number;
+  first_payment_at: string | null;
+  last_payment_at: string | null;
+  pending_cents: number;
+  refunded_cents: number;
+  plans_offered: number;
+  plans_accepted: number;
+};
+
+const EMPTY_PATIENT_FINANCIALS: Omit<PatientFinancials, "patient_id"> = {
+  total_revenue_cents: 0,
+  payments_count: 0,
+  average_ticket_cents: 0,
+  lifetime_value_cents: 0,
+  first_payment_at: null,
+  last_payment_at: null,
+  pending_cents: 0,
+  refunded_cents: 0,
+  plans_offered: 0,
+  plans_accepted: 0,
+};
+
+/**
+ * Métricas financeiras de um paciente. Escopo de clínica explícito (além da
+ * RLS). Retorna zeros quando o paciente ainda não tem movimento financeiro.
+ */
+export async function getPatientFinancials(
+  patientId: string,
+  clinicId: string,
+): Promise<PatientFinancials> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("patient_financials")
+    .select(
+      "patient_id, total_revenue_cents, payments_count, average_ticket_cents, lifetime_value_cents, first_payment_at, last_payment_at, pending_cents, refunded_cents, plans_offered, plans_accepted",
+    )
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return { patient_id: patientId, ...EMPTY_PATIENT_FINANCIALS };
+
+  return data as PatientFinancials;
+}

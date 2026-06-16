@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import type { TreatmentPlan, TreatmentPlanStep } from "@/services/treatment-plan-service";
+import { useFormatMoney } from "@/components/currency-provider";
 import {
   createTreatmentPlanAction,
   addPlanStepAction,
@@ -213,6 +214,17 @@ function CreatePlanForm({
           />
         </div>
 
+        <div>
+          <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("value")}</label>
+          <input
+            type="text"
+            inputMode="decimal"
+            name="plan_value"
+            placeholder={t("valuePlaceholder")}
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+          />
+        </div>
+
         <div className="flex justify-end pt-[2px]">
           <button
             type="submit"
@@ -235,6 +247,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
   const [expanded, setExpanded] = useState(plan.status === "active");
   const [changingStatus, setChangingStatus] = useState(false);
 
+  const money = useFormatMoney();
   const done  = plan.steps.filter((s) => s.is_completed).length;
   const total = plan.steps.length;
   const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
@@ -269,6 +282,9 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
             <p className="text-[13px] font-semibold text-[#0F1A2E] leading-snug">{plan.title}</p>
             {plan.goal && (
               <p className="text-[11px] text-[#6B6A66] mt-[3px] line-clamp-2">{plan.goal}</p>
+            )}
+            {plan.plan_value_cents != null && (
+              <p className="text-[11px] font-medium text-[#0F6E56] mt-[4px]">{money(plan.plan_value_cents)}</p>
             )}
           </div>
 

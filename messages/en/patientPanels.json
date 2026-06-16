@@ -1,4 +1,18 @@
 {
+  "financials": {
+    "eyebrow": "FINANCIALS",
+    "title": "Patient financials",
+    "restricted": "Visible to managers",
+    "empty": "No financial activity yet.",
+    "revenue": "Total revenue",
+    "ltv": "Lifetime value (LTV)",
+    "avgTicket": "Average ticket",
+    "payments": "Payments",
+    "lastPayment": "Last payment",
+    "plans": "Plans accepted",
+    "pending": "Pending",
+    "refunded": "Refunded"
+  },
   "intelligenceStrip": {
     "engagement": "Engagement",
     "lastSession": "LAST SESSION",
@@ -9,7 +23,32 @@
     "sessions": "{count, plural, one {# session} other {# sessions}}",
     "attendance": "ATTENDANCE",
     "churnHigh": "⚠ Inactive patient — consider a follow-up.",
-    "churnMedium": "Consider rescheduling soon."
+    "churnMedium": "Consider rescheduling soon.",
+    "journey": {
+      "label": "JOURNEY",
+      "stage": {
+        "novo": "New patient",
+        "avaliacao_agendada": "Assessment scheduled",
+        "avaliado": "Assessment done",
+        "plano_sugerido": "Plan suggested",
+        "em_tratamento": "In treatment",
+        "reavaliacao": "Reassessment",
+        "manutencao": "Maintenance",
+        "inativo": "Inactive",
+        "reativacao": "Reactivation"
+      },
+      "next": {
+        "novo": "Schedule the initial assessment",
+        "avaliacao_agendada": "Confirm and prepare the assessment",
+        "avaliado": "Present the care plan",
+        "plano_sugerido": "Confirm acceptance and start the plan",
+        "em_tratamento": "Log progress and confirm the next session",
+        "reavaliacao": "Reassess progress and reinforce perceived improvement",
+        "manutencao": "Offer a maintenance plan",
+        "inativo": "Send a reactivation message",
+        "reativacao": "Re-engage with a focus on continued care"
+      }
+    }
   },
   "timeline": {
     "types": {
@@ -190,6 +229,8 @@
       "goal": "Therapeutic goal",
       "goalPlaceholder": "Describe the expected outcome at the end of treatment...",
       "targetEnd": "Target completion",
+      "value": "Plan value",
+      "valuePlaceholder": "e.g. 1200 (optional)",
       "create": "Create plan"
     }
   },

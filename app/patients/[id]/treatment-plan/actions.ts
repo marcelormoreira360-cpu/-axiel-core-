@@ -22,15 +22,22 @@ export async function createTreatmentPlanAction(formData: FormData) {
   const targetEndAt  = String(formData.get("target_end_at") ?? "").trim() || null;
   const notes        = String(formData.get("notes") ?? "").trim() || null;
 
+  // Valor do plano: aceita "300", "300,50" ou "300.50" (unidades) → centavos.
+  const rawValue     = String(formData.get("plan_value") ?? "").trim().replace(/\./g, "").replace(",", ".");
+  const parsedValue  = rawValue ? Number(rawValue) : NaN;
+  const planValueCents =
+    Number.isFinite(parsedValue) && parsedValue >= 0 ? Math.round(parsedValue * 100) : null;
+
   if (!title || !patientId) return;
 
   await createTreatmentPlan({
-    clinic_id:     profile.clinic_id,
-    patient_id:    patientId,
-    created_by:    profile.id,
+    clinic_id:        profile.clinic_id,
+    patient_id:       patientId,
+    created_by:       profile.id,
     title,
     goal,
-    target_end_at: targetEndAt,
+    target_end_at:    targetEndAt,
+    plan_value_cents: planValueCents,
     notes,
   });
 

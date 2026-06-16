@@ -27,6 +27,10 @@ import { PatientAssessmentProgressPanel } from "@/components/patient-assessment-
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentUserProfile } from "@/services/user-service";
+import { isManager } from "@/lib/team-utils";
+import { getPatientFinancials, getClinicCurrency } from "@/services/finance-service";
+import { PatientFinancialsPanel } from "@/components/patient-financials-panel";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
@@ -34,6 +38,7 @@ import { PatientIntelligenceStrip } from "@/components/patient-intelligence-stri
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
+import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
 import { WaitlistButton } from "@/components/waitlist-button";
 import { getWaitlist } from "@/services/waitlist-service";
 
@@ -123,6 +128,22 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // ── Intelligence — computed from already-loaded data (zero extra queries) ──
   const engagement = computePatientEngagement(appointments, patient);
+  // Etapa da jornada — derivada dos mesmos dados já carregados (zero query extra)
+  const journeyStage = derivePatientJourneyStage({
+    patientStatus: patient.status,
+    appointments,
+    treatmentPlans,
+    churnRisk: engagement.churnRisk,
+    hasActivePackageOrSub: !!activePackage || !!activeSub,
+  });
+
+  // ── Financeiro do paciente — só para gestores (dado financeiro restrito) ──
+  const profile = await getCurrentUserProfile();
+  const canSeeFinance = !!profile && isManager(profile.role);
+  const patientFinancials =
+    canSeeFinance && clinic?.id ? await getPatientFinancials(id, clinic.id) : null;
+  const clinicCurrency =
+    canSeeFinance && clinic?.id ? await getClinicCurrency(clinic.id) : "BRL";
   const timelineEvents = buildPatientTimeline(patient.id, {
     appointments,
     sessionRecords,
@@ -225,7 +246,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       </div>
 
       {/* ── Intelligence strip ── */}
-      <PatientIntelligenceStrip engagement={engagement} />
+      <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
 
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
       <PatientCaseSummaryCard
@@ -599,6 +620,17 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             }))}
         />
       </div>
+
+      {/* Financeiro do paciente — restrito a gestores */}
+      {canSeeFinance && patientFinancials && (
+        <div className="mt-[18px]">
+          <PatientFinancialsPanel
+            financials={patientFinancials}
+            currency={clinicCurrency}
+            locale={locale}
+          />
+        </div>
+      )}
 
       {/* Exames laboratoriais */}
       <div className="mt-[18px]">
