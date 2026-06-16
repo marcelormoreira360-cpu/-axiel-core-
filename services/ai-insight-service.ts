@@ -5,6 +5,9 @@ import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
+import { getPatientAssessmentResponses } from "@/services/assessment-service";
+import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
+import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { AI_INSIGHT_SYSTEM_PROMPT, normalizeInsightText } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
@@ -31,6 +34,30 @@ export type AiInsightInputSnapshot = {
     duration_minutes: number;
     notes: string | null;
   }>;
+  assessments: Array<{
+    name: string;
+    total_score: number | null;
+    max_possible_score: number | null;
+    score_percentage: number | null;
+    date: string | null;
+  }>;
+  lab_exams: Array<{
+    date: string;
+    lab_name: string | null;
+    results: Array<{ biomarker: string; value: number; unit: string | null; status: string }>;
+  }>;
+  functional_exams: Array<{
+    type: string;
+    title: string | null;
+    date: string;
+    summary: string | null;
+  }>;
+  prescriptions: Array<{
+    type: string;
+    name: string;
+    dosage: string | null;
+    active: boolean;
+  }>;
 };
 
 function buildAiFallbackOutput(reason: string): AiInsightOutput {
@@ -53,10 +80,14 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   const patient = await getPatientById(patientId);
   if (!patient) return null;
 
-  const [intakeResponses, appointments, sessionRecords] = await Promise.all([
+  const [intakeResponses, appointments, sessionRecords, assessments, labExams, functionalExams, prescriptions] = await Promise.all([
     getPatientIntakeResponses(patientId),
     getAppointmentsByPatient(patientId),
     getSessionRecordsByPatient(patientId),
+    getPatientAssessmentResponses(patientId),
+    getPatientExams(patientId),
+    getPatientFunctionalExams(patientId),
+    getPatientPrescriptions(patientId),
   ]);
 
   return {
@@ -80,6 +111,35 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       date: appointment.starts_at,
       duration_minutes: appointment.duration_minutes,
       notes: normalizeInsightText(appointment.notes),
+    })),
+    assessments: assessments.map((a) => ({
+      name: (a as { assessment_templates?: { name?: string } }).assessment_templates?.name ?? "Questionário",
+      total_score: a.total_score ?? null,
+      max_possible_score: a.max_possible_score ?? null,
+      score_percentage: a.score_percentage ?? null,
+      date: a.created_at ?? null,
+    })),
+    lab_exams: labExams.map((e) => ({
+      date: e.exam_date,
+      lab_name: e.lab_name,
+      results: (e.exam_results ?? []).map((r) => ({
+        biomarker: r.biomarker,
+        value: r.value,
+        unit: r.unit,
+        status: r.status,
+      })),
+    })),
+    functional_exams: functionalExams.map((f) => ({
+      type: f.exam_type,
+      title: f.title,
+      date: f.exam_date,
+      summary: normalizeInsightText(f.summary),
+    })),
+    prescriptions: prescriptions.map((p) => ({
+      type: p.type,
+      name: p.name,
+      dosage: p.dosage,
+      active: p.is_active,
     })),
   };
 }

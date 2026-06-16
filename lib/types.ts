@@ -245,6 +245,41 @@ export type FollowUp = {
   appointments?: Pick<Appointment, "id" | "starts_at" | "duration_minutes" | "notes"> | null;
 };
 
+/** Neuro ID 360 — Documento 1: "o que foi identificado". */
+export type NeuroMapaIntegrativo = {
+  principais_achados: string[];
+  padroes_observados: string[];
+  leitura_integrativa: string;
+  achados_funcionais: string[];
+  elementos_biomecanicos: string[];
+  elementos_bioemocionais: string[];
+  desregulacao_sna: string[];
+  fatores_bioquimicos: string[];
+  prioridades_atencao: string[];
+};
+
+/** Neuro ID 360 — Documento 2: "o que fazer agora" (rascunho para revisão profissional). */
+export type NeuroPlanoRegulacao = {
+  proximos_passos: string[];
+  orientacoes_iniciais: string[];
+  recomendacoes_rotina: string[];
+  sugestoes_regulacao: string[];
+  exames_complementares: string[];
+  prioridades: string[];
+  recomendacao_continuidade: string;
+};
+
+/** Neuro ID 360 — Documento 3: protocolo de suplementação (rascunho; exige aprovação humana). */
+export type NeuroProtocoloSuplementacao = {
+  itens: Array<{
+    nome: string;
+    objetivo: string;
+    dose_sugerida: string;
+    observacao: string;
+  }>;
+  observacoes_gerais: string[];
+};
+
 export type AiInsightOutput = {
   label: "AI-generated insights (not medical advice)";
   structured_summary: {
@@ -260,6 +295,10 @@ export type AiInsightOutput = {
   practitioner_review_points: string[];
   data_limitations: string[];
   safety_note: string;
+  // Neuro ID 360 (opcionais p/ compatibilidade com insights antigos)
+  mapa_integrativo?: NeuroMapaIntegrativo;
+  plano_regulacao?: NeuroPlanoRegulacao;
+  protocolo_suplementacao?: NeuroProtocoloSuplementacao;
 };
 
 export type AiInsightReviewStatus = "pending_review" | "needs_changes" | "final" | "archived";

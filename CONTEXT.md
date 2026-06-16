@@ -9,8 +9,16 @@ Plano completo em `NEURO_ID_360_PLANO.md` (4 fases). Fase 1 concluída:
 - **Migration `080_patient_functional_exams.sql` APLICADA**: tabela `patient_functional_exams` (clinic_id, patient_id, exam_type [neurometria|biorressonancia|outro], title, summary, findings jsonb, exam_date, created_by) + índices + RLS (can_access_clinic/can_write_clinic_data, espelhando patient_exams).
 - `services/functional-exams-service.ts` (get/create/delete + tipo `PatientFunctionalExam`); `app/patients/[id]/functional-exams/actions.ts`.
 - `components/patient-functional-exams-panel.tsx` (lista + form: tipo/data/título/achados) na ficha (`/patients/[id]`, após o card de exames laboratoriais). i18n `patientPanels.functionalExams` (PT/EN).
-- **Pendente Fases 2–4**: novo schema da IA (Mapa Integrativo + Plano de Regulação) lendo TODAS as fontes incl. exames funcionais; telas+PDF; envio dos 2 documentos ao paciente na aprovação.
 - Validado: tsc **0 erros**; verify:i18n **39 namespaces, paridade OK**.
+
+### ✅ Fase 2 — Motor da IA: 3 documentos (15/06/2026)
+- ⚠️ **Refinamento do usuário**: são **TRÊS** documentos — suplementação virou doc separado (exige aprovação humana).
+- `lib/types`: `AiInsightOutput` ganhou (opcionais, compat) `mapa_integrativo` (NeuroMapaIntegrativo), `plano_regulacao` (NeuroPlanoRegulacao, **sem** suplementação) e `protocolo_suplementacao` (NeuroProtocoloSuplementacao: itens[{nome,objetivo,dose_sugerida,observacao}] + observacoes_gerais).
+- `modules/ai-insights/insight-schema.ts`: shape + coerção dos 3 documentos. `guardrails.ts`: prompt reescrito (pt-BR) para gerar os 3 docs como **rascunho para revisão/aprovação profissional** (não diagnóstico, não prescrição definitiva); suplementação como doc 3 que exige aprovação humana explícita.
+- `services/ai-insight-service.ts`: `AiInsightInputSnapshot` + `buildAiInsightInput` agora alimentam a IA com **questionários (assessments), exames laboratoriais, exames funcionais e prescrições** (além de intake/sessões/histórico).
+- Compatível: telas/PDF antigos seguem lendo `structured_summary` (Fase 3 renderiza os 3 docs).
+- **Pendente Fases 3–4**: telas + PDF dos 3 documentos; envio na aprovação (doc 3 com aprovação explícita).
+- Validado: tsc **0 erros**.
 
 ## ✅ Questionários: domínio correto, encadeamento, toggle PT/EN (15/06/2026)
 
