@@ -24,7 +24,6 @@ import { getMonetizationOffers } from "@/services/monetization-service";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { getPatientAssessmentProgress } from "@/services/assessment-progress-service";
 import { PatientAssessmentProgressPanel } from "@/components/patient-assessment-progress-panel";
-import { HealthAgentPanel } from "@/components/health-agent-panel";
 import { PatientDocumentsPanel } from "@/components/patient-documents-panel";
 import { getPatientDocuments } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -630,11 +629,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Documentos do paciente */}
       <div className="mt-[18px]">
         <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />
-      </div>
-
-      {/* Agente de saúde */}
-      <div className="mt-[18px]">
-        <HealthAgentPanel patientId={id} />
       </div>
     </Shell>
   );

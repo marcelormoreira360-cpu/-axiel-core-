@@ -22,6 +22,7 @@ Plano completo em `NEURO_ID_360_PLANO.md` (4 fases). Fase 1 concluída:
 ### ✅ Fase 4 — Envio dos documentos na aprovação (15/06/2026) — NEURO ID 360 COMPLETO
 - `sendApprovedInsightToPatient` reescrito: `formatApprovedReport(out)` monta os 3 documentos (Mapa + Plano + Protocolo de Suplementação) em HTML + texto (fallback no resumo para insights antigos); envia por e-mail + WhatsApp. Como o envio só ocorre após APROVAÇÃO do profissional, a suplementação já passou por aprovação humana. Checkbox no card de revisão controla o envio (default ligado).
 - **Neuro ID 360 (Fases 1–4) COMPLETO**. Pendência operacional: deploy dos `.ts` na Vercel.
+- **Unificação (15/06)**: o antigo "Agente de Saúde" (HealthAgentPanel + `/api/health-agent`) foi aposentado da UI. `app/patients/[id]/health-agent/page.tsx` agora **redireciona** para `/patients/[id]/insights`; o `HealthAgentPanel` foi removido da ficha. Há **um só caminho**: AI Insights (gerar → revisar os 3 documentos via `AiInsightReviewCard` → aprovar → enviar). `health-agent-panel.tsx` e as rotas `/api/health-agent*` ficaram órfãos (inofensivos).
 - Validado: tsc **0 erros**; verify:i18n 39 namespaces OK.
 
 ### ✅ Fase 3 — Telas + PDF dos 3 documentos (15/06/2026)
