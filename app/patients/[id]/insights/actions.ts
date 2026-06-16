@@ -13,6 +13,16 @@ function fieldValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/** Extrai a causa real de erros do Supabase/PostgREST (objetos com message/code/details/hint). */
+function describeError(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (error && typeof error === "object") {
+    const e = error as { message?: string; details?: string; hint?: string; code?: string };
+    return [e.message, e.details, e.hint, e.code].filter(Boolean).join(" · ") || JSON.stringify(error).slice(0, 300);
+  }
+  return "Unknown error.";
+}
+
 export async function generateAiInsightAction(patientId: string) {
   // ── Feature gate: ai_insights ─────────────────────────────────────────────
   const clinic = await getCurrentClinic();
@@ -26,14 +36,7 @@ export async function generateAiInsightAction(patientId: string) {
   try {
     await generateAndSaveAiInsight(patientId);
   } catch (error) {
-    // Surface the real cause (Supabase/PostgREST errors are objects with message/code/details).
-    let message = "Unknown error.";
-    if (error instanceof Error) message = error.message;
-    else if (error && typeof error === "object") {
-      const e = error as { message?: string; details?: string; hint?: string; code?: string };
-      message = [e.message, e.details, e.hint, e.code].filter(Boolean).join(" · ") || JSON.stringify(error).slice(0, 300);
-    }
-    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(message)}`);
+    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(describeError(error))}`);
   }
 
   revalidatePath(`/patients/${patientId}/insights`);
@@ -49,8 +52,7 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
       changesMade: fieldValue(formData, "changes_made"),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error.";
-    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(message)}`);
+    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(describeError(error))}`);
   }
 
   revalidatePath(`/patients/${patientId}/insights`);
@@ -82,8 +84,7 @@ export async function requestAiInsightChangesAction(patientId: string, aiInsight
       changesMade: fieldValue(formData, "changes_made"),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error.";
-    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(message)}`);
+    redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(describeError(error))}`);
   }
 
   revalidatePath(`/patients/${patientId}/insights`);
