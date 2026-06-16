@@ -106,6 +106,11 @@ export function PublicAssessmentForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Todas as perguntas são obrigatórias: bloqueia envio/avanço se faltar responder.
+    if (answeredCount < totalQuestions) {
+      setError(t("answerAll", { count: totalQuestions - answeredCount }));
+      return;
+    }
     setSubmitting(true);
     setError(null);
 
@@ -334,9 +339,15 @@ export function PublicAssessmentForm({
         </div>
       )}
 
+      {answeredCount < totalQuestions && (
+        <p className="text-[12px] text-[#8A5A06] bg-[#FDF8EE] border border-[#E9D8B0] rounded-[8px] px-[11px] py-[8px] text-center">
+          {t("answerAll", { count: totalQuestions - answeredCount })}
+        </p>
+      )}
+
       <button
         type="submit"
-        disabled={submitting || advancing}
+        disabled={submitting || advancing || answeredCount < totalQuestions}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
         {submitting || advancing ? t("submitting") : chain.length > 0 ? t("next") : t("submit")}

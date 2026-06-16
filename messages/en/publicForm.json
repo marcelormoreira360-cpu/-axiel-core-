@@ -16,5 +16,6 @@
   "doneTitle": "Thank you!",
   "doneDesc": "Your answers were submitted successfully and are now in your clinical record.",
   "totalScore": "Total score",
-  "next": "Save and continue"
+  "next": "Save and continue",
+  "answerAll": "{count, plural, one {# question left to answer.} other {# questions left to answer.}}"
 }

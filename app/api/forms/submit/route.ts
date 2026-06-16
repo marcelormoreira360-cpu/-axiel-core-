@@ -78,14 +78,15 @@ export async function POST(req: NextRequest) {
 
     if (rErr) throw rErr;
 
-    // Insert answers
+    // Insert answers — colunas reais: section_id, value_number, value_text
     if (answers.length > 0) {
       const { error: aErr } = await supabase.from("assessment_answers").insert(
         answers.map((a) => ({
-          response_id: response.id,
-          question_id: a.question_id,
-          score:        a.value_number ?? null,
-          text_answer:  a.value_text   ?? null,
+          response_id:  response.id,
+          question_id:  a.question_id,
+          section_id:   a.section_id   ?? null,
+          value_number: a.value_number ?? null,
+          value_text:   a.value_text   ?? null,
         }))
       );
       if (aErr) throw aErr;

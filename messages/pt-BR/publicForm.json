@@ -16,5 +16,6 @@
   "doneTitle": "Obrigado!",
   "doneDesc": "Suas respostas foram enviadas com sucesso e já estão na sua ficha clínica.",
   "totalScore": "Pontuação total",
-  "next": "Salvar e continuar"
+  "next": "Salvar e continuar",
+  "answerAll": "{count, plural, one {Falta # pergunta para responder.} other {Faltam # perguntas para responder.}}"
 }
