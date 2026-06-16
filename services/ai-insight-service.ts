@@ -631,8 +631,17 @@ function formatApprovedReport(out: AiInsightOutput): { html: string; text: strin
  * (Mapa Integrativo + Plano de Regulação + Protocolo de Suplementação). Como o envio só
  * ocorre após a APROVAÇÃO do profissional, a suplementação já passou pela aprovação humana.
  */
-export async function sendApprovedInsightToPatient(patientId: string): Promise<{ email: boolean; whatsapp: boolean }> {
-  const result = { email: false, whatsapp: false };
+export type InsightDeliveryChannel = "sent" | "skipped_no_contact" | "failed" | "no_report";
+export type InsightDeliveryResult = {
+  email: InsightDeliveryChannel;
+  whatsapp: InsightDeliveryChannel;
+  emailError?: string;
+  whatsappError?: string;
+};
+
+export async function sendApprovedInsightToPatient(patientId: string): Promise<InsightDeliveryResult> {
+  const result: InsightDeliveryResult = { email: "no_report", whatsapp: "no_report" };
+
   const insight = await getLatestFinalAiInsight(patientId);
   if (!insight) return result;
   const out = (insight.final_output ?? insight.output) as AiInsightOutput;
@@ -657,8 +666,13 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<{
         report.html +
         (safety ? `<p style="color:#6B6A66;font-size:12px;margin-top:16px">${escHtml(safety)}</p>` : "");
       await sendSimpleEmail({ to: patient.email, subject: "Seu relatório de acompanhamento", html });
-      result.email = true;
-    } catch { /* canal opcional */ }
+      result.email = "sent";
+    } catch (e) {
+      result.email = "failed";
+      result.emailError = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    result.email = "skipped_no_contact";
   }
 
   // WhatsApp
@@ -670,9 +684,33 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<{
         report.text +
         (safety ? `\n\n${safety}` : "");
       await sendWhatsAppText(patient.phone, body);
-      result.whatsapp = true;
-    } catch { /* canal opcional */ }
+      result.whatsapp = "sent";
+    } catch (e) {
+      result.whatsapp = "failed";
+      result.whatsappError = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    result.whatsapp = "skipped_no_contact";
   }
+
+  // Registro permanente para auditoria/verificação.
+  try {
+    await writeAuditLog({
+      clinicId: insight.clinic_id,
+      action: "ai_insight.report_sent",
+      entityType: "ai_insight",
+      entityId: insight.id,
+      metadata: {
+        patient_id: patientId,
+        email: result.email,
+        whatsapp: result.whatsapp,
+        email_error: result.emailError ?? null,
+        whatsapp_error: result.whatsappError ?? null,
+        to_email: patient.email ?? null,
+        to_phone: patient.phone ?? null,
+      },
+    });
+  } catch { /* auditoria não deve quebrar o envio */ }
 
   return result;
 }

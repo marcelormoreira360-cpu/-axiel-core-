@@ -68,12 +68,19 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
 
   // Envio automático ao paciente (e-mail + WhatsApp) — só se o checkbox estiver marcado.
   // Default: enviar (campo ausente quando desmarcado num <input type=checkbox>).
+  // Aguardamos o resultado para informar com certeza o que aconteceu (enviado / pulado / falhou).
+  let delivery = "";
   const sendToPatient = formData.get("send_to_patient");
   if (sendToPatient === "on" || sendToPatient === "true") {
-    sendApprovedInsightToPatient(patientId).catch(() => {});
+    try {
+      const r = await sendApprovedInsightToPatient(patientId);
+      delivery = `&delivery=${encodeURIComponent(JSON.stringify(r))}`;
+    } catch (error) {
+      delivery = `&delivery=${encodeURIComponent(JSON.stringify({ email: "failed", whatsapp: "failed", emailError: describeError(error) }))}`;
+    }
   }
 
-  redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1`);
+  redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1${delivery}`);
 }
 
 export async function requestAiInsightChangesAction(patientId: string, aiInsightId: string, formData: FormData) {

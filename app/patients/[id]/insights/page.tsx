@@ -9,12 +9,29 @@ import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string }>;
+  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string; delivery?: string }>;
 };
+
+type DeliveryStatus = "sent" | "skipped_no_contact" | "failed" | "no_report";
+type DeliveryResult = { email: DeliveryStatus; whatsapp: DeliveryStatus; emailError?: string; whatsappError?: string };
+
+function describeChannel(label: string, status: DeliveryStatus, err?: string): string {
+  switch (status) {
+    case "sent": return `✓ ${label}: enviado`;
+    case "skipped_no_contact": return `— ${label}: não enviado (paciente sem ${label === "E-mail" ? "e-mail" : "telefone"} cadastrado)`;
+    case "failed": return `✗ ${label}: falhou${err ? ` (${err})` : ""}`;
+    default: return `— ${label}: sem relatório`;
+  }
+}
 
 export default async function PatientInsightsPage({ params, searchParams }: Props) {
   const { id } = await params;
-  const { error, approved, suggest_followup: suggestFollowup } = await searchParams;
+  const { error, approved, suggest_followup: suggestFollowup, delivery } = await searchParams;
+
+  let deliveryResult: DeliveryResult | null = null;
+  if (delivery) {
+    try { deliveryResult = JSON.parse(decodeURIComponent(delivery)) as DeliveryResult; } catch { deliveryResult = null; }
+  }
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
@@ -36,6 +53,24 @@ export default async function PatientInsightsPage({ params, searchParams }: Prop
           <p className="text-[12px] text-[#A09E98] mt-[1px]">{patient.full_name}</p>
         </div>
       </div>
+      {/* Resultado do envio do relatório ao paciente */}
+      {deliveryResult && (() => {
+        const allSent = deliveryResult.email === "sent" || deliveryResult.whatsapp === "sent";
+        const anyFailed = deliveryResult.email === "failed" || deliveryResult.whatsapp === "failed";
+        const tone = anyFailed
+          ? "bg-[#FDECEC] border-[#F5B5B5] text-[#8A1F1F]"
+          : allSent
+            ? "bg-[#E1F5EE] border-[#9FE1CB] text-[#085041]"
+            : "bg-[#FBF3E0] border-[#EBD9A8] text-[#7A5A12]";
+        return (
+          <div className={`mb-4 border rounded-[10px] px-[15px] py-[11px] ${tone}`}>
+            <p className="text-[12px] font-medium mb-[3px]">Envio do relatório ao paciente</p>
+            <p className="text-[11px] leading-[1.6]">{describeChannel("E-mail", deliveryResult.email, deliveryResult.emailError)}</p>
+            <p className="text-[11px] leading-[1.6]">{describeChannel("WhatsApp", deliveryResult.whatsapp, deliveryResult.whatsappError)}</p>
+          </div>
+        );
+      })()}
+
       {/* Sugestão de follow-up pós-aprovação */}
       {approved === "1" && suggestFollowup === "1" && (
         <div className="mb-4 bg-[#E1F5EE] border border-[#9FE1CB] rounded-[10px] px-[15px] py-[11px] flex items-center gap-[10px]">
