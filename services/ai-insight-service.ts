@@ -656,16 +656,45 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
   const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
   const safety = (out.safety_note ?? "").trim();
 
-  // E-mail
+  // ── Gera o PDF do relatório (3 documentos) uma única vez ──────────────────
+  // Usado como anexo no e-mail e como mídia no WhatsApp.
+  let pdfBuffer: Buffer | null = null;
+  let pdfSignedUrl: string | null = null;
+  const pdfFilename = `relatorio-neuro-id-360-${patientId.slice(0, 8)}.pdf`;
+  try {
+    const { buildNeuroId360Pdf } = await import("@/services/insight-pdf-service");
+    pdfBuffer = await buildNeuroId360Pdf({ output: out, patientName: patient.full_name });
+
+    // Upload no bucket privado + URL assinada (o Twilio busca a mídia ao enviar).
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const admin = createSupabaseAdminClient();
+    const path = `reports/${patientId}/neuro-id-360-${insight.id}.pdf`;
+    const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, {
+      contentType: "application/pdf",
+      upsert: true,
+    });
+    if (!up.error) {
+      const signed = await admin.storage.from("patient-docs").createSignedUrl(path, 60 * 60 * 24 * 7); // 7 dias
+      pdfSignedUrl = signed.data?.signedUrl ?? null;
+    }
+  } catch { /* sem PDF: cai no texto/HTML normal abaixo */ }
+
+  // E-mail — anexa o PDF quando disponível.
   if (patient.email) {
     try {
       const { sendSimpleEmail } = await import("@/services/email-service");
       const html =
         `<p>Olá${firstName ? `, ${firstName}` : ""}!</p>` +
-        `<p>Seu profissional revisou e aprovou o seu relatório de acompanhamento:</p>` +
+        `<p>Seu profissional revisou e aprovou o seu relatório de acompanhamento.` +
+        (pdfBuffer ? ` O relatório completo segue em anexo (PDF).` : "") + `</p>` +
         report.html +
         (safety ? `<p style="color:#6B6A66;font-size:12px;margin-top:16px">${escHtml(safety)}</p>` : "");
-      await sendSimpleEmail({ to: patient.email, subject: "Seu relatório de acompanhamento", html });
+      await sendSimpleEmail({
+        to: patient.email,
+        subject: "Seu relatório de acompanhamento",
+        html,
+        attachments: pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer }] : undefined,
+      });
       result.email = "sent";
     } catch (e) {
       result.email = "failed";
@@ -675,15 +704,24 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
     result.email = "skipped_no_contact";
   }
 
-  // WhatsApp
+  // WhatsApp — envia o PDF como anexo (mídia) + texto curto.
   if (patient.phone) {
     try {
-      const { sendWhatsAppText } = await import("@/services/whatsapp-service");
-      const body =
-        `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou o seu relatório de acompanhamento:\n` +
-        report.text +
+      const caption =
+        `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou o seu relatório de acompanhamento.` +
+        ` O documento completo (Neuro ID 360) está anexado abaixo em PDF.` +
         (safety ? `\n\n${safety}` : "");
-      await sendWhatsAppText(patient.phone, body);
+      if (pdfSignedUrl) {
+        const { sendWhatsAppMedia } = await import("@/services/whatsapp-service");
+        await sendWhatsAppMedia(patient.phone, caption, pdfSignedUrl);
+      } else {
+        // Fallback: sem PDF/Storage, manda ao menos o aviso por texto.
+        const { sendWhatsAppText } = await import("@/services/whatsapp-service");
+        await sendWhatsAppText(
+          patient.phone,
+          caption + (patient.email ? `\n\n📄 O relatório completo foi enviado para o seu e-mail.` : ""),
+        );
+      }
       result.whatsapp = "sent";
     } catch (e) {
       result.whatsapp = "failed";
