@@ -26,7 +26,13 @@ export async function generateAiInsightAction(patientId: string) {
   try {
     await generateAndSaveAiInsight(patientId);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error.";
+    // Surface the real cause (Supabase/PostgREST errors are objects with message/code/details).
+    let message = "Unknown error.";
+    if (error instanceof Error) message = error.message;
+    else if (error && typeof error === "object") {
+      const e = error as { message?: string; details?: string; hint?: string; code?: string };
+      message = [e.message, e.details, e.hint, e.code].filter(Boolean).join(" · ") || JSON.stringify(error).slice(0, 300);
+    }
     redirect(`/patients/${patientId}/insights?error=${encodeURIComponent(message)}`);
   }
 
