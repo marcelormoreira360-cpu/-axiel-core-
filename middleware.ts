@@ -42,6 +42,7 @@ const publicPrefixes = [
   "/api/meta",
   "/api/integrations/growth",          // AXIEL Growth webhook (Bearer key auth, no session)
   "/api/book",                         // public booking slots API
+  "/api/forms/submit",                 // questionário público (autenticado pelo token do convite)
   "/api/p",                            // patient portal self-booking (token-authenticated, no session cookie)
   "/api/stripe/patient-checkout",      // portal package purchase (token-authenticated)
   "/api/stripe/session-checkout",      // portal session payment (token-authenticated)

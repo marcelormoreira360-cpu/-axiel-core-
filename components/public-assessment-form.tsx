@@ -149,9 +149,11 @@ export function PublicAssessmentForm({
         }),
       });
 
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error ?? t("errSave"));
+      // Confirma de fato o salvamento: exige ok:true do servidor (evita falso-positivo
+      // se a requisição cair num redirect/HTML com status 200, ex.: login).
+      const body = await res.json().catch(() => ({} as { ok?: boolean; error?: string }));
+      if (!res.ok || !body?.ok) {
+        throw new Error(body?.error ?? t("errSave"));
       }
 
       // Encadeamento: se há próximos questionários, avança automaticamente.
