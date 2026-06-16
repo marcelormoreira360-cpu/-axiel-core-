@@ -1,7 +1,16 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/06/2026 (12)
+> Atualizado em: 15/06/2026 (13)
+
+## ✅ Neuro ID 360 — Fase 1: Exames funcionais (15/06/2026)
+
+Plano completo em `NEURO_ID_360_PLANO.md` (4 fases). Fase 1 concluída:
+- **Migration `080_patient_functional_exams.sql` APLICADA**: tabela `patient_functional_exams` (clinic_id, patient_id, exam_type [neurometria|biorressonancia|outro], title, summary, findings jsonb, exam_date, created_by) + índices + RLS (can_access_clinic/can_write_clinic_data, espelhando patient_exams).
+- `services/functional-exams-service.ts` (get/create/delete + tipo `PatientFunctionalExam`); `app/patients/[id]/functional-exams/actions.ts`.
+- `components/patient-functional-exams-panel.tsx` (lista + form: tipo/data/título/achados) na ficha (`/patients/[id]`, após o card de exames laboratoriais). i18n `patientPanels.functionalExams` (PT/EN).
+- **Pendente Fases 2–4**: novo schema da IA (Mapa Integrativo + Plano de Regulação) lendo TODAS as fontes incl. exames funcionais; telas+PDF; envio dos 2 documentos ao paciente na aprovação.
+- Validado: tsc **0 erros**; verify:i18n **39 namespaces, paridade OK**.
 
 ## ✅ Questionários: domínio correto, encadeamento, toggle PT/EN (15/06/2026)
 

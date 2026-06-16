@@ -10,10 +10,12 @@ import { getSessionRecordsByPatient } from "@/services/session-recording-service
 import { getAiInsightsByPatient } from "@/services/ai-insight-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
+import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getPatientPackages } from "@/services/package-service";
 import { getPatientTreatmentPlans } from "@/services/treatment-plan-service";
 import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
 import { PatientExamsPanel } from "@/components/patient-exams-panel";
+import { PatientFunctionalExamsPanel } from "@/components/patient-functional-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
@@ -70,13 +72,14 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const tc = await getTranslations("common.terms");
   const locale = await getLocale();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, prescriptions, packages, documents, treatmentPlans, offers, activeSubscriptionResult] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, functionalExams, prescriptions, packages, documents, treatmentPlans, offers, activeSubscriptionResult] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
     getAiInsightsByPatient(id, 4),
     getPatientAssessmentResponses(id),
     getPatientExams(id),
+    getPatientFunctionalExams(id),
     getPatientPrescriptions(id),
     getPatientPackages(id),
     getPatientDocuments(id),
@@ -615,6 +618,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Exames laboratoriais */}
       <div className="mt-[18px]">
         <PatientExamsPanel exams={exams} patientId={id} />
+
+        <PatientFunctionalExamsPanel exams={functionalExams} patientId={id} />
       </div>
 
       {/* Medicamentos e suplementos */}

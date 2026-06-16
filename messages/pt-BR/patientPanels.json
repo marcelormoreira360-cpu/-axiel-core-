@@ -45,7 +45,11 @@
     "markers": "{count, plural, one {# marcador} other {# marcadores}}",
     "outOfRange": "{count} fora do padrão",
     "ref": "ref:",
-    "status": { "high": "Alto", "low": "Baixo", "normal": "Normal" },
+    "status": {
+      "high": "Alto",
+      "low": "Baixo",
+      "normal": "Normal"
+    },
     "form": {
       "title": "Novo exame",
       "examDate": "Data do exame",
@@ -102,7 +106,11 @@
     "emptyShareBefore": "Compartilhe o",
     "emptyLinkText": "link do paciente",
     "emptyShareAfter": "para receber arquivos.",
-    "source": { "clinic": "Clínica", "intake": "Paciente", "portal": "Portal" },
+    "source": {
+      "clinic": "Clínica",
+      "intake": "Paciente",
+      "portal": "Portal"
+    },
     "download": "Baixar",
     "delete": "Excluir",
     "confirmDelete": "Excluir \"{name}\"?"
@@ -157,7 +165,12 @@
     "newPlan": "Novo plano",
     "empty": "Nenhum plano de tratamento criado ainda.",
     "previous": "Anteriores",
-    "status": { "active": "Ativo", "paused": "Pausado", "completed": "Concluído", "cancelled": "Cancelado" },
+    "status": {
+      "active": "Ativo",
+      "paused": "Pausado",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    },
     "until": "até {date}",
     "stepUntil": "Até {date}",
     "stepsProgress": "{done}/{total} etapas",
@@ -181,7 +194,11 @@
     }
   },
   "healthAgent": {
-    "severity": { "alta": "Alta", "media": "Média", "baixa": "Baixa" },
+    "severity": {
+      "alta": "Alta",
+      "media": "Média",
+      "baixa": "Baixa"
+    },
     "practitioner": {
       "clinicalSummary": "Síntese clínica",
       "priorityFindings": "Achados prioritários",
@@ -232,5 +249,22 @@
       "attention": "📌 Áreas de atenção:",
       "nextSteps": "🎯 Próximos passos:"
     }
+  },
+  "functionalExams": {
+    "title": "Exames funcionais",
+    "add": "Adicionar",
+    "cancel": "Cancelar",
+    "empty": "Nenhum exame funcional registrado.",
+    "typeLabel": "Tipo de exame",
+    "typeNeurometria": "Neurometria",
+    "typeBiorressonancia": "Biorressonância",
+    "typeOutro": "Outro",
+    "dateLabel": "Data do exame",
+    "titleLabel": "Nome do exame",
+    "titlePlaceholder": "Ex.: Análise de variabilidade cardíaca",
+    "summaryLabel": "Achados",
+    "summaryPlaceholder": "Descreva os principais achados e resultados do exame…",
+    "save": "Salvar exame",
+    "delete": "Excluir"
   }
 }

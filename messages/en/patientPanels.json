@@ -45,7 +45,11 @@
     "markers": "{count, plural, one {# marker} other {# markers}}",
     "outOfRange": "{count} out of range",
     "ref": "ref:",
-    "status": { "high": "High", "low": "Low", "normal": "Normal" },
+    "status": {
+      "high": "High",
+      "low": "Low",
+      "normal": "Normal"
+    },
     "form": {
       "title": "New test",
       "examDate": "Test date",
@@ -102,7 +106,11 @@
     "emptyShareBefore": "Share the",
     "emptyLinkText": "patient link",
     "emptyShareAfter": "to receive files.",
-    "source": { "clinic": "Clinic", "intake": "Patient", "portal": "Portal" },
+    "source": {
+      "clinic": "Clinic",
+      "intake": "Patient",
+      "portal": "Portal"
+    },
     "download": "Download",
     "delete": "Delete",
     "confirmDelete": "Delete \"{name}\"?"
@@ -157,7 +165,12 @@
     "newPlan": "New plan",
     "empty": "No treatment plan created yet.",
     "previous": "Previous",
-    "status": { "active": "Active", "paused": "Paused", "completed": "Completed", "cancelled": "Cancelled" },
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
     "until": "by {date}",
     "stepUntil": "By {date}",
     "stepsProgress": "{done}/{total} steps",
@@ -181,7 +194,11 @@
     }
   },
   "healthAgent": {
-    "severity": { "alta": "High", "media": "Medium", "baixa": "Low" },
+    "severity": {
+      "alta": "High",
+      "media": "Medium",
+      "baixa": "Low"
+    },
     "practitioner": {
       "clinicalSummary": "Clinical summary",
       "priorityFindings": "Priority findings",
@@ -232,5 +249,22 @@
       "attention": "📌 Areas of attention:",
       "nextSteps": "🎯 Next steps:"
     }
+  },
+  "functionalExams": {
+    "title": "Functional exams",
+    "add": "Add",
+    "cancel": "Cancel",
+    "empty": "No functional exams recorded.",
+    "typeLabel": "Exam type",
+    "typeNeurometria": "Neurometry",
+    "typeBiorressonancia": "Bioresonance",
+    "typeOutro": "Other",
+    "dateLabel": "Exam date",
+    "titleLabel": "Exam name",
+    "titlePlaceholder": "e.g., Heart rate variability analysis",
+    "summaryLabel": "Findings",
+    "summaryPlaceholder": "Describe the main findings and results of the exam…",
+    "save": "Save exam",
+    "delete": "Delete"
   }
 }
