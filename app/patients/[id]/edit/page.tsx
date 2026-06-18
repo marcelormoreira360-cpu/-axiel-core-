@@ -105,6 +105,52 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
+          {/* Demografia (fonte única — lida por todos os relatórios) */}
+          <div className="grid grid-cols-2 gap-[10px]">
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Sexo</label>
+              <input
+                type="text"
+                name="sex"
+                defaultValue={patient.sex ?? ""}
+                placeholder="Ex: feminino, masculino..."
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Cidade</label>
+              <input
+                type="text"
+                name="city"
+                defaultValue={patient.city ?? ""}
+                placeholder="Cidade"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Peso (kg)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="weight_kg"
+                defaultValue={patient.weight_kg ?? ""}
+                placeholder="Ex: 68"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Altura (cm)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                name="height_cm"
+                defaultValue={patient.height_cm ?? ""}
+                placeholder="Ex: 170"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+          </div>
+
           {/* Notas */}
           <div>
             <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Notas clínicas</label>

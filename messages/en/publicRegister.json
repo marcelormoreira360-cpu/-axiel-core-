@@ -21,5 +21,8 @@
   "submitting": "Submitting…",
   "privacyNote": "Your data is protected under data protection law. Use for statistics is optional, anonymized and can be revoked at any time.",
   "doneTitle": "Registration complete!",
-  "doneDesc": "Thank you. The {clinic} team has received your details and will be in touch."
+  "doneDesc": "Thank you. The {clinic} team has received your details and will be in touch.",
+  "sex": "Sex",
+  "weight": "Weight (kg)",
+  "height": "Height (cm)"
 }

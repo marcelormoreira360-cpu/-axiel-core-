@@ -21,5 +21,8 @@
   "submitting": "Enviando…",
   "privacyNote": "Seus dados são protegidos conforme a LGPD. O uso para estatísticas é opcional, anonimizado e pode ser revogado a qualquer momento.",
   "doneTitle": "Cadastro concluído!",
-  "doneDesc": "Obrigado. A equipe da {clinic} já recebeu seus dados e entrará em contato."
+  "doneDesc": "Obrigado. A equipe da {clinic} já recebeu seus dados e entrará em contato.",
+  "sex": "Sexo",
+  "weight": "Peso (kg)",
+  "height": "Altura (cm)"
 }

@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroSecaoItem } from "@/lib/types";
 import type { PatientSupplementRecommendation } from "@/services/supplement-service";
+import type { PatientIdentificacao } from "@/lib/patient-demographics";
 
 // ── Identidade visual ────────────────────────────────────────────────────────
 const GRAD = ["#9A86B8", "#5E8AA0", "#3E5C8A"]; // barra superior (roxo → teal → azul)
@@ -131,14 +132,15 @@ function idRow(doc: Doc, label: string, value?: string | null) {
   doc.moveDown(0.1);
 }
 
-function identificacaoBlock(doc: Doc, id?: NeuroIdentificacao, fallbackName?: string | null) {
+function identificacaoBlock(doc: Doc, id?: NeuroIdentificacao, fallbackName?: string | null, demo?: PatientIdentificacao) {
+  // Fonte única: a demografia do CADASTRO (demo) tem prioridade sobre o que a IA ecoou.
   sectionTitle(doc, "Identificação");
-  idRow(doc, "Paciente", id?.paciente ?? fallbackName ?? undefined);
-  idRow(doc, "Idade", id?.idade);
-  idRow(doc, "Sexo", id?.sexo);
-  idRow(doc, "Peso", id?.peso);
-  idRow(doc, "Altura", id?.altura);
-  idRow(doc, "Local de acompanhamento", id?.local);
+  idRow(doc, "Paciente", demo?.paciente ?? id?.paciente ?? fallbackName ?? undefined);
+  idRow(doc, "Idade", demo?.idade ?? id?.idade);
+  idRow(doc, "Sexo", demo?.sexo ?? id?.sexo);
+  idRow(doc, "Peso", demo?.peso ?? id?.peso);
+  idRow(doc, "Altura", demo?.altura ?? id?.altura);
+  idRow(doc, "Local de acompanhamento", demo?.local ?? id?.local);
   idRow(doc, "Data das avaliações", id?.data_avaliacoes);
   idRow(doc, "Microfisioterapia", id?.microfisioterapia);
   idRow(doc, "Exame de cabelo", id?.exame_cabelo);
@@ -167,8 +169,11 @@ export async function buildNeuroId360Pdf(opts: {
   /** Recomendação de suplementos APROVADA (manual). Quando presente, vira o
    *  Doc 3 e substitui o protocolo gerado pela IA (decisão de produto). */
   approvedSupplement?: PatientSupplementRecommendation | null;
+  /** Demografia do cadastro (fonte única) — sobrepõe o que a IA ecoou. */
+  demographics?: PatientIdentificacao | null;
 }): Promise<Buffer> {
   const { output, patientName } = opts;
+  const demo = opts.demographics ?? undefined;
   const brand: ClinicBrand = opts.clinic ?? {};
   const logo = await fetchLogo(brand.logoUrl);
 
@@ -205,7 +210,7 @@ export async function buildNeuroId360Pdf(opts: {
   // ── DOCUMENTO 1 — Relatório Funcional Integrado ────────────────────────────
   if (mapa) {
     docTitle(doc, "Relatório Funcional Integrado — Neuro ID", "Resultado da Avaliação Funcional");
-    identificacaoBlock(doc, mapa.identificacao, patientName);
+    identificacaoBlock(doc, mapa.identificacao, patientName, demo);
 
     sectionTitle(doc, "Exames e Informações Avaliadas");
     paragraph(doc, mapa.exames_avaliados ?? mapa.leitura_integrativa);
@@ -234,7 +239,7 @@ export async function buildNeuroId360Pdf(opts: {
   if (plano) {
     doc.addPage();
     docTitle(doc, "Plano Integrativo Neuro ID", "Próximos Passos e Direção Terapêutica");
-    identificacaoBlock(doc, plano.identificacao, patientName);
+    identificacaoBlock(doc, plano.identificacao, patientName, demo);
 
     if (plano.fase_jornada_nome || plano.fase_jornada_justificativa) {
       sectionTitle(doc, "Fase na Jornada Neuro ID");

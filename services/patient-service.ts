@@ -60,6 +60,9 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
   last_name?: string | null;
   cpf?: string | null;
   date_of_birth?: string | null;
+  sex?: string | null;
+  weight_kg?: number | null;
+  height_cm?: number | null;
   address_line?: string | null;
   neighborhood?: string | null;
   city?: string | null;
@@ -86,7 +89,7 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
 
 export async function updatePatient(
   patientId: string,
-  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "notes" | "status" | "chief_complaint" | "case_summary" | "address_line" | "neighborhood" | "city" | "state" | "zip_code" | "country" | "referred_by_patient_id">>
+  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "sex" | "weight_kg" | "height_cm" | "notes" | "status" | "chief_complaint" | "case_summary" | "address_line" | "neighborhood" | "city" | "state" | "zip_code" | "country" | "referred_by_patient_id">>
 ): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

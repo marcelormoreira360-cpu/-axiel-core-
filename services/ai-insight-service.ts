@@ -4,6 +4,7 @@ import type { AiInsight, AiInsightOutput } from "@/lib/types";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientById } from "@/services/patient-service";
+import { ageFromDob, patientIdentificacao } from "@/lib/patient-demographics";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
@@ -19,6 +20,11 @@ export type AiInsightInputSnapshot = {
     full_name: string;
     status: string;
     notes: string | null;
+    age: number | null;
+    sex: string | null;
+    weight_kg: number | null;
+    height_cm: number | null;
+    city: string | null;
   };
   intake: Array<{
     question: string;
@@ -100,6 +106,11 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       full_name: patient.full_name,
       status: patient.status,
       notes: normalizeInsightText(patient.notes),
+      age: ageFromDob(patient.date_of_birth),
+      sex: patient.sex,
+      weight_kg: patient.weight_kg,
+      height_cm: patient.height_cm,
+      city: patient.city,
     },
     intake: intakeResponses.map((response) => ({
       question: normalizeInsightText(response.intake_questions?.label ?? "Question"),
@@ -689,7 +700,7 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
     } catch { /* sem marca: usa defaults */ }
 
     const { buildNeuroId360Pdf } = await import("@/services/insight-pdf-service");
-    pdfBuffer = await buildNeuroId360Pdf({ output: out, patientName: patient.full_name, clinic: clinicBrand });
+    pdfBuffer = await buildNeuroId360Pdf({ output: out, patientName: patient.full_name, clinic: clinicBrand, demographics: patientIdentificacao(patient) });
 
     // Upload no bucket privado + URL assinada (o Twilio busca a mídia ao enviar).
     const path = `reports/${patientId}/neuro-id-360-${insight.id}.pdf`;

@@ -3,6 +3,7 @@ import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { buildNeuroIdMapPdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
 import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { patientIdentificacao } from "@/lib/patient-demographics";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const patientName = patient?.full_name ?? null;
   const buffer = view === "clinical"
-    ? await buildNeuroIdMapPdf({ map, patientName, clinic: brand })
+    ? await buildNeuroIdMapPdf({ map, patientName, clinic: brand, demographics: patient ? patientIdentificacao(patient) : null })
     : await buildNeuroIdPatientReportPdf({
         map, patientName, clinic: brand,
         vars: {

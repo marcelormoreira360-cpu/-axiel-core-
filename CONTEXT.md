@@ -1,7 +1,19 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (22)
+> Atualizado em: 18/06/2026 (23)
+
+## 🟡 Demografia do paciente — fonte única + legenda Bio³ (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ Nada em prod / sem deploy (aguarda OK). `tsc` 0; verify:i18n 40. Brief: `_BRIEF_FIX_DEMOGRAFIA.md`. Fix do bug "Idade/Sexo/Peso/Altura/Local = não informado".
+
+- **Migration `094_patient_demographics.sql` (arquivo, NÃO aplicada)**: `patients` += `sex text`, `weight_kg numeric`, `height_cm numeric` (date_of_birth/city já existiam; RLS já vale). Idade NUNCA armazenada.
+- **`lib/patient-demographics.ts`** (novo): `ageFromDob(dob)` (idade derivada em runtime) + `patientIdentificacao(patient)` → {paciente, idade ("N anos"), sexo, peso ("N kg"), altura ("N cm"), local ("cidade / UF")}; null quando vazio. Teste `lib/__tests__/patient-demographics.test.ts`.
+- **Tipos/serviço**: `Patient` += sex/weight_kg/height_cm; `updatePatient`/`createPatient` aceitam.
+- **UI fonte única**: form de edição do paciente edita **DOB/sexo/peso/altura/cidade** (um lugar). Self-register (`/cadastro`) também captura sexo/peso/altura e faz **upsert no patients** (sem cópia paralela) — i18n `publicRegister.sex/weight/height`.
+- **Geradores leem do cadastro** (regenerar relê): `insight-pdf-service` (`buildNeuroId360Pdf` ganhou `demographics?`; `identificacaoBlock` dá prioridade ao cadastro sobre o que a IA ecoou) — rotas do 360 e o `ai-insight-service` passam `patientIdentificacao(patient)`. Snapshot do AI insight ganhou age/sex/weight/height/city. Bio³ clínico (`buildNeuroIdMapPdf`) mostra linha de demografia. "Não informado" só quando realmente vazio.
+- **Legenda Bio³**: `band()` "possíveis crises agudas" → "**pede cuidado prioritário**" (alinha com o Beat 6 suavizado). Demais legendas já estavam sem "crises agudas".
+- **Pendência (OK)**: aplicar migration 094 + commit/push + deploy.
 
 ## 🟡 Mapa Bio³ — Relatório do paciente persuasivo-ético (7 beats) (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 

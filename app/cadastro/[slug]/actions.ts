@@ -35,6 +35,11 @@ export async function submitSelfRegistrationAction(
   const phoneRaw = clean(formData.get("phone"), 40);
   const cpf = clean(formData.get("cpf"), 20) || null;
   const dob = clean(formData.get("date_of_birth"), 10) || null;
+  const sex = clean(formData.get("sex"), 40) || null;
+  const weightRaw = clean(formData.get("weight_kg"), 10).replace(",", ".");
+  const heightRaw = clean(formData.get("height_cm"), 10).replace(",", ".");
+  const weight_kg = weightRaw && Number.isFinite(Number(weightRaw)) ? Number(weightRaw) : null;
+  const height_cm = heightRaw && Number.isFinite(Number(heightRaw)) ? Number(heightRaw) : null;
 
   const addressLine = clean(formData.get("address_line"), 200) || null;
   const neighborhood = clean(formData.get("neighborhood"), 120) || null;
@@ -88,6 +93,9 @@ export async function submitSelfRegistrationAction(
     phone,
     cpf,
     date_of_birth: dob,
+    sex,
+    weight_kg,
+    height_cm,
     address_line: addressLine,
     neighborhood,
     city,

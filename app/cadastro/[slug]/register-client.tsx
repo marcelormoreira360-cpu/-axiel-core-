@@ -105,6 +105,20 @@ export function RegisterClient({
                 </div>
               )}
             </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-[12px]">
+              <div>
+                <label className={labelCls} htmlFor="sex">{t("sex")}</label>
+                <input id="sex" name="sex" maxLength={40} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="weight_kg">{t("weight")}</label>
+                <input id="weight_kg" name="weight_kg" maxLength={10} className={inputCls} inputMode="decimal" />
+              </div>
+              <div>
+                <label className={labelCls} htmlFor="height_cm">{t("height")}</label>
+                <input id="height_cm" name="height_cm" maxLength={10} className={inputCls} inputMode="decimal" />
+              </div>
+            </div>
           </section>
 
           {/* Endereço */}

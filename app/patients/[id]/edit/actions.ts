@@ -13,10 +13,16 @@ export async function updatePatientAction(patientId: string, formData: FormData)
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const status = String(formData.get("status") ?? "active") as "active" | "inactive" | "archived";
   const referred_by_patient_id = String(formData.get("referred_by_patient_id") ?? "").trim() || null;
+  const sex = String(formData.get("sex") ?? "").trim() || null;
+  const city = String(formData.get("city") ?? "").trim() || null;
+  const weightRaw = String(formData.get("weight_kg") ?? "").trim().replace(",", ".");
+  const heightRaw = String(formData.get("height_cm") ?? "").trim().replace(",", ".");
+  const weight_kg = weightRaw && Number.isFinite(Number(weightRaw)) ? Number(weightRaw) : null;
+  const height_cm = heightRaw && Number.isFinite(Number(heightRaw)) ? Number(heightRaw) : null;
 
   if (!full_name) return;
 
-  await updatePatient(patientId, { full_name, email, phone, cpf, date_of_birth, notes, status, referred_by_patient_id });
+  await updatePatient(patientId, { full_name, email, phone, cpf, date_of_birth, sex, weight_kg, height_cm, city, notes, status, referred_by_patient_id });
 
   revalidatePath(`/patients/${patientId}`);
   redirect(`/patients/${patientId}`);

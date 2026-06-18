@@ -59,6 +59,9 @@ export type Patient = {
   phone: string | null;
   cpf: string | null;
   date_of_birth: string | null;
+  sex: string | null;
+  weight_kg: number | null;
+  height_cm: number | null;
   status: "active" | "inactive" | "archived";
   notes: string | null;
   chief_complaint: string | null;

@@ -52,7 +52,7 @@ function band(dysfunction: number | null): string {
   if (dysfunction === null) return "aguardando dados para leitura completa";
   if (dysfunction <= 30) return "em função e equilíbrio";
   if (dysfunction <= 69) return "em disfunção e desequilíbrio crônico";
-  return "em grande disfunção e desequilíbrio (possíveis crises agudas)";
+  return "em grande disfunção e desequilíbrio (pede cuidado prioritário)";
 }
 
 async function fetchLogo(url?: string | null): Promise<Buffer | null> {
@@ -162,6 +162,8 @@ export async function buildNeuroIdMapPdf(opts: {
   map: NeuroIdPdfMap;
   patientName?: string | null;
   clinic?: ClinicBrand;
+  /** Demografia do cadastro (fonte única): idade/sexo/peso/altura/local. */
+  demographics?: { idade?: string | null; sexo?: string | null; peso?: string | null; altura?: string | null; local?: string | null } | null;
 }): Promise<Buffer> {
   const { map } = opts;
   const brand = opts.clinic ?? {};
@@ -186,7 +188,12 @@ export async function buildNeuroIdMapPdf(opts: {
 
   // ── Página 1 — índice (herói) / pirâmide / ponto de atenção ──
   docTitle(doc, "Mapa Bio³", "Índice Bio — grau de disfunção por eixo (meta: baixar)");
-  if (opts.patientName) { doc.font("Times-Roman").fontSize(11).fillColor(MUTED).text(`Paciente: ${opts.patientName}`, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.4); }
+  if (opts.patientName) { doc.font("Times-Roman").fontSize(11).fillColor(MUTED).text(`Paciente: ${opts.patientName}`, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.2); }
+  {
+    const d = opts.demographics;
+    const demoLine = [d?.idade, d?.sexo, d?.peso, d?.altura, d?.local].map((x) => (x ?? "").trim()).filter(Boolean).join(" · ");
+    if (demoLine) { doc.font("Times-Italic").fontSize(9.5).fillColor("#9ca3af").text(demoLine, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.4); }
+  }
 
   const generalDys = round(map.indice_geral);
   const indexBand = bandForDysfunction(map.indice_geral);
