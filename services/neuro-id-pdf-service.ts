@@ -114,6 +114,36 @@ function equilibriumBar(doc: Doc, label: string, hint: string, dysfunction: numb
   doc.font("Times-Bold").fontSize(11).fillColor(color).text(balance === null ? "—" : `${balance}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
   doc.y = barY + 18;
 }
+
+// Pirâmide Bio³: 3 faixas (ápice → base), coloridas pelo % de equilíbrio.
+// bands na ordem [ápice, meio, base] = [emocional, bioquimico, fisico].
+function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: boolean }[]) {
+  ensureSpace(doc, 150);
+  const cx = PAGE_W / 2;
+  const y0 = doc.y + 6;
+  const H = 120, half = 84;
+  const yA = y0, yB = y0 + 40, yC = y0 + 80, yBase = y0 + 120;
+  const xAt = (y: number) => (half * (y - y0)) / H;
+  const polys: [number, number][][] = [
+    [[cx, yA], [cx + xAt(yB), yB], [cx - xAt(yB), yB]],
+    [[cx - xAt(yB), yB], [cx + xAt(yB), yB], [cx + xAt(yC), yC], [cx - xAt(yC), yC]],
+    [[cx - xAt(yC), yC], [cx + xAt(yC), yC], [cx + xAt(yBase), yBase], [cx - xAt(yBase), yBase]],
+  ];
+  const centersY = [y0 + 30, y0 + 60, y0 + 100];
+  doc.lineWidth(2);
+  bands.forEach((b, i) => {
+    const balance = eq(b.dysfunction);
+    const color = barColor(balance);
+    doc.polygon(...polys[i]).fillAndStroke(color, "#ffffff");
+    doc.font("Helvetica-Bold").fontSize(13).fillColor("#ffffff")
+      .text(balance === null ? "—" : `${balance}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
+    if (b.isPriority) {
+      doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
+    }
+  });
+  doc.lineWidth(1);
+  doc.y = yBase + 12;
+}
 function pdfToBuffer(doc: Doc): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -165,6 +195,11 @@ export async function buildNeuroIdMapPdf(opts: {
   }
 
   sectionTitle(doc, "Os 3 Eixos (Bio³)");
+  drawPyramid(doc, [
+    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
+    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
+  ]);
   for (const p of PILLARS) equilibriumBar(doc, PILLAR_LABEL[p], PILLAR_HINT[p], dysByPillar[p], map.priority_pillar === p);
 
   // ── Página 2 — por eixo: o que foi avaliado / o que revela ──
