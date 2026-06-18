@@ -1,8 +1,8 @@
 /**
  * bands.ts — Mapa Bio³ · sistema de cores semáforo (solto/tenso/bloqueado).
  *
- * Banda definida pela DISFUNÇÃO (0–100). O display ao paciente é equilíbrio
- * (100 − disfunção); a banda já reflete isso (solto = pouca disfunção = bom).
+ * Banda definida pela DISFUNÇÃO (0–100). O display ao paciente = disfunção
+ * (maior = pior; meta = baixar); a banda reflete isso (solto = pouca disfunção).
  * Acessibilidade: SEMPRE cor + rótulo + ícone (nunca só cor).
  *
  * Util puro (sem React) — usado pelo painel, pelo PDF e pelos testes.

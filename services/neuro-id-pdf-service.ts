@@ -1,7 +1,7 @@
 /**
  * neuro-id-pdf-service.ts — PDF herói do Mapa Bio³ (≤4 páginas, timbrado).
  *
- * Conteúdo: pirâmide/eixos em EQUILÍBRIO + índice geral + ponto de atenção;
+ * Conteúdo: pirâmide/eixos em DISFUNÇÃO (maior = pior) + índice geral + ponto de atenção;
  * por eixo (o que foi avaliado / o que revela, linguagem de cuidado);
  * plano amarrado aos eixos; próximos passos; disclaimer (bem-estar funcional).
  */
@@ -229,11 +229,11 @@ export async function buildNeuroIdMapPdf(opts: {
   doc.addPage();
   docTitle(doc, "Plano de Cuidado", "Direção terapêutica amarrada aos eixos");
   if (map.priority_pillar) {
-    paragraph(doc, `Foco inicial sugerido: eixo ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}), por apresentar o menor equilíbrio. O plano prioriza recuperar este eixo e, em paralelo, sustentar os demais.`);
+    paragraph(doc, `Foco inicial sugerido: eixo ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}), por apresentar a maior disfunção. O plano prioriza recuperar este eixo e, em paralelo, sustentar os demais.`);
   }
   sectionTitle(doc, "Próximos passos");
   paragraph(doc, "• Acompanhamento conforme o plano definido com o(a) profissional.");
-  paragraph(doc, "• Reavaliação para medir a evolução do equilíbrio dos eixos ao longo do cuidado.");
+  paragraph(doc, "• Reavaliação para medir a evolução da disfunção dos eixos ao longo do cuidado.");
   if (map.is_partial) paragraph(doc, "• Complementar a avaliação com os exames pendentes para uma leitura completa.");
 
   doc.moveDown(0.6);

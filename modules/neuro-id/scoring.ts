@@ -3,7 +3,7 @@
  *
  * item → DISFUNÇÃO 0–100 → média ponderada por pilar → índice geral → prioridade.
  * Trata dado faltando: calcula com o que há e marca `isPartial` (vira CTA na UI).
- * Display ao paciente = EQUILÍBRIO = 100 − disfunção (ver toEquilibrium).
+ * Display ao paciente = DISFUNÇÃO (maior = pior; meta = baixar).
  */
 
 import type { CatalogItemDef, NeuroPillar, ItemDirection, ItemInputType, ScoringRule } from "./catalog";
@@ -81,7 +81,7 @@ export type NeuroIdResult = {
   pillars: Record<NeuroPillar, PillarScore>;
   /** disfunção geral 0–100 (null se nenhum pilar pôde ser calculado) */
   indiceGeral: number | null;
-  /** pilar de MAIOR disfunção = MENOR equilíbrio = prioridade */
+  /** pilar de MAIOR disfunção = prioridade ("comece aqui") */
   priorityPillar: NeuroPillar | null;
   isPartial: boolean;
   scoredItems: ScoredItem[];
@@ -173,11 +173,6 @@ export function computeNeuroId(
   });
 
   return { pillars, indiceGeral, priorityPillar, isPartial, scoredItems, contributions };
-}
-
-/** Converte disfunção (0–100) em equilíbrio para exibição ao paciente. */
-export function toEquilibrium(dysfunction: number | null): number | null {
-  return dysfunction === null ? null : clamp(100 - dysfunction);
 }
 
 /** Arredonda para inteiro de exibição (mantém null). */

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DEFAULT_CATALOG } from "../catalog";
-import { scoreItem, computeNeuroId, toEquilibrium, asScorable, pillarContributions, type ScorableItem } from "../scoring";
+import { scoreItem, computeNeuroId, asScorable, pillarContributions, type ScorableItem } from "../scoring";
 import { bandForItem, bandForDysfunction, labelFor } from "../bands";
 
 const items = asScorable(DEFAULT_CATALOG);
@@ -100,12 +100,5 @@ describe("pillarContributions (soma 100%)", () => {
     const c = pillarContributions({ fisico: 40, bioquimico: null, emocional: 60 });
     expect(c.bioquimico).toBeNull();
     expect(Math.round((c.fisico ?? 0) + (c.emocional ?? 0))).toBe(100);
-  });
-});
-
-describe("toEquilibrium", () => {
-  it("equilíbrio = 100 − disfunção", () => {
-    expect(toEquilibrium(70)).toBe(30);
-    expect(toEquilibrium(null)).toBeNull();
   });
 });
