@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Activity, Plus, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Sparkles } from "lucide-react";
+import { Activity, Plus, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Sparkles, Download, ShieldAlert } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
-import { createNeuroIdAssessmentAction, segmentInstrumentsAction } from "@/app/patients/[id]/neuro-id/actions";
+import { createNeuroIdAssessmentAction, segmentInstrumentsAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
   fisico_pct: number | null;
@@ -82,6 +82,27 @@ export function PatientNeuroIdPanel({
   const [qsnaText, setQsnaText] = useState("");
   const [segmenting, setSegmenting] = useState(false);
   const [segMsg, setSegMsg] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [autoCodes, setAutoCodes] = useState<Set<string>>(new Set());
+  const [phq9Alert, setPhq9Alert] = useState<number | null>(null);
+
+  async function handleImport() {
+    setImporting(true);
+    setImportMsg(null);
+    const res = await importQuestionnaireAnswersAction(patientId);
+    setImporting(false);
+    if (res.error) { setImportMsg(res.error); return; }
+    const entries = Object.entries(res.draft);
+    setVals((v) => {
+      const next = { ...v };
+      for (const [code, val] of entries) next[code] = String(val);
+      return next;
+    });
+    setAutoCodes((prev) => new Set([...prev, ...entries.map(([c]) => c)]));
+    setPhq9Alert(res.phq9Item9 ? res.phq9Item9.value : null);
+    setImportMsg(entries.length > 0 ? t("importDone", { count: entries.length }) : t("importNone"));
+  }
 
   async function handleSegment() {
     setSegmenting(true);
@@ -219,13 +240,33 @@ export function PatientNeuroIdPanel({
             <p className="text-[10px] text-[#A09E98]">{t("segmentNote")}</p>
           </div>
 
+          {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA) */}
+          <div className="rounded-[8px] border border-[#0F6E56]/20 bg-white p-[10px] space-y-[8px]">
+            <p className="text-[11px] font-semibold text-[#0F1A2E] flex items-center gap-1"><Download className="h-3 w-3 text-[#0F6E56]" /> {t("importTitle")}</p>
+            <p className="text-[10px] text-[#A09E98]">{t("importHint")}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button type="button" disabled={importing} onClick={handleImport}
+                className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center gap-1">
+                <Download className="h-3 w-3" /> {importing ? t("importing") : t("importBtn")}
+              </button>
+              {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
+            </div>
+            {phq9Alert !== null && (
+              <p className="text-[11px] text-[#991B1B] bg-[#FEE2E2] rounded-[6px] px-[8px] py-[6px] flex items-start gap-1">
+                <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-[1px]" /> {t("phq9Alert", { value: phq9Alert })}
+              </p>
+            )}
+          </div>
+
           <p className="text-[11px] text-[#A09E98]">{t("formHint")}</p>
 
           {PILLARS.map((pillar) => (
             <div key={pillar}>
               <p className="text-[11px] font-semibold text-[#0F1A2E] mb-[6px]">{t(`pillar.${pillar}`)}</p>
               <div className="grid gap-[8px] sm:grid-cols-2">
-                {DEFAULT_CATALOG.filter((it) => it.pillar === pillar).map((it) => {
+                {DEFAULT_CATALOG
+                  .filter((it) => it.pillar === pillar && (!it.auto || (vals[it.code] ?? "") !== ""))
+                  .map((it) => {
                   const raw = vals[it.code] ?? "";
                   const band = it.input_type === "lab"
                     ? (raw ? bandForDysfunction(LAB_DYS[raw] ?? null) : null)
@@ -233,7 +274,10 @@ export function PatientNeuroIdPanel({
                   return (
                     <label key={it.code} className="block">
                       <span className="text-[11px] text-[#6B6A66] mb-[2px] flex items-center justify-between gap-2">
-                        <span>{it.label}{it.partial && <span className="text-[#C77D17]"> · {t("optional")}</span>}</span>
+                        <span>{it.label}
+                          {it.partial && <span className="text-[#C77D17]"> · {t("optional")}</span>}
+                          {autoCodes.has(it.code) && <span className="text-[#0F6E56]"> · {t("autoTag")}</span>}
+                        </span>
                         {band && <BandPill band={band} label={bandLabel(band, it.band_type)} />}
                       </span>
                       {it.input_type === "lab" ? (

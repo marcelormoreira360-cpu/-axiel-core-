@@ -11,6 +11,7 @@ import OpenAI from "openai";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
 import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
+import { DEFAULT_QUESTION_MAP, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
 
 export type CatalogRow = {
   id: string;
@@ -189,4 +190,163 @@ export async function segmentInstruments(input: {
   let parsed: unknown;
   try { parsed = JSON.parse(raw); } catch { parsed = {}; }
   return coerceSegmentDraft(parsed);
+}
+
+// ── §8: importar respostas de questionário → rascunho 0–10 (auto) ─────────────
+export type QuestionMapRow = QuestionMapEntry & {
+  id: string; clinic_id: string; norm_min?: number | null; norm_max?: number | null;
+};
+
+/** Garante o de-para default da clínica (idempotente). Requer contexto de escrita. */
+export async function ensureClinicQuestionMap(clinicId: string): Promise<QuestionMapRow[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data: existing, error } = await supabase
+    .from("neuro_id_question_map")
+    .select("*")
+    .eq("clinic_id", clinicId)
+    .eq("active", true);
+  if (error) throw error;
+  if ((existing ?? []).length > 0) return existing as QuestionMapRow[];
+
+  const rows = DEFAULT_QUESTION_MAP.map((m) => ({
+    clinic_id: clinicId,
+    source: m.source,
+    template_match: m.template_match,
+    section_match: m.section_match,
+    catalog_code: m.catalog_code,
+    weight: m.weight ?? 1,
+    active: true,
+  }));
+  const { error: insErr } = await supabase.from("neuro_id_question_map").insert(rows);
+  if (insErr) throw insErr;
+  const { data: seeded } = await supabase
+    .from("neuro_id_question_map").select("*").eq("clinic_id", clinicId).eq("active", true);
+  return (seeded ?? []) as QuestionMapRow[];
+}
+
+export type QuestionnaireImport = {
+  /** code → disfunção 0–10 (rascunho para revisão) */
+  draft: Record<string, number>;
+  /** code → nome do questionário de origem */
+  sources: Record<string, string>;
+  /** codes mapeados mas sem resposta (pendentes / CTA) */
+  missing: string[];
+  /** Alerta clínico: PHQ-9 item 9 (ideação) > 0 — não silenciar. */
+  phq9Item9: { value: number } | null;
+};
+
+type RespRow = {
+  id: string;
+  template_id: string;
+  total_score: number | null;
+  max_possible_score: number | null;
+  filled_at: string;
+  assessment_templates: { name?: string } | { name?: string }[] | null;
+};
+
+function tplName(r: RespRow): string {
+  const t = Array.isArray(r.assessment_templates) ? r.assessment_templates[0] : r.assessment_templates;
+  return t?.name ?? "";
+}
+
+/**
+ * Lê as respostas mais recentes do paciente, aplica o de-para da clínica e
+ * normaliza para disfunção 0–10. NÃO grava — devolve rascunho para revisão.
+ */
+export async function importQuestionnaireAnswers(
+  patientId: string,
+  clinicId: string,
+): Promise<QuestionnaireImport> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const map = await ensureClinicQuestionMap(clinicId);
+
+  // Respostas do paciente (mais recente primeiro) + nome do template.
+  const { data: respsRaw, error: respErr } = await supabase
+    .from("assessment_responses")
+    .select("id, template_id, total_score, max_possible_score, filled_at, assessment_templates(name)")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .order("filled_at", { ascending: false });
+  if (respErr) throw respErr;
+  const resps = (respsRaw ?? []) as RespRow[];
+
+  // Resposta mais recente cujo nome do template contém o match (case-insensitive).
+  const latestFor = (match: string): RespRow | null =>
+    resps.find((r) => tplName(r).toLowerCase().includes(match.toLowerCase())) ?? null;
+
+  // Cache de agregados por response: sectionSums[title] = {raw,max}, total, item9.
+  type Agg = {
+    sections: Record<string, { raw: number; max: number }>;
+    totalRaw: number; totalMax: number;
+    item9: number | null;
+  };
+  const aggCache = new Map<string, Agg>();
+
+  async function aggregate(resp: RespRow): Promise<Agg> {
+    const cached = aggCache.get(resp.id);
+    if (cached) return cached;
+    const [{ data: answers }, { data: sections }] = await Promise.all([
+      supabase
+        .from("assessment_answers")
+        .select("value_number, section_id, assessment_questions(max_score, order_index)")
+        .eq("response_id", resp.id),
+      supabase.from("assessment_sections").select("id, title").eq("template_id", resp.template_id),
+    ]);
+    const titleById = new Map<string, string>();
+    for (const s of sections ?? []) titleById.set(s.id as string, (s.title as string) ?? "");
+
+    const agg: Agg = { sections: {}, totalRaw: 0, totalMax: 0, item9: null };
+    for (const a of answers ?? []) {
+      const q = Array.isArray(a.assessment_questions) ? a.assessment_questions[0] : a.assessment_questions;
+      const val = a.value_number as number | null;
+      const max = (q?.max_score as number | null) ?? null;
+      if (val === null || val === undefined || max === null) continue;
+      agg.totalRaw += val;
+      agg.totalMax += max;
+      const title = titleById.get(a.section_id as string) ?? "";
+      const bucket = (agg.sections[title] ??= { raw: 0, max: 0 });
+      bucket.raw += val;
+      bucket.max += max;
+      if ((q?.order_index as number | null) === 8) agg.item9 = val; // 9ª pergunta (PHQ-9)
+    }
+    aggCache.set(resp.id, agg);
+    return agg;
+  }
+
+  const draft: Record<string, number> = {};
+  const sources: Record<string, string> = {};
+  const missing: string[] = [];
+
+  for (const row of map) {
+    const resp = latestFor(row.template_match);
+    if (!resp) { missing.push(row.catalog_code); continue; }
+    const agg = await aggregate(resp);
+
+    let raw: number | null = null;
+    let max: number | null = null;
+    if (row.section_match) {
+      const key = Object.keys(agg.sections).find((tt) => tt.toLowerCase().includes(row.section_match!.toLowerCase()));
+      if (key) { raw = agg.sections[key].raw; max = agg.sections[key].max; }
+    } else {
+      raw = resp.total_score ?? agg.totalRaw;
+      max = resp.max_possible_score ?? agg.totalMax;
+    }
+    const norm = row.norm_max != null ? normalizeToDysfunction10(raw, row.norm_max) : normalizeToDysfunction10(raw, max);
+    if (norm === null) { if (!missing.includes(row.catalog_code)) missing.push(row.catalog_code); continue; }
+    draft[row.catalog_code] = norm;
+    sources[row.catalog_code] = tplName(resp);
+  }
+
+  // Alerta PHQ-9 item 9 (ideação) — não silenciar.
+  let phq9Item9: { value: number } | null = null;
+  const phq9 = latestFor("PHQ-9");
+  if (phq9) {
+    const agg = await aggregate(phq9);
+    if (agg.item9 !== null && agg.item9 > 0) phq9Item9 = { value: agg.item9 };
+  }
+
+  return { draft, sources, missing, phq9Item9 };
 }

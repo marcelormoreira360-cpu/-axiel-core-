@@ -1,7 +1,21 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (20)
+> Atualizado em: 18/06/2026 (21)
+
+## 🟡 Mapa Bio³ §8 — Questionários alimentam os pilares (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ Nada em prod / sem deploy (aguarda OK). `tsc` 0; verify:i18n 40. Brief: `_BRIEF_BIO3_QUESTIONARIOS.md`.
+
+MVP do §8: respostas de questionários validados (MSQ/PHQ-9/GAD-7/HPA) preenchem os itens dos 3 pilares automaticamente, com revisão humana antes de calcular.
+
+- **Codes novos no catálogo** (`catalog.ts`, todos `higher_worse`, `band_type` symptom, flag `auto`): 15 `msq_*` + `phq9_depressao` + `gad7_ansiedade` + `hpa_cortisol_baixo/alto` + `hpa_adrenal`. Itens `auto` NÃO aparecem no form manual vazio (só quando importados).
+- **Migration `093_neuro_id_question_map.sql` (arquivo, NÃO aplicada)**: de-para por clínica. **Decisão de eng.**: mapeia por TEMPLATE+SEÇÃO (MSQ 15 sistemas; HPA 3 seções) ou TOTAL (PHQ-9/GAD-7), via substring de nome/título — robusto e sem UUID por clínica (o brief sugeria question_id, mas o MSQ pontua por seção).
+- **`modules/neuro-id/question-map.ts`**: `DEFAULT_QUESTION_MAP` (de-para §3 — MIND/EMOTIONS/HEAD/HEART/LUNGS/DIGESTIVE→emocional; JOINTS→biomecânico; EYES/EARS/NOSE/MOUTH/SKIN/ENERGY/WEIGHT/OTHER→bioquímico; PHQ-9/GAD-7 total→emocional; HPA cortisol→emocional, adrenal→bioquímico) + `normalizeToDysfunction10(raw,max)`.
+- **Service** (`neuro-id-service.ts`): `ensureClinicQuestionMap` (seed default), `importQuestionnaireAnswers(patientId, clinicId)` — lê respostas (computa soma por seção/total de `assessment_answers`), normaliza 0–10, devolve **rascunho `auto`** + `sources` + `missing` (pendentes) + **alerta PHQ-9 item 9** (ideação, order_index 8 > 0). NÃO grava (revisão humana → `createNeuroIdAssessment`).
+- **Painel**: botão **Importar respostas** → pré-preenche o form (badge "auto (questionário)") → revisão → **Calcular**. Itens sem resposta = pendente. Alerta PHQ-9 destacado (vermelho), não silenciado.
+- **Testes** `question-map.test.ts` (normalização + cobertura dos 3 pilares + codes existem). `npm test` local.
+- **Pendências (OK)**: aplicar migrations **093** (+ 092 já aplicada) e deploy. Catálogo prod vazio → re-semeia com os codes novos (incl. `auto`) na 1ª avaliação. **MVP+ (não feito)**: IA sugere de-para de template novo; suporte a intake.
 
 ## 🟡 Mapa Bio³ — Revisão: display DISFUNÇÃO + ordem fixa + contribuição (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 

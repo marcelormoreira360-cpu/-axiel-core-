@@ -36,6 +36,8 @@ export type CatalogItemDef = {
   sort_order: number;
   /** Itens tipicamente ausentes na 1ª avaliação (exames) → CTA quando faltam. */
   partial?: boolean;
+  /** Item preenchido por questionário/IA (não aparece no form manual vazio). */
+  auto?: boolean;
 };
 
 const LAB_RULE: ScoringRule = { lab: { normal: 0, leve: 25, moderado: 50, alto: 85 } };
@@ -57,6 +59,14 @@ const scale = (
 const lab = (code: string, label: string, pillar: NeuroPillar, sort_order: number): CatalogItemDef => ({
   code, label, pillar, band_type: "symptom", sort_order, weight: 1,
   direction: "higher_worse", input_type: "lab", scoring_rule: LAB_RULE, partial: true,
+});
+
+// Itens derivados de QUESTIONÁRIO (§8): preenchidos pela importação, não no form manual.
+const auto = (
+  code: string, label: string, pillar: NeuroPillar, sort_order: number, weight = 1,
+): CatalogItemDef => ({
+  code, label, pillar, band_type: "symptom", sort_order, weight,
+  direction: "higher_worse", input_type: "scale_0_10", scoring_rule: {}, auto: true,
 });
 
 /** Mapeamento corrigido do §2. Direção/pesos default, ajustáveis por clínica. */
@@ -95,6 +105,31 @@ export const DEFAULT_CATALOG: CatalogItemDef[] = [
   scale("qsna_gi_visceral", "Q-SNA — gastrointestinal / visceral", "emocional", "symptom", 380),
   scale("qsna_neurocognitiva", "Q-SNA — neurocognitiva / executiva", "emocional", "symptom", 390),
   lab("biorressonancia_emocional", "Biorressonância emocional", "emocional", 400),
+
+  // ── Questionários (§8) — preenchidos pela importação (auto). MSQ por sistema ──
+  // Bioemocional
+  auto("msq_head", "MSQ — Cabeça", "emocional", 510, 0.5),
+  auto("msq_mind", "MSQ — Mente", "emocional", 520, 0.5),
+  auto("msq_emotions", "MSQ — Emoções", "emocional", 530, 0.5),
+  auto("msq_heart", "MSQ — Coração", "emocional", 540, 0.5),
+  auto("msq_lungs", "MSQ — Pulmão", "emocional", 550, 0.5),
+  auto("msq_digestive", "MSQ — Trato digestivo", "emocional", 560, 0.5),
+  auto("phq9_depressao", "PHQ-9 — Depressão (total)", "emocional", 570),
+  auto("gad7_ansiedade", "GAD-7 — Ansiedade (total)", "emocional", 580),
+  auto("hpa_cortisol_baixo", "HPA — Baixo cortisol", "emocional", 590, 0.5),
+  auto("hpa_cortisol_alto", "HPA — Alto cortisol", "emocional", 600, 0.5),
+  // Biomecânico
+  auto("msq_joints_muscles", "MSQ — Articulações / músculos", "fisico", 610, 0.5),
+  // Bioquímico
+  auto("msq_eyes", "MSQ — Olhos", "bioquimico", 710, 0.5),
+  auto("msq_ears", "MSQ — Ouvidos", "bioquimico", 720, 0.5),
+  auto("msq_nose", "MSQ — Nariz", "bioquimico", 730, 0.5),
+  auto("msq_mouth_throat", "MSQ — Boca / garganta", "bioquimico", 740, 0.5),
+  auto("msq_skin", "MSQ — Pele", "bioquimico", 750, 0.5),
+  auto("msq_energy", "MSQ — Energia / atividade", "bioquimico", 760, 0.5),
+  auto("msq_weight", "MSQ — Peso", "bioquimico", 770, 0.5),
+  auto("msq_other", "MSQ — Outros", "bioquimico", 780, 0.5),
+  auto("hpa_adrenal", "HPA — Hiperplasia adrenal", "bioquimico", 790, 0.5),
 ];
 
 /** Lookup por code (band_type, label, pillar) — usado na UI/PDF para itens armazenados. */

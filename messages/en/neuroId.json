@@ -66,5 +66,13 @@
   "goalLower": "goal: lower it each reassessment",
   "startHere": "Start here",
   "legendRanges": "0–30 in balance · 31–69 chronic dysfunction · 70–100 high dysfunction (possible acute flares)",
-  "contribution": "{pct}% of total"
+  "contribution": "{pct}% of total",
+  "importTitle": "Import questionnaire answers",
+  "importHint": "Pulls the latest answers (MSQ, PHQ-9, GAD-7, HPA), normalizes to 0–10 and pre-fills the items for you to review.",
+  "importBtn": "Import answers",
+  "importing": "Importing…",
+  "importDone": "{count} items filled — review before calculating.",
+  "importNone": "No answers found to import.",
+  "autoTag": "auto (questionnaire)",
+  "phq9Alert": "Clinical alert: PHQ-9 item 9 (ideation) flagged ({value}/3). Assess risk per your protocol — do not ignore."
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatientById } from "@/services/patient-service";
-import { createNeuroIdAssessment, segmentInstruments } from "@/services/neuro-id-service";
+import { createNeuroIdAssessment, segmentInstruments, importQuestionnaireAnswers, type QuestionnaireImport } from "@/services/neuro-id-service";
 
 export async function createNeuroIdAssessmentAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -51,5 +51,24 @@ export async function segmentInstrumentsAction(input: {
     return { draft };
   } catch {
     return { draft: {}, error: "Não foi possível extrair agora. Tente novamente ou preencha manualmente." };
+  }
+}
+
+/**
+ * §8: importa as respostas de questionário do paciente → rascunho 0–10 (auto)
+ * para revisão humana. NÃO grava; a gravação ocorre no createNeuroIdAssessmentAction.
+ */
+export async function importQuestionnaireAnswersAction(
+  patientId: string,
+): Promise<QuestionnaireImport & { error?: string }> {
+  const empty: QuestionnaireImport = { draft: {}, sources: {}, missing: [], phq9Item9: null };
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ...empty, error: "Não autorizado." };
+  const patient = await getPatientById(patientId, profile.clinic_id);
+  if (!patient) return { ...empty, error: "Paciente não encontrado nesta clínica." };
+  try {
+    return await importQuestionnaireAnswers(patientId, profile.clinic_id);
+  } catch {
+    return { ...empty, error: "Não foi possível importar as respostas agora." };
   }
 }

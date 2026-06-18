@@ -66,5 +66,13 @@
   "goalLower": "meta: baixar a cada reavaliação",
   "startHere": "Comece aqui",
   "legendRanges": "0–30 em função e equilíbrio · 31–69 disfunção/desequilíbrio crônico · 70–100 grande disfunção (possíveis crises agudas)",
-  "contribution": "{pct}% do total"
+  "contribution": "{pct}% do total",
+  "importTitle": "Importar respostas de questionário",
+  "importHint": "Puxa as respostas mais recentes (MSQ, PHQ-9, GAD-7, HPA), normaliza para 0–10 e preenche os itens para você revisar.",
+  "importBtn": "Importar respostas",
+  "importing": "Importando…",
+  "importDone": "{count} itens preenchidos — revise antes de calcular.",
+  "importNone": "Nenhuma resposta encontrada para importar.",
+  "autoTag": "auto (questionário)",
+  "phq9Alert": "Atenção clínica: PHQ-9 item 9 (ideação) marcado ({value}/3). Avalie risco conforme seu protocolo — não ignore."
 }
