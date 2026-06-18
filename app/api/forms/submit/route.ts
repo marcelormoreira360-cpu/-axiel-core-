@@ -98,6 +98,15 @@ export async function POST(req: NextRequest) {
       .update({ completed_at: new Date().toISOString(), response_id: response.id })
       .eq("token_hash", token_hash);
 
+    // Auto-gerar/atualizar o Mapa Bio³ (rascunho parcial) se o template estiver
+    // mapeado. Silencioso e não pode derrubar o submit do paciente.
+    try {
+      const { autoUpsertNeuroIdDraft } = await import("@/services/neuro-id-service");
+      await autoUpsertNeuroIdDraft(inv.patient_id, inv.clinic_id, supabase);
+    } catch (e) {
+      console.error("Bio3 auto-draft (form submit) falhou:", e);
+    }
+
     return NextResponse.json({ ok: true, response_id: response.id });
   } catch (err: unknown) {
     console.error("Form submit error:", err);

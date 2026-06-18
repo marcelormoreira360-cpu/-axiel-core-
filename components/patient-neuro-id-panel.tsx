@@ -17,6 +17,7 @@ export type NeuroIdMapView = {
   indice_geral: number | null;
   priority_pillar: NeuroPillar | null;
   is_partial: boolean;
+  status?: string | null;
 } | null;
 
 const PILLARS: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
@@ -163,6 +164,18 @@ export function PatientNeuroIdPanel({
 
       {map ? (
         <div className="space-y-[12px]">
+          {map.status === "auto_draft" && (
+            <div className="rounded-[10px] border border-[#C77D17]/30 bg-[#FFF8E7] px-[12px] py-[10px] flex items-start justify-between gap-3 flex-wrap">
+              <p className="text-[11px] text-[#633806] flex items-start gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px]" />
+                {t("autoDraftBanner")}
+              </p>
+              <button type="button" onClick={() => { setAssessing(true); handleImport(); }}
+                className="text-[11px] font-medium text-white bg-[#C77D17] hover:bg-[#A8650F] rounded-[8px] px-[12px] py-[6px] transition shrink-0">
+                {t("reviewComplete")}
+              </button>
+            </div>
+          )}
           <div className="flex items-center gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px] flex-wrap">
             <NeuroPyramid data={pyramidData} />
             <div className="text-center shrink-0">

@@ -12,6 +12,16 @@ import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
 import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
 import { DEFAULT_QUESTION_MAP, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+
+// Client genérico: server (sessão do usuário) por padrão, ou admin (ex.: gatilho
+// no submit público do paciente, sem sessão — escopo de clínica explícito).
+type Db = ReturnType<typeof createSupabaseAdminClient>;
+async function getDb(client?: Db): Promise<Db> {
+  if (client) return client;
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  return (await createSupabaseServerClient()) as unknown as Db;
+}
 
 export type CatalogRow = {
   id: string;
@@ -37,12 +47,13 @@ export type NeuroIdMap = {
   priority_pillar: NeuroPillar | null;
   is_partial: boolean;
   computed_at: string;
+  /** status da avaliação de origem: 'auto_draft' | 'draft' | 'final'. */
+  status: string | null;
 };
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
-export async function getNeuroIdCatalog(clinicId: string): Promise<CatalogRow[]> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+export async function getNeuroIdCatalog(clinicId: string, client?: Db): Promise<CatalogRow[]> {
+  const supabase = await getDb(client);
   const { data, error } = await supabase
     .from("assessment_items_catalog")
     .select("*")
@@ -54,12 +65,11 @@ export async function getNeuroIdCatalog(clinicId: string): Promise<CatalogRow[]>
 }
 
 /** Garante o catálogo default para a clínica (idempotente). Requer contexto de escrita. */
-export async function ensureClinicCatalog(clinicId: string): Promise<CatalogRow[]> {
-  const existing = await getNeuroIdCatalog(clinicId);
+export async function ensureClinicCatalog(clinicId: string, client?: Db): Promise<CatalogRow[]> {
+  const existing = await getNeuroIdCatalog(clinicId, client);
   if (existing.length > 0) return existing;
 
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getDb(client);
   const rows = DEFAULT_CATALOG.map((d) => ({
     clinic_id: clinicId,
     code: d.code,
@@ -88,18 +98,20 @@ export function catalogToScorable(rows: CatalogRow[]): ScorableItem[] {
 }
 
 // ── Leitura do mapa mais recente ──────────────────────────────────────────────
-export async function getLatestNeuroIdMap(patientId: string): Promise<NeuroIdMap | null> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promise<NeuroIdMap | null> {
+  const supabase = await getDb(client);
   const { data, error } = await supabase
     .from("patient_neuro_id_scores")
-    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at")
+    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status)")
     .eq("patient_id", patientId)
     .order("computed_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  return (data ?? null) as NeuroIdMap | null;
+  if (!data) return null;
+  const a = (data as { patient_assessments?: { status?: string } | { status?: string }[] | null }).patient_assessments;
+  const status = (Array.isArray(a) ? a[0]?.status : a?.status) ?? null;
+  return { ...(data as unknown as NeuroIdMap), status };
 }
 
 // ── Criar avaliação + calcular + gravar scores ────────────────────────────────
@@ -159,6 +171,15 @@ export async function createNeuroIdAssessment(input: {
   });
   if (sErr) throw sErr;
 
+  // Finaliza qualquer rascunho automático aberto deste paciente (idempotência §3):
+  // ao criar uma avaliação final, o auto_draft deixa de ser o rascunho ativo.
+  await supabase
+    .from("patient_assessments")
+    .update({ status: "final", updated_at: new Date().toISOString() })
+    .eq("patient_id", input.patientId)
+    .eq("status", "auto_draft")
+    .neq("id", assessmentId);
+
   return { assessmentId, result };
 }
 
@@ -198,9 +219,8 @@ export type QuestionMapRow = QuestionMapEntry & {
 };
 
 /** Garante o de-para default da clínica (idempotente). Requer contexto de escrita. */
-export async function ensureClinicQuestionMap(clinicId: string): Promise<QuestionMapRow[]> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+export async function ensureClinicQuestionMap(clinicId: string, client?: Db): Promise<QuestionMapRow[]> {
+  const supabase = await getDb(client);
   const { data: existing, error } = await supabase
     .from("neuro_id_question_map")
     .select("*")
@@ -257,11 +277,11 @@ function tplName(r: RespRow): string {
 export async function importQuestionnaireAnswers(
   patientId: string,
   clinicId: string,
+  client?: Db,
 ): Promise<QuestionnaireImport> {
-  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
-  const supabase = await createSupabaseServerClient();
+  const supabase = await getDb(client);
 
-  const map = await ensureClinicQuestionMap(clinicId);
+  const map = await ensureClinicQuestionMap(clinicId, client);
 
   // Respostas do paciente (mais recente primeiro) + nome do template.
   const { data: respsRaw, error: respErr } = await supabase
@@ -349,4 +369,76 @@ export async function importQuestionnaireAnswers(
   }
 
   return { draft, sources, missing, phq9Item9 };
+}
+
+// ── Auto-gerar Mapa Bio³ ao responder questionário (gatilho pós-submit) ───────
+// Idempotente: mantém UM rascunho `auto_draft` por paciente até finalizar.
+// `is_partial=true` sempre (falta o Biomecânico/exame físico). Silencioso quando
+// o template não está mapeado (draft vazio) → não gera nem quebra.
+export async function autoUpsertNeuroIdDraft(
+  patientId: string,
+  clinicId: string,
+  client?: Db,
+): Promise<{ assessmentId: string } | null> {
+  const supabase = await getDb(client);
+
+  const imp = await importQuestionnaireAnswers(patientId, clinicId, client);
+  if (Object.keys(imp.draft).length === 0) return null; // nada mapeado/respondido
+
+  const catalog = await ensureClinicCatalog(clinicId, client);
+  const items = catalogToScorable(catalog);
+  const result = computeNeuroId(items, imp.draft);
+
+  // Um rascunho auto por paciente: reaproveita o aberto (atualiza) ou cria.
+  const { data: existing } = await supabase
+    .from("patient_assessments")
+    .select("id")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .eq("status", "auto_draft")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let assessmentId: string;
+  if (existing?.id) {
+    assessmentId = existing.id as string;
+    await supabase.from("patient_assessment_values").delete().eq("assessment_id", assessmentId);
+    await supabase.from("patient_neuro_id_scores").delete().eq("assessment_id", assessmentId);
+    await supabase.from("patient_assessments").update({ updated_at: new Date().toISOString() }).eq("id", assessmentId);
+  } else {
+    const { data: created, error: cErr } = await supabase
+      .from("patient_assessments")
+      .insert({ clinic_id: clinicId, patient_id: patientId, source: "questionnaire", status: "auto_draft" })
+      .select("id")
+      .single();
+    if (cErr) throw cErr;
+    assessmentId = created.id as string;
+  }
+
+  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
+  const valueRows = Object.entries(imp.draft).map(([item_code, raw]) => ({
+    assessment_id: assessmentId,
+    item_code,
+    raw_value: `auto:${raw}`,
+    dysfunction_score: byCode.get(item_code) ?? null,
+  }));
+  if (valueRows.length > 0) {
+    const { error: vErr } = await supabase.from("patient_assessment_values").insert(valueRows);
+    if (vErr) throw vErr;
+  }
+
+  const { error: sErr } = await supabase.from("patient_neuro_id_scores").insert({
+    assessment_id: assessmentId,
+    patient_id: patientId,
+    fisico_pct: result.pillars.fisico.dysfunction,
+    bioquimico_pct: result.pillars.bioquimico.dysfunction,
+    emocional_pct: result.pillars.emocional.dysfunction,
+    indice_geral: result.indiceGeral,
+    priority_pillar: result.priorityPillar,
+    is_partial: true, // rascunho automático: falta o Biomecânico → sempre parcial
+  });
+  if (sErr) throw sErr;
+
+  return { assessmentId };
 }

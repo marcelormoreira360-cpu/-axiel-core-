@@ -74,5 +74,7 @@
   "importDone": "{count} items filled — review before calculating.",
   "importNone": "No answers found to import.",
   "autoTag": "auto (questionnaire)",
-  "phq9Alert": "Clinical alert: PHQ-9 item 9 (ideation) flagged ({value}/3). Assess risk per your protocol — do not ignore."
+  "phq9Alert": "Clinical alert: PHQ-9 item 9 (ideation) flagged ({value}/3). Assess risk per your protocol — do not ignore.",
+  "autoDraftBanner": "Partial map generated from answers — complete the physical exam (Biomechanical) to finalize.",
+  "reviewComplete": "Review and complete"
 }

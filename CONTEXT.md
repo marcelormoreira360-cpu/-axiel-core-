@@ -1,7 +1,19 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (23)
+> Atualizado em: 18/06/2026 (24)
+
+## 🟡 Mapa Bio³ — Auto-gerar ao responder questionário (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ Nada deployado (aguarda OK). `tsc` 0; verify:i18n 40. **Sem migration** (`auto_draft` é valor de `status`, texto; tabelas da 091). Brief: `_BRIEF_BIO3_AUTOGEN.md`. (A demografia, brief `_BRIEF_FIX_DEMOGRAFIA.md`, já foi feita e deployada — commit `008e9ce`.)
+
+- **Gatilho pós-submit**: `app/api/forms/submit/route.ts` (submit público do paciente, admin client) chama `autoUpsertNeuroIdDraft(patient_id, clinic_id, supabase)` em try/catch (fire-and-forget — não derruba o submit).
+- **`autoUpsertNeuroIdDraft` (novo em `neuro-id-service.ts`)**: roda `importQuestionnaireAnswers`; se draft vazio (template não mapeado) → **não gera, sem erro**. Senão computa e faz **upsert de UM `patient_assessment` `status='auto_draft'`** por paciente (idempotente: reaproveita o aberto, recria valores/scores) + grava `patient_neuro_id_scores` com **`is_partial=true`** (falta o Biomecânico/exame físico). Valores marcados `auto:<n>`.
+- **Refactor**: `getNeuroIdCatalog`/`ensureClinicCatalog`/`ensureClinicQuestionMap`/`importQuestionnaireAnswers`/`getLatestNeuroIdMap` aceitam **client opcional** (helper `getDb`) — funcionam com server (sessão) ou admin (gatilho público).
+- **Idempotência/finalização**: `createNeuroIdAssessment` (ao criar uma final) **consome** os `auto_draft` abertos do paciente (status→final). Depois disso, nova resposta abre um novo rascunho (evolução).
+- **Painel**: `getLatestNeuroIdMap` agora traz `status` (join `patient_assessments`). Quando `auto_draft` → **banner** "Mapa parcial — complete o exame físico (Biomecânico)" + botão **"Revisar e completar"** (abre o form e roda `handleImport` para pré-preencher; terapeuta adiciona o Biomecânico → Calcular → final, is_partial=false). i18n `neuroId.autoDraftBanner/reviewComplete`.
+- **Guarda-corpos**: auto_draft sempre `is_partial=true` (nunca final sem revisão humana); RLS por clinic_id; gatilho só mexe no Mapa.
+- **Pendência (OK)**: commit/push + deploy. Sem migration.
 
 ## 🟡 Demografia do paciente — fonte única + legenda Bio³ (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 
