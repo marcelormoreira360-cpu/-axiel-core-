@@ -8,6 +8,7 @@
 
 import PDFDocument from "pdfkit";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
+import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
 
 const GRAD = ["#9A86B8", "#5E8AA0", "#3E5C8A"];
 const INK = "#1f2937";
@@ -49,12 +50,6 @@ function band(equilibrium: number | null): string {
   if (equilibrium >= 70) return "em bom equilíbrio funcional";
   if (equilibrium >= 45) return "merece acompanhamento";
   return "ponto de maior atenção — sugere priorizar o cuidado";
-}
-function barColor(equilibrium: number | null): string {
-  if (equilibrium === null) return "#D3D1C7";
-  if (equilibrium >= 70) return "#0F6E56";
-  if (equilibrium >= 45) return "#C77D17";
-  return "#C0392B";
 }
 
 async function fetchLogo(url?: string | null): Promise<Buffer | null> {
@@ -101,17 +96,20 @@ function paragraph(doc: Doc, text?: string | null) {
 }
 function equilibriumBar(doc: Doc, label: string, hint: string, dysfunction: number | null, isPriority: boolean) {
   ensureSpace(doc, 50);
+  const band = bandForDysfunction(dysfunction);
   const balance = eq(dysfunction);
-  const color = barColor(balance);
+  const color = band ? band.colors.stroke : "#D3D1C7";
+  const textColor = band ? band.colors.text : MUTED;
+  const bandWord = band ? labelFor(band.key, "axis") : "—";
   const y = doc.y;
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
-  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint}${isPriority ? "  ★ ponto de atenção" : ""}`);
+  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${isPriority ? "  ★ ponto de atenção" : ""}`);
   const pct = balance ?? 0;
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
   doc.roundedRect(MARGIN, barY, barW, 8, 4).fill("#EFEDE7");
   if (balance !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
-  doc.font("Times-Bold").fontSize(11).fillColor(color).text(balance === null ? "—" : `${balance}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
+  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(balance === null ? "—" : `${balance}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
   doc.y = barY + 18;
 }
 
@@ -132,13 +130,15 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   const centersY = [y0 + 30, y0 + 60, y0 + 100];
   doc.lineWidth(2);
   bands.forEach((b, i) => {
+    const band = bandForDysfunction(b.dysfunction);
     const balance = eq(b.dysfunction);
-    const color = barColor(balance);
-    doc.polygon(...polys[i]).fillAndStroke(color, "#ffffff");
-    doc.font("Helvetica-Bold").fontSize(13).fillColor("#ffffff")
+    const fill = band ? band.colors.fill : "#E9E7E0";
+    const txt = band ? band.colors.text : "#9ca3af";
+    doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
+    doc.font("Helvetica-Bold").fontSize(13).fillColor(txt)
       .text(balance === null ? "—" : `${balance}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
     if (b.isPriority) {
-      doc.font("Helvetica").fontSize(10).fillColor("#ffffff").text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
+      doc.font("Helvetica").fontSize(10).fillColor(txt).text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
     }
   });
   doc.lineWidth(1);
@@ -183,8 +183,14 @@ export async function buildNeuroIdMapPdf(opts: {
   if (opts.patientName) { doc.font("Times-Roman").fontSize(11).fillColor(MUTED).text(`Paciente: ${opts.patientName}`, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.4); }
 
   const generalBalance = eq(map.indice_geral);
+  const indexBand = bandForDysfunction(map.indice_geral);
   sectionTitle(doc, "Índice Geral de Equilíbrio");
-  doc.font("Times-Bold").fontSize(30).fillColor(barColor(generalBalance)).text(generalBalance === null ? "—" : `${generalBalance}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.font("Times-Bold").fontSize(30).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
+    .text(generalBalance === null ? "—" : `${generalBalance}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  if (indexBand) {
+    doc.font("Times-Italic").fontSize(11).fillColor(indexBand.colors.text)
+      .text(labelFor(indexBand.key, "axis"), MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
+  }
   doc.moveDown(0.3);
   if (map.priority_pillar) {
     paragraph(doc, `Ponto de atenção principal: ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}). É o eixo de menor equilíbrio e onde o cuidado tende a gerar mais resultado.`);
@@ -201,6 +207,8 @@ export async function buildNeuroIdMapPdf(opts: {
     { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
   ]);
   for (const p of PILLARS) equilibriumBar(doc, PILLAR_LABEL[p], PILLAR_HINT[p], dysByPillar[p], map.priority_pillar === p);
+  doc.moveDown(0.2);
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("Legenda: Solto · Tenso · Bloqueado", MARGIN, doc.y, { width: CONTENT_W });
 
   // ── Página 2 — por eixo: o que foi avaliado / o que revela ──
   doc.addPage();

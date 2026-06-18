@@ -30,5 +30,37 @@
     "leve": "Alteração leve",
     "moderado": "Alteração moderada",
     "alto": "Alteração alta"
-  }
+  },
+  "band": {
+    "legend": "solto · tenso · bloqueado",
+    "mobility": {
+      "solto": "Solto",
+      "tenso": "Tenso",
+      "bloqueado": "Bloqueado"
+    },
+    "pain": {
+      "solto": "Leve",
+      "tenso": "Moderada",
+      "bloqueado": "Intensa"
+    },
+    "symptom": {
+      "solto": "Baixo",
+      "tenso": "Moderado",
+      "bloqueado": "Alto"
+    },
+    "axis": {
+      "solto": "Solto",
+      "tenso": "Tenso",
+      "bloqueado": "Bloqueado"
+    }
+  },
+  "detailLabel": "Por eixo",
+  "segmentTitle": "Colar QRM / Q-SNA (IA preenche)",
+  "segmentHint": "Cole o texto do QRM e/ou do Q-SNA. A IA extrai os sub-scores; você revisa antes de calcular.",
+  "segmentBtn": "Extrair com IA",
+  "segmenting": "Extraindo…",
+  "segmentReview": "Revise os valores extraídos antes de calcular.",
+  "qrmLabel": "QRM (texto completo)",
+  "qsnaLabel": "Q-SNA (texto completo)",
+  "segmentNote": "A IA só extrai números do documento — não inventa. Itens não encontrados ficam pendentes."
 }

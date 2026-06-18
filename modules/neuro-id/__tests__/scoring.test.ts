@@ -1,84 +1,94 @@
 import { describe, it, expect } from "vitest";
 import { DEFAULT_CATALOG } from "../catalog";
 import { scoreItem, computeNeuroId, toEquilibrium, asScorable, type ScorableItem } from "../scoring";
+import { bandForItem, bandForDysfunction, labelFor } from "../bands";
 
 const items = asScorable(DEFAULT_CATALOG);
-
-function item(code: string): ScorableItem {
-  const it = items.find((i) => i.code === code);
-  if (!it) throw new Error(`item ${code} não encontrado`);
-  return it;
+function item(c: string): ScorableItem {
+  const f = items.find((i) => i.code === c);
+  if (!f) throw new Error(`item ${c} não encontrado`);
+  return f;
 }
 
-describe("scoreItem", () => {
-  it("scale_0_10 higher_worse: valor × 10", () => {
+describe("scoreItem (escala unificada higher_worse)", () => {
+  it("dor: valor × 10", () => {
     expect(scoreItem(7, item("dor"))).toBe(70);
     expect(scoreItem(0, item("dor"))).toBe(0);
     expect(scoreItem(10, item("dor"))).toBe(100);
   });
 
-  it("scale_0_10 higher_better: (10 − valor) × 10", () => {
-    expect(scoreItem(8, item("mob_sacroiliaca"))).toBe(20);
-    expect(scoreItem(10, item("mob_sacroiliaca"))).toBe(0);
-    expect(scoreItem(0, item("mob_sacroiliaca"))).toBe(100);
+  it("mobilidade agora é higher_worse (sem inversão 10−valor)", () => {
+    expect(scoreItem(8, item("restr_sacroiliaca"))).toBe(80);
+    expect(scoreItem(2, item("restr_lombar"))).toBe(20);
   });
 
-  it("med: nº de medicações × perItem, com teto", () => {
-    expect(scoreItem(2, item("medicacao"))).toBe(40);
-    expect(scoreItem(10, item("medicacao"))).toBe(100); // teto
-    expect(scoreItem(0, item("medicacao"))).toBe(0);
+  it("QRM/Q-SNA sub-scores: valor × 10", () => {
+    expect(scoreItem(6, item("qrm_coracao"))).toBe(60);
+    expect(scoreItem(9, item("qsna_sono"))).toBe(90);
   });
 
-  it("lab: status → score; status desconhecido → null", () => {
-    expect(scoreItem("moderado", item("exames_sangue_cabelo"))).toBe(50);
-    expect(scoreItem("alto", item("exames_sangue_cabelo"))).toBe(85);
-    expect(scoreItem("xyz", item("exames_sangue_cabelo"))).toBeNull();
+  it("lab: status → score; desconhecido → null", () => {
+    expect(scoreItem("moderado", item("exame_sangue"))).toBe(50);
+    expect(scoreItem("alto", item("exame_sangue"))).toBe(85);
+    expect(scoreItem("xyz", item("exame_sangue"))).toBeNull();
   });
 
-  it("valor ausente → null (dado faltando)", () => {
+  it("valor ausente → null", () => {
     expect(scoreItem("", item("dor"))).toBeNull();
     expect(scoreItem(null, item("dor"))).toBeNull();
-    expect(scoreItem(undefined, item("dor"))).toBeNull();
   });
 });
 
 describe("computeNeuroId", () => {
-  it("calcula 3 eixos, índice e prioridade (pilar de maior disfunção)", () => {
+  it("3 eixos + índice + prioridade (maior disfunção)", () => {
     const r = computeNeuroId(items, {
-      // físico baixo (pouca disfunção)
-      dor: 1, mob_sacroiliaca: 9, capsula_quadril: 9, lombar: 1,
-      // emocional alto (muita disfunção) → deve ser prioridade
-      tronco_simpatico: 9, plexo_cardiopulmonar: 8, vago_ganglio_cervical: 9,
-      vago_orelha_temporal: 8, sutura_occipto_mastoide: 9, qsna: 9,
-      relato_emocional: 8, sono: 9,
-      // bioquímico médio
-      intestino: 5, ciclo_hormonal: 5, qrm: 5,
+      dor: 1, restr_sacroiliaca: 1, restr_lombar: 1,
+      qrm_coracao: 9, qrm_mente: 9, qsna_sono: 9, qsna_emocional: 8,
+      intestino: 4, qrm_total: 4,
     });
     expect(r.priorityPillar).toBe("emocional");
-    expect(r.pillars.fisico.dysfunction).toBeLessThan(r.pillars.emocional.dysfunction!);
+    expect(r.pillars.fisico.dysfunction!).toBeLessThan(r.pillars.emocional.dysfunction!);
     expect(r.indiceGeral).not.toBeNull();
-    expect(r.indiceGeral!).toBeGreaterThan(0);
   });
 
-  it("dado faltando não quebra e marca isPartial (eixo sem itens = null)", () => {
-    const r = computeNeuroId(items, { dor: 4, mob_sacroiliaca: 6 }); // só físico parcial
+  it("overlap Q-SNA: qsna_total tem peso 0.5 na média do Bioquímico", () => {
+    const r = computeNeuroId(items, { intestino: 4, qsna_total: 8 });
+    // (40*1 + 80*0.5) / (1 + 0.5) = 80 / 1.5 = 53.33…
+    expect(Math.round(r.pillars.bioquimico.dysfunction! * 100) / 100).toBe(53.33);
+  });
+
+  it("dado faltando não quebra e marca parcial + CTA", () => {
+    const r = computeNeuroId(items, { dor: 5 });
     expect(r.pillars.fisico.dysfunction).not.toBeNull();
     expect(r.pillars.bioquimico.dysfunction).toBeNull();
-    expect(r.pillars.emocional.dysfunction).toBeNull();
     expect(r.isPartial).toBe(true);
-    expect(r.pillars.fisico.itemsMissing).toBeGreaterThan(0);
+    // exames (lab partial) faltando viram CTA
+    expect(r.pillars.bioquimico.missingCtaCodes).toContain("exame_sangue");
   });
+});
 
-  it("itens 'partial' faltando viram CTA", () => {
-    const r = computeNeuroId(items, { intestino: 3, ciclo_hormonal: 2, qrm: 4 });
-    expect(r.pillars.bioquimico.missingCtaCodes).toContain("exames_sangue_cabelo");
+describe("bands (semáforo)", () => {
+  it("item 0–10: ≤3 solto · 4–6 tenso · ≥7 bloqueado", () => {
+    expect(bandForItem(2)?.key).toBe("solto");
+    expect(bandForItem(5)?.key).toBe("tenso");
+    expect(bandForItem(8)?.key).toBe("bloqueado");
+  });
+  it("disfunção 0–100: ≤35 solto · 36–65 tenso · ≥66 bloqueado", () => {
+    expect(bandForDysfunction(20)?.key).toBe("solto");
+    expect(bandForDysfunction(50)?.key).toBe("tenso");
+    expect(bandForDysfunction(80)?.key).toBe("bloqueado");
+    expect(bandForDysfunction(null)).toBeNull();
+  });
+  it("labelFor muda a palavra por tipo de item", () => {
+    expect(labelFor("bloqueado", "mobility")).toBe("Bloqueado");
+    expect(labelFor("tenso", "pain")).toBe("Moderada");
+    expect(labelFor("solto", "symptom")).toBe("Baixo");
   });
 });
 
 describe("toEquilibrium", () => {
   it("equilíbrio = 100 − disfunção", () => {
     expect(toEquilibrium(70)).toBe(30);
-    expect(toEquilibrium(0)).toBe(100);
     expect(toEquilibrium(null)).toBeNull();
   });
 });

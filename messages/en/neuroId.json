@@ -30,5 +30,37 @@
     "leve": "Mild change",
     "moderado": "Moderate change",
     "alto": "High change"
-  }
+  },
+  "band": {
+    "legend": "free · tense · blocked",
+    "mobility": {
+      "solto": "Free",
+      "tenso": "Tense",
+      "bloqueado": "Blocked"
+    },
+    "pain": {
+      "solto": "Mild",
+      "tenso": "Moderate",
+      "bloqueado": "Intense"
+    },
+    "symptom": {
+      "solto": "Low",
+      "tenso": "Moderate",
+      "bloqueado": "High"
+    },
+    "axis": {
+      "solto": "Free",
+      "tenso": "Tense",
+      "bloqueado": "Blocked"
+    }
+  },
+  "detailLabel": "By axis",
+  "segmentTitle": "Paste QRM / Q-SNA (AI fills in)",
+  "segmentHint": "Paste the QRM and/or Q-SNA text. AI extracts the sub-scores; you review before calculating.",
+  "segmentBtn": "Extract with AI",
+  "segmenting": "Extracting…",
+  "segmentReview": "Review the extracted values before calculating.",
+  "qrmLabel": "QRM (full text)",
+  "qsnaLabel": "Q-SNA (full text)",
+  "segmentNote": "AI only extracts numbers from the document — it never invents. Items not found stay pending."
 }

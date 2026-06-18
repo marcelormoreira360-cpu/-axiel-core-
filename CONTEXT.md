@@ -1,7 +1,27 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 16/06/2026 (18)
+> Atualizado em: 18/06/2026 (19)
+
+## 🟡 Mapa Bio³ — Ajuste de pilares + escala unificada + semáforo + IA segmentadora (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ **Nada aplicado em produção / sem deploy** (Marcelo pediu OK). `tsc` 0 erros; verify:i18n 40 namespaces.
+> Briefs: `_BRIEF_BIO3_AJUSTE_PILARES.md` + `_BRIEF_BIO3_VISUAL.md`.
+
+**FASE 1 (determinística):**
+- **Escala unificada**: TUDO 0–10 `higher_worse` (disfuncao = valor×10; sem inversão). Faixas por tipo: mobilidade solto/tenso/bloqueado · dor leve/mod/intensa · QRM/Q-SNA/sintomas baixo/mod/alto.
+- **`modules/neuro-id/catalog.ts` remapeado (§2)**: TODA mobilidade/palpação → Biomecânico (codes `restr_*`); QRM e Q-SNA **segmentados** em sub-scores roteados (qrm_musculo_articular→biomecânico; qrm_total/qsna_total→bioquímico; qrm_coracao/pulmao/trato_digestivo/mente/emocoes + qsna_sono/emocional/gi_visceral/neurocognitiva→bioemocional). `qsna_total` peso **0.5** (overlap §4). `band_type` por item; `CATALOG_BY_CODE`.
+- **`modules/neuro-id/bands.ts` (semáforo)**: `bandForDysfunction`/`bandForItem` (≤35 solto · 36–65 tenso · ≥66 bloqueado) + cores (verde-sálvia/âmbar/terracota) + ícone + `labelFor(itemType)`. Aplicado na pirâmide, índice, eixos e PDF — **sempre cor + rótulo + ícone** (acessível) + legenda. i18n `neuroId.band.*`.
+- **Testes** `scoring.test.ts` reescritos (novos codes, peso 0.5, bandas). ⚠️ vitest não roda no sandbox — **rodar `npm test` local**.
+- **Form**: agrupado pelos 3 pilares corrigidos, input 0–10 + faixa ao vivo, sem ↑melhor/↑pior; exames = select (lab).
+
+**FASE 2 (IA segmentadora):**
+- `modules/neuro-id/segment-instruments.ts` (prompt + `coerceSegmentDraft`, mapas domínio→code) + `segmentInstruments()` em `neuro-id-service.ts` (OpenAI `gpt-4.1-mini`, json_object, temp 0). Action `segmentInstrumentsAction`.
+- UI no painel: colar **QRM/Q-SNA** → "Extrair com IA" → preenche o form (rascunho 0–10) → terapeuta **revisa/edita** → **Calcular** (motor determinístico grava). Guarda-corpo: IA só extrai do texto, não inventa; item não extraído = pendente (CTA).
+
+**Pendências (aguardando OK):**
+- **Migration `092_neuro_id_catalog_reseed.sql` (arquivo, NÃO aplicada)**: apaga o catálogo Neuro ID antigo (codes mudaram) p/ `ensureClinicCatalog` re-semear os novos. Sem isso, em prod o catálogo fica com codes velhos.
+- Aplicar 092 + deploy Vercel (com seu OK). `/code-review --fix` é comando do Claude Code (indisponível no Cowork — revisão feita manualmente).
 
 ## 🟡 Mapa Bio³ / Índice Neuro ID — MVP (brief `_BRIEF_MAPA_NEURO_ID.md`) (16/06/2026) — NÃO APLICADO EM PROD
 
