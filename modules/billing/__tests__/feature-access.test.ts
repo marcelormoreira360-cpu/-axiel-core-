@@ -9,6 +9,8 @@ describe("canUseFeature", () => {
     expect(canUseFeature({ planSlug: "starter" }, "schedule")).toBe(true);
     expect(canUseFeature({ planSlug: "starter" }, "forms")).toBe(true);
     expect(canUseFeature({ planSlug: "starter" }, "patient_snapshot")).toBe(true);
+    // audio_transcription foi habilitado no starter (commit b7ef9ed).
+    expect(canUseFeature({ planSlug: "starter" }, "audio_transcription")).toBe(true);
   });
 
   it("returns false for features not in starter plan", () => {

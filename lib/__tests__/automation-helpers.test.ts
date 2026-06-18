@@ -81,7 +81,7 @@ describe("buildMessage", () => {
     const msg = buildMessage("nps", "Maria Santos", null);
     expect(msg).toContain("Maria");
     expect(msg).toContain("sessão de ontem");
-    expect(msg).toContain("avaliação");
+    expect(msg).toContain("Responda");
   });
 
   it("d+3: includes first name and follow-up text", () => {
