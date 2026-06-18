@@ -1,14 +1,16 @@
 import { notFound } from "next/navigation";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
-import { buildNeuroIdMapPdf } from "@/services/neuro-id-pdf-service";
+import { buildNeuroIdMapPdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
 import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // view=clinical → relatório técnico interno; padrão = relatório do paciente (persuasivo).
+  const view = new URL(request.url).searchParams.get("view") === "clinical" ? "clinical" : "patient";
 
   const clinic = await getCurrentClinic();
   const map = await getLatestNeuroIdMap(id);
@@ -30,7 +32,17 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   } catch { /* usa defaults */ }
 
-  const buffer = await buildNeuroIdMapPdf({ map, patientName: patient?.full_name ?? null, clinic: brand });
+  const patientName = patient?.full_name ?? null;
+  const buffer = view === "clinical"
+    ? await buildNeuroIdMapPdf({ map, patientName, clinic: brand })
+    : await buildNeuroIdPatientReportPdf({
+        map, patientName, clinic: brand,
+        vars: {
+          q1: patient?.chief_complaint ?? null,
+          q2: null,
+          sintoma: patient?.chief_complaint ?? null,
+        },
+      });
   const safeName = (patient?.full_name ?? "paciente").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "paciente";
 
   return new Response(new Uint8Array(buffer), {

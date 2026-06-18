@@ -10,6 +10,7 @@ import PDFDocument from "pdfkit";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
+import { buildPatientReportCopy, copyBandForDysfunction, type CopyPillar } from "@/modules/neuro-id/report-copy";
 
 const GRAD = ["#9A86B8", "#5E8AA0", "#3E5C8A"];
 const INK = "#1f2937";
@@ -241,6 +242,108 @@ export async function buildNeuroIdMapPdf(opts: {
     "Este Mapa é uma ferramenta de comunicação de bem-estar funcional. Não é diagnóstico de doença nem promessa de cura. Sugere pontos que merecem acompanhamento profissional.",
     MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 },
   );
+
+  return pdfToBuffer(doc);
+}
+
+const COPY_HINT: Record<NeuroPillar, string> = {
+  fisico: "corpo & movimento",
+  bioquimico: "energia & química interna",
+  emocional: "mente & emoção",
+};
+
+/**
+ * Versão PACIENTE (persuasiva-ética, 7 beats) — `_BRIEF_BIO3_RELATORIO_PERSUASIVO`.
+ * Consome apenas os scores existentes; a copy vem de report-copy.ts (Aval/Termo).
+ * A versão clínica interna é a buildNeuroIdMapPdf (acima), preservada.
+ */
+export async function buildNeuroIdPatientReportPdf(opts: {
+  map: NeuroIdPdfMap;
+  patientName?: string | null;
+  clinic?: ClinicBrand;
+  vars?: { q1?: string | null; q2?: string | null; sintoma?: string | null };
+  showSafeguard?: boolean;
+}): Promise<Buffer> {
+  const { map } = opts;
+  const brand = opts.clinic ?? {};
+  const logo = await fetchLogo(brand.logoUrl);
+  const dysByPillar: Record<NeuroPillar, number | null> = {
+    fisico: map.fisico_pct, bioquimico: map.bioquimico_pct, emocional: map.emocional_pct,
+  };
+  const pillar: CopyPillar = (map.priority_pillar ?? "emocional") as CopyPillar;
+  const band = copyBandForDysfunction(map.indice_geral);
+  const indice = map.indice_geral === null ? 0 : Math.round(map.indice_geral);
+  const showSafeguard = opts.showSafeguard ?? ((map.emocional_pct ?? 0) >= 70);
+
+  const copy = buildPatientReportCopy({
+    band, pillar, showSafeguard,
+    vars: {
+      nome: (opts.patientName ?? "").split(" ")[0] || "Olá",
+      indice,
+      pilar: PILLAR_LABEL[pillar],
+      hint: COPY_HINT[pillar],
+      q1: opts.vars?.q1 ?? null,
+      q2: opts.vars?.q2 ?? null,
+      sintoma: opts.vars?.sintoma ?? null,
+    },
+  });
+
+  const doc = new PDFDocument({
+    margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
+    size: "LETTER",
+    info: { Title: "Mapa Bio³ — Seu Relatório", Author: brand.name ?? "AXIEL Core" },
+  });
+  let decorating = false;
+  const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
+  decorate();
+  doc.on("pageAdded", () => { decorate(); resetBody(doc); });
+  resetBody(doc);
+
+  // Página 1 — abertura + retrato (índice herói + pirâmide)
+  docTitle(doc, "Mapa Bio³", "Seu relatório de bem-estar funcional");
+  sectionTitle(doc, copy.beats[0].title);
+  paragraph(doc, copy.beats[0].body);
+
+  sectionTitle(doc, copy.beats[1].title);
+  const indexBand = bandForDysfunction(map.indice_geral);
+  doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
+    .text(map.indice_geral === null ? "—" : `${indice}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.moveDown(0.2);
+  drawPyramid(doc, [
+    { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
+    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
+  ]);
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("0–30 em função · 31–69 disfunção crônica · 70–100 grande disfunção", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.moveDown(0.3);
+  paragraph(doc, copy.beats[1].body);
+
+  // Página 2 — significado + por onde começar + autoridade
+  doc.addPage();
+  sectionTitle(doc, copy.beats[2].title);
+  paragraph(doc, copy.beats[2].body);
+  sectionTitle(doc, copy.beats[3].title);
+  paragraph(doc, copy.beats[3].body);
+  doc.moveDown(0.2);
+  doc.font("Times-Italic").fontSize(9.5).fillColor(MUTED).text(copy.authority, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+
+  // Página 3 — caminho + trajetória + próximo passo + prova/disclaimer/salvaguarda
+  doc.addPage();
+  sectionTitle(doc, copy.beats[4].title);
+  paragraph(doc, copy.beats[4].body);
+  sectionTitle(doc, copy.beats[5].title);
+  paragraph(doc, copy.beats[5].body);
+  sectionTitle(doc, copy.beats[6].title);
+  paragraph(doc, copy.beats[6].body);
+  doc.moveDown(0.2);
+  doc.font("Times-Italic").fontSize(9.5).fillColor(MUTED).text(copy.socialProof, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+
+  if (copy.safeguard) {
+    doc.moveDown(0.5);
+    doc.font("Times-Bold").fontSize(9.5).fillColor("#8A3216").text(copy.safeguard, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+  doc.moveDown(0.5);
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(copy.disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
 
   return pdfToBuffer(doc);
 }

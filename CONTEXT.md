@@ -1,7 +1,17 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (21)
+> Atualizado em: 18/06/2026 (22)
+
+## 🟡 Mapa Bio³ — Relatório do paciente persuasivo-ético (7 beats) (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ Nada em prod / sem deploy (aguarda OK). `tsc` 0; verify:i18n 40. **Sem migration** (só código). Briefs: `_BRIEF_BIO3_RELATORIO_PERSUASIVO.md` + copy aprovada `_COPY_BIO3_RELATORIO.md` (Aval/Termo 18/06).
+
+- **`modules/neuro-id/report-copy.ts`** (novo): copy dos **7 beats** ("Eu te ouvi" → "Seu próximo passo"), variando por **faixa** (solto/tenso/bloqueado = 0–30/31–69/70–100) e **pilar prioritário**, com placeholders `{nome}{indice}{pilar}{hint}{q1}{q2}{sintoma}`. `buildPatientReportCopy()`, `copyBandForDysfunction()`. `PROHIBITED_TERMS` + `findProhibited()` (match por palavra inteira — não pega "procure"). Beat 1 tem variante honesta quando não há queixa (não inventa). Disclaimer obrigatório + salvaguarda de saúde mental (CVV 188) quando Bioemocional alto (≥70) ou PHQ-9 sinalizar.
+- **PDF**: `buildNeuroIdPatientReportPdf()` (versão PACIENTE persuasiva, 7 beats, reusa pirâmide/bandas/índice) adicionada ao `neuro-id-pdf-service.ts`. A `buildNeuroIdMapPdf()` vira a versão **clínica interna** (preservada). Rota `/api/patients/[id]/neuro-id/pdf` serve **paciente por padrão**; `?view=clinical` = técnica interna. {q1}/{sintoma} = `patients.chief_complaint` (fallback gracioso).
+- **Não recalcula scores** — só consome `patient_neuro_id_scores` + queixa do paciente.
+- **Testes** `report-copy.test.ts`: variação por faixa/pilar, sem placeholders soltos, **zero termos proibidos** em toda combinação, salvaguarda condicional, cita queixa real, fallback honesto. `npm test` local.
+- **Pendência (OK)**: commit/push + deploy. Sem migration.
 
 ## 🟡 Mapa Bio³ §8 — Questionários alimentam os pilares (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 
