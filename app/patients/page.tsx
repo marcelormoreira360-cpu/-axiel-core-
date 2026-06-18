@@ -3,6 +3,9 @@ import { getPatients, getPatientCount } from "@/services/patient-service";
 import { getAppointments } from "@/services/appointment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { isPractitioner, getTeamMembers, isManager } from "@/services/team-service";
+import { getActivePlanPatientIds } from "@/services/treatment-plan-service";
+import { computePatientEngagement } from "@/services/patient-intelligence-service";
+import { derivePatientJourneyStage, type PatientJourneyStage } from "@/modules/patient-journey/stage";
 import { PatientsClient } from "./patients-client";
 
 const PAGE_SIZE = 100;
@@ -39,6 +42,27 @@ export default async function PatientsPage({
 
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
+  // ── Etapa da jornada por paciente (derivada, sem N+1) ──────────────────────
+  // Agrupa os agendamentos já carregados por paciente + 1 query de planos ativos.
+  const activePlanIds = clinicId ? new Set(await getActivePlanPatientIds(clinicId)) : new Set<string>();
+  const apptsByPatient = new Map<string, typeof appointments>();
+  for (const a of appointments) {
+    const arr = apptsByPatient.get(a.patient_id) ?? [];
+    arr.push(a);
+    apptsByPatient.set(a.patient_id, arr);
+  }
+  const journeyByPatientId: Record<string, PatientJourneyStage> = {};
+  for (const p of patients) {
+    const appts = apptsByPatient.get(p.id) ?? [];
+    const churnRisk = computePatientEngagement(appts, p).churnRisk;
+    journeyByPatientId[p.id] = derivePatientJourneyStage({
+      patientStatus: p.status,
+      appointments: appts,
+      treatmentPlans: activePlanIds.has(p.id) ? [{ status: "active" }] : [],
+      churnRisk,
+    });
+  }
+
   // Deduplicated list of patient_ids sorted by their most recent appointment date
   const seen = new Set<string>();
   const recentPatientIds: string[] = [];
@@ -63,6 +87,7 @@ export default async function PatientsPage({
         totalCount={totalCount}
         initialSearch={search}
         practitioners={practitioners}
+        journeyByPatientId={journeyByPatientId}
       />
     </Shell>
   );

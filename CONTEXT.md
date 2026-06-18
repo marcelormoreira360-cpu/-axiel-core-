@@ -1,7 +1,26 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 16/06/2026 (16)
+> Atualizado em: 16/06/2026 (17)
+
+## ✅ Quick Wins da Jornada (brief `_BRIEF_QUICKWINS.md`) — #3 e #4 (16/06/2026)
+
+Os 4 quick wins: **#1 (valor do plano)** e **#2 (view financeira por paciente)** já tinham sido
+feitos (migrations 087 e 086). Nesta sessão, **#3** (completado) e **#4**:
+
+- **#3 — Etapa unificada na LISTA de pacientes**: a derivação (`derivePatientJourneyStage`) já
+  existia na ficha; agora a **lista** (`app/patients/page.tsx` + `patients-client.tsx`) deriva a
+  etapa por paciente **sem N+1** (agrupa os `appointments` já carregados + 1 query
+  `getActivePlanPatientIds(clinicId)`), mostra **badge** por linha e tem **filtro por etapa**
+  (dropdown). i18n `patients.list.allStages` + reusa `patientPanels.intelligenceStrip.journey.stage`.
+- **#4 — Indicação paciente→paciente**: migration **`090_patient_referral.sql` APLICADA**
+  (`patients.referred_by_patient_id` → patients, on delete set null, indexada). `Patient` type +
+  `updatePatient` aceitam o campo. `getClinicPatientsForPicker` (seletor) e `getPatientReferralInfo`
+  (quem indicou + quantos/quais trouxe) no patient-service. Form de **edição** ganhou select
+  "Indicado por"; **ficha** mostra "Indicado por X" + "Indicou N pacientes (nomes)".
+  i18n `patientProfile.referral`. Fixtures de teste (action-rules, ai-placeholder) atualizados.
+- Validado: tsc confiável **0 erros**; verify:i18n **39 namespaces, paridade OK**.
+- **Pendência operacional**: deploy dos `.ts` na Vercel (087/086/088/089/090 já em produção).
 
 ## ✅ Feature de Suplementos — MVP (brief `_BRIEF_SUPLEMENTOS.md`) (16/06/2026)
 

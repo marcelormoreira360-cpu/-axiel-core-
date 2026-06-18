@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { AiInsightReviewCard } from "@/components/ai-insight-review-card";
-import { getPatientById } from "@/services/patient-service";
+import { getPatientById, getPatientReferralInfo } from "@/services/patient-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
@@ -110,6 +110,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     clinic?.id ? getSupplementCatalog(clinic.id, { activeOnly: true }) : Promise.resolve([]),
     getPatientSupplementRecommendations(id),
   ]);
+
+  // Indicação paciente→paciente (quem indicou + quantos este trouxe)
+  const referralInfo = clinic?.id
+    ? await getPatientReferralInfo(id, clinic.id, patient.referred_by_patient_id)
+    : { referredByName: null, referred: [] as { id: string; full_name: string }[] };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -262,6 +267,23 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         chiefComplaint={patient.chief_complaint}
         caseSummary={patient.case_summary}
       />
+
+      {/* ── Indicação paciente→paciente ── */}
+      {(referralInfo.referredByName || referralInfo.referred.length > 0) && (
+        <div className="bg-white border border-t-0 border-black/[.07] px-[22px] py-[12px] flex flex-wrap items-center gap-x-[18px] gap-y-[4px] text-[12px]">
+          {referralInfo.referredByName && (
+            <span className="text-[#6B6A66]">
+              {t("referral.referredBy", { name: referralInfo.referredByName })}
+            </span>
+          )}
+          {referralInfo.referred.length > 0 && (
+            <span className="text-[#0F6E56] font-medium">
+              {t("referral.brought", { count: referralInfo.referred.length })}
+              <span className="text-[#A09E98] font-normal"> — {referralInfo.referred.map((r) => r.full_name).join(", ")}</span>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* ── 3-column body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-t-0 border-black/[.07] rounded-b-[12px] overflow-hidden mb-5">

@@ -69,6 +69,8 @@ export type Patient = {
   state: string | null;
   zip_code: string | null;
   country: string | null;
+  /** Paciente (mesma clínica) que indicou este — indicação paciente→paciente. */
+  referred_by_patient_id: string | null;
   created_at: string;
   updated_at: string;
   /** Populated only when fetched with appointments(practitioner_id) */

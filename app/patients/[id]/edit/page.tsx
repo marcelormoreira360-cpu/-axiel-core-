@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Shell } from "@/components/shell";
-import { getPatientById } from "@/services/patient-service";
+import { getPatientById, getClinicPatientsForPicker } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { updatePatientAction, anonymizePatientAction } from "./actions";
 
@@ -10,6 +10,8 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
+
+  const referrerOptions = clinic?.id ? await getClinicPatientsForPicker(clinic.id, id) : [];
 
   const action = updatePatientAction.bind(null, id);
 
@@ -113,6 +115,22 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               placeholder="Observações relevantes sobre o paciente..."
               className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
             />
+          </div>
+
+          {/* Indicado por (indicação paciente→paciente) */}
+          <div>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Indicado por</label>
+            <select
+              name="referred_by_patient_id"
+              defaultValue={patient.referred_by_patient_id ?? ""}
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+            >
+              <option value="">— Nenhum / origem externa</option>
+              {referrerOptions.map((p) => (
+                <option key={p.id} value={p.id}>{p.full_name}</option>
+              ))}
+            </select>
+            <p className="text-[10px] text-[#A09E98] mt-[4px]">Outro paciente que indicou este. Ajuda a identificar quem mais traz indicações.</p>
           </div>
 
           <div className="flex gap-[8px] pt-[4px]">

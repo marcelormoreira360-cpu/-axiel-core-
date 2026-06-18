@@ -86,7 +86,7 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
 
 export async function updatePatient(
   patientId: string,
-  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "notes" | "status" | "chief_complaint" | "case_summary" | "address_line" | "neighborhood" | "city" | "state" | "zip_code" | "country">>
+  input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "notes" | "status" | "chief_complaint" | "case_summary" | "address_line" | "neighborhood" | "city" | "state" | "zip_code" | "country" | "referred_by_patient_id">>
 ): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -136,6 +136,62 @@ export async function getPatientById(
   const { data, error } = await query.maybeSingle();
   if (error) throw error;
   return data as Patient | null;
+}
+
+// ── Indicação paciente→paciente (quick win #4) ────────────────────────────────
+export type PatientPickerItem = { id: string; full_name: string };
+
+/** Lista enxuta de pacientes da clínica para o seletor "indicado por". */
+export async function getClinicPatientsForPicker(
+  clinicId: string,
+  excludeId?: string,
+): Promise<PatientPickerItem[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("patients")
+    .select("id, full_name")
+    .eq("clinic_id", clinicId)
+    .is("deleted_at", null)
+    .order("full_name", { ascending: true });
+  if (excludeId) query = query.neq("id", excludeId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as PatientPickerItem[];
+}
+
+export type PatientReferralInfo = {
+  referredByName: string | null;
+  referred: PatientPickerItem[];
+};
+
+/** Quem indicou este paciente + quantos/quais pacientes ele trouxe. */
+export async function getPatientReferralInfo(
+  patientId: string,
+  clinicId: string,
+  referredById?: string | null,
+): Promise<PatientReferralInfo> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const [referredRes, referrerRes] = await Promise.all([
+    supabase
+      .from("patients")
+      .select("id, full_name")
+      .eq("clinic_id", clinicId)
+      .eq("referred_by_patient_id", patientId)
+      .is("deleted_at", null)
+      .order("full_name", { ascending: true }),
+    referredById
+      ? supabase.from("patients").select("full_name").eq("id", referredById).eq("clinic_id", clinicId).maybeSingle()
+      : Promise.resolve({ data: null as { full_name?: string } | null }),
+  ]);
+
+  if (referredRes.error) throw referredRes.error;
+  return {
+    referredByName: (referrerRes.data as { full_name?: string } | null)?.full_name ?? null,
+    referred: (referredRes.data ?? []) as PatientPickerItem[],
+  };
 }
 
 // ── LGPD: anonimização de dados do paciente ───────────────────────────────────

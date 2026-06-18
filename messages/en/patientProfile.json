@@ -76,5 +76,9 @@
     "saved": "Saved",
     "empty": "No summary yet. Click edit to record the chief complaint and the case.",
     "errorSave": "Could not save. Please try again."
+  },
+  "referral": {
+    "referredBy": "Referred by {name}",
+    "brought": "{count, plural, one {Referred # patient} other {Referred # patients}}"
   }
 }

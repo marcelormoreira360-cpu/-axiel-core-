@@ -12,10 +12,11 @@ export async function updatePatientAction(patientId: string, formData: FormData)
   const date_of_birth = String(formData.get("date_of_birth") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const status = String(formData.get("status") ?? "active") as "active" | "inactive" | "archived";
+  const referred_by_patient_id = String(formData.get("referred_by_patient_id") ?? "").trim() || null;
 
   if (!full_name) return;
 
-  await updatePatient(patientId, { full_name, email, phone, cpf, date_of_birth, notes, status });
+  await updatePatient(patientId, { full_name, email, phone, cpf, date_of_birth, notes, status, referred_by_patient_id });
 
   revalidatePath(`/patients/${patientId}`);
   redirect(`/patients/${patientId}`);

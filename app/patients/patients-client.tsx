@@ -6,6 +6,19 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import type { Patient } from "@/lib/types";
+import type { PatientJourneyStage, ClinicalJourneyStage, JourneyStageTone } from "@/modules/patient-journey/stage";
+
+const JOURNEY_STAGES: ClinicalJourneyStage[] = [
+  "novo", "avaliacao_agendada", "avaliado", "plano_sugerido",
+  "em_tratamento", "reavaliacao", "manutencao", "inativo", "reativacao",
+];
+
+const JOURNEY_TONE_CLASSES: Record<JourneyStageTone, string> = {
+  neutral:   "bg-[#F4F3EF] text-[#6B6A66]",
+  active:    "bg-[#E1F5EE] text-[#085041]",
+  attention: "bg-[#FFF8E7] text-[#633806]",
+  risk:      "bg-[#FEE2E2] text-[#991B1B]",
+};
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -48,6 +61,7 @@ export function PatientsClient({
   totalCount,
   initialSearch,
   practitioners,
+  journeyByPatientId = {},
 }: {
   patients: Patient[];
   practitionerMode: boolean;
@@ -57,8 +71,10 @@ export function PatientsClient({
   totalCount?: number;
   initialSearch?: string;
   practitioners?: Practitioner[];
+  journeyByPatientId?: Record<string, PatientJourneyStage>;
 }) {
   const t = useTranslations("patients.list");
+  const tJourney = useTranslations("patientPanels.intelligenceStrip.journey");
   const locale = useLocale();
   const router = useRouter();
   // When initialSearch is set, we're showing server-filtered results.
@@ -66,6 +82,7 @@ export function PatientsClient({
   const [query, setQuery] = useState(initialSearch ?? "");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [practitionerFilter, setPractitionerFilter] = useState<string>("all");
+  const [stageFilter, setStageFilter] = useState<ClinicalJourneyStage | "all">("all");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce URL navigation so server search fires after typing stops (~400ms)
@@ -98,10 +115,11 @@ export function PatientsClient({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     // When a search/filter is active, use the original (created_at desc) order
-    const hasFilter = q || statusFilter !== "all" || practitionerFilter !== "all";
+    const hasFilter = q || statusFilter !== "all" || practitionerFilter !== "all" || stageFilter !== "all";
     const source = hasFilter ? patients : sortedPatients;
     return source.filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
+      if (stageFilter !== "all" && journeyByPatientId[p.id]?.stage !== stageFilter) return false;
       if (practitionerFilter !== "all") {
         const appts = p.appointments ?? [];
         const hasAppt = appts.some((a) => a.practitioner_id === practitionerFilter);
@@ -114,7 +132,7 @@ export function PatientsClient({
         (p.phone ?? "").toLowerCase().includes(q)
       );
     });
-  }, [patients, sortedPatients, query, statusFilter, practitionerFilter]);
+  }, [patients, sortedPatients, query, statusFilter, practitionerFilter, stageFilter, journeyByPatientId]);
 
   const totalLabel = practitionerMode
     ? t("countPractitioner", { count: patients.length })
@@ -214,6 +232,18 @@ export function PatientsClient({
               );
             })}
           </div>
+
+          {/* Journey stage filter */}
+          <select
+            value={stageFilter}
+            onChange={(e) => setStageFilter(e.target.value as ClinicalJourneyStage | "all")}
+            className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium"
+          >
+            <option value="all">{tJourney("label")}: {t("allStages")}</option>
+            {JOURNEY_STAGES.map((s) => (
+              <option key={s} value={s}>{tJourney(`stage.${s}`)}</option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -236,7 +266,7 @@ export function PatientsClient({
               : t("noResultsFilter")}
           </p>
           <button
-            onClick={() => { handleSearchChange(""); setStatusFilter("all"); setPractitionerFilter("all"); }}
+            onClick={() => { handleSearchChange(""); setStatusFilter("all"); setPractitionerFilter("all"); setStageFilter("all"); }}
             className="mt-2 text-[12px] text-[#0F6E56] hover:underline"
           >
             {t("clearFilters")}
@@ -246,6 +276,7 @@ export function PatientsClient({
         <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
           {filtered.map((patient, i) => {
             const av = avatarColor(patient.full_name);
+            const journey = journeyByPatientId[patient.id];
             const since = new Date(patient.created_at).toLocaleDateString(locale, {
               month: "short",
               year: "numeric",
@@ -285,6 +316,13 @@ export function PatientsClient({
                   </span>
                 )}
 
+                {/* Journey stage badge */}
+                {journey && (
+                  <span className={`hidden sm:inline text-[10px] px-2 py-[2px] rounded-full shrink-0 ${JOURNEY_TONE_CLASSES[journey.tone]}`}>
+                    {tJourney(`stage.${journey.stage}`)}
+                  </span>
+                )}
+
                 {/* Status badge */}
                 <span className={`text-[10px] px-2 py-[2px] rounded-full shrink-0 ${statusClasses(patient.status)}`}>
                   {t(`status.${statusKey(patient.status)}`)}
@@ -309,14 +347,14 @@ export function PatientsClient({
       )}
 
       {/* Result count when searching */}
-      {(query || statusFilter !== "all" || practitionerFilter !== "all") && filtered.length > 0 && (
+      {(query || statusFilter !== "all" || practitionerFilter !== "all" || stageFilter !== "all") && filtered.length > 0 && (
         <p className="mt-[10px] text-[11px] text-[#A09E98] text-center">
           {t("resultCount", { filtered: filtered.length, total: patients.length })}
         </p>
       )}
 
       {/* Pagination — only shown when no local-only filter and there are multiple pages */}
-      {statusFilter === "all" && totalPages > 1 && (
+      {statusFilter === "all" && stageFilter === "all" && totalPages > 1 && (
         <div className="flex items-center justify-between mt-[14px] pt-[12px] border-t border-black/[.06]">
           <p className="text-[11px] text-[#A09E98]">
             {t("pageOf", { page, total: totalPages })}

@@ -33,6 +33,19 @@ export type TreatmentPlan = {
 
 // ── Queries ──────────────────────────────────────────────────────────────────
 
+/** IDs dos pacientes da clínica com plano ATIVO — para derivar etapa na lista (1 query). */
+export async function getActivePlanPatientIds(clinicId: string): Promise<string[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("treatment_plans")
+    .select("patient_id")
+    .eq("clinic_id", clinicId)
+    .eq("status", "active");
+  if (error) throw error;
+  return Array.from(new Set((data ?? []).map((r) => r.patient_id as string)));
+}
+
 export async function getPatientTreatmentPlans(patientId: string): Promise<TreatmentPlan[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();

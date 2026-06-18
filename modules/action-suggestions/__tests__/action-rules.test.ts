@@ -29,6 +29,7 @@ function makePatient(overrides: Partial<Patient> = {}): Patient {
     state: null,
     zip_code: null,
     country: null,
+    referred_by_patient_id: null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     ...overrides,

@@ -4,6 +4,7 @@
     "countClinic": "{count, plural, =0 {No patients yet} one {# patient in the clinic} other {# patients in the clinic}}",
     "countPractitioner": "{count, plural, =0 {No patients yet} one {# patient seen by you} other {# patients seen by you}}",
     "allPractitioners": "All practitioners",
+    "allStages": "All",
     "exportCsv": "Export CSV",
     "newPatient": "+ New patient",
     "searchPlaceholder": "Search by name, email or phone…",

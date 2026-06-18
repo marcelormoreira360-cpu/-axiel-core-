@@ -76,5 +76,9 @@
     "saved": "Salvo",
     "empty": "Sem resumo ainda. Clique em editar para registrar a queixa principal e o caso.",
     "errorSave": "Não foi possível salvar. Tente novamente."
+  },
+  "referral": {
+    "referredBy": "Indicado por {name}",
+    "brought": "{count, plural, one {Indicou # paciente} other {Indicou # pacientes}}"
   }
 }
