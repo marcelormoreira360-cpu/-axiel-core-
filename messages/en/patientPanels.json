@@ -307,5 +307,39 @@
     "summaryPlaceholder": "Describe the main findings and results of the exam…",
     "save": "Save exam",
     "delete": "Delete"
+  },
+  "supplements": {
+    "title": "Supplements",
+    "newRecommendation": "New recommendation",
+    "disclaimer": "Professional use. Does not replace evaluation/medication. Does not treat or cure. Check interactions with current medication.",
+    "outputTypeLabel": "Output type",
+    "rationalePlaceholder": "Clinical summary (prudent language)…",
+    "create": "Create draft",
+    "empty": "No recommendations yet.",
+    "noItems": "No items.",
+    "addItem": "Add item",
+    "approve": "Approve (human review)",
+    "inReportNote": "Approved — included in the Neuro ID 360 report (Doc 3).",
+    "fromCatalog": "From catalog",
+    "freeItem": "Free item",
+    "itemName": "Supplement name",
+    "dosage": "Dosage",
+    "timing": "Timing",
+    "duration": "Duration",
+    "buyUrl": "Buy link",
+    "itemRationale": "Why this item",
+    "brFormulaTitle": "Compounded formula · {clinic}",
+    "usLinksTitle": "Purchase links (US)",
+    "buy": "Buy",
+    "status": {
+      "draft": "Draft",
+      "reviewed": "Reviewed",
+      "approved": "Approved",
+      "sent": "Sent"
+    },
+    "outputType": {
+      "br_formula": "Formula (BR)",
+      "us_link": "Links (US)"
+    }
   }
 }

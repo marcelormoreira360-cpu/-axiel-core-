@@ -3,6 +3,7 @@ import { getLatestFinalAiInsight, getLatestAiInsight } from "@/services/ai-insig
 import { buildNeuroId360Pdf } from "@/services/insight-pdf-service";
 import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getApprovedSupplementRecommendation } from "@/services/supplement-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsightOutput } from "@/lib/types";
 
@@ -32,7 +33,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   } catch { /* usa defaults */ }
 
-  const buffer = await buildNeuroId360Pdf({ output, patientName: patient?.full_name ?? null, clinic });
+  // Doc 3: recomendação de suplementos aprovada (manual) substitui a da IA.
+  const approvedSupplement = await getApprovedSupplementRecommendation(id).catch(() => null);
+
+  const buffer = await buildNeuroId360Pdf({ output, patientName: patient?.full_name ?? null, clinic, approvedSupplement });
   const safeName = (patient?.full_name ?? "paciente").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "paciente";
 
   return new Response(new Uint8Array(buffer), {

@@ -17,6 +17,8 @@ import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
 import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientFunctionalExamsPanel } from "@/components/patient-functional-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
+import { PatientSupplementsPanel } from "@/components/patient-supplements-panel";
+import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
@@ -102,6 +104,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   const activeSub = activeSubscriptionResult.data;
   const assessmentProgress = await getPatientAssessmentProgress(id);
+
+  // Suplementos (catálogo ativo da clínica + recomendações do paciente)
+  const [supplementCatalog, supplementRecommendations] = await Promise.all([
+    clinic?.id ? getSupplementCatalog(clinic.id, { activeOnly: true }) : Promise.resolve([]),
+    getPatientSupplementRecommendations(id),
+  ]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -642,6 +650,16 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Medicamentos e suplementos */}
       <div className="mt-[18px]">
         <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
+      </div>
+
+      {/* Recomendação de suplementos (catálogo + builder manual + saídas) */}
+      <div className="mt-[18px]">
+        <PatientSupplementsPanel
+          recommendations={supplementRecommendations}
+          catalog={supplementCatalog}
+          patientId={id}
+          clinicName={clinic?.name ?? ""}
+        />
       </div>
 
       {/* Documentos do paciente */}

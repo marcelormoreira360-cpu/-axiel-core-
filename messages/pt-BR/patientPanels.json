@@ -307,5 +307,39 @@
     "summaryPlaceholder": "Descreva os principais achados e resultados do exame…",
     "save": "Salvar exame",
     "delete": "Excluir"
+  },
+  "supplements": {
+    "title": "Suplementos",
+    "newRecommendation": "Nova recomendação",
+    "disclaimer": "Uso profissional. Não substitui avaliação/medicação. Não trata nem cura. Verifique interações com a medicação atual.",
+    "outputTypeLabel": "Tipo de saída",
+    "rationalePlaceholder": "Resumo clínico (linguagem prudente)…",
+    "create": "Criar rascunho",
+    "empty": "Nenhuma recomendação ainda.",
+    "noItems": "Sem itens.",
+    "addItem": "Adicionar item",
+    "approve": "Aprovar (revisão humana)",
+    "inReportNote": "Aprovada — entra no relatório Neuro ID 360 (Doc 3).",
+    "fromCatalog": "Do catálogo",
+    "freeItem": "Item livre",
+    "itemName": "Nome do suplemento",
+    "dosage": "Dose",
+    "timing": "Horário",
+    "duration": "Duração",
+    "buyUrl": "Link de compra",
+    "itemRationale": "Por que este item",
+    "brFormulaTitle": "Fórmula manipulada · {clinic}",
+    "usLinksTitle": "Links de compra (EUA)",
+    "buy": "Comprar",
+    "status": {
+      "draft": "Rascunho",
+      "reviewed": "Revisado",
+      "approved": "Aprovado",
+      "sent": "Enviado"
+    },
+    "outputType": {
+      "br_formula": "Fórmula (BR)",
+      "us_link": "Links (US)"
+    }
   }
 }

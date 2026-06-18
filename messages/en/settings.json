@@ -90,6 +90,10 @@
       "clinicalTests": {
         "title": "Clinical tests",
         "text": "Battery of in-person tests applied in sessions."
+      },
+      "supplements": {
+        "title": "Supplements",
+        "text": "Clinic supplement catalog (BR formula / US links)."
       }
     }
   },
@@ -581,5 +585,41 @@
     "saved": "Catalog saved",
     "empty": "No tests in the catalog yet.",
     "errorSave": "Could not save. Please try again."
+  },
+  "supplements": {
+    "title": "Supplement catalog",
+    "subtitle": "What your clinic offers (BR compounded formula and US purchase links).",
+    "listLabel": "Catalog items",
+    "empty": "No items yet.",
+    "addLabel": "Add item",
+    "name": "Name",
+    "namePlaceholder": "e.g. Magnesium glycinate",
+    "country": "Country",
+    "countryBR": "Brazil (formula)",
+    "countryUS": "US (link)",
+    "sourceLabel": "Source",
+    "defaultDosage": "Default dosage",
+    "dosagePlaceholder": "e.g. 1 capsule",
+    "form": "Form",
+    "formPlaceholder": "e.g. capsule, powder",
+    "sku": "SKU",
+    "buyUrl": "Buy link",
+    "buyUrlBrHint": "(not used for BR)",
+    "notes": "Notes",
+    "notesPlaceholder": "Optional",
+    "add": "Add",
+    "saving": "Saving…",
+    "saved": "Added",
+    "inactive": "inactive",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "buyLink": "Open link",
+    "source": {
+      "manipulacao_br": "Compounded (BR)",
+      "dfh": "Designs for Health",
+      "pure_encapsulations": "Pure Encapsulations",
+      "fullscript": "Fullscript",
+      "outro": "Other"
+    }
   }
 }

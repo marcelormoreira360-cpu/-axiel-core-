@@ -90,6 +90,10 @@
       "clinicalTests": {
         "title": "Testes clínicos",
         "text": "Bateria de testes presenciais aplicados nas sessões."
+      },
+      "supplements": {
+        "title": "Suplementos",
+        "text": "Catálogo de suplementos da clínica (fórmula BR / links US)."
       }
     }
   },
@@ -581,5 +585,41 @@
     "saved": "Catálogo salvo",
     "empty": "Nenhum teste no catálogo ainda.",
     "errorSave": "Não foi possível salvar. Tente novamente."
+  },
+  "supplements": {
+    "title": "Catálogo de suplementos",
+    "subtitle": "O que sua clínica oferece (fórmula manipulada BR e links de compra US).",
+    "listLabel": "Itens do catálogo",
+    "empty": "Nenhum item ainda.",
+    "addLabel": "Adicionar item",
+    "name": "Nome",
+    "namePlaceholder": "Ex.: Magnésio glicinato",
+    "country": "País",
+    "countryBR": "Brasil (fórmula)",
+    "countryUS": "EUA (link)",
+    "sourceLabel": "Origem",
+    "defaultDosage": "Dose padrão",
+    "dosagePlaceholder": "Ex.: 1 cápsula",
+    "form": "Forma",
+    "formPlaceholder": "Ex.: cápsula, pó",
+    "sku": "SKU",
+    "buyUrl": "Link de compra",
+    "buyUrlBrHint": "(não usado no BR)",
+    "notes": "Observações",
+    "notesPlaceholder": "Opcional",
+    "add": "Adicionar",
+    "saving": "Salvando…",
+    "saved": "Adicionado",
+    "inactive": "inativo",
+    "activate": "Ativar",
+    "deactivate": "Desativar",
+    "buyLink": "Abrir link",
+    "source": {
+      "manipulacao_br": "Manipulação (BR)",
+      "dfh": "Designs for Health",
+      "pure_encapsulations": "Pure Encapsulations",
+      "fullscript": "Fullscript",
+      "outro": "Outro"
+    }
   }
 }

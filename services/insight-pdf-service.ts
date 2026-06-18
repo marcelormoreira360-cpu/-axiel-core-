@@ -1,5 +1,6 @@
 import PDFDocument from "pdfkit";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroSecaoItem } from "@/lib/types";
+import type { PatientSupplementRecommendation } from "@/services/supplement-service";
 
 // ── Identidade visual ────────────────────────────────────────────────────────
 const GRAD = ["#9A86B8", "#5E8AA0", "#3E5C8A"]; // barra superior (roxo → teal → azul)
@@ -163,6 +164,9 @@ export async function buildNeuroId360Pdf(opts: {
   output: AiInsightOutput;
   patientName?: string | null;
   clinic?: ClinicBrand;
+  /** Recomendação de suplementos APROVADA (manual). Quando presente, vira o
+   *  Doc 3 e substitui o protocolo gerado pela IA (decisão de produto). */
+  approvedSupplement?: PatientSupplementRecommendation | null;
 }): Promise<Buffer> {
   const { output, patientName } = opts;
   const brand: ClinicBrand = opts.clinic ?? {};
@@ -171,6 +175,7 @@ export async function buildNeuroId360Pdf(opts: {
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
+  const approved = opts.approvedSupplement ?? null;
 
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
@@ -256,8 +261,33 @@ export async function buildNeuroId360Pdf(opts: {
       .text(plano.observacao ?? "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.", MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
   }
 
-  // ── DOCUMENTO 3 — Protocolo de Suplementação ───────────────────────────────
-  if (sup && (sup.itens.length > 0 || sup.observacoes_gerais.length > 0)) {
+  // ── DOCUMENTO 3 — Suplementação ────────────────────────────────────────────
+  // Precedência: se houver recomendação MANUAL APROVADA, ela é o Doc 3 e
+  // substitui o protocolo gerado pela IA (decisão de produto).
+  if (approved && approved.items.length > 0) {
+    doc.addPage();
+    const subtitle = approved.output_type === "br_formula"
+      ? "Fórmula Manipulada — Aprovada pelo Profissional"
+      : "Suplementos Recomendados — Aprovada pelo Profissional";
+    docTitle(doc, "Protocolo de Suplementação", subtitle);
+    doc.font("Times-Italic").fontSize(9).fillColor("#9ca3af")
+      .text("Uso profissional. Não substitui avaliação/medicação. Não trata nem cura.", MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+    doc.moveDown(0.5);
+    if (approved.rationale_summary) paragraph(doc, approved.rationale_summary);
+    approved.items.forEach((it) => {
+      ensureSpace(doc, 70);
+      doc.font("Times-Bold").fontSize(11).fillColor(INK).text(it.name, MARGIN, doc.y, { width: CONTENT_W });
+      const detail = [it.dosage, it.timing, it.duration].filter(Boolean).join(" · ");
+      if (detail) paragraph(doc, detail);
+      if (it.rationale) paragraph(doc, it.rationale);
+      if (it.buy_url) {
+        doc.font("Times-Roman").fontSize(9.5).fillColor("#3E5C8A")
+          .text(it.buy_url, MARGIN, doc.y, { width: CONTENT_W, link: it.buy_url, underline: true });
+        doc.moveDown(0.2);
+      }
+      doc.moveDown(0.2);
+    });
+  } else if (sup && (sup.itens.length > 0 || sup.observacoes_gerais.length > 0)) {
     doc.addPage();
     docTitle(doc, "Protocolo de Suplementação", "Sugestões para Validação Profissional");
     doc.font("Times-Italic").fontSize(9).fillColor("#9a7b2f")

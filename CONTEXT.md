@@ -1,7 +1,40 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 16/06/2026 (15)
+> Atualizado em: 16/06/2026 (16)
+
+## ✅ Feature de Suplementos — MVP (brief `_BRIEF_SUPLEMENTOS.md`) (16/06/2026)
+
+Módulo multi-tenant: catálogo por clínica + recomendação manual por paciente → saída
+**fórmula BR** / **links US** → seção Doc 3 do relatório Neuro ID 360. **Corte MVP** (sem IA;
+a sugestão por IA é MVP+). Reaproveita treatment_plans, relatório 360 e branding.
+
+- **Migrations `088_supplements.sql` + `089_supplements_fk_indexes.sql` APLICADAS**:
+  `supplement_catalog` (catálogo por clínica: source manipulacao_br/dfh/pure_encapsulations/
+  fullscript/outro, country BR/US, buy_url, default_dosage, form…), `patient_supplement_recommendations`
+  (status draft→reviewed→approved→sent, output_type br_formula/us_link, source_of_suggestion,
+  report_id→ai_insights, approved_at/reviewed_by), `patient_supplement_recommendation_items`
+  (itens livres ou do catálogo). **RLS por clinic_id** (can_access_clinic/can_write_clinic_data);
+  **itens herdam via EXISTS no parent** (recommendation_id). Policies verificadas (12 no total).
+- **`services/supplement-service.ts`**: CRUD do catálogo; CRUD recomendação + itens;
+  `approveSupplementRecommendation` (gate humano — carimba approved/reviewed_by/approved_at);
+  `getApprovedSupplementRecommendation` (usada no relatório 360).
+- **Settings**: `/settings/supplements` (page + actions + `supplement-catalog-form.tsx`),
+  guard owner/manager/admin; card no hub (`settings.hub.items.supplements`). US exige buy_url; BR não.
+- **Ficha do paciente**: `components/patient-supplements-panel.tsx` — criar recomendação (BR/US),
+  adicionar itens (livre ou puxando do catálogo), **aprovar** (gate), e **saída** inline
+  (fórmula BR timbrada-preview / lista de links US). **Disclaimer de compliance sempre visível**
+  ("Uso profissional. Não substitui avaliação/medicação. Não trata nem cura."). Plugado em
+  `app/patients/[id]/page.tsx` após o painel de prescrições.
+- **Relatório Neuro ID 360 (Doc 3)**: `buildNeuroId360Pdf` ganhou `approvedSupplement?`;
+  **decisão de produto: a recomendação manual aprovada SUBSTITUI o protocolo da IA** no Doc 3
+  (quando existir; senão mantém a IA). A rota `reports/clinical-insight/pdf` carrega
+  `getApprovedSupplementRecommendation` e passa ao gerador.
+- **IA = MVP+ (NÃO neste corte)**: nada de auto-sugestão/auto-aprovação. O fluxo manual já tem
+  o gate de aprovação humana; nada vai ao paciente sem `status=approved`.
+- Validado: tsc confiável **0 erros**; verify:i18n **39 namespaces, paridade OK**; RLS conferida;
+  FKs indexadas. **Pendência operacional**: deploy dos `.ts` na Vercel (088/089 já em produção).
+  **Antes do commit**: rodar `/code-review --fix` (comando do Claude Code).
 
 ## ✅ Jornada do Paciente — Etapas 1, 3 e 4 (extensão, sem duplicar) (16/06/2026)
 
