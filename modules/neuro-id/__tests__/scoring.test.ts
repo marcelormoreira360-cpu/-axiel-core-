@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DEFAULT_CATALOG } from "../catalog";
-import { scoreItem, computeNeuroId, toEquilibrium, asScorable, type ScorableItem } from "../scoring";
+import { scoreItem, computeNeuroId, toEquilibrium, asScorable, pillarContributions, type ScorableItem } from "../scoring";
 import { bandForItem, bandForDysfunction, labelFor } from "../bands";
 
 const items = asScorable(DEFAULT_CATALOG);
@@ -73,16 +73,33 @@ describe("bands (semáforo)", () => {
     expect(bandForItem(5)?.key).toBe("tenso");
     expect(bandForItem(8)?.key).toBe("bloqueado");
   });
-  it("disfunção 0–100: ≤35 solto · 36–65 tenso · ≥66 bloqueado", () => {
-    expect(bandForDysfunction(20)?.key).toBe("solto");
-    expect(bandForDysfunction(50)?.key).toBe("tenso");
-    expect(bandForDysfunction(80)?.key).toBe("bloqueado");
+  it("disfunção 0–100: 0–30 solto · 31–69 tenso · 70–100 bloqueado (limites)", () => {
+    expect(bandForDysfunction(30)?.key).toBe("solto");
+    expect(bandForDysfunction(31)?.key).toBe("tenso");
+    expect(bandForDysfunction(69)?.key).toBe("tenso");
+    expect(bandForDysfunction(70)?.key).toBe("bloqueado");
     expect(bandForDysfunction(null)).toBeNull();
   });
   it("labelFor muda a palavra por tipo de item", () => {
     expect(labelFor("bloqueado", "mobility")).toBe("Bloqueado");
     expect(labelFor("tenso", "pain")).toBe("Moderada");
     expect(labelFor("solto", "symptom")).toBe("Baixo");
+  });
+});
+
+describe("pillarContributions (soma 100%)", () => {
+  it("reparte proporcionalmente ao total de disfunção", () => {
+    const c = pillarContributions({ fisico: 20, bioquimico: 30, emocional: 50 });
+    expect(Math.round(c.fisico!)).toBe(20);
+    expect(Math.round(c.bioquimico!)).toBe(30);
+    expect(Math.round(c.emocional!)).toBe(50);
+    const total = (c.fisico ?? 0) + (c.bioquimico ?? 0) + (c.emocional ?? 0);
+    expect(Math.round(total)).toBe(100);
+  });
+  it("pilar sem dado → null; total zero → tudo null", () => {
+    const c = pillarContributions({ fisico: 40, bioquimico: null, emocional: 60 });
+    expect(c.bioquimico).toBeNull();
+    expect(Math.round((c.fisico ?? 0) + (c.emocional ?? 0))).toBe(100);
   });
 });
 

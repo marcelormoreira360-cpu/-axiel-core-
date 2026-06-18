@@ -3,7 +3,7 @@
   "viewPdf": "Ver PDF",
   "newAssessment": "Nova avaliação",
   "disclaimer": "Mapa funcional de bem-estar — não é diagnóstico de doença nem promessa de cura. Indica pontos que merecem acompanhamento profissional.",
-  "indexLabel": "Índice geral",
+  "indexLabel": "Índice Bio · grau de disfunção",
   "equilibrium": "equilíbrio",
   "priorityLabel": "Ponto de atenção",
   "partialHint": "Leitura parcial — inclua os dados pendentes (ex.: exames) para o mapa completo.",
@@ -62,5 +62,9 @@
   "segmentReview": "Revise os valores extraídos antes de calcular.",
   "qrmLabel": "QRM (texto completo)",
   "qsnaLabel": "Q-SNA (texto completo)",
-  "segmentNote": "A IA só extrai números do documento — não inventa. Itens não encontrados ficam pendentes."
+  "segmentNote": "A IA só extrai números do documento — não inventa. Itens não encontrados ficam pendentes.",
+  "goalLower": "meta: baixar a cada reavaliação",
+  "startHere": "Comece aqui",
+  "legendRanges": "0–30 em função e equilíbrio · 31–69 disfunção/desequilíbrio crônico · 70–100 grande disfunção (possíveis crises agudas)",
+  "contribution": "{pct}% do total"
 }

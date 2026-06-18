@@ -1,7 +1,22 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (19)
+> Atualizado em: 18/06/2026 (20)
+
+## 🟡 Mapa Bio³ — Revisão: display DISFUNÇÃO + ordem fixa + contribuição (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
+
+> ⚠️ Nada em prod / sem deploy (aguarda OK). `tsc` 0 erros; verify:i18n 40 namespaces. Só mudança de display/lógica — **sem migration nova** (scores já são disfunção; catálogo §2 inalterado).
+> Briefs atualizados: `_BRIEF_BIO3_AJUSTE_PILARES.md` §1.5 + `_BRIEF_BIO3_VISUAL.md`.
+
+- **DISPLAY trocado de equilíbrio → GRAU DE DISFUNÇÃO** (maior = pior; meta = baixar). `toEquilibrium` deixou de ser usado na UI/PDF (mantido no módulo). Painel e PDF mostram o número de disfunção direto.
+- **Faixas (bands.ts) ajustadas**: 0–30 solto/verde · 31–69 tenso/âmbar · 70–100 bloqueado/vermelho (eram 35/65). Cor = faixa ABSOLUTA do número.
+- **Ordem fixa da pirâmide** (base→topo): Bioemocional (origem) / Bioquímico (ponte) / Biomecânico (consequência) — antes era o inverso.
+- **Índice = número-herói**: grande (40–48px), "Índice Bio · grau de disfunção" + banda + "meta: baixar". Prioridade = pilar de MAIOR disfunção ("Comece aqui").
+- **Contribuição relativa** por pilar (soma 100%): `pillarContributions()` em `scoring.ts` + exibida no painel/PDF (mede por onde começar).
+- **Legenda** das 3 faixas (0–30 / 31–69 / 70–100) na tela e no PDF.
+- Testes `scoring.test.ts` atualizados (limites 30/31/69/70 + contribuição). ⚠️ rodar `npm test` local.
+- **FASE 2 (IA segmentadora) inalterada** — segue funcionando (QRM/Q-SNA → rascunho → revisão → motor; qsna_total peso 0.5).
+- **Pendência (OK)**: commit/push + deploy. Catálogo já está vazio em prod (092 aplicada antes) → re-semeia codes §2 na 1ª avaliação pós-deploy.
 
 ## 🟡 Mapa Bio³ — Ajuste de pilares + escala unificada + semáforo + IA segmentadora (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 

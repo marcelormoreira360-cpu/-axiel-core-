@@ -7,6 +7,7 @@ import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
+import { pillarContributions } from "@/modules/neuro-id/scoring";
 import { createNeuroIdAssessmentAction, segmentInstrumentsAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
@@ -19,7 +20,7 @@ export type NeuroIdMapView = {
 } | null;
 
 const PILLARS: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
-const eq = (d: number | null) => (d === null ? null : Math.round(100 - d));
+const round = (d: number | null) => (d === null ? null : Math.round(d));
 
 const BAND_ICON: Record<BandIconKey, typeof CheckCircle2> = {
   check: CheckCircle2, alert: AlertTriangle, ban: Ban,
@@ -43,12 +44,14 @@ function BandPill({ band, label, className = "" }: { band: Band; label: string; 
   );
 }
 
-// ── Pirâmide (faixas coloridas pela banda do eixo) ───────────────────────────
-function NeuroPyramid({ data }: { data: { dys: number | null; balance: number | null; isPriority: boolean }[] }) {
+// ── Pirâmide (faixas coloridas pela banda do eixo; exibe GRAU DE DISFUNÇÃO) ───
+// Ordem fixa base→topo: Bioemocional (origem) / Bioquímico (ponte) / Biomecânico (consequência).
+// data[0] = topo (Biomecânico), data[2] = base (Bioemocional).
+function NeuroPyramid({ data }: { data: { dys: number | null; isPriority: boolean }[] }) {
   const polys = ["120,10 150,54 90,54", "90,54 150,54 182,98 58,98", "58,98 182,98 214,142 26,142"];
   const cy = [46, 84, 128];
   return (
-    <svg viewBox="0 0 240 152" className="w-[190px] h-[120px] shrink-0" role="img" aria-label="Pirâmide Bio³">
+    <svg viewBox="0 0 240 152" className="w-[190px] h-[120px] shrink-0" role="img" aria-label="Pirâmide Bio³ — grau de disfunção">
       {data.map((d, i) => {
         const band = bandForDysfunction(d.dys);
         const fill = band ? band.colors.fill : "#E9E7E0";
@@ -57,7 +60,7 @@ function NeuroPyramid({ data }: { data: { dys: number | null; balance: number | 
           <g key={i}>
             <polygon points={polys[i]} fill={fill} stroke="#fff" strokeWidth={2} />
             <text x={120} y={cy[i]} textAnchor="middle" dominantBaseline="middle" fontSize={14} fontWeight={700} fill={txt}>
-              {d.balance === null ? "—" : `${d.balance}%`}
+              {d.dys === null ? "—" : `${Math.round(d.dys)}%`}
             </text>
             {d.isPriority && <text x={120} y={cy[i] - 14} textAnchor="middle" fontSize={11} fill={txt}>★</text>}
           </g>
@@ -99,11 +102,13 @@ export function PatientNeuroIdPanel({
     bioquimico: map?.bioquimico_pct ?? null,
     emocional: map?.emocional_pct ?? null,
   };
-  const generalBalance = eq(map?.indice_geral ?? null);
+  const generalDys = round(map?.indice_geral ?? null);
   const indexBand = bandForDysfunction(map?.indice_geral ?? null);
+  const contrib = pillarContributions(pillarDys);
 
-  const pyramidData = (["emocional", "bioquimico", "fisico"] as NeuroPillar[]).map((p) => ({
-    dys: pillarDys[p], balance: eq(pillarDys[p]), isPriority: map?.priority_pillar === p,
+  // Pirâmide topo→base: Biomecânico (topo) / Bioquímico (meio) / Bioemocional (base).
+  const pyramidData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
+    dys: pillarDys[p], isPriority: map?.priority_pillar === p,
   }));
 
   function bandLabel(band: Band | null, itemType: BandItemType): string {
@@ -141,26 +146,28 @@ export function PatientNeuroIdPanel({
             <NeuroPyramid data={pyramidData} />
             <div className="text-center shrink-0">
               <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em]">{t("indexLabel")}</p>
-              <p className="text-[26px] font-semibold leading-none mt-[2px]" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
-                {generalBalance === null ? "—" : `${generalBalance}%`}
+              <p className="text-[40px] font-semibold leading-none mt-[2px]" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
+                {generalDys === null ? "—" : `${generalDys}%`}
               </p>
-              {indexBand && <span className="mt-[4px] inline-block"><BandPill band={indexBand} label={bandLabel(indexBand, "axis")} /></span>}
+              {indexBand && <span className="mt-[5px] inline-block"><BandPill band={indexBand} label={bandLabel(indexBand, "axis")} /></span>}
+              <p className="text-[9px] text-[#A09E98] mt-[3px]">{t("goalLower")}</p>
             </div>
             <div className="flex-1 min-w-0">
               {map.priority_pillar && (
-                <p className="text-[12px] text-[#0F1A2E]"><span className="font-medium">{t("priorityLabel")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
+                <p className="text-[12px] text-[#0F1A2E]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
               )}
               {map.is_partial && (
                 <p className="text-[11px] text-[#C77D17] flex items-center gap-1 mt-[3px]"><AlertCircle className="h-3 w-3" /> {t("partialHint")}</p>
               )}
-              <p className="text-[10px] text-[#A09E98] mt-[6px]">{t("band.legend")}</p>
+              <p className="text-[10px] text-[#A09E98] mt-[6px] leading-snug">{t("legendRanges")}</p>
             </div>
           </div>
 
-          {/* Eixos com banda (cor + rótulo + ícone) */}
-          {PILLARS.map((p) => {
+          {/* Eixos com banda (cor + rótulo + ícone) — exibe GRAU DE DISFUNÇÃO */}
+          {(["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
             const band = bandForDysfunction(pillarDys[p]);
-            const balance = eq(pillarDys[p]);
+            const disf = round(pillarDys[p]);
+            const share = round(contrib[p]);
             return (
               <div key={p}>
                 <div className="flex items-center justify-between mb-[3px]">
@@ -169,15 +176,16 @@ export function PatientNeuroIdPanel({
                     {map.priority_pillar === p && <span className="ml-[6px] text-[10px] text-[#991B1B]">★</span>}
                   </span>
                   <span className="flex items-center gap-2">
+                    {share !== null && <span className="text-[10px] text-[#A09E98]">{t("contribution", { pct: share })}</span>}
                     {band && <BandPill band={band} label={bandLabel(band, "axis")} />}
                     <span className="text-[12px] font-semibold" style={{ color: band?.colors.text ?? "#A09E98" }}>
-                      {balance === null ? "—" : `${balance}%`}
+                      {disf === null ? "—" : `${disf}%`}
                     </span>
                   </span>
                 </div>
                 <div className="h-[7px] bg-[#F4F3EF] rounded-full overflow-hidden">
                   <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${balance ?? 0}%`, background: band?.colors.stroke ?? "#D3D1C7" }} />
+                    style={{ width: `${disf ?? 0}%`, background: band?.colors.stroke ?? "#D3D1C7" }} />
                 </div>
               </div>
             );

@@ -85,9 +85,27 @@ export type NeuroIdResult = {
   priorityPillar: NeuroPillar | null;
   isPartial: boolean;
   scoredItems: ScoredItem[];
+  /** Contribuição relativa de cada pilar ao total de disfunção (soma 100%). */
+  contributions: Record<NeuroPillar, number | null>;
 };
 
 const PILLARS: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
+
+/**
+ * Contribuição relativa de cada pilar ao total de disfunção (soma 100% entre os
+ * pilares com valor). Diz QUAL está pior / por onde começar.
+ */
+export function pillarContributions(
+  dys: Record<NeuroPillar, number | null>,
+): Record<NeuroPillar, number | null> {
+  const total = PILLARS.reduce((s, p) => s + (dys[p] ?? 0), 0);
+  const out = { fisico: null, bioquimico: null, emocional: null } as Record<NeuroPillar, number | null>;
+  if (total <= 0) return out;
+  for (const p of PILLARS) {
+    out[p] = dys[p] === null ? null : ((dys[p] as number) / total) * 100;
+  }
+  return out;
+}
 
 function weightedAvg(pairs: { value: number; weight: number }[]): number | null {
   const totalW = pairs.reduce((s, p) => s + p.weight, 0);
@@ -148,7 +166,13 @@ export function computeNeuroId(
     available.length < PILLARS.length ||
     PILLARS.some((p) => pillars[p].itemsMissing > 0);
 
-  return { pillars, indiceGeral, priorityPillar, isPartial, scoredItems };
+  const contributions = pillarContributions({
+    fisico: pillars.fisico.dysfunction,
+    bioquimico: pillars.bioquimico.dysfunction,
+    emocional: pillars.emocional.dysfunction,
+  });
+
+  return { pillars, indiceGeral, priorityPillar, isPartial, scoredItems, contributions };
 }
 
 /** Converte disfunção (0–100) em equilíbrio para exibição ao paciente. */

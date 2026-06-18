@@ -9,6 +9,7 @@
 import PDFDocument from "pdfkit";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
+import { pillarContributions } from "@/modules/neuro-id/scoring";
 
 const GRAD = ["#9A86B8", "#5E8AA0", "#3E5C8A"];
 const INK = "#1f2937";
@@ -44,12 +45,13 @@ const PILLAR_ASSESSED: Record<NeuroPillar, string> = {
   emocional: "Respostas autonômicas (SNA), relato emocional, sono e questionários funcionais.",
 };
 
-const eq = (d: number | null) => (d === null ? null : Math.round(100 - d));
-function band(equilibrium: number | null): string {
-  if (equilibrium === null) return "aguardando dados para leitura completa";
-  if (equilibrium >= 70) return "em bom equilíbrio funcional";
-  if (equilibrium >= 45) return "merece acompanhamento";
-  return "ponto de maior atenção — sugere priorizar o cuidado";
+const round = (d: number | null) => (d === null ? null : Math.round(d));
+// Texto por faixa de DISFUNÇÃO (maior = pior).
+function band(dysfunction: number | null): string {
+  if (dysfunction === null) return "aguardando dados para leitura completa";
+  if (dysfunction <= 30) return "em função e equilíbrio";
+  if (dysfunction <= 69) return "em disfunção e desequilíbrio crônico";
+  return "em grande disfunção e desequilíbrio (possíveis crises agudas)";
 }
 
 async function fetchLogo(url?: string | null): Promise<Buffer | null> {
@@ -94,27 +96,28 @@ function paragraph(doc: Doc, text?: string | null) {
   doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED).text(text, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 3 });
   doc.moveDown(0.4);
 }
-function equilibriumBar(doc: Doc, label: string, hint: string, dysfunction: number | null, isPriority: boolean) {
+function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: number | null, isPriority: boolean, share: number | null) {
   ensureSpace(doc, 50);
-  const band = bandForDysfunction(dysfunction);
-  const balance = eq(dysfunction);
-  const color = band ? band.colors.stroke : "#D3D1C7";
-  const textColor = band ? band.colors.text : MUTED;
-  const bandWord = band ? labelFor(band.key, "axis") : "—";
+  const bd = bandForDysfunction(dysfunction);
+  const disf = round(dysfunction);
+  const color = bd ? bd.colors.stroke : "#D3D1C7";
+  const textColor = bd ? bd.colors.text : MUTED;
+  const bandWord = bd ? labelFor(bd.key, "axis") : "—";
+  const shareTxt = share === null ? "" : `  ·  ${Math.round(share)}% do total`;
   const y = doc.y;
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
-  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${isPriority ? "  ★ ponto de atenção" : ""}`);
-  const pct = balance ?? 0;
+  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ★ comece aqui" : ""}`);
+  const pct = disf ?? 0;
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
   doc.roundedRect(MARGIN, barY, barW, 8, 4).fill("#EFEDE7");
-  if (balance !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
-  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(balance === null ? "—" : `${balance}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
+  if (disf !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
+  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
   doc.y = barY + 18;
 }
 
-// Pirâmide Bio³: 3 faixas (ápice → base), coloridas pelo % de equilíbrio.
-// bands na ordem [ápice, meio, base] = [emocional, bioquimico, fisico].
+// Pirâmide Bio³: 3 faixas coloridas pela banda de DISFUNÇÃO.
+// Ordem fixa [ápice, meio, base] = [Biomecânico, Bioquímico, Bioemocional].
 function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: boolean }[]) {
   ensureSpace(doc, 150);
   const cx = PAGE_W / 2;
@@ -130,13 +133,13 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   const centersY = [y0 + 30, y0 + 60, y0 + 100];
   doc.lineWidth(2);
   bands.forEach((b, i) => {
-    const band = bandForDysfunction(b.dysfunction);
-    const balance = eq(b.dysfunction);
-    const fill = band ? band.colors.fill : "#E9E7E0";
-    const txt = band ? band.colors.text : "#9ca3af";
+    const bd = bandForDysfunction(b.dysfunction);
+    const disf = round(b.dysfunction);
+    const fill = bd ? bd.colors.fill : "#E9E7E0";
+    const txt = bd ? bd.colors.text : "#9ca3af";
     doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
     doc.font("Helvetica-Bold").fontSize(13).fillColor(txt)
-      .text(balance === null ? "—" : `${balance}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
+      .text(disf === null ? "—" : `${disf}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
     if (b.isPriority) {
       doc.font("Helvetica").fontSize(10).fillColor(txt).text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
     }
@@ -178,22 +181,24 @@ export async function buildNeuroIdMapPdf(opts: {
   doc.on("pageAdded", () => { decorate(); resetBody(doc); });
   resetBody(doc);
 
-  // ── Página 1 — pirâmide / índice / ponto de atenção ──
-  docTitle(doc, "Mapa Bio³", "Índice Neuro ID — equilíbrio funcional por eixo");
+  const contrib = pillarContributions(dysByPillar);
+
+  // ── Página 1 — índice (herói) / pirâmide / ponto de atenção ──
+  docTitle(doc, "Mapa Bio³", "Índice Bio — grau de disfunção por eixo (meta: baixar)");
   if (opts.patientName) { doc.font("Times-Roman").fontSize(11).fillColor(MUTED).text(`Paciente: ${opts.patientName}`, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.4); }
 
-  const generalBalance = eq(map.indice_geral);
+  const generalDys = round(map.indice_geral);
   const indexBand = bandForDysfunction(map.indice_geral);
-  sectionTitle(doc, "Índice Geral de Equilíbrio");
-  doc.font("Times-Bold").fontSize(30).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
-    .text(generalBalance === null ? "—" : `${generalBalance}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  sectionTitle(doc, "Índice Bio — Grau de Disfunção");
+  doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
+    .text(generalDys === null ? "—" : `${generalDys}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
   if (indexBand) {
     doc.font("Times-Italic").fontSize(11).fillColor(indexBand.colors.text)
-      .text(labelFor(indexBand.key, "axis"), MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
+      .text(`${labelFor(indexBand.key, "axis")} — ${band(map.indice_geral)}`, MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
   }
   doc.moveDown(0.3);
   if (map.priority_pillar) {
-    paragraph(doc, `Ponto de atenção principal: ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}). É o eixo de menor equilíbrio e onde o cuidado tende a gerar mais resultado.`);
+    paragraph(doc, `Comece aqui: ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}). É o eixo de MAIOR disfunção e onde o cuidado tende a gerar mais resultado.`);
   }
   if (map.is_partial) {
     doc.font("Times-Italic").fontSize(9.5).fillColor("#9a7b2f").text("Leitura parcial — alguns dados (ex.: exames) ainda não foram incluídos. Recomenda-se complementar a avaliação.", MARGIN, doc.y, { width: CONTENT_W });
@@ -202,22 +207,22 @@ export async function buildNeuroIdMapPdf(opts: {
 
   sectionTitle(doc, "Os 3 Eixos (Bio³)");
   drawPyramid(doc, [
-    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
-    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
     { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
+    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
   ]);
-  for (const p of PILLARS) equilibriumBar(doc, PILLAR_LABEL[p], PILLAR_HINT[p], dysByPillar[p], map.priority_pillar === p);
+  for (const p of PILLARS) dysfunctionBar(doc, PILLAR_LABEL[p], PILLAR_HINT[p], dysByPillar[p], map.priority_pillar === p, contrib[p]);
   doc.moveDown(0.2);
-  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("Legenda: Solto · Tenso · Bloqueado", MARGIN, doc.y, { width: CONTENT_W });
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("Legenda: 0–30 em função (Solto) · 31–69 disfunção crônica (Tenso) · 70–100 grande disfunção (Bloqueado)", MARGIN, doc.y, { width: CONTENT_W });
 
   // ── Página 2 — por eixo: o que foi avaliado / o que revela ──
   doc.addPage();
   docTitle(doc, "Leitura por Eixo", "O que foi avaliado e o que sugere");
   for (const p of PILLARS) {
-    const balance = eq(dysByPillar[p]);
+    const disf = round(dysByPillar[p]);
     sectionTitle(doc, `${PILLAR_LABEL[p]} — ${PILLAR_HINT[p]}`);
     paragraph(doc, `O que foi avaliado: ${PILLAR_ASSESSED[p]}`);
-    paragraph(doc, `O que sugere: este eixo está ${band(balance)}${balance !== null ? ` (equilíbrio ${balance}%)` : ""}.`);
+    paragraph(doc, `O que sugere: este eixo está ${band(dysByPillar[p])}${disf !== null ? ` (disfunção ${disf}%)` : ""}.`);
   }
 
   // ── Página 3 — plano amarrado aos eixos + próximos passos ──

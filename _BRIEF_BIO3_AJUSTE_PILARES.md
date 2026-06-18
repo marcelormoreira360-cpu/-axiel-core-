@@ -13,6 +13,22 @@
   - **Input numérico 0–10** (precisão do cálculo) **+ faixa exibida como rótulo/cor** na tela e no relatório. (Opcional: modo "só faixa" como toggle.)
   - `disfuncao = valor × 10` (não há mais inversão `10−valor`).
 
+## 1.5 Ordem da pirâmide + modelo de pontuação (Marcelo 2026-06-18)
+**ORDEM FIXA (base → topo):**
+- BASE = **Bioemocional** (geralmente a ORIGEM do problema)
+- MEIO = **Bioquímico** (a PONTE que liga emocional ↔ físico)
+- TOPO = **Biomecânico** (geralmente CONSEQUÊNCIA do desequilíbrio dos outros dois — não é a origem)
+
+**DISPLAY ao paciente = GRAU DE DISFUNÇÃO 0–100 (maior = pior; sem inversão; meta = baixar).** Faixas: **0–30 em função e equilíbrio · 31–69 em disfunção e desequilíbrio crônico · 70–100 em grande disfunção e desequilíbrio, com possíveis crises agudas.**
+
+**PONTUAÇÃO (3 números por avaliação, todos em disfunção):**
+1. **Score setorial por pilar (0–100)** — mede a evolução de CADA pilar (meta: baixar).
+2. **Contribuição relativa de cada pilar** (% do total; soma 100%) — diz QUAL está pior e POR ONDE COMEÇAR.
+3. **Índice geral (0–100)** — combinação dos três; número-herói (meta: baixar).
+→ Permite mensurar melhora **setorizada** (cada pilar) e **geral** (índice).
+
+**COR (semáforo) = FAIXA ABSOLUTA do número:** 0–30 verde (em função e equilíbrio) · 31–69 âmbar (em disfunção e desequilíbrio crônico) · 70–100 vermelho (em grande disfunção e desequilíbrio, com possíveis crises agudas). **Prioridade ("comece aqui") = pilar de MAIOR disfunção.** Banda solto/tenso/bloqueado também como rótulo+ícone. (Supersede a ideia anterior de cor relativa e de exibir equilíbrio.)
+
 ## 2. Mapeamento corrigido (catalog.ts — substituir)
 ### Biomecânico — TODOS `higher_worse` (escala restrição solto/tenso/bloqueado, exceto onde indicado)
 | code | label | faixa |
@@ -80,4 +96,21 @@ Adicionar um serviço (ex.: `modules/neuro-id/segment-instruments.ts` + action) 
 - [ ] `/code-review --fix` limpo.
 
 ## 7. Kickoff (cole na sessão do repo do Core)
-> "Leia CONTEXT.md, este _BRIEF_BIO3_AJUSTE_PILARES.md e o _BRIEF_BIO3_VISUAL.md. FASE 1 (determinística, faça primeiro): aplique a ESCALA UNIFICADA (§1 — tudo 0–10 higher_worse; faixas solto/tenso/bloqueado p/ mobilidade, leve/mod/intensa p/ dor, baixo/mod/alto p/ resto; input numérico + faixa como rótulo/cor); corrija `modules/neuro-id/catalog.ts` com o mapeamento da §2; aplique o sistema de cores semáforo do _BRIEF_BIO3_VISUAL.md (util bandFor(), cor+rótulo+ícone na pirâmide, índice, chips e PDF — acessível); ajuste o form de entrada (§5, mostrando a faixa) e atualize os testes de scoring — rode e deixe verde. FASE 2: implemente a IA segmentadora da §3 (parser de QRM e Q-SNA → sub-scores estruturados → revisão humana → motor calcula), com o overlap do Q-SNA da §4 (qsna_total peso 0.5). Não invente %; IA só extrai, humano revisa. Pergunte só em decisão ambígua. Ao fim, /code-review --fix e me mostre o que mudou. Não faça deploy sem meu OK."
+> "Leia CONTEXT.md, o _BRIEF_BIO3_AJUSTE_PILARES.md e o _BRIEF_BIO3_VISUAL.md.
+> FASE 1 (determinística, faça primeiro):
+> (a) ORDEM FIXA da pirâmide base→topo = Bioemocional (origem) / Bioquímico (ponte) / Biomecânico (consequência) — §1.5.
+> (b) ESCALA UNIFICADA §1: tudo 0–10 higher_worse; faixas solto/tenso/bloqueado (mobilidade), leve/mod/intensa (dor), baixo/mod/alto (resto); input numérico + faixa. DISPLAY ao paciente = GRAU DE DISFUNÇÃO (maior=pior; 0–30 em função e equilíbrio / 31–69 disfunção e desequilíbrio crônico / 70–100 grande disfunção e desequilíbrio com possíveis crises agudas), NÃO equilíbrio.
+> (c) PONTUAÇÃO §1.5: score setorial 0–100 por pilar + contribuição relativa ao total (soma 100%) + índice geral 0–100.
+> (d) corrija modules/neuro-id/catalog.ts com o mapeamento §2.
+> (e) COR = faixa absoluta do número de disfunção (0–30 verde / 31–69 âmbar / 70–100 vermelho); prioridade "comece aqui" = pilar de maior disfunção — _BRIEF_BIO3_VISUAL.md, util bandFor() + cor+rótulo+ícone na pirâmide/índice/chips/PDF, acessível.
+> (f) ajuste o form de entrada §5; (g) atualize os testes e deixe verde.
+> FASE 2: IA segmentadora §3 (parser QRM+Q-SNA → sub-scores → revisão humana → motor calcula), overlap §4 (qsna_total peso 0.5).
+> Regras: a IA NÃO inventa %, só extrai; humano revisa; item não extraído = pendente (CTA). Pergunte só em decisão ambígua. Ao fim, /code-review --fix e me mostre o que mudou. NÃO faça deploy sem meu OK."
+
+## 8. Generalizar p/ outros questionários do Core (Marcelo perguntou)
+O motor é agnóstico à origem: a abstração é o `assessment_items_catalog` (pilar, direção, escala, peso, scoring_rule). Plugar qualquer questionário (intake enviado antes, Q-SNA, QRM, futuros):
+1. **Mapear os campos do questionário → codes do catálogo** (pilar + direção + escala + peso) — camada de "mapeamento de formulário".
+2. A **IA sugere o mapeamento** de um questionário novo (qual pergunta → qual pilar/direção); humano aprova uma vez.
+3. O questionário passa a **alimentar o Mapa Bio³ automaticamente** (mesma engine, mesmas cores).
+Opcional: questionário que meça outra coisa → mesmo padrão suporta **outros "mapas"** (eixos definidos por tipo de mapa). Começar plugando os existentes no Bio³; mapas alternativos depois.
+> Próximo passo prático: inventariar os formulários do Core (módulo Formulários/forms) e mapear cada pergunta aos 3 pilares.

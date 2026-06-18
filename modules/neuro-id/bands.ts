@@ -27,11 +27,11 @@ const BANDS: Record<BandKey, Band> = {
   bloqueado:  { key: "bloqueado",  icon: "ban",   colors: { fill: "#EFD7CC", stroke: "#C2643C", text: "#8A3216" } },
 };
 
-/** Banda a partir da DISFUNÇÃO 0–100 (≤35 solto · 36–65 tenso · ≥66 bloqueado). */
+/** Banda a partir da DISFUNÇÃO 0–100 (0–30 solto · 31–69 tenso · 70–100 bloqueado). */
 export function bandForDysfunction(dysfunction: number | null): Band | null {
   if (dysfunction === null || !Number.isFinite(dysfunction)) return null;
-  if (dysfunction <= 35) return BANDS.solto;
-  if (dysfunction <= 65) return BANDS.tenso;
+  if (dysfunction <= 30) return BANDS.solto;
+  if (dysfunction <= 69) return BANDS.tenso;
   return BANDS.bloqueado;
 }
 

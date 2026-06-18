@@ -2,13 +2,19 @@
 
 > Transforma a escala solto/tenso/bloqueado num sistema de cor (semáforo) usado no app, no relatório e no marketing. Mesma cor em todo lugar = coesão de marca.
 
+## Índice Bio = número-herói (norte do paciente)
+O **índice geral** é o elemento de MAIOR destaque visual: número grande no topo (ex.: 48px), com label "Índice Bio · grau de disfunção", colorido pela sua faixa + a palavra da faixa + a prioridade ("prioridade: Bioemocional"). A pirâmide entra ABAIXO, como o detalhamento dos 3 eixos. Mensagem: "este é o número que você acompanha BAIXAR a cada reavaliação" (maior = pior). Vale em tela, no PDF herói e na evolução (mostrar o índice antes→depois com seta de queda = melhora).
+
+## Ordem da pirâmide (fixa)
+Base→topo: **Bioemocional (origem) → Bioquímico (ponte) → Biomecânico (consequência)**. Ver `_BRIEF_BIO3_AJUSTE_PILARES.md` §1.5.
+
 ## Regra-mãe (semáforo)
-Banda por valor de DISFUNÇÃO. Cor = banda. (Display ao paciente é equilíbrio = 100 − disfunção; a banda já reflete isso.)
-| Banda | Item 0–10 | Eixo/Índice 0–100 (disfunção) | Equilíbrio | Cor | Ícone |
+**Display ao paciente = GRAU DE DISFUNÇÃO 0–100 (maior = pior; meta = baixar).** **Cor = faixa absoluta do número** (tabela abaixo). **Prioridade ("comece aqui") = pilar de maior disfunção.** Sempre cor + rótulo de texto + ícone (acessível, P&B-safe).
+| Banda | Item 0–10 | Disfunção 0–100 | Estado | Cor | Ícone |
 |---|---|---|---|---|---|
-| **Solto** | 0–3 | ≤ 35 | ≥ 65 | verde-sálvia | ti-circle-check |
-| **Tenso** | 4–6 | 36–65 | 35–64 | âmbar | ti-alert-triangle |
-| **Bloqueado** | 7–10 | ≥ 66 | < 35 | terracota | ti-ban |
+| **Solto** | 0–3 | 0–30 | em função e equilíbrio | verde-sálvia | ti-circle-check |
+| **Tenso** | 4–6 | 31–69 | em disfunção e desequilíbrio crônico | âmbar | ti-alert-triangle |
+| **Bloqueado** | 7–10 | 70–100 | em grande disfunção e desequilíbrio · possíveis crises agudas | terracota | ti-ban |
 
 Rótulo por tipo de item (a banda/cor é a mesma; muda só a palavra):
 - mobilidade/palpação → **solto / tenso / bloqueado**
