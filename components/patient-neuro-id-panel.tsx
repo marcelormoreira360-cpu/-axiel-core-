@@ -30,6 +30,35 @@ function balanceColor(equilibrium: number | null): string {
 const inputCls =
   "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56]/50 transition";
 
+// Pirâmide Bio³: 3 faixas (ápice = Bioemocional, meio = Bioquímico, base = Biomecânico),
+// coloridas pelo % de equilíbrio. Faixa do ponto de atenção recebe ★.
+function NeuroPyramid({ data }: { data: { pillar: NeuroPillar; balance: number | null; isPriority: boolean }[] }) {
+  const bands = [
+    { poly: "120,10 150,54 90,54", cx: 120, cy: 46 },         // ápice
+    { poly: "90,54 150,54 182,98 58,98", cx: 120, cy: 84 },   // meio
+    { poly: "58,98 182,98 214,142 26,142", cx: 120, cy: 128 },// base
+  ];
+  return (
+    <svg viewBox="0 0 240 152" className="w-[190px] h-[120px] shrink-0" role="img" aria-label="Pirâmide Bio³">
+      {data.map((d, i) => {
+        const b = bands[i];
+        const color = balanceColor(d.balance);
+        return (
+          <g key={d.pillar}>
+            <polygon points={b.poly} fill={color} stroke="#fff" strokeWidth={2} opacity={d.balance === null ? 0.35 : 1} />
+            <text x={b.cx} y={b.cy} textAnchor="middle" dominantBaseline="middle" fontSize={14} fontWeight={700} fill="#fff">
+              {d.balance === null ? "—" : `${d.balance}%`}
+            </text>
+            {d.isPriority && (
+              <text x={b.cx} y={b.cy - 14} textAnchor="middle" fontSize={11} fill="#fff">★</text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
 function PillarBar({ pillar, dysfunction, label, hint, isPriority }: {
   pillar: NeuroPillar; dysfunction: number | null; label: string; hint: string; isPriority: boolean;
 }) {
@@ -72,6 +101,13 @@ export function PatientNeuroIdPanel({
   };
   const generalBalance = eq(map?.indice_geral ?? null);
 
+  // Ordem das faixas da pirâmide: ápice → base.
+  const pyramidData = (["emocional", "bioquimico", "fisico"] as NeuroPillar[]).map((p) => ({
+    pillar: p,
+    balance: eq(pillarDys[p]),
+    isPriority: map?.priority_pillar === p,
+  }));
+
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
       <div className="flex items-center justify-between mb-[6px]">
@@ -107,7 +143,8 @@ export function PatientNeuroIdPanel({
       {/* Mapa (equilíbrio) */}
       {map ? (
         <div className="space-y-[12px]">
-          <div className="flex items-center gap-[14px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px]">
+          <div className="flex items-center gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px] flex-wrap">
+            <NeuroPyramid data={pyramidData} />
             <div className="text-center shrink-0">
               <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em]">{t("indexLabel")}</p>
               <p className="text-[26px] font-semibold leading-none mt-[2px]" style={{ color: balanceColor(generalBalance) }}>
