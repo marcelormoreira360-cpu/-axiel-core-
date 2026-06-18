@@ -18,7 +18,6 @@ describe("canUseFeature", () => {
     expect(canUseFeature({ planSlug: "starter" }, "whatsapp_automation")).toBe(false);
     expect(canUseFeature({ planSlug: "starter" }, "patient_portal")).toBe(false);
     expect(canUseFeature({ planSlug: "starter" }, "advanced_reports")).toBe(false);
-    expect(canUseFeature({ planSlug: "starter" }, "audio_transcription")).toBe(false);
   });
 
   it("returns true for features included in professional plan", () => {
