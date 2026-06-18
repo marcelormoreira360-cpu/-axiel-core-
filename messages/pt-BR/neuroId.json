@@ -1,0 +1,34 @@
+{
+  "title": "Mapa Bio³",
+  "viewPdf": "Ver PDF",
+  "newAssessment": "Nova avaliação",
+  "disclaimer": "Mapa funcional de bem-estar — não é diagnóstico de doença nem promessa de cura. Indica pontos que merecem acompanhamento profissional.",
+  "indexLabel": "Índice geral",
+  "equilibrium": "equilíbrio",
+  "priorityLabel": "Ponto de atenção",
+  "partialHint": "Leitura parcial — inclua os dados pendentes (ex.: exames) para o mapa completo.",
+  "empty": "Nenhuma avaliação ainda. Crie uma para gerar o Mapa Bio³.",
+  "formHint": "Preencha o que avaliou (0–10). O que ficar em branco entra como dado pendente.",
+  "optional": "opcional",
+  "medPlaceholder": "nº de medicações",
+  "yes": "Sim",
+  "no": "Não",
+  "compute": "Calcular Mapa",
+  "pillar": {
+    "fisico": "Biomecânico",
+    "bioquimico": "Bioquímico",
+    "emocional": "Bioemocional"
+  },
+  "pillarHint": {
+    "fisico": "corpo & movimento",
+    "bioquimico": "energia & química interna",
+    "emocional": "mente & equilíbrio"
+  },
+  "lab": {
+    "unknown": "Sem exame",
+    "normal": "Normal",
+    "leve": "Alteração leve",
+    "moderado": "Alteração moderada",
+    "alto": "Alteração alta"
+  }
+}

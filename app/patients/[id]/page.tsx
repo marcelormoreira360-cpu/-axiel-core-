@@ -19,6 +19,8 @@ import { PatientFunctionalExamsPanel } from "@/components/patient-functional-exa
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
 import { PatientSupplementsPanel } from "@/components/patient-supplements-panel";
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
+import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
+import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
@@ -115,6 +117,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const referralInfo = clinic?.id
     ? await getPatientReferralInfo(id, clinic.id, patient.referred_by_patient_id)
     : { referredByName: null, referred: [] as { id: string; full_name: string }[] };
+
+  // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
+  const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -284,6 +289,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           )}
         </div>
       )}
+
+      {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
+      <div className="mt-[18px]">
+        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} />
+      </div>
 
       {/* ── 3-column body ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-t-0 border-black/[.07] rounded-b-[12px] overflow-hidden mb-5">

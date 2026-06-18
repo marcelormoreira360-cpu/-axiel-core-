@@ -1,7 +1,36 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 16/06/2026 (17)
+> Atualizado em: 16/06/2026 (18)
+
+## 🟡 Mapa Bio³ / Índice Neuro ID — MVP (brief `_BRIEF_MAPA_NEURO_ID.md`) (16/06/2026) — NÃO APLICADO EM PROD
+
+> ⚠️ **Migration 091 NÃO foi aplicada em produção** (Marcelo pediu OK antes de qualquer deploy).
+> Código pronto e validado (tsc/i18n); aguardando OK para aplicar a migration.
+
+3 eixos: **fisico** (Biomecânico), **bioquimico** (Bioquímico), **emocional** (Bioemocional),
+conectados pelo SNA. Motor calcula **disfunção 0–100**; display = **equilíbrio (100 − disfunção)**;
+menor equilíbrio = prioridade.
+
+- **Migration `091_neuro_id_map.sql` (arquivo, NÃO aplicada)**: `assessment_items_catalog`
+  (item→pilar, direção, input_type, scoring_rule jsonb, weight; unique clinic_id+code),
+  `patient_assessments`, `patient_assessment_values`, `patient_neuro_id_scores`. RLS por
+  clinic_id; values/scores herdam via assessment_id (EXISTS no parent).
+- **Motor (puro)** `modules/neuro-id/`: `catalog.ts` (DEFAULT_CATALOG = mapa da seção 3, direção/pesos),
+  `scoring.ts` (`scoreItem` por input_type, `computeNeuroId` → pilares/índice/prioridade, trata
+  dado faltando = parcial + CTA, `toEquilibrium`), `__tests__/scoring.test.ts` (unit, roda no CI).
+- **Service** `services/neuro-id-service.ts`: `ensureClinicCatalog` (seed default por clínica),
+  `getNeuroIdCatalog`, `getLatestNeuroIdMap`, `createNeuroIdAssessment` (computa + grava values+scores).
+- **UI**: `components/patient-neuro-id-panel.tsx` (mapa em **equilíbrio**: índice geral + 3 eixos +
+  prioridade + parcial/CTA; formulário de avaliação por item) na ficha (após case summary/indicação).
+  Action `app/patients/[id]/neuro-id/actions.ts` (parse `item__<code>` + posse do paciente).
+- **PDF herói** `services/neuro-id-pdf-service.ts` (timbrado, 3 págs: pirâmide/índice/atenção →
+  leitura por eixo → plano amarrado aos eixos + disclaimer) + rota `app/api/patients/[id]/neuro-id/pdf`.
+- **i18n** namespace novo **`neuroId`** (40 namespaces) + registrado em `i18n/request.ts`.
+- Validado: tsc **0 erros**; verify:i18n **40 namespaces, paridade OK**.
+- **Pendências (aguardando OK)**: aplicar migration 091 em prod; rodar `/code-review --fix`
+  (comando do Claude Code, indisponível no Cowork — revisão feita manualmente); deploy Vercel.
+- **MVP+ (não feito)**: relatório de evolução antes/depois; parse automático de labs; pesos por clínica.
 
 ## ✅ Quick Wins da Jornada (brief `_BRIEF_QUICKWINS.md`) — #3 e #4 (16/06/2026)
 

@@ -1,0 +1,34 @@
+{
+  "title": "Bio³ Map",
+  "viewPdf": "View PDF",
+  "newAssessment": "New assessment",
+  "disclaimer": "Functional wellbeing map — not a disease diagnosis or a promise of cure. It points to areas worth professional follow-up.",
+  "indexLabel": "Overall index",
+  "equilibrium": "balance",
+  "priorityLabel": "Focus area",
+  "partialHint": "Partial reading — add the pending data (e.g. labs) for the full map.",
+  "empty": "No assessment yet. Create one to generate the Bio³ Map.",
+  "formHint": "Fill in what you assessed (0–10). Anything left blank counts as pending data.",
+  "optional": "optional",
+  "medPlaceholder": "# of medications",
+  "yes": "Yes",
+  "no": "No",
+  "compute": "Compute Map",
+  "pillar": {
+    "fisico": "Biomechanical",
+    "bioquimico": "Biochemical",
+    "emocional": "Bioemotional"
+  },
+  "pillarHint": {
+    "fisico": "body & movement",
+    "bioquimico": "energy & internal chemistry",
+    "emocional": "mind & balance"
+  },
+  "lab": {
+    "unknown": "No lab",
+    "normal": "Normal",
+    "leve": "Mild change",
+    "moderado": "Moderate change",
+    "alto": "High change"
+  }
+}
