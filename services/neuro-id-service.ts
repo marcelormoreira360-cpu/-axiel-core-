@@ -114,6 +114,32 @@ export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promi
   return { ...(data as unknown as NeuroIdMap), status };
 }
 
+// ── Pontos de atenção: piores itens da última avaliação (barras, pior primeiro) ─
+export type AttentionPoint = { code: string; label: string; dysfunction: number };
+
+export async function getNeuroIdAttentionPoints(
+  assessmentId: string,
+  limit = 6,
+  client?: Db,
+): Promise<AttentionPoint[]> {
+  const supabase = await getDb(client);
+  const { data, error } = await supabase
+    .from("patient_assessment_values")
+    .select("item_code, dysfunction_score")
+    .eq("assessment_id", assessmentId);
+  if (error) throw error;
+  const labelByCode = new Map(DEFAULT_CATALOG.map((d) => [d.code, d.label]));
+  return ((data ?? []) as { item_code: string; dysfunction_score: number | null }[])
+    .filter((r) => r.dysfunction_score != null && r.dysfunction_score > 0)
+    .map((r) => ({
+      code: r.item_code,
+      label: labelByCode.get(r.item_code) ?? r.item_code,
+      dysfunction: Math.round(r.dysfunction_score as number),
+    }))
+    .sort((a, b) => b.dysfunction - a.dysfunction)
+    .slice(0, limit);
+}
+
 // ── Criar avaliação + calcular + gravar scores ────────────────────────────────
 export async function createNeuroIdAssessment(input: {
   clinicId: string;
@@ -250,6 +276,8 @@ export type QuestionnaireImport = {
   draft: Record<string, number>;
   /** code → nome do questionário de origem */
   sources: Record<string, string>;
+  /** code → "raw/max" usado na normalização (ex.: "6/32") — hint de origem */
+  origins: Record<string, string>;
   /** codes mapeados mas sem resposta (pendentes / CTA) */
   missing: string[];
   /** Alerta clínico: PHQ-9 item 9 (ideação) > 0 — não silenciar. */
@@ -338,6 +366,7 @@ export async function importQuestionnaireAnswers(
 
   const draft: Record<string, number> = {};
   const sources: Record<string, string> = {};
+  const origins: Record<string, string> = {};
   const missing: string[] = [];
 
   for (const row of map) {
@@ -354,10 +383,12 @@ export async function importQuestionnaireAnswers(
       raw = resp.total_score ?? agg.totalRaw;
       max = resp.max_possible_score ?? agg.totalMax;
     }
-    const norm = row.norm_max != null ? normalizeToDysfunction10(raw, row.norm_max) : normalizeToDysfunction10(raw, max);
+    const effMax = row.norm_max != null ? row.norm_max : max;
+    const norm = normalizeToDysfunction10(raw, effMax);
     if (norm === null) { if (!missing.includes(row.catalog_code)) missing.push(row.catalog_code); continue; }
     draft[row.catalog_code] = norm;
     sources[row.catalog_code] = tplName(resp);
+    if (raw != null && effMax != null) origins[row.catalog_code] = `${raw}/${effMax}`;
   }
 
   // Alerta PHQ-9 item 9 (ideação) — não silenciar.
@@ -368,7 +399,7 @@ export async function importQuestionnaireAnswers(
     if (agg.item9 !== null && agg.item9 > 0) phq9Item9 = { value: agg.item9 };
   }
 
-  return { draft, sources, missing, phq9Item9 };
+  return { draft, sources, origins, missing, phq9Item9 };
 }
 
 // ── Auto-gerar Mapa Bio³ ao responder questionário (gatilho pós-submit) ───────

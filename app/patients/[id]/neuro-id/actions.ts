@@ -61,7 +61,7 @@ export async function segmentInstrumentsAction(input: {
 export async function importQuestionnaireAnswersAction(
   patientId: string,
 ): Promise<QuestionnaireImport & { error?: string }> {
-  const empty: QuestionnaireImport = { draft: {}, sources: {}, missing: [], phq9Item9: null };
+  const empty: QuestionnaireImport = { draft: {}, sources: {}, origins: {}, missing: [], phq9Item9: null };
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) return { ...empty, error: "Não autorizado." };
   const patient = await getPatientById(patientId, profile.clinic_id);

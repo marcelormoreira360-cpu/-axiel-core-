@@ -1,16 +1,26 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 19/06/2026 (25)
+> Atualizado em: 19/06/2026 (26)
+
+## 🟢 Bio³ — 5 fixes + redesign escaneável (19/06/2026) — CÓDIGO PRONTO, AGUARDA OK p/ deploy
+
+> Brief `_BRIEF_BIO3_FIXES_UX.md`. `tsc` 0; `verify:i18n` 40/0/0. Testes: rodar `npm test` local (vitest não roda no sandbox). **Sem migration.** Nenhuma mudança na lógica de cálculo.
+
+1. **Auto-gerar in-app**: `app/patients/[id]/forms/new/actions.ts` (submitFormAction) agora chama `autoUpsertNeuroIdDraft` após salvar — igual ao submit público. **Bug achado/corrigido**: `submitAssessmentResponse` (assessment-service) gravava `assessment_answers` em colunas inexistentes (`score`/`text_answer`) → preenchimento in-app estava quebrado; agora grava `section_id`/`value_number`/`value_text` (mesmas colunas do de-para/leitura).
+2. **Decimais mantidos**: input do form de `step={1}` → `step="0.1"` (`inputMode=decimal`). Cálculo intacto (parseFloat). Hint de origem: import devolve `origins[code]="raw/max"` (ex.: "6/32") → exibido no campo como "normalizado de 6/32" (`neuroId.normalizedFrom`).
+3. **Demografia no cadastro público**: `app/envio/[slug]` (intake-client + actions) captura nascimento/sexo/peso/altura → grava no insert (novo) e no update (preenche só o que falta, não sobrescreve terapeuta). Edição de perfil já tinha os campos. Idade via `ageFromDob`.
+4. **Paste QRM/Q-SNA rebaixado**: bloco "Colar QRM/Q-SNA" virou `<details>` recolhido "Importar de documento externo (opcional)" no painel (`neuroId.segmentDetailsTitle/Hint`). Fase 2 (IA) segue ativa.
+5. **Redesign escaneável da ficha**: painel Bio³ agora = pirâmide pequena (120px) + índice-herói + **3 cards de pilar** (% + cor da faixa + "comece aqui" no prioritário) + bloco **"Pontos de atenção"** (piores itens, barras coloridas, pior primeiro — via `getNeuroIdAttentionPoints(assessmentId)` lendo `patient_assessment_values`). Na página: **Plano + Suplementação** e **Questionários (Q-SNA · QRM + Evolução)** recolhidos em `<details>` (`patientProfile.accordion.*`). AI Insight/Documento 1 mantido como card-resumo (decisão Marcelo: escopo "Bio³ + 2 acordeões").
 
 ## 🔴 FIX Bio³ — "Importar respostas" não puxava nada (19/06/2026) — APLICADO no banco
 
 > **Sintoma**: painel mostrava "Nenhuma resposta encontrada para importar." e a pirâmide não gerava, mesmo com questionários respondidos.
 > **Causa-raiz**: em produção os pacientes respondem o **Q.R.M. — Questionário de Rastreamento Metabólico** (versão PT-BR do MSQ, seções em **português**: CABEÇA, MENTE, EMOÇÕES…), mas o de-para (`neuro_id_question_map`) só tinha linhas para template **"MSQ"** com seções em **inglês** (HEAD, MIND…). Nenhum template casava → draft vazio. Além disso `ensureClinicQuestionMap` **não re-semeia** clínica já semeada, então editar só o default não bastava.
 > **Fix (2 partes)**:
-> 1. `modules/neuro-id/question-map.ts`: +14 linhas Q.R.M. (`template_match: "Rastreamento Metab"`, `section_match` em PT) → mesmos codes `msq_*`. (Q.R.M. não tem seção PESO → `msq_weight` fica pendente.) PHQ-9/GAD-7/HPA já casavam pelo nome.
-> 2. **Backfill no banco** (clínica `98e98ef3…`): `INSERT` das mesmas 14 linhas em `neuro_id_question_map` (aditivo, reversível via `active=false`). Tabela: 22→36 linhas ativas.
-> **Validação**: simulação SQL por seção bateu (ex.: CABEÇA 3.8, EMOÇÕES 3.1, MENTE 1.9); `tsc` 0; testes do de-para inalterados (todos os codes existem no catálogo). **Pendente**: Q-SNA ainda não entra no import (só via "Extrair com IA"); avaliar se deve mapear. Código **não** deployado na Vercel (aguarda OK do Marcelo); o backfill já vale para o app atual.
+> 1. `modules/neuro-id/question-map.ts`: +14 linhas Q.R.M. (`template_match: "Rastreamento Metab"`, `section_match` em PT) → mesmos codes `msq_*`. (Q.R.M. não tem seção PESO → `msq_weight` fica pendente.) PHQ-9/GAD-7/HPA já casavam pelo nome. **+5 linhas Q-SNA** (`template_match: "Q-SNA"`): total → `qsna_total` (Bioquímico, carga autonômica geral); `SONO`→`qsna_sono`, `EMOCIONAL`→`qsna_emocional`, `GASTROINTESTINAL`→`qsna_gi_visceral`, `NEUROCOGNITIVA`→`qsna_neurocognitiva` (Bioemocional). Codes já existiam no catálogo. As 5 seções Q-SNA sem code próprio (cardiovascular/respiratória/inflamatória/endócrino/envelhecimento) entram via o total.
+> 2. **Backfill no banco** (clínica `98e98ef3…`): `INSERT` das mesmas 14 (Q.R.M.) + 5 (Q-SNA) linhas em `neuro_id_question_map` (aditivo, reversível via `active=false`). Tabela: 22→**41** linhas ativas.
+> **Validação**: simulação SQL por seção bateu (Q.R.M.: CABEÇA 3.8, EMOÇÕES 3.1; Q-SNA: TOTAL 0.8, EMOCIONAL 3.0, SONO 1.0); `tsc` 0; `verify:i18n` 40/0/0; testes do de-para inalterados. **Commit `4bc0659`** feito local (main 1 à frente de origin) — **push pendente** (sandbox sem acesso ao GitHub; Marcelo dá `git push origin main` na máquina dele → Vercel deploya). O backfill já vale para o app atual independ, do deploy.
 
 ## 🟡 Mapa Bio³ — Auto-gerar ao responder questionário (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 

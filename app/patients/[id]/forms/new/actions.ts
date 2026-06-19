@@ -66,5 +66,15 @@ export async function submitFormAction(formData: FormData) {
     notes,
   });
 
+  // Auto-gerar/atualizar o Mapa Bio³ (rascunho parcial) quando o terapeuta
+  // preenche o questionário DENTRO do app — mesmo gatilho do submit público.
+  // Idempotente (um auto_draft por paciente); silencioso e não derruba o fluxo.
+  try {
+    const { autoUpsertNeuroIdDraft } = await import("@/services/neuro-id-service");
+    await autoUpsertNeuroIdDraft(patientId, profile.clinic_id);
+  } catch (e) {
+    console.error("Bio3 auto-draft (form in-app) falhou:", e);
+  }
+
   redirect(`/patients/${patientId}/forms/${response.id}`);
 }

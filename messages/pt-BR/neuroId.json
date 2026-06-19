@@ -57,6 +57,8 @@
   "detailLabel": "Por eixo",
   "segmentTitle": "Colar QRM / Q-SNA (IA preenche)",
   "segmentHint": "Cole o texto do QRM e/ou do Q-SNA. A IA extrai os sub-scores; você revisa antes de calcular.",
+  "segmentDetailsTitle": "Importar de documento externo (opcional)",
+  "segmentDetailsHint": "Use se o QRM/Q-SNA vier de fora (máquina/papel). Os questionários respondidos no Core já entram pelo \"Importar respostas\".",
   "segmentBtn": "Extrair com IA",
   "segmenting": "Extraindo…",
   "segmentReview": "Revise os valores extraídos antes de calcular.",
@@ -74,6 +76,8 @@
   "importDone": "{count} itens preenchidos — revise antes de calcular.",
   "importNone": "Nenhuma resposta encontrada para importar.",
   "autoTag": "auto (questionário)",
+  "normalizedFrom": "normalizado de {ratio}",
+  "attentionTitle": "Pontos de atenção",
   "phq9Alert": "Atenção clínica: PHQ-9 item 9 (ideação) marcado ({value}/3). Avalie risco conforme seu protocolo — não ignore.",
   "autoDraftBanner": "Mapa parcial gerado pelas respostas — complete o exame físico (Biomecânico) para finalizar.",
   "reviewComplete": "Revisar e completar"

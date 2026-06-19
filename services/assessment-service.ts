@@ -177,11 +177,14 @@ export async function submitAssessmentResponse(input: {
     .single();
   if (rErr) throw rErr;
 
+  // Colunas reais da tabela: section_id, value_number, value_text (mesmas do
+  // submit público em /api/forms/submit) — necessário para o de-para Bio³ ler.
   const answersToInsert = input.answers.map((a) => ({
     response_id: response.id,
     question_id: a.question_id,
-    score: a.value_number ?? null,
-    text_answer: a.value_text ?? null,
+    section_id: a.section_id ?? null,
+    value_number: a.value_number ?? null,
+    value_text: a.value_text ?? null,
   }));
   const { error: aErr } = await supabase
     .from("assessment_answers")

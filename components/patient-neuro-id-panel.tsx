@@ -7,7 +7,6 @@ import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
-import { pillarContributions } from "@/modules/neuro-id/scoring";
 import { createNeuroIdAssessmentAction, segmentInstrumentsAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
@@ -48,11 +47,11 @@ function BandPill({ band, label, className = "" }: { band: Band; label: string; 
 // ── Pirâmide (faixas coloridas pela banda do eixo; exibe GRAU DE DISFUNÇÃO) ───
 // Ordem fixa base→topo: Bioemocional (origem) / Bioquímico (ponte) / Biomecânico (consequência).
 // data[0] = topo (Biomecânico), data[2] = base (Bioemocional).
-function NeuroPyramid({ data }: { data: { dys: number | null; isPriority: boolean }[] }) {
+function NeuroPyramid({ data, className = "w-[190px] h-[120px] shrink-0" }: { data: { dys: number | null; isPriority: boolean }[]; className?: string }) {
   const polys = ["120,10 150,54 90,54", "90,54 150,54 182,98 58,98", "58,98 182,98 214,142 26,142"];
   const cy = [46, 84, 128];
   return (
-    <svg viewBox="0 0 240 152" className="w-[190px] h-[120px] shrink-0" role="img" aria-label="Pirâmide Bio³ — grau de disfunção">
+    <svg viewBox="0 0 240 152" className={className} role="img" aria-label="Pirâmide Bio³ — grau de disfunção">
       {data.map((d, i) => {
         const band = bandForDysfunction(d.dys);
         const fill = band ? band.colors.fill : "#E9E7E0";
@@ -71,10 +70,12 @@ function NeuroPyramid({ data }: { data: { dys: number | null; isPriority: boolea
   );
 }
 
+export type AttentionPoint = { code: string; label: string; dysfunction: number };
+
 export function PatientNeuroIdPanel({
-  map, patientId, hasReport,
+  map, patientId, hasReport, attentionPoints = [],
 }: {
-  map: NeuroIdMapView; patientId: string; hasReport: boolean;
+  map: NeuroIdMapView; patientId: string; hasReport: boolean; attentionPoints?: AttentionPoint[];
 }) {
   const t = useTranslations("neuroId");
   const [assessing, setAssessing] = useState(false);
@@ -86,6 +87,7 @@ export function PatientNeuroIdPanel({
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [autoCodes, setAutoCodes] = useState<Set<string>>(new Set());
+  const [origins, setOrigins] = useState<Record<string, string>>({});
   const [phq9Alert, setPhq9Alert] = useState<number | null>(null);
 
   async function handleImport() {
@@ -101,6 +103,7 @@ export function PatientNeuroIdPanel({
       return next;
     });
     setAutoCodes((prev) => new Set([...prev, ...entries.map(([c]) => c)]));
+    setOrigins((prev) => ({ ...prev, ...res.origins }));
     setPhq9Alert(res.phq9Item9 ? res.phq9Item9.value : null);
     setImportMsg(entries.length > 0 ? t("importDone", { count: entries.length }) : t("importNone"));
   }
@@ -126,7 +129,6 @@ export function PatientNeuroIdPanel({
   };
   const generalDys = round(map?.indice_geral ?? null);
   const indexBand = bandForDysfunction(map?.indice_geral ?? null);
-  const contrib = pillarContributions(pillarDys);
 
   // Pirâmide topo→base: Biomecânico (topo) / Bioquímico (meio) / Bioemocional (base).
   const pyramidData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
@@ -176,54 +178,76 @@ export function PatientNeuroIdPanel({
               </button>
             </div>
           )}
+          {/* Resumo escaneável: índice-herói + pirâmide pequena (assinatura) */}
           <div className="flex items-center gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px] flex-wrap">
-            <NeuroPyramid data={pyramidData} />
-            <div className="text-center shrink-0">
+            <NeuroPyramid data={pyramidData} className="w-[120px] h-[76px] shrink-0" />
+            <div className="min-w-0 flex-1">
               <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em]">{t("indexLabel")}</p>
-              <p className="text-[40px] font-semibold leading-none mt-[2px]" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
-                {generalDys === null ? "—" : `${generalDys}%`}
-              </p>
-              {indexBand && <span className="mt-[5px] inline-block"><BandPill band={indexBand} label={bandLabel(indexBand, "axis")} /></span>}
-              <p className="text-[9px] text-[#A09E98] mt-[3px]">{t("goalLower")}</p>
-            </div>
-            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-[8px] flex-wrap">
+                <p className="text-[40px] font-semibold leading-none" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
+                  {generalDys === null ? "—" : `${generalDys}%`}
+                </p>
+                {indexBand && <BandPill band={indexBand} label={bandLabel(indexBand, "axis")} />}
+              </div>
               {map.priority_pillar && (
-                <p className="text-[12px] text-[#0F1A2E]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
+                <p className="text-[11px] text-[#0F1A2E] mt-[4px]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
               )}
               {map.is_partial && (
-                <p className="text-[11px] text-[#C77D17] flex items-center gap-1 mt-[3px]"><AlertCircle className="h-3 w-3" /> {t("partialHint")}</p>
+                <p className="text-[11px] text-[#C77D17] flex items-center gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
               )}
-              <p className="text-[10px] text-[#A09E98] mt-[6px] leading-snug">{t("legendRanges")}</p>
+              <p className="text-[9px] text-[#A09E98] mt-[2px]">{t("goalLower")}</p>
             </div>
           </div>
 
-          {/* Eixos com banda (cor + rótulo + ícone) — exibe GRAU DE DISFUNÇÃO */}
-          {(["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
-            const band = bandForDysfunction(pillarDys[p]);
-            const disf = round(pillarDys[p]);
-            const share = round(contrib[p]);
-            return (
-              <div key={p}>
-                <div className="flex items-center justify-between mb-[3px]">
-                  <span className="text-[12px] font-medium text-[#0F1A2E]">
-                    {t(`pillar.${p}`)} <span className="text-[#A09E98] font-normal">· {t(`pillarHint.${p}`)}</span>
-                    {map.priority_pillar === p && <span className="ml-[6px] text-[10px] text-[#991B1B]">★</span>}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    {share !== null && <span className="text-[10px] text-[#A09E98]">{t("contribution", { pct: share })}</span>}
+          {/* 3 cards dos pilares (% + cor da faixa + "comece aqui" no prioritário) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
+            {(["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
+              const band = bandForDysfunction(pillarDys[p]);
+              const disf = round(pillarDys[p]);
+              const isPriority = map.priority_pillar === p;
+              return (
+                <div key={p} className="rounded-[10px] border px-[12px] py-[10px]"
+                  style={{ background: band?.colors.fill ?? "#FAFAF8", borderColor: isPriority ? (band?.colors.stroke ?? "#A09E98") : "transparent", borderWidth: isPriority ? 2 : 1 }}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium" style={{ color: band?.colors.text ?? "#6B6A66" }}>{t(`pillar.${p}`)}</span>
                     {band && <BandPill band={band} label={bandLabel(band, "axis")} />}
-                    <span className="text-[12px] font-semibold" style={{ color: band?.colors.text ?? "#A09E98" }}>
-                      {disf === null ? "—" : `${disf}%`}
-                    </span>
-                  </span>
+                  </div>
+                  <p className="text-[26px] font-semibold leading-none mt-[6px]" style={{ color: band?.colors.text ?? "#A09E98" }}>
+                    {disf === null ? "—" : `${disf}%`}
+                  </p>
+                  {isPriority && (
+                    <p className="text-[10px] font-semibold mt-[4px] flex items-center gap-1" style={{ color: band?.colors.text ?? "#991B1B" }}>★ {t("startHere")}</p>
+                  )}
                 </div>
-                <div className="h-[7px] bg-[#F4F3EF] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all duration-500"
-                    style={{ width: `${disf ?? 0}%`, background: band?.colors.stroke ?? "#D3D1C7" }} />
-                </div>
+              );
+            })}
+          </div>
+
+          {/* Pontos de atenção: piores itens (barras coloridas, pior primeiro) */}
+          {attentionPoints.length > 0 && (
+            <div className="rounded-[10px] border border-black/[.06] px-[12px] py-[10px]">
+              <p className="text-[11px] font-semibold text-[#0F1A2E] mb-[8px]">{t("attentionTitle")}</p>
+              <div className="space-y-[7px]">
+                {attentionPoints.map((ap) => {
+                  const band = bandForDysfunction(ap.dysfunction);
+                  return (
+                    <div key={ap.code}>
+                      <div className="flex items-center justify-between gap-2 mb-[2px]">
+                        <span className="text-[11px] text-[#0F1A2E] truncate">{ap.label}</span>
+                        <span className="text-[11px] font-semibold shrink-0" style={{ color: band?.colors.text ?? "#A09E98" }}>{ap.dysfunction}%</span>
+                      </div>
+                      <div className="h-[6px] bg-[#F4F3EF] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${ap.dysfunction}%`, background: band?.colors.stroke ?? "#D3D1C7" }} />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          )}
+
+          <p className="text-[10px] text-[#A09E98] leading-snug">{t("legendRanges")}</p>
         </div>
       ) : (
         !assessing && <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
@@ -237,21 +261,26 @@ export function PatientNeuroIdPanel({
         >
           <input type="hidden" name="patient_id" value={patientId} />
 
-          {/* Fase 2: colar QRM/Q-SNA → IA extrai sub-scores → revisar */}
-          <div className="rounded-[8px] border border-[#3B6BE4]/20 bg-white p-[10px] space-y-[8px]">
-            <p className="text-[11px] font-semibold text-[#0F1A2E] flex items-center gap-1"><Sparkles className="h-3 w-3 text-[#3B6BE4]" /> {t("segmentTitle")}</p>
-            <p className="text-[10px] text-[#A09E98]">{t("segmentHint")}</p>
-            <textarea value={qrmText} onChange={(e) => setQrmText(e.target.value)} rows={2} placeholder={t("qrmLabel")} className={`${inputCls} resize-none`} />
-            <textarea value={qsnaText} onChange={(e) => setQsnaText(e.target.value)} rows={2} placeholder={t("qsnaLabel")} className={`${inputCls} resize-none`} />
-            <div className="flex items-center gap-2 flex-wrap">
-              <button type="button" disabled={segmenting || (!qrmText.trim() && !qsnaText.trim())} onClick={handleSegment}
-                className="text-[11px] font-medium text-white bg-[#3B6BE4] hover:bg-[#2f57bd] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center gap-1">
-                <Sparkles className="h-3 w-3" /> {segmenting ? t("segmenting") : t("segmentBtn")}
-              </button>
-              {segMsg && <span className="text-[10px] text-[#0F6E56]">{segMsg}</span>}
+          {/* Fase 2 (opcional, recolhido): colar QRM/Q-SNA de documento externo → IA extrai sub-scores */}
+          <details className="rounded-[8px] border border-black/[.10] bg-white group">
+            <summary className="cursor-pointer list-none px-[10px] py-[8px] text-[11px] font-medium text-[#6B6A66] flex items-center gap-1.5 hover:text-[#0F1A2E] transition">
+              <Sparkles className="h-3 w-3 text-[#3B6BE4]" /> {t("segmentDetailsTitle")}
+              <span className="ml-auto text-[#A09E98] transition group-open:rotate-180">▾</span>
+            </summary>
+            <div className="px-[10px] pb-[10px] space-y-[8px]">
+              <p className="text-[10px] text-[#A09E98]">{t("segmentDetailsHint")}</p>
+              <textarea value={qrmText} onChange={(e) => setQrmText(e.target.value)} rows={2} placeholder={t("qrmLabel")} className={`${inputCls} resize-none`} />
+              <textarea value={qsnaText} onChange={(e) => setQsnaText(e.target.value)} rows={2} placeholder={t("qsnaLabel")} className={`${inputCls} resize-none`} />
+              <div className="flex items-center gap-2 flex-wrap">
+                <button type="button" disabled={segmenting || (!qrmText.trim() && !qsnaText.trim())} onClick={handleSegment}
+                  className="text-[11px] font-medium text-white bg-[#3B6BE4] hover:bg-[#2f57bd] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" /> {segmenting ? t("segmenting") : t("segmentBtn")}
+                </button>
+                {segMsg && <span className="text-[10px] text-[#0F6E56]">{segMsg}</span>}
+              </div>
+              <p className="text-[10px] text-[#A09E98]">{t("segmentNote")}</p>
             </div>
-            <p className="text-[10px] text-[#A09E98]">{t("segmentNote")}</p>
-          </div>
+          </details>
 
           {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA) */}
           <div className="rounded-[8px] border border-[#0F6E56]/20 bg-white p-[10px] space-y-[8px]">
@@ -290,6 +319,7 @@ export function PatientNeuroIdPanel({
                         <span>{it.label}
                           {it.partial && <span className="text-[#C77D17]"> · {t("optional")}</span>}
                           {autoCodes.has(it.code) && <span className="text-[#0F6E56]"> · {t("autoTag")}</span>}
+                          {origins[it.code] && <span className="text-[#A09E98]"> · {t("normalizedFrom", { ratio: origins[it.code] })}</span>}
                         </span>
                         {band && <BandPill band={band} label={bandLabel(band, it.band_type)} />}
                       </span>
@@ -303,7 +333,7 @@ export function PatientNeuroIdPanel({
                           <option value="alto">{t("lab.alto")}</option>
                         </select>
                       ) : (
-                        <input type="number" min={0} max={10} step={1} name={`item__${it.code}`} className={inputCls}
+                        <input type="number" min={0} max={10} step="0.1" inputMode="decimal" name={`item__${it.code}`} className={inputCls}
                           value={raw} onChange={(e) => setVals((v) => ({ ...v, [it.code]: e.target.value }))} />
                       )}
                     </label>

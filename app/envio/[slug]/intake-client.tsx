@@ -63,6 +63,10 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
   const [email, setEmail]             = useState("");
   const [name, setName]               = useState("");   // filled by user (new) or returned by lookup (found)
   const [phone, setPhone]             = useState("");
+  const [dob, setDob]                 = useState("");   // data de nascimento (yyyy-mm-dd)
+  const [sex, setSex]                 = useState("");   // "female" | "male" | "other"
+  const [weightKg, setWeightKg]       = useState("");
+  const [heightCm, setHeightCm]       = useState("");
   const [patientId, setPatientId]     = useState<string | null>(null); // set when patient recognised
 
   const [notes, setNotes]             = useState("");
@@ -135,10 +139,14 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
       // Returning patient — pass the resolved id
       fd.set("patient_id", patientId);
     } else {
-      // New patient — pass name/email/phone for server-side create
+      // New patient — pass name/email/phone + demografia for server-side create
       fd.set("name", name);
       fd.set("email", email);
       fd.set("phone", phone);
+      if (dob) fd.set("date_of_birth", dob);
+      if (sex) fd.set("sex", sex);
+      if (weightKg) fd.set("weight_kg", weightKg);
+      if (heightCm) fd.set("height_cm", heightCm);
     }
 
     startTransition(async () => {
@@ -268,6 +276,59 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                     inputMode="tel"
                     className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
                   />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    Data de nascimento
+                  </label>
+                  <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    max={new Date().toISOString().slice(0, 10)}
+                    className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                    Sexo
+                  </label>
+                  <select
+                    value={sex}
+                    onChange={(e) => setSex(e.target.value)}
+                    className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] bg-white focus:outline-none focus:border-black/30"
+                  >
+                    <option value="">Prefiro não informar</option>
+                    <option value="female">Feminino</option>
+                    <option value="male">Masculino</option>
+                    <option value="other">Outro</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                      Peso (kg)
+                    </label>
+                    <input
+                      type="number" min={0} max={400} step="0.1" inputMode="decimal"
+                      value={weightKg}
+                      onChange={(e) => setWeightKg(e.target.value)}
+                      placeholder="70"
+                      className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
+                      Altura (cm)
+                    </label>
+                    <input
+                      type="number" min={0} max={260} step="1" inputMode="numeric"
+                      value={heightCm}
+                      onChange={(e) => setHeightCm(e.target.value)}
+                      placeholder="170"
+                      className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
+                    />
+                  </div>
                 </div>
                 <button
                   onClick={handleNewPatientContinue}

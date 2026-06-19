@@ -63,6 +63,10 @@
     "fill": "Preencher",
     "empty": "Nenhum formulário preenchido ainda."
   },
+  "accordion": {
+    "questionnaires": "Questionários — Q-SNA · QRM",
+    "planSupplements": "Plano de tratamento e Suplementação"
+  },
   "caseSummary": {
     "title": "Resumo do caso",
     "chiefLabel": "Queixa principal",

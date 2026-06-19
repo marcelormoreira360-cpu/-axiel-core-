@@ -77,6 +77,21 @@ export async function submitIntakeAction(
   const clinicId     =  formData.get("clinic_id")  as string;
   const prePatientId = (formData.get("patient_id") as string ?? "").trim() || null;
 
+  // Demografia opcional (fonte única do cadastro → flui pra ficha/relatórios).
+  const dobRaw    = (formData.get("date_of_birth") as string ?? "").trim();
+  const sexRaw    = (formData.get("sex")           as string ?? "").trim().toLowerCase();
+  const weightRaw = (formData.get("weight_kg")     as string ?? "").trim();
+  const heightRaw = (formData.get("height_cm")     as string ?? "").trim();
+  const dob    = /^\d{4}-\d{2}-\d{2}$/.test(dobRaw) ? dobRaw : null;
+  const sex    = ["female", "male", "other"].includes(sexRaw) ? sexRaw : null;
+  const weight = weightRaw !== "" && Number.isFinite(Number(weightRaw)) && Number(weightRaw) > 0 && Number(weightRaw) <= 400 ? Number(weightRaw) : null;
+  const height = heightRaw !== "" && Number.isFinite(Number(heightRaw)) && Number(heightRaw) > 0 && Number(heightRaw) <= 260 ? Number(heightRaw) : null;
+  const demo: Record<string, string | number> = {};
+  if (dob !== null)    demo.date_of_birth = dob;
+  if (sex !== null)    demo.sex = sex;
+  if (weight !== null) demo.weight_kg = weight;
+  if (height !== null) demo.height_cm = height;
+
   if (!clinicId) return { error: "Clínica inválida." };
 
   // Rate limit: 50 intake submissions per clinic per hour
@@ -101,11 +116,15 @@ export async function submitIntakeAction(
     // Queries separadas com .eq() — nunca interpolar input no DSL .or() (injeção PostgREST).
     const normalizedPhone = phone ? phone.replace(/\D/g, "") : null;
 
-    let existing: { id: string; email: string | null; phone: string | null } | null = null;
+    type ExistingPatient = {
+      id: string; email: string | null; phone: string | null;
+      date_of_birth: string | null; sex: string | null; weight_kg: number | null; height_cm: number | null;
+    };
+    let existing: ExistingPatient | null = null;
     {
       const { data } = await supabase
         .from("patients")
-        .select("id, email, phone")
+        .select("id, email, phone, date_of_birth, sex, weight_kg, height_cm")
         .eq("clinic_id", clinicId)
         .eq("email", email)
         .maybeSingle();
@@ -114,7 +133,7 @@ export async function submitIntakeAction(
     if (!existing && normalizedPhone) {
       const { data } = await supabase
         .from("patients")
-        .select("id, email, phone")
+        .select("id, email, phone, date_of_birth, sex, weight_kg, height_cm")
         .eq("clinic_id", clinicId)
         .in("phone", [normalizedPhone, phone].filter(Boolean) as string[])
         .limit(1)
@@ -125,14 +144,19 @@ export async function submitIntakeAction(
     if (existing) {
       patientId = existing.id;
       // Enrich the record with any new information provided
-      const updates: Record<string, string> = { full_name: name };
+      const updates: Record<string, string | number> = { full_name: name };
       if (email && !existing.email) updates.email = email;
       if (normalizedPhone && !existing.phone) updates.phone = normalizedPhone;
+      // Demografia: só preenche o que ainda está vazio (não sobrescreve o terapeuta).
+      if (demo.date_of_birth && !existing.date_of_birth) updates.date_of_birth = demo.date_of_birth;
+      if (demo.sex && !existing.sex) updates.sex = demo.sex;
+      if (demo.weight_kg && existing.weight_kg == null) updates.weight_kg = demo.weight_kg;
+      if (demo.height_cm && existing.height_cm == null) updates.height_cm = demo.height_cm;
       await supabase.from("patients").update(updates).eq("id", patientId);
     } else {
       const { data: created, error } = await supabase
         .from("patients")
-        .insert({ clinic_id: clinicId, full_name: name, email, phone: normalizedPhone ?? phone })
+        .insert({ clinic_id: clinicId, full_name: name, email, phone: normalizedPhone ?? phone, ...demo })
         .select("id")
         .single();
       if (error || !created) return { error: "Erro ao identificar paciente. Tente novamente." };

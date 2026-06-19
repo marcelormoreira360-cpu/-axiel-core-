@@ -63,6 +63,10 @@
     "fill": "Fill out",
     "empty": "No forms filled out yet."
   },
+  "accordion": {
+    "questionnaires": "Questionnaires — Q-SNA · QRM",
+    "planSupplements": "Treatment plan & Supplementation"
+  },
   "caseSummary": {
     "title": "Case summary",
     "chiefLabel": "Chief complaint",

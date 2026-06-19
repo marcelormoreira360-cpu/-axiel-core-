@@ -57,6 +57,8 @@
   "detailLabel": "By axis",
   "segmentTitle": "Paste QRM / Q-SNA (AI fills in)",
   "segmentHint": "Paste the QRM and/or Q-SNA text. AI extracts the sub-scores; you review before calculating.",
+  "segmentDetailsTitle": "Import from external document (optional)",
+  "segmentDetailsHint": "Use if the QRM/Q-SNA comes from outside (device/paper). Questionnaires answered in the Core already flow in via \"Import answers\".",
   "segmentBtn": "Extract with AI",
   "segmenting": "Extracting…",
   "segmentReview": "Review the extracted values before calculating.",
@@ -74,6 +76,8 @@
   "importDone": "{count} items filled — review before calculating.",
   "importNone": "No answers found to import.",
   "autoTag": "auto (questionnaire)",
+  "normalizedFrom": "normalized from {ratio}",
+  "attentionTitle": "Points of attention",
   "phq9Alert": "Clinical alert: PHQ-9 item 9 (ideation) flagged ({value}/3). Assess risk per your protocol — do not ignore.",
   "autoDraftBanner": "Partial map generated from answers — complete the physical exam (Biomechanical) to finalize.",
   "reviewComplete": "Review and complete"

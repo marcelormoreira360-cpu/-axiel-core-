@@ -20,7 +20,7 @@ import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-pa
 import { PatientSupplementsPanel } from "@/components/patient-supplements-panel";
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
-import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
+import { getLatestNeuroIdMap, getNeuroIdAttentionPoints } from "@/services/neuro-id-service";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
@@ -120,6 +120,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
   const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
+  // Pontos de atenção — piores itens da última avaliação (barras, pior primeiro)
+  const attentionPoints = neuroIdMap?.assessment_id
+    ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
+    : [];
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -292,7 +296,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
       <div className="mt-[18px]">
-        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} />
+        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} />
       </div>
 
       {/* ── 3-column body ── */}
@@ -561,8 +565,15 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Notes — quick voice note widget */}
       <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
 
+      {/* ── Questionários (acordeão recolhido) ── */}
+      <details className="mt-5 group">
+        <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] transition">
+          <span className="text-[13px] font-medium text-[#0F1A2E]">{t("accordion.questionnaires")}</span>
+          <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
+        </summary>
+        <div className="mt-[12px] space-y-[18px]">
       {/* Assessment responses */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden mt-5">
+      <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
         <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.06]">
           <div>
             <p className="text-[13px] font-medium text-[#0F1A2E]">{t("assessments.title")}</p>
@@ -628,15 +639,27 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* Evolução dos questionários */}
       {assessmentProgress.length > 0 && (
-        <div className="mt-[18px]">
-          <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
-        </div>
+        <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
       )}
+        </div>
+      </details>
 
-      {/* Plano de tratamento */}
-      <div className="mt-[18px]">
-        <PatientTreatmentPlanPanel plans={treatmentPlans} patientId={id} />
-      </div>
+      {/* ── Plano de tratamento + Suplementação (acordeão recolhido) ── */}
+      <details className="mt-[18px] group">
+        <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] transition">
+          <span className="text-[13px] font-medium text-[#0F1A2E]">{t("accordion.planSupplements")}</span>
+          <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
+        </summary>
+        <div className="mt-[12px] space-y-[18px]">
+          <PatientTreatmentPlanPanel plans={treatmentPlans} patientId={id} />
+          <PatientSupplementsPanel
+            recommendations={supplementRecommendations}
+            catalog={supplementCatalog}
+            patientId={id}
+            clinicName={clinic?.name ?? ""}
+          />
+        </div>
+      </details>
 
       {/* Pacotes de sessão */}
       <div className="mt-[18px]">
@@ -682,16 +705,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Medicamentos e suplementos */}
       <div className="mt-[18px]">
         <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
-      </div>
-
-      {/* Recomendação de suplementos (catálogo + builder manual + saídas) */}
-      <div className="mt-[18px]">
-        <PatientSupplementsPanel
-          recommendations={supplementRecommendations}
-          catalog={supplementCatalog}
-          patientId={id}
-          clinicName={clinic?.name ?? ""}
-        />
       </div>
 
       {/* Documentos do paciente */}
