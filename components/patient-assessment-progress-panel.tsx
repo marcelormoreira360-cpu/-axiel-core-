@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { TrendingUp, TrendingDown, Minus, Send } from "lucide-react";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
+import { bandForDysfunction } from "@/modules/neuro-id/bands";
 import { resendAssessmentAction } from "@/app/patients/[id]/assessments/actions";
 
 function fmtDate(iso: string) {
@@ -78,16 +79,19 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
       {/* Série (mini barras) */}
       {item.points.length > 0 && (
         <div className="flex items-end gap-[3px] h-12 mb-[6px]">
-          {item.points.map((p, i) => (
+          {item.points.map((p, i) => {
+            const pBand = bandForDysfunction(p.score_percentage); // semáforo por severidade
+            return (
             <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
               <div
-                className="w-full rounded-t bg-[#0F6E56]/70"
-                style={{ height: `${Math.max(4, Math.round((p.score_percentage / max) * 40))}px` }}
+                className="w-full rounded-t"
+                style={{ height: `${Math.max(4, Math.round((p.score_percentage / max) * 40))}px`, background: pBand?.colors.stroke ?? "#5E8C6A" }}
                 title={`${fmtDate(p.date)}: ${p.score_percentage}%`}
               />
               <span className="text-[8px] text-[#A09E98] truncate w-full text-center">{fmtDate(p.date)}</span>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

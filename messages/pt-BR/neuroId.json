@@ -4,6 +4,8 @@
   "newAssessment": "Nova avaliação",
   "disclaimer": "Mapa funcional de bem-estar — não é diagnóstico de doença nem promessa de cura. Indica pontos que merecem acompanhamento profissional.",
   "indexLabel": "Índice Bio · grau de disfunção",
+  "indexCaption": "Índice geral · todos os eixos · grau de disfunção (menor = melhor)",
+  "cardSubtitle": "disfunção do eixo",
   "equilibrium": "equilíbrio",
   "priorityLabel": "Ponto de atenção",
   "partialHint": "Leitura parcial — inclua os dados pendentes (ex.: exames) para o mapa completo.",

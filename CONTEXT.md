@@ -1,7 +1,16 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 19/06/2026 (26)
+> Atualizado em: 19/06/2026 (27)
+
+## 🟢 Bio³ — 4 refinos visuais (19/06/2026) — CÓDIGO PRONTO, AGUARDA OK p/ deploy
+
+> Brief `_BRIEF_BIO3_REFINOS.md`. `tsc` 0; `verify:i18n` 40/0/0. Sem migration. **Nenhuma mudança na lógica de cálculo.**
+
+1. **Rótulos geral × eixo** (painel Bio³): topo usa `neuroId.indexCaption` ("Índice geral · todos os eixos · grau de disfunção (menor = melhor)"); cada um dos 3 cards ganha subtítulo `neuroId.cardSubtitle` ("disfunção do eixo"). (`indexLabel`/`goalLower` viraram legados, mantidos por paridade.)
+2. **Relatório de Insight escaneável + demografia ao vivo**: `neuro-id-360-documents.tsx` agora renderiza Documento 1/2/3 em `<details>` recolhido (resumo no topo = título + síntese do review card). Demografia (Idade/Sexo/Peso/Altura/Local/Paciente) lida do **cadastro ao vivo** via novo `liveIdentificacaoPt(patient)` em `lib/patient-demographics.ts` (mapeia sexo→PT), passada por `ai-insight-panel` e pela ficha → `ai-insight-review-card` → `NeuroId360Documents` (prop `liveId`). Snapshot da IA é fallback; **Idade = "—" quando não há data de nascimento** (some o "0 ano"). Igual ao PDF (fonte única).
+3. **Pirâmide com cores vivas**: `bands.ts` ganhou `colors.fillStrong` (tom saturado por banda); `NeuroPyramid` usa `fillStrong` + **borda = `colors.stroke`** (antes branca). Lógica por faixa intacta.
+4. **Semáforo nos questionários** (`bandForDysfunction` sobre o % → verde/âmbar/vermelho na barra + valor, rótulo de texto mantido): `patient-assessment-progress-panel.tsx` (mini-barras da série), `app/patients/[id]/forms/[responseId]/page.tsx` (total + seções) e a lista de respostas em `app/patients/[id]/page.tsx`.
 
 ## 🟢 Bio³ — 5 fixes + redesign escaneável (19/06/2026) — CÓDIGO PRONTO, AGUARDA OK p/ deploy
 

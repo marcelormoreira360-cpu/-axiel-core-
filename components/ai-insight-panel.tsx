@@ -4,6 +4,7 @@ import { Button } from "@/components/button";
 import { Card } from "@/components/card";
 import { AiInsightReviewCard } from "@/components/ai-insight-review-card";
 import type { AiInsight, Patient } from "@/lib/types";
+import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { aiInsightStatusLabel } from "@/modules/ai-insights/status-labels";
 import type { AiValidationEvent } from "@/services/ai-insight-service";
@@ -42,6 +43,7 @@ export function AiInsightPanel({
   const output = insight?.review_status === "final" && insight.final_output ? insight.final_output : insight?.output;
   const isFinal = insight?.review_status === "final";
   const hasContact = Boolean(patient.email || patient.phone);
+  const liveId = liveIdentificacaoPt(patient); // demografia ao vivo do cadastro (igual ao PDF)
 
   return (
     <div className="space-y-5">
@@ -95,7 +97,7 @@ export function AiInsightPanel({
         </Card>
       ) : (
         <div className="space-y-5">
-          <AiInsightReviewCard patientId={patient.id} insight={insight} />
+          <AiInsightReviewCard patientId={patient.id} insight={insight} liveId={liveId} />
 
           <details className="group rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-black/55">

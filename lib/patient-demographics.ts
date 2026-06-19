@@ -50,3 +50,11 @@ export function patientIdentificacao(p: PatientDemographicsInput, now: Date = ne
     local,
   };
 }
+
+const SEX_PT: Record<string, string> = { female: "Feminino", male: "Masculino", other: "Outro" };
+
+/** Identificação ao vivo do cadastro com o sexo localizado em PT (para a revisão web). */
+export function liveIdentificacaoPt(p: PatientDemographicsInput, now: Date = new Date()): PatientIdentificacao {
+  const base = patientIdentificacao(p, now);
+  return { ...base, sexo: base.sexo ? (SEX_PT[base.sexo.toLowerCase()] ?? base.sexo) : null };
+}

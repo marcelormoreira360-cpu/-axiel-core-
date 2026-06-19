@@ -1,4 +1,6 @@
+import { ChevronDown } from "lucide-react";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroSecaoItem } from "@/lib/types";
+import type { PatientIdentificacao } from "@/lib/patient-demographics";
 
 function Section({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
@@ -45,27 +47,36 @@ function LeadItems({ title, items, numbered }: { title: string; items?: NeuroSec
   );
 }
 
-function Identificacao({ id, fallbackName }: { id?: NeuroIdentificacao; fallbackName?: string | null }) {
-  const rows: Array<[string, string | undefined]> = [
-    ["Paciente", id?.paciente ?? fallbackName ?? undefined],
-    ["Idade", id?.idade],
-    ["Sexo", id?.sexo],
-    ["Peso", id?.peso],
-    ["Altura", id?.altura],
-    ["Local", id?.local],
-    ["Data das avaliações", id?.data_avaliacoes],
-    ["Microfisioterapia", id?.microfisioterapia],
-    ["Exame de cabelo", id?.exame_cabelo],
-    ["Base da orientação", id?.base_orientacao],
+function Identificacao({ id, live, fallbackName }: { id?: NeuroIdentificacao; live?: PatientIdentificacao; fallbackName?: string | null }) {
+  // Demografia: o CADASTRO ao vivo (live) tem prioridade; o snapshot da IA é fallback.
+  // Quando ao vivo e sem data de nascimento, Idade vira "—" (em vez de "0 ano"/sumir).
+  const paciente = live?.paciente ?? id?.paciente ?? fallbackName ?? undefined;
+  const idade = live ? (live.idade ?? "—") : id?.idade;
+  const sexo = live?.sexo ?? id?.sexo;
+  const peso = live?.peso ?? id?.peso;
+  const altura = live?.altura ?? id?.altura;
+  const local = live?.local ?? id?.local;
+  // [rótulo, valor, sempreMostrar]
+  const rows: Array<[string, string | undefined, boolean]> = [
+    ["Paciente", paciente ?? undefined, !!live],
+    ["Idade", idade ?? undefined, !!live],
+    ["Sexo", sexo, false],
+    ["Peso", peso, false],
+    ["Altura", altura, false],
+    ["Local", local, false],
+    ["Data das avaliações", id?.data_avaliacoes, false],
+    ["Microfisioterapia", id?.microfisioterapia, false],
+    ["Exame de cabelo", id?.exame_cabelo, false],
+    ["Base da orientação", id?.base_orientacao, false],
   ];
-  const filled = rows.filter(([, v]) => v && v.trim());
+  const filled = rows.filter(([, v, always]) => always || (v && v.trim()));
   if (filled.length === 0) return null;
   return (
     <div className="mb-3 rounded-xl bg-[#F7F6F2] border border-black/[.05] px-3 py-2">
       {filled.map(([k, v]) => (
         <p key={k} className="text-[12px] leading-5 text-[#0F1A2E]">
           <span className="font-semibold">{k}: </span>
-          <span className="text-[#4b5563]">{v}</span>
+          <span className="text-[#4b5563]">{v && v.trim() ? v : "—"}</span>
         </p>
       ))}
     </div>
@@ -76,7 +87,7 @@ function Identificacao({ id, fallbackName }: { id?: NeuroIdentificacao; fallback
  * Renderiza os documentos do Neuro ID 360 no padrão dos relatórios oficiais.
  * Componente apenas de apresentação (server-compatible). Faz fallback p/ campos antigos.
  */
-export function NeuroId360Documents({ output, patientName }: { output: AiInsightOutput; patientName?: string | null }) {
+export function NeuroId360Documents({ output, patientName, liveId }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao }) {
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
@@ -86,10 +97,16 @@ export function NeuroId360Documents({ output, patientName }: { output: AiInsight
   return (
     <div className="space-y-3">
       {mapa && (
-        <div className="rounded-2xl border border-black/[.08] bg-white p-5">
-          <p className="text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-1">Documento 1</p>
-          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Relatório Funcional Integrado — Neuro ID</h3>
-          <Identificacao id={mapa.identificacao} fallbackName={patientName} />
+        <details className="group rounded-2xl border border-black/[.08] bg-white">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+            <span>
+              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-0.5">Documento 1</span>
+              <span className="block text-[15px] font-semibold text-[#0F1A2E]">Relatório Funcional Integrado — Neuro ID</span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-5">
+          <Identificacao id={mapa.identificacao} live={liveId} fallbackName={patientName} />
           <Paragraph title="Exames e informações avaliadas" text={mapa.exames_avaliados ?? mapa.leitura_integrativa} />
           {mapa.resultados_encontrados && mapa.resultados_encontrados.length > 0 ? (
             <LeadItems title="Resultados encontrados" items={mapa.resultados_encontrados} />
@@ -104,14 +121,21 @@ export function NeuroId360Documents({ output, patientName }: { output: AiInsight
           <Paragraph title="Síntese clínico-funcional" text={mapa.sintese_clinico_funcional} />
           <Paragraph title="Conclusão funcional" text={mapa.conclusao_funcional} />
           {mapa.fase_jornada && <Paragraph title="Fase na Jornada Neuro ID" text={mapa.fase_jornada} />}
-        </div>
+          </div>
+        </details>
       )}
 
       {plano && (
-        <div className="rounded-2xl border border-black/[.08] bg-white p-5">
-          <p className="text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-1">Documento 2</p>
-          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Plano Integrativo Neuro ID</h3>
-          <Identificacao id={plano.identificacao} fallbackName={patientName} />
+        <details className="group rounded-2xl border border-black/[.08] bg-white">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+            <span>
+              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-0.5">Documento 2</span>
+              <span className="block text-[15px] font-semibold text-[#0F1A2E]">Plano Integrativo Neuro ID</span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-5">
+          <Identificacao id={plano.identificacao} live={liveId} fallbackName={patientName} />
           {(plano.fase_jornada_nome || plano.fase_jornada_justificativa) && (
             <Paragraph
               title="Fase na Jornada Neuro ID"
@@ -130,13 +154,20 @@ export function NeuroId360Documents({ output, patientName }: { output: AiInsight
           )}
           <Paragraph title="Acompanhamento da evolução" text={plano.acompanhamento_evolucao} />
           <Paragraph title="Próximo passo" text={plano.proximo_passo} />
-        </div>
+          </div>
+        </details>
       )}
 
       {sup && (sup.itens.length > 0 || sup.observacoes_gerais.length > 0) && (
-        <div className="rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE] p-5">
-          <p className="text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-1">Documento 3 · rascunho, exige aprovação</p>
-          <h3 className="text-[15px] font-semibold text-[#0F1A2E] mb-3">Protocolo de Suplementação</h3>
+        <details className="group rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+            <span>
+              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-0.5">Documento 3 · rascunho, exige aprovação</span>
+              <span className="block text-[15px] font-semibold text-[#0F1A2E]">Protocolo de Suplementação</span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-5">
           {sup.itens.length > 0 && (
             <div className="space-y-2 mb-3">
               {sup.itens.map((it, i) => (
@@ -150,7 +181,8 @@ export function NeuroId360Documents({ output, patientName }: { output: AiInsight
             </div>
           )}
           <Section title="Observações gerais" items={sup.observacoes_gerais} />
-        </div>
+          </div>
+        </details>
       )}
     </div>
   );

@@ -12,7 +12,7 @@ export type BandKey = "solto" | "tenso" | "bloqueado";
 export type BandItemType = "mobility" | "pain" | "symptom" | "axis";
 export type BandIcon = "check" | "alert" | "ban";
 
-export type BandColors = { fill: string; stroke: string; text: string };
+export type BandColors = { fill: string; fillStrong: string; stroke: string; text: string };
 export type Band = {
   key: BandKey;
   colors: BandColors;
@@ -22,9 +22,9 @@ export type Band = {
 
 // Cores (light) do _BRIEF_BIO3_VISUAL.md. Terracota = cor de marca.
 const BANDS: Record<BandKey, Band> = {
-  solto:      { key: "solto",      icon: "check", colors: { fill: "#DCEBE0", stroke: "#5E8C6A", text: "#3E6B4E" } },
-  tenso:      { key: "tenso",      icon: "alert", colors: { fill: "#F4E4C8", stroke: "#C98A3C", text: "#8A5A14" } },
-  bloqueado:  { key: "bloqueado",  icon: "ban",   colors: { fill: "#EFD7CC", stroke: "#C2643C", text: "#8A3216" } },
+  solto:      { key: "solto",      icon: "check", colors: { fill: "#DCEBE0", fillStrong: "#B7D8C0", stroke: "#5E8C6A", text: "#3E6B4E" } },
+  tenso:      { key: "tenso",      icon: "alert", colors: { fill: "#F4E4C8", fillStrong: "#EACB92", stroke: "#C98A3C", text: "#8A5A14" } },
+  bloqueado:  { key: "bloqueado",  icon: "ban",   colors: { fill: "#EFD7CC", fillStrong: "#E2B09A", stroke: "#C2643C", text: "#8A3216" } },
 };
 
 /** Banda a partir da DISFUNÇÃO 0–100 (0–30 solto · 31–69 tenso · 70–100 bloqueado). */

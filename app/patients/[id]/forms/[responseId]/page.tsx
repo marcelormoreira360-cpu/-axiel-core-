@@ -7,6 +7,7 @@ import {
   getTemplateWithStructure,
   getAssessmentAnswers,
 } from "@/services/assessment-service";
+import { bandForDysfunction } from "@/modules/neuro-id/bands";
 
 type Props = {
   params: Promise<{ id: string; responseId: string }>;
@@ -25,6 +26,7 @@ export default async function ViewResponsePage({ params }: Props) {
 
   const answersMap = Object.fromEntries(answers.map((a) => [a.question_id, a]));
   const pct = response.score_percentage ?? 0;
+  const totalBand = bandForDysfunction(pct); // semáforo por severidade (maior % = pior)
   const sectionScores = response.section_scores ?? {};
 
   const filledDate = new Date(response.filled_at).toLocaleDateString("pt-BR", {
@@ -61,13 +63,13 @@ export default async function ViewResponsePage({ params }: Props) {
               {response.total_score ?? 0}
             </span>
             <span className="text-[14px] text-white/40">/ {response.max_possible_score ?? 0}</span>
-            <span className="ml-[10px] text-[18px] font-semibold text-[#0F6E56]">
+            <span className="ml-[10px] text-[18px] font-semibold" style={{ color: totalBand?.colors.stroke ?? "#0F6E56" }}>
               {Math.round(pct)}%
             </span>
           </div>
         </div>
         <div className="h-[6px] rounded-full bg-white/10 overflow-hidden">
-          <div className="h-full rounded-full bg-[#0F6E56]" style={{ width: `${pct}%` }} />
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: totalBand?.colors.stroke ?? "#0F6E56" }} />
         </div>
       </div>
 
@@ -79,6 +81,7 @@ export default async function ViewResponsePage({ params }: Props) {
             const ss = sectionScores[section.id];
             if (!ss) return null;
             const sPct = ss.max > 0 ? Math.round((ss.score / ss.max) * 100) : 0;
+            const sBand = bandForDysfunction(sPct);
             return (
               <div key={section.id} className="flex items-center gap-[10px]">
                 <p className="text-[12px] text-[#0F1A2E] w-[140px] shrink-0 truncate">
@@ -86,19 +89,12 @@ export default async function ViewResponsePage({ params }: Props) {
                 </p>
                 <div className="flex-1 h-[4px] bg-[#F4F3EF] rounded-full overflow-hidden">
                   <div
-                    className={[
-                      "h-full rounded-full",
-                      sPct >= 70
-                        ? "bg-[#FF6B4A]"
-                        : sPct >= 40
-                        ? "bg-[#F5A623]"
-                        : "bg-[#0F6E56]",
-                    ].join(" ")}
-                    style={{ width: `${sPct}%` }}
+                    className="h-full rounded-full"
+                    style={{ width: `${sPct}%`, background: sBand?.colors.stroke ?? "#0F6E56" }}
                   />
                 </div>
                 <div className="flex items-baseline gap-[3px] shrink-0">
-                  <span className="text-[12px] font-medium text-[#0F1A2E]">{ss.score}</span>
+                  <span className="text-[12px] font-medium" style={{ color: sBand?.colors.text ?? "#0F1A2E" }}>{ss.score}</span>
                   <span className="text-[10px] text-[#A09E98]">/{ss.max}</span>
                 </div>
               </div>

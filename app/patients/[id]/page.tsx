@@ -21,6 +21,8 @@ import { PatientSupplementsPanel } from "@/components/patient-supplements-panel"
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
 import { getLatestNeuroIdMap, getNeuroIdAttentionPoints } from "@/services/neuro-id-service";
+import { bandForDysfunction } from "@/modules/neuro-id/bands";
+import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
 import { PatientChargePanel } from "@/components/patient-charge-panel";
@@ -514,7 +516,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               </div>
               <div className="space-y-2">
                 {aiInsights.slice(0, 3).map((insight) => (
-                  <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} />
+                  <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} liveId={liveIdentificacaoPt(patient)} />
                 ))}
               </div>
             </div>
@@ -598,6 +600,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <div className="divide-y divide-black/[.04]">
             {assessmentResponses.slice(0, 5).map((resp) => {
               const pct = resp.score_percentage ?? 0;
+              const band = bandForDysfunction(pct); // semáforo por severidade (maior % = pior)
               const filledDate = new Date(resp.filled_at).toLocaleDateString(locale, {
                 day: "numeric",
                 month: "short",
@@ -618,14 +621,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                   <div className="flex items-center gap-[8px] shrink-0">
                     <div className="w-[80px] h-[4px] bg-[#F4F3EF] rounded-full overflow-hidden">
                       <div
-                        className={[
-                          "h-full rounded-full",
-                          pct >= 70 ? "bg-[#FF6B4A]" : pct >= 40 ? "bg-[#F5A623]" : "bg-[#0F6E56]",
-                        ].join(" ")}
-                        style={{ width: `${pct}%` }}
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: band?.colors.stroke ?? "#0F6E56" }}
                       />
                     </div>
-                    <span className="text-[12px] font-semibold text-[#0F1A2E] w-[36px] text-right">
+                    <span className="text-[12px] font-semibold w-[36px] text-right" style={{ color: band?.colors.text ?? "#0F1A2E" }}>
                       {Math.round(pct)}%
                     </span>
                     <svg className="w-3 h-3 text-[#D3D1C7] group-hover:text-[#A09E98] transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>

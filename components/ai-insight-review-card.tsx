@@ -6,6 +6,7 @@ import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
+import type { PatientIdentificacao } from "@/lib/patient-demographics";
 
 function insightOutput(insight: AiInsight) {
   return insight.final_output ?? insight.output;
@@ -29,7 +30,7 @@ function simplifiedStatus(status: AiInsight["review_status"]): BadgeStatus {
   return status === "final" ? "final" : "review";
 }
 
-export function AiInsightReviewCard({ patientId, insight }: { patientId: string; insight: AiInsight }) {
+export function AiInsightReviewCard({ patientId, insight, liveId }: { patientId: string; insight: AiInsight; liveId?: PatientIdentificacao }) {
   const approveAction = approveAiInsightAction.bind(null, patientId, insight.id);
   const requestChangeAction = requestAiInsightChangesAction.bind(null, patientId, insight.id);
   const generateAction = generateAiInsightAction.bind(null, patientId);
@@ -45,8 +46,8 @@ export function AiInsightReviewCard({ patientId, insight }: { patientId: string;
 
       <p className="line-clamp-3 text-sm leading-6 text-axiel-text-secondary">{shortSummary(insight)}</p>
 
-      {/* Neuro ID 360 — os 3 documentos (quando gerados) */}
-      <NeuroId360Documents output={output} />
+      {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
+      <NeuroId360Documents output={output} liveId={liveId} />
 
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">

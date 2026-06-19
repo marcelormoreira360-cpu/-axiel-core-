@@ -54,11 +54,12 @@ function NeuroPyramid({ data, className = "w-[190px] h-[120px] shrink-0" }: { da
     <svg viewBox="0 0 240 152" className={className} role="img" aria-label="Pirâmide Bio³ — grau de disfunção">
       {data.map((d, i) => {
         const band = bandForDysfunction(d.dys);
-        const fill = band ? band.colors.fill : "#E9E7E0";
+        const fill = band ? band.colors.fillStrong : "#E9E7E0";
+        const stroke = band ? band.colors.stroke : "#D3D1C7";
         const txt = band ? band.colors.text : "#A09E98";
         return (
           <g key={i}>
-            <polygon points={polys[i]} fill={fill} stroke="#fff" strokeWidth={2} />
+            <polygon points={polys[i]} fill={fill} stroke={stroke} strokeWidth={2} />
             <text x={120} y={cy[i]} textAnchor="middle" dominantBaseline="middle" fontSize={14} fontWeight={700} fill={txt}>
               {d.dys === null ? "—" : `${Math.round(d.dys)}%`}
             </text>
@@ -182,8 +183,8 @@ export function PatientNeuroIdPanel({
           <div className="flex items-center gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px] flex-wrap">
             <NeuroPyramid data={pyramidData} className="w-[120px] h-[76px] shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em]">{t("indexLabel")}</p>
-              <div className="flex items-baseline gap-[8px] flex-wrap">
+              <p className="text-[10px] text-[#A09E98] leading-snug">{t("indexCaption")}</p>
+              <div className="flex items-baseline gap-[8px] flex-wrap mt-[2px]">
                 <p className="text-[40px] font-semibold leading-none" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
                   {generalDys === null ? "—" : `${generalDys}%`}
                 </p>
@@ -195,7 +196,6 @@ export function PatientNeuroIdPanel({
               {map.is_partial && (
                 <p className="text-[11px] text-[#C77D17] flex items-center gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
               )}
-              <p className="text-[9px] text-[#A09E98] mt-[2px]">{t("goalLower")}</p>
             </div>
           </div>
 
@@ -215,6 +215,7 @@ export function PatientNeuroIdPanel({
                   <p className="text-[26px] font-semibold leading-none mt-[6px]" style={{ color: band?.colors.text ?? "#A09E98" }}>
                     {disf === null ? "—" : `${disf}%`}
                   </p>
+                  <p className="text-[9px] mt-[2px] opacity-70" style={{ color: band?.colors.text ?? "#A09E98" }}>{t("cardSubtitle")}</p>
                   {isPriority && (
                     <p className="text-[10px] font-semibold mt-[4px] flex items-center gap-1" style={{ color: band?.colors.text ?? "#991B1B" }}>★ {t("startHere")}</p>
                   )}
