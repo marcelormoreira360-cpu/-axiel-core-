@@ -43,6 +43,31 @@ export const DEFAULT_QUESTION_MAP: QuestionMapEntry[] = [
   { source: "assessment", template_match: "MSQ", section_match: "MOUTH", catalog_code: "msq_mouth_throat" },
   { source: "assessment", template_match: "MSQ", section_match: "OTHER", catalog_code: "msq_other" },
 
+  // ── Q.R.M. (versão PT-BR do MSQ — "Questionário de Rastreamento Metabólico").
+  //    Seções em português; mesmo de-para → codes msq_*. (sem seção PESO no Q.R.M.) ──
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "CABEÇA",   catalog_code: "msq_head" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "OLHOS",    catalog_code: "msq_eyes" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "OUVIDOS",  catalog_code: "msq_ears" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "NARIZ",    catalog_code: "msq_nose" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "BOCA",     catalog_code: "msq_mouth_throat" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "PELE",     catalog_code: "msq_skin" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "CORAÇÃO",  catalog_code: "msq_heart" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "PULMÃO",   catalog_code: "msq_lungs" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "DIGESTIVO",catalog_code: "msq_digestive" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "ARTICULA", catalog_code: "msq_joints_muscles" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "ENERGIA",  catalog_code: "msq_energy" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "MENTE",    catalog_code: "msq_mind" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "EMOÇÕES",  catalog_code: "msq_emotions" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "OUTROS",   catalog_code: "msq_other" },
+
+  // ── Q-SNA (Sistema Nervoso Autônomo). Total = carga autonômica geral (Bioquímico,
+  //    peso menor); 4 dimensões específicas → Bioemocional. Codes já no catálogo. ──
+  { source: "assessment", template_match: "Q-SNA", section_match: null,             catalog_code: "qsna_total" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "SONO",           catalog_code: "qsna_sono" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "EMOCIONAL",      catalog_code: "qsna_emocional" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "GASTROINTESTINAL",catalog_code: "qsna_gi_visceral" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "NEUROCOGNITIVA", catalog_code: "qsna_neurocognitiva" },
+
   // ── PHQ-9 / GAD-7 (total do template) ──
   { source: "assessment", template_match: "PHQ-9", section_match: null, catalog_code: "phq9_depressao" },
   { source: "assessment", template_match: "GAD-7", section_match: null, catalog_code: "gad7_ansiedade" },

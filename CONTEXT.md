@@ -1,7 +1,18 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 18/06/2026 (24)
+> Atualizado em: 19/06/2026 (25)
+
+## 🔴 FIX Bio³ — "Importar respostas" não puxava nada (19/06/2026) — APLICADO no banco
+
+> **Sintoma**: painel mostrava "Nenhuma resposta encontrada para importar." e a pirâmide não gerava, mesmo com questionários respondidos.
+> **Causa-raiz**: em produção os pacientes respondem o **Q.R.M. — Questionário de Rastreamento Metabólico** (versão PT-BR do MSQ, seções em **português**: CABEÇA, MENTE, EMOÇÕES…), mas o de-para (`neuro_id_question_map`) só tinha linhas para template **"MSQ"** com seções em **inglês** (HEAD, MIND…). Nenhum template casava → draft vazio. Além disso `ensureClinicQuestionMap` **não re-semeia** clínica já semeada, então editar só o default não bastava.
+> **Fix (2 partes)**:
+> 1. `modules/neuro-id/question-map.ts`: +14 linhas Q.R.M. (`template_match: "Rastreamento Metab"`, `section_match` em PT) → mesmos codes `msq_*`. (Q.R.M. não tem seção PESO → `msq_weight` fica pendente.) PHQ-9/GAD-7/HPA já casavam pelo nome.
+> 2. **Backfill no banco** (clínica `98e98ef3…`): `INSERT` das mesmas 14 linhas em `neuro_id_question_map` (aditivo, reversível via `active=false`). Tabela: 22→36 linhas ativas.
+> **Validação**: simulação SQL por seção bateu (ex.: CABEÇA 3.8, EMOÇÕES 3.1, MENTE 1.9); `tsc` 0; testes do de-para inalterados (todos os codes existem no catálogo). **Pendente**: Q-SNA ainda não entra no import (só via "Extrair com IA"); avaliar se deve mapear. Código **não** deployado na Vercel (aguarda OK do Marcelo); o backfill já vale para o app atual.
+
+## 🟡 Mapa Bio³ — Auto-gerar ao responder questionário (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 
 ## 🟡 Mapa Bio³ — Auto-gerar ao responder questionário (18/06/2026) — CÓDIGO PRONTO, AGUARDA OK
 
