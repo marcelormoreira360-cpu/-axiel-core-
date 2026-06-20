@@ -4,12 +4,16 @@ import { Shell } from "@/components/shell";
 import { getPatientById, getClinicPatientsForPicker } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { updatePatientAction, anonymizePatientAction } from "./actions";
+import { getTranslations } from "next-intl/server";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id); // A-06
   if (!patient) notFound();
+
+  const t = await getTranslations("patientEdit");
+  const confirmMsg = t("anonymizeConfirm", { name: patient.full_name });
 
   const referrerOptions = clinic?.id ? await getClinicPatientsForPicker(clinic.id, id) : [];
 
@@ -27,14 +31,14 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
 
       <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden max-w-xl">
         <div className="px-[20px] py-[16px] border-b border-black/[.06]">
-          <p className="text-[15px] font-medium text-[#0F1A2E]">Editar paciente</p>
-          <p className="text-[12px] text-[#A09E98] mt-[2px]">Atualize os dados cadastrais</p>
+          <p className="text-[15px] font-medium text-[#0F1A2E]">{t("title")}</p>
+          <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
         </div>
 
         <form action={action} className="px-[20px] py-[20px] space-y-[14px]">
           {/* Nome */}
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Nome completo *</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("fullName")} *</label>
             <input
               type="text"
               name="full_name"
@@ -47,22 +51,22 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
           {/* Email e telefone */}
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Email</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("email")}</label>
               <input
                 type="email"
                 name="email"
                 defaultValue={patient.email ?? ""}
-                placeholder="email@exemplo.com"
+                placeholder={t("emailPh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Telefone</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("phone")}</label>
               <input
                 type="text"
                 name="phone"
                 defaultValue={patient.phone ?? ""}
-                placeholder="(11) 99999-9999"
+                placeholder={t("phonePh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
@@ -70,12 +74,12 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
 
           {/* CPF (necessário para cobrança Pix via Asaas) */}
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">CPF</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("cpf")}</label>
             <input
               type="text"
               name="cpf"
               defaultValue={patient.cpf ?? ""}
-              placeholder="000.000.000-00"
+              placeholder={t("cpfPh")}
               className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
@@ -83,7 +87,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
           {/* Data de nascimento e status */}
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Data de nascimento</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("dob")}</label>
               <input
                 type="date"
                 name="date_of_birth"
@@ -92,15 +96,15 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Status</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("status")}</label>
               <select
                 name="status"
                 defaultValue={patient.status}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
               >
-                <option value="active">Ativo</option>
-                <option value="inactive">Inativo</option>
-                <option value="archived">Arquivado</option>
+                <option value="active">{t("statusActive")}</option>
+                <option value="inactive">{t("statusInactive")}</option>
+                <option value="archived">{t("statusArchived")}</option>
               </select>
             </div>
           </div>
@@ -108,44 +112,44 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
           {/* Demografia (fonte única — lida por todos os relatórios) */}
           <div className="grid grid-cols-2 gap-[10px]">
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Sexo</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("sex")}</label>
               <input
                 type="text"
                 name="sex"
                 defaultValue={patient.sex ?? ""}
-                placeholder="Ex: feminino, masculino..."
+                placeholder={t("sexPh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Cidade</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("city")}</label>
               <input
                 type="text"
                 name="city"
                 defaultValue={patient.city ?? ""}
-                placeholder="Cidade"
+                placeholder={t("cityPh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Peso (kg)</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("weight")}</label>
               <input
                 type="text"
                 inputMode="decimal"
                 name="weight_kg"
                 defaultValue={patient.weight_kg ?? ""}
-                placeholder="Ex: 68"
+                placeholder={t("weightPh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
-              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Altura (cm)</label>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("height")}</label>
               <input
                 type="text"
                 inputMode="decimal"
                 name="height_cm"
                 defaultValue={patient.height_cm ?? ""}
-                placeholder="Ex: 170"
+                placeholder={t("heightPh")}
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
@@ -153,30 +157,30 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
 
           {/* Notas */}
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Notas clínicas</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("notes")}</label>
             <textarea
               name="notes"
               rows={4}
               defaultValue={patient.notes ?? ""}
-              placeholder="Observações relevantes sobre o paciente..."
+              placeholder={t("notesPh")}
               className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
             />
           </div>
 
           {/* Indicado por (indicação paciente→paciente) */}
           <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">Indicado por</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("referredBy")}</label>
             <select
               name="referred_by_patient_id"
               defaultValue={patient.referred_by_patient_id ?? ""}
               className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
             >
-              <option value="">— Nenhum / origem externa</option>
+              <option value="">{t("referredByNone")}</option>
               {referrerOptions.map((p) => (
                 <option key={p.id} value={p.id}>{p.full_name}</option>
               ))}
             </select>
-            <p className="text-[10px] text-[#A09E98] mt-[4px]">Outro paciente que indicou este. Ajuda a identificar quem mais traz indicações.</p>
+            <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("referredByHint")}</p>
           </div>
 
           <div className="flex gap-[8px] pt-[4px]">
@@ -184,13 +188,13 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               type="submit"
               className="text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[20px] py-[9px] transition"
             >
-              Salvar alterações
+              {t("save")}
             </button>
             <Link
               href={`/patients/${id}`}
               className="text-[13px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-[8px] px-[20px] py-[9px] transition"
             >
-              Cancelar
+              {t("cancel")}
             </Link>
           </div>
         </form>
@@ -199,29 +203,29 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
       {/* ── Zona de perigo (LGPD) ──────────────────────────────────────────── */}
       <div className="bg-white border border-red-100 rounded-[12px] overflow-hidden max-w-xl mt-6">
         <div className="px-[20px] py-[16px] border-b border-red-100 bg-red-50/40">
-          <p className="text-[14px] font-semibold text-red-700">Zona de perigo</p>
+          <p className="text-[14px] font-semibold text-red-700">{t("dangerTitle")}</p>
           <p className="text-[11px] text-red-500 mt-[2px]">
-            Ações irreversíveis em conformidade com a LGPD.
+            {t("dangerSubtitle")}
           </p>
         </div>
         <div className="px-[20px] py-[16px] flex items-center justify-between gap-4">
           <div>
-            <p className="text-[13px] font-medium text-[#0F1A2E]">Anonimizar dados do paciente</p>
+            <p className="text-[13px] font-medium text-[#0F1A2E]">{t("anonymizeTitle")}</p>
             <p className="text-[11px] text-[#A09E98] mt-[2px]">
-              Remove nome, e-mail, telefone e endereço. O histórico clínico é mantido de forma anonimizada. Esta ação não pode ser desfeita.
+              {t("anonymizeDesc")}
             </p>
           </div>
           <form action={anonymizePatientAction.bind(null, id)}>
             <button
               type="submit"
               onClick={(e) => {
-                if (!confirm(`Tem certeza? Isso anonimizará permanentemente os dados de ${patient.full_name} (LGPD). Esta ação não pode ser desfeita.`)) {
+                if (!confirm(confirmMsg)) {
                   e.preventDefault();
                 }
               }}
               className="shrink-0 text-[12px] font-medium text-red-600 border border-red-200 bg-white hover:bg-red-50 rounded-[8px] px-[14px] py-[7px] transition whitespace-nowrap"
             >
-              Anonimizar
+              {t("anonymizeBtn")}
             </button>
           </form>
         </div>
