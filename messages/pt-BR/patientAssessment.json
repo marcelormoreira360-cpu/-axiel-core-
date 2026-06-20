@@ -1,0 +1,22 @@
+{
+  "title": "Avaliação",
+  "subtitle": "Espaços do terapeuta — entram no relatório do paciente.",
+  "edit": "Editar",
+  "save": "Salvar",
+  "saving": "Salvando…",
+  "cancel": "Cancelar",
+  "empty": "Sem avaliação ainda. Clique em editar para registrar anamnese, antecedentes, dor e conduta.",
+  "anamnese": "Anamnese",
+  "anamnesePh": "Como o paciente está, queixa, história de vida, hábitos…",
+  "antecedents": "Antecedentes / cirurgias",
+  "antecedentsPh": "Cirurgias, doenças prévias e histórico relevante (o que não vem dos questionários).",
+  "pain": "Dor",
+  "painLevel": "Grau da dor (0–10)",
+  "painLocation": "Local da dor",
+  "painLocationPh": "Ex: torácica alta, lombar, ombro direito…",
+  "painMapHint": "Mapa visual do corpo chega em breve.",
+  "treatment": "Conduta / tratamento sugerido",
+  "treatmentPh": "Tratamento realizado e a sugestão que vai no 1º relatório do paciente.",
+  "notInformed": "não informado",
+  "errorSave": "Não foi possível salvar. Tente novamente."
+}

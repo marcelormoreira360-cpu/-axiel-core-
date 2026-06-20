@@ -43,6 +43,7 @@ import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientDemographicsPanel } from "@/components/patient-demographics-panel";
+import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
@@ -307,6 +308,16 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           )}
         </div>
       )}
+
+      {/* ── Avaliação (espaços do terapeuta — entram no relatório) ── */}
+      <PatientAssessmentPanel
+        patientId={patient.id}
+        anamnese={patient.anamnese}
+        antecedents={patient.antecedents}
+        painLevel={patient.pain_level}
+        painLocation={patient.pain_location}
+        treatmentNote={patient.treatment_note}
+      />
 
       {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
       <div className="mt-[18px]">

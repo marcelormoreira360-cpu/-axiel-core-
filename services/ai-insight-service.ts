@@ -25,6 +25,11 @@ export type AiInsightInputSnapshot = {
     weight_kg: number | null;
     height_cm: number | null;
     city: string | null;
+    anamnese: string | null;
+    antecedents: string | null;
+    pain_level: number | null;
+    pain_location: string | null;
+    treatment_note: string | null;
   };
   intake: Array<{
     question: string;
@@ -111,6 +116,12 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       weight_kg: patient.weight_kg,
       height_cm: patient.height_cm,
       city: patient.city,
+      // Seção "Avaliação" — escrita do terapeuta entra no relatório.
+      anamnese: normalizeInsightText(patient.anamnese),
+      antecedents: normalizeInsightText(patient.antecedents),
+      pain_level: patient.pain_level,
+      pain_location: normalizeInsightText(patient.pain_location),
+      treatment_note: normalizeInsightText(patient.treatment_note),
     },
     intake: intakeResponses.map((response) => ({
       question: normalizeInsightText(response.intake_questions?.label ?? "Question"),
