@@ -84,5 +84,28 @@
   "referral": {
     "referredBy": "Referred by {name}",
     "brought": "{count, plural, one {Referred # patient} other {Referred # patients}}"
+  },
+  "demographics": {
+    "title": "Patient data",
+    "subtitle": "Single source — feeds the Bio³ map, reports and PDF.",
+    "edit": "Edit",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "empty": "No data yet. Click edit to fill in name, date of birth, sex, weight, height and city.",
+    "nameLabel": "Full name",
+    "dobLabel": "Date of birth",
+    "sexLabel": "Sex",
+    "sexMale": "Male",
+    "sexFemale": "Female",
+    "sexOther": "Other",
+    "sexUnset": "Prefer not to say",
+    "weightLabel": "Weight (kg)",
+    "heightLabel": "Height (cm)",
+    "cityLabel": "City",
+    "ageSuffix": "yrs",
+    "notInformed": "not informed",
+    "errorName": "Name is required.",
+    "errorSave": "Could not save. Please try again."
   }
 }

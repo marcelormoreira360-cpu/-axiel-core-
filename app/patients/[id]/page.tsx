@@ -42,6 +42,7 @@ import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
+import { PatientDemographicsPanel } from "@/components/patient-demographics-panel";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
@@ -271,6 +272,17 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Intelligence strip ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
+
+      {/* ── Demografia (fonte única: alimenta Bio³, relatórios, PDF) ── */}
+      <PatientDemographicsPanel
+        patientId={patient.id}
+        fullName={patient.full_name}
+        dateOfBirth={patient.date_of_birth}
+        sex={patient.sex}
+        weightKg={patient.weight_kg}
+        heightCm={patient.height_cm}
+        city={patient.city}
+      />
 
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
       <PatientCaseSummaryCard
@@ -505,24 +517,26 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             </div>
           )}
 
-          {/* Recent AI insights list */}
-          {aiInsights.length > 0 && (
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-[11px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
-                <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
-                  {t("insight.viewAll")}
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {aiInsights.slice(0, 3).map((insight) => (
-                  <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} liveId={liveIdentificacaoPt(patient)} />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Relatórios Neuro ID 360 renderizados em largura total, abaixo do grid (ver seção dedicada). */}
         </div>
       </div>
+
+      {/* ── Relatórios Neuro ID 360 — largura total (leitura ampla, sem coluna estreita) ── */}
+      {aiInsights.length > 0 && (
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
+            <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
+              {t("insight.viewAll")}
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {aiInsights.slice(0, 3).map((insight) => (
+              <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} liveId={liveIdentificacaoPt(patient)} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Next Step strip — ação prioritária baseada no estado atual */}
       {(pendingReviews > 0 || latestInsight?.output?.structured_summary?.current_status) && (
