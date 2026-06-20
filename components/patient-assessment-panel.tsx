@@ -31,7 +31,6 @@ export function PatientAssessmentPanel({
     null,
   );
 
-  const dash = t("notInformed");
   const hasContent = Boolean(anamnese || antecedents || painLevel !== null || painLocation || treatmentNote);
 
   function Field({ label, value }: { label: string; value: string | null }) {
