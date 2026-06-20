@@ -5,6 +5,7 @@
   "disclaimer": "Functional wellbeing map — not a disease diagnosis or a promise of cure. It points to areas worth professional follow-up.",
   "indexLabel": "Bio Index · dysfunction grade",
   "indexCaption": "Overall index · all axes · dysfunction grade (lower = better)",
+  "pyramidShareCaption": "each axis's weight in the total · sums to 100% · color = severity",
   "cardSubtitle": "axis dysfunction",
   "equilibrium": "balance",
   "priorityLabel": "Focus area",

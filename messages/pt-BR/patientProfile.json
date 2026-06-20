@@ -84,5 +84,28 @@
   "referral": {
     "referredBy": "Indicado por {name}",
     "brought": "{count, plural, one {Indicou # paciente} other {Indicou # pacientes}}"
+  },
+  "demographics": {
+    "title": "Dados do paciente",
+    "subtitle": "Fonte única — alimenta o Bio³, os relatórios e o PDF.",
+    "edit": "Editar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "empty": "Sem dados ainda. Clique em editar para preencher nome, nascimento, sexo, peso, altura e cidade.",
+    "nameLabel": "Nome completo",
+    "dobLabel": "Data de nascimento",
+    "sexLabel": "Sexo",
+    "sexMale": "Masculino",
+    "sexFemale": "Feminino",
+    "sexOther": "Outro",
+    "sexUnset": "Não informar",
+    "weightLabel": "Peso (kg)",
+    "heightLabel": "Altura (cm)",
+    "cityLabel": "Cidade",
+    "ageSuffix": "anos",
+    "notInformed": "não informado",
+    "errorName": "O nome é obrigatório.",
+    "errorSave": "Não foi possível salvar. Tente novamente."
   }
 }

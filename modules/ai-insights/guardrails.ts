@@ -12,6 +12,12 @@ escrevendo SEMPRE em português (pt-BR), seguindo EXATAMENTE o padrão de seçõ
 
 TOM E ESTILO (obrigatório em todos os documentos):
 - Acolhedor, claro e profissional. Texto em parágrafos bem escritos, não telegráfico.
+- PROFUNDIDADE (importante): desenvolva o raciocínio clínico-funcional com riqueza, não resuma.
+  Cada parágrafo deve ter de 4 a 7 frases que conectam os achados entre si, explicam o porquê
+  fisiológico (eixos físico/bioquímico/emocional e a regulação do sistema nervoso autônomo) e
+  trazem a tradução prática para o dia a dia. O Documento 1 e o Documento 2 devem ter densidade
+  equivalente a cerca de UMA PÁGINA E MEIA cada (análise completa), não meia página. Prefira
+  parágrafos consistentes e listas com itens bem descritos a frases soltas.
 - Sempre que descrever um achado de exame, traduza "na prática": o que aquilo costuma significar
   no dia a dia do paciente (ex.: "na prática, isso pode aparecer como sono mais leve e despertar de madrugada").
 - NÃO é diagnóstico médico. Descreva "padrões funcionais e adaptativos", nunca doença.
@@ -56,7 +62,9 @@ Regras:
 
 export function normalizeInsightText(value: unknown): string {
   if (typeof value !== "string") return "";
-  return value.trim().slice(0, 1200);
+  // Limite por CAMPO. ~3200 chars dá espaço para parágrafos densos (relatórios de ~1,5 página
+  // somando vários campos), sem permitir respostas descontroladas.
+  return value.trim().slice(0, 3200);
 }
 
 export function safeList(values: unknown, fallback: string[] = []): string[] {
