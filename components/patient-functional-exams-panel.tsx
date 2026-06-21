@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Activity, Plus, X, Trash2 } from "lucide-react";
+import { Activity, Plus, X, Trash2, ChevronDown } from "lucide-react";
 import type { PatientFunctionalExam } from "@/services/functional-exams-service";
 import { addFunctionalExamAction, deleteFunctionalExamAction } from "@/app/patients/[id]/functional-exams/actions";
 
@@ -71,10 +71,6 @@ export function PatientFunctionalExamsPanel({
             <input type="file" name="exam_file" accept="application/pdf" className={inputCls + " text-[11px] file:mr-2 file:rounded-md file:border-0 file:bg-[#0F6E56]/10 file:px-2 file:py-1 file:text-[#0F6E56]"} />
             <p className="text-[9px] text-[#A09E98] mt-[3px]">{t("fileHint")}</p>
           </div>
-          <div>
-            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("summaryLabel")}</label>
-            <textarea name="summary" rows={4} placeholder={t("summaryPlaceholder")} className={inputCls + " resize-none"} />
-          </div>
           <button
             type="submit"
             className="w-full text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] py-[9px] transition"
@@ -89,8 +85,8 @@ export function PatientFunctionalExamsPanel({
       ) : (
         <div className="space-y-[8px]">
           {exams.map((exam) => (
-            <div key={exam.id} className="border border-black/[.06] rounded-[10px] px-[12px] py-[10px]">
-              <div className="flex items-start justify-between gap-[8px]">
+            <details key={exam.id} className="group border border-black/[.06] rounded-[10px] px-[12px] py-[10px]">
+              <summary className="flex items-center justify-between gap-[8px] cursor-pointer list-none">
                 <div className="flex items-center gap-[7px] min-w-0">
                   <Activity className="h-[14px] w-[14px] text-[#0F6E56] shrink-0" />
                   <div className="min-w-0">
@@ -100,16 +96,17 @@ export function PatientFunctionalExamsPanel({
                     </p>
                   </div>
                 </div>
-                <form action={deleteFunctionalExamAction.bind(null, exam.id, patientId)}>
-                  <button type="submit" className="text-[#C4C2BC] hover:text-[#B42318] transition" aria-label={t("delete")}>
-                    <Trash2 className="h-[13px] w-[13px]" />
-                  </button>
-                </form>
-              </div>
+                <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
+              </summary>
               {exam.summary && (
-                <p className="text-[11px] text-[#6B6A66] mt-[8px] whitespace-pre-wrap leading-relaxed">{exam.summary}</p>
+                <p className="text-[11px] text-[#6B6A66] mt-[10px] whitespace-pre-wrap leading-relaxed">{exam.summary}</p>
               )}
-            </div>
+              <form action={deleteFunctionalExamAction.bind(null, exam.id, patientId)} className="mt-[8px]">
+                <button type="submit" className="inline-flex items-center gap-1 text-[10px] font-medium text-[#B42318]/80 hover:text-[#B42318] transition" aria-label={t("delete")}>
+                  <Trash2 className="h-[12px] w-[12px]" /> {t("delete")}
+                </button>
+              </form>
+            </details>
           ))}
         </div>
       )}
