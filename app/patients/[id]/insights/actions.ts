@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { approveAiInsightAsFinal, generateAndSaveAiInsight, requestAiInsightChanges, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
+import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -93,6 +93,18 @@ export async function resendApprovedInsightAction(patientId: string) {
   }
   revalidatePath(`/patients/${patientId}/insights`);
   redirect(`/patients/${patientId}/insights?resent=1${delivery}`);
+}
+
+export async function archiveAiInsightAction(patientId: string, aiInsightId: string) {
+  try {
+    await archiveAiInsight(aiInsightId);
+  } catch (error) {
+    redirect(`/patients/${patientId}?error=${encodeURIComponent(describeError(error))}`);
+  }
+
+  revalidatePath(`/patients/${patientId}`);
+  revalidatePath(`/patients/${patientId}/insights`);
+  redirect(`/patients/${patientId}?archived_insight=1`);
 }
 
 export async function requestAiInsightChangesAction(patientId: string, aiInsightId: string, formData: FormData) {

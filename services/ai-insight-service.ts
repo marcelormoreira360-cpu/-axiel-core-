@@ -343,6 +343,23 @@ export async function getAiInsightsByPatient(patientId: string, limit = 6): Prom
   return (data ?? []) as AiInsight[];
 }
 
+/**
+ * Arquiva um insight/caso (review_status = 'archived'). Some da ficha e das listas
+ * (todas filtram != 'archived'), mas NÃO apaga o registro clínico — é reversível.
+ * Para o terapeuta isso é "excluir o relatório". RLS de UPDATE (can_write_clinic_data) escopa.
+ */
+export async function archiveAiInsight(aiInsightId: string): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("ai_insights")
+    .update({ review_status: "archived" })
+    .eq("id", aiInsightId);
+
+  if (error) throw error;
+}
+
 export async function getLatestFinalAiInsight(patientId: string): Promise<AiInsight | null> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

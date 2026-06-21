@@ -6,6 +6,7 @@ import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
+import { DeleteInsightButton } from "@/components/delete-insight-button";
 import type { PatientIdentificacao } from "@/lib/patient-demographics";
 
 function insightOutput(insight: AiInsight) {
@@ -85,6 +86,8 @@ export function AiInsightReviewCard({ patientId, insight, liveId }: { patientId:
             </span>
           </button>
         </form>
+
+        <DeleteInsightButton patientId={patientId} insightId={insight.id} />
       </div>
 
       <p className="rounded-xl bg-yellow-50 px-4 py-3 text-xs font-medium text-yellow-800">{AI_INSIGHT_LABEL}</p>
