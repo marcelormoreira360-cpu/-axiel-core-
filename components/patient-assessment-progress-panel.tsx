@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { TrendingUp, TrendingDown, Minus, Send } from "lucide-react";
+import Link from "next/link";
+import { TrendingUp, TrendingDown, Minus, Send, Plus, ChevronRight } from "lucide-react";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
 import { bandForDysfunction } from "@/modules/neuro-id/bands";
 import { resendAssessmentAction } from "@/app/patients/[id]/assessments/actions";
@@ -29,7 +30,17 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
       <div className="flex items-start justify-between gap-2 mb-[8px]">
-        <p className="text-[13px] font-medium text-[#0F1A2E]">{item.template_name}</p>
+        {item.latest_response_id ? (
+          <Link
+            href={`/patients/${patientId}/forms/${item.latest_response_id}`}
+            className="inline-flex items-center gap-1 text-[13px] font-medium text-[#0F1A2E] hover:text-[#0F6E56] transition group/q"
+          >
+            {item.template_name}
+            <ChevronRight className="h-3 w-3 text-[#C4C2BC] group-hover/q:text-[#0F6E56] transition" />
+          </Link>
+        ) : (
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{item.template_name}</p>
+        )}
         {delta != null && item.count > 1 && (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B6A66] shrink-0">
             <Arrow className="h-3.5 w-3.5" />
@@ -123,15 +134,28 @@ export function PatientAssessmentProgressPanel({
   patientId: string;
   progress: AssessmentProgress[];
 }) {
-  if (progress.length === 0) return null;
   return (
-    <div className="space-y-[8px]">
-      <p className="text-[11px] font-medium text-[#6B6A66]">Evolução dos questionários</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-[8px]">
-        {progress.map((item) => (
-          <ProgressRow key={item.template_id} item={item} patientId={patientId} />
-        ))}
+    <div className="space-y-[10px]">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[11px] text-[#A09E98]">
+          {progress.length === 0
+            ? "Nenhum questionário respondido ainda."
+            : `${progress.length} ${progress.length === 1 ? "questionário" : "questionários"}`}
+        </p>
+        <Link
+          href={`/patients/${patientId}/forms/new`}
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[10px] py-[5px] rounded-[6px] shrink-0"
+        >
+          <Plus className="h-3 w-3" /> Preencher
+        </Link>
       </div>
+      {progress.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-[8px]">
+          {progress.map((item) => (
+            <ProgressRow key={item.template_id} item={item} patientId={patientId} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

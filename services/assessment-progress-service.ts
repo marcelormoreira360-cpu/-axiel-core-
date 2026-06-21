@@ -21,6 +21,7 @@ export type SectionGrade = {
 export type AssessmentProgress = {
   template_id: string;
   template_name: string;
+  latest_response_id: string | null;  // última resposta — para abrir o detalhe
   points: AssessmentProgressPoint[]; // ordem cronológica
   baseline: number | null;           // 1ª pontuação (%)
   latest: number | null;             // última pontuação (%)
@@ -105,6 +106,7 @@ export async function getAssessmentProgress(
   return {
     template_id: tpl.id as string,
     template_name: tpl.name as string,
+    latest_response_id: (last?.id as string) ?? null,
     points,
     baseline,
     latest,
