@@ -279,6 +279,16 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* ── Intelligence strip ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
 
+      {/* ── Avaliação (espaços do terapeuta — entram no relatório) — ACIMA do Resumo ── */}
+      <PatientAssessmentPanel
+        patientId={patient.id}
+        anamnese={patient.anamnese}
+        antecedents={patient.antecedents}
+        painLevel={patient.pain_level}
+        painLocation={patient.pain_location}
+        treatmentNote={patient.treatment_note}
+      />
+
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
       <PatientCaseSummaryCard
         patientId={patient.id}
@@ -302,16 +312,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           )}
         </div>
       )}
-
-      {/* ── Avaliação (espaços do terapeuta — entram no relatório) ── */}
-      <PatientAssessmentPanel
-        patientId={patient.id}
-        anamnese={patient.anamnese}
-        antecedents={patient.antecedents}
-        painLevel={patient.pain_level}
-        painLocation={patient.pain_location}
-        treatmentNote={patient.treatment_note}
-      />
 
       {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
       <div className="mt-[18px]">
