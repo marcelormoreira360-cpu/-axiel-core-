@@ -42,6 +42,8 @@ import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
+import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-followup-panel";
+import { getPatientEvolution } from "@/services/evolution-service";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
@@ -122,6 +124,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
   const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
+  const evolution = await getPatientEvolution(id).catch(() => ({ biomarkers: [], assessments: [], vitals: [] }));
   // Pontos de atenção — piores itens da última avaliação (barras, pior primeiro)
   const attentionPoints = neuroIdMap?.assessment_id
     ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
@@ -295,6 +298,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         chiefComplaint={patient.chief_complaint}
         caseSummary={patient.case_summary}
       />
+
+      {/* ── Acompanhamento do tratamento: notas por sessão + evolução clínica (gráfico inline) ── */}
+      <PatientTreatmentFollowupPanel patientId={id} sessions={sessionRecords} assessments={evolution.assessments} />
 
       {/* ── Indicação paciente→paciente ── */}
       {(referralInfo.referredByName || referralInfo.referred.length > 0) && (

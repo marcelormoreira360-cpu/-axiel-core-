@@ -11,7 +11,10 @@
 2. **Demografia no cabeçalho**: o card "Dados do paciente" saiu; demografia (sexo · peso · altura · cidade) vira linha compacta sob o nome (via `liveIdentificacaoPt`). Edição segue em /edit. `patient-demographics-panel.tsx` ficou órfão (inofensivo).
 3. **Questionários consolidados (Opção A escolhida por Marcelo)**: apareciam em 3 lugares (timeline + "Formulários aplicados" + "Evolução"). Timeline (Jornada) = histórico; questionários viram UM bloco no acordeão "Questionários" (cada um: sub-itens/seções, %/cor, clicável p/ detalhe da última resposta, botão "+ Preencher"). `AssessmentProgress` ganhou `latest_response_id` (assessment-progress-service + patient-portal-service); `PatientAssessmentProgressPanel` reformado (título clicável, header com CTA, render sempre); removidos os 2 blocos duplicados em page.tsx.
 
-Pendente do redesign (backlog, não feito): "Fila de espera" virar ícone; "Resumo do caso" aberto + vínculo com notas de sessão; Avaliação acima do Resumo; relação evolução clínica ↔ notas de sessão.
+4. **"Fila de espera" vira ícone** (WaitlistButton 30x30, âmbar quando ativo, X vermelho no hover p/ remover) + **"Avaliação" acima do "Resumo do caso"** (reorder em page.tsx). Itens 6 e 8 do backlog.
+5. **"Acompanhamento do tratamento"** (agregador, novo `patient-treatment-followup-panel.tsx`, sob o Resumo do caso): lista as **notas por sessão** (SOAP, cada uma clicável p/ `/schedule/[appointment_id]/session`, "+ Nota de sessão" → `/schedule/new?patient_id`) + **Evolução clínica como gráfico inline** (recharts, séries de questionários % no tempo de `getPatientEvolution`, menor=melhor) + link p/ `/evolution`. Resolve itens 7 e 9 (Resumo direciona; notas de sessão + evolução clínica unificadas num lugar). Decisões de Marcelo: nota amarrada a agendamento; sempre mostrar um gráfico.
+
+REDESIGN DA FICHA: todos os itens do backlog FEITOS. Backlog restante = nenhum item de layout; ver memória do redesign.
 
 ## 🟢 Exames — Legenda Neuro ID na extração da IA (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
 
