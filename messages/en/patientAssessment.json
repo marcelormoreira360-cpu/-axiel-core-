@@ -1,0 +1,22 @@
+{
+  "title": "Assessment",
+  "subtitle": "Therapist's notes — included in the patient report.",
+  "edit": "Edit",
+  "save": "Save",
+  "saving": "Saving…",
+  "cancel": "Cancel",
+  "empty": "No assessment yet. Click edit to record anamnesis, history, pain and treatment.",
+  "anamnese": "Anamnesis",
+  "anamnesePh": "How the patient is, complaint, life history, habits…",
+  "antecedents": "History / surgeries",
+  "antecedentsPh": "Surgeries, past conditions and relevant history (what the questionnaires don't capture).",
+  "pain": "Pain",
+  "painLevel": "Pain level (0–10)",
+  "painLocation": "Pain location",
+  "painLocationPh": "e.g. upper thoracic, lower back, right shoulder…",
+  "painMapHint": "Visual body map coming soon.",
+  "treatment": "Treatment / suggested plan",
+  "treatmentPh": "Treatment performed and the suggestion that goes into the patient's first report.",
+  "notInformed": "not informed",
+  "errorSave": "Could not save. Please try again."
+}

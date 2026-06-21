@@ -66,6 +66,12 @@ export type Patient = {
   notes: string | null;
   chief_complaint: string | null;
   case_summary: string | null;
+  /** Seção "Avaliação" (espaços de escrita do terapeuta — fonte única, entra no relatório). */
+  anamnese: string | null;
+  antecedents: string | null;
+  pain_level: number | null;
+  pain_location: string | null;
+  treatment_note: string | null;
   address_line: string | null;
   neighborhood: string | null;
   city: string | null;

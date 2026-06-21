@@ -53,6 +53,11 @@ Preencha também: structured_summary (overview curto e acessível ao paciente; c
 patterns_and_correlations, practitioner_review_points e data_limitations.
 
 Regras:
+- AVALIAÇÃO DO TERAPEUTA: quando os dados trouxerem anamnese, antecedents (antecedentes/cirurgias),
+  pain_level/pain_location ou treatment_note, INCORPORE-os. A anamnese e os antecedentes enriquecem o
+  Documento 1 (contexto, história, achados). A dor entra como ponto de atenção. O treatment_note
+  (conduta/sugestão do terapeuta) deve aparecer com destaque no Documento 2 (Plano), como a recomendação
+  do profissional, sem contradizê-la.
 - Baseie TUDO apenas nos dados fornecidos. Se faltar dado, escreva isso de forma honesta no próprio texto
   (ex.: "não informado neste momento") e registre em data_limitations. Não invente exames, valores ou achados.
 - Tudo é RASCUNHO de apoio ao profissional, que revisa, edita e aprova antes de qualquer envio ao paciente.
