@@ -1,9 +1,14 @@
 import OpenAI from "openai";
+import { examLegendBlock } from "@/modules/neuro-id/exam-legends";
 
 /**
  * Análise de exame funcional (PDF) pela IA — genérico (biorressonância, neurometria, etc.).
  * O modelo lê o PDF direto e devolve uma SÍNTESE CONCISA para o Relatório Funcional
  * Integrado (Doc 1), que não pode passar de ~1,5 página. Não inventa: baseia-se só no exame.
+ *
+ * Para neurometria e biorressonância, anexa a LEGENDA do exame (modules/neuro-id/exam-legends)
+ * para que a leitura seja ancorada na mesma interpretação clínica da clínica (verdadeira e
+ * verificável), em vez de interpretação livre do modelo.
  */
 
 const SYSTEM_PROMPT = `
@@ -38,12 +43,15 @@ export async function analyzeExamPdf(opts: {
       ? "exame de neurometria"
       : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
 
+  const legend = examLegendBlock(opts.examType);
+  const systemPrompt = legend ? `${SYSTEM_PROMPT}\n\n${legend}` : SYSTEM_PROMPT;
+
   try {
     const response = await client.chat.completions.create({
       model,
       temperature: 0.2,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         {
           role: "user",
           content: [
