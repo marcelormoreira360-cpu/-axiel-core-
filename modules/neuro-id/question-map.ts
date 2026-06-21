@@ -28,11 +28,12 @@ export function normalizeToDysfunction10(raw: number | null, max: number | null)
 export const DEFAULT_QUESTION_MAP: QuestionMapEntry[] = [
   // ── MSQ (15 sistemas → codes) ──
   { source: "assessment", template_match: "MSQ", section_match: "HEAD", catalog_code: "msq_head" },
-  { source: "assessment", template_match: "MSQ", section_match: "MIND", catalog_code: "msq_mind" },
-  { source: "assessment", template_match: "MSQ", section_match: "EMOTIONS", catalog_code: "msq_emotions" },
-  { source: "assessment", template_match: "MSQ", section_match: "HEART", catalog_code: "msq_heart" },
-  { source: "assessment", template_match: "MSQ", section_match: "LUNGS", catalog_code: "msq_lungs" },
-  { source: "assessment", template_match: "MSQ", section_match: "DIGESTIVE", catalog_code: "msq_digestive" },
+  // Bioemocional: sistemas vão para os itens qrm_* (um por sistema, sem duplicar com msq_*).
+  { source: "assessment", template_match: "MSQ", section_match: "MIND", catalog_code: "qrm_mente" },
+  { source: "assessment", template_match: "MSQ", section_match: "EMOTIONS", catalog_code: "qrm_emocoes" },
+  { source: "assessment", template_match: "MSQ", section_match: "HEART", catalog_code: "qrm_coracao" },
+  { source: "assessment", template_match: "MSQ", section_match: "LUNGS", catalog_code: "qrm_pulmao" },
+  { source: "assessment", template_match: "MSQ", section_match: "DIGESTIVE", catalog_code: "qrm_trato_digestivo" },
   { source: "assessment", template_match: "MSQ", section_match: "JOINTS", catalog_code: "msq_joints_muscles" },
   { source: "assessment", template_match: "MSQ", section_match: "ENERGY", catalog_code: "msq_energy" },
   { source: "assessment", template_match: "MSQ", section_match: "WEIGHT", catalog_code: "msq_weight" },
@@ -51,14 +52,18 @@ export const DEFAULT_QUESTION_MAP: QuestionMapEntry[] = [
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "NARIZ",    catalog_code: "msq_nose" },
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "BOCA",     catalog_code: "msq_mouth_throat" },
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "PELE",     catalog_code: "msq_skin" },
-  { source: "assessment", template_match: "Rastreamento Metab", section_match: "CORAÇÃO",  catalog_code: "msq_heart" },
-  { source: "assessment", template_match: "Rastreamento Metab", section_match: "PULMÃO",   catalog_code: "msq_lungs" },
-  { source: "assessment", template_match: "Rastreamento Metab", section_match: "DIGESTIVO",catalog_code: "msq_digestive" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "CORAÇÃO",  catalog_code: "qrm_coracao" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "PULMÃO",   catalog_code: "qrm_pulmao" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "DIGESTIVO",catalog_code: "qrm_trato_digestivo" },
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "ARTICULA", catalog_code: "msq_joints_muscles" },
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "ENERGIA",  catalog_code: "msq_energy" },
-  { source: "assessment", template_match: "Rastreamento Metab", section_match: "MENTE",    catalog_code: "msq_mind" },
-  { source: "assessment", template_match: "Rastreamento Metab", section_match: "EMOÇÕES",  catalog_code: "msq_emotions" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "MENTE",    catalog_code: "qrm_mente" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "EMOÇÕES",  catalog_code: "qrm_emocoes" },
   { source: "assessment", template_match: "Rastreamento Metab", section_match: "OUTROS",   catalog_code: "msq_other" },
+
+  // ── Bioquímico: total do QRM + intestino (puxa da seção digestiva). Decisão de Marcelo. ──
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: null,        catalog_code: "qrm_total" },
+  { source: "assessment", template_match: "Rastreamento Metab", section_match: "DIGESTIVO", catalog_code: "intestino" },
 
   // ── Q-SNA (Sistema Nervoso Autônomo). Total = carga autonômica geral (Bioquímico,
   //    peso menor); 4 dimensões específicas → Bioemocional. Codes já no catálogo. ──
