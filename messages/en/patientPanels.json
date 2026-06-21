@@ -306,7 +306,9 @@
     "summaryLabel": "Findings",
     "summaryPlaceholder": "Describe the main findings and results of the exam…",
     "save": "Save exam",
-    "delete": "Delete"
+    "delete": "Delete",
+    "fileLabel": "Attach exam (PDF)",
+    "fileHint": "The AI reads the PDF and summarizes the key findings (e.g. most altered emotions) for the report."
   },
   "supplements": {
     "title": "Supplements",

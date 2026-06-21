@@ -21,7 +21,6 @@ import { PatientSupplementsPanel } from "@/components/patient-supplements-panel"
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
 import { getLatestNeuroIdMap, getNeuroIdAttentionPoints } from "@/services/neuro-id-service";
-import { bandForDysfunction } from "@/modules/neuro-id/bands";
 import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
@@ -42,8 +41,9 @@ import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
-import { PatientDemographicsPanel } from "@/components/patient-demographics-panel";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
+import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-followup-panel";
+import { getPatientEvolution } from "@/services/evolution-service";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
@@ -124,6 +124,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
   const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
+  const evolution = await getPatientEvolution(id).catch(() => ({ biomarkers: [], assessments: [], vitals: [] }));
   // Pontos de atenção — piores itens da última avaliação (barras, pior primeiro)
   const attentionPoints = neuroIdMap?.assessment_id
     ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
@@ -143,6 +144,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
+
+  // Demografia compacta no cabeçalho (fonte única; edição na ficha /edit). Substitui o card.
+  const demo = liveIdentificacaoPt(patient);
+  const demoParts = [demo.sexo, demo.peso, demo.altura, demo.local].filter(Boolean) as string[];
   const since = new Date(patient.created_at).toLocaleDateString(locale, { month: "short", year: "numeric" });
 
   // Pacote ativo — usado para exibir o badge no card de sessões
@@ -211,6 +216,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
             <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
           </div>
+          {demoParts.length > 0 && (
+            <p className="text-[11px] text-[#A09E98] mt-[6px] truncate">{demoParts.join("  ·  ")}</p>
+          )}
         </div>
         <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
           {/* Fila de espera */}
@@ -274,15 +282,14 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* ── Intelligence strip ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
 
-      {/* ── Demografia (fonte única: alimenta Bio³, relatórios, PDF) ── */}
-      <PatientDemographicsPanel
+      {/* ── Avaliação (espaços do terapeuta — entram no relatório) — ACIMA do Resumo ── */}
+      <PatientAssessmentPanel
         patientId={patient.id}
-        fullName={patient.full_name}
-        dateOfBirth={patient.date_of_birth}
-        sex={patient.sex}
-        weightKg={patient.weight_kg}
-        heightCm={patient.height_cm}
-        city={patient.city}
+        anamnese={patient.anamnese}
+        antecedents={patient.antecedents}
+        painLevel={patient.pain_level}
+        painLocation={patient.pain_location}
+        treatmentNote={patient.treatment_note}
       />
 
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
@@ -291,6 +298,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         chiefComplaint={patient.chief_complaint}
         caseSummary={patient.case_summary}
       />
+
+      {/* ── Acompanhamento do tratamento: notas por sessão + evolução clínica (gráfico inline) ── */}
+      <PatientTreatmentFollowupPanel patientId={id} sessions={sessionRecords} assessments={evolution.assessments} />
 
       {/* ── Indicação paciente→paciente ── */}
       {(referralInfo.referredByName || referralInfo.referred.length > 0) && (
@@ -308,16 +318,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           )}
         </div>
       )}
-
-      {/* ── Avaliação (espaços do terapeuta — entram no relatório) ── */}
-      <PatientAssessmentPanel
-        patientId={patient.id}
-        anamnese={patient.anamnese}
-        antecedents={patient.antecedents}
-        painLevel={patient.pain_level}
-        painLocation={patient.pain_location}
-        treatmentNote={patient.treatment_note}
-      />
 
       {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
       <div className="mt-[18px]">
@@ -599,73 +599,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
         </summary>
         <div className="mt-[12px] space-y-[18px]">
-      {/* Assessment responses */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-        <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.06]">
-          <div>
-            <p className="text-[13px] font-medium text-[#0F1A2E]">{t("assessments.title")}</p>
-            <p className="text-[11px] text-[#A09E98] mt-[1px]">
-              {t("assessments.count", { count: assessmentResponses.length })}
-            </p>
-          </div>
-          <Link
-            href={`/patients/${patient.id}/forms/new`}
-            className="flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[10px] py-[5px] rounded-[6px]"
-          >
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            {t("assessments.fill")}
-          </Link>
-        </div>
-
-        {assessmentResponses.length === 0 ? (
-          <div className="px-[16px] py-[14px]">
-            <p className="text-[12px] text-[#A09E98]">{t("assessments.empty")}</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-black/[.04]">
-            {assessmentResponses.slice(0, 5).map((resp) => {
-              const pct = resp.score_percentage ?? 0;
-              const band = bandForDysfunction(pct); // semáforo por severidade (maior % = pior)
-              const filledDate = new Date(resp.filled_at).toLocaleDateString(locale, {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              });
-              return (
-                <Link
-                  key={resp.id}
-                  href={`/patients/${patient.id}/forms/${resp.id}`}
-                  className="flex items-center gap-[12px] px-[16px] py-[11px] hover:bg-[#FAFAF8] transition group"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-medium text-[#0F1A2E] truncate">
-                      {resp.assessment_templates?.name ?? "—"}
-                    </p>
-                    <p className="text-[11px] text-[#A09E98] mt-[1px]">{filledDate}</p>
-                  </div>
-                  <div className="flex items-center gap-[8px] shrink-0">
-                    <div className="w-[80px] h-[4px] bg-[#F4F3EF] rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full"
-                        style={{ width: `${pct}%`, background: band?.colors.stroke ?? "#0F6E56" }}
-                      />
-                    </div>
-                    <span className="text-[12px] font-semibold w-[36px] text-right" style={{ color: band?.colors.text ?? "#0F1A2E" }}>
-                      {Math.round(pct)}%
-                    </span>
-                    <svg className="w-3 h-3 text-[#D3D1C7] group-hover:text-[#A09E98] transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Evolução dos questionários */}
-      {assessmentProgress.length > 0 && (
-        <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
-      )}
+      {/* Questionários consolidados (Opção A): cada um com sub-itens, %/cor, clicável p/ detalhe + botão Preencher. */}
+      <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
         </div>
       </details>
 

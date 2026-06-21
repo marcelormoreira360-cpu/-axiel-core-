@@ -306,7 +306,9 @@
     "summaryLabel": "Achados",
     "summaryPlaceholder": "Descreva os principais achados e resultados do exame…",
     "save": "Salvar exame",
-    "delete": "Excluir"
+    "delete": "Excluir",
+    "fileLabel": "Anexar exame (PDF)",
+    "fileHint": "A IA lê o PDF e resume os principais achados (ex.: emoções mais alteradas) para o relatório."
   },
   "supplements": {
     "title": "Suplementos",

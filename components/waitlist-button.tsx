@@ -52,9 +52,11 @@ export function WaitlistButton({ patientId, patientName, isOnWaitlist, waitlistE
 
   if (done) {
     return (
-      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-[#E1F5EE] text-[#0F6E56] text-[12px] font-medium">
-        <CheckCircle2 className="w-3.5 h-3.5" />
-        {t("added", { name: patientName.split(" ")[0] })}
+      <div
+        className="inline-flex items-center justify-center w-[30px] h-[30px] rounded-lg bg-[#E1F5EE] text-[#0F6E56]"
+        title={t("added", { name: patientName.split(" ")[0] })}
+      >
+        <CheckCircle2 className="w-[15px] h-[15px]" />
       </div>
     );
   }
@@ -64,13 +66,12 @@ export function WaitlistButton({ patientId, patientName, isOnWaitlist, waitlistE
       <button
         onClick={handleRemove}
         disabled={loading}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] bg-amber-50 dark:bg-amber-900/10 text-amber-700 text-[12px] font-medium hover:bg-red-50 hover:text-red-600 transition disabled:opacity-50 group"
-        title={t("removeTitle")}
+        className="w-[30px] h-[30px] rounded-lg bg-amber-50 dark:bg-amber-900/10 text-amber-700 flex items-center justify-center hover:bg-red-50 hover:text-red-600 transition disabled:opacity-50 group"
+        title={t("onList")}
+        aria-label={t("onList")}
       >
-        <Clock className="w-3.5 h-3.5 group-hover:hidden" />
-        <X className="w-3.5 h-3.5 hidden group-hover:block" />
-        <span className="group-hover:hidden">{t("onList")}</span>
-        <span className="hidden group-hover:block">{t("remove")}</span>
+        <Clock className="w-[15px] h-[15px] group-hover:hidden" />
+        <X className="w-[15px] h-[15px] hidden group-hover:block" />
       </button>
     );
   }
@@ -79,10 +80,11 @@ export function WaitlistButton({ patientId, patientName, isOnWaitlist, waitlistE
     <button
       onClick={handleAdd}
       disabled={loading}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-black/[.08] dark:border-white/[.1] bg-white dark:bg-[#1C2333] text-[#6B6A66] text-[12px] font-medium hover:border-[#0F6E56]/30 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition disabled:opacity-50"
+      className="w-[30px] h-[30px] rounded-lg border border-black/[.1] dark:border-white/[.1] bg-white dark:bg-[#1C2333] text-[#6B6A66] flex items-center justify-center hover:border-[#0F6E56]/30 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition disabled:opacity-50"
+      title={loading ? t("adding") : t("add")}
+      aria-label={t("add")}
     >
-      <Clock className="w-3.5 h-3.5" />
-      {loading ? t("adding") : t("add")}
+      <Clock className="w-[15px] h-[15px]" />
     </button>
   );
 }

@@ -709,7 +709,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     const tpl = Array.isArray(r.assessment_templates) ? r.assessment_templates[0] : r.assessment_templates;
     let entry = progressMap.get(tid);
     if (!entry) {
-      entry = { template_id: tid, template_name: (tpl as { name?: string } | null)?.name ?? "Questionário", points: [], baseline: null, latest: null, deltaPct: null, count: 0, latestTotal: null, grade: null, sectionGrades: [], flaggedCount: 0 };
+      entry = { template_id: tid, template_name: (tpl as { name?: string } | null)?.name ?? "Questionário", latest_response_id: null, points: [], baseline: null, latest: null, deltaPct: null, count: 0, latestTotal: null, grade: null, sectionGrades: [], flaggedCount: 0 };
       progressMap.set(tid, entry);
     }
     entry.points.push({ date: r.created_at as string, score_percentage: Number(r.score_percentage ?? 0), total_score: Number(r.total_score ?? 0) });

@@ -58,6 +58,10 @@ Regras:
   Documento 1 (contexto, história, achados). A dor entra como ponto de atenção. O treatment_note
   (conduta/sugestão do terapeuta) deve aparecer com destaque no Documento 2 (Plano), como a recomendação
   do profissional, sem contradizê-la.
+- EXAMES FUNCIONAIS (functional_exams — ex.: biorressonância emocional, neurometria): o campo summary
+  já traz uma síntese pronta do exame. Incorpore-a no Documento 1 de forma CONCISA (ex.: as emoções mais
+  alteradas da biorressonância), como achado registrado pelo exame, sem expandir demais — o relatório
+  inteiro não pode passar de ~1,5 página somando todos os exames.
 - Baseie TUDO apenas nos dados fornecidos. Se faltar dado, escreva isso de forma honesta no próprio texto
   (ex.: "não informado neste momento") e registre em data_limitations. Não invente exames, valores ou achados.
 - Tudo é RASCUNHO de apoio ao profissional, que revisa, edita e aprova antes de qualquer envio ao paciente.

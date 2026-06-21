@@ -1,7 +1,35 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 19/06/2026 (27)
+> Atualizado em: 21/06/2026 (29)
+
+## 🟢 Redesign da ficha — 3 itens (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
+
+> `tsc` 0; `verify:i18n` 42/0/0. Sem migration. Testado por Marcelo no preview.
+
+1. **Excluir/refazer relatório (caso de IA)**: não dava pra apagar/refazer casos gerados. Novo `archiveAiInsight()` (UPDATE review_status='archived' — some das listas que já filtram archived; reversível, status já no CHECK) + `archiveAiInsightAction` + `DeleteInsightButton` (client, window.confirm) plugado no `ai-insight-review-card`. Combina com "New draft" pra refazer.
+2. **Demografia no cabeçalho**: o card "Dados do paciente" saiu; demografia (sexo · peso · altura · cidade) vira linha compacta sob o nome (via `liveIdentificacaoPt`). Edição segue em /edit. `patient-demographics-panel.tsx` ficou órfão (inofensivo).
+3. **Questionários consolidados (Opção A escolhida por Marcelo)**: apareciam em 3 lugares (timeline + "Formulários aplicados" + "Evolução"). Timeline (Jornada) = histórico; questionários viram UM bloco no acordeão "Questionários" (cada um: sub-itens/seções, %/cor, clicável p/ detalhe da última resposta, botão "+ Preencher"). `AssessmentProgress` ganhou `latest_response_id` (assessment-progress-service + patient-portal-service); `PatientAssessmentProgressPanel` reformado (título clicável, header com CTA, render sempre); removidos os 2 blocos duplicados em page.tsx.
+
+4. **"Fila de espera" vira ícone** (WaitlistButton 30x30, âmbar quando ativo, X vermelho no hover p/ remover) + **"Avaliação" acima do "Resumo do caso"** (reorder em page.tsx). Itens 6 e 8 do backlog.
+5. **"Acompanhamento do tratamento"** (agregador, novo `patient-treatment-followup-panel.tsx`, sob o Resumo do caso): lista as **notas por sessão** (SOAP, cada uma clicável p/ `/schedule/[appointment_id]/session`, "+ Nota de sessão" → `/schedule/new?patient_id`) + **Evolução clínica como gráfico inline** (recharts, séries de questionários % no tempo de `getPatientEvolution`, menor=melhor) + link p/ `/evolution`. Resolve itens 7 e 9 (Resumo direciona; notas de sessão + evolução clínica unificadas num lugar). Decisões de Marcelo: nota amarrada a agendamento; sempre mostrar um gráfico.
+
+REDESIGN DA FICHA: todos os itens do backlog FEITOS. Backlog restante = nenhum item de layout; ver memória do redesign.
+
+## 🟢 Exames — Legenda Neuro ID na extração da IA (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
+
+> `tsc` 0; `verify:i18n` 42/0/0; `vitest run modules/neuro-id/__tests__/exam-legends.test.ts` 4/4. **Sem migration.** Não muda schema nem cálculo.
+
+A IA que lê o PDF do exame (`services/exam-ai-service.ts`, OpenAI Vision `gpt-4.1-mini`) passava com prompt **genérico** → neurometria saía confusa e a biorressonância não entrava bem no Doc 1. Agora a extração injeta a **legenda do exame** por tipo, para leitura ancorada (verdadeira/verificável) na mesma interpretação da clínica.
+
+- **`modules/neuro-id/exam-legends.ts`** (novo): `examLegendBlock(examType)` devolve o bloco de instrução por tipo.
+  - **Neurometria**: 6 dimensões fixas (1 controle ansiedade/HPA; 2 HRV/cardio-cerebral; 3 fluxo/barorreflexo; 4 temperatura, faixa fixa **31,5–32,5 °C**; 5 SNA Tilt Test; 6 vias nervosas), regra de **agrupar achados por padrão** + citar valor medido + destacar 1 ponto positivo.
+  - **Biorressonância**: escala %/OF-UF; extrair as **maiores emoções reais** e **relacioná-las a órgãos** (coração/pulmão/rim…), abrindo com "De acordo com a análise do exame, foi encontrado um perfil de…"; **proíbe** conteúdo esotérico/holístico (chakra/aura/Louise Hay/"energia-vibração-cura") — categoria "Wisdom teachings" EXCLUÍDA (fronteira fé/clínica, decisão de Marcelo).
+  - `examType` desconhecido ('outro'/vazio) → sem legenda (prompt genérico).
+- **`services/exam-ai-service.ts`**: monta `systemPrompt = SYSTEM_PROMPT + bloco da legenda` quando há legenda para o tipo. Resto do fluxo intacto (Vision PDF, ~120 palavras, temp 0.2, slice 1800).
+- **Teste** `modules/neuro-id/__tests__/exam-legends.test.ts` (4 casos: dimensões+faixa; emoções+órgãos+frase canônica; proibição esotérica; tipo desconhecido = "").
+- **Fonte das legendas** (destiladas dos manuais/relatórios, com campos `precisa_manual`): `../legendas_exames/legenda_neurometria.json` e `legenda_biorressonancia.json` (fora do repo, no diretório do projeto).
+- **Pendência (OK)**: commit na branch + push + preview + Marcelo testa anexando um exame real. **MVP+ (não feito)**: preencher limiares `precisa_manual` lendo os manuais; promover legenda a config por clínica (hoje é asset de código, pois é específica de equipamento); RAG (pgvector) do manual completo como camada de profundidade.
 
 ## 🟢 Bio³ — 4 refinos visuais (19/06/2026) — CÓDIGO PRONTO, AGUARDA OK p/ deploy
 
