@@ -67,6 +67,11 @@ export function PatientFunctionalExamsPanel({
             </div>
           )}
           <div>
+            <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("fileLabel")}</label>
+            <input type="file" name="exam_file" accept="application/pdf" className={inputCls + " text-[11px] file:mr-2 file:rounded-md file:border-0 file:bg-[#0F6E56]/10 file:px-2 file:py-1 file:text-[#0F6E56]"} />
+            <p className="text-[9px] text-[#A09E98] mt-[3px]">{t("fileHint")}</p>
+          </div>
+          <div>
             <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("summaryLabel")}</label>
             <textarea name="summary" rows={4} placeholder={t("summaryPlaceholder")} className={inputCls + " resize-none"} />
           </div>
