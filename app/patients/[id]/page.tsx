@@ -42,7 +42,6 @@ import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
-import { PatientDemographicsPanel } from "@/components/patient-demographics-panel";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
@@ -143,6 +142,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
+
+  // Demografia compacta no cabeçalho (fonte única; edição na ficha /edit). Substitui o card.
+  const demo = liveIdentificacaoPt(patient);
+  const demoParts = [demo.sexo, demo.peso, demo.altura, demo.local].filter(Boolean) as string[];
   const since = new Date(patient.created_at).toLocaleDateString(locale, { month: "short", year: "numeric" });
 
   // Pacote ativo — usado para exibir o badge no card de sessões
@@ -211,6 +214,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
             <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
           </div>
+          {demoParts.length > 0 && (
+            <p className="text-[11px] text-[#A09E98] mt-[6px] truncate">{demoParts.join("  ·  ")}</p>
+          )}
         </div>
         <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
           {/* Fila de espera */}
@@ -273,17 +279,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Intelligence strip ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
-
-      {/* ── Demografia (fonte única: alimenta Bio³, relatórios, PDF) ── */}
-      <PatientDemographicsPanel
-        patientId={patient.id}
-        fullName={patient.full_name}
-        dateOfBirth={patient.date_of_birth}
-        sex={patient.sex}
-        weightKg={patient.weight_kg}
-        heightCm={patient.height_cm}
-        city={patient.city}
-      />
 
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
       <PatientCaseSummaryCard
