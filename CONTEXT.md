@@ -1,7 +1,17 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 21/06/2026 (28)
+> Atualizado em: 21/06/2026 (29)
+
+## 🟢 Redesign da ficha — 3 itens (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
+
+> `tsc` 0; `verify:i18n` 42/0/0. Sem migration. Testado por Marcelo no preview.
+
+1. **Excluir/refazer relatório (caso de IA)**: não dava pra apagar/refazer casos gerados. Novo `archiveAiInsight()` (UPDATE review_status='archived' — some das listas que já filtram archived; reversível, status já no CHECK) + `archiveAiInsightAction` + `DeleteInsightButton` (client, window.confirm) plugado no `ai-insight-review-card`. Combina com "New draft" pra refazer.
+2. **Demografia no cabeçalho**: o card "Dados do paciente" saiu; demografia (sexo · peso · altura · cidade) vira linha compacta sob o nome (via `liveIdentificacaoPt`). Edição segue em /edit. `patient-demographics-panel.tsx` ficou órfão (inofensivo).
+3. **Questionários consolidados (Opção A escolhida por Marcelo)**: apareciam em 3 lugares (timeline + "Formulários aplicados" + "Evolução"). Timeline (Jornada) = histórico; questionários viram UM bloco no acordeão "Questionários" (cada um: sub-itens/seções, %/cor, clicável p/ detalhe da última resposta, botão "+ Preencher"). `AssessmentProgress` ganhou `latest_response_id` (assessment-progress-service + patient-portal-service); `PatientAssessmentProgressPanel` reformado (título clicável, header com CTA, render sempre); removidos os 2 blocos duplicados em page.tsx.
+
+Pendente do redesign (backlog, não feito): "Fila de espera" virar ícone; "Resumo do caso" aberto + vínculo com notas de sessão; Avaliação acima do Resumo; relação evolução clínica ↔ notas de sessão.
 
 ## 🟢 Exames — Legenda Neuro ID na extração da IA (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
 
