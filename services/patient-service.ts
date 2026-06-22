@@ -13,6 +13,7 @@ export async function getPatients(
   let query = supabase
     .from("patients")
     .select("*, appointments(practitioner_id)")
+    .is("deleted_at", null) // não lista pacientes arquivados/soft-deleted
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
 
@@ -40,7 +41,8 @@ export async function getPatientCount(
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("patients")
-    .select("id", { count: "exact", head: true });
+    .select("id", { count: "exact", head: true })
+    .is("deleted_at", null); // espelha o filtro de getPatients (contagem = lista)
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
   if (practitionerId) query = query.eq("created_by", practitionerId);
@@ -110,20 +112,20 @@ export async function findOrCreatePatientForBooking(input: {
   let existing: Patient | null = null;
   if (email) {
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).eq("email", email).limit(1).maybeSingle();
+      .eq("clinic_id", input.clinic_id).eq("email", email).is("deleted_at", null).limit(1).maybeSingle();
     existing = (data as Patient) ?? null;
   }
   if (!existing && phoneDigits) {
     const phones = [...new Set([phoneDigits, phoneRaw].filter(Boolean) as string[])];
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).in("phone", phones).limit(1).maybeSingle();
+      .eq("clinic_id", input.clinic_id).in("phone", phones).is("deleted_at", null).limit(1).maybeSingle();
     existing = (data as Patient) ?? null;
   }
   if (!existing && name) {
     // ilike sem curinga = igualdade case-insensitive; escapa %/_ por segurança.
     const safe = name.replace(/[%_]/g, "\\$&");
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).ilike("full_name", safe).limit(2);
+      .eq("clinic_id", input.clinic_id).ilike("full_name", safe).is("deleted_at", null).limit(2);
     if (data && data.length === 1) existing = data[0] as Patient;
   }
 
