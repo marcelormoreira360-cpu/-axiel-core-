@@ -375,11 +375,17 @@ export function PatientNeuroIdPanel({
                           <option value="moderado">{t("lab.moderado")}</option>
                           <option value="alto">{t("lab.alto")}</option>
                         </select>
-                      ) : (
+                      ) : it.band_type === "mobility" || it.band_type === "pain" ? (
+                        // Só os itens MANUAIS de palpação/dor do Biomecânico viram escala clicável.
+                        // QRM/Q-SNA e os pilares Bioquímico/Bioemocional seguem como campo numérico
+                        // (extraídos dos questionários, podem ter decimais).
                         <>
                           <ScaleButtons value={raw} onSelect={(val) => setVals((v) => ({ ...v, [it.code]: val }))} />
                           <input type="hidden" name={`item__${it.code}`} value={raw} />
                         </>
+                      ) : (
+                        <input type="number" min={0} max={10} step="0.1" inputMode="decimal" name={`item__${it.code}`} className={inputCls}
+                          value={raw} onChange={(e) => setVals((v) => ({ ...v, [it.code]: e.target.value }))} />
                       )}
                     </label>
                   );
