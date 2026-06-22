@@ -1,5 +1,10 @@
 import OpenAI from "openai";
 import { examLegendBlock } from "@/modules/neuro-id/exam-legends";
+import {
+  buildMetricExtractionPrompt,
+  coerceExamMetricsDraft,
+  type ExamInstrument,
+} from "@/modules/neuro-id/exam-metrics";
 
 /**
  * Análise de exame funcional (PDF) pela IA — genérico (biorressonância, neurometria, etc.).
@@ -71,5 +76,60 @@ export async function analyzeExamPdf(opts: {
     return text && text.length > 0 ? text.slice(0, 1800) : null;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Extrai do PDF do exame os VALORES BRUTOS das métricas Bio³ (incremento 3),
+ * por code (ex.: neuro_temperatura, neuro_sna_balance, bio_carga_emocional).
+ * A IA só transcreve o que está no exame (ancorada na legenda); a conversão
+ * para disfunção 0–100 é determinística (examMetricContributions/computeNeuroId).
+ *
+ * Retorna um RASCUNHO { code: valorBruto } para REVISÃO HUMANA antes de entrar
+ * na pirâmide (gate, incremento 4). Só neurometria/biorressonância têm métricas;
+ * outros tipos -> {}. Falha de IA/sem chave -> {} (não quebra o upload).
+ */
+export async function extractExamMetrics(opts: {
+  pdfBase64: string;
+  filename: string;
+  examType: string; // 'neurometria' | 'biorressonancia' | 'outro'
+}): Promise<Record<string, number>> {
+  if (opts.examType !== "neurometria" && opts.examType !== "biorressonancia") return {};
+  if (!process.env.OPENAI_API_KEY) return {};
+  const instrument = opts.examType as ExamInstrument;
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+
+  const legend = examLegendBlock(instrument);
+  const systemPrompt = `${buildMetricExtractionPrompt(instrument)}${legend ? `\n\n${legend}` : ""}`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt },
+        {
+          role: "user",
+          content: [
+            {
+              type: "file",
+              file: {
+                filename: opts.filename || "exame.pdf",
+                file_data: `data:application/pdf;base64,${opts.pdfBase64}`,
+              },
+            } as never,
+            { type: "text", text: "Extraia os valores medidos conforme as regras e responda só com o JSON pedido." },
+          ],
+        },
+      ],
+    });
+    const raw = response.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch { parsed = {}; }
+    return coerceExamMetricsDraft(parsed, instrument);
+  } catch {
+    return {};
   }
 }

@@ -11,6 +11,7 @@ import OpenAI from "openai";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
 import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
+import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
 import { DEFAULT_QUESTION_MAP, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -97,6 +98,44 @@ export function catalogToScorable(rows: CatalogRow[]): ScorableItem[] {
   }));
 }
 
+// ── Fusão de exames (gate humano): métricas CONFIRMADAS do paciente ───────────
+// Lê os exames já revisados (metrics_reviewed_at != null) e funde os metrics_values
+// num único { code: valor } (mais recente vence). Alimenta `examValues` do motor.
+export async function confirmedExamMetrics(patientId: string, clinicId: string, client?: Db): Promise<Record<string, number>> {
+  const supabase = await getDb(client);
+  // clinic_id explícito além da RLS: o gatilho pós-submit usa o admin client
+  // (RLS off), então o escopo multi-tenant precisa ser garantido aqui.
+  // Ordena por exam_date e desempata por metrics_reviewed_at: a leitura mais
+  // recente (e, em empate de data, a confirmada por último) vence em mergeConfirmedMetrics.
+  const { data, error } = await supabase
+    .from("patient_functional_exams")
+    .select("metrics_values, exam_date, metrics_reviewed_at")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .not("metrics_reviewed_at", "is", null)
+    .order("exam_date", { ascending: true })
+    .order("metrics_reviewed_at", { ascending: true });
+  if (error) throw error;
+  return mergeConfirmedMetrics((data ?? []) as { metrics_values: Record<string, number> | null }[]);
+}
+
+// Linhas de patient_assessment_values para as métricas de exame fundidas, com a
+// disfunção 0–100 do motor (rastreável; entram nos pontos de atenção). Origem `exam:`.
+function examValueRows(
+  assessmentId: string,
+  examValues: Record<string, number>,
+  examContributions: PillarContribution[],
+): { assessment_id: string; item_code: string; raw_value: string; dysfunction_score: number | null }[] {
+  const dysByCode = new Map<string, number>();
+  for (const c of examContributions) dysByCode.set(c.code, c.dysfunction);
+  return Object.entries(examValues).map(([item_code, v]) => ({
+    assessment_id: assessmentId,
+    item_code,
+    raw_value: `exam:${v}`,
+    dysfunction_score: dysByCode.get(item_code) ?? null,
+  }));
+}
+
 // ── Leitura do mapa mais recente ──────────────────────────────────────────────
 export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promise<NeuroIdMap | null> {
   const supabase = await getDb(client);
@@ -133,7 +172,7 @@ export async function getNeuroIdAttentionPoints(
     .filter((r) => r.dysfunction_score != null && r.dysfunction_score > 0)
     .map((r) => ({
       code: r.item_code,
-      label: labelByCode.get(r.item_code) ?? r.item_code,
+      label: labelByCode.get(r.item_code) ?? EXAM_METRIC_META[r.item_code]?.label ?? r.item_code,
       dysfunction: Math.round(r.dysfunction_score as number),
     }))
     .sort((a, b) => b.dysfunction - a.dysfunction)
@@ -150,9 +189,14 @@ export async function createNeuroIdAssessment(input: {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
 
-  const catalog = await ensureClinicCatalog(input.clinicId);
+  // IO independente em paralelo: catálogo da clínica + métricas de exame CONFIRMADAS.
+  const [catalog, examValues] = await Promise.all([
+    ensureClinicCatalog(input.clinicId),
+    confirmedExamMetrics(input.patientId, input.clinicId),
+  ]);
   const items = catalogToScorable(catalog);
-  const result = computeNeuroId(items, input.values);
+  // Fusão: métricas de exame CONFIRMADAS entram na média ponderada por pilar.
+  const result = computeNeuroId(items, input.values, examValues);
 
   // 1) avaliação
   const { data: assessment, error: aErr } = await supabase
@@ -169,7 +213,7 @@ export async function createNeuroIdAssessment(input: {
   if (aErr) throw aErr;
   const assessmentId = assessment.id as string;
 
-  // 2) valores (só os preenchidos), com a disfunção calculada
+  // 2) valores (só os preenchidos), com a disfunção calculada + métricas de exame
   const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
   const valueRows = Object.entries(input.values)
     .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
@@ -179,8 +223,9 @@ export async function createNeuroIdAssessment(input: {
       raw_value: String(raw),
       dysfunction_score: byCode.get(item_code) ?? null,
     }));
-  if (valueRows.length > 0) {
-    const { error: vErr } = await supabase.from("patient_assessment_values").insert(valueRows);
+  const allRows = [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+  if (allRows.length > 0) {
+    const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
   }
 
@@ -416,9 +461,14 @@ export async function autoUpsertNeuroIdDraft(
   const imp = await importQuestionnaireAnswers(patientId, clinicId, client);
   if (Object.keys(imp.draft).length === 0) return null; // nada mapeado/respondido
 
-  const catalog = await ensureClinicCatalog(clinicId, client);
+  // IO independente em paralelo: catálogo + métricas de exame já confirmadas (gate).
+  const [catalog, examValues] = await Promise.all([
+    ensureClinicCatalog(clinicId, client),
+    confirmedExamMetrics(patientId, clinicId, client),
+  ]);
   const items = catalogToScorable(catalog);
-  const result = computeNeuroId(items, imp.draft);
+  // Fusão: inclui as métricas de exame confirmadas na pirâmide parcial.
+  const result = computeNeuroId(items, imp.draft, examValues);
 
   // Um rascunho auto por paciente: reaproveita o aberto (atualiza) ou cria.
   const { data: existing } = await supabase
@@ -454,8 +504,9 @@ export async function autoUpsertNeuroIdDraft(
     raw_value: `auto:${raw}`,
     dysfunction_score: byCode.get(item_code) ?? null,
   }));
-  if (valueRows.length > 0) {
-    const { error: vErr } = await supabase.from("patient_assessment_values").insert(valueRows);
+  const allRows = [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+  if (allRows.length > 0) {
+    const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
   }
 

@@ -308,7 +308,16 @@
     "save": "Save exam",
     "delete": "Delete",
     "fileLabel": "Attach exam (PDF)",
-    "fileHint": "The AI reads the PDF and summarizes the key findings (e.g. most altered emotions) for the report."
+    "fileHint": "The AI reads the PDF and summarizes the key findings (e.g. most altered emotions) for the report.",
+    "metrics": {
+      "title": "Bio³ metrics (from exam)",
+      "hint": "The AI extracted these values from the PDF. Review, adjust if needed and confirm to add them to the pyramid.",
+      "pending": "Review",
+      "reviewed": "In the map",
+      "confirm": "Confirm for the pyramid",
+      "update": "Update metrics",
+      "reviewedOn": "Confirmed on {date}"
+    }
   },
   "supplements": {
     "title": "Supplements",

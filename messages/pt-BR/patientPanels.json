@@ -308,7 +308,16 @@
     "save": "Salvar exame",
     "delete": "Excluir",
     "fileLabel": "Anexar exame (PDF)",
-    "fileHint": "A IA lê o PDF e resume os principais achados (ex.: emoções mais alteradas) para o relatório."
+    "fileHint": "A IA lê o PDF e resume os principais achados (ex.: emoções mais alteradas) para o relatório.",
+    "metrics": {
+      "title": "Métricas Bio³ (do exame)",
+      "hint": "A IA extraiu estes valores do PDF. Revise, ajuste se preciso e confirme para entrarem na pirâmide.",
+      "pending": "Revisar",
+      "reviewed": "No mapa",
+      "confirm": "Confirmar para a pirâmide",
+      "update": "Atualizar métricas",
+      "reviewedOn": "Confirmado em {date}"
+    }
   },
   "supplements": {
     "title": "Suplementos",
