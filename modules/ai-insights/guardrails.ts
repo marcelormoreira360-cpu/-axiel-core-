@@ -77,10 +77,13 @@ Regras:
   já traz uma síntese pronta do exame. Incorpore-a no Documento 1 de forma CONCISA (ex.: as emoções mais
   alteradas da biorressonância), como achado registrado pelo exame, sem expandir demais — o relatório
   inteiro não pode passar de ~1,5 página somando todos os exames.
-- MAPA BIO³ (neuro_id): traz o GRAU DE DISFUNÇÃO por eixo (fisico_pct = Biomecânico, bioquimico_pct = Bioquímico,
-  emocional_pct = Bioemocional) e o indice_geral, em % onde MAIOR = PIOR (menor = melhor). Cite esses números no
-  Documento 1 (ex.: "Bioemocional 71% — maior eixo de disfunção; índice geral 66%") e use o priority_pillar como o
-  eixo prioritário do plano. Se is_partial = true, registre que o mapa é parcial (falta o exame físico/Biomecânico).
+- MAPA BIO³ (neuro_id): traz o GRAU DE DISFUNÇÃO por eixo, em % onde MAIOR = PIOR (menor = melhor). No Documento 1,
+  apresente SEMPRE OS TRÊS EIXOS pelos nomes AXIEL, cada um com o seu %, inclusive os mais preservados:
+  Biomecânico (fisico_pct), Bioquímico (bioquimico_pct) e Bioemocional (emocional_pct) — use exatamente o termo
+  "Bioemocional", não "emocional" — além do índice geral (indice_geral). Ex.: "Mapa Bio³ — Bioemocional 71%
+  (maior disfunção), Bioquímico 58%, Biomecânico 40%; índice geral 66%." De preferência traga isso como um
+  resultado/achado próprio ("Leitura do Mapa Bio³"). Use o priority_pillar como eixo prioritário do plano.
+  Se is_partial = true, registre que o mapa é parcial (falta o exame físico/Biomecânico).
 - Baseie TUDO apenas nos dados fornecidos. Se faltar dado, escreva isso de forma honesta no próprio texto
   (ex.: "não informado neste momento") e registre em data_limitations. Não invente exames, valores ou achados.
 - Tudo é RASCUNHO de apoio ao profissional, que revisa, edita e aprova antes de qualquer envio ao paciente.
