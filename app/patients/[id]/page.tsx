@@ -579,15 +579,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         </div>
       )}
 
-      {/* ── Jornada do paciente — timeline de eventos ── */}
+      {/* ── Jornada do paciente — timeline + questionários (superfície única) ── */}
       <div className="mt-5">
-        <PatientTimeline events={timelineEvents} limit={15} />
-      </div>
-
-      {/* Questionários DENTRO da Jornada (única superfície; % + itens em disfunção; sem duplicar no timeline) */}
-      <div className="mt-[12px] bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-        <p className="text-[13px] font-medium text-[#0F1A2E] mb-[12px]">{t("accordion.questionnaires")}</p>
-        <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
+        <PatientTimeline
+          events={timelineEvents}
+          limit={15}
+          questionnaires={<PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />}
+        />
       </div>
 
       {/* Notes — quick voice note widget */}

@@ -33,17 +33,20 @@ interface Props {
   events: TimelineEvent[];
   /** Max events to show before collapsing (default 12) */
   limit?: number;
+  /** Bloco de questionários renderizado DENTRO do card da Jornada (superfície única). */
+  questionnaires?: React.ReactNode;
 }
 
-export function PatientTimeline({ events, limit = 12 }: Props) {
+export function PatientTimeline({ events, limit = 12, questionnaires }: Props) {
   const t = useTranslations("patientPanels.timeline");
   const locale = useLocale();
   const visible = events.slice(0, limit);
 
   if (visible.length === 0) {
     return (
-      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[20px]">
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[20px] space-y-[14px]">
         <p className="text-[12px] text-[#A09E98] text-center">{t("empty")}</p>
+        {questionnaires && <div className="pt-[14px] border-t border-black/[.06]">{questionnaires}</div>}
       </div>
     );
   }
@@ -156,6 +159,11 @@ export function PatientTimeline({ events, limit = 12 }: Props) {
           <p className="text-[11px] text-center text-[#A09E98] pt-1">
             {t("more", { count: events.length - limit })}
           </p>
+        )}
+
+        {/* Questionários — dentro do mesmo card da Jornada (superfície única) */}
+        {questionnaires && (
+          <div className="pt-[14px] border-t border-black/[.06]">{questionnaires}</div>
         )}
       </div>
     </div>
