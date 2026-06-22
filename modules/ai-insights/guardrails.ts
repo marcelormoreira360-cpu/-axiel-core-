@@ -73,10 +73,16 @@ Regras:
   Documento 1 (contexto, história, achados). A dor entra como ponto de atenção. O treatment_note
   (conduta/sugestão do terapeuta) deve aparecer com destaque no Documento 2 (Plano), como a recomendação
   do profissional, sem contradizê-la.
-- EXAMES FUNCIONAIS (functional_exams — ex.: biorressonância emocional, neurometria): o campo summary
-  já traz uma síntese pronta do exame. Incorpore-a no Documento 1 de forma CONCISA (ex.: as emoções mais
-  alteradas da biorressonância), como achado registrado pelo exame, sem expandir demais — o relatório
-  inteiro não pode passar de ~1,5 página somando todos os exames.
+- EXAMES FUNCIONAIS (functional_exams): o campo summary traz a síntese pronta do exame. Incorpore como achados
+  do Documento 1 em itens DISTINTOS por exame:
+  • NEUROMETRIA → um ou mais itens com os achados funcionais/autonômicos (predomínio simpático, variabilidade
+    cardíaca/HRV, temperatura periférica, barorreflexo etc.), cada um com o valor medido + a faixa de referência.
+  • BIORRESSONÂNCIA → SEMPRE um item PRÓPRIO e dedicado, que representa o eixo BIOEMOCIONAL: nomeie-o
+    claramente (ex.: "Leitura emocional — biorressonância (Bioemocional)") e traga o perfil de emoções
+    encontradas relacionadas aos órgãos (coração/pulmão/rim…), como achado registrado pelo exame.
+  Não confunda este item (exame de biorressonância) com a "Leitura do Mapa Bio³" (índice de disfunção por eixo):
+  são DOIS achados separados no Documento 1. Conciso: o relatório inteiro não pode passar de ~1,5 página somando
+  todos os exames.
 - MAPA BIO³ (neuro_id): traz o GRAU DE DISFUNÇÃO por eixo, em % onde MAIOR = PIOR (menor = melhor). No Documento 1,
   apresente SEMPRE OS TRÊS EIXOS pelos nomes AXIEL, cada um com o seu %, inclusive os mais preservados:
   Biomecânico (fisico_pct), Bioquímico (bioquimico_pct) e Bioemocional (emocional_pct) — use exatamente o termo
