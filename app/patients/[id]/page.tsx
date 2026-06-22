@@ -8,7 +8,6 @@ import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getAiInsightsByPatient } from "@/services/ai-insight-service";
-import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getPatientPackages } from "@/services/package-service";
@@ -43,7 +42,6 @@ import { PatientIntelligenceStrip } from "@/components/patient-intelligence-stri
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
 import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-followup-panel";
-import { getPatientEvolution } from "@/services/evolution-service";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
@@ -84,12 +82,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const tc = await getTranslations("common.terms");
   const locale = await getLocale();
 
-  const [appointments, responses, sessionRecords, aiInsights, assessmentResponses, exams, functionalExams, prescriptions, packages, documents, treatmentPlans, offers, activeSubscriptionResult] = await Promise.all([
+  const [appointments, responses, sessionRecords, aiInsights, exams, functionalExams, prescriptions, packages, documents, treatmentPlans, offers, activeSubscriptionResult] = await Promise.all([
     getAppointmentsByPatient(id),
     getPatientIntakeResponses(id),
     getSessionRecordsByPatient(id),
     getAiInsightsByPatient(id, 4),
-    getPatientAssessmentResponses(id),
     getPatientExams(id),
     getPatientFunctionalExams(id),
     getPatientPrescriptions(id),
@@ -124,7 +121,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
   const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
-  const evolution = await getPatientEvolution(id).catch(() => ({ biomarkers: [], assessments: [], vitals: [] }));
   // Pontos de atenção — piores itens da última avaliação (barras, pior primeiro)
   const attentionPoints = neuroIdMap?.assessment_id
     ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
@@ -179,7 +175,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     appointments,
     sessionRecords,
     aiInsights,
-    assessmentResponses,
     exams,
     prescriptions,
   });
@@ -299,8 +294,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         caseSummary={patient.case_summary}
       />
 
-      {/* ── Acompanhamento do tratamento: notas por sessão + evolução clínica (gráfico inline) ── */}
-      <PatientTreatmentFollowupPanel patientId={id} sessions={sessionRecords} assessments={evolution.assessments} />
+      {/* ── Acompanhamento do tratamento: sessões → Registro de sessão (notas/SOAP/vitais) ── */}
+      <PatientTreatmentFollowupPanel patientId={id} appointments={appointments} sessions={sessionRecords} />
 
       {/* ── Indicação paciente→paciente ── */}
       {(referralInfo.referredByName || referralInfo.referred.length > 0) && (
@@ -584,25 +579,19 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         </div>
       )}
 
-      {/* ── Patient timeline — unified event stream ── */}
+      {/* ── Jornada do paciente — timeline de eventos ── */}
       <div className="mt-5">
         <PatientTimeline events={timelineEvents} limit={15} />
       </div>
 
+      {/* Questionários DENTRO da Jornada (única superfície; % + itens em disfunção; sem duplicar no timeline) */}
+      <div className="mt-[12px] bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <p className="text-[13px] font-medium text-[#0F1A2E] mb-[12px]">{t("accordion.questionnaires")}</p>
+        <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
+      </div>
+
       {/* Notes — quick voice note widget */}
       <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
-
-      {/* ── Questionários (acordeão recolhido) ── */}
-      <details className="mt-5 group">
-        <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] transition">
-          <span className="text-[13px] font-medium text-[#0F1A2E]">{t("accordion.questionnaires")}</span>
-          <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
-        </summary>
-        <div className="mt-[12px] space-y-[18px]">
-      {/* Questionários consolidados (Opção A): cada um com sub-itens, %/cor, clicável p/ detalhe + botão Preencher. */}
-      <PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />
-        </div>
-      </details>
 
       {/* ── Plano de tratamento + Suplementação (acordeão recolhido) ── */}
       <details className="mt-[18px] group">

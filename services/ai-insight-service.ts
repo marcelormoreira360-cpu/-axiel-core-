@@ -9,6 +9,7 @@ import { getSessionRecordsByPatient } from "@/services/session-recording-service
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
+import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { AI_INSIGHT_SYSTEM_PROMPT, normalizeInsightText } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
@@ -69,6 +70,14 @@ export type AiInsightInputSnapshot = {
     dosage: string | null;
     active: boolean;
   }>;
+  neuro_id: {
+    indice_geral: number | null;
+    fisico_pct: number | null;
+    bioquimico_pct: number | null;
+    emocional_pct: number | null;
+    priority_pillar: string | null;
+    is_partial: boolean;
+  } | null;
 };
 
 function buildAiFallbackOutput(reason: string): AiInsightOutput {
@@ -103,6 +112,7 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
     safe(getPatientFunctionalExams(patientId)),
     safe(getPatientPrescriptions(patientId)),
   ]);
+  const neuroIdMap = await getLatestNeuroIdMap(patientId).catch(() => null);
 
   return {
     patient: {
@@ -166,6 +176,16 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       dosage: p.dosage,
       active: p.is_active,
     })),
+    neuro_id: neuroIdMap
+      ? {
+          indice_geral: neuroIdMap.indice_geral,
+          fisico_pct: neuroIdMap.fisico_pct,
+          bioquimico_pct: neuroIdMap.bioquimico_pct,
+          emocional_pct: neuroIdMap.emocional_pct,
+          priority_pillar: neuroIdMap.priority_pillar,
+          is_partial: neuroIdMap.is_partial,
+        }
+      : null,
   };
 }
 
