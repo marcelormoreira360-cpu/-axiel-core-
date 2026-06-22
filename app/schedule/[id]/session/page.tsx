@@ -64,7 +64,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
       {/* Topbar */}
       <div className="flex items-center gap-[10px] mb-[20px] flex-wrap">
         <Link
-          href="/schedule"
+          href={`/patients/${appointment.patient_id}`}
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

@@ -4,12 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Minus, Send, Plus, ChevronRight } from "lucide-react";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
-import { bandForDysfunction } from "@/modules/neuro-id/bands";
 import { resendAssessmentAction } from "@/app/patients/[id]/assessments/actions";
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
-}
 
 function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -17,7 +12,6 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
 
   const delta = item.deltaPct;
   const Arrow = delta == null || delta === 0 ? Minus : delta < 0 ? TrendingDown : TrendingUp;
-  const max = Math.max(...item.points.map((p) => p.score_percentage), 1);
 
   function resend() {
     setMsg(null);
@@ -28,8 +22,8 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
   }
 
   return (
-    <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-      <div className="flex items-start justify-between gap-2 mb-[8px]">
+    <div className="rounded-[10px] border border-black/[.06] bg-[#FAFAF8] px-[12px] py-[10px]">
+      <div className="flex items-start justify-between gap-2 mb-[6px]">
         {item.latest_response_id ? (
           <Link
             href={`/patients/${patientId}/forms/${item.latest_response_id}`}
@@ -87,25 +81,6 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
         </div>
       )}
 
-      {/* Série (mini barras) */}
-      {item.points.length > 0 && (
-        <div className="flex items-end gap-[3px] h-12 mb-[6px]">
-          {item.points.map((p, i) => {
-            const pBand = bandForDysfunction(p.score_percentage); // semáforo por severidade
-            return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-              <div
-                className="w-full rounded-t"
-                style={{ height: `${Math.max(4, Math.round((p.score_percentage / max) * 40))}px`, background: pBand?.colors.stroke ?? "#5E8C6A" }}
-                title={`${fmtDate(p.date)}: ${p.score_percentage}%`}
-              />
-              <span className="text-[8px] text-[#A09E98] truncate w-full text-center">{fmtDate(p.date)}</span>
-            </div>
-            );
-          })}
-        </div>
-      )}
-
       <div className="flex items-center justify-between mt-[4px]">
         <p className="text-[11px] text-[#A09E98]">
           {item.count > 1
@@ -137,11 +112,14 @@ export function PatientAssessmentProgressPanel({
   return (
     <div className="space-y-[10px]">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] text-[#A09E98]">
-          {progress.length === 0
-            ? "Nenhum questionário respondido ainda."
-            : `${progress.length} ${progress.length === 1 ? "questionário" : "questionários"}`}
-        </p>
+        <div className="min-w-0">
+          <p className="text-[13px] font-medium text-[#0F1A2E]">Questionários</p>
+          <p className="text-[11px] text-[#A09E98]">
+            {progress.length === 0
+              ? "Nenhum questionário respondido ainda."
+              : `${progress.length} ${progress.length === 1 ? "questionário" : "questionários"}`}
+          </p>
+        </div>
         <Link
           href={`/patients/${patientId}/forms/new`}
           className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[10px] py-[5px] rounded-[6px] shrink-0"
