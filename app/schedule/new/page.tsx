@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { AppointmentForm, type ClinicUserOption } from "@/components/appointment-form";
-import { getPatients, createPatient } from "@/services/patient-service";
+import { getPatients, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createAppointment, getSessionTypes } from "@/services/appointment-service";
@@ -67,13 +67,12 @@ export default async function NewAppointmentPage({
     let patientId = String(formData.get("patient_id") ?? "").trim();
 
     if (newPatientName) {
-      // Create the patient on the fly then use their new ID
-      const newPatient = await createPatient({
+      // Reusa paciente existente (dedup) ou cria; evita duplicar no reagendamento.
+      const newPatient = await findOrCreatePatientForBooking({
         clinic_id: profile.clinic_id,
         full_name: newPatientName,
         email:     String(formData.get("new_patient_email") ?? "").trim() || null,
         phone:     String(formData.get("new_patient_phone") ?? "").trim() || null,
-        notes:     null,
       });
       patientId = newPatient.id;
     }

@@ -11,7 +11,7 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
-import { getPatients, createPatient } from "@/services/patient-service";
+import { getPatients, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { isPractitioner, getTeamMembers } from "@/services/team-service";
@@ -91,12 +91,11 @@ export default async function SchedulePage() {
     let patientId = String(formData.get("patient_id") ?? "").trim();
 
     if (newPatientName) {
-      const newPatient = await createPatient({
+      const newPatient = await findOrCreatePatientForBooking({
         clinic_id: profile.clinic_id,
         full_name: newPatientName,
         email: String(formData.get("new_patient_email") ?? "").trim() || null,
         phone: String(formData.get("new_patient_phone") ?? "").trim() || null,
-        notes: null,
       });
       patientId = newPatient.id;
     }
@@ -164,12 +163,11 @@ export default async function SchedulePage() {
     let patientName = "";
 
     if (newPatientName) {
-      const np = await createPatient({
+      const np = await findOrCreatePatientForBooking({
         clinic_id: profile.clinic_id,
         full_name: newPatientName,
         email: String(formData.get("new_patient_email") ?? "").trim() || null,
         phone: String(formData.get("new_patient_phone") ?? "").trim() || null,
-        notes: null,
       });
       patientId = np.id; phone = np.phone; email = np.email; patientName = np.full_name;
     } else if (patientId) {
