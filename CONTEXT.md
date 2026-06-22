@@ -1,7 +1,20 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 21/06/2026 (29)
+> Atualizado em: 22/06/2026 (30)
+
+## 🟢 Bio³ fusão de exames + ajustes da ficha + dedup de paciente (22/06/2026) — TUDO MERGEADO E NO AR
+
+> `tsc` 0; `verify:i18n` 42/0/0; 289 testes verdes. Migration 100 aplicada na prod. PRs #9–#15 mergeados e deployados (axiel-core-6ikl.vercel.app).
+
+1. **Fusão Bio³ a partir de exames (incrementos 1–5, PR #9):** neurometria/biorressonância passam a alimentar a pirâmide (antes só questionários), com extração por IA e **gate humano**. `computeNeuroId` ganhou 3º arg `examValues` (funde métricas na média ponderada por pilar; expõe `examContributions`). `modules/neuro-id/exam-metrics.ts` = núcleo determinístico (8 métricas ancoradas no manual) + extração (`buildMetricExtractionPrompt`/`coerceExamMetricsDraft`, faixa de sanidade) + `mergeConfirmedMetrics` + `EXAM_METRIC_META`. `services/exam-ai-service.ts` → `extractExamMetrics` (lê PDF + legenda). **Migration 100** (`patient_functional_exams` += `metrics_draft`/`metrics_values`/`metrics_reviewed_at`/`metrics_reviewed_by`). Gate na UI: `MetricsGate` no `patient-functional-exams-panel` (revisar/editar/confirmar). `neuro-id-service`: `createNeuroIdAssessment` e `autoUpsertNeuroIdDraft` puxam métricas confirmadas (`confirmedExamMetrics`, clinic-scoped) e persistem em `patient_assessment_values` (origem `exam:`). Spec: `_SPEC_BIO3_FUSAO_EXAMES.md`.
+2. **Ficha — questionários dentro da Jornada + Avaliação sempre editável + voltar→ficha (PR #10):** o bloco Q-SNA/QRM deixou de ser card separado e virou seção compacta DENTRO do card "Jornada do paciente" (slot `questionnaires` no `PatientTimeline`; removida a barra de cor/mini-barras). `PatientAssessmentPanel` agora é sempre formulário pré-preenchido (sem alternar leitura/edição). `app/schedule/[id]/session/page.tsx`: seta de voltar vai para `/patients/[id]`, não `/schedule`.
+3. **Escala 0–10 clicável e colorida (PR #11/#12):** no formulário de avaliação, os itens **manuais do Biomecânico** (palpação/dor, `band_type` mobility/pain) viram botões 0–10 coloridos por banda (0–3 verde · 4–6 âmbar · 7–10 vermelho, via `bandForItem`). QRM/Q-SNA e Bioquímico/Bioemocional seguem campo numérico (extraídos, podem ter decimais). Componente `ScaleButtons` em `patient-neuro-id-panel`.
+4. **Confirmar agendamento — sem falha silenciosa (PR #13):** `confirmAppointmentByToken` agora CHECA o erro do update do paciente (antes ignorava); `confirmAppointmentAction` revalida `/patients/[id]` e `/schedule`.
+5. **Agendamento — dedup de paciente (PR #14):** novo `findOrCreatePatientForBooking` (patient-service) procura paciente existente por **e-mail → telefone → nome exato** (só reusa com 1 match de nome) antes de criar; usado em `schedule/page.tsx` e `schedule/new/page.tsx`. Resolve duplicata no reagendamento.
+6. **Pacientes — ocultar arquivados (PR #15):** `getPatients`/`getPatientCount` filtram `deleted_at is null`; o dedup também ignora arquivados. Faz o "arquivar" sumir da lista (a listagem não filtrava por status/deleted_at).
+7. **Limpeza de duplicatas (no banco de prod, com OK do Marcelo):** 9 `teste` + `MArcelo` excluídos; 1 `teste` arquivado (não dava hard-delete: `ai_validation_events` é log imutável por trigger); 4 clones vazios excluídos; 2 clones com pagamentos (Angelica, Serginando) **mesclados** (pagamentos reatribuídos ao registro real, clone apagado). GOTCHA: deletar paciente com `ai_validation_events` falha (trigger de imutabilidade); só `hotmart_purchases` é FK NO ACTION, o resto cascateia.
+8. **INFRA (importante):** links para o PACIENTE (confirmação de agendamento em `app/schedule/page.tsx`, intake, portal) são montados a partir do HOST da requisição. Em deploy de PREVIEW da Vercel, o link herda a URL de preview, que tem Vercel Authentication (login wall) → paciente cai em "Log in to Vercel". **Fluxo de paciente só funciona/testa em PRODUÇÃO** (axiel-core-6ikl.vercel.app). Blindagem futura possível: usar `NEXT_PUBLIC_APP_URL` em vez do host nos links de paciente.
 
 ## 🟢 Redesign da ficha — 3 itens (21/06/2026) — CÓDIGO PRONTO, na branch `feat/exam-ai-analysis` (PR #6)
 
