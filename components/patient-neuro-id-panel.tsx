@@ -69,6 +69,37 @@ function NeuroPyramid({ data, className = "w-[190px] h-[120px] shrink-0" }: { da
   );
 }
 
+// ── Escala 0–10 clicável e colorida por banda (0–3 verde · 4–6 âmbar · 7–10 vermelho) ──
+// Prático: o terapeuta só clica. Preserva valor decimal auto-importado (destaca o
+// botão arredondado; o valor cru fica no hidden input até alguém clicar).
+function ScaleButtons({ value, onSelect }: { value: string; onSelect: (v: string) => void }) {
+  const sel = value === "" || !Number.isFinite(Number(value)) ? null : Math.round(Number(value));
+  return (
+    <div className="flex gap-[3px] flex-wrap" role="group" aria-label="Pontuação 0 a 10">
+      {Array.from({ length: 11 }, (_, n) => {
+        const c = bandForItem(n)?.colors ?? { fill: "#F4F3EF", stroke: "#A09E98", text: "#6B6A66" };
+        const active = sel === n;
+        return (
+          <button
+            type="button"
+            key={n}
+            onClick={() => onSelect(String(n))}
+            aria-pressed={active}
+            className="w-[28px] h-[28px] rounded-[7px] text-[12px] font-medium border transition hover:opacity-80"
+            style={
+              active
+                ? { background: c.stroke, color: "#fff", borderColor: c.stroke }
+                : { background: c.fill, color: c.text, borderColor: "transparent" }
+            }
+          >
+            {n}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export type AttentionPoint = { code: string; label: string; dysfunction: number };
 
 export function PatientNeuroIdPanel({
@@ -345,8 +376,10 @@ export function PatientNeuroIdPanel({
                           <option value="alto">{t("lab.alto")}</option>
                         </select>
                       ) : (
-                        <input type="number" min={0} max={10} step="0.1" inputMode="decimal" name={`item__${it.code}`} className={inputCls}
-                          value={raw} onChange={(e) => setVals((v) => ({ ...v, [it.code]: e.target.value }))} />
+                        <>
+                          <ScaleButtons value={raw} onSelect={(val) => setVals((v) => ({ ...v, [it.code]: val }))} />
+                          <input type="hidden" name={`item__${it.code}`} value={raw} />
+                        </>
                       )}
                     </label>
                   );
