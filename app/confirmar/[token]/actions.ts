@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { confirmAppointmentByToken } from "@/services/appointment-service";
@@ -60,6 +61,10 @@ export async function confirmAppointmentAction(
   if (!result.ok || !result.patientId || !result.clinicId) {
     return { error: result.error ?? "Não foi possível confirmar." };
   }
+
+  // A ficha do paciente e a agenda devem refletir os dados recém-confirmados.
+  revalidatePath(`/patients/${result.patientId}`);
+  revalidatePath("/schedule");
 
   // Consentimentos (LGPD) — best-effort
   const h = await headers();

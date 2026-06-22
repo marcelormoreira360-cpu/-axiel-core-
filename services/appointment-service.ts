@@ -209,11 +209,15 @@ export async function confirmAppointmentByToken(
 
   if (info.patient?.id) {
     const cleaned = Object.fromEntries(Object.entries(patientFields).filter(([, v]) => v !== undefined));
-    await supabase
+    // Erro do update NÃO pode ser silencioso: se os dados do paciente (nome,
+    // contato, demografia) não gravarem, a confirmação não deve seguir como se
+    // tivesse gravado.
+    const { error: pErr } = await supabase
       .from("patients")
       .update({ ...cleaned, status: "active", updated_at: new Date().toISOString() })
       .eq("id", info.patient.id)
       .eq("clinic_id", info.clinic_id);
+    if (pErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
   }
 
   const { error } = await supabase
