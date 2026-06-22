@@ -6,9 +6,11 @@ import {
   createPatientFunctionalExam,
   uploadFunctionalExamFile,
   deletePatientFunctionalExam,
+  reviewExamMetrics,
   type FunctionalExamType,
 } from "@/services/functional-exams-service";
-import { analyzeExamPdf } from "@/services/exam-ai-service";
+import { analyzeExamPdf, extractExamMetrics } from "@/services/exam-ai-service";
+import { coerceExamMetricsDraft, type ExamInstrument } from "@/modules/neuro-id/exam-metrics";
 
 const TYPES: FunctionalExamType[] = ["neurometria", "biorressonancia", "outro"];
 
@@ -27,20 +29,21 @@ export async function addFunctionalExamAction(formData: FormData) {
 
   if (!patientId) throw new Error("Paciente obrigatório");
 
-  // Anexo opcional do PDF do exame → a IA lê e extrai uma síntese concisa.
+  // Anexo opcional do PDF do exame → a IA lê e extrai (a) uma síntese concisa e
+  // (b) as métricas numéricas Bio³ (rascunho p/ gate humano antes da pirâmide).
   let filePath: string | null = null;
   let aiAnalysis: string | null = null;
+  let metricsDraft: Record<string, number> = {};
   const file = formData.get("exam_file");
   if (file instanceof File && file.size > 0) {
     if (file.type !== "application/pdf") throw new Error("Anexe o exame em PDF.");
     const buffer = Buffer.from(await file.arrayBuffer());
+    const pdfBase64 = buffer.toString("base64");
     filePath = await uploadFunctionalExamFile(buffer, file.name, file.type, patientId, profile.clinic_id);
-    aiAnalysis = await analyzeExamPdf({
-      pdfBase64: buffer.toString("base64"),
-      filename: file.name,
-      examType,
-      examTitle: title,
-    });
+    [aiAnalysis, metricsDraft] = await Promise.all([
+      analyzeExamPdf({ pdfBase64, filename: file.name, examType, examTitle: title }),
+      extractExamMetrics({ pdfBase64, filename: file.name, examType }),
+    ]);
     // Sem resumo manual? usa a síntese da IA (que o terapeuta pode editar depois).
     if (!summary && aiAnalysis) summary = aiAnalysis;
   }
@@ -56,8 +59,36 @@ export async function addFunctionalExamAction(formData: FormData) {
     exam_date: examDate,
     file_path: filePath,
     ai_analysis: aiAnalysis,
+    metrics_draft: metricsDraft,
   });
 
+  revalidatePath(`/patients/${patientId}`);
+}
+
+/**
+ * Gate humano (incremento 4): o terapeuta revisa/edita as métricas extraídas pela
+ * IA e CONFIRMA. Só depois disso elas entram na pirâmide Bio³. Os campos chegam por
+ * `metric_code` no FormData; saneamos por code/faixa (coerceExamMetricsDraft) antes de gravar.
+ */
+export async function reviewExamMetricsAction(
+  examId: string,
+  patientId: string,
+  examType: string,
+  formData: FormData,
+) {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+  if (examType !== "neurometria" && examType !== "biorressonancia") return;
+
+  // Os campos do form são os próprios metric_codes; coerceExamMetricsDraft já
+  // ignora codes desconhecidos e valores fora da faixa, então basta coletar os
+  // não-vazios (codes ausentes/limpos = métrica removida do mapa).
+  const raw: Record<string, string> = {};
+  for (const [key, val] of formData.entries()) {
+    if (typeof val === "string" && val.trim() !== "") raw[key] = val.trim();
+  }
+  const values = coerceExamMetricsDraft(raw, examType as ExamInstrument);
+  await reviewExamMetrics(examId, values);
   revalidatePath(`/patients/${patientId}`);
 }
 

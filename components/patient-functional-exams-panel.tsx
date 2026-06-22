@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Activity, Plus, X, Trash2, ChevronDown } from "lucide-react";
+import { Activity, Plus, X, Trash2, ChevronDown, Sparkles, Check } from "lucide-react";
 import type { PatientFunctionalExam } from "@/services/functional-exams-service";
-import { addFunctionalExamAction, deleteFunctionalExamAction } from "@/app/patients/[id]/functional-exams/actions";
+import { EXAM_METRIC_META } from "@/modules/neuro-id/exam-metrics";
+import { addFunctionalExamAction, deleteFunctionalExamAction, reviewExamMetricsAction } from "@/app/patients/[id]/functional-exams/actions";
 
 function typeLabel(t: ReturnType<typeof useTranslations>, exam: PatientFunctionalExam): string {
   if (exam.exam_type === "neurometria") return t("typeNeurometria");
@@ -101,6 +102,7 @@ export function PatientFunctionalExamsPanel({
               {exam.summary && (
                 <p className="text-[11px] text-[#6B6A66] mt-[10px] whitespace-pre-wrap leading-relaxed">{exam.summary}</p>
               )}
+              <MetricsGate exam={exam} patientId={patientId} t={t} locale={locale} />
               <form action={deleteFunctionalExamAction.bind(null, exam.id, patientId)} className="mt-[8px]">
                 <button type="submit" className="inline-flex items-center gap-1 text-[10px] font-medium text-[#B42318]/80 hover:text-[#B42318] transition" aria-label={t("delete")}>
                   <Trash2 className="h-[12px] w-[12px]" /> {t("delete")}
@@ -110,6 +112,94 @@ export function PatientFunctionalExamsPanel({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Gate humano (incremento 4): mostra as métricas Bio³ que a IA extraiu do PDF,
+ * editáveis, para o terapeuta revisar e CONFIRMAR. Só depois entram na pirâmide.
+ * Aparece só quando há rascunho (neurometria/biorressonância com PDF lido).
+ */
+function MetricsGate({
+  exam,
+  patientId,
+  t,
+  locale,
+}: {
+  exam: PatientFunctionalExam;
+  patientId: string;
+  t: ReturnType<typeof useTranslations>;
+  locale: string;
+}) {
+  const draft = exam.metrics_draft;
+  if (!draft || Object.keys(draft).length === 0) return null;
+  const reviewed = !!exam.metrics_reviewed_at;
+  const current = exam.metrics_values ?? draft;
+  const codes = Object.keys(draft);
+
+  const numCls =
+    "w-[88px] text-[12px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[7px] px-[8px] py-[5px] outline-none focus:border-[#0F6E56]/50 transition";
+
+  return (
+    <div className="mt-[12px] border border-[#0F6E56]/15 bg-[#0F6E56]/[.03] rounded-[10px] p-[12px]">
+      <div className="flex items-center justify-between gap-[8px] mb-[8px]">
+        <span className="inline-flex items-center gap-[5px] text-[11px] font-medium text-[#0F1A2E]">
+          <Sparkles className="h-[13px] w-[13px] text-[#0F6E56]" /> {t("metrics.title")}
+        </span>
+        {reviewed ? (
+          <span className="inline-flex items-center gap-[3px] text-[10px] font-medium text-[#0F6E56]">
+            <Check className="h-[11px] w-[11px]" /> {t("metrics.reviewed")}
+          </span>
+        ) : (
+          <span className="text-[10px] font-medium text-[#B7791F]">{t("metrics.pending")}</span>
+        )}
+      </div>
+      <p className="text-[10px] text-[#6B6A66] mb-[10px] leading-relaxed">{t("metrics.hint")}</p>
+
+      <form action={reviewExamMetricsAction.bind(null, exam.id, patientId, exam.exam_type)} className="space-y-[6px]">
+        {codes.map((code) => {
+          const meta = EXAM_METRIC_META[code];
+          return (
+            <div key={code} className="flex items-center justify-between gap-[8px]">
+              <label htmlFor={`${exam.id}-${code}`} className="text-[11px] text-[#3B3A36] min-w-0 truncate">
+                {meta?.label ?? code}
+                {meta?.unit ? <span className="text-[#A09E98]"> ({meta.unit})</span> : null}
+              </label>
+              <input
+                id={`${exam.id}-${code}`}
+                name={code}
+                type="number"
+                step="any"
+                // Após a revisão, semeia só dos valores CONFIRMADOS (current = metrics_values):
+                // uma métrica que o terapeuta apagou fica vazia e PERMANECE removida do mapa.
+                // Antes da revisão, current = draft, então mostra a sugestão da IA.
+                // O placeholder preserva o valor que a IA leu, sem reintroduzi-lo.
+                defaultValue={current[code] ?? ""}
+                placeholder={draft[code] != null ? String(draft[code]) : undefined}
+                className={numCls}
+              />
+            </div>
+          );
+        })}
+        <button
+          type="submit"
+          className="mt-[4px] w-full text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[7px] py-[7px] transition"
+        >
+          {reviewed ? t("metrics.update") : t("metrics.confirm")}
+        </button>
+        {reviewed && exam.metrics_reviewed_at && (
+          <p className="text-[9px] text-[#A09E98] text-center">
+            {t("metrics.reviewedOn", {
+              date: new Date(exam.metrics_reviewed_at).toLocaleDateString(locale, {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
+            })}
+          </p>
+        )}
+      </form>
     </div>
   );
 }

@@ -11,6 +11,13 @@ export type PatientFunctionalExam = {
   exam_date: string;
   file_path: string | null;
   ai_analysis: string | null;
+  /** Rascunho da IA { metric_code: valor bruto } extraído do PDF (auditoria; gate humano). */
+  metrics_draft: Record<string, number> | null;
+  /** Valores revisados/confirmados pelo terapeuta — entram na pirâmide Bio³. */
+  metrics_values: Record<string, number> | null;
+  /** Carimbo da revisão (gate). Null = pendente. */
+  metrics_reviewed_at: string | null;
+  metrics_reviewed_by: string | null;
   created_by: string | null;
   created_at: string;
 };
@@ -57,29 +64,55 @@ export async function createPatientFunctionalExam(input: {
   exam_date: string;
   file_path?: string | null;
   ai_analysis?: string | null;
+  /** Rascunho de métricas extraídas pela IA (gate humano: fica pendente até revisão). */
+  metrics_draft?: Record<string, number> | null;
 }): Promise<PatientFunctionalExam> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  const draft = input.metrics_draft && Object.keys(input.metrics_draft).length > 0 ? input.metrics_draft : null;
   const { data, error } = await supabase
     .from("patient_functional_exams")
     .insert({
-      clinic_id:   input.clinic_id,
-      patient_id:  input.patient_id,
-      exam_type:   input.exam_type,
-      title:       input.title ?? null,
-      summary:     input.summary ?? null,
-      findings:    input.findings ?? null,
-      exam_date:   input.exam_date,
-      file_path:   input.file_path ?? null,
-      ai_analysis: input.ai_analysis ?? null,
-      created_by:  user?.id ?? null,
+      clinic_id:     input.clinic_id,
+      patient_id:    input.patient_id,
+      exam_type:     input.exam_type,
+      title:         input.title ?? null,
+      summary:       input.summary ?? null,
+      findings:      input.findings ?? null,
+      exam_date:     input.exam_date,
+      file_path:     input.file_path ?? null,
+      ai_analysis:   input.ai_analysis ?? null,
+      metrics_draft: draft,
+      created_by:    user?.id ?? null,
     })
     .select("*")
     .single();
   if (error) throw error;
   return data as PatientFunctionalExam;
+}
+
+/**
+ * Gate humano: grava os valores das métricas revisados/confirmados pelo terapeuta
+ * (estes entram na pirâmide Bio³). `values` já vem saneado por code (coerceExamMetricsDraft).
+ */
+export async function reviewExamMetrics(
+  examId: string,
+  values: Record<string, number>,
+): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase
+    .from("patient_functional_exams")
+    .update({
+      metrics_values:      Object.keys(values).length > 0 ? values : null,
+      metrics_reviewed_at: new Date().toISOString(),
+      metrics_reviewed_by: user?.id ?? null,
+    })
+    .eq("id", examId);
+  if (error) throw error;
 }
 
 export async function deletePatientFunctionalExam(examId: string): Promise<void> {

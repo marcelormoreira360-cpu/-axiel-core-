@@ -67,6 +67,48 @@ describe("computeNeuroId", () => {
   });
 });
 
+describe("computeNeuroId — fusão de exames (incremento 2)", () => {
+  it("sem examValues → idêntico ao comportamento anterior (sem regressão)", () => {
+    const base = { qrm_coracao: 6, intestino: 4 };
+    const a = computeNeuroId(items, base);
+    const b = computeNeuroId(items, base, undefined);
+    expect(b.pillars.emocional.dysfunction).toBe(a.pillars.emocional.dysfunction);
+    expect(b.pillars.bioquimico.dysfunction).toBe(a.pillars.bioquimico.dysfunction);
+    expect(b.examContributions).toEqual([]);
+    expect(b.pillars.emocional.examItemsUsed).toBe(0);
+  });
+
+  it("métrica de exame alimenta um pilar mesmo sem questionário", () => {
+    // temperatura 28,82°C → disfunção 89,33; roteia emocional 0.6 + bioquímico 0.4
+    const r = computeNeuroId(items, {}, { neuro_temperatura: 28.82 });
+    expect(Math.round(r.pillars.emocional.dysfunction!)).toBe(89);
+    expect(Math.round(r.pillars.bioquimico.dysfunction!)).toBe(89);
+    expect(r.pillars.fisico.dysfunction).toBeNull(); // exame não toca o Biomecânico
+    expect(r.pillars.emocional.examItemsUsed).toBe(1);
+    expect(r.pillars.bioquimico.examItemsUsed).toBe(1);
+    expect(r.examContributions).toHaveLength(2);
+  });
+
+  it("exame + questionário entram na MESMA média ponderada do pilar (§5)", () => {
+    const q = computeNeuroId(items, { qrm_mente: 2 }); // emocional só do questionário (score 20)
+    // sna_balance 70,97% → disfunção 41,94 no Bioemocional (peso 1)
+    const f = computeNeuroId(items, { qrm_mente: 2 }, { neuro_sna_balance: 70.97 });
+    const blended = f.pillars.emocional.dysfunction!;
+    expect(blended).not.toBe(q.pillars.emocional.dysfunction);
+    // média ponderada de dois valores distintos (20 e ~42) fica entre eles
+    expect(blended).toBeGreaterThan(20);
+    expect(blended).toBeLessThan(41.94);
+    expect(f.pillars.emocional.examItemsUsed).toBe(1);
+  });
+
+  it("examContributions é rastreável (pilar, code, disfunção, peso)", () => {
+    const r = computeNeuroId(items, {}, { neuro_barorreflexo: 96.44 });
+    const baro = r.examContributions.find((c) => c.code === "neuro_barorreflexo");
+    expect(baro).toMatchObject({ pillar: "bioquimico", dysfunction: 0, weight: 1 });
+    expect(baro?.instrument).toBe("neurometria");
+  });
+});
+
 describe("bands (semáforo)", () => {
   it("item 0–10: ≤3 solto · 4–6 tenso · ≥7 bloqueado", () => {
     expect(bandForItem(2)?.key).toBe("solto");

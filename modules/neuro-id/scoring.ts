@@ -7,6 +7,7 @@
  */
 
 import type { CatalogItemDef, NeuroPillar, ItemDirection, ItemInputType, ScoringRule } from "./catalog";
+import { examMetricContributions, type PillarContribution } from "./exam-metrics";
 
 /** Subconjunto necessário do item (compatível com CatalogItemDef e com a linha do banco). */
 export type ScorableItem = {
@@ -73,6 +74,8 @@ export type PillarScore = {
   itemsMissing: number;
   /** códigos de itens faltando que justificam CTA (ex.: exames) */
   missingCtaCodes: string[];
+  /** métricas de exame (neurometria/biorressonância) que entraram neste pilar */
+  examItemsUsed: number;
 };
 
 export type ScoredItem = { code: string; pillar: NeuroPillar; dysfunction: number | null };
@@ -87,6 +90,11 @@ export type NeuroIdResult = {
   scoredItems: ScoredItem[];
   /** Contribuição relativa de cada pilar ao total de disfunção (soma 100%). */
   contributions: Record<NeuroPillar, number | null>;
+  /**
+   * Métricas de exame que entraram na pirâmide (neurometria/biorressonância),
+   * com pilar, disfunção e peso efetivo — para exibir/auditar (rastreável, §5 do spec).
+   */
+  examContributions: PillarContribution[];
 };
 
 const PILLARS: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
@@ -116,15 +124,22 @@ function weightedAvg(pairs: { value: number; weight: number }[]): number | null 
 /**
  * Calcula os 3 eixos + índice geral + prioridade a partir do catálogo e dos
  * valores crus por item_code. `values` = { item_code: raw }.
+ *
+ * `examValues` (opcional) = métricas de exame { metric_code: valor medido }
+ * (neurometria/biorressonância). Cada métrica vira disfunção 0–100 pela SUA
+ * referência (ver exam-metrics.ts) e entra na MESMA média ponderada do pilar,
+ * lado a lado com os itens de questionário (§5 do spec). Sem `examValues`, o
+ * comportamento é idêntico ao anterior (só questionário) — sem regressão.
  */
 export function computeNeuroId(
   items: ScorableItem[],
   values: Record<string, string | number | null | undefined>,
+  examValues?: Record<string, number | null | undefined>,
 ): NeuroIdResult {
   const scoredItems: ScoredItem[] = [];
   const pillars = {} as Record<NeuroPillar, PillarScore>;
   for (const p of PILLARS) {
-    pillars[p] = { pillar: p, dysfunction: null, itemsUsed: 0, itemsMissing: 0, missingCtaCodes: [] };
+    pillars[p] = { pillar: p, dysfunction: null, itemsUsed: 0, itemsMissing: 0, missingCtaCodes: [], examItemsUsed: 0 };
   }
 
   const byPillar: Record<NeuroPillar, { value: number; weight: number }[]> = {
@@ -142,6 +157,16 @@ export function computeNeuroId(
       ps.itemsUsed += 1;
       byPillar[item.pillar].push({ value: ds, weight: item.weight > 0 ? item.weight : 1 });
     }
+  }
+
+  // Fusão de exames: as métricas medidas entram na média ponderada do pilar,
+  // com peso efetivo (instrumento × roteamento × itemWeight). Só métricas
+  // presentes/finitas entram (filtro em examMetricContributions).
+  const examContributions = examValues ? examMetricContributions(examValues) : [];
+  for (const c of examContributions) {
+    if (c.weight <= 0) continue;
+    pillars[c.pillar].examItemsUsed += 1;
+    byPillar[c.pillar].push({ value: c.dysfunction, weight: c.weight });
   }
 
   for (const p of PILLARS) {
@@ -172,7 +197,7 @@ export function computeNeuroId(
     emocional: pillars.emocional.dysfunction,
   });
 
-  return { pillars, indiceGeral, priorityPillar, isPartial, scoredItems, contributions };
+  return { pillars, indiceGeral, priorityPillar, isPartial, scoredItems, contributions, examContributions };
 }
 
 /** Arredonda para inteiro de exibição (mantém null). */
