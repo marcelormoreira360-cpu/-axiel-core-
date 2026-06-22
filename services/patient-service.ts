@@ -87,6 +87,60 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
   return data as Patient;
 }
 
+/**
+ * Agendamento: acha um paciente já existente na clínica ANTES de criar, para não
+ * duplicar quando o terapeuta reusa o mesmo paciente. Dedup por e-mail (mais forte)
+ * → telefone → nome exato (case-insensitive). No nome, só reusa quando há UM único
+ * match (evita fundir homônimos). Enriquece contato vazio do existente sem sobrescrever.
+ */
+export async function findOrCreatePatientForBooking(input: {
+  clinic_id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+}): Promise<Patient> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const name = input.full_name.trim();
+  const email = input.email?.trim().toLowerCase() || null;
+  const phoneRaw = input.phone?.trim() || null;
+  const phoneDigits = phoneRaw ? phoneRaw.replace(/\D/g, "") || null : null;
+
+  let existing: Patient | null = null;
+  if (email) {
+    const { data } = await supabase.from("patients").select("*")
+      .eq("clinic_id", input.clinic_id).eq("email", email).limit(1).maybeSingle();
+    existing = (data as Patient) ?? null;
+  }
+  if (!existing && phoneDigits) {
+    const phones = [...new Set([phoneDigits, phoneRaw].filter(Boolean) as string[])];
+    const { data } = await supabase.from("patients").select("*")
+      .eq("clinic_id", input.clinic_id).in("phone", phones).limit(1).maybeSingle();
+    existing = (data as Patient) ?? null;
+  }
+  if (!existing && name) {
+    // ilike sem curinga = igualdade case-insensitive; escapa %/_ por segurança.
+    const safe = name.replace(/[%_]/g, "\\$&");
+    const { data } = await supabase.from("patients").select("*")
+      .eq("clinic_id", input.clinic_id).ilike("full_name", safe).limit(2);
+    if (data && data.length === 1) existing = data[0] as Patient;
+  }
+
+  if (existing) {
+    const patch: Record<string, string> = {};
+    if (email && !existing.email) patch.email = email;
+    if (phoneDigits && !existing.phone) patch.phone = phoneDigits;
+    if (Object.keys(patch).length > 0) {
+      await supabase.from("patients").update(patch).eq("id", existing.id).eq("clinic_id", input.clinic_id);
+      return { ...existing, ...patch } as Patient;
+    }
+    return existing;
+  }
+
+  return createPatient({ clinic_id: input.clinic_id, full_name: name, email, phone: phoneDigits ?? phoneRaw, notes: null });
+}
+
 export async function updatePatient(
   patientId: string,
   input: Partial<Pick<Patient, "full_name" | "email" | "phone" | "cpf" | "date_of_birth" | "sex" | "weight_kg" | "height_cm" | "notes" | "status" | "chief_complaint" | "case_summary" | "anamnese" | "antecedents" | "pain_level" | "pain_location" | "treatment_note" | "address_line" | "neighborhood" | "city" | "state" | "zip_code" | "country" | "referred_by_patient_id">>
