@@ -19,5 +19,8 @@
   "treatment": "Treatment / suggested plan",
   "treatmentPh": "Treatment performed and the suggestion that goes into the patient's first report.",
   "notInformed": "not informed",
-  "errorSave": "Could not save. Please try again."
+  "errorSave": "Could not save. Please try again.",
+  "configure": "Configure fields",
+  "noFields": "No fields configured. Set up the Assessment fields in Settings.",
+  "selectPlaceholder": "Select…"
 }

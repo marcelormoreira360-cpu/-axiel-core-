@@ -9,6 +9,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import { canManageClinicUsers } from "@/modules/auth/roles";
 
 const SETTINGS_ITEMS: { href: string; key: string }[] = [
+  { href: "/settings/personalizar", key: "personalize" },
   { href: "/settings/profile", key: "profile" },
   { href: "/settings/equipe", key: "equipe" },
   { href: "/settings/practitioners", key: "practitioners" },
@@ -19,6 +20,7 @@ const SETTINGS_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/lgpd", key: "lgpd" },
   { href: "/settings/usage", key: "usage" },
   { href: "/settings/session-types", key: "sessionTypes" },
+  { href: "/settings/avaliacao", key: "assessmentFields" },
   { href: "/settings/clinical-tests", key: "clinicalTests" },
   { href: "/settings/supplements", key: "supplements" },
   { href: "/settings/offers", key: "offers" },

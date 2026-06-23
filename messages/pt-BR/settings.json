@@ -94,6 +94,18 @@
       "supplements": {
         "title": "Suplementos",
         "text": "Catálogo de suplementos da clínica (fórmula BR / links US)."
+      },
+      "assessmentFields": {
+        "title": "Campos da Avaliação",
+        "text": "Personalize os campos da Avaliação do paciente (cada clínica define os seus)."
+      },
+      "personalize": {
+        "title": "Personalizar minha clínica",
+        "text": "Tudo que você define do seu jeito (avaliação, formulários, serviços, marca) num lugar só."
+      },
+      "forms": {
+        "title": "Formulários",
+        "text": "Questionários do paciente e onde cada um aparece (intake, sessão, portal)."
       }
     }
   },
@@ -621,5 +633,45 @@
       "fullscript": "Fullscript",
       "outro": "Outro"
     }
+  },
+  "assessmentFields": {
+    "title": "Campos da Avaliação",
+    "subtitle": "Defina os campos do painel Avaliação da ficha do paciente. Cada clínica tem os seus.",
+    "listLabel": "Campos atuais",
+    "empty": "Nenhum campo ainda.",
+    "addLabel": "Adicionar campo",
+    "name": "Nome do campo",
+    "namePlaceholder": "Ex: Anamnese, Sono, Energia…",
+    "type": "Tipo",
+    "types": {
+      "textarea": "Texto longo",
+      "text": "Texto curto",
+      "number": "Número",
+      "select": "Lista de opções"
+    },
+    "placeholder": "Texto de exemplo (placeholder)",
+    "helpText": "Dica abaixo do campo (opcional)",
+    "choices": "Opções (uma por linha)",
+    "choicesPlaceholder": "Uma opção por linha",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "includeInReport": "Incluir no relatório",
+    "inReportBadge": "No relatório",
+    "inactive": "Inativo",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "deactivate": "Desativar",
+    "activate": "Ativar",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "add": "Adicionar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "cancel": "Cancelar"
+  },
+  "personalize": {
+    "title": "Personalizar minha clínica",
+    "subtitle": "Tudo que você molda do seu jeito, reunido num lugar só."
   }
 }

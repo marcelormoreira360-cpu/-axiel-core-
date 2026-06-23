@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, ChevronUp, ChevronDown, Trash2, GripVertical } from "lucide-react";
-import type { TemplateWithStructure, ScoreBand } from "@/lib/types";
+import type { TemplateWithStructure, ScoreBand, AssessmentPlacement } from "@/lib/types";
+import { ASSESSMENT_PLACEMENTS } from "@/lib/types";
 import { normalizeScoringConfig } from "@/lib/assessment-grading";
 import { updateFormAction } from "@/app/forms/[id]/edit/actions";
 
@@ -56,12 +57,15 @@ function fromTemplate(template: TemplateWithStructure): SectionDraft[] {
 export function AssessmentFormEditor({ template }: { template: TemplateWithStructure }) {
   const t = useTranslations("forms.builder");
   const tEditor = useTranslations("forms.editor");
+  const tSlots = useTranslations("forms.slots");
   const [isPending, startTransition] = useTransition();
   const [name, setName] = useState(template.name);
   const [description, setDescription] = useState(template.description ?? "");
   const [instructions, setInstructions] = useState(template.instructions ?? "");
-  const [sendOnFirst, setSendOnFirst] = useState(template.send_on_first_appointment);
+  const [placement, setPlacement] = useState<AssessmentPlacement[]>(template.placement ?? []);
   const [reassessDays, setReassessDays] = useState(template.reassessment_interval_days ?? 0);
+  const togglePlacement = (slot: AssessmentPlacement) =>
+    setPlacement((prev) => (prev.includes(slot) ? prev.filter((s) => s !== slot) : [...prev, slot]));
   const [sections, setSections] = useState<SectionDraft[]>(() => fromTemplate(template));
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
   const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
@@ -264,7 +268,9 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
         }))
       )
     );
-    formData.set("send_on_first_appointment", sendOnFirst ? "true" : "false");
+    formData.set("placement", JSON.stringify(placement));
+    // send_on_first_appointment é derivado do slot 'intake' (automação intacta).
+    formData.set("send_on_first_appointment", placement.includes("intake") ? "true" : "false");
     formData.set("reassessment_interval_days", String(reassessDays || 0));
     formData.set("deleted_section_ids", JSON.stringify(deletedSectionIds));
     formData.set("deleted_question_ids", JSON.stringify(deletedQuestionIds));
@@ -320,18 +326,26 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
             className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition resize-none"
           />
         </div>
-        <label className="flex items-start gap-[8px] cursor-pointer select-none pt-[2px]">
-          <input
-            type="checkbox"
-            checked={sendOnFirst}
-            onChange={(e) => setSendOnFirst(e.target.checked)}
-            className="mt-[2px] accent-[#0F6E56]"
-          />
-          <span>
-            <span className="text-[13px] font-medium text-[#0F1A2E] block">{t("sendOnFirst")}</span>
-            <span className="text-[11px] text-[#A09E98] block">{t("sendOnFirstHint")}</span>
-          </span>
-        </label>
+        <div className="pt-[2px]">
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{t("placementLabel")}</p>
+          <p className="text-[11px] text-[#A09E98] mb-[8px]">{t("placementHint")}</p>
+          <div className="space-y-[6px]">
+            {ASSESSMENT_PLACEMENTS.map((slot) => (
+              <label key={slot} className="flex items-start gap-[8px] cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={placement.includes(slot)}
+                  onChange={() => togglePlacement(slot)}
+                  className="mt-[2px] accent-[#0F6E56]"
+                />
+                <span>
+                  <span className="text-[13px] font-medium text-[#0F1A2E] block">{tSlots(slot)}</span>
+                  <span className="text-[11px] text-[#A09E98] block">{t(`placementSlotHint.${slot}`)}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
         <div>
           <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("reassessLabel")}</label>
           <input

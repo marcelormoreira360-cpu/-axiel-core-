@@ -27,6 +27,7 @@ const ignoredPatterns = [
   /ai-placeholder/i,
   /report-service/i,
   /insight-export-service/i,
+  /include_in_report/i, // nome de coluna interno (clinic_assessment_fields), não é copy de UI
 ];
 
 function walk(dir) {

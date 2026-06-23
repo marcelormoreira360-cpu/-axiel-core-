@@ -19,5 +19,8 @@
   "treatment": "Conduta / tratamento sugerido",
   "treatmentPh": "Tratamento realizado e a sugestão que vai no 1º relatório do paciente.",
   "notInformed": "não informado",
-  "errorSave": "Não foi possível salvar. Tente novamente."
+  "errorSave": "Não foi possível salvar. Tente novamente.",
+  "configure": "Configurar campos",
+  "noFields": "Nenhum campo configurado. Configure os campos da Avaliação em Configurações.",
+  "selectPlaceholder": "Selecione…"
 }

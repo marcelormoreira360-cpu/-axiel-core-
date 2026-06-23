@@ -1,36 +1,54 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updatePatient } from "@/services/patient-service";
+import { getPatientById, updatePatient } from "@/services/patient-service";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 
 export type AssessmentState = { error?: string; ok?: boolean } | null;
 
-// Seção "Avaliação" (espaços de escrita do terapeuta). Fonte única em patients;
-// lida pelo Bio³ e pelos relatórios. Escopo de clínica garantido em updatePatient.
+// Colunas legadas mantidas em sincronia quando a clínica conserva os field_keys padrão
+// (compatibilidade com leitores antigos: guardrails, regras de ação, etc.).
+const LEGACY_COLUMNS = new Set<string>(LEGACY_ASSESSMENT_COLUMNS);
+
+// Seção "Avaliação" (espaços de escrita do terapeuta). Fonte viva = patients.assessment_data,
+// estruturada pelos clinic_assessment_fields da clínica. Escopo de clínica garantido em updatePatient.
 export async function saveAssessmentAction(
   patientId: string,
   _prev: AssessmentState,
   formData: FormData,
 ): Promise<AssessmentState> {
   try {
-    const str = (k: string) => {
-      const v = String(formData.get(k) ?? "").trim();
-      return v === "" ? null : v;
-    };
-    const painRaw = String(formData.get("pain_level") ?? "").trim();
-    let pain_level: number | null = null;
-    if (painRaw !== "") {
-      const n = Number(painRaw);
-      pain_level = Number.isFinite(n) ? Math.max(0, Math.min(10, n)) : null;
+    const clinic = await getCurrentClinic();
+    if (!clinic?.id) return { error: "Não autorizado." };
+
+    const fields = await getClinicAssessmentFields(clinic.id, { activeOnly: true });
+
+    // Merge sobre o que já existe: campos inativos/fora do formulário NÃO são apagados.
+    const current = await getPatientById(patientId, clinic.id);
+    const data: Record<string, string | number | null> = { ...(current?.assessment_data ?? {}) };
+    const legacy: Record<string, string | number | null> = {};
+
+    for (const f of fields) {
+      const raw = String(formData.get(f.field_key) ?? "").trim();
+      let value: string | number | null = raw === "" ? null : raw;
+
+      if (f.field_type === "number" && value !== null) {
+        const n = Number(value);
+        if (Number.isFinite(n)) {
+          const min = f.options?.min ?? Number.NEGATIVE_INFINITY;
+          const max = f.options?.max ?? Number.POSITIVE_INFINITY;
+          value = Math.max(min, Math.min(max, n));
+        } else {
+          value = null;
+        }
+      }
+
+      data[f.field_key] = value;
+      if (LEGACY_COLUMNS.has(f.field_key)) legacy[f.field_key] = value;
     }
 
-    await updatePatient(patientId, {
-      anamnese: str("anamnese"),
-      antecedents: str("antecedents"),
-      pain_level,
-      pain_location: str("pain_location"),
-      treatment_note: str("treatment_note"),
-    });
+    await updatePatient(patientId, { assessment_data: data, ...legacy });
     revalidatePath(`/patients/${patientId}`);
     return { ok: true };
   } catch {

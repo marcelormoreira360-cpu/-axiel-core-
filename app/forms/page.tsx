@@ -17,6 +17,7 @@ import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 
 export default async function FormsPage() {
   const t = await getTranslations("forms.list");
+  const tSlots = await getTranslations("forms.slots");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
   const [templates, patients] = await Promise.all([
@@ -117,6 +118,15 @@ export default async function FormsPage() {
                   <p className="text-[13px] font-medium text-[#0F1A2E]">{tpl.name}</p>
                   {tpl.description && (
                     <p className="text-[11px] text-[#A09E98] mt-[1px]">{tpl.description}</p>
+                  )}
+                  {tpl.placement?.length > 0 && (
+                    <div className="flex flex-wrap gap-[4px] mt-[5px]">
+                      {tpl.placement.map((slot) => (
+                        <span key={slot} className="text-[10px] px-[7px] py-[1px] rounded-full bg-[#E1F5EE] text-[#085041]">
+                          {tSlots(slot)}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
