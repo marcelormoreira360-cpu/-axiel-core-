@@ -102,7 +102,14 @@
     "bandMax": "To",
     "bandLabelPlaceholder": "Label (e.g., Mild dysfunction)",
     "bandMaxHint": "empty = no limit",
-    "addBand": "Add band"
+    "addBand": "Add band",
+    "placementLabel": "Where this form appears",
+    "placementHint": "Choose where this form is offered.",
+    "placementSlotHint": {
+      "intake": "Sent automatically (WhatsApp, email and portal) when the patient books their first session.",
+      "session": "Suggested to fill in each session (follow-up).",
+      "portal": "Available for the patient to fill in the portal."
+    }
   },
   "editor": {
     "sectionsTitle": "Sections",
@@ -122,5 +129,10 @@
     "notesPlaceholder": "Additional notes about this submission (optional).",
     "saving": "Saving…",
     "save": "Save results"
+  },
+  "slots": {
+    "intake": "Intake (1st booking)",
+    "session": "Per session",
+    "portal": "Patient portal"
   }
 }

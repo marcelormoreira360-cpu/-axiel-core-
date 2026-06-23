@@ -102,7 +102,14 @@
     "bandMax": "Até",
     "bandLabelPlaceholder": "Rótulo (ex.: Disfunção leve)",
     "bandMaxHint": "vazio = sem limite",
-    "addBand": "Adicionar faixa"
+    "addBand": "Adicionar faixa",
+    "placementLabel": "Onde este formulário aparece",
+    "placementHint": "Escolha em quais lugares este formulário fica disponível.",
+    "placementSlotHint": {
+      "intake": "Enviado automaticamente (WhatsApp, e-mail e portal) quando o paciente marca a primeira sessão.",
+      "session": "Sugerido para preencher a cada sessão (acompanhamento).",
+      "portal": "Disponível para o paciente preencher pelo portal."
+    }
   },
   "editor": {
     "sectionsTitle": "Seções",
@@ -122,5 +129,10 @@
     "notesPlaceholder": "Observações adicionais sobre este preenchimento (opcional).",
     "saving": "Salvando…",
     "save": "Salvar resultados"
+  },
+  "slots": {
+    "intake": "Intake (1º agendamento)",
+    "session": "Por sessão",
+    "portal": "Portal do paciente"
   }
 }

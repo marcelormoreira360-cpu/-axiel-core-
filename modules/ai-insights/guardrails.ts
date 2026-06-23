@@ -72,7 +72,8 @@ Regras:
   pain_level/pain_location ou treatment_note, INCORPORE-os. A anamnese e os antecedentes enriquecem o
   Documento 1 (contexto, história, achados). A dor entra como ponto de atenção. O treatment_note
   (conduta/sugestão do terapeuta) deve aparecer com destaque no Documento 2 (Plano), como a recomendação
-  do profissional, sem contradizê-la.
+  do profissional, sem contradizê-la. O array assessment_extra traz campos de avaliação PERSONALIZADOS da
+  clínica (label/value) — INCORPORE cada um ao Documento 1 com o mesmo cuidado, usando o label como rótulo.
 - EXAMES FUNCIONAIS (functional_exams): o campo summary traz a síntese pronta do exame. Incorpore como achados
   do Documento 1 em itens DISTINTOS por exame:
   • NEUROMETRIA → um ou mais itens com os achados funcionais/autonômicos (predomínio simpático, variabilidade

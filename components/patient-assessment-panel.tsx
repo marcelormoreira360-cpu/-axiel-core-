@@ -1,25 +1,30 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList } from "lucide-react";
+import { Check, AlertCircle, ClipboardList, Settings2 } from "lucide-react";
 import { saveAssessmentAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import type { ClinicAssessmentField } from "@/lib/types";
 
 type Props = {
   patientId: string;
-  anamnese: string | null;
-  antecedents: string | null;
-  painLevel: number | null;
-  painLocation: string | null;
-  treatmentNote: string | null;
+  /** Campos configurados da clínica (ativos, na ordem). */
+  fields: ClinicAssessmentField[];
+  /** Respostas atuais do paciente por field_key. */
+  values: Record<string, string | number | null> | null;
+  /** Gestor pode editar a estrutura dos campos. */
+  canConfigure?: boolean;
 };
 
 const inputCls =
   "w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition";
 
-export function PatientAssessmentPanel({
-  patientId, anamnese, antecedents, painLevel, painLocation, treatmentNote,
-}: Props) {
+function fieldDefault(value: string | number | null | undefined): string {
+  return value === null || value === undefined ? "" : String(value);
+}
+
+export function PatientAssessmentPanel({ patientId, fields, values, canConfigure }: Props) {
   const t = useTranslations("patientAssessment");
   const [state, formAction, isPending] = useActionState<AssessmentState, FormData>(
     async (prev, fd) => saveAssessmentAction(patientId, prev, fd),
@@ -28,54 +33,88 @@ export function PatientAssessmentPanel({
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px] mb-5">
-      <div className="flex items-center gap-[7px] mb-[10px]">
-        <ClipboardList className="h-3.5 w-3.5 text-[#0F6E56]" />
-        <div>
-          <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-          <p className="text-[10px] text-[#A09E98] leading-tight">{t("subtitle")}</p>
+      <div className="flex items-center justify-between gap-2 mb-[10px]">
+        <div className="flex items-center gap-[7px]">
+          <ClipboardList className="h-3.5 w-3.5 text-[#0F6E56]" />
+          <div>
+            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
+            <p className="text-[10px] text-[#A09E98] leading-tight">{t("subtitle")}</p>
+          </div>
         </div>
+        {canConfigure && (
+          <Link
+            href="/settings/avaliacao"
+            className="inline-flex items-center gap-1 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] transition shrink-0"
+            title={t("configure")}
+          >
+            <Settings2 className="h-3.5 w-3.5" /> {t("configure")}
+          </Link>
+        )}
       </div>
 
-      {/* Sempre editável: formulário pré-preenchido com o que já foi salvo. */}
-      <form action={formAction} className="space-y-[10px]">
-        <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{t("anamnese")}</label>
-          <textarea name="anamnese" defaultValue={anamnese ?? ""} rows={4} placeholder={t("anamnesePh")} className={`${inputCls} resize-none`} />
-        </div>
-        <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{t("antecedents")}</label>
-          <textarea name="antecedents" defaultValue={antecedents ?? ""} rows={3} placeholder={t("antecedentsPh")} className={`${inputCls} resize-none`} />
-        </div>
-        <div className="grid grid-cols-3 gap-[10px]">
-          <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{t("painLevel")}</label>
-            <input type="number" min={0} max={10} step="1" inputMode="numeric" name="pain_level" defaultValue={painLevel ?? ""} className={inputCls} />
-          </div>
-          <div className="col-span-2">
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{t("painLocation")}</label>
-            <input name="pain_location" defaultValue={painLocation ?? ""} placeholder={t("painLocationPh")} className={inputCls} />
-          </div>
-        </div>
-        <p className="text-[10px] text-[#A09E98] -mt-[4px]">{t("painMapHint")}</p>
-        <div>
-          <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{t("treatment")}</label>
-          <textarea name="treatment_note" defaultValue={treatmentNote ?? ""} rows={3} placeholder={t("treatmentPh")} className={`${inputCls} resize-none`} />
-        </div>
-        {state?.error && (
-          <p className="flex items-center gap-1 text-[11px] text-red-500"><AlertCircle className="h-3 w-3" /> {state.error}</p>
-        )}
-        <div className="flex items-center gap-[10px]">
-          <button type="submit" disabled={isPending}
-            className="inline-flex items-center gap-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[14px] py-[7px] transition">
-            <Check className="h-3.5 w-3.5" /> {isPending ? t("saving") : t("save")}
-          </button>
-          {state?.ok && !isPending && (
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56]">
-              <Check className="h-3 w-3" /> {t("saved")}
-            </span>
+      {fields.length === 0 ? (
+        <p className="text-[12px] text-[#A09E98]">{t("noFields")}</p>
+      ) : (
+        // Sempre editável: formulário pré-preenchido com o que já foi salvo.
+        <form action={formAction} className="space-y-[10px]">
+          {fields.map((f) => {
+            const dv = fieldDefault(values?.[f.field_key]);
+            return (
+              <div key={f.id}>
+                <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{f.label}</label>
+                {f.field_type === "textarea" && (
+                  <textarea
+                    name={f.field_key}
+                    defaultValue={dv}
+                    rows={4}
+                    placeholder={f.placeholder ?? ""}
+                    className={`${inputCls} resize-none`}
+                  />
+                )}
+                {f.field_type === "text" && (
+                  <input name={f.field_key} defaultValue={dv} placeholder={f.placeholder ?? ""} className={inputCls} />
+                )}
+                {f.field_type === "number" && (
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    name={f.field_key}
+                    defaultValue={dv}
+                    min={f.options?.min}
+                    max={f.options?.max}
+                    placeholder={f.placeholder ?? ""}
+                    className={inputCls}
+                  />
+                )}
+                {f.field_type === "select" && (
+                  <select name={f.field_key} defaultValue={dv} className={inputCls}>
+                    <option value="">{t("selectPlaceholder")}</option>
+                    {(f.options?.choices ?? []).map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                )}
+                {f.help_text && <p className="text-[10px] text-[#A09E98] mt-[3px]">{f.help_text}</p>}
+              </div>
+            );
+          })}
+
+          {state?.error && (
+            <p className="flex items-center gap-1 text-[11px] text-red-500"><AlertCircle className="h-3 w-3" /> {state.error}</p>
           )}
-        </div>
-      </form>
+          <div className="flex items-center gap-[10px]">
+            <button type="submit" disabled={isPending}
+              className="inline-flex items-center gap-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[14px] py-[7px] transition">
+              <Check className="h-3.5 w-3.5" /> {isPending ? t("saving") : t("save")}
+            </button>
+            {state?.ok && !isPending && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56]">
+                <Check className="h-3 w-3" /> {t("saved")}
+              </span>
+            )}
+          </div>
+        </form>
+      )}
     </div>
   );
 }

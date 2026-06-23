@@ -41,6 +41,7 @@ import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
 import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
+import { getClinicAssessmentFields } from "@/services/clinic-assessment-service";
 import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-followup-panel";
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
@@ -107,6 +108,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   const activeSub = activeSubscriptionResult.data;
   const assessmentProgress = await getPatientAssessmentProgress(id);
+
+  // Campos da Avaliação configurados pela clínica (editáveis em /settings/avaliacao)
+  const assessmentFields = clinic?.id
+    ? await getClinicAssessmentFields(clinic.id, { activeOnly: true }).catch(() => [])
+    : [];
 
   // Suplementos (catálogo ativo da clínica + recomendações do paciente)
   const [supplementCatalog, supplementRecommendations] = await Promise.all([
@@ -280,11 +286,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* ── Avaliação (espaços do terapeuta — entram no relatório) — ACIMA do Resumo ── */}
       <PatientAssessmentPanel
         patientId={patient.id}
-        anamnese={patient.anamnese}
-        antecedents={patient.antecedents}
-        painLevel={patient.pain_level}
-        painLocation={patient.pain_location}
-        treatmentNote={patient.treatment_note}
+        fields={assessmentFields}
+        values={patient.assessment_data}
+        canConfigure={canSeeFinance}
       />
 
       {/* ── Resumo do caso + queixa principal (Feature 2) ── */}

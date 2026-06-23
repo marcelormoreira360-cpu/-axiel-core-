@@ -30,7 +30,16 @@ export async function updateFormAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim() || null;
   const instructions = String(formData.get("instructions") ?? "").trim() || null;
-  const sendOnFirst = String(formData.get("send_on_first_appointment") ?? "") === "true";
+  // Placement (onde o formulário aparece). send_on_first é DERIVADO do slot 'intake'.
+  const ALLOWED_PLACEMENTS = ["intake", "session", "portal"];
+  let placement: string[] = [];
+  try {
+    const raw = JSON.parse(String(formData.get("placement") ?? "[]"));
+    if (Array.isArray(raw)) placement = [...new Set(raw.filter((s) => ALLOWED_PLACEMENTS.includes(s)))];
+  } catch {
+    placement = [];
+  }
+  const sendOnFirst = placement.includes("intake");
   const reassessDaysRaw = parseInt(String(formData.get("reassessment_interval_days") ?? "0"), 10);
   const reassessDays = isNaN(reassessDaysRaw) || reassessDaysRaw < 0 ? 0 : reassessDaysRaw;
 
@@ -70,7 +79,7 @@ export async function updateFormAction(formData: FormData) {
   // Update template metadata
   await supabase
     .from("assessment_templates")
-    .update({ name, description, instructions, send_on_first_appointment: sendOnFirst, reassessment_interval_days: reassessDays, scoring_config: scoringConfig })
+    .update({ name, description, instructions, placement, send_on_first_appointment: sendOnFirst, reassessment_interval_days: reassessDays, scoring_config: scoringConfig })
     .eq("id", templateId);
 
   // Delete removed questions first (avoids FK issues)

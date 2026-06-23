@@ -10,6 +10,7 @@ import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
+import { getClinicAssessmentFields, assessmentReportPairs } from "@/services/clinic-assessment-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { AI_INSIGHT_SYSTEM_PROMPT, normalizeInsightText } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
@@ -31,6 +32,8 @@ export type AiInsightInputSnapshot = {
     pain_level: number | null;
     pain_location: string | null;
     treatment_note: string | null;
+    /** Campos personalizados da Avaliação da clínica (label/valor) marcados para o relatório. */
+    assessment_extra: Array<{ label: string; value: string }>;
   };
   intake: Array<{
     question: string;
@@ -113,6 +116,21 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
     safe(getPatientPrescriptions(patientId)),
   ]);
   const neuroIdMap = await getLatestNeuroIdMap(patientId).catch(() => null);
+  const clinicFields = await getClinicAssessmentFields(patient.clinic_id, { activeOnly: true }).catch(() => []);
+
+  // Avaliação: fonte viva = assessment_data (com fallback às colunas legadas).
+  const ad = patient.assessment_data ?? {};
+  const adText = (key: string, legacy: string | null) =>
+    normalizeInsightText((ad[key] ?? legacy ?? null) as string | null);
+  const adNum = (key: string, legacy: number | null): number | null => {
+    const v = ad[key] ?? legacy;
+    return typeof v === "number" ? v : v != null && Number.isFinite(Number(v)) ? Number(v) : null;
+  };
+  // Campos personalizados (não-legados) marcados para o relatório.
+  const LEGACY = new Set(["anamnese", "antecedents", "pain_level", "pain_location", "treatment_note"]);
+  const assessment_extra = assessmentReportPairs(patient, clinicFields)
+    .filter((p) => !LEGACY.has(p.key))
+    .map((p) => ({ label: p.label, value: p.value }));
 
   return {
     patient: {
@@ -127,11 +145,12 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       height_cm: patient.height_cm,
       city: patient.city,
       // Seção "Avaliação" — escrita do terapeuta entra no relatório.
-      anamnese: normalizeInsightText(patient.anamnese),
-      antecedents: normalizeInsightText(patient.antecedents),
-      pain_level: patient.pain_level,
-      pain_location: normalizeInsightText(patient.pain_location),
-      treatment_note: normalizeInsightText(patient.treatment_note),
+      anamnese: adText("anamnese", patient.anamnese),
+      antecedents: adText("antecedents", patient.antecedents),
+      pain_level: adNum("pain_level", patient.pain_level),
+      pain_location: adText("pain_location", patient.pain_location),
+      treatment_note: adText("treatment_note", patient.treatment_note),
+      assessment_extra,
     },
     intake: intakeResponses.map((response) => ({
       question: normalizeInsightText(response.intake_questions?.label ?? "Question"),

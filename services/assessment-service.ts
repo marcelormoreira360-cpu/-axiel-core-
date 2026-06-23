@@ -7,7 +7,10 @@ import type {
   TemplateWithStructure,
 } from "@/lib/types";
 
-export async function getAssessmentTemplates(clinicId?: string): Promise<AssessmentTemplate[]> {
+export async function getAssessmentTemplates(
+  clinicId?: string,
+  opts?: { placement?: string },
+): Promise<AssessmentTemplate[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
@@ -17,6 +20,8 @@ export async function getAssessmentTemplates(clinicId?: string): Promise<Assessm
     .eq("is_active", true)
     .order("name");
   if (clinicId) q = q.eq("clinic_id", clinicId);
+  // Filtro opcional por slot de exibição (placement contém o slot).
+  if (opts?.placement) q = q.contains("placement", [opts.placement]);
   const { data } = await q;
   return (data ?? []) as AssessmentTemplate[];
 }

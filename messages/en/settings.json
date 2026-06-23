@@ -94,6 +94,10 @@
       "supplements": {
         "title": "Supplements",
         "text": "Clinic supplement catalog (BR formula / US links)."
+      },
+      "assessmentFields": {
+        "title": "Assessment fields",
+        "text": "Customize the patient Assessment fields (each clinic defines its own)."
       }
     }
   },
@@ -621,5 +625,41 @@
       "fullscript": "Fullscript",
       "outro": "Other"
     }
+  },
+  "assessmentFields": {
+    "title": "Assessment fields",
+    "subtitle": "Define the fields in the patient's Assessment panel. Each clinic has its own.",
+    "listLabel": "Current fields",
+    "empty": "No fields yet.",
+    "addLabel": "Add field",
+    "name": "Field name",
+    "namePlaceholder": "e.g. History, Sleep, Energy…",
+    "type": "Type",
+    "types": {
+      "textarea": "Long text",
+      "text": "Short text",
+      "number": "Number",
+      "select": "Dropdown"
+    },
+    "placeholder": "Example text (placeholder)",
+    "helpText": "Hint below the field (optional)",
+    "choices": "Options (one per line)",
+    "choicesPlaceholder": "One option per line",
+    "min": "Min",
+    "max": "Max",
+    "includeInReport": "Include in report",
+    "inReportBadge": "In report",
+    "inactive": "Inactive",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "add": "Add",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "cancel": "Cancel"
   }
 }

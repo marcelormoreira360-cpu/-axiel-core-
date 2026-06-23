@@ -66,12 +66,18 @@ export type Patient = {
   notes: string | null;
   chief_complaint: string | null;
   case_summary: string | null;
-  /** Seção "Avaliação" (espaços de escrita do terapeuta — fonte única, entra no relatório). */
+  /**
+   * Seção "Avaliação" (espaços de escrita do terapeuta — entra no relatório).
+   * Colunas legadas mantidas por compatibilidade; a fonte viva é `assessment_data`
+   * (chave = field_key dos clinic_assessment_fields). Ver migration 101.
+   */
   anamnese: string | null;
   antecedents: string | null;
   pain_level: number | null;
   pain_location: string | null;
   treatment_note: string | null;
+  /** Respostas da Avaliação por field_key configurado da clínica (JSONB). */
+  assessment_data: Record<string, string | number | null> | null;
   address_line: string | null;
   neighborhood: string | null;
   city: string | null;
@@ -84,6 +90,27 @@ export type Patient = {
   updated_at: string;
   /** Populated only when fetched with appointments(practitioner_id) */
   appointments?: { practitioner_id: string | null }[] | null;
+};
+
+/** Tipo de campo configurável da Avaliação (migration 101). */
+export type AssessmentFieldType = "textarea" | "text" | "number" | "select";
+
+/** Definição de um campo da Avaliação por clínica (editável em /settings/avaliacao). */
+export type ClinicAssessmentField = {
+  id: string;
+  clinic_id: string;
+  field_key: string;
+  label: string;
+  field_type: AssessmentFieldType;
+  placeholder: string | null;
+  help_text: string | null;
+  /** select: { choices: string[] }; number: { min?: number; max?: number } */
+  options: { choices?: string[]; min?: number; max?: number } | null;
+  order_index: number;
+  is_active: boolean;
+  include_in_report: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type LeadSource = "website" | "instagram" | "facebook" | "google" | "referral" | "other";
@@ -564,9 +591,15 @@ export type AssessmentTemplate = {
   is_active: boolean;
   send_on_first_appointment: boolean;
   reassessment_interval_days: number;
+  /** Onde o formulário aparece: 'intake' | 'session' | 'portal' (migration 102). */
+  placement: AssessmentPlacement[];
   created_at: string;
   updated_at: string;
 };
+
+/** Slots de exibição de um formulário (Vagaro-style "escolho onde vai"). */
+export type AssessmentPlacement = "intake" | "session" | "portal";
+export const ASSESSMENT_PLACEMENTS: AssessmentPlacement[] = ["intake", "session", "portal"];
 
 export type AssessmentSection = {
   id: string;
