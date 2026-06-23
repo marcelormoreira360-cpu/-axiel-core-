@@ -22,6 +22,18 @@ export type DefaultFieldSeed = {
   include_in_report: boolean;
 };
 
+/**
+ * Colunas legadas da Avaliação que ainda existem em `patients` (compat/fallback).
+ * Fonte única: usada pelo save (dual-write) e pelo relatório (fallback). Ver migration 101.
+ */
+export const LEGACY_ASSESSMENT_COLUMNS = [
+  "anamnese",
+  "antecedents",
+  "pain_level",
+  "pain_location",
+  "treatment_note",
+] as const;
+
 export const DEFAULT_ASSESSMENT_FIELDS: DefaultFieldSeed[] = [
   { field_key: "anamnese", label: "Anamnese", field_type: "textarea", placeholder: "Como o paciente está, queixa, história de vida, hábitos...", options: null, order_index: 0, include_in_report: true },
   { field_key: "antecedents", label: "Antecedentes / cirurgias", field_type: "textarea", placeholder: "Cirurgias, doenças prévias e histórico relevante (o que não vem dos questionários).", options: null, order_index: 1, include_in_report: true },

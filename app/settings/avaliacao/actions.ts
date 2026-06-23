@@ -9,14 +9,11 @@ import {
   moveClinicAssessmentField,
 } from "@/services/clinic-assessment-service";
 import type { AssessmentFieldType } from "@/lib/types";
+import { isManager } from "@/lib/team-utils";
 
 export type FieldState = { ok?: boolean; error?: string } | null;
 
 const TYPES: AssessmentFieldType[] = ["textarea", "text", "number", "select"];
-
-function isManagerRole(role: string | null | undefined): boolean {
-  return ["clinic_owner", "clinic_manager", "admin"].includes(role ?? "");
-}
 
 function parseOptions(type: AssessmentFieldType, formData: FormData) {
   if (type === "select") {
@@ -43,7 +40,7 @@ export async function createAssessmentFieldAction(
 ): Promise<FieldState> {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) return { error: "Não autorizado." };
-  if (!isManagerRole(profile.role)) return { error: "Sem permissão." };
+  if (!isManager(profile.role)) return { error: "Sem permissão." };
 
   const label = String(formData.get("label") ?? "").trim();
   if (!label) return { error: "Informe o nome do campo." };
@@ -77,7 +74,7 @@ export async function updateAssessmentFieldAction(
 ): Promise<FieldState> {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) return { error: "Não autorizado." };
-  if (!isManagerRole(profile.role)) return { error: "Sem permissão." };
+  if (!isManager(profile.role)) return { error: "Sem permissão." };
 
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "Campo inválido." };
@@ -109,21 +106,21 @@ export async function updateAssessmentFieldAction(
 
 export async function toggleAssessmentFieldActiveAction(id: string, isActive: boolean) {
   const profile = await getCurrentUserProfile();
-  if (!profile?.clinic_id || !isManagerRole(profile.role)) throw new Error("Sem permissão.");
+  if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
   await updateClinicAssessmentField(id, { is_active: isActive });
   revalidatePath("/settings/avaliacao");
 }
 
 export async function deleteAssessmentFieldAction(id: string) {
   const profile = await getCurrentUserProfile();
-  if (!profile?.clinic_id || !isManagerRole(profile.role)) throw new Error("Sem permissão.");
+  if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
   await deleteClinicAssessmentField(id);
   revalidatePath("/settings/avaliacao");
 }
 
 export async function moveAssessmentFieldAction(id: string, direction: "up" | "down") {
   const profile = await getCurrentUserProfile();
-  if (!profile?.clinic_id || !isManagerRole(profile.role)) throw new Error("Sem permissão.");
+  if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
   await moveClinicAssessmentField(profile.clinic_id, id, direction);
   revalidatePath("/settings/avaliacao");
 }

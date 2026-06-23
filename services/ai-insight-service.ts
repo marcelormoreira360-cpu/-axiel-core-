@@ -10,7 +10,7 @@ import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
-import { getClinicAssessmentFields, assessmentReportPairs } from "@/services/clinic-assessment-service";
+import { getClinicAssessmentFields, assessmentReportPairs, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { AI_INSIGHT_SYSTEM_PROMPT, normalizeInsightText } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
@@ -119,15 +119,19 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   const clinicFields = await getClinicAssessmentFields(patient.clinic_id, { activeOnly: true }).catch(() => []);
 
   // Avaliação: fonte viva = assessment_data (com fallback às colunas legadas).
+  // Só entram no relatório os campos que a clínica mantém ATIVOS e marcados
+  // "incluir no relatório" — campo deletado/desativado/excluído não injeta dado legado obsoleto.
   const ad = patient.assessment_data ?? {};
+  const reportable = new Set(clinicFields.filter((f) => f.include_in_report).map((f) => f.field_key));
   const adText = (key: string, legacy: string | null) =>
-    normalizeInsightText((ad[key] ?? legacy ?? null) as string | null);
+    reportable.has(key) ? normalizeInsightText((ad[key] ?? legacy ?? null) as string | null) : null;
   const adNum = (key: string, legacy: number | null): number | null => {
+    if (!reportable.has(key)) return null;
     const v = ad[key] ?? legacy;
     return typeof v === "number" ? v : v != null && Number.isFinite(Number(v)) ? Number(v) : null;
   };
   // Campos personalizados (não-legados) marcados para o relatório.
-  const LEGACY = new Set(["anamnese", "antecedents", "pain_level", "pain_location", "treatment_note"]);
+  const LEGACY = new Set<string>(LEGACY_ASSESSMENT_COLUMNS);
   const assessment_extra = assessmentReportPairs(patient, clinicFields)
     .filter((p) => !LEGACY.has(p.key))
     .map((p) => ({ label: p.label, value: p.value }));

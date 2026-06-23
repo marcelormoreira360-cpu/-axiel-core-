@@ -89,6 +89,10 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
                 {f.field_type === "select" && (
                   <select name={f.field_key} defaultValue={dv} className={inputCls}>
                     <option value="">{t("selectPlaceholder")}</option>
+                    {/* Preserva valor já salvo que não está mais na lista (não apaga ao salvar). */}
+                    {dv && !(f.options?.choices ?? []).includes(dv) && (
+                      <option value={dv}>{dv}</option>
+                    )}
                     {(f.options?.choices ?? []).map((c) => (
                       <option key={c} value={c}>{c}</option>
                     ))}

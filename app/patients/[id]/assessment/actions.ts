@@ -1,15 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { updatePatient } from "@/services/patient-service";
+import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { getClinicAssessmentFields } from "@/services/clinic-assessment-service";
+import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 
 export type AssessmentState = { error?: string; ok?: boolean } | null;
 
 // Colunas legadas mantidas em sincronia quando a clínica conserva os field_keys padrão
 // (compatibilidade com leitores antigos: guardrails, regras de ação, etc.).
-const LEGACY_COLUMNS = new Set(["anamnese", "antecedents", "pain_level", "pain_location", "treatment_note"]);
+const LEGACY_COLUMNS = new Set<string>(LEGACY_ASSESSMENT_COLUMNS);
 
 // Seção "Avaliação" (espaços de escrita do terapeuta). Fonte viva = patients.assessment_data,
 // estruturada pelos clinic_assessment_fields da clínica. Escopo de clínica garantido em updatePatient.
@@ -24,7 +24,9 @@ export async function saveAssessmentAction(
 
     const fields = await getClinicAssessmentFields(clinic.id, { activeOnly: true });
 
-    const data: Record<string, string | number | null> = {};
+    // Merge sobre o que já existe: campos inativos/fora do formulário NÃO são apagados.
+    const current = await getPatientById(patientId, clinic.id);
+    const data: Record<string, string | number | null> = { ...(current?.assessment_data ?? {}) };
     const legacy: Record<string, string | number | null> = {};
 
     for (const f of fields) {
