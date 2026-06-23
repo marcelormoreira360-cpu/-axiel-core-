@@ -1,7 +1,18 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 22/06/2026 (30)
+> Atualizado em: 23/06/2026 (31)
+
+## 🟢 Avaliação editável por clínica + placement nos formulários + hub de personalização (23/06/2026) — MERGEADO E NO AR (PR #17)
+
+> `tsc` 0; `verify:i18n` 42/0/0; 295 testes verdes (6 novos). Migrations 101 e 102 aplicadas na prod (`bfuulpvzedcrpmmjxles`) e verificadas. PR #17 squash-merge (commit `f0d9001`). Core agora em **migration 102**.
+
+**Tema:** tirar do código o que é específico de cada clínica e torná-lo configurável (modelo Vagaro: "crio e escolho onde vai"). Decisão: customizar a camada de apresentação/coleta; manter o motor de scoring Neuro ID estável (depende de mapeamentos fixos de pergunta).
+
+1. **Avaliação editável por clínica (migration 101):** o painel "Avaliação" da ficha deixou de ter 5 campos fixos. Nova tabela `clinic_assessment_fields` (por clínica, RLS `can_access_clinic`/`can_write_clinic_data`, 4 políticas) define os campos (label, `field_type` textarea/text/number/select, `options` jsonb, `order_index`, `is_active`, `include_in_report`). Respostas em `patients.assessment_data` (JSONB, chave = `field_key`). Backfill dos 5 campos legados + seed dos padrões por clínica (no banco: 0 pacientes tinham campos legados preenchidos, então backfill vazio = esperado). Colunas legadas (anamnese/antecedents/pain_level/pain_location/treatment_note) mantidas por compat; constante única `LEGACY_ASSESSMENT_COLUMNS`. Service `services/clinic-assessment-service.ts` (CRUD, `moveClinicAssessmentField`, seed preguiçoso idempotente via admin client + onConflict, `slugifyFieldKey`, helpers `assessmentReportPairs`/`fieldValue`). Painel `patient-assessment-panel.tsx` renderiza dinâmico por tipo (select preserva valor fora da lista). Save `app/patients/[id]/assessment/actions.ts` faz **merge** sobre o assessment_data existente (não apaga campos inativos) + dual-write das colunas legadas ativas. Tela de config `/settings/avaliacao` (gestor). Relatório IA (`ai-insight-service.ts`): injeta os campos só se ATIVOS + `include_in_report` (sem dado obsoleto de campo deletado; respeita o toggle nos 5 padrão); custom vão em `assessment_extra` no Doc 1 (linha nova no guardrails).
+2. **Placement nos formulários (migration 102):** `assessment_templates.placement` (text[]). Editor de formulário ganhou grupo "Onde este formulário aparece" (slots `intake`/`session`/`portal`); `send_on_first_appointment` agora é DERIVADO do slot `intake` (automação de envio intacta; backfill põe `intake` onde send_on_first era true). Chips de placement na lista `/forms`. `getAssessmentTemplates` aceita filtro opcional por slot (`.contains`). Slot `intake` totalmente ligado; `session`/`portal` por ora são organização/descoberta (estrutura pronta).
+3. **Hub "Personalizar minha clínica" (`/settings/personalizar`):** tela única que agrega Avaliação + Formulários + Tipos de sessão + Testes clínicos + Suplementos + Marca + Ofertas + Lembretes (só links p/ telas existentes; sem migration). Card em destaque no hub de Configurações. Apoia onboarding de clínica nova (frente C). Passo 1/2/3 do plano "editável por clínica".
+4. **Code-review (high effort) aplicado:** merge do assessment_data (não apagar inativos); gate do relatório por ativo+include_in_report; select preserva valor órfão; reuso `isManager` (lib/team-utils) + constante `LEGACY_ASSESSMENT_COLUMNS`. Pulados com motivo: seed via admin client (dormente p/ clínicas existentes, clinicId é session-scoped), race no create (tabela de config), chaves i18n mortas (grep não confiável).
 
 ## 🟢 Bio³ fusão de exames + ajustes da ficha + dedup de paciente (22/06/2026) — TUDO MERGEADO E NO AR
 
