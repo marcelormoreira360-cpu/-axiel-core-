@@ -98,6 +98,14 @@
       "assessmentFields": {
         "title": "Assessment fields",
         "text": "Customize the patient Assessment fields (each clinic defines its own)."
+      },
+      "personalize": {
+        "title": "Customize my clinic",
+        "text": "Everything you define your way (assessment, forms, services, branding) in one place."
+      },
+      "forms": {
+        "title": "Forms",
+        "text": "Patient questionnaires and where each one appears (intake, session, portal)."
       }
     }
   },
@@ -661,5 +669,9 @@
     "saving": "Saving…",
     "saved": "Saved",
     "cancel": "Cancel"
+  },
+  "personalize": {
+    "title": "Customize my clinic",
+    "subtitle": "Everything you shape your way, gathered in one place."
   }
 }

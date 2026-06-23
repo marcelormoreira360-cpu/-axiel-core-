@@ -98,6 +98,14 @@
       "assessmentFields": {
         "title": "Campos da Avaliação",
         "text": "Personalize os campos da Avaliação do paciente (cada clínica define os seus)."
+      },
+      "personalize": {
+        "title": "Personalizar minha clínica",
+        "text": "Tudo que você define do seu jeito (avaliação, formulários, serviços, marca) num lugar só."
+      },
+      "forms": {
+        "title": "Formulários",
+        "text": "Questionários do paciente e onde cada um aparece (intake, sessão, portal)."
       }
     }
   },
@@ -661,5 +669,9 @@
     "saving": "Salvando…",
     "saved": "Salvo",
     "cancel": "Cancelar"
+  },
+  "personalize": {
+    "title": "Personalizar minha clínica",
+    "subtitle": "Tudo que você molda do seu jeito, reunido num lugar só."
   }
 }

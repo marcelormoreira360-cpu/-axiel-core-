@@ -9,6 +9,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import { canManageClinicUsers } from "@/modules/auth/roles";
 
 const SETTINGS_ITEMS: { href: string; key: string }[] = [
+  { href: "/settings/personalizar", key: "personalize" },
   { href: "/settings/profile", key: "profile" },
   { href: "/settings/equipe", key: "equipe" },
   { href: "/settings/practitioners", key: "practitioners" },
