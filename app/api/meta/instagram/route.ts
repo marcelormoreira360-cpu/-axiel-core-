@@ -8,20 +8,23 @@ export const runtime = "nodejs";
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
-// O Instagram assina os webhooks com SEU PRÓPRIO app secret (≠ app secret do
-// Facebook usado no Messenger). Validamos com META_INSTAGRAM_APP_SECRET, caindo
-// para META_APP_SECRET se aquele não estiver configurado.
+// A Meta pode assinar os webhooks do Instagram com o app secret do INSTAGRAM
+// (Instagram business login) OU com o app secret do Facebook, dependendo do
+// evento. Aceita a assinatura se bater com QUALQUER um dos dois.
 function isValidInstagramSignature(signature: string | null, body: Buffer): boolean {
-  const secret = process.env.META_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || "";
-  if (!signature || !secret) return false;
+  if (!signature) return false;
   const [algo, hash] = signature.split("=");
   if (algo !== "sha256" || !hash) return false;
-  const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
-  try {
-    return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(expected, "hex"));
-  } catch {
-    return false;
-  }
+  const secrets = [process.env.META_INSTAGRAM_APP_SECRET, process.env.META_APP_SECRET]
+    .filter((s): s is string => !!s);
+  return secrets.some((secret) => {
+    const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
+    try {
+      return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(expected, "hex"));
+    } catch {
+      return false;
+    }
+  });
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -200,19 +203,6 @@ export async function POST(req: NextRequest) {
     const rawBuffer = Buffer.from(await req.arrayBuffer());
 
     if (!isValidInstagramSignature(req.headers.get("x-hub-signature-256"), rawBuffer)) {
-      // DEBUG TEMP (remover): isolar se é secret ou formato do corpo.
-      try {
-        const sec = process.env.META_APP_SECRET ?? "";
-        const recv256 = (req.headers.get("x-hub-signature-256") || "").replace("sha256=", "");
-        const recv1 = (req.headers.get("x-hub-signature") || "").replace("sha1=", "");
-        const h256 = (b: Buffer) => crypto.createHmac("sha256", sec).update(b).digest("hex");
-        const raw = rawBuffer;
-        const trimmed = Buffer.from(rawBuffer.toString("utf8").trim(), "utf8");
-        let reser = Buffer.alloc(0);
-        try { reser = Buffer.from(JSON.stringify(JSON.parse(rawBuffer.toString("utf8"))), "utf8"); } catch { /* noop */ }
-        const calcSha1 = crypto.createHmac("sha1", sec).update(raw).digest("hex");
-        console.warn(`META_IG_DBG3 ct=${req.headers.get("content-type")} secLen=${sec.length} matchRaw256=${recv256 === h256(raw)} matchTrim256=${recv256 === h256(trimmed)} matchReser256=${recv256 === h256(reser)} matchSha1=${recv1 === calcSha1} recv256=${recv256.slice(0, 10)} calcRaw256=${h256(raw).slice(0, 10)}`);
-      } catch (e) { console.warn("META_IG_DBG3 err", e); }
       console.warn("Instagram webhook: invalid signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
