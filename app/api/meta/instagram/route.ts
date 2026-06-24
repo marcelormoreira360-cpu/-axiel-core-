@@ -179,15 +179,17 @@ export async function POST(req: NextRequest) {
   if (!apiKey) return new NextResponse("", { status: 200 });
 
   try {
-    const rawBody = await req.text();
+    // Bytes brutos para validar a assinatura (re-codificar o texto quebra o HMAC
+    // quando a mensagem tem acento/emoji, ex.: "Olá").
+    const rawBuffer = Buffer.from(await req.arrayBuffer());
 
     const signature = req.headers.get("x-hub-signature-256");
-    if (!validateMetaSignature(signature, Buffer.from(rawBody))) {
+    if (!validateMetaSignature(signature, rawBuffer)) {
       console.warn("Instagram webhook: invalid signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const body = JSON.parse(rawBody);
+    const body = JSON.parse(rawBuffer.toString("utf-8"));
     if (body.object !== "instagram") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
