@@ -107,7 +107,9 @@ async function sendInstagramReply(recipientId: string, text: string): Promise<vo
   const token = process.env.META_INSTAGRAM_TOKEN;
   if (!token) throw new Error("META_INSTAGRAM_TOKEN not set");
 
-  const res = await fetch("https://graph.facebook.com/v20.0/me/messages", {
+  // Instagram com login próprio (instagram_business_*) envia por graph.instagram.com,
+  // não por graph.facebook.com (token do IG dá "Cannot parse access token" no host do FB).
+  const res = await fetch("https://graph.instagram.com/v21.0/me/messages", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
