@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
@@ -160,6 +160,23 @@ async function generateReply(
   return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
+// ─── Opt-out / human escalation (exigência do App Review) ────────────────────
+// O paciente pode pedir para falar com uma pessoa. Frase-based (sem "parar"
+// sozinho) para evitar falso positivo em conversa clínica ("parar de sentir dor").
+const OPT_OUT_PATTERNS = [
+  "falar com atendente", "falar com um atendente", "falar com humano", "falar com um humano",
+  "falar com uma pessoa", "falar com alguem", "falar com a equipe", "falar com a recepcao",
+  "atendente", "atendimento humano", "quero um humano", "pessoa de verdade", "ser humano",
+  "talk to a human", "talk to a person", "talk to an agent", "speak to a human",
+  "speak to a person", "speak to an agent", "speak to someone", "real person",
+  "human agent", "live agent",
+];
+
+function isOptOutRequest(text: string): boolean {
+  const t = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  return OPT_OUT_PATTERNS.some((p) => t.includes(p));
+}
+
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
@@ -194,15 +211,6 @@ export async function POST(req: NextRequest) {
     if (body.object !== "page") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
-    // Messenger atende público EUA + Brasil: o bot espelha o idioma do lead
-    // (corrige o caso de lead em inglês receber resposta em português).
-    const systemPrompt =
-      buildSystemPrompt(IFWC_DEFAULT_CONFIG) +
-      `\n\n━━━ IDIOMA (OBRIGATÓRIO) ━━━\n` +
-      `Detecte o idioma da mensagem do paciente e responda SEMPRE no mesmo idioma — português ou inglês. ` +
-      `Se o paciente escrever em inglês, traduza naturalmente as mensagens-modelo acima para um inglês caloroso e profissional ` +
-      `(ex.: "investimento" → "investment", nunca "price"). Nunca misture os dois idiomas na mesma resposta. ` +
-      `Mantenha o idioma escolhido por toda a conversa, a menos que o paciente troque de idioma.`;
 
     for (const entry of body.entry ?? []) {
       const pageId: string = entry.id;
@@ -230,10 +238,34 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
+        // Opt-out / escalonamento humano: responde uma vez, marca a conversa
+        // para um humano assumir (bot_disabled) e para de auto-responder.
+        if (isOptOutRequest(messageText)) {
+          const handover =
+            "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏 " +
+            "(Of course! I'll let the team know and a person will reach out to you here shortly.)";
+          await saveHistory(supabase, senderPsid, convId, [
+            ...history,
+            { role: "user", content: messageText },
+            { role: "assistant", content: handover },
+          ], effectiveClinicId);
+          await supabase
+            .from("whatsapp_conversations")
+            .update({ bot_disabled: true })
+            .eq("phone", `fb_${senderPsid}`)
+            .then(() => {}, () => {});
+          await sendFacebookReply(senderPsid, handover, pageId);
+          continue;
+        }
+
         // Primeira mensagem de um PSID novo → cria lead no CRM
         if (!convId) {
           void autoCreateLead(supabase, senderPsid, effectiveClinicId, messageText);
         }
+
+        // Passo do funil estimado pelo histórico (sai do "preso no passo 1")
+        const step = funnelStepFromHistory(history.length);
+        const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
