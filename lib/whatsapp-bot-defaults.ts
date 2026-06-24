@@ -165,12 +165,14 @@ ${custom_instructions ? `\nINSTRUÇÕES ADICIONAIS:\n${custom_instructions}` : "
 }
 
 // Regra de idioma para os canais Meta (Messenger/Instagram), que atendem EUA + Brasil:
-// o bot espelha o idioma do lead (PT/EN). Não usada no WhatsApp (público majoritariamente BR).
+// o bot espelha o idioma do lead (PT/EN/ES — muito hispânico nos EUA).
+// Não usada no WhatsApp (público majoritariamente BR).
 export const META_LANG_RULE =
   `\n\n━━━ IDIOMA (OBRIGATÓRIO) ━━━\n` +
-  `Detecte o idioma da mensagem do paciente e responda SEMPRE no mesmo idioma — português ou inglês. ` +
-  `Se o paciente escrever em inglês, traduza naturalmente as mensagens-modelo acima para um inglês caloroso e profissional ` +
-  `(ex.: "investimento" → "investment", nunca "price"). Nunca misture os dois idiomas na mesma resposta. ` +
+  `Detecte o idioma da mensagem do paciente e responda SEMPRE no mesmo idioma — português, inglês ou espanhol. ` +
+  `Se o paciente escrever em inglês ou espanhol, traduza naturalmente as mensagens-modelo acima para um texto caloroso e profissional nesse idioma ` +
+  `(ex.: "investimento" → "investment" / "inversión", evitando a palavra fria "price" / "precio"). ` +
+  `Nunca misture idiomas na mesma resposta. ` +
   `Mantenha o idioma escolhido por toda a conversa, a menos que o paciente troque de idioma.`;
 
 // Estima o passo do funil (1..7) pelo tamanho do histórico: ~1 passo por troca
