@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
@@ -185,6 +186,15 @@ export async function POST(req: NextRequest) {
 
     const signature = req.headers.get("x-hub-signature-256");
     if (!validateMetaSignature(signature, rawBuffer)) {
+      // DEBUG TEMP (remover): por que o HMAC não bate?
+      try {
+        const sec = process.env.META_APP_SECRET ?? "";
+        const expected = crypto.createHmac("sha256", sec).update(rawBuffer).digest("hex");
+        let obj = "?";
+        try { obj = String(JSON.parse(rawBuffer.toString("utf-8")).object); } catch { /* noop */ }
+        const sig1 = req.headers.get("x-hub-signature") ?? "";
+        console.warn(`META_IG_DBG object=${obj} bodyLen=${rawBuffer.length} secretLen=${sec.length} sig256Recv=${(signature ?? "(null)").slice(0, 18)} sig256Calc=sha256=${expected.slice(0, 11)} sig1Recv=${sig1.slice(0, 14)}`);
+      } catch { /* noop */ }
       console.warn("Instagram webhook: invalid signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
