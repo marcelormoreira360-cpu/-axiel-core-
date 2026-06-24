@@ -152,7 +152,15 @@ export async function POST(req: NextRequest) {
     if (body.object !== "page") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
-    const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
+    // Messenger atende público EUA + Brasil: o bot espelha o idioma do lead
+    // (corrige o caso de lead em inglês receber resposta em português).
+    const systemPrompt =
+      buildSystemPrompt(IFWC_DEFAULT_CONFIG) +
+      `\n\n━━━ IDIOMA (OBRIGATÓRIO) ━━━\n` +
+      `Detecte o idioma da mensagem do paciente e responda SEMPRE no mesmo idioma — português ou inglês. ` +
+      `Se o paciente escrever em inglês, traduza naturalmente as mensagens-modelo acima para um inglês caloroso e profissional ` +
+      `(ex.: "investimento" → "investment", nunca "price"). Nunca misture os dois idiomas na mesma resposta. ` +
+      `Mantenha o idioma escolhido por toda a conversa, a menos que o paciente troque de idioma.`;
 
     for (const entry of body.entry ?? []) {
       const pageId: string = entry.id;
