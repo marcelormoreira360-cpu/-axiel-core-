@@ -149,6 +149,25 @@ export async function POST(req: NextRequest) {
     }
 
     const body = JSON.parse(rawBody);
+
+    // DEBUG TEMPORÁRIO (remover após diagnóstico) — só a ESTRUTURA do evento,
+    // sem o conteúdo da mensagem, para entender por que nada grava.
+    try {
+      console.log("META_DBG " + JSON.stringify({
+        object: body.object,
+        entries: (body.entry ?? []).map((e: Record<string, unknown>) => ({
+          keys: Object.keys(e),
+          hasChanges: !!e.changes,
+          messaging: ((e.messaging as Record<string, unknown>[]) ?? []).map((ev: Record<string, unknown>) => ({
+            keys: Object.keys(ev),
+            isEcho: !!(ev.message as { is_echo?: boolean } | undefined)?.is_echo,
+            hasText: !!(ev.message as { text?: string } | undefined)?.text,
+            hasSender: !!(ev.sender as { id?: string } | undefined)?.id,
+          })),
+        })),
+      }));
+    } catch { /* noop */ }
+
     if (body.object !== "page") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
