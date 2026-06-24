@@ -163,3 +163,18 @@ ${stepBlock}
 Tom: acolhedor, humano, estilo WhatsApp. Mensagens curtas. Emoji discreto. Saudação SOMENTE no passo 1.
 ${custom_instructions ? `\nINSTRUÇÕES ADICIONAIS:\n${custom_instructions}` : ""}`;
 }
+
+// Regra de idioma para os canais Meta (Messenger/Instagram), que atendem EUA + Brasil:
+// o bot espelha o idioma do lead (PT/EN). Não usada no WhatsApp (público majoritariamente BR).
+export const META_LANG_RULE =
+  `\n\n━━━ IDIOMA (OBRIGATÓRIO) ━━━\n` +
+  `Detecte o idioma da mensagem do paciente e responda SEMPRE no mesmo idioma — português ou inglês. ` +
+  `Se o paciente escrever em inglês, traduza naturalmente as mensagens-modelo acima para um inglês caloroso e profissional ` +
+  `(ex.: "investimento" → "investment", nunca "price"). Nunca misture os dois idiomas na mesma resposta. ` +
+  `Mantenha o idioma escolhido por toda a conversa, a menos que o paciente troque de idioma.`;
+
+// Estima o passo do funil (1..7) pelo tamanho do histórico: ~1 passo por troca
+// (user + assistant). Sem isso o bot fica preso no passo 1 e repete a saudação.
+export function funnelStepFromHistory(historyLength: number): number {
+  return Math.min(7, Math.floor(historyLength / 2) + 1);
+}

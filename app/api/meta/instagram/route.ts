@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, getWhatsAppBotConfigByInstagramId } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
@@ -52,6 +52,34 @@ async function saveHistory(
       await supabase.from("whatsapp_conversations").upsert(payload, { onConflict: "phone" });
     }
   } catch { /* non-blocking */ }
+}
+
+// Cria lead no CRM quando um usuário novo do Instagram inicia conversa (não bloqueia o bot)
+async function autoCreateLead(
+  supabase: SupabaseAdmin,
+  userId: string,
+  clinicId: string,
+  firstMessage: string
+) {
+  try {
+    const { count } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("clinic_id", clinicId)
+      .eq("phone", `ig_${userId}`);
+    if ((count ?? 0) > 0) return; // já existe
+
+    await supabase.from("leads").insert({
+      clinic_id: clinicId,
+      full_name: `Instagram ${userId.slice(-4)}`,
+      phone: `ig_${userId}`,
+      source: "other",
+      stage: "new_lead",
+      notes: `Lead criado automaticamente via Instagram DM.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
+    });
+  } catch (e) {
+    console.error("[instagram] auto-create lead failed:", e);
+  }
 }
 
 // ─── Send reply via Instagram Graph API ──────────────────────────────────────
@@ -175,7 +203,6 @@ export async function POST(req: NextRequest) {
       if (!botConfig) continue;
 
       const clinicId = botConfig.clinic_id;
-      const systemPrompt = buildSystemPrompt(botConfig);
 
       for (const event of entry.messaging ?? []) {
         // Skip echoes (messages sent by the page itself)
@@ -218,6 +245,15 @@ export async function POST(req: NextRequest) {
           await sendInstagramReply(senderId, handover);
           continue;
         }
+
+        // Primeira mensagem de um usuário novo → cria lead no CRM
+        if (!convId) {
+          void autoCreateLead(supabase, senderId, clinicId, messageText);
+        }
+
+        // Passo do funil estimado pelo histórico + regra de idioma (PT/EN)
+        const step = funnelStepFromHistory(history.length);
+        const systemPrompt = buildSystemPrompt(botConfig, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
