@@ -1,13 +1,28 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { validateMetaSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
+
+// O Instagram assina os webhooks com SEU PRÓPRIO app secret (≠ app secret do
+// Facebook usado no Messenger). Validamos com META_INSTAGRAM_APP_SECRET, caindo
+// para META_APP_SECRET se aquele não estiver configurado.
+function isValidInstagramSignature(signature: string | null, body: Buffer): boolean {
+  const secret = process.env.META_INSTAGRAM_APP_SECRET || process.env.META_APP_SECRET || "";
+  if (!signature || !secret) return false;
+  const [algo, hash] = signature.split("=");
+  if (algo !== "sha256" || !hash) return false;
+  const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(expected, "hex"));
+  } catch {
+    return false;
+  }
+}
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -184,17 +199,7 @@ export async function POST(req: NextRequest) {
     // quando a mensagem tem acento/emoji, ex.: "Olá").
     const rawBuffer = Buffer.from(await req.arrayBuffer());
 
-    const signature = req.headers.get("x-hub-signature-256");
-    if (!validateMetaSignature(signature, rawBuffer)) {
-      // DEBUG TEMP (remover): por que o HMAC não bate?
-      try {
-        const sec = process.env.META_APP_SECRET ?? "";
-        const expected = crypto.createHmac("sha256", sec).update(rawBuffer).digest("hex");
-        let obj = "?";
-        try { obj = String(JSON.parse(rawBuffer.toString("utf-8")).object); } catch { /* noop */ }
-        const sig1 = req.headers.get("x-hub-signature") ?? "";
-        console.warn(`META_IG_DBG object=${obj} bodyLen=${rawBuffer.length} secretLen=${sec.length} sig256Recv=${(signature ?? "(null)").slice(0, 18)} sig256Calc=sha256=${expected.slice(0, 11)} sig1Recv=${sig1.slice(0, 14)}`);
-      } catch { /* noop */ }
+    if (!isValidInstagramSignature(req.headers.get("x-hub-signature-256"), rawBuffer)) {
       console.warn("Instagram webhook: invalid signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
