@@ -8,25 +8,30 @@ export const runtime = "nodejs";
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
+// Clínica atendida por este webhook (IFWC). Configurável por env; fallback fixo.
+const IFWC_CLINIC_ID =
+  process.env.META_BOT_CLINIC_ID ?? "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getHistory(
   supabase: SupabaseAdmin,
   psid: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean }> {
+): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled")
+      .select("id, messages, bot_disabled, clinic_id")
       .eq("phone", `fb_${psid}`)
       .maybeSingle();
     return {
       id: data?.id ?? null,
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
+      clinicId: data?.clinic_id ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false };
+    return { id: null, messages: [], botDisabled: false, clinicId: null };
   }
 }
 
@@ -34,20 +39,57 @@ async function saveHistory(
   supabase: SupabaseAdmin,
   psid: string,
   id: string | null,
-  messages: ChatMessage[]
+  messages: ChatMessage[],
+  clinicId?: string | null
 ) {
-  const payload = {
+  const payload: Record<string, unknown> = {
     phone: `fb_${psid}`,
     messages: messages.slice(-20),
     updated_at: new Date().toISOString(),
   };
   try {
     if (id) {
-      await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
+      const { error } = await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
+      if (error) console.error("[messenger] saveHistory UPDATE error:", error.message);
     } else {
-      await supabase.from("whatsapp_conversations").insert(payload);
+      // clinic_id é NOT NULL na tabela — sem ele o insert falha silenciosamente
+      if (clinicId) payload.clinic_id = clinicId;
+      const { error } = await supabase
+        .from("whatsapp_conversations")
+        .upsert(payload, { onConflict: "phone" });
+      if (error) console.error("[messenger] saveHistory UPSERT error:", error.message);
     }
-  } catch { /* non-blocking */ }
+  } catch (e) {
+    console.error("[messenger] saveHistory exception:", e);
+  }
+}
+
+// Cria lead no CRM quando um PSID desconhecido inicia conversa (não bloqueia o bot)
+async function autoCreateLead(
+  supabase: SupabaseAdmin,
+  psid: string,
+  clinicId: string,
+  firstMessage: string
+) {
+  try {
+    const { count } = await supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("clinic_id", clinicId)
+      .eq("phone", `fb_${psid}`);
+    if ((count ?? 0) > 0) return; // já existe
+
+    await supabase.from("leads").insert({
+      clinic_id: clinicId,
+      full_name: `Messenger ${psid.slice(-4)}`,
+      phone: `fb_${psid}`,
+      source: "other",
+      stage: "new_lead",
+      notes: `Lead criado automaticamente via Facebook Messenger.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
+    });
+  } catch (e) {
+    console.error("[messenger] auto-create lead failed:", e);
+  }
 }
 
 // ─── Page token lookup ────────────────────────────────────────────────────────
@@ -149,25 +191,6 @@ export async function POST(req: NextRequest) {
     }
 
     const body = JSON.parse(rawBody);
-
-    // DEBUG TEMPORÁRIO (remover após diagnóstico) — só a ESTRUTURA do evento,
-    // sem o conteúdo da mensagem, para entender por que nada grava.
-    try {
-      console.log("META_DBG " + JSON.stringify({
-        object: body.object,
-        entries: (body.entry ?? []).map((e: Record<string, unknown>) => ({
-          keys: Object.keys(e),
-          hasChanges: !!e.changes,
-          messaging: ((e.messaging as Record<string, unknown>[]) ?? []).map((ev: Record<string, unknown>) => ({
-            keys: Object.keys(ev),
-            isEcho: !!(ev.message as { is_echo?: boolean } | undefined)?.is_echo,
-            hasText: !!(ev.message as { text?: string } | undefined)?.text,
-            hasSender: !!(ev.sender as { id?: string } | undefined)?.id,
-          })),
-        })),
-      }));
-    } catch { /* noop */ }
-
     if (body.object !== "page") return new NextResponse("", { status: 200 });
 
     const supabase = createSupabaseAdminClient();
@@ -194,16 +217,22 @@ export async function POST(req: NextRequest) {
 
         if (!senderPsid || !messageText) continue;
 
-        const { id: convId, messages: history, botDisabled } =
+        const { id: convId, messages: history, botDisabled, clinicId: convClinicId } =
           await getHistory(supabase, senderPsid);
+        const effectiveClinicId = convClinicId ?? IFWC_CLINIC_ID;
 
         // Human takeover — save message, don't reply
         if (botDisabled) {
           await saveHistory(supabase, senderPsid, convId, [
             ...history,
             { role: "user", content: messageText },
-          ]);
+          ], effectiveClinicId);
           continue;
+        }
+
+        // Primeira mensagem de um PSID novo → cria lead no CRM
+        if (!convId) {
+          void autoCreateLead(supabase, senderPsid, effectiveClinicId, messageText);
         }
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
@@ -213,7 +242,7 @@ export async function POST(req: NextRequest) {
           ...history,
           { role: "user", content: messageText },
           { role: "assistant", content: finalReply },
-        ]);
+        ], effectiveClinicId);
 
         await sendFacebookReply(senderPsid, finalReply, pageId);
       }
