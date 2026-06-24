@@ -1,12 +1,34 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 
 export const runtime = "nodejs";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
+
+const IFWC_CLINIC_ID = "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
+
+// Contas de Instagram EXTRAS (ex.: conta pessoal do profissional) que atendem
+// pela mesma clínica, mas não têm linha própria em whatsapp_bot_configs (a coluna
+// clinic_id é única, então não cabe uma 2ª config para a mesma clínica). Mapeia
+// o id da conta IG → clinic_id. Configurável por env "META_IG_EXTRA_ACCOUNTS"
+// no formato "<igId>:<clinicId>,<igId>:<clinicId>". Mantém a regra SEC-01: só
+// contas conhecidas (com config no banco OU neste mapa) são atendidas.
+function extraIgAccounts(): Record<string, string> {
+  const raw = process.env.META_IG_EXTRA_ACCOUNTS;
+  if (raw) {
+    const map: Record<string, string> = {};
+    for (const pair of raw.split(",")) {
+      const [ig, clinic] = pair.split(":").map((s) => s.trim());
+      if (ig && clinic) map[ig] = clinic;
+    }
+    return map;
+  }
+  // Default: conta pessoal de Instagram do Marcelo (@marcelomoreira360) → IFWC.
+  return { "17841400592744534": IFWC_CLINIC_ID };
+}
 
 // A Meta pode assinar os webhooks do Instagram com o app secret do INSTAGRAM
 // (Instagram business login) OU com o app secret do Facebook, dependendo do
@@ -103,9 +125,17 @@ async function autoCreateLead(
 
 // ─── Send reply via Instagram Graph API ──────────────────────────────────────
 
-async function sendInstagramReply(recipientId: string, text: string): Promise<void> {
-  const token = process.env.META_INSTAGRAM_TOKEN;
+// Token de envio por conta de Instagram: cada conta tem o seu (cada uma gera o
+// próprio token no painel). Env por conta: META_INSTAGRAM_TOKEN_<igAccountId>.
+// Cai para META_INSTAGRAM_TOKEN (conta principal @jifwcenter) se não houver específico.
+function getInstagramToken(igAccountId: string): string {
+  const token = process.env[`META_INSTAGRAM_TOKEN_${igAccountId}`] || process.env.META_INSTAGRAM_TOKEN;
   if (!token) throw new Error("META_INSTAGRAM_TOKEN not set");
+  return token;
+}
+
+async function sendInstagramReply(recipientId: string, text: string, igAccountId: string): Promise<void> {
+  const token = getInstagramToken(igAccountId);
 
   // Instagram com login próprio (instagram_business_*) envia por graph.instagram.com,
   // não por graph.facebook.com (token do IG dá "Cannot parse access token" no host do FB).
@@ -221,10 +251,19 @@ export async function POST(req: NextRequest) {
       const igAccountId: string = entry.id ?? "";
       if (!igAccountId) continue;
 
-      const botConfig = await getWhatsAppBotConfigByInstagramId(igAccountId).catch(() => null);
-      if (!botConfig) continue;
-
-      const clinicId = botConfig.clinic_id;
+      const dbConfig = await getWhatsAppBotConfigByInstagramId(igAccountId).catch(() => null);
+      let clinicId: string;
+      if (dbConfig) {
+        clinicId = dbConfig.clinic_id;
+      } else {
+        // Conta sem config própria no banco: atende só se for uma conta EXTRA
+        // conhecida (ex.: a conta pessoal do profissional). Senão ignora (SEC-01).
+        const extraClinic = extraIgAccounts()[igAccountId];
+        if (!extraClinic) continue;
+        clinicId = extraClinic;
+      }
+      // Persona do prompt: a config da clínica, ou a padrão IFWC para a conta extra.
+      const promptConfig = dbConfig ?? IFWC_DEFAULT_CONFIG;
 
       for (const event of entry.messaging ?? []) {
         // Skip echoes (messages sent by the page itself)
@@ -251,7 +290,7 @@ export async function POST(req: NextRequest) {
         // can ask to talk to a person. We reply once, flag the conversation for a
         // human to take over (bot_disabled), and stop auto-replying in this thread.
         if (isOptOutRequest(messageText)) {
-          const handover = botConfig.language === "en-US"
+          const handover = promptConfig.language === "en-US"
             ? "Of course! I'll let the team know and a person will reach out to you here shortly. 🙏"
             : "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏";
           await saveHistory(supabase, senderId, convId, [
@@ -264,7 +303,7 @@ export async function POST(req: NextRequest) {
             .update({ bot_disabled: true })
             .eq("phone", `ig_${senderId}`)
             .then(() => {}, () => {});
-          await sendInstagramReply(senderId, handover);
+          await sendInstagramReply(senderId, handover, igAccountId);
           continue;
         }
 
@@ -275,7 +314,7 @@ export async function POST(req: NextRequest) {
 
         // Passo do funil estimado pelo histórico + regra de idioma (PT/EN)
         const step = funnelStepFromHistory(history.length);
-        const systemPrompt = buildSystemPrompt(botConfig, step) + META_LANG_RULE;
+        const systemPrompt = buildSystemPrompt(promptConfig, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
@@ -286,7 +325,7 @@ export async function POST(req: NextRequest) {
           { role: "assistant", content: finalReply },
         ], clinicId);
 
-        await sendInstagramReply(senderId, finalReply);
+        await sendInstagramReply(senderId, finalReply, igAccountId);
       }
     }
 
