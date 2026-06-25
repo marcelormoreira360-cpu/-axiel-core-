@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 export const runtime = "nodejs";
 
@@ -278,15 +279,24 @@ export async function POST(req: NextRequest) {
 
         if (!senderId || !messageText) continue;
 
+        // Disjuntor anti-loop: se uma conversa dispara muitas mensagens num minuto
+        // (ex.: duas contas com bot conversando entre si, ou eco), desativa o bot
+        // nessa conversa para parar o loop. Em uso normal, um lead não atinge isso.
+        if (!(await checkRateLimitDb(`ig:${senderId}`, 5, 60_000))) {
+          console.warn(`[instagram] possível loop em ${senderId} — desativando bot na conversa`);
+          await supabase
+            .from("whatsapp_conversations")
+            .update({ bot_disabled: true })
+            .eq("phone", `ig_${senderId}`)
+            .then(() => {}, () => {});
+          continue;
+        }
+
         const { id: convId, messages: history, botDisabled } =
           await getHistory(supabase, senderId);
 
-        // DEBUG TEMP (remover): estrutura do evento p/ entender o echo do IG.
-        console.warn(`META_IG_ECHO acc=${igAccountId} sender=${event.sender?.id} recip=${event.recipient?.id} isEcho=${!!event.message?.is_echo} t=${messageText.slice(0, 18)}`);
-
-        // Anti-eco robusto: se a mensagem que chega é idêntica à última resposta
-        // do próprio bot, é o echo voltando — ignora (quebra o loop, independe do
-        // formato do echo do Instagram).
+        // Anti-eco: se a mensagem que chega é idêntica à última resposta do próprio
+        // bot, é o echo voltando — ignora.
         const lastBotReply = [...history].reverse().find((m) => m.role === "assistant")?.content;
         if (lastBotReply && messageText === lastBotReply) continue;
 
