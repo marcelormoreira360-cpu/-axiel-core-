@@ -266,8 +266,12 @@ export async function POST(req: NextRequest) {
       const promptConfig = dbConfig ?? IFWC_DEFAULT_CONFIG;
 
       for (const event of entry.messaging ?? []) {
-        // Skip echoes (messages sent by the page itself)
+        // Skip echoes (messages sent by the account itself). No Instagram o echo
+        // NEM SEMPRE traz is_echo, então também ignoramos quando o remetente é a
+        // própria conta (sender.id == igAccountId). Sem isso, a resposta do bot
+        // volta como webhook e vira um loop infinito.
         if (event.message?.is_echo) continue;
+        if (event.sender?.id && event.sender.id === igAccountId) continue;
 
         const senderId: string = event.sender?.id;
         const messageText: string = event.message?.text?.trim() ?? "";
