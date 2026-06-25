@@ -281,6 +281,15 @@ export async function POST(req: NextRequest) {
         const { id: convId, messages: history, botDisabled } =
           await getHistory(supabase, senderId);
 
+        // DEBUG TEMP (remover): estrutura do evento p/ entender o echo do IG.
+        console.warn(`META_IG_ECHO acc=${igAccountId} sender=${event.sender?.id} recip=${event.recipient?.id} isEcho=${!!event.message?.is_echo} t=${messageText.slice(0, 18)}`);
+
+        // Anti-eco robusto: se a mensagem que chega é idêntica à última resposta
+        // do próprio bot, é o echo voltando — ignora (quebra o loop, independe do
+        // formato do echo do Instagram).
+        const lastBotReply = [...history].reverse().find((m) => m.role === "assistant")?.content;
+        if (lastBotReply && messageText === lastBotReply) continue;
+
         // Human takeover — save message, don't reply
         if (botDisabled) {
           await saveHistory(supabase, senderId, convId, [
