@@ -75,8 +75,15 @@ function drawFooter(doc: Doc, brand: ClinicBrand) {
   doc.save();
   doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.6).strokeColor("#D9D6E4").stroke();
   if (tagline) {
+    // Escrever na área de rodapé (abaixo da margem inferior) sem disparar uma
+    // nova página: zera margins.bottom durante o text() e restaura em seguida.
+    // Sem isto, o texto fluido em y>margem força addPage → páginas em branco e a
+    // tagline "vaza" para o topo da página seguinte, sobrepondo o título.
+    const prevBottom = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
     doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
       .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
+    doc.page.margins.bottom = prevBottom;
   }
   doc.restore();
 }
@@ -107,7 +114,7 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   const shareTxt = share === null ? "" : `  ·  ${Math.round(share)}% do total`;
   const y = doc.y;
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
-  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ★ comece aqui" : ""}`);
+  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ·  comece aqui (prioridade)" : ""}`);
   const pct = disf ?? 0;
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
@@ -115,6 +122,21 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   if (disf !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
   doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
   doc.y = barY + 18;
+}
+
+// Estrela vetorial de 5 pontas (marcador de prioridade). As fontes padrão
+// (WinAnsi) NÃO têm o glifo ★ — desenhar como vetor evita o caractere quebrado.
+function drawStar(doc: Doc, cx: number, cy: number, r: number, color: string) {
+  const pts: [number, number][] = [];
+  for (let i = 0; i < 5; i++) {
+    const outer = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    const inner = outer + Math.PI / 5;
+    pts.push([cx + r * Math.cos(outer), cy + r * Math.sin(outer)]);
+    pts.push([cx + r * 0.42 * Math.cos(inner), cy + r * 0.42 * Math.sin(inner)]);
+  }
+  doc.save();
+  doc.polygon(...pts).fill(color);
+  doc.restore();
 }
 
 // Pirâmide Bio³: 3 faixas coloridas pela banda de DISFUNÇÃO.
@@ -142,7 +164,7 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
     doc.font("Helvetica-Bold").fontSize(13).fillColor(txt)
       .text(disf === null ? "—" : `${disf}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
     if (b.isPriority) {
-      doc.font("Helvetica").fontSize(10).fillColor(txt).text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
+      drawStar(doc, cx, centersY[i] - 15, 5.5, txt);
     }
   });
   doc.lineWidth(1);
