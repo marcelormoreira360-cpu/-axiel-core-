@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Activity, Plus, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Sparkles, Download, ShieldAlert } from "lucide-react";
+import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Sparkles, Download, ShieldAlert } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, severityColor, priorityPillars, sharesSummingTo100,
   type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
-import { createNeuroIdAssessmentAction, segmentInstrumentsAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
+import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, segmentInstrumentsAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
   fisico_pct: number | null;
@@ -104,11 +104,14 @@ export type AttentionPoint = { code: string; label: string; dysfunction: number 
 
 export function PatientNeuroIdPanel({
   map, patientId, hasReport, attentionPoints = [],
+  assessmentId = null, initialValues = {}, initialAutoCodes = [],
 }: {
   map: NeuroIdMapView; patientId: string; hasReport: boolean; attentionPoints?: AttentionPoint[];
+  assessmentId?: string | null; initialValues?: Record<string, string>; initialAutoCodes?: string[];
 }) {
   const t = useTranslations("neuroId");
   const [assessing, setAssessing] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [qrmText, setQrmText] = useState("");
   const [qsnaText, setQsnaText] = useState("");
@@ -119,6 +122,43 @@ export function PatientNeuroIdPanel({
   const [autoCodes, setAutoCodes] = useState<Set<string>>(new Set());
   const [origins, setOrigins] = useState<Record<string, string>>({});
   const [phq9Alert, setPhq9Alert] = useState<number | null>(null);
+  const [unanswered, setUnanswered] = useState<string[]>([]);
+  const [pendingCodes, setPendingCodes] = useState<Set<string>>(new Set());
+
+  function resetFormHints() {
+    setUnanswered([]);
+    setPendingCodes(new Set());
+    setImportMsg(null);
+    setSegMsg(null);
+    setPhq9Alert(null);
+    setOrigins({});
+  }
+
+  // Nova avaliação (reavaliação) → formulário em branco; cria uma avaliação nova.
+  function startNew() {
+    setVals({});
+    setAutoCodes(new Set());
+    resetFormHints();
+    setEditing(false);
+    setAssessing(true);
+  }
+
+  // Rever / editar → recarrega os pontos da última avaliação; ao salvar, CORRIGE a mesma.
+  function startEdit() {
+    setVals({ ...initialValues });
+    setAutoCodes(new Set(initialAutoCodes));
+    resetFormHints();
+    setEditing(true);
+    setAssessing(true);
+  }
+
+  function closeForm() {
+    setAssessing(false);
+    setEditing(false);
+    setVals({});
+    resetFormHints();
+    setAutoCodes(new Set());
+  }
 
   async function handleImport() {
     setImporting(true);
@@ -135,6 +175,10 @@ export function PatientNeuroIdPanel({
     setAutoCodes((prev) => new Set([...prev, ...entries.map(([c]) => c)]));
     setOrigins((prev) => ({ ...prev, ...res.origins }));
     setPhq9Alert(res.phq9Item9 ? res.phq9Item9.value : null);
+    setUnanswered(res.unanswered ?? []);
+    // Itens mapeados sem resposta → marca "pendente" (mas não os já preenchidos agora).
+    const filled = new Set(entries.map(([c]) => c));
+    setPendingCodes(new Set((res.missing ?? []).filter((c) => !filled.has(c))));
     setImportMsg(entries.length > 0 ? t("importDone", { count: entries.length }) : t("importNone"));
   }
 
@@ -192,8 +236,14 @@ export function PatientNeuroIdPanel({
               <FileText className="h-3 w-3" /> {t("viewPdf")}
             </a>
           )}
+          {!assessing && map && assessmentId && (
+            <button type="button" onClick={startEdit}
+              className="flex items-center gap-[4px] text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              <Pencil className="h-3 w-3" /> {t("editAssessment")}
+            </button>
+          )}
           {!assessing && (
-            <button type="button" onClick={() => setAssessing(true)}
+            <button type="button" onClick={startNew}
               className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition">
               <Plus className="h-3 w-3" /> {t("newAssessment")}
             </button>
@@ -299,10 +349,20 @@ export function PatientNeuroIdPanel({
       {/* Formulário de avaliação (manual) */}
       {assessing && (
         <form
-          action={async (fd) => { await createNeuroIdAssessmentAction(fd); setAssessing(false); setVals({}); }}
+          action={async (fd) => {
+            if (editing && assessmentId) await updateNeuroIdAssessmentAction(fd);
+            else await createNeuroIdAssessmentAction(fd);
+            closeForm();
+          }}
           className="mt-[12px] space-y-[14px] bg-[#FAFAF8] rounded-[10px] p-[12px]"
         >
           <input type="hidden" name="patient_id" value={patientId} />
+          {editing && assessmentId && <input type="hidden" name="assessment_id" value={assessmentId} />}
+          {editing && (
+            <p className="text-[11px] text-[#6B6A66] bg-[#EEF6F2] border border-[#0F6E56]/20 rounded-[8px] px-[10px] py-[7px] flex items-start gap-1.5">
+              <Pencil className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#0F6E56]" /> {t("editingHint")}
+            </p>
+          )}
 
           {/* Fase 2 (opcional, recolhido): colar QRM/Q-SNA de documento externo → IA extrai sub-scores */}
           <details className="rounded-[8px] border border-black/[.10] bg-white group">
@@ -341,6 +401,11 @@ export function PatientNeuroIdPanel({
                 <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-[1px]" /> {t("phq9Alert", { value: phq9Alert })}
               </p>
             )}
+            {unanswered.length > 0 && (
+              <p className="text-[11px] text-[#633806] bg-[#FFF8E7] border border-[#C77D17]/30 rounded-[6px] px-[8px] py-[6px] flex items-start gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#C77D17]" /> {t("unansweredHint", { list: unanswered.join(", ") })}
+              </p>
+            )}
           </div>
 
           <p className="text-[11px] text-[#A09E98]">{t("formHint")}</p>
@@ -363,6 +428,7 @@ export function PatientNeuroIdPanel({
                           {it.partial && <span className="text-[#C77D17]"> · {t("optional")}</span>}
                           {autoCodes.has(it.code) && <span className="text-[#0F6E56]"> · {t("autoTag")}</span>}
                           {origins[it.code] && <span className="text-[#A09E98]"> · {t("normalizedFrom", { ratio: origins[it.code] })}</span>}
+                          {pendingCodes.has(it.code) && raw === "" && <span className="text-[#C77D17]"> · {t("pendingTag")}</span>}
                         </span>
                         {band && <BandPill band={band} label={bandLabel(band, it.band_type)} />}
                       </span>
@@ -396,9 +462,9 @@ export function PatientNeuroIdPanel({
 
           <div className="flex gap-[8px]">
             <button type="submit" className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition">
-              {t("compute")}
+              {editing ? t("saveCorrection") : t("compute")}
             </button>
-            <button type="button" onClick={() => { setAssessing(false); setVals({}); }} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+            <button type="button" onClick={closeForm} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
               <X className="h-4 w-4" />
             </button>
           </div>
