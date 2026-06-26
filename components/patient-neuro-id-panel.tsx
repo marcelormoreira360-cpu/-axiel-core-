@@ -261,7 +261,7 @@ export function PatientNeuroIdPanel({
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px]" />
                 {t("autoDraftBanner")}
               </p>
-              <button type="button" onClick={() => { setAssessing(true); handleImport(); }}
+              <button type="button" onClick={() => { startNew(); handleImport(); }}
                 className="text-[11px] font-medium text-white bg-[#C77D17] hover:bg-[#A8650F] rounded-[8px] px-[12px] py-[6px] transition shrink-0">
                 {t("reviewComplete")}
               </button>

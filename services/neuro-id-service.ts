@@ -136,6 +136,45 @@ function examValueRows(
   }));
 }
 
+// Linhas de patient_assessment_values: itens preenchidos (raw cru) + métricas de
+// exame fundidas. Compartilhado por create/update para não divergirem.
+function neuroIdValueRows(
+  assessmentId: string,
+  values: Record<string, string | number | null | undefined>,
+  result: NeuroIdResult,
+  examValues: Record<string, number>,
+) {
+  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
+  const valueRows = Object.entries(values)
+    .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
+    .map(([item_code, raw]) => ({
+      assessment_id: assessmentId,
+      item_code,
+      raw_value: String(raw),
+      dysfunction_score: byCode.get(item_code) ?? null,
+    }));
+  return [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+}
+
+// Linha agregada de patient_neuro_id_scores.
+function neuroIdScoresRow(
+  assessmentId: string,
+  patientId: string,
+  result: NeuroIdResult,
+  isPartial: boolean,
+) {
+  return {
+    assessment_id: assessmentId,
+    patient_id: patientId,
+    fisico_pct: result.pillars.fisico.dysfunction,
+    bioquimico_pct: result.pillars.bioquimico.dysfunction,
+    emocional_pct: result.pillars.emocional.dysfunction,
+    indice_geral: result.indiceGeral,
+    priority_pillar: result.priorityPillar,
+    is_partial: isPartial,
+  };
+}
+
 // ── Leitura do mapa mais recente ──────────────────────────────────────────────
 export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promise<NeuroIdMap | null> {
   const supabase = await getDb(client);
@@ -199,6 +238,8 @@ export async function getAssessmentRawValues(
   const autoCodes: string[] = [];
   for (const r of (data ?? []) as { item_code: string; raw_value: string | null }[]) {
     let raw = r.raw_value == null ? "" : String(r.raw_value);
+    // Métricas de exame (origem `exam:`) são re-fundidas pelo motor, não editáveis no form.
+    if (raw.startsWith("exam:")) continue;
     if (raw.startsWith("auto:")) { autoCodes.push(r.item_code); raw = raw.slice("auto:".length); }
     if (raw.trim() !== "") values[r.item_code] = raw;
   }
@@ -240,32 +281,16 @@ export async function createNeuroIdAssessment(input: {
   const assessmentId = assessment.id as string;
 
   // 2) valores (só os preenchidos), com a disfunção calculada + métricas de exame
-  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
-  const valueRows = Object.entries(input.values)
-    .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
-    .map(([item_code, raw]) => ({
-      assessment_id: assessmentId,
-      item_code,
-      raw_value: String(raw),
-      dysfunction_score: byCode.get(item_code) ?? null,
-    }));
-  const allRows = [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+  const allRows = neuroIdValueRows(assessmentId, input.values, result, examValues);
   if (allRows.length > 0) {
     const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
   }
 
   // 3) scores agregados
-  const { error: sErr } = await supabase.from("patient_neuro_id_scores").insert({
-    assessment_id: assessmentId,
-    patient_id: input.patientId,
-    fisico_pct: result.pillars.fisico.dysfunction,
-    bioquimico_pct: result.pillars.bioquimico.dysfunction,
-    emocional_pct: result.pillars.emocional.dysfunction,
-    indice_geral: result.indiceGeral,
-    priority_pillar: result.priorityPillar,
-    is_partial: result.isPartial,
-  });
+  const { error: sErr } = await supabase
+    .from("patient_neuro_id_scores")
+    .insert(neuroIdScoresRow(assessmentId, input.patientId, result, result.isPartial));
   if (sErr) throw sErr;
 
   // Finaliza qualquer rascunho automático aberto deste paciente (idempotência §3):
@@ -316,35 +341,22 @@ export async function updateNeuroIdAssessment(input: {
   const result = computeNeuroId(items, input.values, examValues);
 
   // Regrava in-place: limpa valores+scores e reinsere (corrige a MESMA avaliação).
+  // Promove para `final`: uma revisão/correção humana deixa de ser rascunho
+  // automático e fica protegida do auto-gatilho (autoUpsertNeuroIdDraft), que
+  // sobrescreveria um `auto_draft` ao chegar um novo questionário.
   await supabase.from("patient_assessment_values").delete().eq("assessment_id", input.assessmentId);
   await supabase.from("patient_neuro_id_scores").delete().eq("assessment_id", input.assessmentId);
-  await supabase.from("patient_assessments").update({ updated_at: new Date().toISOString() }).eq("id", input.assessmentId);
+  await supabase.from("patient_assessments").update({ status: "final", updated_at: new Date().toISOString() }).eq("id", input.assessmentId);
 
-  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
-  const valueRows = Object.entries(input.values)
-    .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
-    .map(([item_code, raw]) => ({
-      assessment_id: input.assessmentId,
-      item_code,
-      raw_value: String(raw),
-      dysfunction_score: byCode.get(item_code) ?? null,
-    }));
-  const allRows = [...valueRows, ...examValueRows(input.assessmentId, examValues, result.examContributions)];
+  const allRows = neuroIdValueRows(input.assessmentId, input.values, result, examValues);
   if (allRows.length > 0) {
     const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
   }
 
-  const { error: sErr } = await supabase.from("patient_neuro_id_scores").insert({
-    assessment_id: input.assessmentId,
-    patient_id: input.patientId,
-    fisico_pct: result.pillars.fisico.dysfunction,
-    bioquimico_pct: result.pillars.bioquimico.dysfunction,
-    emocional_pct: result.pillars.emocional.dysfunction,
-    indice_geral: result.indiceGeral,
-    priority_pillar: result.priorityPillar,
-    is_partial: result.isPartial,
-  });
+  const { error: sErr } = await supabase
+    .from("patient_neuro_id_scores")
+    .insert(neuroIdScoresRow(input.assessmentId, input.patientId, result, result.isPartial));
   if (sErr) throw sErr;
 
   return { assessmentId: input.assessmentId, result };
