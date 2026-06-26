@@ -81,9 +81,14 @@ function drawFooter(doc: Doc, brand: ClinicBrand) {
     // tagline "vaza" para o topo da página seguinte, sobrepondo o título.
     const prevBottom = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
-    doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
-      .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
-    doc.page.margins.bottom = prevBottom;
+    try {
+      doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
+        .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
+    } finally {
+      // Restaura sempre: margem em 0 vazaria para as páginas seguintes (via
+      // pageAdded) e quebraria a paginação de relatórios longos.
+      doc.page.margins.bottom = prevBottom;
+    }
   }
   doc.restore();
 }
