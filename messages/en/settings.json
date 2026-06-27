@@ -691,6 +691,8 @@
     "title": "Patient chart sections",
     "subtitle": "Set the order and which sections appear on the patient chart. Applies clinic-wide.",
     "listLabel": "Sections",
+    "drag": "Drag to reorder",
+    "dragHint": "Drag by the handle to change the order. Use \"Hide\" to remove a section from the chart.",
     "moveUp": "Move up",
     "moveDown": "Move down",
     "show": "Show",

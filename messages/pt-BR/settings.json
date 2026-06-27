@@ -691,6 +691,8 @@
     "title": "Ordem das seções da ficha",
     "subtitle": "Defina a ordem e quais seções aparecem na ficha do paciente. Vale para toda a clínica.",
     "listLabel": "Seções",
+    "drag": "Arraste para reordenar",
+    "dragHint": "Arraste pela alça para mudar a ordem. Use \"Ocultar\" para sumir com uma seção da ficha.",
     "moveUp": "Mover para cima",
     "moveDown": "Mover para baixo",
     "show": "Mostrar",
