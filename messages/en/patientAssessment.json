@@ -47,5 +47,16 @@
     "gatilhos": "What set off the symptoms (events, losses, infections, hormonal changes).",
     "mediadores": "What keeps it going today (questionnaire symptoms, sleep, stress, pain). Use \"Import findings\".",
     "integracao": "Ties it together: patterns, dysregulated systems, plan."
-  }
+  },
+  "medTitle": "Medication load",
+  "medHint": "AI reads the medications/supplements answered in the QRM and splits them for you to confirm. Only medications score (Biochemical pillar).",
+  "medExtract": "Extract medication (AI)",
+  "medExtracting": "Analyzing…",
+  "medMeds": "Medications",
+  "medSupps": "Supplements",
+  "medNone": "none",
+  "medCount": "Medication count",
+  "medScoreNote": "0 none · 1-2 green · 3-4 yellow · 5+ red. Review and confirm; supplements don't score.",
+  "medConfirm": "Confirm and score",
+  "medSaved": "Medication saved and Bio³ Map updated."
 }

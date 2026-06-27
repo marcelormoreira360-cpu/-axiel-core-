@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
-import { extractQuestionnaireFindings } from "@/services/neuro-id-service";
+import { extractQuestionnaireFindings, autoUpsertNeuroIdDraft } from "@/services/neuro-id-service";
 import { suggestAtmIntegration } from "@/services/ai-insight-service";
+import { suggestMedicationLoad, saveMedicationLoad, type MedicationSuggestion } from "@/services/medication-load-service";
 
 export type AssessmentState = { error?: string; ok?: boolean } | null;
 
@@ -87,4 +88,34 @@ export async function suggestAtmIntegrationAction(
   const patient = await getPatientById(patientId, clinic.id);
   if (!patient) return { error: "Paciente não encontrado nesta clínica." };
   return await suggestAtmIntegration(patientId);
+}
+
+// Medicação (carga): IA lê a resposta do QRM e separa remédios x suplementos para o
+// terapeuta REVISAR. Não grava nem pontua aqui — só sugere.
+export async function suggestMedicationLoadAction(patientId: string): Promise<MedicationSuggestion> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { error: "Paciente não encontrado nesta clínica." };
+  return await suggestMedicationLoad(patientId, clinic.id);
+}
+
+// Confirma a contagem de medicamentos (gate do terapeuta): salva e recalcula o Mapa
+// Bio³ para a carga entrar no pilar Bioquímico. Suplementos não pontuam.
+export async function confirmMedicationLoadAction(
+  patientId: string,
+  input: { count: number; medications?: string[]; supplements?: string[] },
+): Promise<{ ok?: boolean; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { error: "Paciente não encontrado nesta clínica." };
+  try {
+    await saveMedicationLoad(patientId, clinic.id, input);
+    await autoUpsertNeuroIdDraft(patientId, clinic.id); // recomputa o Bio³ com a carga
+    revalidatePath(`/patients/${patientId}`);
+    return { ok: true };
+  } catch {
+    return { error: "Não foi possível salvar a medicação agora." };
+  }
 }
