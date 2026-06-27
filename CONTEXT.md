@@ -1,7 +1,20 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 23/06/2026 (31)
+> Atualizado em: 27/06/2026 (32)
+
+## 🟢 Polish da ficha do paciente — 4 frentes (27/06/2026) — 1a/1b/1c MERGEADAS E NO AR; Fase 2 no PR #43
+
+> `tsc` 0 (sobra só erro PRÉ-EXISTENTE em `.next/types/app/api/voice/webhook/route.ts`: `route.ts` exporta `encodeHistory`, função não-handler). `verify:i18n` 42/0/0. 304 testes verdes. `next build` ok. Migrations **105 e 106 aplicadas na prod** (`bfuulpvzedcrpmmjxles`). Core agora em **migration 106**.
+
+Sessão de feedback do Marcelo sobre a ficha. As 4 frentes nasceram da lista dele; decisões tomadas via perguntas antes de construir (evitar retrabalho).
+
+1. **Fase 1a — Avaliação obedece 100% à config (PR #40, migration 105):** antes a ficha renderizava a Avaliação por uma espinha ATM **fixa no código** (`ASSESSMENT_GROUP_ORDER`), ignorando o `order_index` que as setas de `/settings/avaliacao` já salvavam (Anamnese ficava em 1º na config mas no 4º bloco na ficha). Agora `clinic_assessment_fields` ganhou **`group_key`** (migration 105, check dos 5 grupos ATM, backfill pela mesma classificação); a ficha renderiza pela **ordem global** (`order_index`) agrupando em **blocos contíguos** por `group_key` (`groupRuns` em `patient-assessment-panel`; `groupForField` em `lib/assessment-groups` = config manda, fallback no mapa). Config ganhou select "Grupo (seção)" + badge. Ordem padrão recontígua com **Anamnese no topo** (seed `DEFAULT_ASSESSMENT_FIELDS` + dados da clínica existente normalizados no banco).
+2. **Fase 1b — "Voltar" inteligente (PR #41):** antes cada página tinha `<Link href="..." fixo>` de voltar, então ia sempre pro mesmo lugar, ignorando de onde o usuário veio. Novo **`components/back-link.tsx`** (`BackLink`): clique normal + histórico → `router.back()`; sem histórico → `fallbackHref`; cmd/ctrl/meio → comportamento padrão (nova aba). Substituídos **~44 botões** em toda a app (ficha + sub-páginas, `settings/*`, `schedule/*`, `products/*`, `forms/*`, leads, intake, financeiro, whatsapp, termos/privacidade). Imports `next/link` mortos removidos.
+3. **Fase 1c — IA sugere rascunho de "Integração clínica (ATM)" (PR #42):** botão "Sugerir com IA" no campo `integracao_atm`. `suggestAtmIntegration` (`ai-insight-service`, **reusa `buildAiInsightInput`** = avaliação + questionários + exames + Mapa Bio³) + `suggestAtmIntegrationAction` (escopo de clínica). Guarda-corpos clínicos no prompt (Salvo/Aval: sem diagnóstico fechado, sem cura, encaminha em sinais de alerta, linguagem prudente). É **RASCUNHO**: campo controlado, dedup por marcador `[Sugestão IA (revise)]` **preserva o texto do terapeuta**; NÃO grava nem entra no relatório automaticamente (decisão do Marcelo: opção A).
+4. **Fase 2 — Seções da ficha reordenáveis e ocultáveis por clínica (PR #43, migration 106):** a página `/patients/[id]` tinha ~17 seções em ordem fixa no JSX. Agora **`clinic_patient_sections`** (clinic_id/section_key/order_index/is_visible + RLS + seed das 17 seções) guarda ordem e visibilidade por clínica. `lib/patient-sections` (registro canônico, 17 keys) + `clinic-patient-sections-service` (seed/backfill preguiçoso, reorder, toggle, `getPatientSectionLayout` com **fallback resiliente** à ordem padrão). A página foi reescrita num **registro de seções** (`Record<key, ReactNode>`) renderizado na ordem configurada num container `flex` com gap uniforme; **cabeçalho + barra de inteligência ficam fixos no topo** (data-fetching intacto, confirmado por diff). Normalizadas 2 bordas encadeadas (acompanhamento + barra de inteligência). Config: nova tela **`/settings/secoes`** (↑↓ + mostrar/ocultar) + card no hub `/settings/personalizar`. Decisões do Marcelo: reorder completo (não presets) + permitir ocultar. Retrocompatível: sem a tabela, a ficha cai na ordem padrão.
+
+**Estado de merge:** #40/#41/#42 mergeados (squash) e deployados; **#43 aberto** (migration 106 já aplicada, só falta mergear). Os PRs tocam arquivos majoritariamente disjuntos.
 
 ## 🟢 Avaliação editável por clínica + placement nos formulários + hub de personalização (23/06/2026) — MERGEADO E NO AR (PR #17)
 
