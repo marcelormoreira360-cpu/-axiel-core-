@@ -3,11 +3,14 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList, Settings2, Download } from "lucide-react";
-import { saveAssessmentAction, importQuestionnaireFindingsAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles } from "lucide-react";
+import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
 import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
+
+// Marca o bloco de rascunho da IA no campo ATM, para deduplicar ao re-sugerir.
+const ATM_AI_MARKER = "[Sugestão IA (revise)]";
 
 type Props = {
   patientId: string;
@@ -56,20 +59,49 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     fields.find((f) => f.field_type === "textarea")?.field_key ??
     null;
   const antecedentsKey = fields.find((f) => f.field_key === "antecedents" && f.field_type === "textarea")?.field_key ?? null;
+  // Campo da Integração (ATM): recebe o rascunho sugerido pela IA; controlado para a
+  // sugestão entrar no textarea (terapeuta revisa e edita antes de salvar).
+  const atmKey = fields.find((f) => f.field_key === "integracao_atm" && f.field_type === "textarea")?.field_key ?? null;
   const [overrides, setOverrides] = useState<Record<string, string>>(() => {
     const o: Record<string, string> = {};
     if (anamneseKey) o[anamneseKey] = fieldDefault(values?.[anamneseKey]);
     if (antecedentsKey) o[antecedentsKey] = fieldDefault(values?.[antecedentsKey]);
+    if (atmKey) o[atmKey] = fieldDefault(values?.[atmKey]);
     return o;
   });
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [suggestingAtm, setSuggestingAtm] = useState(false);
+  const [atmMsg, setAtmMsg] = useState<string | null>(null);
 
   // Anexa um bloco de achados deduplicando (remove um bloco anterior pelo marcador).
   function mergeFindings(prev: string, block: string): string {
     const idx = prev.indexOf(FINDINGS_MARKER);
     const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
     return base ? `${base}\n\n${block}` : block;
+  }
+
+  // Anexa o rascunho da IA preservando o que o terapeuta já escreveu; re-sugerir
+  // substitui o bloco anterior (deduplica pelo marcador), nunca apaga o texto humano.
+  function mergeAtmSuggestion(prev: string, suggestion: string): string {
+    const idx = prev.indexOf(ATM_AI_MARKER);
+    const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
+    const block = `${ATM_AI_MARKER}\n${suggestion.trim()}`;
+    return base ? `${base}\n\n${block}` : block;
+  }
+
+  async function handleSuggestAtm() {
+    if (!atmKey) return;
+    setSuggestingAtm(true);
+    setAtmMsg(null);
+    const res = await suggestAtmIntegrationAction(patientId);
+    setSuggestingAtm(false);
+    if (res.error || !res.suggestion) {
+      setAtmMsg(res.error ?? t("atmError"));
+      return;
+    }
+    setOverrides((o) => ({ ...o, [atmKey]: mergeAtmSuggestion(o[atmKey] ?? "", res.suggestion!) }));
+    setAtmMsg(t("atmSuggested"));
   }
 
   function renderField(f: ClinicAssessmentField) {
@@ -128,6 +160,21 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
             <Download className="h-3 w-3" /> {importing ? t("importingFindings") : t("importFindings")}
           </button>
           {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  function atmBlock() {
+    return (
+      <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
+        <p className="text-[10px] text-[#6B6A66] leading-snug">{t("atmHint")}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" disabled={suggestingAtm} onClick={handleSuggestAtm}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+            <Sparkles className="h-3 w-3" /> {suggestingAtm ? t("atmSuggesting") : t("atmSuggest")}
+          </button>
+          {atmMsg && <span className="text-[10px] text-[#0F6E56]">{atmMsg}</span>}
         </div>
       </div>
     );
@@ -192,6 +239,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
               {run.fields.map((f) => (
                 <div key={f.id} className="space-y-[8px]">
                   {anamneseKey && f.field_key === anamneseKey && importBlock()}
+                  {atmKey && f.field_key === atmKey && atmBlock()}
                   {renderField(f)}
                 </div>
               ))}

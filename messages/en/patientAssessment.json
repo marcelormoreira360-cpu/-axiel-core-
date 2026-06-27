@@ -28,6 +28,11 @@
   "findingsImported": "Findings added to Anamnesis. Review and validate before saving.",
   "findingsNone": "No items above the threshold found in the questionnaires.",
   "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA for you to review and validate.",
+  "atmSuggest": "Suggest with AI",
+  "atmSuggesting": "Analyzing…",
+  "atmSuggested": "Suggestion added. Review and edit before saving.",
+  "atmHint": "Combines assessment, exams and the Bio³ Map and proposes possible patterns/dysfunctions. It is a draft, not a diagnosis.",
+  "atmError": "Couldn't generate now. Try again.",
   "atmIntro": "Organized as Antecedents, Triggers and Mediators (functional view).",
   "group": {
     "objetivo": "Goal",

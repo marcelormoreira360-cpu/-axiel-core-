@@ -28,6 +28,11 @@
   "findingsImported": "Achados adicionados à Anamnese. Revise e valide antes de salvar.",
   "findingsNone": "Nenhum item acima do corte encontrado nos questionários.",
   "findingsHint": "Puxa os itens de maior pontuação (3+) do QRM e Q-SNA para você revisar e validar.",
+  "atmSuggest": "Sugerir com IA",
+  "atmSuggesting": "Analisando…",
+  "atmSuggested": "Sugestão adicionada. Revise e edite antes de salvar.",
+  "atmHint": "Junta avaliação, exames e Mapa Bio³ e propõe possíveis padrões/disfunções. É rascunho, não diagnóstico.",
+  "atmError": "Não foi possível gerar agora. Tente de novo.",
   "atmIntro": "Organizada por Antecedentes, Gatilhos e Mediadores (visão funcional).",
   "group": {
     "objetivo": "Objetivo",

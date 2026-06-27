@@ -306,6 +306,65 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   };
 }
 
+// Prompt focado: rascunho do campo "Integração clínica (ATM)" da Avaliação.
+// Guarda-corpos clínicos (Salvo/Aval) embutidos: sem diagnóstico fechado, sem cura,
+// linguagem prudente. NÃO grava nada, NÃO entra no relatório — só devolve texto.
+const ATM_SUGGESTION_SYSTEM_PROMPT = `Você é um APOIO de raciocínio clínico integrativo para um terapeuta (método Neuro ID; espinha ATM: Antecedentes → Gatilhos → Mediadores). A partir dos dados do paciente (avaliação, questionários, exames, Mapa Bio³), escreva um RASCUNHO curto para o campo "Integração clínica (ATM)".
+
+O QUE ESCREVER (português, 4 a 8 linhas, texto corrido ou bullets curtos):
+- Possíveis PADRÕES funcionais e sistemas mais desregulados que os dados sugerem (ex.: eixo do estresse/SNA, intestino, sono, inflamação, eixo emocional).
+- Como Antecedentes, Gatilhos e Mediadores podem estar se conectando neste caso.
+- 1 a 3 hipóteses a confirmar e o que merece acompanhamento ou investigação.
+
+REGRAS INEGOCIÁVEIS (segurança e ciência):
+- É RASCUNHO para o terapeuta humano revisar e editar. NÃO é diagnóstico.
+- NUNCA dê diagnóstico fechado, nome de doença como conclusão, nem promessa de cura.
+- NUNCA diga que algo "trata", "cura" ou "reverte"; nada substitui avaliação médica.
+- Associação não é causalidade. Use linguagem prudente: "sugere", "pode estar associado", "merece investigação", "correlacionar clinicamente".
+- Se houver sinais de alerta (dor torácica, ideação suicida, sintomas neurológicos agudos), recomende encaminhamento ou avaliação médica.
+- Se os dados forem insuficientes, diga o que falta em vez de inventar.
+- Não use travessão. Responda só com o texto do rascunho, sem títulos.`;
+
+/**
+ * Gera um RASCUNHO para o campo "Integração clínica (ATM)" a partir de todos os
+ * dados do paciente. Reusa buildAiInsightInput. Não grava nem entra no relatório:
+ * o terapeuta revisa e edita antes de salvar. Erros voltam como { error } (pt-BR).
+ */
+export async function suggestAtmIntegration(
+  patientId: string,
+): Promise<{ suggestion: string } | { error: string }> {
+  if (!process.env.OPENAI_API_KEY) {
+    return { error: "IA não configurada (OPENAI_API_KEY ausente)." };
+  }
+  const snapshot = await buildAiInsightInput(patientId);
+  if (!snapshot) {
+    return { error: "Sem dados suficientes do paciente para sugerir." };
+  }
+  try {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: ATM_SUGGESTION_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: JSON.stringify({
+            task: "Rascunho de Integração clínica (ATM). Sem diagnóstico, linguagem prudente.",
+            input_data: snapshot,
+          }),
+        },
+      ],
+    });
+    const text = response.choices[0]?.message?.content?.trim();
+    if (!text) return { error: "A IA não retornou conteúdo. Tente novamente." };
+    return { suggestion: text };
+  } catch {
+    return { error: "Não foi possível gerar a sugestão agora. Tente novamente." };
+  }
+}
+
 export async function saveAiInsight(input: {
   clinic_id: string;
   patient_id: string;
