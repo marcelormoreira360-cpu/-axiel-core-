@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Check, AlertCircle, ClipboardList, Settings2, Download } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
+import { ASSESSMENT_GROUP_ORDER, groupForFieldKey } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
 
 type Props = {
@@ -40,8 +41,70 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   const [anamneseText, setAnamneseText] = useState<string>(
     anamneseKey ? fieldDefault(values?.[anamneseKey]) : "",
   );
+  const anamneseGroup = anamneseKey ? groupForFieldKey(anamneseKey) : null;
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  function renderField(f: ClinicAssessmentField) {
+    const dv = fieldDefault(values?.[f.field_key]);
+    const isAnamnese = f.field_key === anamneseKey;
+    return (
+      <div key={f.id}>
+        <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{f.label}</label>
+        {f.field_type === "textarea" && (
+          <textarea
+            name={f.field_key}
+            {...(isAnamnese
+              ? { value: anamneseText, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setAnamneseText(e.target.value) }
+              : { defaultValue: dv })}
+            rows={isAnamnese ? 6 : 4}
+            placeholder={f.placeholder ?? ""}
+            className={`${inputCls} resize-none`}
+          />
+        )}
+        {f.field_type === "text" && (
+          <input name={f.field_key} defaultValue={dv} placeholder={f.placeholder ?? ""} className={inputCls} />
+        )}
+        {f.field_type === "number" && (
+          <input
+            type="number"
+            inputMode="numeric"
+            name={f.field_key}
+            defaultValue={dv}
+            min={f.options?.min}
+            max={f.options?.max}
+            placeholder={f.placeholder ?? ""}
+            className={inputCls}
+          />
+        )}
+        {f.field_type === "select" && (
+          <select name={f.field_key} defaultValue={dv} className={inputCls}>
+            <option value="">{t("selectPlaceholder")}</option>
+            {dv && !(f.options?.choices ?? []).includes(dv) && <option value={dv}>{dv}</option>}
+            {(f.options?.choices ?? []).map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        )}
+        {f.help_text && <p className="text-[10px] text-[#A09E98] mt-[3px]">{f.help_text}</p>}
+      </div>
+    );
+  }
+
+  function importBlock() {
+    return (
+      <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
+        <p className="text-[10px] text-[#6B6A66] leading-snug">{t("findingsHint")}</p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button type="button" disabled={importing} onClick={handleImportFindings}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+            <Download className="h-3 w-3" /> {importing ? t("importingFindings") : t("importFindings")}
+          </button>
+          {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
+        </div>
+      </div>
+    );
+  }
 
   async function handleImportFindings() {
     setImporting(true);
@@ -84,64 +147,19 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         <p className="text-[12px] text-[#A09E98]">{t("noFields")}</p>
       ) : (
         // Sempre editável: formulário pré-preenchido com o que já foi salvo.
-        <form action={formAction} className="space-y-[10px]">
-          {anamneseKey && (
-            <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
-              <p className="text-[10px] text-[#6B6A66] leading-snug">{t("findingsHint")}</p>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button type="button" disabled={importing} onClick={handleImportFindings}
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-                  <Download className="h-3 w-3" /> {importing ? t("importingFindings") : t("importFindings")}
-                </button>
-                {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
-              </div>
-            </div>
-          )}
-          {fields.map((f) => {
-            const dv = fieldDefault(values?.[f.field_key]);
-            const isAnamnese = f.field_key === anamneseKey;
+        <form action={formAction} className="space-y-[14px]">
+          <p className="text-[10px] text-[#A09E98] leading-snug">{t("atmIntro")}</p>
+          {ASSESSMENT_GROUP_ORDER.map((g) => {
+            const groupFields = fields.filter((f) => groupForFieldKey(f.field_key) === g);
+            if (groupFields.length === 0) return null;
             return (
-              <div key={f.id}>
-                <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{f.label}</label>
-                {f.field_type === "textarea" && (
-                  <textarea
-                    name={f.field_key}
-                    {...(isAnamnese
-                      ? { value: anamneseText, onChange: (e) => setAnamneseText(e.target.value) }
-                      : { defaultValue: dv })}
-                    rows={isAnamnese ? 6 : 4}
-                    placeholder={f.placeholder ?? ""}
-                    className={`${inputCls} resize-none`}
-                  />
-                )}
-                {f.field_type === "text" && (
-                  <input name={f.field_key} defaultValue={dv} placeholder={f.placeholder ?? ""} className={inputCls} />
-                )}
-                {f.field_type === "number" && (
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    name={f.field_key}
-                    defaultValue={dv}
-                    min={f.options?.min}
-                    max={f.options?.max}
-                    placeholder={f.placeholder ?? ""}
-                    className={inputCls}
-                  />
-                )}
-                {f.field_type === "select" && (
-                  <select name={f.field_key} defaultValue={dv} className={inputCls}>
-                    <option value="">{t("selectPlaceholder")}</option>
-                    {/* Preserva valor já salvo que não está mais na lista (não apaga ao salvar). */}
-                    {dv && !(f.options?.choices ?? []).includes(dv) && (
-                      <option value={dv}>{dv}</option>
-                    )}
-                    {(f.options?.choices ?? []).map((c) => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                )}
-                {f.help_text && <p className="text-[10px] text-[#A09E98] mt-[3px]">{f.help_text}</p>}
+              <div key={g} className="space-y-[8px]">
+                <div className="border-l-2 border-[#0F6E56]/30 pl-[8px]">
+                  <p className="text-[11px] font-semibold text-[#0F1A2E]">{t(`group.${g}`)}</p>
+                  <p className="text-[10px] text-[#A09E98] leading-snug">{t(`groupHint.${g}`)}</p>
+                </div>
+                {anamneseKey && g === anamneseGroup && importBlock()}
+                {groupFields.map(renderField)}
               </div>
             );
           })}

@@ -27,5 +27,20 @@
   "importingFindings": "Searching…",
   "findingsImported": "Findings added to Anamnesis. Review and validate before saving.",
   "findingsNone": "No items above the threshold found in the questionnaires.",
-  "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA for you to review and validate."
+  "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA for you to review and validate.",
+  "atmIntro": "Organized as Antecedents, Triggers and Mediators (functional view).",
+  "group": {
+    "objetivo": "Goal",
+    "antecedentes": "Antecedents",
+    "gatilhos": "Triggers",
+    "mediadores": "Mediators",
+    "integracao": "Integration"
+  },
+  "groupHint": {
+    "objetivo": "What the patient most wants to resolve.",
+    "antecedentes": "What raised vulnerability (genetics, childhood, traumas, surgeries, history).",
+    "gatilhos": "What set off the symptoms (events, losses, infections, hormonal changes).",
+    "mediadores": "What keeps it going today (questionnaire symptoms, sleep, stress, pain). Use \"Import findings\".",
+    "integracao": "Ties it together: patterns, dysregulated systems, plan."
+  }
 }
