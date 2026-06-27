@@ -84,23 +84,21 @@ export async function setClinicPatientSectionVisibility(id: string, isVisible: b
   if (error) throw error;
 }
 
-/** Move uma seção para cima/baixo trocando order_index com o vizinho. */
-export async function moveClinicPatientSection(
-  clinicId: string,
-  id: string,
-  direction: "up" | "down",
-): Promise<void> {
-  const sections = await getClinicPatientSections(clinicId);
-  const idx = sections.findIndex((s) => s.id === id);
-  if (idx < 0) return;
-  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
-  if (swapIdx < 0 || swapIdx >= sections.length) return;
-  const a = sections[idx];
-  const b = sections[swapIdx];
+/**
+ * Grava a ordem completa (drag-and-drop): order_index = posição na lista. Escopo
+ * de clínica explícito (além da RLS); só atualiza ids da própria clínica.
+ */
+export async function reorderClinicPatientSections(clinicId: string, orderedIds: string[]): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
-  await Promise.all([
-    supabase.from("clinic_patient_sections").update({ order_index: b.order_index, updated_at: new Date().toISOString() }).eq("id", a.id),
-    supabase.from("clinic_patient_sections").update({ order_index: a.order_index, updated_at: new Date().toISOString() }).eq("id", b.id),
-  ]);
+  const now = new Date().toISOString();
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("clinic_patient_sections")
+        .update({ order_index: index, updated_at: now })
+        .eq("id", id)
+        .eq("clinic_id", clinicId),
+    ),
+  );
 }

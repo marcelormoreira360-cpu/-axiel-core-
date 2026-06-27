@@ -195,6 +195,22 @@ export async function moveClinicAssessmentField(
   ]);
 }
 
+/** Grava a ordem completa (drag-and-drop): order_index = posição na lista. */
+export async function reorderClinicAssessmentFields(clinicId: string, orderedIds: string[]): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const now = new Date().toISOString();
+  await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("clinic_assessment_fields")
+        .update({ order_index: index, updated_at: now })
+        .eq("id", id)
+        .eq("clinic_id", clinicId),
+    ),
+  );
+}
+
 // ── Helpers de leitura (painel + relatório) ──────────────────────────────────
 
 /** Valor cru de um campo a partir do assessment_data do paciente. */

@@ -7,6 +7,7 @@ import {
   updateClinicAssessmentField,
   deleteClinicAssessmentField,
   moveClinicAssessmentField,
+  reorderClinicAssessmentFields,
 } from "@/services/clinic-assessment-service";
 import type { AssessmentFieldType } from "@/lib/types";
 import { isManager } from "@/lib/team-utils";
@@ -130,5 +131,12 @@ export async function moveAssessmentFieldAction(id: string, direction: "up" | "d
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
   await moveClinicAssessmentField(profile.clinic_id, id, direction);
+  revalidatePath("/settings/avaliacao");
+}
+
+export async function reorderAssessmentFieldsAction(orderedIds: string[]) {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
+  await reorderClinicAssessmentFields(profile.clinic_id, orderedIds);
   revalidatePath("/settings/avaliacao");
 }

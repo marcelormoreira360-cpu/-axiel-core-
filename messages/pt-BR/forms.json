@@ -109,7 +109,8 @@
       "intake": "Enviado automaticamente (WhatsApp, e-mail e portal) quando o paciente marca a primeira sessão.",
       "session": "Sugerido para preencher a cada sessão (acompanhamento).",
       "portal": "Disponível para o paciente preencher pelo portal."
-    }
+    },
+    "drag": "Arraste para reordenar"
   },
   "editor": {
     "sectionsTitle": "Seções",

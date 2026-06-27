@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Trash2, Check, AlertCircle, ArrowUp, ArrowDown, Pencil, X } from "lucide-react";
+import { Plus, Trash2, Check, AlertCircle, GripVertical, Pencil, X } from "lucide-react";
 import {
   createAssessmentFieldAction,
   updateAssessmentFieldAction,
   toggleAssessmentFieldActiveAction,
   deleteAssessmentFieldAction,
-  moveAssessmentFieldAction,
+  reorderAssessmentFieldsAction,
   type FieldState,
 } from "@/app/settings/avaliacao/actions";
+import { SortableList } from "@/components/sortable-list";
 import type { ClinicAssessmentField, AssessmentFieldType } from "@/lib/types";
 import { ASSESSMENT_GROUP_ORDER, isAssessmentGroup } from "@/lib/assessment-groups";
 
@@ -147,62 +148,71 @@ export function AssessmentFieldsForm({ initial }: { initial: ClinicAssessmentFie
     async (prev, fd) => createAssessmentFieldAction(prev, fd),
     null,
   );
+  const [items, setItems] = useState(initial);
+  // Mantém a lista em sincronia com o servidor (criar/excluir/desativar revalidam),
+  // permitindo reordenar de forma otimista por arrastar no meio do caminho.
+  useEffect(() => { setItems(initial); }, [initial]);
+  function reorder(next: ClinicAssessmentField[]) {
+    setItems(next);
+    reorderAssessmentFieldsAction(next.map((f) => f.id));
+  }
 
   return (
     <div className="space-y-6">
       {/* Lista atual */}
       <div>
         <p className="text-[12px] font-medium text-[#6B6A66] mb-2">{t("listLabel")}</p>
-        {initial.length === 0 ? (
+        {items.length === 0 ? (
           <p className="text-[13px] text-[#A09E98]">{t("empty")}</p>
         ) : (
-          <div className="space-y-2">
-            {initial.map((f, i) => (
-              <div key={f.id} className="border border-black/[.07] rounded-[10px] px-3 py-2.5">
-                <div className="flex items-start gap-3">
-                  <div className="flex flex-col gap-0.5 shrink-0 pt-0.5">
-                    <button type="button" disabled={i === 0} onClick={() => moveAssessmentFieldAction(f.id, "up")}
-                      className="text-[#A09E98] hover:text-[#0F1A2E] disabled:opacity-30 transition" title={t("moveUp")}>
-                      <ArrowUp className="h-3.5 w-3.5" />
+          <>
+            <p className="text-[11px] text-[#A09E98] mb-2">{t("dragHint")}</p>
+            <SortableList
+              items={items}
+              getId={(f) => f.id}
+              onReorder={reorder}
+              className="space-y-2"
+              render={(f, { setNodeRef, style, handleProps, isDragging }) => (
+                <div ref={setNodeRef} style={style} className={`border border-black/[.07] rounded-[10px] px-3 py-2.5 bg-white ${isDragging ? "shadow-md" : ""}`}>
+                  <div className="flex items-start gap-3">
+                    <button type="button" {...handleProps}
+                      className="shrink-0 mt-0.5 cursor-grab active:cursor-grabbing text-[#C4C2BC] hover:text-[#6B6A66] touch-none p-0.5" title={t("drag")} aria-label={t("drag")}>
+                      <GripVertical className="h-4 w-4" />
                     </button>
-                    <button type="button" disabled={i === initial.length - 1} onClick={() => moveAssessmentFieldAction(f.id, "down")}
-                      className="text-[#A09E98] hover:text-[#0F1A2E] disabled:opacity-30 transition" title={t("moveDown")}>
-                      <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[13px] font-medium text-[#0F1A2E]">{f.label}</span>
-                      <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#EEF3F1] text-[#0F6E56]">{t(`groups.${groupLabelKey(f.group_key)}`)}</span>
-                      <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t(`types.${f.field_type}`)}</span>
-                      {f.include_in_report && (
-                        <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">{t("inReportBadge")}</span>
-                      )}
-                      {!f.is_active && (
-                        <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#FEE2E2] text-[#991B1B]">{t("inactive")}</span>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[13px] font-medium text-[#0F1A2E]">{f.label}</span>
+                        <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#EEF3F1] text-[#0F6E56]">{t(`groups.${groupLabelKey(f.group_key)}`)}</span>
+                        <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t(`types.${f.field_type}`)}</span>
+                        {f.include_in_report && (
+                          <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">{t("inReportBadge")}</span>
+                        )}
+                        {!f.is_active && (
+                          <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#FEE2E2] text-[#991B1B]">{t("inactive")}</span>
+                        )}
+                      </div>
+                      {f.help_text && <p className="text-[11px] text-[#A09E98] mt-[2px]">{f.help_text}</p>}
                     </div>
-                    {f.help_text && <p className="text-[11px] text-[#A09E98] mt-[2px]">{f.help_text}</p>}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button type="button" onClick={() => setEditing(editing === f.id ? null : f.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#6B6A66] hover:text-[#0F6E56] border border-black/[.08] transition" title={t("edit")}>
+                        {editing === f.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                      </button>
+                      <button type="button" onClick={() => toggleAssessmentFieldActiveAction(f.id, !f.is_active)}
+                        className="text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">
+                        {f.is_active ? t("deactivate") : t("activate")}
+                      </button>
+                      <button type="button" onClick={() => deleteAssessmentFieldAction(f.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#A09E98] hover:text-red-500 border border-black/[.08] transition" title={t("delete")}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button type="button" onClick={() => setEditing(editing === f.id ? null : f.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#6B6A66] hover:text-[#0F6E56] border border-black/[.08] transition" title={t("edit")}>
-                      {editing === f.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
-                    </button>
-                    <button type="button" onClick={() => toggleAssessmentFieldActiveAction(f.id, !f.is_active)}
-                      className="text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">
-                      {f.is_active ? t("deactivate") : t("activate")}
-                    </button>
-                    <button type="button" onClick={() => deleteAssessmentFieldAction(f.id)}
-                      className="w-8 h-8 flex items-center justify-center rounded-[8px] text-[#A09E98] hover:text-red-500 border border-black/[.08] transition" title={t("delete")}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
+                  {editing === f.id && <FieldEditor field={f} onDone={() => setEditing(null)} />}
                 </div>
-                {editing === f.id && <FieldEditor field={f} onDone={() => setEditing(null)} />}
-              </div>
-            ))}
-          </div>
+              )}
+            />
+          </>
         )}
       </div>
 

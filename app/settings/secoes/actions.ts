@@ -4,14 +4,14 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { isManager } from "@/lib/team-utils";
 import {
-  moveClinicPatientSection,
+  reorderClinicPatientSections,
   setClinicPatientSectionVisibility,
 } from "@/services/clinic-patient-sections-service";
 
-export async function movePatientSectionAction(id: string, direction: "up" | "down") {
+export async function reorderPatientSectionsAction(orderedIds: string[]) {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id || !isManager(profile.role)) throw new Error("Sem permissão.");
-  await moveClinicPatientSection(profile.clinic_id, id, direction);
+  await reorderClinicPatientSections(profile.clinic_id, orderedIds);
   revalidatePath("/settings/secoes");
 }
 
