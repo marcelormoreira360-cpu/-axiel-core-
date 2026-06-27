@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
+import { BackLink } from "@/components/back-link";
 import { UsageLimitCard } from "@/components/usage-limit-card";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClinicPlanContext } from "@/services/billing-service";
@@ -44,9 +44,9 @@ export default async function UsageSettingsPage() {
   return (
     <main className="min-h-screen bg-axiel-background p-4 md:p-8 space-y-8">
       <section>
-        <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+        <BackLink fallbackHref="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
           <ArrowLeft className="h-3.5 w-3.5" /> {t("common.back")}
-        </Link>
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 mt-2">{t("common.eyebrow")}</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("usage.title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">

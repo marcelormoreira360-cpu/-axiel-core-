@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getHotmartToken, listRecentHotmartPurchases } from "@/services/hotmart-service";
 import { HotmartForm } from "./hotmart-form";
@@ -41,12 +41,12 @@ export default async function HotmartSettingsPage() {
   return (
     <Shell>
       <div className="mb-8">
-        <Link
-          href="/settings/integrations"
+        <BackLink
+          fallbackHref="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
-        </Link>
+        </BackLink>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">{t("eyebrow")}</p>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-3 max-w-2xl text-lg text-black/55">

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ChevronLeft, MessageCircle } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getPatientById } from "@/services/patient-service";
 import { ClinicChat } from "@/components/clinic-chat";
 
@@ -20,13 +20,13 @@ export default async function PatientMessagesPage({
       <div className="max-w-2xl mx-auto flex flex-col" style={{ height: "calc(100vh - 120px)" }}>
         {/* Back link */}
         <div className="flex items-center gap-3 mb-4">
-          <Link
-            href={`/patients/${patientId}`}
+          <BackLink
+            fallbackHref={`/patients/${patientId}`}
             className="flex items-center gap-1 text-[12px] text-black/40 hover:text-[#0F1A2E] transition"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Voltar ao paciente
-          </Link>
+          </BackLink>
         </div>
 
         {/* Header */}

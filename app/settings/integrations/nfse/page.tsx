@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { redirect } from "next/navigation";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getNfseConfig } from "@/services/nfse-service";
@@ -17,12 +18,12 @@ export default async function NfseSettingsPage() {
   return (
     <Shell>
       <div className="mb-7">
-        <Link
-          href="/settings/integrations"
+        <BackLink
+          fallbackHref="/settings/integrations"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
-        </Link>
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px] max-w-xl">

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getTemplateWithStructure } from "@/services/assessment-service";
 import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -39,12 +40,12 @@ export default async function FormDetailPage({ params }: Props) {
       {/* Topbar */}
       <div className="flex items-center justify-between mb-[24px]">
         <div className="flex items-center gap-[10px]">
-          <Link
-            href="/forms"
+          <BackLink
+            fallbackHref="/forms"
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-          </Link>
+          </BackLink>
           <div>
             <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{template.name}</h1>
             <p className="text-[12px] text-[#A09E98] mt-[1px]">

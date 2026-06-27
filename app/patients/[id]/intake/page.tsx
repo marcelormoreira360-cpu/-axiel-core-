@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, Pencil } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { PatientIntakeForm } from "@/components/patient-intake-form";
 import { getPatientById } from "@/services/patient-service";
@@ -45,9 +46,9 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <Link href={patient ? `/patients/${patient.id}` : "/patients"} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
+        <BackLink fallbackHref={patient ? `/patients/${patient.id}` : "/patients"} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
           <ArrowLeft className="h-4 w-4" /> {ti("back")}
-        </Link>
+        </BackLink>
         <div className="mt-6 flex items-start justify-between gap-4 flex-wrap">
           <div>
             <h1 className="text-4xl font-semibold tracking-tight md:text-5xl">{ti("fillTitle")}</h1>

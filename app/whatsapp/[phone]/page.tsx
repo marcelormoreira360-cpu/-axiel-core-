@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getConversationByPhone, formatPhone } from "@/services/whatsapp-conversation-service";
 import { WhatsAppConversationClient } from "./conversation-client";
 
@@ -17,12 +17,12 @@ export default async function ConversationPage({ params }: Props) {
     <Shell>
       {/* Header */}
       <div className="flex items-center gap-[10px] mb-[20px]">
-        <Link
-          href="/whatsapp"
+        <BackLink
+          fallbackHref="/whatsapp"
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
+        </BackLink>
         <div className="flex-1">
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
             {formatPhone(conv.phone)}

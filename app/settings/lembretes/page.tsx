@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Mail, MessageCircle, CheckCircle2, XCircle } from "lucide-react";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { toggleReminderAction } from "./actions";
@@ -73,12 +73,12 @@ export default async function LembretesPage() {
     <Shell>
       <div className="max-w-2xl">
         {/* Back link */}
-        <Link
-          href="/settings"
+        <BackLink
+          fallbackHref="/settings"
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
-        </Link>
+        </BackLink>
 
         {/* Header */}
         <div className="mb-8">

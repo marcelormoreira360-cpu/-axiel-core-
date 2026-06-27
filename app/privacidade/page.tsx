@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BackLink } from "@/components/back-link";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
@@ -19,7 +20,7 @@ async function Navbar() {
           {t("brand")}
         </Link>
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-[13px] text-[#0F1A2E]/55 hover:text-[#0F6E56] transition-colors">{t("back")}</Link>
+          <BackLink fallbackHref="/" className="text-[13px] text-[#0F1A2E]/55 hover:text-[#0F6E56] transition-colors">{t("back")}</BackLink>
           <Link href="/auth/login" className="text-[13px] text-[#0F1A2E]/55 hover:text-[#0F6E56] transition-colors">{t("login")}</Link>
         </div>
       </div>

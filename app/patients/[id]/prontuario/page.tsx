@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Printer, FileText, Video, ExternalLink } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
@@ -72,12 +73,12 @@ export default async function ProntuarioPage({ params }: Props) {
     <Shell>
       {/* Topbar */}
       <div className="flex items-center gap-3 mb-7 flex-wrap">
-        <Link
-          href={`/patients/${id}`}
+        <BackLink
+          fallbackHref={`/patients/${id}`}
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
+        </BackLink>
         <div className="flex-1">
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Prontuário</p>
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import {
   getAssessmentResponse,
   getTemplateWithStructure,
@@ -38,12 +38,12 @@ export default async function ViewResponsePage({ params }: Props) {
   return (
     <Shell>
       <div className="flex items-center gap-[10px] mb-[24px]">
-        <Link
-          href={`/patients/${patientId}`}
+        <BackLink
+          fallbackHref={`/patients/${patientId}`}
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
+        </BackLink>
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
             {template.name}

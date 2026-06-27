@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { ArrowLeft, Video } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { SessionRecordingPanel } from "@/components/session-recording-panel";
 import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
@@ -63,12 +64,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
     <Shell>
       {/* Topbar */}
       <div className="flex items-center gap-[10px] mb-[20px] flex-wrap">
-        <Link
-          href={`/patients/${appointment.patient_id}`}
+        <BackLink
+          fallbackHref={`/patients/${appointment.patient_id}`}
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
+        </BackLink>
         <div className="flex-1">
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">

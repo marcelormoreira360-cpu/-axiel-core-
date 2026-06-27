@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft, Download, FileText } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { ClinicalInsightView } from "@/components/clinical-insight";
 import { getClinicalInsight } from "@/services/insight-export-service";
 
@@ -15,9 +16,9 @@ export default async function ClinicalInsightPage({ params }: { params: Promise<
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <Link href={`/patients/${id}`} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
+        <BackLink fallbackHref={`/patients/${id}`} className="inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65">
           <ArrowLeft className="h-4 w-4" /> {t("back")}
-        </Link>
+        </BackLink>
         <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>

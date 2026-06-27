@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/card";
+import { BackLink } from "@/components/back-link";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { getRlsStatus, summarizeRlsStatus } from "@/services/security-service";
 import { MfaSettings } from "@/components/mfa-settings";
@@ -13,9 +13,9 @@ export default async function SecuritySettingsPage() {
 
   return (
     <div className="space-y-6">
-      <Link href="/settings" className="inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+      <BackLink fallbackHref="/settings" className="inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
         <ArrowLeft className="h-3.5 w-3.5" /> {t("common.back")}
-      </Link>
+      </BackLink>
 
       <MfaSettings />
 
