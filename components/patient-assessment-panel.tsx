@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
-import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
+import { stripPreviousFindings } from "@/modules/neuro-id/findings";
 import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
 
@@ -74,10 +74,9 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   const [suggestingAtm, setSuggestingAtm] = useState(false);
   const [atmMsg, setAtmMsg] = useState<string | null>(null);
 
-  // Anexa um bloco de achados deduplicando (remove um bloco anterior pelo marcador).
+  // Anexa um bloco de achados deduplicando (remove um bloco anterior pelos cabeçalhos).
   function mergeFindings(prev: string, block: string): string {
-    const idx = prev.indexOf(FINDINGS_MARKER);
-    const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
+    const base = stripPreviousFindings(prev);
     return base ? `${base}\n\n${block}` : block;
   }
 

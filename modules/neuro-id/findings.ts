@@ -43,29 +43,48 @@ function bandLabel(g: FindingGroup): string | null {
   return null;
 }
 
-/** Marcador estável do bloco (para deduplicar ao reimportar). */
-export const FINDINGS_MARKER = "ACHADOS DOS QUESTIONÁRIOS";
+/**
+ * Cabeçalhos que iniciam um bloco de achados — âncora para deduplicar ao reimportar
+ * (substitui o antigo marcador de texto "ACHADOS...", removido por não ser útil).
+ * Mantenha em sincronia com os instrumentos roteados em neuro-id-service
+ * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar).
+ */
+const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM:|Q-SNA:|Estilo de vida e ambiente:|História familiar:)/;
 
-/** Cabeçalho do bloco de achados, com o corte usado. */
-export function findingsHeader(threshold: number): string {
-  return `${FINDINGS_MARKER} (itens com pontuação ${threshold} ou mais; revisar, corrigir e validar)`;
+/**
+ * Remove um bloco de achados anterior (do 1º cabeçalho em diante), preservando o
+ * texto humano que vier antes dele. Usado na importação para não duplicar.
+ */
+export function stripPreviousFindings(prev: string): string {
+  const m = FINDINGS_BLOCK_RE.exec(prev);
+  if (!m) return prev.trim();
+  return prev.slice(0, m.index).trim();
+}
+
+/** Cabeçalho curto do grupo (sem "total X/Y"): QRM mostra a faixa; Q-SNA, total + faixa. */
+function groupHead(g: FindingGroup): string {
+  const band = bandLabel(g);
+  if (g.kind === "qrm") return band ? `QRM: ${band}` : "QRM:";
+  if (g.kind === "qsna") {
+    const num = g.total !== null ? `${g.total}` : "";
+    const tail = [num, band].filter(Boolean).join(" ");
+    return tail ? `Q-SNA: ${tail}` : "Q-SNA:";
+  }
+  return `${g.instrument}:`;
 }
 
 /**
  * Monta o resumo em texto dos achados. Agrupa por instrumento e, dentro dele, por
- * seção (na ordem em que os itens chegam). Sem travessão "—" (preferência da casa).
+ * seção (na ordem em que os itens chegam). Sem travessão "—" (preferência da casa)
+ * e sem cabeçalho introdutório (a frase "ACHADOS..." foi removida por não ser útil).
  */
-export function formatFindingsSummary(groups: FindingGroup[], threshold: number): string {
+export function formatFindingsSummary(groups: FindingGroup[], _threshold?: number): string {
   const blocks: string[] = [];
 
   for (const g of groups) {
     if (g.items.length === 0) continue;
 
-    const totalTxt = g.total !== null && g.max !== null ? ` (total ${g.total}/${g.max}` : "";
-    const band = bandLabel(g);
-    const head = totalTxt
-      ? `${g.instrument}${totalTxt}${band ? `, ${band}` : ""}):`
-      : `${g.instrument}:`;
+    const head = groupHead(g);
 
     // Agrupa itens por seção preservando a ordem de chegada.
     const bySection: { section: string; items: FindingItem[] }[] = [];
@@ -83,6 +102,5 @@ export function formatFindingsSummary(groups: FindingGroup[], threshold: number)
     blocks.push([head, ...lines].join("\n"));
   }
 
-  if (blocks.length === 0) return "";
-  return [findingsHeader(threshold), "", blocks.join("\n\n")].join("\n");
+  return blocks.join("\n\n");
 }
