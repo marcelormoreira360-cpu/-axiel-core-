@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
+import { extractQuestionnaireFindings } from "@/services/neuro-id-service";
 
 export type AssessmentState = { error?: string; ok?: boolean } | null;
 
@@ -53,5 +54,21 @@ export async function saveAssessmentAction(
     return { ok: true };
   } catch {
     return { error: "Não foi possível salvar. Tente novamente." };
+  }
+}
+
+// Puxa os achados (itens >= corte) do QRM/Q-SNA para o terapeuta colar na Anamnese,
+// revisar e validar. NÃO grava: só devolve o texto. A gravação é o saveAssessmentAction.
+export async function importQuestionnaireFindingsAction(
+  patientId: string,
+): Promise<{ text: string; hasData: boolean; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { text: "", hasData: false, error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { text: "", hasData: false, error: "Paciente não encontrado nesta clínica." };
+  try {
+    return await extractQuestionnaireFindings(patientId, clinic.id, 3);
+  } catch {
+    return { text: "", hasData: false, error: "Não foi possível buscar os achados agora." };
   }
 }

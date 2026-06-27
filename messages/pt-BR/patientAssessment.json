@@ -22,5 +22,10 @@
   "errorSave": "Não foi possível salvar. Tente novamente.",
   "configure": "Configurar campos",
   "noFields": "Nenhum campo configurado. Configure os campos da Avaliação em Configurações.",
-  "selectPlaceholder": "Selecione…"
+  "selectPlaceholder": "Selecione…",
+  "importFindings": "Importar achados dos questionários",
+  "importingFindings": "Buscando…",
+  "findingsImported": "Achados adicionados à Anamnese. Revise e valide antes de salvar.",
+  "findingsNone": "Nenhum item acima do corte encontrado nos questionários.",
+  "findingsHint": "Puxa os itens de maior pontuação (3+) do QRM e Q-SNA para você revisar e validar."
 }

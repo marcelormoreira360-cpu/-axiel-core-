@@ -13,6 +13,7 @@ import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } fro
 import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
 import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
 import { DEFAULT_QUESTION_MAP, QUESTIONNAIRE_LABELS, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
+import { formatFindingsSummary, type FindingGroup, type FindingItem } from "@/modules/neuro-id/findings";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // Client genérico: server (sessão do usuário) por padrão, ou admin (ex.: gatilho
@@ -642,4 +643,82 @@ export async function autoUpsertNeuroIdDraft(
   if (sErr) throw sErr;
 
   return { assessmentId };
+}
+
+// ── Achados dos questionários (QRM/Q-SNA) → texto para a Anamnese ──────────────
+// Itens com pontuação >= corte (default 3), por seção, do QRM e do Q-SNA mais
+// recentes. Devolve um resumo em texto para o terapeuta revisar/validar na
+// Avaliação (depois alimenta o Doc 1). NÃO grava nada; pontuações Bio³ intactas.
+export type QuestionnaireFindings = { text: string; hasData: boolean };
+
+export async function extractQuestionnaireFindings(
+  patientId: string,
+  clinicId: string,
+  threshold = 3,
+  client?: Db,
+): Promise<QuestionnaireFindings> {
+  const supabase = await getDb(client);
+
+  const instruments: { match: string; label: string; kind: "qrm" | "qsna" }[] = [
+    { match: "Rastreamento Metab", label: "QRM (Rastreamento Metabólico)", kind: "qrm" },
+    { match: "Q-SNA", label: "Q-SNA (Sistema Nervoso Autônomo)", kind: "qsna" },
+  ];
+
+  const groups: FindingGroup[] = [];
+
+  for (const inst of instruments) {
+    const { data: resp } = await supabase
+      .from("assessment_responses")
+      .select("id, template_id, total_score, max_possible_score, assessment_templates!inner(name)")
+      .eq("patient_id", patientId)
+      .eq("clinic_id", clinicId)
+      .ilike("assessment_templates.name", `%${inst.match}%`)
+      .order("filled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!resp) continue;
+
+    const r = resp as unknown as { id: string; template_id: string; total_score: number | null; max_possible_score: number | null };
+
+    const [{ data: answers }, { data: sections }] = await Promise.all([
+      supabase
+        .from("assessment_answers")
+        .select("value_number, section_id, assessment_questions(text, order_index)")
+        .eq("response_id", r.id)
+        .gte("value_number", threshold),
+      supabase.from("assessment_sections").select("id, title, order_index").eq("template_id", r.template_id),
+    ]);
+
+    const meta = new Map<string, { title: string; order: number }>();
+    for (const s of sections ?? []) meta.set(s.id as string, { title: (s.title as string) ?? "", order: (s.order_index as number) ?? 0 });
+
+    const items: (FindingItem & { secOrder: number; qOrder: number })[] = [];
+    for (const a of answers ?? []) {
+      const q = Array.isArray(a.assessment_questions) ? a.assessment_questions[0] : a.assessment_questions;
+      const val = a.value_number as number | null;
+      if (val === null || val === undefined) continue;
+      const sec = meta.get(a.section_id as string);
+      items.push({
+        section: sec?.title ?? "",
+        text: (q?.text as string) ?? "",
+        value: val,
+        secOrder: sec?.order ?? 0,
+        qOrder: (q?.order_index as number) ?? 0,
+      });
+    }
+
+    if (items.length === 0) continue;
+    items.sort((x, y) => x.secOrder - y.secOrder || y.value - x.value || x.qOrder - y.qOrder);
+
+    groups.push({
+      instrument: inst.label,
+      kind: inst.kind,
+      total: r.total_score,
+      max: r.max_possible_score,
+      items: items.map(({ section, text, value }) => ({ section, text, value })),
+    });
+  }
+
+  const text = formatFindingsSummary(groups, threshold);
+  return { text, hasData: text.length > 0 };
 }

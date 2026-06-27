@@ -22,5 +22,10 @@
   "errorSave": "Could not save. Please try again.",
   "configure": "Configure fields",
   "noFields": "No fields configured. Set up the Assessment fields in Settings.",
-  "selectPlaceholder": "Select…"
+  "selectPlaceholder": "Select…",
+  "importFindings": "Import questionnaire findings",
+  "importingFindings": "Searching…",
+  "findingsImported": "Findings added to Anamnesis. Review and validate before saving.",
+  "findingsNone": "No items above the threshold found in the questionnaires.",
+  "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA for you to review and validate."
 }
