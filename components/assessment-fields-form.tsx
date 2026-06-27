@@ -12,8 +12,13 @@ import {
   type FieldState,
 } from "@/app/settings/avaliacao/actions";
 import type { ClinicAssessmentField, AssessmentFieldType } from "@/lib/types";
+import { ASSESSMENT_GROUP_ORDER, isAssessmentGroup } from "@/lib/assessment-groups";
 
 const TYPES: AssessmentFieldType[] = ["textarea", "text", "number", "select"];
+
+function groupLabelKey(g: string): string {
+  return isAssessmentGroup(g) ? g : "mediadores";
+}
 
 const inputCls =
   "w-full h-9 px-3 rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#A09E98] outline-none focus:border-[#0F6E56] transition";
@@ -68,6 +73,20 @@ function TypeExtras({
   );
 }
 
+/** Select do grupo (seção ATM) onde o campo aparece na ficha. */
+function GroupSelect({ field, t }: { field?: ClinicAssessmentField; t: (k: string) => string }) {
+  return (
+    <div>
+      <label className="text-[11px] text-[#6B6A66] mb-1 block">{t("group")}</label>
+      <select name="group_key" defaultValue={groupLabelKey(field?.group_key ?? "mediadores")} className={inputCls}>
+        {ASSESSMENT_GROUP_ORDER.map((g) => (
+          <option key={g} value={g}>{t(`groups.${g}`)}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 /** Editor inline de um campo existente. */
 function FieldEditor({ field, onDone }: { field: ClinicAssessmentField; onDone: () => void }) {
   const t = useTranslations("settings.assessmentFields");
@@ -97,6 +116,7 @@ function FieldEditor({ field, onDone }: { field: ClinicAssessmentField; onDone: 
             ))}
           </select>
         </div>
+        <GroupSelect field={field} t={t} />
         <TypeExtras type={type} field={field} t={t} />
         <label className="sm:col-span-2 flex items-center gap-2 text-[12px] text-[#6B6A66] cursor-pointer">
           <input type="checkbox" name="include_in_report" defaultChecked={field.include_in_report} className="accent-[#0F6E56]" />
@@ -153,6 +173,7 @@ export function AssessmentFieldsForm({ initial }: { initial: ClinicAssessmentFie
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-[13px] font-medium text-[#0F1A2E]">{f.label}</span>
+                      <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#EEF3F1] text-[#0F6E56]">{t(`groups.${groupLabelKey(f.group_key)}`)}</span>
                       <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t(`types.${f.field_type}`)}</span>
                       {f.include_in_report && (
                         <span className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">{t("inReportBadge")}</span>
@@ -201,6 +222,7 @@ export function AssessmentFieldsForm({ initial }: { initial: ClinicAssessmentFie
               ))}
             </select>
           </div>
+          <GroupSelect t={t} />
           <TypeExtras type={addType} t={t} />
           <label className="sm:col-span-2 flex items-center gap-2 text-[12px] text-[#6B6A66] cursor-pointer">
             <input type="checkbox" name="include_in_report" defaultChecked className="accent-[#0F6E56]" />

@@ -649,6 +649,15 @@
       "number": "Número",
       "select": "Lista de opções"
     },
+    "group": "Grupo (seção)",
+    "groupHelp": "Em qual bloco da ficha o campo aparece.",
+    "groups": {
+      "objetivo": "Objetivo",
+      "antecedentes": "Antecedentes",
+      "gatilhos": "Gatilhos",
+      "mediadores": "Mediadores",
+      "integracao": "Integração"
+    },
     "placeholder": "Texto de exemplo (placeholder)",
     "helpText": "Dica abaixo do campo (opcional)",
     "choices": "Opções (uma por linha)",

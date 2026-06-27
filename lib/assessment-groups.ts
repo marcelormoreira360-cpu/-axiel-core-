@@ -26,3 +26,16 @@ const ATM_GROUP_BY_KEY: Record<string, AssessmentGroup> = {
 export function groupForFieldKey(fieldKey: string): AssessmentGroup {
   return ATM_GROUP_BY_KEY[fieldKey] ?? "mediadores";
 }
+
+/** True se `g` é um grupo ATM válido. */
+export function isAssessmentGroup(g: string | null | undefined): g is AssessmentGroup {
+  return !!g && (ASSESSMENT_GROUP_ORDER as string[]).includes(g);
+}
+
+/**
+ * Grupo efetivo de um campo: usa group_key (config da clínica) quando válido,
+ * com fallback no mapa ATM por field_key (compat com dados antigos sem group_key).
+ */
+export function groupForField(field: { field_key: string; group_key?: string | null }): AssessmentGroup {
+  return isAssessmentGroup(field.group_key) ? field.group_key : groupForFieldKey(field.field_key);
+}

@@ -649,6 +649,15 @@
       "number": "Number",
       "select": "Dropdown"
     },
+    "group": "Group (section)",
+    "groupHelp": "Which block of the chart the field appears in.",
+    "groups": {
+      "objetivo": "Goal",
+      "antecedentes": "Antecedents",
+      "gatilhos": "Triggers",
+      "mediadores": "Mediators",
+      "integracao": "Integration"
+    },
     "placeholder": "Example text (placeholder)",
     "helpText": "Hint below the field (optional)",
     "choices": "Options (one per line)",
