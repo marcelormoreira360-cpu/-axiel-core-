@@ -6,3 +6,7 @@ node_modules
 *.backup
 .DS_Store
 .vercel
+
+# Notas locais do Marcelo (não versionar)
+IA_Voz_Recepcionista_IFWC.md
+_GUIA_APP_REVIEW_META.md
