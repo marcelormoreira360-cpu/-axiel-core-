@@ -642,6 +642,8 @@
     "title": "Assessment fields",
     "subtitle": "Define the fields in the patient's Assessment panel. Each clinic has its own.",
     "listLabel": "Current fields",
+    "drag": "Drag to reorder",
+    "dragHint": "Drag by the handle to change the field order.",
     "empty": "No fields yet.",
     "addLabel": "Add field",
     "name": "Field name",

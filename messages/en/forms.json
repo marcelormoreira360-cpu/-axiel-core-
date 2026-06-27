@@ -109,7 +109,8 @@
       "intake": "Sent automatically (WhatsApp, email and portal) when the patient books their first session.",
       "session": "Suggested to fill in each session (follow-up).",
       "portal": "Available for the patient to fill in the portal."
-    }
+    },
+    "drag": "Drag to reorder"
   },
   "editor": {
     "sectionsTitle": "Sections",

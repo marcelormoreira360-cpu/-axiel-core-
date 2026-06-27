@@ -642,6 +642,8 @@
     "title": "Campos da Avaliação",
     "subtitle": "Defina os campos do painel Avaliação da ficha do paciente. Cada clínica tem os seus.",
     "listLabel": "Campos atuais",
+    "drag": "Arraste para reordenar",
+    "dragHint": "Arraste pela alça para mudar a ordem dos campos.",
     "empty": "Nenhum campo ainda.",
     "addLabel": "Adicionar campo",
     "name": "Nome do campo",

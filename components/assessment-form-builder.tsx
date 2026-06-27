@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Trash2, ChevronUp, ChevronDown, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical } from "lucide-react";
 import { createFormAction } from "@/app/forms/new/actions";
+import { SortableList } from "@/components/sortable-list";
 
 type QuestionDraft = {
   id: string;
@@ -46,22 +47,8 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
     setSections((prev) => prev.filter((s) => s.id !== sid));
   }
 
-  function moveSectionUp(idx: number) {
-    if (idx === 0) return;
-    setSections((prev) => {
-      const next = [...prev];
-      [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-      return next;
-    });
-  }
-
-  function moveSectionDown(idx: number) {
-    setSections((prev) => {
-      if (idx >= prev.length - 1) return prev;
-      const next = [...prev];
-      [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-      return next;
-    });
+  function reorderSections(next: SectionDraft[]) {
+    setSections(next);
   }
 
   function updateSectionTitle(sid: string, title: string) {
@@ -105,28 +92,8 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
     );
   }
 
-  function moveQuestionUp(sid: string, idx: number) {
-    if (idx === 0) return;
-    setSections((prev) =>
-      prev.map((s) => {
-        if (s.id !== sid) return s;
-        const qs = [...s.questions];
-        [qs[idx - 1], qs[idx]] = [qs[idx], qs[idx - 1]];
-        return { ...s, questions: qs };
-      })
-    );
-  }
-
-  function moveQuestionDown(sid: string, idx: number) {
-    setSections((prev) =>
-      prev.map((s) => {
-        if (s.id !== sid) return s;
-        if (idx >= s.questions.length - 1) return s;
-        const qs = [...s.questions];
-        [qs[idx], qs[idx + 1]] = [qs[idx + 1], qs[idx]];
-        return { ...s, questions: qs };
-      })
-    );
+  function reorderQuestions(sid: string, next: QuestionDraft[]) {
+    setSections((prev) => prev.map((s) => (s.id === sid ? { ...s, questions: next } : s)));
   }
 
   function submit(formData: FormData) {
@@ -191,141 +158,124 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
         </div>
       </div>
 
-      {/* Sections */}
-      {sections.map((section, si) => (
-        <div key={section.id} className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-          {/* Section header */}
-          <div className="flex items-center gap-[8px] px-[16px] py-[12px] border-b border-black/[.06] bg-[#FAFAF8]">
-            <span className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] shrink-0">
-              {t("section", { n: si + 1 })}
-            </span>
-            <input
-              type="text"
-              value={section.title}
-              onChange={(e) => updateSectionTitle(section.id, e.target.value)}
-              placeholder={t("sectionPlaceholder")}
-              className="flex-1 px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[12px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition uppercase"
-            />
-            <div className="flex items-center gap-[4px] shrink-0">
-              <button
-                type="button"
-                onClick={() => moveSectionUp(si)}
-                disabled={si === 0}
-                className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] disabled:opacity-30 transition"
-              >
-                <ChevronUp className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => moveSectionDown(si)}
-                disabled={si === sections.length - 1}
-                className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] disabled:opacity-30 transition"
-              >
-                <ChevronDown className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => removeSection(section.id)}
-                className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 hover:bg-red-50 transition"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
-
-          {/* Questions */}
-          <div className="px-[16px] py-[12px] space-y-[8px]">
-            {section.questions.map((q, qi) => (
-              <div
-                key={q.id}
-                className="flex items-start gap-[8px] bg-[#FAFAF8] rounded-[8px] px-[10px] py-[9px]"
-              >
-                <GripVertical className="h-3.5 w-3.5 text-[#D3D1C7] mt-[7px] shrink-0" />
-                <div className="flex-1 space-y-[6px]">
-                  <input
-                    type="text"
-                    value={q.text}
-                    onChange={(e) => updateQuestion(section.id, q.id, { text: e.target.value })}
-                    placeholder={t("questionPlaceholder")}
-                    className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
-                  />
-                  <div className="flex items-center gap-[8px]">
-                    <select
-                      value={q.type}
-                      onChange={(e) =>
-                        updateQuestion(section.id, q.id, {
-                          type: e.target.value as QuestionDraft["type"],
-                          maxScore:
-                            e.target.value === "yes_no"
-                              ? 1
-                              : e.target.value === "scale"
-                              ? 4
-                              : 0,
-                        })
-                      }
-                      className="px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
-                    >
-                      {TYPE_KEYS.map((val) => (
-                        <option key={val} value={val}>
-                          {t(`typeLabels.${val}`)}
-                        </option>
-                      ))}
-                    </select>
-                    {(q.type === "scale" || q.type === "number") && (
-                      <div className="flex items-center gap-[4px]">
-                        <span className="text-[10px] text-[#A09E98]">{t("maxScore")}</span>
-                        <input
-                          type="number"
-                          min={1}
-                          max={100}
-                          value={q.maxScore}
-                          onChange={(e) =>
-                            updateQuestion(section.id, q.id, { maxScore: Number(e.target.value) })
-                          }
-                          className="w-14 px-[6px] py-[4px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] text-center"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-[2px] shrink-0 mt-[2px]">
-                  <button
-                    type="button"
-                    onClick={() => moveQuestionUp(section.id, qi)}
-                    disabled={qi === 0}
-                    className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-[#0F1A2E] disabled:opacity-30 transition"
-                  >
-                    <ChevronUp className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveQuestionDown(section.id, qi)}
-                    disabled={qi === section.questions.length - 1}
-                    className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-[#0F1A2E] disabled:opacity-30 transition"
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeQuestion(section.id, q.id)}
-                    className="w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 transition"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </button>
-                </div>
+      {/* Seções (arraste pela alça para reordenar) */}
+      <SortableList
+        items={sections}
+        getId={(s) => s.id}
+        onReorder={reorderSections}
+        className="space-y-[18px]"
+        render={(section, { setNodeRef, style, handleProps, isDragging }) => {
+          const si = sections.findIndex((s) => s.id === section.id);
+          return (
+            <div ref={setNodeRef} style={style} className={`bg-white border border-black/[.07] rounded-[12px] overflow-hidden ${isDragging ? "shadow-md" : ""}`}>
+              {/* Section header */}
+              <div className="flex items-center gap-[8px] px-[16px] py-[12px] border-b border-black/[.06] bg-[#FAFAF8]">
+                <button type="button" {...handleProps}
+                  className="shrink-0 cursor-grab active:cursor-grabbing text-[#C4C2BC] hover:text-[#6B6A66] touch-none p-0.5" title={t("drag")} aria-label={t("drag")}>
+                  <GripVertical className="h-4 w-4" />
+                </button>
+                <span className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] shrink-0">
+                  {t("section", { n: si + 1 })}
+                </span>
+                <input
+                  type="text"
+                  value={section.title}
+                  onChange={(e) => updateSectionTitle(section.id, e.target.value)}
+                  placeholder={t("sectionPlaceholder")}
+                  className="flex-1 px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[12px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition uppercase"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSection(section.id)}
+                  className="shrink-0 w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 hover:bg-red-50 transition"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
               </div>
-            ))}
 
-            <button
-              type="button"
-              onClick={() => addQuestion(section.id)}
-              className="flex items-center gap-[6px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition mt-[4px]"
-            >
-              <Plus className="h-3.5 w-3.5" /> {t("addQuestion")}
-            </button>
-          </div>
-        </div>
-      ))}
+              {/* Questions (arraste pela alça para reordenar) */}
+              <div className="px-[16px] py-[12px] space-y-[8px]">
+                <SortableList
+                  items={section.questions}
+                  getId={(q) => q.id}
+                  onReorder={(next) => reorderQuestions(section.id, next)}
+                  className="space-y-[8px]"
+                  render={(q, qBag) => (
+                    <div ref={qBag.setNodeRef} style={qBag.style} className={`flex items-start gap-[8px] bg-[#FAFAF8] rounded-[8px] px-[10px] py-[9px] ${qBag.isDragging ? "shadow-md" : ""}`}>
+                      <button type="button" {...qBag.handleProps}
+                        className="mt-[6px] shrink-0 cursor-grab active:cursor-grabbing text-[#D3D1C7] hover:text-[#6B6A66] touch-none" title={t("drag")} aria-label={t("drag")}>
+                        <GripVertical className="h-3.5 w-3.5" />
+                      </button>
+                      <div className="flex-1 space-y-[6px]">
+                        <input
+                          type="text"
+                          value={q.text}
+                          onChange={(e) => updateQuestion(section.id, q.id, { text: e.target.value })}
+                          placeholder={t("questionPlaceholder")}
+                          className="w-full px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                        />
+                        <div className="flex items-center gap-[8px]">
+                          <select
+                            value={q.type}
+                            onChange={(e) =>
+                              updateQuestion(section.id, q.id, {
+                                type: e.target.value as QuestionDraft["type"],
+                                maxScore:
+                                  e.target.value === "yes_no"
+                                    ? 1
+                                    : e.target.value === "scale"
+                                    ? 4
+                                    : 0,
+                              })
+                            }
+                            className="px-[8px] py-[5px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+                          >
+                            {TYPE_KEYS.map((val) => (
+                              <option key={val} value={val}>
+                                {t(`typeLabels.${val}`)}
+                              </option>
+                            ))}
+                          </select>
+                          {(q.type === "scale" || q.type === "number") && (
+                            <div className="flex items-center gap-[4px]">
+                              <span className="text-[10px] text-[#A09E98]">{t("maxScore")}</span>
+                              <input
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={q.maxScore}
+                                onChange={(e) =>
+                                  updateQuestion(section.id, q.id, { maxScore: Number(e.target.value) })
+                                }
+                                className="w-14 px-[6px] py-[4px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] text-center"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeQuestion(section.id, q.id)}
+                        className="shrink-0 mt-[2px] w-6 h-6 flex items-center justify-center rounded text-[#A09E98] hover:text-red-500 transition"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => addQuestion(section.id)}
+                  className="flex items-center gap-[6px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition mt-[4px]"
+                >
+                  <Plus className="h-3.5 w-3.5" /> {t("addQuestion")}
+                </button>
+              </div>
+            </div>
+          );
+        }}
+      />
 
       <button
         type="button"
