@@ -17,6 +17,16 @@ export type QuestionMapEntry = {
   weight?: number;
 };
 
+/** Rótulo amigável por template_match — para avisar "questionário não respondido". */
+export const QUESTIONNAIRE_LABELS: Record<string, string> = {
+  "Q-SNA": "Q-SNA",
+  "Rastreamento Metab": "Q.R.M.",
+  "MSQ": "MSQ",
+  "PHQ-9": "PHQ-9",
+  "GAD-7": "GAD-7",
+  "HPA": "Eixo HPA",
+};
+
 /** Normaliza um score bruto (0..max) para disfunção 0–10. null se max inválido. */
 export function normalizeToDysfunction10(raw: number | null, max: number | null): number | null {
   if (raw === null || max === null || !Number.isFinite(raw) || !Number.isFinite(max) || max <= 0) return null;

@@ -19,7 +19,7 @@ import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-pa
 import { PatientSupplementsPanel } from "@/components/patient-supplements-panel";
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
-import { getLatestNeuroIdMap, getNeuroIdAttentionPoints } from "@/services/neuro-id-service";
+import { getLatestNeuroIdMap, getNeuroIdAttentionPoints, getAssessmentRawValues } from "@/services/neuro-id-service";
 import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
@@ -131,6 +131,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const attentionPoints = neuroIdMap?.assessment_id
     ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
     : [];
+  // Valores crus da última avaliação — para "Rever / editar" (corrigir in-place)
+  const neuroEdit = neuroIdMap?.assessment_id
+    ? await getAssessmentRawValues(neuroIdMap.assessment_id).catch(() => ({ values: {}, autoCodes: [] }))
+    : { values: {}, autoCodes: [] };
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -320,7 +324,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
       <div className="mt-[18px]">
-        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} />
+        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} />
       </div>
 
       {/* ── 3-column body ── */}

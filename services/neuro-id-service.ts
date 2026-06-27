@@ -12,7 +12,7 @@ import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
 import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
 import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
-import { DEFAULT_QUESTION_MAP, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
+import { DEFAULT_QUESTION_MAP, QUESTIONNAIRE_LABELS, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // Client genérico: server (sessão do usuário) por padrão, ou admin (ex.: gatilho
@@ -136,6 +136,45 @@ function examValueRows(
   }));
 }
 
+// Linhas de patient_assessment_values: itens preenchidos (raw cru) + métricas de
+// exame fundidas. Compartilhado por create/update para não divergirem.
+function neuroIdValueRows(
+  assessmentId: string,
+  values: Record<string, string | number | null | undefined>,
+  result: NeuroIdResult,
+  examValues: Record<string, number>,
+) {
+  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
+  const valueRows = Object.entries(values)
+    .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
+    .map(([item_code, raw]) => ({
+      assessment_id: assessmentId,
+      item_code,
+      raw_value: String(raw),
+      dysfunction_score: byCode.get(item_code) ?? null,
+    }));
+  return [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+}
+
+// Linha agregada de patient_neuro_id_scores.
+function neuroIdScoresRow(
+  assessmentId: string,
+  patientId: string,
+  result: NeuroIdResult,
+  isPartial: boolean,
+) {
+  return {
+    assessment_id: assessmentId,
+    patient_id: patientId,
+    fisico_pct: result.pillars.fisico.dysfunction,
+    bioquimico_pct: result.pillars.bioquimico.dysfunction,
+    emocional_pct: result.pillars.emocional.dysfunction,
+    indice_geral: result.indiceGeral,
+    priority_pillar: result.priorityPillar,
+    is_partial: isPartial,
+  };
+}
+
 // ── Leitura do mapa mais recente ──────────────────────────────────────────────
 export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promise<NeuroIdMap | null> {
   const supabase = await getDb(client);
@@ -179,6 +218,34 @@ export async function getNeuroIdAttentionPoints(
     .slice(0, limit);
 }
 
+// ── Reabrir avaliação: valores crus por item (para rever/corrigir) ────────────
+/**
+ * Valores crus (raw) gravados numa avaliação, por item_code — para reabrir o
+ * formulário e corrigir. Strips o prefixo "auto:" (usado pelos rascunhos
+ * automáticos) e devolve quais codes vieram de questionário (autoCodes).
+ */
+export async function getAssessmentRawValues(
+  assessmentId: string,
+  client?: Db,
+): Promise<{ values: Record<string, string>; autoCodes: string[] }> {
+  const supabase = await getDb(client);
+  const { data, error } = await supabase
+    .from("patient_assessment_values")
+    .select("item_code, raw_value")
+    .eq("assessment_id", assessmentId);
+  if (error) throw error;
+  const values: Record<string, string> = {};
+  const autoCodes: string[] = [];
+  for (const r of (data ?? []) as { item_code: string; raw_value: string | null }[]) {
+    let raw = r.raw_value == null ? "" : String(r.raw_value);
+    // Métricas de exame (origem `exam:`) são re-fundidas pelo motor, não editáveis no form.
+    if (raw.startsWith("exam:")) continue;
+    if (raw.startsWith("auto:")) { autoCodes.push(r.item_code); raw = raw.slice("auto:".length); }
+    if (raw.trim() !== "") values[r.item_code] = raw;
+  }
+  return { values, autoCodes };
+}
+
 // ── Criar avaliação + calcular + gravar scores ────────────────────────────────
 export async function createNeuroIdAssessment(input: {
   clinicId: string;
@@ -214,32 +281,16 @@ export async function createNeuroIdAssessment(input: {
   const assessmentId = assessment.id as string;
 
   // 2) valores (só os preenchidos), com a disfunção calculada + métricas de exame
-  const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
-  const valueRows = Object.entries(input.values)
-    .filter(([, raw]) => raw !== null && raw !== undefined && String(raw).trim() !== "")
-    .map(([item_code, raw]) => ({
-      assessment_id: assessmentId,
-      item_code,
-      raw_value: String(raw),
-      dysfunction_score: byCode.get(item_code) ?? null,
-    }));
-  const allRows = [...valueRows, ...examValueRows(assessmentId, examValues, result.examContributions)];
+  const allRows = neuroIdValueRows(assessmentId, input.values, result, examValues);
   if (allRows.length > 0) {
     const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
   }
 
   // 3) scores agregados
-  const { error: sErr } = await supabase.from("patient_neuro_id_scores").insert({
-    assessment_id: assessmentId,
-    patient_id: input.patientId,
-    fisico_pct: result.pillars.fisico.dysfunction,
-    bioquimico_pct: result.pillars.bioquimico.dysfunction,
-    emocional_pct: result.pillars.emocional.dysfunction,
-    indice_geral: result.indiceGeral,
-    priority_pillar: result.priorityPillar,
-    is_partial: result.isPartial,
-  });
+  const { error: sErr } = await supabase
+    .from("patient_neuro_id_scores")
+    .insert(neuroIdScoresRow(assessmentId, input.patientId, result, result.isPartial));
   if (sErr) throw sErr;
 
   // Finaliza qualquer rascunho automático aberto deste paciente (idempotência §3):
@@ -252,6 +303,63 @@ export async function createNeuroIdAssessment(input: {
     .neq("id", assessmentId);
 
   return { assessmentId, result };
+}
+
+// ── Corrigir a MESMA avaliação (rever/editar, não cria nova) ──────────────────
+/**
+ * Recalcula e regrava os valores/scores de uma avaliação EXISTENTE — usado pelo
+ * "Rever / editar" para corrigir pontuação sem criar uma reavaliação nova.
+ * Preserva o status/origem da avaliação (correção ≠ reavaliação). Guard de
+ * tenant: a avaliação precisa pertencer ao paciente/clínica.
+ */
+export async function updateNeuroIdAssessment(input: {
+  assessmentId: string;
+  clinicId: string;
+  patientId: string;
+  values: Record<string, string | number | null | undefined>;
+}): Promise<{ assessmentId: string; result: NeuroIdResult }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  // Guard: a avaliação tem de pertencer a este paciente/clínica.
+  const { data: existing, error: exErr } = await supabase
+    .from("patient_assessments")
+    .select("id, clinic_id, patient_id")
+    .eq("id", input.assessmentId)
+    .maybeSingle();
+  if (exErr) throw exErr;
+  if (!existing || existing.clinic_id !== input.clinicId || existing.patient_id !== input.patientId) {
+    throw new Error("Avaliação não encontrada para este paciente/clínica.");
+  }
+
+  // IO independente em paralelo: catálogo da clínica + métricas de exame CONFIRMADAS.
+  const [catalog, examValues] = await Promise.all([
+    ensureClinicCatalog(input.clinicId),
+    confirmedExamMetrics(input.patientId, input.clinicId),
+  ]);
+  const items = catalogToScorable(catalog);
+  const result = computeNeuroId(items, input.values, examValues);
+
+  // Regrava in-place: limpa valores+scores e reinsere (corrige a MESMA avaliação).
+  // Promove para `final`: uma revisão/correção humana deixa de ser rascunho
+  // automático e fica protegida do auto-gatilho (autoUpsertNeuroIdDraft), que
+  // sobrescreveria um `auto_draft` ao chegar um novo questionário.
+  await supabase.from("patient_assessment_values").delete().eq("assessment_id", input.assessmentId);
+  await supabase.from("patient_neuro_id_scores").delete().eq("assessment_id", input.assessmentId);
+  await supabase.from("patient_assessments").update({ status: "final", updated_at: new Date().toISOString() }).eq("id", input.assessmentId);
+
+  const allRows = neuroIdValueRows(input.assessmentId, input.values, result, examValues);
+  if (allRows.length > 0) {
+    const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
+    if (vErr) throw vErr;
+  }
+
+  const { error: sErr } = await supabase
+    .from("patient_neuro_id_scores")
+    .insert(neuroIdScoresRow(input.assessmentId, input.patientId, result, result.isPartial));
+  if (sErr) throw sErr;
+
+  return { assessmentId: input.assessmentId, result };
 }
 
 // ── IA segmentadora (Fase 2): extrai sub-scores do QRM/Q-SNA → rascunho 0–10 ──
@@ -325,6 +433,8 @@ export type QuestionnaireImport = {
   origins: Record<string, string>;
   /** codes mapeados mas sem resposta (pendentes / CTA) */
   missing: string[];
+  /** rótulos dos questionários que o paciente NÃO respondeu (ex.: "Q-SNA") */
+  unanswered: string[];
   /** Alerta clínico: PHQ-9 item 9 (ideação) > 0 — não silenciar. */
   phq9Item9: { value: number } | null;
 };
@@ -369,6 +479,15 @@ export async function importQuestionnaireAnswers(
   // Resposta mais recente cujo nome do template contém o match (case-insensitive).
   const latestFor = (match: string): RespRow | null =>
     resps.find((r) => tplName(r).toLowerCase().includes(match.toLowerCase())) ?? null;
+
+  // Questionários mapeados que o paciente NÃO respondeu (rótulo amigável, deduplicado).
+  const unanswered = [
+    ...new Set(
+      [...new Set(map.map((m) => m.template_match))]
+        .filter((m) => latestFor(m) === null)
+        .map((m) => QUESTIONNAIRE_LABELS[m] ?? m),
+    ),
+  ].sort();
 
   // Cache de agregados por response: sectionSums[title] = {raw,max}, total, item9.
   type Agg = {
@@ -444,7 +563,7 @@ export async function importQuestionnaireAnswers(
     if (agg.item9 !== null && agg.item9 > 0) phq9Item9 = { value: agg.item9 };
   }
 
-  return { draft, sources, origins, missing, phq9Item9 };
+  return { draft, sources, origins, missing, unanswered, phq9Item9 };
 }
 
 // ── Auto-gerar Mapa Bio³ ao responder questionário (gatilho pós-submit) ───────
