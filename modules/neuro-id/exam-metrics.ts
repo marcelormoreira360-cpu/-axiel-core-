@@ -140,7 +140,7 @@ export function pillarDysfunctionFromContributions(contribs: PillarContribution[
 }
 
 // ── Extração por IA (incremento 3): PDF do exame -> valores BRUTOS por code ────
-// Espelha a IA segmentadora (segment-instruments.ts): a IA SÓ lê os números que
+// Guarda-corpo da extração por IA: a IA SÓ lê os números que
 // JÁ estão no exame e os devolve na unidade do instrumento; NÃO inventa, NÃO
 // estima fora do que está no documento, NÃO diagnostica. O valor cru alimenta
 // `examValues` em computeNeuroId, que aplica a conversão determinística -> %.

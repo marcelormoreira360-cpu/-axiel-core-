@@ -104,7 +104,13 @@
       "addMarker": "Adicionar marcador",
       "notes": "Observações (opcional)",
       "notesPlaceholder": "Contexto clínico relevante...",
-      "save": "Salvar exame"
+      "save": "Salvar exame",
+      "uploadHint": "Anexe uma foto ou PDF dos resultados e a IA preenche os marcadores para você revisar e validar.",
+      "extractAI": "Extrair com IA",
+      "extracting": "Lendo…",
+      "extractDone": "{count} marcadores preenchidos. Revise e ajuste antes de salvar.",
+      "extractNone": "Nenhum marcador encontrado. Tente uma foto mais nítida ou preencha manual.",
+      "extractPickFile": "Anexe uma foto ou PDF primeiro."
     }
   },
   "prescriptions": {

@@ -104,7 +104,13 @@
       "addMarker": "Add marker",
       "notes": "Notes (optional)",
       "notesPlaceholder": "Relevant clinical context...",
-      "save": "Save test"
+      "save": "Save test",
+      "uploadHint": "Attach a photo or PDF of the lab results and the AI fills in the markers for you to review and validate.",
+      "extractAI": "Extract with AI",
+      "extracting": "Reading…",
+      "extractDone": "{count} markers filled. Review and adjust before saving.",
+      "extractNone": "No markers found. Try a clearer photo or fill in manually.",
+      "extractPickFile": "Attach a photo or PDF first."
     }
   },
   "prescriptions": {

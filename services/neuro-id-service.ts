@@ -7,10 +7,8 @@
  * Armazena DISFUNÇÃO (0–100); a conversão para EQUILÍBRIO é feita na exibição.
  */
 
-import OpenAI from "openai";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
-import { SEGMENT_SYSTEM_PROMPT, coerceSegmentDraft, type SegmentDraft } from "@/modules/neuro-id/segment-instruments";
 import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
 import { DEFAULT_QUESTION_MAP, QUESTIONNAIRE_LABELS, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
 import { formatFindingsSummary, type FindingGroup, type FindingItem } from "@/modules/neuro-id/findings";
@@ -361,36 +359,6 @@ export async function updateNeuroIdAssessment(input: {
   if (sErr) throw sErr;
 
   return { assessmentId: input.assessmentId, result };
-}
-
-// ── IA segmentadora (Fase 2): extrai sub-scores do QRM/Q-SNA → rascunho 0–10 ──
-// Guarda-corpo: a IA só extrai números do documento (não inventa); o humano
-// revisa o rascunho antes de o motor calcular.
-export async function segmentInstruments(input: {
-  qrmText?: string;
-  qsnaText?: string;
-}): Promise<SegmentDraft> {
-  const qrm = (input.qrmText ?? "").trim();
-  const qsna = (input.qsnaText ?? "").trim();
-  if (!qrm && !qsna) return {};
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY ausente. Configure antes de usar a extração por IA.");
-  }
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
-  const response = await client.chat.completions.create({
-    model,
-    temperature: 0,
-    response_format: { type: "json_object" },
-    messages: [
-      { role: "system", content: SEGMENT_SYSTEM_PROMPT },
-      { role: "user", content: JSON.stringify({ qrm_document: qrm || null, qsna_document: qsna || null }) },
-    ],
-  });
-  const raw = response.choices[0]?.message?.content ?? "{}";
-  let parsed: unknown;
-  try { parsed = JSON.parse(raw); } catch { parsed = {}; }
-  return coerceSegmentDraft(parsed);
 }
 
 // ── §8: importar respostas de questionário → rascunho 0–10 (auto) ─────────────
