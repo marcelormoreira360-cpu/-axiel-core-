@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Sparkles, Download, ShieldAlert } from "lucide-react";
+import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Download, ShieldAlert } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, severityColor, priorityPillars, sharesSummingTo100,
   type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
-import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, segmentInstrumentsAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
+import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
   fisico_pct: number | null;
@@ -113,10 +113,6 @@ export function PatientNeuroIdPanel({
   const [assessing, setAssessing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>({});
-  const [qrmText, setQrmText] = useState("");
-  const [qsnaText, setQsnaText] = useState("");
-  const [segmenting, setSegmenting] = useState(false);
-  const [segMsg, setSegMsg] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [autoCodes, setAutoCodes] = useState<Set<string>>(new Set());
@@ -129,7 +125,6 @@ export function PatientNeuroIdPanel({
     setUnanswered([]);
     setPendingCodes(new Set());
     setImportMsg(null);
-    setSegMsg(null);
     setPhq9Alert(null);
     setOrigins({});
   }
@@ -180,20 +175,6 @@ export function PatientNeuroIdPanel({
     const filled = new Set(entries.map(([c]) => c));
     setPendingCodes(new Set((res.missing ?? []).filter((c) => !filled.has(c))));
     setImportMsg(entries.length > 0 ? t("importDone", { count: entries.length }) : t("importNone"));
-  }
-
-  async function handleSegment() {
-    setSegmenting(true);
-    setSegMsg(null);
-    const res = await segmentInstrumentsAction({ qrmText, qsnaText });
-    setSegmenting(false);
-    if (res.error) { setSegMsg(res.error); return; }
-    setVals((v) => {
-      const next = { ...v };
-      for (const [code, val] of Object.entries(res.draft)) next[code] = String(val);
-      return next;
-    });
-    setSegMsg(t("segmentReview"));
   }
 
   const pillarDys: Record<NeuroPillar, number | null> = {
@@ -363,27 +344,6 @@ export function PatientNeuroIdPanel({
               <Pencil className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#0F6E56]" /> {t("editingHint")}
             </p>
           )}
-
-          {/* Fase 2 (opcional, recolhido): colar QRM/Q-SNA de documento externo → IA extrai sub-scores */}
-          <details className="rounded-[8px] border border-black/[.10] bg-white group">
-            <summary className="cursor-pointer list-none px-[10px] py-[8px] text-[11px] font-medium text-[#6B6A66] flex items-center gap-1.5 hover:text-[#0F1A2E] transition">
-              <Sparkles className="h-3 w-3 text-[#3B6BE4]" /> {t("segmentDetailsTitle")}
-              <span className="ml-auto text-[#A09E98] transition group-open:rotate-180">▾</span>
-            </summary>
-            <div className="px-[10px] pb-[10px] space-y-[8px]">
-              <p className="text-[10px] text-[#A09E98]">{t("segmentDetailsHint")}</p>
-              <textarea value={qrmText} onChange={(e) => setQrmText(e.target.value)} rows={2} placeholder={t("qrmLabel")} className={`${inputCls} resize-none`} />
-              <textarea value={qsnaText} onChange={(e) => setQsnaText(e.target.value)} rows={2} placeholder={t("qsnaLabel")} className={`${inputCls} resize-none`} />
-              <div className="flex items-center gap-2 flex-wrap">
-                <button type="button" disabled={segmenting || (!qrmText.trim() && !qsnaText.trim())} onClick={handleSegment}
-                  className="text-[11px] font-medium text-white bg-[#3B6BE4] hover:bg-[#2f57bd] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center gap-1">
-                  <Sparkles className="h-3 w-3" /> {segmenting ? t("segmenting") : t("segmentBtn")}
-                </button>
-                {segMsg && <span className="text-[10px] text-[#0F6E56]">{segMsg}</span>}
-              </div>
-              <p className="text-[10px] text-[#A09E98]">{t("segmentNote")}</p>
-            </div>
-          </details>
 
           {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA) */}
           <div className="rounded-[8px] border border-[#0F6E56]/20 bg-white p-[10px] space-y-[8px]">

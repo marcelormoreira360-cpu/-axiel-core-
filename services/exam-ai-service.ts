@@ -32,6 +32,88 @@ Regras:
 - Saída em texto simples (pode usar bullets curtos). Sem títulos longos, sem repetir o cabeçalho do exame.
 `;
 
+/**
+ * Extrai marcadores de um exame LABORATORIAL (sangue, etc.) de uma FOTO ou PDF.
+ * A IA só TRANSCREVE o que está no documento (biomarcador, valor, unidade, faixa
+ * de referência); não interpreta nem inventa. Devolve um RASCUNHO para o terapeuta
+ * revisar e validar antes de salvar. Sem chave/erro -> [] (não quebra o fluxo).
+ */
+export type LabMarkerDraft = {
+  biomarker: string;
+  value: number;
+  unit: string | null;
+  ref_min: number | null;
+  ref_max: number | null;
+};
+
+const LAB_SYSTEM_PROMPT = `
+Você transcreve resultados de exames laboratoriais (sangue, urina, etc.) de uma imagem ou PDF.
+Regras (não negociáveis):
+- Só TRANSCREVA o que está no documento. NÃO interprete, não calcule, não invente nenhum valor.
+- Para cada marcador: nome (biomarker), valor numérico (value), unidade (unit) e a faixa de
+  referência do laudo (ref_min e ref_max). Use ponto decimal. Se algo não estiver no documento, use null.
+- Ignore cabeçalhos, textos de método e marcadores sem valor numérico.
+- No máximo 60 marcadores.
+Responda SOMENTE com JSON no formato exato:
+{ "markers": [ { "biomarker": string, "value": number, "unit": string|null, "ref_min": number|null, "ref_max": number|null } ] }
+`;
+
+function numOrNull(v: unknown): number | null {
+  const n = typeof v === "number" ? v : typeof v === "string" ? parseFloat(v.replace(",", ".")) : NaN;
+  return Number.isFinite(n) ? n : null;
+}
+
+export async function extractLabMarkers(opts: {
+  fileBase64: string;   // base64 puro (sem prefixo data:)
+  mimeType: string;     // image/* ou application/pdf
+  filename: string;
+}): Promise<LabMarkerDraft[]> {
+  if (!process.env.OPENAI_API_KEY) return [];
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+
+  const isPdf = opts.mimeType === "application/pdf";
+  const filePart = isPdf
+    ? { type: "file", file: { filename: opts.filename || "exame.pdf", file_data: `data:application/pdf;base64,${opts.fileBase64}` } }
+    : { type: "image_url", image_url: { url: `data:${opts.mimeType};base64,${opts.fileBase64}` } };
+
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: LAB_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            filePart as never,
+            { type: "text", text: "Transcreva os marcadores deste exame e responda só com o JSON pedido." },
+          ],
+        },
+      ],
+    });
+    const raw = response.choices[0]?.message?.content ?? "{}";
+    let parsed: unknown;
+    try { parsed = JSON.parse(raw); } catch { return []; }
+    const arr = (parsed as { markers?: unknown[] })?.markers ?? [];
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .map((m) => {
+        const o = (m ?? {}) as Record<string, unknown>;
+        const biomarker = String(o.biomarker ?? "").trim();
+        const value = numOrNull(o.value);
+        if (!biomarker || value === null) return null;
+        const unit = o.unit == null ? null : String(o.unit).trim() || null;
+        return { biomarker, value, unit, ref_min: numOrNull(o.ref_min), ref_max: numOrNull(o.ref_max) };
+      })
+      .filter((x): x is LabMarkerDraft => x !== null)
+      .slice(0, 60);
+  } catch {
+    return [];
+  }
+}
+
 export async function analyzeExamPdf(opts: {
   pdfBase64: string;       // base64 puro (sem prefixo data:)
   filename: string;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatientById } from "@/services/patient-service";
-import { createNeuroIdAssessment, updateNeuroIdAssessment, segmentInstruments, importQuestionnaireAnswers, type QuestionnaireImport } from "@/services/neuro-id-service";
+import { createNeuroIdAssessment, updateNeuroIdAssessment, importQuestionnaireAnswers, type QuestionnaireImport } from "@/services/neuro-id-service";
 
 export async function createNeuroIdAssessmentAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -68,25 +68,6 @@ export async function updateNeuroIdAssessmentAction(formData: FormData) {
   });
 
   revalidatePath(`/patients/${patientId}`);
-}
-
-/**
- * Fase 2: IA extrai sub-scores do QRM/Q-SNA colados → rascunho 0–10 para revisão
- * humana. NÃO grava nada; só devolve o rascunho (a gravação acontece quando o
- * terapeuta confirma via createNeuroIdAssessmentAction).
- */
-export async function segmentInstrumentsAction(input: {
-  qrmText?: string;
-  qsnaText?: string;
-}): Promise<{ draft: Record<string, number>; error?: string }> {
-  const profile = await getCurrentUserProfile();
-  if (!profile?.clinic_id) return { draft: {}, error: "Não autorizado." };
-  try {
-    const draft = await segmentInstruments(input);
-    return { draft };
-  } catch {
-    return { draft: {}, error: "Não foi possível extrair agora. Tente novamente ou preencha manualmente." };
-  }
 }
 
 /**
