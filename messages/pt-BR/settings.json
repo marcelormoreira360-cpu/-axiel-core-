@@ -106,6 +106,10 @@
       "forms": {
         "title": "Formulários",
         "text": "Questionários do paciente e onde cada um aparece (intake, sessão, portal)."
+      },
+      "patientSections": {
+        "title": "Seções da ficha",
+        "text": "Ordene e mostre/oculte as seções da ficha do paciente."
       }
     }
   },
@@ -682,5 +686,34 @@
   "personalize": {
     "title": "Personalizar minha clínica",
     "subtitle": "Tudo que você molda do seu jeito, reunido num lugar só."
+  },
+  "patientSections": {
+    "title": "Ordem das seções da ficha",
+    "subtitle": "Defina a ordem e quais seções aparecem na ficha do paciente. Vale para toda a clínica.",
+    "listLabel": "Seções",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "show": "Mostrar",
+    "hide": "Ocultar",
+    "hidden": "Oculta",
+    "labels": {
+      "avaliacao": "Avaliação",
+      "resumo": "Resumo do caso",
+      "acompanhamento": "Acompanhamento do tratamento",
+      "indicacao": "Indicação de pacientes",
+      "mapa_bio3": "Mapa Bio³ (Neuro ID)",
+      "resumo_rapido": "Resumo rápido (stats e ações)",
+      "relatorios": "Relatórios de IA",
+      "proximo_passo": "Próximo passo",
+      "jornada": "Jornada do paciente",
+      "nota_voz": "Nota de voz",
+      "plano_suplementos": "Plano + Suplementação",
+      "pacotes": "Pacotes de sessão",
+      "cobranca": "Cobrança",
+      "financeiro": "Financeiro",
+      "exames": "Exames (laboratoriais e funcionais)",
+      "medicamentos": "Medicamentos e suplementos",
+      "documentos": "Documentos"
+    }
   }
 }

@@ -49,6 +49,9 @@ import { computePatientEngagement, buildPatientTimeline } from "@/services/patie
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
 import { WaitlistButton } from "@/components/waitlist-button";
 import { getWaitlist } from "@/services/waitlist-service";
+import { getPatientSectionLayout } from "@/services/clinic-patient-sections-service";
+import { PATIENT_SECTION_ORDER } from "@/lib/patient-sections";
+import type { ReactNode } from "react";
 
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
@@ -190,146 +193,53 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     prescriptions,
   });
 
-  return (
-    <Shell>
-      {/* Back */}
-      <BackLink
-        fallbackHref="/patients"
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
-      >
-        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-        {t("back")}
-      </BackLink>
+  // ── Ordem/visibilidade das seções (config por clínica, /settings/personalizar) ──
+  const sectionLayout = clinic?.id
+    ? await getPatientSectionLayout(clinic.id)
+    : PATIENT_SECTION_ORDER.map((key) => ({ key, visible: true }));
 
-      {/* ── Patient header ── */}
-      <div className="bg-white border-b border-black/[.07] rounded-t-[12px] px-[22px] py-5 flex items-center gap-4 mb-0">
-        <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[15px] font-medium text-[#0F6E56] shrink-0">
-          {initials(patient.full_name)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E] truncate">{patient.full_name}</p>
-          <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {t("patientSince", { since })}
-            {patient.date_of_birth ? (() => {
-              const dob = new Date(patient.date_of_birth);
-              const today = new Date();
-              let age = today.getFullYear() - dob.getFullYear();
-              if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
-              return t("age", { age });
-            })() : ""}
-          </p>
-          <div className="flex gap-[6px] mt-[6px]">
-            <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
-            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
-          </div>
-          {demoParts.length > 0 && (
-            <p className="text-[11px] text-[#A09E98] mt-[6px] truncate">{demoParts.join("  ·  ")}</p>
-          )}
-        </div>
-        <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
-          {/* Fila de espera */}
-          <WaitlistButton
-            patientId={patient.id}
-            patientName={patient.full_name}
-            isOnWaitlist={!!waitlistEntry}
-            waitlistEntryId={waitlistEntry?.id ?? null}
-          />
-          {/* Exportar PDF */}
-          <a
-            href={`/api/reports/paciente/${patient.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title={t("actions.exportPdf")}
-          >
-            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          </a>
-          <Link
-            href={`/patients/${patient.id}/edit`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title={t("actions.edit")}
-          >
-            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-          </Link>
-          <Link
-            href={`/patients/${patient.id}/intake`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title={t("actions.intake")}
-          >
-            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-          </Link>
-          <Link
-            href={`/patients/${patient.id}/prontuario`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title={t("actions.chart")}
-          >
-            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-          </Link>
-          <Link
-            href={`/schedule/new?patient_id=${patient.id}`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
-            title={t("actions.schedule")}
-          >
-            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
-          </Link>
-          {nextSession && (
-            <Link
-              href={`/teleconsulta/${nextSession.id}`}
-              className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-[#0F6E56] text-white text-[11px] font-medium hover:bg-[#085041] transition"
-              title={t("actions.startTelehealth")}
-            >
-              <svg className="w-[12px] h-[12px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>
-              {t("actions.telehealth")}
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {/* ── Intelligence strip ── */}
-      <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
-
-      {/* ── Avaliação (espaços do terapeuta — entram no relatório) — ACIMA do Resumo ── */}
+  // Registro das seções: cada uma é um nó (ou null quando não há dado). A página
+  // renderiza na ordem configurada, pulando as ocultas. O espaçamento vem do
+  // container (gap), por isso os nós não carregam margem vertical própria.
+  const sections: Record<string, ReactNode> = {
+    avaliacao: (
       <PatientAssessmentPanel
         patientId={patient.id}
         fields={assessmentFields}
         values={patient.assessment_data}
         canConfigure={canSeeFinance}
       />
-
-      {/* ── Resumo do caso + queixa principal (Feature 2) ── */}
+    ),
+    resumo: (
       <PatientCaseSummaryCard
         patientId={patient.id}
         chiefComplaint={patient.chief_complaint}
         caseSummary={patient.case_summary}
       />
-
-      {/* ── Acompanhamento do tratamento: sessões → Registro de sessão (notas/SOAP/vitais) ── */}
+    ),
+    acompanhamento: (
       <PatientTreatmentFollowupPanel patientId={id} appointments={appointments} sessions={sessionRecords} />
-
-      {/* ── Indicação paciente→paciente ── */}
-      {(referralInfo.referredByName || referralInfo.referred.length > 0) && (
-        <div className="bg-white border border-t-0 border-black/[.07] px-[22px] py-[12px] flex flex-wrap items-center gap-x-[18px] gap-y-[4px] text-[12px]">
-          {referralInfo.referredByName && (
-            <span className="text-[#6B6A66]">
-              {t("referral.referredBy", { name: referralInfo.referredByName })}
-            </span>
-          )}
-          {referralInfo.referred.length > 0 && (
-            <span className="text-[#0F6E56] font-medium">
-              {t("referral.brought", { count: referralInfo.referred.length })}
-              <span className="text-[#A09E98] font-normal"> — {referralInfo.referred.map((r) => r.full_name).join(", ")}</span>
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* ── Mapa Bio³ (Índice Neuro ID) ── */}
-      <div className="mt-[18px]">
-        <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} />
+    ),
+    indicacao: (referralInfo.referredByName || referralInfo.referred.length > 0) ? (
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[22px] py-[12px] flex flex-wrap items-center gap-x-[18px] gap-y-[4px] text-[12px]">
+        {referralInfo.referredByName && (
+          <span className="text-[#6B6A66]">
+            {t("referral.referredBy", { name: referralInfo.referredByName })}
+          </span>
+        )}
+        {referralInfo.referred.length > 0 && (
+          <span className="text-[#0F6E56] font-medium">
+            {t("referral.brought", { count: referralInfo.referred.length })}
+            <span className="text-[#A09E98] font-normal"> ({referralInfo.referred.map((r) => r.full_name).join(", ")})</span>
+          </span>
+        )}
       </div>
-
-      {/* ── 3-column body ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-t-0 border-black/[.07] rounded-b-[12px] overflow-hidden mb-5">
+    ) : null,
+    mapa_bio3: (
+      <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} />
+    ),
+    resumo_rapido: (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
 
         {/* Col 1 — stats */}
         <div className="p-[20px] lg:border-r border-black/[.05]">
@@ -531,77 +441,67 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               </form>
             </div>
           )}
-
-          {/* Relatórios Neuro ID 360 renderizados em largura total, abaixo do grid (ver seção dedicada). */}
         </div>
       </div>
-
-      {/* ── Relatórios Neuro ID 360 — largura total (leitura ampla, sem coluna estreita) ── */}
-      {aiInsights.length > 0 && (
-        <div className="mb-5">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
-            <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
-              {t("insight.viewAll")}
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {aiInsights.slice(0, 3).map((insight) => (
-              <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} liveId={liveIdentificacaoPt(patient)} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Next Step strip — ação prioritária baseada no estado atual */}
-      {(pendingReviews > 0 || latestInsight?.output?.structured_summary?.current_status) && (
-        <div className={[
-          "mt-3 rounded-[10px] border px-[15px] py-[11px] flex items-center gap-[10px]",
-          pendingReviews > 0
-            ? "bg-[#FAEEDA] border-[#F5C47F]"
-            : "bg-[#E1F5EE] border-[#9FE1CB]",
-        ].join(" ")}>
-          <div className="flex-1 min-w-0">
-            <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806]" : "text-[#085041]"].join(" ")}>
-              {pendingReviews > 0
-                ? t("nextStep.pending", { count: pendingReviews })
-                : t("nextStep.title")
-              }
-            </p>
-            {pendingReviews === 0 && latestInsight?.output?.structured_summary?.current_status && (
-              <p className="text-[11px] text-[#0F6E56] mt-[2px] line-clamp-1">
-                {latestInsight.output.structured_summary.current_status}
-              </p>
-            )}
-          </div>
-          <Link
-            href={`/patients/${patient.id}/insights`}
-            className={[
-              "shrink-0 text-[11px] font-medium px-[10px] py-[4px] rounded-[6px] transition",
-              pendingReviews > 0
-                ? "bg-[#F5A623] text-white hover:bg-[#e09510]"
-                : "bg-[#0F6E56] text-white hover:bg-[#085041]",
-            ].join(" ")}
-          >
-            {pendingReviews > 0 ? t("nextStep.review") : t("nextStep.viewInsight")}
+    ),
+    relatorios: aiInsights.length > 0 ? (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[12px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
+          <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
+            {t("insight.viewAll")}
           </Link>
         </div>
-      )}
-
-      {/* ── Jornada do paciente — timeline + questionários (superfície única) ── */}
-      <div className="mt-5">
-        <PatientTimeline
-          events={timelineEvents}
-          limit={15}
-          questionnaires={<PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />}
-        />
+        <div className="space-y-2">
+          {aiInsights.slice(0, 3).map((insight) => (
+            <AiInsightReviewCard key={insight.id} patientId={patient.id} insight={insight} liveId={liveIdentificacaoPt(patient)} />
+          ))}
+        </div>
       </div>
-
-      {/* Notes — quick voice note widget */}
-      <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />
-
-      {/* ── Plano de tratamento + Suplementação (acordeão recolhido) ── */}
-      <details className="mt-[18px] group">
+    ) : null,
+    proximo_passo: (pendingReviews > 0 || latestInsight?.output?.structured_summary?.current_status) ? (
+      <div className={[
+        "rounded-[10px] border px-[15px] py-[11px] flex items-center gap-[10px]",
+        pendingReviews > 0
+          ? "bg-[#FAEEDA] border-[#F5C47F]"
+          : "bg-[#E1F5EE] border-[#9FE1CB]",
+      ].join(" ")}>
+        <div className="flex-1 min-w-0">
+          <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806]" : "text-[#085041]"].join(" ")}>
+            {pendingReviews > 0
+              ? t("nextStep.pending", { count: pendingReviews })
+              : t("nextStep.title")
+            }
+          </p>
+          {pendingReviews === 0 && latestInsight?.output?.structured_summary?.current_status && (
+            <p className="text-[11px] text-[#0F6E56] mt-[2px] line-clamp-1">
+              {latestInsight.output.structured_summary.current_status}
+            </p>
+          )}
+        </div>
+        <Link
+          href={`/patients/${patient.id}/insights`}
+          className={[
+            "shrink-0 text-[11px] font-medium px-[10px] py-[4px] rounded-[6px] transition",
+            pendingReviews > 0
+              ? "bg-[#F5A623] text-white hover:bg-[#e09510]"
+              : "bg-[#0F6E56] text-white hover:bg-[#085041]",
+          ].join(" ")}
+        >
+          {pendingReviews > 0 ? t("nextStep.review") : t("nextStep.viewInsight")}
+        </Link>
+      </div>
+    ) : null,
+    jornada: (
+      <PatientTimeline
+        events={timelineEvents}
+        limit={15}
+        questionnaires={<PatientAssessmentProgressPanel patientId={id} progress={assessmentProgress} />}
+      />
+    ),
+    nota_voz: <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />,
+    plano_suplementos: (
+      <details className="group">
         <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] transition">
           <span className="text-[13px] font-medium text-[#0F1A2E]">{t("accordion.planSupplements")}</span>
           <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
@@ -616,56 +516,145 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           />
         </div>
       </details>
-
-      {/* Pacotes de sessão */}
-      <div className="mt-[18px]">
-        <PatientPackagePanel packages={packages} patientId={id} />
-      </div>
-
-      {/* Cobrança (pacote / mensalidade) */}
-      <div className="mt-[18px]">
-        <PatientChargePanel
-          patientId={id}
-          asaasEnabled={isAsaasConfigured()}
-          offers={offers
-            .filter((o) => o.is_active && o.price_cents > 0)
-            .map((o) => ({
-              id: o.id,
-              name: o.name,
-              price_cents: o.price_cents,
-              currency: o.currency,
-              offer_type: o.offer_type,
-              number_of_sessions: o.number_of_sessions,
-            }))}
-        />
-      </div>
-
-      {/* Financeiro do paciente — restrito a gestores */}
-      {canSeeFinance && patientFinancials && (
-        <div className="mt-[18px]">
-          <PatientFinancialsPanel
-            financials={patientFinancials}
-            currency={clinicCurrency}
-            locale={locale}
-          />
-        </div>
-      )}
-
-      {/* Exames laboratoriais */}
-      <div className="mt-[18px]">
+    ),
+    pacotes: <PatientPackagePanel packages={packages} patientId={id} />,
+    cobranca: (
+      <PatientChargePanel
+        patientId={id}
+        asaasEnabled={isAsaasConfigured()}
+        offers={offers
+          .filter((o) => o.is_active && o.price_cents > 0)
+          .map((o) => ({
+            id: o.id,
+            name: o.name,
+            price_cents: o.price_cents,
+            currency: o.currency,
+            offer_type: o.offer_type,
+            number_of_sessions: o.number_of_sessions,
+          }))}
+      />
+    ),
+    financeiro: (canSeeFinance && patientFinancials) ? (
+      <PatientFinancialsPanel
+        financials={patientFinancials}
+        currency={clinicCurrency}
+        locale={locale}
+      />
+    ) : null,
+    exames: (
+      <div className="space-y-[18px]">
         <PatientExamsPanel exams={exams} patientId={id} />
-
         <PatientFunctionalExamsPanel exams={functionalExams} patientId={id} />
       </div>
+    ),
+    medicamentos: <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />,
+    documentos: <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />,
+  };
 
-      {/* Medicamentos e suplementos */}
-      <div className="mt-[18px]">
-        <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
+  return (
+    <Shell>
+      {/* Back */}
+      <BackLink
+        fallbackHref="/patients"
+        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
+      >
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        {t("back")}
+      </BackLink>
+
+      {/* ── Patient header (fixo no topo) ── */}
+      <div className="bg-white border-b border-black/[.07] rounded-t-[12px] px-[22px] py-5 flex items-center gap-4 mb-0">
+        <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[15px] font-medium text-[#0F6E56] shrink-0">
+          {initials(patient.full_name)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E] truncate">{patient.full_name}</p>
+          <p className="text-[12px] text-[#A09E98] mt-[2px]">
+            {t("patientSince", { since })}
+            {patient.date_of_birth ? (() => {
+              const dob = new Date(patient.date_of_birth);
+              const today = new Date();
+              let age = today.getFullYear() - dob.getFullYear();
+              if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;
+              return t("age", { age });
+            })() : ""}
+          </p>
+          <div className="flex gap-[6px] mt-[6px]">
+            <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
+            <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
+          </div>
+          {demoParts.length > 0 && (
+            <p className="text-[11px] text-[#A09E98] mt-[6px] truncate">{demoParts.join("  ·  ")}</p>
+          )}
+        </div>
+        <div className="flex gap-2 shrink-0 items-center flex-wrap justify-end">
+          {/* Fila de espera */}
+          <WaitlistButton
+            patientId={patient.id}
+            patientName={patient.full_name}
+            isOnWaitlist={!!waitlistEntry}
+            waitlistEntryId={waitlistEntry?.id ?? null}
+          />
+          {/* Exportar PDF */}
+          <a
+            href={`/api/reports/paciente/${patient.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title={t("actions.exportPdf")}
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </a>
+          <Link
+            href={`/patients/${patient.id}/edit`}
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title={t("actions.edit")}
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </Link>
+          <Link
+            href={`/patients/${patient.id}/intake`}
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title={t("actions.intake")}
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </Link>
+          <Link
+            href={`/patients/${patient.id}/prontuario`}
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title={t("actions.chart")}
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          </Link>
+          <Link
+            href={`/schedule/new?patient_id=${patient.id}`}
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            title={t("actions.schedule")}
+          >
+            <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+          </Link>
+          {nextSession && (
+            <Link
+              href={`/teleconsulta/${nextSession.id}`}
+              className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-[#0F6E56] text-white text-[11px] font-medium hover:bg-[#085041] transition"
+              title={t("actions.startTelehealth")}
+            >
+              <svg className="w-[12px] h-[12px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 8-6 4 6 4V8z"/><rect x="2" y="6" width="14" height="12" rx="2" ry="2"/></svg>
+              {t("actions.telehealth")}
+            </Link>
+          )}
+        </div>
       </div>
 
-      {/* Documentos do paciente */}
-      <div className="mt-[18px]">
-        <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />
+      {/* ── Intelligence strip (fixo, fecha o cartão do cabeçalho) ── */}
+      <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
+
+      {/* ── Seções reordenáveis (ordem/visibilidade por clínica, /settings/personalizar) ── */}
+      <div className="flex flex-col gap-[18px] mt-[18px]">
+        {sectionLayout.map(({ key, visible }) => {
+          const node = visible ? sections[key] : null;
+          return node ? <div key={key}>{node}</div> : null;
+        })}
       </div>
     </Shell>
   );
