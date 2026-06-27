@@ -43,9 +43,12 @@ function bandLabel(g: FindingGroup): string | null {
   return null;
 }
 
+/** Marcador estável do bloco (para deduplicar ao reimportar). */
+export const FINDINGS_MARKER = "ACHADOS DOS QUESTIONÁRIOS";
+
 /** Cabeçalho do bloco de achados, com o corte usado. */
 export function findingsHeader(threshold: number): string {
-  return `ACHADOS DOS QUESTIONÁRIOS (itens com pontuação ${threshold} ou mais; revisar, corrigir e validar)`;
+  return `${FINDINGS_MARKER} (itens com pontuação ${threshold} ou mais; revisar, corrigir e validar)`;
 }
 
 /**

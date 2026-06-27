@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Check, AlertCircle, ClipboardList, Settings2, Download } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
 import type { ClinicAssessmentField } from "@/lib/types";
 
 type Props = {
@@ -49,7 +50,12 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     setImporting(false);
     if (res.error) { setImportMsg(res.error); return; }
     if (!res.hasData) { setImportMsg(t("findingsNone")); return; }
-    setAnamneseText((prev) => (prev.trim() ? `${prev.trim()}\n\n${res.text}` : res.text));
+    // Dedup: remove um bloco de achados anterior antes de anexar o novo (reimportar não duplica).
+    setAnamneseText((prev) => {
+      const idx = prev.indexOf(FINDINGS_MARKER);
+      const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
+      return base ? `${base}\n\n${res.text}` : res.text;
+    });
     setImportMsg(t("findingsImported"));
   }
 

@@ -695,8 +695,9 @@ export async function extractQuestionnaireFindings(
     const items: (FindingItem & { secOrder: number; qOrder: number })[] = [];
     for (const a of answers ?? []) {
       const q = Array.isArray(a.assessment_questions) ? a.assessment_questions[0] : a.assessment_questions;
-      const val = a.value_number as number | null;
-      if (val === null || val === undefined) continue;
+      // PostgREST serializa numeric como string → coage para número.
+      const val = a.value_number == null ? null : Number(a.value_number);
+      if (val === null || !Number.isFinite(val)) continue;
       const sec = meta.get(a.section_id as string);
       items.push({
         section: sec?.title ?? "",
