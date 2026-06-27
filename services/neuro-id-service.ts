@@ -613,11 +613,59 @@ export async function autoUpsertNeuroIdDraft(
   return { assessmentId };
 }
 
-// ── Achados dos questionários (QRM/Q-SNA) → texto para a Anamnese ──────────────
-// Itens com pontuação >= corte (default 3), por seção, do QRM e do Q-SNA mais
-// recentes. Devolve um resumo em texto para o terapeuta revisar/validar na
-// Avaliação (depois alimenta o Doc 1). NÃO grava nada; pontuações Bio³ intactas.
-export type QuestionnaireFindings = { text: string; hasData: boolean };
+// ── Achados dos questionários → texto para a Avaliação (ATM) ───────────────────
+// Itens com pontuação >= corte (default 3), por seção. Roteia para o campo certo:
+// História Familiar → Antecedentes; o resto (QRM, Q-SNA, Estilo de vida, Ambiente)
+// → Anamnese (Mediadores). Devolve textos para o terapeuta revisar/validar; NÃO
+// grava nada; pontuações Bio³ intactas.
+export type QuestionnaireFindings = { anamnese: string; antecedents: string; hasData: boolean };
+
+type RawItem = FindingItem & { secOrder: number; qOrder: number };
+
+async function instrumentFindings(
+  supabase: Db,
+  patientId: string,
+  clinicId: string,
+  match: string,
+  threshold: number,
+): Promise<{ total: number | null; max: number | null; items: RawItem[] } | null> {
+  const { data: resp } = await supabase
+    .from("assessment_responses")
+    .select("id, template_id, total_score, max_possible_score, assessment_templates!inner(name)")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .ilike("assessment_templates.name", `%${match}%`)
+    .order("filled_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!resp) return null;
+
+  const r = resp as unknown as { id: string; template_id: string; total_score: number | null; max_possible_score: number | null };
+  const [{ data: answers }, { data: sections }] = await Promise.all([
+    supabase
+      .from("assessment_answers")
+      .select("value_number, section_id, assessment_questions(text, order_index)")
+      .eq("response_id", r.id)
+      .gte("value_number", threshold),
+    supabase.from("assessment_sections").select("id, title, order_index").eq("template_id", r.template_id),
+  ]);
+
+  const meta = new Map<string, { title: string; order: number }>();
+  for (const s of sections ?? []) meta.set(s.id as string, { title: (s.title as string) ?? "", order: (s.order_index as number) ?? 0 });
+
+  const items: RawItem[] = [];
+  for (const a of answers ?? []) {
+    const q = Array.isArray(a.assessment_questions) ? a.assessment_questions[0] : a.assessment_questions;
+    const val = a.value_number == null ? null : Number(a.value_number); // PostgREST manda numeric como string
+    if (val === null || !Number.isFinite(val)) continue;
+    const sec = meta.get(a.section_id as string);
+    items.push({ section: sec?.title ?? "", text: (q?.text as string) ?? "", value: val, secOrder: sec?.order ?? 0, qOrder: (q?.order_index as number) ?? 0 });
+  }
+  items.sort((x, y) => x.secOrder - y.secOrder || y.value - x.value || x.qOrder - y.qOrder);
+  return { total: r.total_score, max: r.max_possible_score, items };
+}
+
+const stripMeta = (items: RawItem[]): FindingItem[] => items.map(({ section, text, value }) => ({ section, text, value }));
 
 export async function extractQuestionnaireFindings(
   patientId: string,
@@ -627,67 +675,29 @@ export async function extractQuestionnaireFindings(
 ): Promise<QuestionnaireFindings> {
   const supabase = await getDb(client);
 
-  const instruments: { match: string; label: string; kind: "qrm" | "qsna" }[] = [
-    { match: "Rastreamento Metab", label: "QRM (Rastreamento Metabólico)", kind: "qrm" },
-    { match: "Q-SNA", label: "Q-SNA (Sistema Nervoso Autônomo)", kind: "qsna" },
-  ];
+  const anamneseGroups: FindingGroup[] = [];
+  const antecedentesGroups: FindingGroup[] = [];
 
-  const groups: FindingGroup[] = [];
-
-  for (const inst of instruments) {
-    const { data: resp } = await supabase
-      .from("assessment_responses")
-      .select("id, template_id, total_score, max_possible_score, assessment_templates!inner(name)")
-      .eq("patient_id", patientId)
-      .eq("clinic_id", clinicId)
-      .ilike("assessment_templates.name", `%${inst.match}%`)
-      .order("filled_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!resp) continue;
-
-    const r = resp as unknown as { id: string; template_id: string; total_score: number | null; max_possible_score: number | null };
-
-    const [{ data: answers }, { data: sections }] = await Promise.all([
-      supabase
-        .from("assessment_answers")
-        .select("value_number, section_id, assessment_questions(text, order_index)")
-        .eq("response_id", r.id)
-        .gte("value_number", threshold),
-      supabase.from("assessment_sections").select("id, title, order_index").eq("template_id", r.template_id),
-    ]);
-
-    const meta = new Map<string, { title: string; order: number }>();
-    for (const s of sections ?? []) meta.set(s.id as string, { title: (s.title as string) ?? "", order: (s.order_index as number) ?? 0 });
-
-    const items: (FindingItem & { secOrder: number; qOrder: number })[] = [];
-    for (const a of answers ?? []) {
-      const q = Array.isArray(a.assessment_questions) ? a.assessment_questions[0] : a.assessment_questions;
-      // PostgREST serializa numeric como string → coage para número.
-      const val = a.value_number == null ? null : Number(a.value_number);
-      if (val === null || !Number.isFinite(val)) continue;
-      const sec = meta.get(a.section_id as string);
-      items.push({
-        section: sec?.title ?? "",
-        text: (q?.text as string) ?? "",
-        value: val,
-        secOrder: sec?.order ?? 0,
-        qOrder: (q?.order_index as number) ?? 0,
-      });
-    }
-
-    if (items.length === 0) continue;
-    items.sort((x, y) => x.secOrder - y.secOrder || y.value - x.value || x.qOrder - y.qOrder);
-
-    groups.push({
-      instrument: inst.label,
-      kind: inst.kind,
-      total: r.total_score,
-      max: r.max_possible_score,
-      items: items.map(({ section, text, value }) => ({ section, text, value })),
-    });
+  // QRM e Q-SNA → Anamnese (instrumento inteiro).
+  const qrm = await instrumentFindings(supabase, patientId, clinicId, "Rastreamento Metab", threshold);
+  if (qrm && qrm.items.length > 0) {
+    anamneseGroups.push({ instrument: "QRM (Rastreamento Metabólico)", kind: "qrm", total: qrm.total, max: qrm.max, items: stripMeta(qrm.items) });
+  }
+  const qsna = await instrumentFindings(supabase, patientId, clinicId, "Q-SNA", threshold);
+  if (qsna && qsna.items.length > 0) {
+    anamneseGroups.push({ instrument: "Q-SNA (Sistema Nervoso Autônomo)", kind: "qsna", total: qsna.total, max: qsna.max, items: stripMeta(qsna.items) });
   }
 
-  const text = formatFindingsSummary(groups, threshold);
-  return { text, hasData: text.length > 0 };
+  // Estilo de Vida / Ambiente / História Familiar → roteia por seção.
+  const ctx = await instrumentFindings(supabase, patientId, clinicId, "Estilo de Vida", threshold);
+  if (ctx && ctx.items.length > 0) {
+    const familia = ctx.items.filter((i) => /FAMIL/i.test(i.section));
+    const resto = ctx.items.filter((i) => !/FAMIL/i.test(i.section));
+    if (resto.length > 0) anamneseGroups.push({ instrument: "Estilo de vida e ambiente", kind: "other", total: null, max: null, items: stripMeta(resto) });
+    if (familia.length > 0) antecedentesGroups.push({ instrument: "História familiar", kind: "other", total: null, max: null, items: stripMeta(familia) });
+  }
+
+  const anamnese = formatFindingsSummary(anamneseGroups, threshold);
+  const antecedents = formatFindingsSummary(antecedentesGroups, threshold);
+  return { anamnese, antecedents, hasData: anamnese.length > 0 || antecedents.length > 0 };
 }
