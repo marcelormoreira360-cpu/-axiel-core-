@@ -5,6 +5,7 @@ import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 import { extractQuestionnaireFindings } from "@/services/neuro-id-service";
+import { suggestAtmIntegration } from "@/services/ai-insight-service";
 
 export type AssessmentState = { error?: string; ok?: boolean } | null;
 
@@ -73,4 +74,17 @@ export async function importQuestionnaireFindingsAction(
   } catch {
     return { ...empty, error: "Não foi possível buscar os achados agora." };
   }
+}
+
+// Gera um RASCUNHO de "Integração clínica (ATM)" com IA (junta avaliação + exames +
+// Mapa Bio³). NÃO grava nem entra no relatório: o terapeuta revisa e salva via
+// saveAssessmentAction. Escopo de clínica garantido por getPatientById(clinic.id).
+export async function suggestAtmIntegrationAction(
+  patientId: string,
+): Promise<{ suggestion?: string; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { error: "Paciente não encontrado nesta clínica." };
+  return await suggestAtmIntegration(patientId);
 }
