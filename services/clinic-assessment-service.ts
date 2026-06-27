@@ -40,6 +40,10 @@ export const DEFAULT_ASSESSMENT_FIELDS: DefaultFieldSeed[] = [
   { field_key: "pain_level", label: "Grau da dor (0–10)", field_type: "number", placeholder: null, options: { min: 0, max: 10 }, order_index: 2, include_in_report: true },
   { field_key: "pain_location", label: "Local da dor", field_type: "text", placeholder: "Ex: torácica alta, lombar, ombro direito...", options: null, order_index: 3, include_in_report: true },
   { field_key: "treatment_note", label: "Conduta / tratamento sugerido", field_type: "textarea", placeholder: "Tratamento realizado e a sugestão que vai no 1º relatório do paciente.", options: null, order_index: 4, include_in_report: true },
+  // Fase 2 (ATM): campos humanos de alto valor que o terapeuta preenche na consulta.
+  { field_key: "objetivo", label: "Objetivo (3 prioridades)", field_type: "textarea", placeholder: "Se eu pudesse resolver 3 coisas na sua saúde, quais seriam?", options: null, order_index: 5, include_in_report: true },
+  { field_key: "linha_do_tempo", label: "Linha do tempo (gatilhos)", field_type: "textarea", placeholder: "Quando começou? O que aconteceu antes? (cirurgias, COVID, perdas, mudanças hormonais, estresse intenso)", options: null, order_index: 6, include_in_report: true },
+  { field_key: "integracao_atm", label: "Integração clínica (ATM)", field_type: "textarea", placeholder: "Principais queixas, gatilhos, fatores que mantêm o quadro, sistemas mais desregulados, hipóteses a confirmar.", options: null, order_index: 7, include_in_report: true },
 ];
 
 /** Gera um field_key estável a partir de um rótulo (slug ASCII). */

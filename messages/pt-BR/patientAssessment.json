@@ -27,5 +27,20 @@
   "importingFindings": "Buscando…",
   "findingsImported": "Achados adicionados à Anamnese. Revise e valide antes de salvar.",
   "findingsNone": "Nenhum item acima do corte encontrado nos questionários.",
-  "findingsHint": "Puxa os itens de maior pontuação (3+) do QRM e Q-SNA para você revisar e validar."
+  "findingsHint": "Puxa os itens de maior pontuação (3+) do QRM e Q-SNA para você revisar e validar.",
+  "atmIntro": "Organizada por Antecedentes, Gatilhos e Mediadores (visão funcional).",
+  "group": {
+    "objetivo": "Objetivo",
+    "antecedentes": "Antecedentes",
+    "gatilhos": "Gatilhos",
+    "mediadores": "Mediadores",
+    "integracao": "Integração"
+  },
+  "groupHint": {
+    "objetivo": "O que o paciente mais quer resolver.",
+    "antecedentes": "O que aumentou a vulnerabilidade (genética, infância, traumas, cirurgias, histórico).",
+    "gatilhos": "O que desencadeou os sintomas (eventos, perdas, infecções, mudanças hormonais).",
+    "mediadores": "O que mantém o quadro hoje (sintomas dos questionários, sono, estresse, dor). Use \"Importar achados\".",
+    "integracao": "Amarra tudo: padrões, sistemas desregulados, conduta."
+  }
 }
