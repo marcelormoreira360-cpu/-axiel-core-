@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, type FindingGroup } from "../findings";
+import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, stripPreviousFindings, type FindingGroup } from "../findings";
 
 describe("findings", () => {
   it("faixas do QRM", () => {
@@ -18,7 +18,7 @@ describe("findings", () => {
     expect(qsnaTotalLabel(130)).toContain("grave");
   });
 
-  it("agrupa por instrumento e seção, sem travessão, e mostra a pontuação", () => {
+  it("cabeçalho curto: QRM mostra a faixa (sem total), sem intro nem travessão", () => {
     const groups: FindingGroup[] = [
       {
         instrument: "QRM (Rastreamento Metabólico)", kind: "qrm", total: 42, max: 268,
@@ -30,15 +30,30 @@ describe("findings", () => {
       },
     ];
     const out = formatFindingsSummary(groups, 3);
-    expect(out).toContain("ACHADOS DOS QUESTIONÁRIOS");
-    expect(out).toContain("total 42/268");
+    expect(out).not.toContain("ACHADOS DOS QUESTIONÁRIOS"); // intro removida
+    expect(out).not.toContain("total 42/268");              // sem total cru
+    expect(out).toContain("QRM: acima de 40 (hipersensibilidade provável)");
     expect(out).toContain("Mente: Memória ruim (3); Concentração ruim (3)");
     expect(out).toContain("Emoções: Depressão (4)");
     expect(out).not.toContain("—"); // sem travessão
   });
 
+  it("cabeçalho do Q-SNA mostra total + faixa", () => {
+    const out = formatFindingsSummary([
+      { instrument: "Q-SNA (Sistema Nervoso Autônomo)", kind: "qsna", total: 46, max: 180,
+        items: [{ section: "Cardiovascular", text: "Palpitações", value: 3 }] },
+    ], 3);
+    expect(out).toContain("Q-SNA: 46 disfunção leve (adaptativa)");
+  });
+
   it("ignora grupos sem itens e retorna vazio quando não há achados", () => {
     expect(formatFindingsSummary([{ instrument: "QRM", kind: "qrm", total: 10, max: 268, items: [] }], 3)).toBe("");
     expect(formatFindingsSummary([], 3)).toBe("");
+  });
+
+  it("stripPreviousFindings remove o bloco anterior preservando o texto humano", () => {
+    const prev = "Anotação do terapeuta.\n\nQRM: acima de 40 (hipersensibilidade provável)\n- Mente: Memória ruim (3)";
+    expect(stripPreviousFindings(prev)).toBe("Anotação do terapeuta.");
+    expect(stripPreviousFindings("Só texto humano, sem achados.")).toBe("Só texto humano, sem achados.");
   });
 });
