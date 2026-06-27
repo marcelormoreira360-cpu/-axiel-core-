@@ -115,6 +115,17 @@ export type ClinicAssessmentField = {
   updated_at: string;
 };
 
+/** Ordem/visibilidade de uma seção da ficha do paciente, por clínica (migration 106). */
+export type ClinicPatientSection = {
+  id: string;
+  clinic_id: string;
+  section_key: string;
+  order_index: number;
+  is_visible: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type LeadSource = "website" | "instagram" | "facebook" | "google" | "referral" | "other";
 
 export type LeadStage = "new_lead" | "contacted" | "scheduled" | "converted_to_patient";

@@ -106,6 +106,10 @@
       "forms": {
         "title": "Forms",
         "text": "Patient questionnaires and where each one appears (intake, session, portal)."
+      },
+      "patientSections": {
+        "title": "Chart sections",
+        "text": "Reorder and show/hide the patient chart sections."
       }
     }
   },
@@ -682,5 +686,34 @@
   "personalize": {
     "title": "Customize my clinic",
     "subtitle": "Everything you shape your way, gathered in one place."
+  },
+  "patientSections": {
+    "title": "Patient chart sections",
+    "subtitle": "Set the order and which sections appear on the patient chart. Applies clinic-wide.",
+    "listLabel": "Sections",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "show": "Show",
+    "hide": "Hide",
+    "hidden": "Hidden",
+    "labels": {
+      "avaliacao": "Assessment",
+      "resumo": "Case summary",
+      "acompanhamento": "Treatment follow-up",
+      "indicacao": "Patient referrals",
+      "mapa_bio3": "Bio³ Map (Neuro ID)",
+      "resumo_rapido": "Quick summary (stats & actions)",
+      "relatorios": "AI reports",
+      "proximo_passo": "Next step",
+      "jornada": "Patient journey",
+      "nota_voz": "Voice note",
+      "plano_suplementos": "Plan + Supplements",
+      "pacotes": "Session packages",
+      "cobranca": "Billing",
+      "financeiro": "Financials",
+      "exames": "Exams (lab & functional)",
+      "medicamentos": "Medications & supplements",
+      "documentos": "Documents"
+    }
   }
 }

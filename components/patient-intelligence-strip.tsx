@@ -77,7 +77,7 @@ export function PatientIntelligenceStrip({ engagement, journey }: Props) {
   };
 
   return (
-    <div className="bg-white border border-t-0 border-black/[.07] px-[22px] py-[14px] flex items-center gap-[18px] flex-wrap">
+    <div className="bg-white border border-t-0 border-black/[.07] rounded-b-[12px] px-[22px] py-[14px] flex items-center gap-[18px] flex-wrap">
 
       {/* Journey stage + next best action (derived, zero extra queries) */}
       {journey && (

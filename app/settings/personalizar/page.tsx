@@ -11,6 +11,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 // Cada card aponta para a tela de edição que já existe (sem lógica nova).
 const PERSONALIZE_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/avaliacao", key: "assessmentFields" },
+  { href: "/settings/secoes", key: "patientSections" },
   { href: "/forms", key: "forms" },
   { href: "/settings/session-types", key: "sessionTypes" },
   { href: "/settings/clinical-tests", key: "clinicalTests" },

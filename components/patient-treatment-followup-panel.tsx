@@ -58,7 +58,7 @@ export function PatientTreatmentFollowupPanel({
     .slice(0, 6);
 
   return (
-    <div className="bg-white border border-t-0 border-black/[.07] px-[22px] py-[16px]">
+    <div className="bg-white border border-black/[.07] rounded-[12px] px-[22px] py-[16px]">
       <div className="flex items-center justify-between mb-[12px]">
         <span className="flex items-center gap-[7px] text-[13px] font-medium text-[#0F1A2E]">
           <ClipboardList className="h-[16px] w-[16px] text-[#0F6E56]" /> Acompanhamento do tratamento
