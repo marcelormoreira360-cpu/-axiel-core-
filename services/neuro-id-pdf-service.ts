@@ -75,8 +75,20 @@ function drawFooter(doc: Doc, brand: ClinicBrand) {
   doc.save();
   doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.6).strokeColor("#D9D6E4").stroke();
   if (tagline) {
-    doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
-      .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
+    // Escrever na área de rodapé (abaixo da margem inferior) sem disparar uma
+    // nova página: zera margins.bottom durante o text() e restaura em seguida.
+    // Sem isto, o texto fluido em y>margem força addPage → páginas em branco e a
+    // tagline "vaza" para o topo da página seguinte, sobrepondo o título.
+    const prevBottom = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
+    try {
+      doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
+        .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
+    } finally {
+      // Restaura sempre: margem em 0 vazaria para as páginas seguintes (via
+      // pageAdded) e quebraria a paginação de relatórios longos.
+      doc.page.margins.bottom = prevBottom;
+    }
   }
   doc.restore();
 }
@@ -107,7 +119,7 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   const shareTxt = share === null ? "" : `  ·  ${Math.round(share)}% do total`;
   const y = doc.y;
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
-  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ★ comece aqui" : ""}`);
+  doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ·  comece aqui (prioridade)" : ""}`);
   const pct = disf ?? 0;
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
@@ -115,6 +127,21 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   if (disf !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
   doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
   doc.y = barY + 18;
+}
+
+// Estrela vetorial de 5 pontas (marcador de prioridade). As fontes padrão
+// (WinAnsi) NÃO têm o glifo ★ — desenhar como vetor evita o caractere quebrado.
+function drawStar(doc: Doc, cx: number, cy: number, r: number, color: string) {
+  const pts: [number, number][] = [];
+  for (let i = 0; i < 5; i++) {
+    const outer = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
+    const inner = outer + Math.PI / 5;
+    pts.push([cx + r * Math.cos(outer), cy + r * Math.sin(outer)]);
+    pts.push([cx + r * 0.42 * Math.cos(inner), cy + r * 0.42 * Math.sin(inner)]);
+  }
+  doc.save();
+  doc.polygon(...pts).fill(color);
+  doc.restore();
 }
 
 // Pirâmide Bio³: 3 faixas coloridas pela banda de DISFUNÇÃO.
@@ -142,7 +169,7 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
     doc.font("Helvetica-Bold").fontSize(13).fillColor(txt)
       .text(disf === null ? "—" : `${disf}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
     if (b.isPriority) {
-      doc.font("Helvetica").fontSize(10).fillColor(txt).text("★", cx - 30, centersY[i] - 19, { width: 60, align: "center" });
+      drawStar(doc, cx, centersY[i] - 15, 5.5, txt);
     }
   });
   doc.lineWidth(1);
@@ -176,7 +203,7 @@ export async function buildNeuroIdMapPdf(opts: {
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
     size: "LETTER",
-    info: { Title: "Mapa Bio³ — Índice Neuro ID", Author: brand.name ?? "AXIEL Core" },
+    info: { Title: "Mapa Bio³ · Índice Neuro ID", Author: brand.name ?? "AXIEL Core" },
   });
   let decorating = false;
   const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
@@ -187,7 +214,7 @@ export async function buildNeuroIdMapPdf(opts: {
   const contrib = pillarContributions(dysByPillar);
 
   // ── Página 1 — índice (herói) / pirâmide / ponto de atenção ──
-  docTitle(doc, "Mapa Bio³", "Índice Bio — grau de disfunção por eixo (meta: baixar)");
+  docTitle(doc, "Mapa Bio³", "Índice Bio · grau de disfunção por eixo (meta: baixar)");
   if (opts.patientName) { doc.font("Times-Roman").fontSize(11).fillColor(MUTED).text(`Paciente: ${opts.patientName}`, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.2); }
   {
     const d = opts.demographics;
@@ -197,19 +224,19 @@ export async function buildNeuroIdMapPdf(opts: {
 
   const generalDys = round(map.indice_geral);
   const indexBand = bandForDysfunction(map.indice_geral);
-  sectionTitle(doc, "Índice Bio — Grau de Disfunção");
+  sectionTitle(doc, "Índice Bio · Grau de Disfunção");
   doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
     .text(generalDys === null ? "—" : `${generalDys}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
   if (indexBand) {
     doc.font("Times-Italic").fontSize(11).fillColor(indexBand.colors.text)
-      .text(`${labelFor(indexBand.key, "axis")} — ${band(map.indice_geral)}`, MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
+      .text(`${labelFor(indexBand.key, "axis")}: ${band(map.indice_geral)}`, MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
   }
   doc.moveDown(0.3);
   if (map.priority_pillar) {
     paragraph(doc, `Comece aqui: ${PILLAR_LABEL[map.priority_pillar]} (${PILLAR_HINT[map.priority_pillar]}). É o eixo de MAIOR disfunção e onde o cuidado tende a gerar mais resultado.`);
   }
   if (map.is_partial) {
-    doc.font("Times-Italic").fontSize(9.5).fillColor("#9a7b2f").text("Leitura parcial — alguns dados (ex.: exames) ainda não foram incluídos. Recomenda-se complementar a avaliação.", MARGIN, doc.y, { width: CONTENT_W });
+    doc.font("Times-Italic").fontSize(9.5).fillColor("#9a7b2f").text("Leitura parcial: alguns dados (ex.: exames) ainda não foram incluídos. Recomenda-se complementar a avaliação.", MARGIN, doc.y, { width: CONTENT_W });
     doc.moveDown(0.4);
   }
 
@@ -228,7 +255,7 @@ export async function buildNeuroIdMapPdf(opts: {
   docTitle(doc, "Leitura por Eixo", "O que foi avaliado e o que sugere");
   for (const p of PILLARS) {
     const disf = round(dysByPillar[p]);
-    sectionTitle(doc, `${PILLAR_LABEL[p]} — ${PILLAR_HINT[p]}`);
+    sectionTitle(doc, `${PILLAR_LABEL[p]} · ${PILLAR_HINT[p]}`);
     paragraph(doc, `O que foi avaliado: ${PILLAR_ASSESSED[p]}`);
     paragraph(doc, `O que sugere: este eixo está ${band(dysByPillar[p])}${disf !== null ? ` (disfunção ${disf}%)` : ""}.`);
   }
@@ -298,7 +325,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
     size: "LETTER",
-    info: { Title: "Mapa Bio³ — Seu Relatório", Author: brand.name ?? "AXIEL Core" },
+    info: { Title: "Mapa Bio³ · Seu Relatório", Author: brand.name ?? "AXIEL Core" },
   });
   let decorating = false;
   const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
