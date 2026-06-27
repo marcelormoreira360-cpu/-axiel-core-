@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Mail, Phone, Send, UserCheck, UserRound } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { getLeadById } from "@/services/lead-service";
 import { GuidedAiInsightsPanel } from "@/components/guided-ai-insights-panel";
@@ -47,9 +48,9 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <Link href="/leads" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
+        <BackLink fallbackHref="/leads" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
           <ArrowLeft className="h-4 w-4" /> Back to pipeline
-        </Link>
+        </BackLink>
         <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">LEAD PROFILE</p>

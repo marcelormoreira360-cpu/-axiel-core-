@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { AppointmentForm, type ClinicUserOption } from "@/components/appointment-form";
 import { getPatients, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -98,12 +98,12 @@ export default async function NewAppointmentPage({
     <Shell>
       {/* Topbar */}
       <div className="flex items-center gap-[10px] mb-[24px]">
-        <Link
-          href="/schedule"
+        <BackLink
+          fallbackHref="/schedule"
           className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-        </Link>
+        </BackLink>
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("new.title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">{t("new.subtitle")}</p>

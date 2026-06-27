@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ClipboardList, Plus } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 
 function timeAgo(iso: string): string {
@@ -31,12 +32,12 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
       {/* Header */}
       <div className="flex items-center justify-between mb-[20px]">
         <div className="flex items-center gap-[10px]">
-          <Link
-            href={`/patients/${id}`}
+          <BackLink
+            fallbackHref={`/patients/${id}`}
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-          </Link>
+          </BackLink>
           <div>
             <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Formulários</h1>
             <p className="text-[12px] text-[#A09E98] mt-[1px]">

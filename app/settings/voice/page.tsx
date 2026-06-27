@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, Phone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 
 const WEBHOOK_URL = "https://axiel-core-6ikl.vercel.app/api/voice/webhook";
@@ -11,9 +12,9 @@ export default async function VoiceSettingsPage() {
   return (
     <Shell>
       <div className="mb-7">
-        <Link href="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+        <BackLink fallbackHref="/settings" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
           <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
-        </Link>
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
         <div className="flex items-center gap-3">
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>

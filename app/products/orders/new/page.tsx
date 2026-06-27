@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getProducts } from "@/services/product-service";
@@ -20,9 +20,9 @@ export default async function NewProductOrderPage() {
   return (
     <Shell>
       <div className="mb-6">
-        <Link href="/products/orders" className="inline-flex items-center gap-1.5 text-[12px] text-[#6B6A66] hover:text-[#0F1A2E] transition mb-3">
+        <BackLink fallbackHref="/products/orders" className="inline-flex items-center gap-1.5 text-[12px] text-[#6B6A66] hover:text-[#0F1A2E] transition mb-3">
           <ArrowLeft className="h-3.5 w-3.5" /> Pedidos
-        </Link>
+        </BackLink>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Novo pedido</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">Selecione produtos e quantidades para gerar um pedido.</p>
       </div>

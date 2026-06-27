@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Bell } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { SendMessageBox } from "@/components/send-message-box";
 import { getAppointmentById } from "@/services/appointment-service";
@@ -22,9 +22,9 @@ export default async function AppointmentReminderPage({ params }: { params: Prom
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <Link href="/schedule" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
+        <BackLink fallbackHref="/schedule" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
           <ArrowLeft className="h-4 w-4" /> Agenda
-        </Link>
+        </BackLink>
         <div className="mt-6 flex items-end justify-between gap-5">
           <div>
             <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">LEMBRETE</p>

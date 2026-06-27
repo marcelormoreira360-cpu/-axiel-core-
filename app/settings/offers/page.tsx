@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getCurrentUserProfile } from "@/services/user-service";
 import {
   getMonetizationOffers,
@@ -97,12 +97,12 @@ export default async function OffersPage() {
   return (
     <Shell>
       <div className="mb-7">
-        <Link
-          href="/settings"
+        <BackLink
+          fallbackHref="/settings"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {t("common.back")}
-        </Link>
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("common.eyebrow")}</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("offers.title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">

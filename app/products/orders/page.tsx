@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { isAsaasConfigured } from "@/lib/asaas";
@@ -74,12 +75,12 @@ export default async function ProductOrdersPage() {
       {/* Header */}
       <div className="flex items-start justify-between mb-[22px]">
         <div className="flex items-center gap-[10px]">
-          <Link
-            href="/products"
+          <BackLink
+            fallbackHref="/products"
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-          </Link>
+          </BackLink>
           <div>
             <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
               Pedidos de produtos

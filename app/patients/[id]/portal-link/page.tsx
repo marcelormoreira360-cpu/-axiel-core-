@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink, Link2, ShieldCheck } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { CopyPortalLinkCard } from "@/components/copy-portal-link-card";
 import { getPatientById } from "@/services/patient-service";
@@ -41,9 +41,9 @@ export default async function PatientPortalLinkPage({
 
   return (
     <Shell>
-      <Link href={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft">
+      <BackLink fallbackHref={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft">
         <ArrowLeft className="h-4 w-4" /> Voltar ao paciente
-      </Link>
+      </BackLink>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <Card className="p-7">

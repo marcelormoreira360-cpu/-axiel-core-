@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { AiInsightReviewCard } from "@/components/ai-insight-review-card";
 import { getPatientById, getPatientReferralInfo } from "@/services/patient-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
@@ -192,13 +193,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   return (
     <Shell>
       {/* Back */}
-      <Link
-        href="/patients"
+      <BackLink
+        fallbackHref="/patients"
         className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         {t("back")}
-      </Link>
+      </BackLink>
 
       {/* ── Patient header ── */}
       <div className="bg-white border-b border-black/[.07] rounded-t-[12px] px-[22px] py-5 flex items-center gap-4 mb-0">
