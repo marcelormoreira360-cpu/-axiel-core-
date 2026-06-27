@@ -3,8 +3,8 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles } from "lucide-react";
-import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill } from "lucide-react";
+import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, suggestMedicationLoadAction, confirmMedicationLoadAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { stripPreviousFindings } from "@/modules/neuro-id/findings";
 import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
@@ -73,6 +73,10 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   const [importMsg, setImportMsg] = useState<string | null>(null);
   const [suggestingAtm, setSuggestingAtm] = useState(false);
   const [atmMsg, setAtmMsg] = useState<string | null>(null);
+  // Medicação (carga): extração por IA + revisão do terapeuta antes de pontuar.
+  const [medLoading, setMedLoading] = useState(false);
+  const [medMsg, setMedMsg] = useState<string | null>(null);
+  const [medData, setMedData] = useState<{ medications: string[]; supplements: string[]; count: number } | null>(null);
 
   // Anexa um bloco de achados deduplicando (remove um bloco anterior pelos cabeçalhos).
   function mergeFindings(prev: string, block: string): string {
@@ -179,6 +183,83 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     );
   }
 
+  async function handleSuggestMed() {
+    setMedLoading(true);
+    setMedMsg(null);
+    const res = await suggestMedicationLoadAction(patientId);
+    setMedLoading(false);
+    if ("error" in res) { setMedMsg(res.error); setMedData(null); return; }
+    setMedData({ medications: res.medications, supplements: res.supplements, count: res.medication_count });
+  }
+
+  async function handleConfirmMed() {
+    if (!medData) return;
+    setMedLoading(true);
+    const res = await confirmMedicationLoadAction(patientId, {
+      count: medData.count,
+      medications: medData.medications,
+      supplements: medData.supplements,
+    });
+    setMedLoading(false);
+    if (res.error) { setMedMsg(res.error); return; }
+    setMedData(null);
+    setMedMsg(t("medSaved"));
+  }
+
+  function medChips(items: string[], cls: string) {
+    return items.length ? items.map((x, i) => (
+      <span key={i} className={`text-[10px] px-[7px] py-[2px] rounded-full ${cls}`}>{x}</span>
+    )) : <span className="text-[10px] text-[#A09E98]">{t("medNone")}</span>;
+  }
+
+  function medBlock() {
+    return (
+      <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[8px]">
+        <div className="flex items-center gap-[6px]">
+          <Pill className="h-3.5 w-3.5 text-[#0F6E56]" />
+          <p className="text-[11px] font-medium text-[#0F1A2E]">{t("medTitle")}</p>
+        </div>
+        <p className="text-[10px] text-[#6B6A66] leading-snug">{t("medHint")}</p>
+        {!medData ? (
+          <div className="flex items-center gap-2 flex-wrap">
+            <button type="button" disabled={medLoading} onClick={handleSuggestMed}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+              <Sparkles className="h-3 w-3" /> {medLoading ? t("medExtracting") : t("medExtract")}
+            </button>
+            {medMsg && <span className="text-[10px] text-[#0F6E56]">{medMsg}</span>}
+          </div>
+        ) : (
+          <div className="space-y-[8px]">
+            <div>
+              <p className="text-[10px] font-medium text-[#085041] mb-[3px]">{t("medMeds")} ({medData.medications.length})</p>
+              <div className="flex flex-wrap gap-1">{medChips(medData.medications, "bg-[#E1F5EE] text-[#085041]")}</div>
+            </div>
+            <div>
+              <p className="text-[10px] font-medium text-[#6B6A66] mb-[3px]">{t("medSupps")} ({medData.supplements.length})</p>
+              <div className="flex flex-wrap gap-1">{medChips(medData.supplements, "bg-[#F4F3EF] text-[#6B6A66]")}</div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <label className="text-[10px] text-[#6B6A66]">{t("medCount")}</label>
+              <input type="number" min={0} value={medData.count}
+                onChange={(e) => setMedData((d) => d ? { ...d, count: Math.max(0, Math.floor(Number(e.target.value) || 0)) } : d)}
+                className="w-16 px-[8px] py-[4px] rounded-[6px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56]" />
+            </div>
+            <p className="text-[9px] text-[#A09E98] leading-snug">{t("medScoreNote")}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button type="button" disabled={medLoading} onClick={handleConfirmMed}
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+                <Check className="h-3 w-3" /> {medLoading ? t("saving") : t("medConfirm")}
+              </button>
+              <button type="button" onClick={() => { setMedData(null); setMedMsg(null); }}
+                className="text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">{t("cancel")}</button>
+              {medMsg && <span className="text-[10px] text-red-500">{medMsg}</span>}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   async function handleImportFindings() {
     setImporting(true);
     setImportMsg(null);
@@ -227,6 +308,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         // Sempre editável: formulário pré-preenchido com o que já foi salvo.
         <form action={formAction} className="space-y-[14px]">
           <p className="text-[10px] text-[#A09E98] leading-snug">{t("atmIntro")}</p>
+          {medBlock()}
           {/* Renderiza na ORDEM GLOBAL (order_index, definida na config), agrupando em
               blocos contíguos por group_key. A config manda 100% na ficha. */}
           {groupRuns(fields).map((run, ri) => (

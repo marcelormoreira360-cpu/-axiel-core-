@@ -12,6 +12,7 @@ import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } fro
 import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
 import { DEFAULT_QUESTION_MAP, QUESTIONNAIRE_LABELS, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
 import { formatFindingsSummary, type FindingGroup, type FindingItem } from "@/modules/neuro-id/findings";
+import { confirmedMedicationLoad } from "@/services/medication-load-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 // Client genérico: server (sessão do usuário) por padrão, ou admin (ex.: gatilho
@@ -255,14 +256,18 @@ export async function createNeuroIdAssessment(input: {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
 
-  // IO independente em paralelo: catálogo da clínica + métricas de exame CONFIRMADAS.
-  const [catalog, examValues] = await Promise.all([
+  // IO independente em paralelo: catálogo + exames CONFIRMADOS + medicação (carga) confirmada.
+  const [catalog, examValues, medValues] = await Promise.all([
     ensureClinicCatalog(input.clinicId),
     confirmedExamMetrics(input.patientId, input.clinicId),
+    confirmedMedicationLoad(input.patientId, input.clinicId),
   ]);
   const items = catalogToScorable(catalog);
+  // Medicação (carga) entra como item normal; a edição do terapeuta (input.values,
+  // vinda do "Rever / editar") tem prioridade sobre o valor sugerido.
+  const values = { ...medValues, ...input.values };
   // Fusão: métricas de exame CONFIRMADAS entram na média ponderada por pilar.
-  const result = computeNeuroId(items, input.values, examValues);
+  const result = computeNeuroId(items, values, examValues);
 
   // 1) avaliação
   const { data: assessment, error: aErr } = await supabase
@@ -280,7 +285,7 @@ export async function createNeuroIdAssessment(input: {
   const assessmentId = assessment.id as string;
 
   // 2) valores (só os preenchidos), com a disfunção calculada + métricas de exame
-  const allRows = neuroIdValueRows(assessmentId, input.values, result, examValues);
+  const allRows = neuroIdValueRows(assessmentId, values, result, examValues);
   if (allRows.length > 0) {
     const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
@@ -331,13 +336,17 @@ export async function updateNeuroIdAssessment(input: {
     throw new Error("Avaliação não encontrada para este paciente/clínica.");
   }
 
-  // IO independente em paralelo: catálogo da clínica + métricas de exame CONFIRMADAS.
-  const [catalog, examValues] = await Promise.all([
+  // IO independente em paralelo: catálogo + exames CONFIRMADOS + medicação (carga).
+  const [catalog, examValues, medValues] = await Promise.all([
     ensureClinicCatalog(input.clinicId),
     confirmedExamMetrics(input.patientId, input.clinicId),
+    confirmedMedicationLoad(input.patientId, input.clinicId),
   ]);
   const items = catalogToScorable(catalog);
-  const result = computeNeuroId(items, input.values, examValues);
+  // medicacao_carga é item `auto`; o form pode não reenviá-lo. Injeta o confirmado,
+  // mas a edição vinda do form (input.values) tem prioridade.
+  const values = { ...medValues, ...input.values };
+  const result = computeNeuroId(items, values, examValues);
 
   // Regrava in-place: limpa valores+scores e reinsere (corrige a MESMA avaliação).
   // Promove para `final`: uma revisão/correção humana deixa de ser rascunho
@@ -347,7 +356,7 @@ export async function updateNeuroIdAssessment(input: {
   await supabase.from("patient_neuro_id_scores").delete().eq("assessment_id", input.assessmentId);
   await supabase.from("patient_assessments").update({ status: "final", updated_at: new Date().toISOString() }).eq("id", input.assessmentId);
 
-  const allRows = neuroIdValueRows(input.assessmentId, input.values, result, examValues);
+  const allRows = neuroIdValueRows(input.assessmentId, values, result, examValues);
   if (allRows.length > 0) {
     const { error: vErr } = await supabase.from("patient_assessment_values").insert(allRows);
     if (vErr) throw vErr;
@@ -549,14 +558,17 @@ export async function autoUpsertNeuroIdDraft(
   const imp = await importQuestionnaireAnswers(patientId, clinicId, client);
   if (Object.keys(imp.draft).length === 0) return null; // nada mapeado/respondido
 
-  // IO independente em paralelo: catálogo + métricas de exame já confirmadas (gate).
-  const [catalog, examValues] = await Promise.all([
+  // IO independente em paralelo: catálogo + exames confirmados (gate) + medicação (carga).
+  const [catalog, examValues, medValues] = await Promise.all([
     ensureClinicCatalog(clinicId, client),
     confirmedExamMetrics(patientId, clinicId, client),
+    confirmedMedicationLoad(patientId, clinicId, client as unknown as Parameters<typeof confirmedMedicationLoad>[2]),
   ]);
   const items = catalogToScorable(catalog);
+  // Medicação (carga) confirmada entra como item auto-derivado na pirâmide parcial.
+  const draft = { ...imp.draft, ...medValues };
   // Fusão: inclui as métricas de exame confirmadas na pirâmide parcial.
-  const result = computeNeuroId(items, imp.draft, examValues);
+  const result = computeNeuroId(items, draft, examValues);
 
   // Um rascunho auto por paciente: reaproveita o aberto (atualiza) ou cria.
   const { data: existing } = await supabase
@@ -586,7 +598,7 @@ export async function autoUpsertNeuroIdDraft(
   }
 
   const byCode = new Map(result.scoredItems.map((s) => [s.code, s.dysfunction]));
-  const valueRows = Object.entries(imp.draft).map(([item_code, raw]) => ({
+  const valueRows = Object.entries(draft).map(([item_code, raw]) => ({
     assessment_id: assessmentId,
     item_code,
     raw_value: `auto:${raw}`,

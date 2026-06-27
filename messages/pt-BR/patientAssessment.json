@@ -47,5 +47,16 @@
     "gatilhos": "O que desencadeou os sintomas (eventos, perdas, infecções, mudanças hormonais).",
     "mediadores": "O que mantém o quadro hoje (sintomas dos questionários, sono, estresse, dor). Use \"Importar achados\".",
     "integracao": "Amarra tudo: padrões, sistemas desregulados, conduta."
-  }
+  },
+  "medTitle": "Medicação (carga)",
+  "medHint": "A IA lê os medicamentos/suplementos respondidos no QRM e separa para você confirmar. Só remédios pontuam (pilar Bioquímico).",
+  "medExtract": "Extrair medicação (IA)",
+  "medExtracting": "Analisando…",
+  "medMeds": "Remédios",
+  "medSupps": "Suplementos",
+  "medNone": "nenhum",
+  "medCount": "Nº de remédios",
+  "medScoreNote": "0 sem carga · 1-2 verde · 3-4 amarelo · 5+ vermelho. Revise e confirme; suplementos não pontuam.",
+  "medConfirm": "Confirmar e pontuar",
+  "medSaved": "Medicação salva e Mapa Bio³ atualizado."
 }
