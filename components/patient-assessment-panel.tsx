@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList, Settings2 } from "lucide-react";
-import { saveAssessmentAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { Check, AlertCircle, ClipboardList, Settings2, Download } from "lucide-react";
+import { saveAssessmentAction, importQuestionnaireFindingsAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
 import type { ClinicAssessmentField } from "@/lib/types";
 
 type Props = {
@@ -30,6 +31,33 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     async (prev, fd) => saveAssessmentAction(patientId, prev, fd),
     null,
   );
+
+  // Campo-alvo dos achados dos questionários: "anamnese" (padrão) ou a 1ª textarea.
+  const anamneseKey =
+    fields.find((f) => f.field_key === "anamnese")?.field_key ??
+    fields.find((f) => f.field_type === "textarea")?.field_key ??
+    null;
+  const [anamneseText, setAnamneseText] = useState<string>(
+    anamneseKey ? fieldDefault(values?.[anamneseKey]) : "",
+  );
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
+
+  async function handleImportFindings() {
+    setImporting(true);
+    setImportMsg(null);
+    const res = await importQuestionnaireFindingsAction(patientId);
+    setImporting(false);
+    if (res.error) { setImportMsg(res.error); return; }
+    if (!res.hasData) { setImportMsg(t("findingsNone")); return; }
+    // Dedup: remove um bloco de achados anterior antes de anexar o novo (reimportar não duplica).
+    setAnamneseText((prev) => {
+      const idx = prev.indexOf(FINDINGS_MARKER);
+      const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
+      return base ? `${base}\n\n${res.text}` : res.text;
+    });
+    setImportMsg(t("findingsImported"));
+  }
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px] mb-5">
@@ -57,16 +85,31 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
       ) : (
         // Sempre editável: formulário pré-preenchido com o que já foi salvo.
         <form action={formAction} className="space-y-[10px]">
+          {anamneseKey && (
+            <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
+              <p className="text-[10px] text-[#6B6A66] leading-snug">{t("findingsHint")}</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button type="button" disabled={importing} onClick={handleImportFindings}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+                  <Download className="h-3 w-3" /> {importing ? t("importingFindings") : t("importFindings")}
+                </button>
+                {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
+              </div>
+            </div>
+          )}
           {fields.map((f) => {
             const dv = fieldDefault(values?.[f.field_key]);
+            const isAnamnese = f.field_key === anamneseKey;
             return (
               <div key={f.id}>
                 <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{f.label}</label>
                 {f.field_type === "textarea" && (
                   <textarea
                     name={f.field_key}
-                    defaultValue={dv}
-                    rows={4}
+                    {...(isAnamnese
+                      ? { value: anamneseText, onChange: (e) => setAnamneseText(e.target.value) }
+                      : { defaultValue: dv })}
+                    rows={isAnamnese ? 6 : 4}
                     placeholder={f.placeholder ?? ""}
                     className={`${inputCls} resize-none`}
                   />
