@@ -33,31 +33,43 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     null,
   );
 
-  // Campo-alvo dos achados dos questionários: "anamnese" (padrão) ou a 1ª textarea.
+  // Campos-alvo dos achados: Anamnese (Mediadores) e Antecedentes recebem o texto
+  // importado dos questionários; ficam controlados (semeados do que já foi salvo).
   const anamneseKey =
     fields.find((f) => f.field_key === "anamnese")?.field_key ??
     fields.find((f) => f.field_type === "textarea")?.field_key ??
     null;
-  const [anamneseText, setAnamneseText] = useState<string>(
-    anamneseKey ? fieldDefault(values?.[anamneseKey]) : "",
-  );
+  const antecedentsKey = fields.find((f) => f.field_key === "antecedents" && f.field_type === "textarea")?.field_key ?? null;
   const anamneseGroup = anamneseKey ? groupForFieldKey(anamneseKey) : null;
+  const [overrides, setOverrides] = useState<Record<string, string>>(() => {
+    const o: Record<string, string> = {};
+    if (anamneseKey) o[anamneseKey] = fieldDefault(values?.[anamneseKey]);
+    if (antecedentsKey) o[antecedentsKey] = fieldDefault(values?.[antecedentsKey]);
+    return o;
+  });
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
 
+  // Anexa um bloco de achados deduplicando (remove um bloco anterior pelo marcador).
+  function mergeFindings(prev: string, block: string): string {
+    const idx = prev.indexOf(FINDINGS_MARKER);
+    const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
+    return base ? `${base}\n\n${block}` : block;
+  }
+
   function renderField(f: ClinicAssessmentField) {
     const dv = fieldDefault(values?.[f.field_key]);
-    const isAnamnese = f.field_key === anamneseKey;
+    const controlled = f.field_key in overrides; // Anamnese e Antecedentes
     return (
       <div key={f.id}>
         <label className="text-[11px] font-medium text-[#6B6A66] mb-[4px] block">{f.label}</label>
         {f.field_type === "textarea" && (
           <textarea
             name={f.field_key}
-            {...(isAnamnese
-              ? { value: anamneseText, onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setAnamneseText(e.target.value) }
+            {...(controlled
+              ? { value: overrides[f.field_key], onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => setOverrides((o) => ({ ...o, [f.field_key]: e.target.value })) }
               : { defaultValue: dv })}
-            rows={isAnamnese ? 6 : 4}
+            rows={f.field_key === anamneseKey ? 6 : 4}
             placeholder={f.placeholder ?? ""}
             className={`${inputCls} resize-none`}
           />
@@ -113,11 +125,16 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     setImporting(false);
     if (res.error) { setImportMsg(res.error); return; }
     if (!res.hasData) { setImportMsg(t("findingsNone")); return; }
-    // Dedup: remove um bloco de achados anterior antes de anexar o novo (reimportar não duplica).
-    setAnamneseText((prev) => {
-      const idx = prev.indexOf(FINDINGS_MARKER);
-      const base = (idx >= 0 ? prev.slice(0, idx) : prev).trim();
-      return base ? `${base}\n\n${res.text}` : res.text;
+    // Roteia: Anamnese (QRM/Q-SNA/estilo/ambiente) e Antecedentes (história familiar).
+    // Reimportar deduplica (substitui o bloco anterior por campo).
+    setOverrides((o) => {
+      const next = { ...o };
+      if (anamneseKey && res.anamnese) next[anamneseKey] = mergeFindings(o[anamneseKey] ?? "", res.anamnese);
+      if (res.antecedents) {
+        if (antecedentsKey) next[antecedentsKey] = mergeFindings(o[antecedentsKey] ?? "", res.antecedents);
+        else if (anamneseKey) next[anamneseKey] = mergeFindings(next[anamneseKey] ?? "", res.antecedents); // fallback
+      }
+      return next;
     });
     setImportMsg(t("findingsImported"));
   }

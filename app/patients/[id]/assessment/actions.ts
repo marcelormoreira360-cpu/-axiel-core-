@@ -57,18 +57,20 @@ export async function saveAssessmentAction(
   }
 }
 
-// Puxa os achados (itens >= corte) do QRM/Q-SNA para o terapeuta colar na Anamnese,
-// revisar e validar. NÃO grava: só devolve o texto. A gravação é o saveAssessmentAction.
+// Puxa os achados (itens >= corte) dos questionários para o terapeuta revisar e
+// validar na Avaliação. Roteia: História Familiar → Antecedentes; o resto →
+// Anamnese. NÃO grava: só devolve os textos. A gravação é o saveAssessmentAction.
 export async function importQuestionnaireFindingsAction(
   patientId: string,
-): Promise<{ text: string; hasData: boolean; error?: string }> {
+): Promise<{ anamnese: string; antecedents: string; hasData: boolean; error?: string }> {
+  const empty = { anamnese: "", antecedents: "", hasData: false };
   const clinic = await getCurrentClinic();
-  if (!clinic?.id) return { text: "", hasData: false, error: "Não autorizado." };
+  if (!clinic?.id) return { ...empty, error: "Não autorizado." };
   const patient = await getPatientById(patientId, clinic.id);
-  if (!patient) return { text: "", hasData: false, error: "Paciente não encontrado nesta clínica." };
+  if (!patient) return { ...empty, error: "Paciente não encontrado nesta clínica." };
   try {
     return await extractQuestionnaireFindings(patientId, clinic.id, 3);
   } catch {
-    return { text: "", hasData: false, error: "Não foi possível buscar os achados agora." };
+    return { ...empty, error: "Não foi possível buscar os achados agora." };
   }
 }
