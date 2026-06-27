@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X, Sparkles } from "lucide-react";
 import type { PatientExam } from "@/services/exams-service";
-import { addExamAction, deleteExamAction } from "@/app/patients/[id]/exams/actions";
+import { addExamAction, deleteExamAction, extractLabMarkersAction } from "@/app/patients/[id]/exams/actions";
+import { labStatus, LAB_STATUS_COLOR } from "@/lib/lab-status";
 
 type ResultDraft = {
   biomarker: string;
@@ -106,6 +107,30 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
   const [results, setResults] = useState<ResultDraft[]>([
     { biomarker: "", value: "", unit: "", ref_min: "", ref_max: "" },
   ]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [extracting, setExtracting] = useState(false);
+  const [extractMsg, setExtractMsg] = useState<string | null>(null);
+
+  async function handleExtract() {
+    const file = fileRef.current?.files?.[0];
+    if (!file) { setExtractMsg(t("extractPickFile")); return; }
+    setExtracting(true);
+    setExtractMsg(null);
+    const fd = new FormData();
+    fd.set("exam_file", file);
+    const res = await extractLabMarkersAction(fd);
+    setExtracting(false);
+    if (res.error) { setExtractMsg(res.error); return; }
+    if (res.markers.length === 0) { setExtractMsg(t("extractNone")); return; }
+    setResults(res.markers.map((m) => ({
+      biomarker: m.biomarker,
+      value: String(m.value),
+      unit: m.unit ?? "",
+      ref_min: m.ref_min == null ? "" : String(m.ref_min),
+      ref_max: m.ref_max == null ? "" : String(m.ref_max),
+    })));
+    setExtractMsg(t("extractDone", { count: res.markers.length }));
+  }
 
   function addRow() {
     setResults((r) => [...r, { biomarker: "", value: "", unit: "", ref_min: "", ref_max: "" }]);
@@ -168,6 +193,25 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
           </div>
         </div>
 
+        {/* Upload foto/PDF → IA extrai os marcadores para revisar */}
+        <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
+          <p className="text-[10px] text-[#6B6A66] leading-snug">{t("uploadHint")}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              ref={fileRef}
+              type="file"
+              name="exam_file"
+              accept="image/*,application/pdf"
+              className="text-[11px] file:mr-2 file:rounded-md file:border-0 file:bg-[#0F6E56]/10 file:px-2 file:py-1 file:text-[#0F6E56]"
+            />
+            <button type="button" disabled={extracting} onClick={handleExtract}
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+              <Sparkles className="h-3 w-3" /> {extracting ? t("extracting") : t("extractAI")}
+            </button>
+          </div>
+          {extractMsg && <p className="text-[10px] text-[#0F6E56]">{extractMsg}</p>}
+        </div>
+
         {/* Biomarkers */}
         <div>
           <p className="text-[10px] font-medium text-[#6B6A66] mb-[6px]">{t("markers")}</p>
@@ -178,7 +222,14 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                 <p key={idx} className="text-[9px] font-medium text-[#A09E98] uppercase tracking-[.06em]">{h}</p>
               ))}
             </div>
-            {results.map((row, i) => (
+            {results.map((row, i) => {
+              const st = labStatus(
+                row.value.trim() ? parseFloat(row.value) : null,
+                row.ref_min.trim() ? parseFloat(row.ref_min) : null,
+                row.ref_max.trim() ? parseFloat(row.ref_max) : null,
+              );
+              const stColor = st === "unknown" ? undefined : LAB_STATUS_COLOR[st];
+              return (
               <div key={i} className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_20px] gap-[4px] items-center">
                 <input
                   value={row.biomarker}
@@ -192,6 +243,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   type="number"
                   step="any"
                   placeholder="0.0"
+                  style={stColor ? { borderColor: stColor, color: stColor, fontWeight: 600 } : undefined}
                   className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
                 />
                 <input
@@ -225,7 +277,8 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   <X className="h-3 w-3" />
                 </button>
               </div>
-            ))}
+              );
+            })}
           </div>
           <button
             type="button"
