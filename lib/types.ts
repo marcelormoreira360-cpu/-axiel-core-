@@ -107,6 +107,8 @@ export type ClinicAssessmentField = {
   /** select: { choices: string[] }; number: { min?: number; max?: number } */
   options: { choices?: string[]; min?: number; max?: number } | null;
   order_index: number;
+  /** Grupo (seção) da espinha ATM ao qual o campo pertence. Ver lib/assessment-groups.ts. */
+  group_key: string;
   is_active: boolean;
   include_in_report: boolean;
   created_at: string;

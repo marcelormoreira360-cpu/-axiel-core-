@@ -15,6 +15,7 @@ function field(partial: Partial<ClinicAssessmentField> & Pick<ClinicAssessmentFi
     help_text: null,
     options: null,
     order_index: 0,
+    group_key: "mediadores",
     is_active: true,
     include_in_report: true,
     created_at: "",

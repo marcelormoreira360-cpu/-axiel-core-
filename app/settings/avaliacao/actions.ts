@@ -10,10 +10,16 @@ import {
 } from "@/services/clinic-assessment-service";
 import type { AssessmentFieldType } from "@/lib/types";
 import { isManager } from "@/lib/team-utils";
+import { isAssessmentGroup } from "@/lib/assessment-groups";
 
 export type FieldState = { ok?: boolean; error?: string } | null;
 
 const TYPES: AssessmentFieldType[] = ["textarea", "text", "number", "select"];
+
+function parseGroup(formData: FormData): string {
+  const g = String(formData.get("group_key") ?? "").trim();
+  return isAssessmentGroup(g) ? g : "mediadores";
+}
 
 function parseOptions(type: AssessmentFieldType, formData: FormData) {
   if (type === "select") {
@@ -58,6 +64,7 @@ export async function createAssessmentFieldAction(
       placeholder: String(formData.get("placeholder") ?? "").trim() || null,
       help_text: String(formData.get("help_text") ?? "").trim() || null,
       options: parseOptions(field_type, formData),
+      group_key: parseGroup(formData),
       include_in_report: formData.get("include_in_report") === "on",
     });
   } catch {
@@ -94,6 +101,7 @@ export async function updateAssessmentFieldAction(
       placeholder: String(formData.get("placeholder") ?? "").trim() || null,
       help_text: String(formData.get("help_text") ?? "").trim() || null,
       options: parseOptions(field_type, formData),
+      group_key: parseGroup(formData),
       include_in_report: formData.get("include_in_report") === "on",
     });
   } catch {

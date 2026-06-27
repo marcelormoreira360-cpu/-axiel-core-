@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { Check, AlertCircle, ClipboardList, Settings2, Download } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { FINDINGS_MARKER } from "@/modules/neuro-id/findings";
-import { ASSESSMENT_GROUP_ORDER, groupForFieldKey } from "@/lib/assessment-groups";
+import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
 
 type Props = {
@@ -26,6 +26,22 @@ function fieldDefault(value: string | number | null | undefined): string {
   return value === null || value === undefined ? "" : String(value);
 }
 
+/**
+ * Agrupa os campos (já na ordem global da config) em blocos CONTÍGUOS por grupo.
+ * Campos do mesmo grupo que estejam juntos viram um bloco com um cabeçalho; se o
+ * terapeuta intercalar grupos, o cabeçalho reaparece (comportamento esperado).
+ */
+function groupRuns(fields: ClinicAssessmentField[]): { group: AssessmentGroup; fields: ClinicAssessmentField[] }[] {
+  const runs: { group: AssessmentGroup; fields: ClinicAssessmentField[] }[] = [];
+  for (const f of fields) {
+    const g = groupForField(f);
+    const last = runs[runs.length - 1];
+    if (last && last.group === g) last.fields.push(f);
+    else runs.push({ group: g, fields: [f] });
+  }
+  return runs;
+}
+
 export function PatientAssessmentPanel({ patientId, fields, values, canConfigure }: Props) {
   const t = useTranslations("patientAssessment");
   const [state, formAction, isPending] = useActionState<AssessmentState, FormData>(
@@ -40,7 +56,6 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     fields.find((f) => f.field_type === "textarea")?.field_key ??
     null;
   const antecedentsKey = fields.find((f) => f.field_key === "antecedents" && f.field_type === "textarea")?.field_key ?? null;
-  const anamneseGroup = anamneseKey ? groupForFieldKey(anamneseKey) : null;
   const [overrides, setOverrides] = useState<Record<string, string>>(() => {
     const o: Record<string, string> = {};
     if (anamneseKey) o[anamneseKey] = fieldDefault(values?.[anamneseKey]);
@@ -166,20 +181,22 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         // Sempre editável: formulário pré-preenchido com o que já foi salvo.
         <form action={formAction} className="space-y-[14px]">
           <p className="text-[10px] text-[#A09E98] leading-snug">{t("atmIntro")}</p>
-          {ASSESSMENT_GROUP_ORDER.map((g) => {
-            const groupFields = fields.filter((f) => groupForFieldKey(f.field_key) === g);
-            if (groupFields.length === 0) return null;
-            return (
-              <div key={g} className="space-y-[8px]">
-                <div className="border-l-2 border-[#0F6E56]/30 pl-[8px]">
-                  <p className="text-[11px] font-semibold text-[#0F1A2E]">{t(`group.${g}`)}</p>
-                  <p className="text-[10px] text-[#A09E98] leading-snug">{t(`groupHint.${g}`)}</p>
-                </div>
-                {anamneseKey && g === anamneseGroup && importBlock()}
-                {groupFields.map(renderField)}
+          {/* Renderiza na ORDEM GLOBAL (order_index, definida na config), agrupando em
+              blocos contíguos por group_key. A config manda 100% na ficha. */}
+          {groupRuns(fields).map((run, ri) => (
+            <div key={`${run.group}-${ri}`} className="space-y-[8px]">
+              <div className="border-l-2 border-[#0F6E56]/30 pl-[8px]">
+                <p className="text-[11px] font-semibold text-[#0F1A2E]">{t(`group.${run.group}`)}</p>
+                <p className="text-[10px] text-[#A09E98] leading-snug">{t(`groupHint.${run.group}`)}</p>
               </div>
-            );
-          })}
+              {run.fields.map((f) => (
+                <div key={f.id} className="space-y-[8px]">
+                  {anamneseKey && f.field_key === anamneseKey && importBlock()}
+                  {renderField(f)}
+                </div>
+              ))}
+            </div>
+          ))}
 
           {state?.error && (
             <p className="flex items-center gap-1 text-[11px] text-red-500"><AlertCircle className="h-3 w-3" /> {state.error}</p>
