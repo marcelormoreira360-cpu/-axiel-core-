@@ -1,7 +1,20 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 27/06/2026 (32)
+> Atualizado em: 01/07/2026 (33)
+
+## 🟢 Captação, UX e consolidação de formulários (01/07/2026) — TUDO MERGEADO E NO AR
+
+> `tsc` 0 (sobra só o erro PRÉ-EXISTENTE de `.next/types` do `encodeHistory`). `verify:i18n` 42/0/0. **311 testes verdes**. Migrations **107 e 108 aplicadas na prod** (`bfuulpvzedcrpmmjxles`). Core agora em **migration 108**. PRs #48–#55 mergeados (squash) e deployados.
+
+Sessão de feedback do Marcelo (UX + arquitetura de formulários). Decisões tomadas via perguntas antes de construir; cada item virou um PR isolado.
+
+1. **Link de captação — questionário público que vira lead (PR #48, migration 107):** antes o convite de formulário exigia um paciente já cadastrado. Agora existe um **link público reutilizável** (`kind='public'` em `assessment_invitations`, `patient_id` virou nullable). Quem abre `/f/[token]` preenche os próprios dados (nome/e-mail/telefone + consentimento) e responde o questionário; entra como **Lead** (`lead_source` += `public_form`), com o score nas notas. Nova tabela `public_form_submissions` (respostas + score + consentimento c/ IP/UA, RLS). `createPublicCaptureInvitation` + `createPublicCaptureLinkAction`; ramo público em `/api/forms/submit` (rate-limit por IP + honeypot). Componentes `public-capture-form`, `public-capture-link-panel`. Materialização no Bio³ = fase 2 (na conversão lead→paciente).
+2. **Spinner "IA trabalhando" (PR #49):** os botões de IA do painel de Avaliação (importar achados, sugerir ATM, extrair/confirmar medicação) e o de extrair de exame só trocavam texto. Novo `components/ai-button-spinner.tsx` nivela ao padrão dos demais geradores de IA.
+3. **Equipe + Profissionais unificados (PR #50):** `/settings/equipe` virou tela com abas **Acesso** (EquipeClient) + **Perfil público** (PractitionersList). `/settings/practitioners` redireciona p/ `?tab=perfil`. Hub tem 1 card só ("Equipe & Profissionais"). Sidebar "Equipe" (`/profissionais`, BI de desempenho) **removido do menu** (PR #52) — colidia de nome e fica vazio em clínica solo; página segue por URL.
+4. **Achados na Anamnese — formato QRM=42 / Q-SNA=46 (PR #51):** `groupHead` (`modules/neuro-id/findings.ts`) gera `QRM=42, <faixa>` e `Q-SNA=46, <faixa>` (com número, sem nome longo nem "total X/Y"). Dedup ao reimportar reconhece formatos antigos e apaga a intro legada "ACHADOS DOS QUESTIONÁRIOS...". Corrige texto já salvo ao reclicar "Importar achados".
+5. **Botão "Voltar" padronizado (PRs #53, #54):** BackLink adicionado em Formulários, Configuração da clínica, LGPD, Integrações e Intake (faltavam). Billing/Monetização/Follow-ups/Get-started ficaram de fora (destinos primários com lugar no menu).
+6. **Intake consolidado em Formulários (PR #55, migration 108):** o antigo "Formulário de intake" (`intake_forms`) não chegava ao paciente e duplicava os Formulários. Migration converte cada `intake_form` ativo em `assessment_template` (perguntas de texto, sem nota, placement `intake` + envio no 1º agendamento), idempotente via `source_intake_form_id`; dados antigos de `intake_responses` intactos e visíveis na ficha. **Formulário público agora exige só perguntas COM nota; texto livre é opcional** (a menos que `is_required`) — nenhum questionário existente muda. Card `/intake` removido do hub (página segue por URL p/ respostas antigas). **Envio automático no 1º agendamento (IFWC):** Anamnese Integrativa + Q-SNA + QRM; "Estilo de Vida" tirado do slot intake (ajuste de config no banco, reversível pela UI).
 
 ## 🟢 Polish da ficha do paciente — 4 frentes (27/06/2026) — 1a/1b/1c MERGEADAS E NO AR; Fase 2 no PR #43
 
