@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, suggestMedicationLoadAction, confirmMedicationLoadAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { stripPreviousFindings } from "@/modules/neuro-id/findings";
+import { AiButtonSpinner } from "@/components/ai-button-spinner";
 import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
 import type { ClinicAssessmentField } from "@/lib/types";
 
@@ -160,7 +161,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" disabled={importing} onClick={handleImportFindings}
             className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-            <Download className="h-3 w-3" /> {importing ? t("importingFindings") : t("importFindings")}
+            {importing ? <AiButtonSpinner /> : <Download className="h-3 w-3" />} {importing ? t("importingFindings") : t("importFindings")}
           </button>
           {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
         </div>
@@ -175,7 +176,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" disabled={suggestingAtm} onClick={handleSuggestAtm}
             className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-            <Sparkles className="h-3 w-3" /> {suggestingAtm ? t("atmSuggesting") : t("atmSuggest")}
+            {suggestingAtm ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {suggestingAtm ? t("atmSuggesting") : t("atmSuggest")}
           </button>
           {atmMsg && <span className="text-[10px] text-[#0F6E56]">{atmMsg}</span>}
         </div>
@@ -224,7 +225,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" disabled={medLoading} onClick={handleSuggestMed}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-              <Sparkles className="h-3 w-3" /> {medLoading ? t("medExtracting") : t("medExtract")}
+              {medLoading ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {medLoading ? t("medExtracting") : t("medExtract")}
             </button>
             {medMsg && <span className="text-[10px] text-[#0F6E56]">{medMsg}</span>}
           </div>
@@ -248,7 +249,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
             <div className="flex items-center gap-2 flex-wrap">
               <button type="button" disabled={medLoading} onClick={handleConfirmMed}
                 className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-                <Check className="h-3 w-3" /> {medLoading ? t("saving") : t("medConfirm")}
+                {medLoading ? <AiButtonSpinner /> : <Check className="h-3 w-3" />} {medLoading ? t("saving") : t("medConfirm")}
               </button>
               <button type="button" onClick={() => { setMedData(null); setMedMsg(null); }}
                 className="text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">{t("cancel")}</button>
