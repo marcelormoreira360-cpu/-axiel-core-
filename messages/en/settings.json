@@ -16,8 +16,8 @@
         "text": "Update your name, email and login password."
       },
       "equipe": {
-        "title": "Team",
-        "text": "Invite practitioners, manage roles and clinic access."
+        "title": "Team & Practitioners",
+        "text": "Team access and roles, plus each practitioner's public profile (specialty, bio, schedule)."
       },
       "practitioners": {
         "title": "Practitioners",
@@ -188,7 +188,9 @@
     "errInvalidCode": "Invalid code. Try again."
   },
   "equipe": {
-    "subtitle": "Manage clinic members, roles and invites.",
+    "subtitle": "Team access and practitioner public profiles, all in one place.",
+    "tabAccess": "Access",
+    "tabProfiles": "Public profile",
     "membersTitle": "Team members",
     "membersCount": "{count, plural, one {# member} other {# members}}",
     "invite": "Invite",

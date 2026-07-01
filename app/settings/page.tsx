@@ -12,7 +12,6 @@ const SETTINGS_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/personalizar", key: "personalize" },
   { href: "/settings/profile", key: "profile" },
   { href: "/settings/equipe", key: "equipe" },
-  { href: "/settings/practitioners", key: "practitioners" },
   { href: "/settings/branding", key: "branding" },
   { href: "/settings/regional", key: "regional" },
   { href: "/clinics", key: "clinic" },

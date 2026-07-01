@@ -16,6 +16,7 @@ export async function updatePractitionerAction(
     .eq("clinic_id", clinic.id)
     .eq("user_id", userId);
   if (error) return { error: error.message };
-  revalidatePath("/settings/practitioners");
+  // A lista de perfis agora vive na aba "Perfil público" de /settings/equipe.
+  revalidatePath("/settings/equipe");
   return {};
 }
