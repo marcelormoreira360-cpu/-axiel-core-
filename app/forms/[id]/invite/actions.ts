@@ -1,8 +1,20 @@
 "use server";
 
 import { headers } from "next/headers";
-import { createAssessmentInvitation } from "@/services/assessment-invitation-service";
+import {
+  createAssessmentInvitation,
+  createPublicCaptureInvitation,
+} from "@/services/assessment-invitation-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+
+async function resolveBaseUrl(): Promise<string> {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+  if (appUrl) return appUrl.replace(/\/$/, "");
+  const headerStore = await headers();
+  const protocol = headerStore.get("x-forwarded-proto") ?? "http";
+  const host = headerStore.get("host") ?? "localhost:3000";
+  return `${protocol}://${host}`;
+}
 
 export async function createInvitationAction(
   templateId: string,
@@ -17,17 +29,25 @@ export async function createInvitationAction(
     clinic_id: profile.clinic_id,
   });
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
-  let baseUrl: string;
-  if (appUrl) {
-    baseUrl = appUrl.replace(/\/$/, "");
-  } else {
-    const headerStore = await headers();
-    const protocol = headerStore.get("x-forwarded-proto") ?? "http";
-    const host = headerStore.get("host") ?? "localhost:3000";
-    baseUrl = `${protocol}://${host}`;
-  }
-  const url = `${baseUrl}/f/${token}`;
+  const baseUrl = await resolveBaseUrl();
+  return { url: `${baseUrl}/f/${token}` };
+}
 
-  return { url };
+/**
+ * Gera um link PÚBLICO de captação: reutilizável, sem paciente. Quem abrir
+ * preenche os próprios dados (vira Lead) e responde o questionário.
+ */
+export async function createPublicCaptureLinkAction(
+  templateId: string
+): Promise<{ url: string }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+
+  const { token } = await createPublicCaptureInvitation({
+    template_id: templateId,
+    clinic_id: profile.clinic_id,
+  });
+
+  const baseUrl = await resolveBaseUrl();
+  return { url: `${baseUrl}/f/${token}` };
 }
