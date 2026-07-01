@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X, Sparkles } from "lucide-react";
 import type { PatientExam } from "@/services/exams-service";
+import { AiButtonSpinner } from "@/components/ai-button-spinner";
 import { addExamAction, deleteExamAction, extractLabMarkersAction } from "@/app/patients/[id]/exams/actions";
 import { labStatus, LAB_STATUS_COLOR } from "@/lib/lab-status";
 
@@ -206,7 +207,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
             />
             <button type="button" disabled={extracting} onClick={handleExtract}
               className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
-              <Sparkles className="h-3 w-3" /> {extracting ? t("extracting") : t("extractAI")}
+              {extracting ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {extracting ? t("extracting") : t("extractAI")}
             </button>
           </div>
           {extractMsg && <p className="text-[10px] text-[#0F6E56]">{extractMsg}</p>}
