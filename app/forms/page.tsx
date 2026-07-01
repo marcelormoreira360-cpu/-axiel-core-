@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatients } from "@/services/patient-service";
-import { FileText, Plus, Pencil, ClipboardList } from "lucide-react";
+import { FileText, Plus, Pencil, ClipboardList, ArrowLeft } from "lucide-react";
 import {
   importQSNAAction, importQRMAction, deleteTemplateAction,
   importPHQ9PTAction, importPHQ9ENAction, importGAD7PTAction, importGAD7ENAction,
@@ -18,6 +19,7 @@ import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
 export default async function FormsPage() {
   const t = await getTranslations("forms.list");
   const tSlots = await getTranslations("forms.slots");
+  const tSettings = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
   const [templates, patients] = await Promise.all([
@@ -62,6 +64,12 @@ export default async function FormsPage() {
 
   return (
     <Shell>
+      <BackLink
+        fallbackHref="/settings/personalizar"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> {tSettings("common.back")}
+      </BackLink>
       <div className="flex items-start justify-between mb-[22px]">
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
