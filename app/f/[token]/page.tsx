@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getInvitationByToken } from "@/services/assessment-invitation-service";
 import { PublicAssessmentForm } from "@/components/public-assessment-form";
+import { PublicCaptureForm } from "@/components/public-capture-form";
 import { LanguageSwitcher } from "@/components/language-switcher";
 
 export const metadata: Metadata = {
@@ -52,14 +53,22 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
           <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
             {data.template.name}
           </h1>
-          <p className="text-[13px] text-[#A09E98] mt-[2px]">{t("greeting", { name: data.patientName })}</p>
+          <p className="text-[13px] text-[#A09E98] mt-[2px]">
+            {data.isPublic
+              ? t("capture.publicIntro")
+              : t("greeting", { name: data.patientName ?? "" })}
+          </p>
         </div>
 
-        <PublicAssessmentForm
-          template={data.template}
-          token={token}
-          chain={chainTokens}
-        />
+        {data.isPublic ? (
+          <PublicCaptureForm template={data.template} token={token} />
+        ) : (
+          <PublicAssessmentForm
+            template={data.template}
+            token={token}
+            chain={chainTokens}
+          />
+        )}
 
         <p className="text-center text-[11px] text-[#D3D1C7] mt-[32px]">
           {t("secureFooter")}

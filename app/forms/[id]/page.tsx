@@ -9,6 +9,7 @@ import { getPatients } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { FormPatientPicker } from "@/components/form-patient-picker";
 import { FormInvitationPanel } from "@/components/form-invitation-panel";
+import { PublicCaptureLinkPanel } from "@/components/public-capture-link-panel";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -102,6 +103,10 @@ export default async function FormDetailPage({ params }: Props) {
           <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
             <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("sendLink")}</p>
             <FormInvitationPanel patients={patients} templateId={id} />
+          </div>
+
+          <div className="bg-white border border-[#0F6E56]/20 rounded-[12px] px-[16px] py-[14px]">
+            <PublicCaptureLinkPanel templateId={id} />
           </div>
 
           {template.instructions && (

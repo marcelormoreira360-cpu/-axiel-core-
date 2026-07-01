@@ -17,5 +17,21 @@
   "doneDesc": "Your answers were submitted successfully and are now in your clinical record.",
   "totalScore": "Total score",
   "next": "Save and continue",
-  "answerAll": "{count, plural, one {# question left to answer.} other {# questions left to answer.}}"
+  "answerAll": "{count, plural, one {# question left to answer.} other {# questions left to answer.}}",
+  "capture": {
+    "publicIntro": "Fill in your details and answer the questionnaire. It only takes a few minutes.",
+    "step1": "Step 1 of 2 · Your details",
+    "step2": "Step 2 of 2 · Questionnaire",
+    "fullName": "Full name",
+    "email": "Email",
+    "phone": "Phone / WhatsApp",
+    "consent": "I authorize the clinic to process my personal and health data for contact and care purposes.",
+    "continue": "Continue to the questionnaire",
+    "nameRequired": "Please enter your name.",
+    "emailInvalid": "Invalid email.",
+    "consentRequired": "You must accept to continue.",
+    "privacyNote": "Your data is protected and used only for your care.",
+    "publicDoneTitle": "We received your answers!",
+    "publicDoneDesc": "Thank you. The clinic team will review them and get in touch with you soon."
+  }
 }

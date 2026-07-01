@@ -50,15 +50,30 @@ function ScaleInput({
   );
 }
 
+export type PublicContact = {
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  consent: boolean;
+  /** honeypot anti-bot */
+  website?: string;
+};
+
 export function PublicAssessmentForm({
   template,
   token,
   chain = [],
+  contact,
+  publicMode = false,
 }: {
   template: TemplateWithStructure;
   token: string;
   /** Tokens dos próximos questionários (encadeamento Q1→Q2→…→fim). */
   chain?: string[];
+  /** Cadastro do futuro paciente — presente só em link público de captação. */
+  contact?: PublicContact | null;
+  /** Modo captação: esconde o placar clínico na tela final. */
+  publicMode?: boolean;
 }) {
   const t = useTranslations("publicForm");
   const [advancing, setAdvancing] = useState(false);
@@ -151,6 +166,7 @@ export function PublicAssessmentForm({
           total_score: totalScore,
           max_possible_score: maxPossible,
           notes: notes.trim() || null,
+          contact: contact ?? null,
         }),
       });
 
@@ -179,6 +195,20 @@ export function PublicAssessmentForm({
   }
 
   if (done) {
+    // Modo captação: mensagem calorosa, sem expor placar clínico ao prospecto.
+    if (publicMode) {
+      return (
+        <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[40px] text-center">
+          <div className="w-14 h-14 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-[16px]">
+            <span className="text-[28px]">✓</span>
+          </div>
+          <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[8px]">{t("capture.publicDoneTitle")}</h2>
+          <p className="text-[13px] text-[#A09E98] leading-relaxed">
+            {t("capture.publicDoneDesc")}
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[40px] text-center">
         <div className="w-14 h-14 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-[16px]">

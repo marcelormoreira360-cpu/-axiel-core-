@@ -17,5 +17,21 @@
   "doneDesc": "Suas respostas foram enviadas com sucesso e já estão na sua ficha clínica.",
   "totalScore": "Pontuação total",
   "next": "Salvar e continuar",
-  "answerAll": "{count, plural, one {Falta # pergunta para responder.} other {Faltam # perguntas para responder.}}"
+  "answerAll": "{count, plural, one {Falta # pergunta para responder.} other {Faltam # perguntas para responder.}}",
+  "capture": {
+    "publicIntro": "Preencha seus dados e responda o questionário. Leva poucos minutos.",
+    "step1": "Passo 1 de 2 · Seus dados",
+    "step2": "Passo 2 de 2 · Questionário",
+    "fullName": "Nome completo",
+    "email": "E-mail",
+    "phone": "Telefone / WhatsApp",
+    "consent": "Autorizo o tratamento dos meus dados pessoais e de saúde pela clínica para fins de contato e atendimento.",
+    "continue": "Continuar para o questionário",
+    "nameRequired": "Informe seu nome.",
+    "emailInvalid": "E-mail inválido.",
+    "consentRequired": "É necessário aceitar para continuar.",
+    "privacyNote": "Seus dados são protegidos e usados apenas para o seu atendimento.",
+    "publicDoneTitle": "Recebemos suas respostas!",
+    "publicDoneDesc": "Obrigado. A equipe da clínica vai analisar e entrar em contato com você em breve."
+  }
 }

@@ -126,7 +126,7 @@ export type ClinicPatientSection = {
   updated_at: string;
 };
 
-export type LeadSource = "website" | "instagram" | "facebook" | "google" | "referral" | "other";
+export type LeadSource = "website" | "instagram" | "facebook" | "google" | "referral" | "public_form" | "other";
 
 export type LeadStage = "new_lead" | "contacted" | "scheduled" | "converted_to_patient";
 

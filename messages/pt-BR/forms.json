@@ -1,4 +1,14 @@
 {
+  "capture": {
+    "title": "Link de captação (novo paciente)",
+    "desc": "Gere um link para enviar a quem ainda não é paciente. A pessoa preenche os próprios dados e responde este questionário — e entra como lead. O mesmo link serve para várias pessoas.",
+    "generate": "Gerar link de captação",
+    "generating": "Gerando…",
+    "ready": "Link pronto. Compartilhe à vontade:",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "regenerate": "Gerar outro link"
+  },
   "fillPicker": {
     "pickTitle": "Selecionar formulário",
     "fillSubtitle": "Preencha todas as seções",

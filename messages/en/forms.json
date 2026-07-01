@@ -1,4 +1,14 @@
 {
+  "capture": {
+    "title": "Capture link (new patient)",
+    "desc": "Generate a link to send to someone who isn't a patient yet. They fill in their own details and answer this questionnaire — and come in as a lead. The same link works for many people.",
+    "generate": "Generate capture link",
+    "generating": "Generating…",
+    "ready": "Link ready. Share it freely:",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "regenerate": "Generate another link"
+  },
   "fillPicker": {
     "pickTitle": "Select a form",
     "fillSubtitle": "Fill in all sections",
