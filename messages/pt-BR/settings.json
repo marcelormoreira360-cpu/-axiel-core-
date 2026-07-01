@@ -16,8 +16,8 @@
         "text": "Atualize seu nome, email e senha de acesso."
       },
       "equipe": {
-        "title": "Equipe",
-        "text": "Convide profissionais, gerencie cargos e acesso à clínica."
+        "title": "Equipe & Profissionais",
+        "text": "Acesso e cargos da equipe, e o perfil público (especialidade, bio, agenda) de cada profissional."
       },
       "practitioners": {
         "title": "Profissionais",
@@ -188,7 +188,9 @@
     "errInvalidCode": "Código inválido. Tente novamente."
   },
   "equipe": {
-    "subtitle": "Gerencie os membros da clínica, cargos e convites.",
+    "subtitle": "Acesso da equipe e perfil público dos profissionais, em um só lugar.",
+    "tabAccess": "Acesso",
+    "tabProfiles": "Perfil público",
     "membersTitle": "Membros da equipe",
     "membersCount": "{count, plural, one {# membro} other {# membros}}",
     "invite": "Convidar",
