@@ -44,31 +44,35 @@ function bandLabel(g: FindingGroup): string | null {
 }
 
 /**
- * Cabeçalhos que iniciam um bloco de achados — âncora para deduplicar ao reimportar
- * (substitui o antigo marcador de texto "ACHADOS...", removido por não ser útil).
+ * Cabeçalhos que iniciam um bloco de achados — âncora para deduplicar ao reimportar.
+ * Cobre os formatos atual ("QRM=42,"), o anterior ("QRM:") e o legado
+ * ("QRM (Rastreamento Metabólico)"), para limpar corretamente texto já salvo.
  * Mantenha em sincronia com os instrumentos roteados em neuro-id-service
  * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar).
  */
-const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM:|Q-SNA:|Estilo de vida e ambiente:|História familiar:)/;
+const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar)(?:[:=]| \()/;
+
+/** Frase de introdução legada, removida ao reimportar caso tenha ficado salva. */
+const LEGACY_INTRO_RE = /^\s*ACHADOS DOS QUESTION[ÁA]RIOS[^\n]*\n?/i;
 
 /**
  * Remove um bloco de achados anterior (do 1º cabeçalho em diante), preservando o
  * texto humano que vier antes dele. Usado na importação para não duplicar.
+ * Também apaga a antiga frase "ACHADOS DOS QUESTIONÁRIOS..." se estiver no topo.
  */
 export function stripPreviousFindings(prev: string): string {
   const m = FINDINGS_BLOCK_RE.exec(prev);
-  if (!m) return prev.trim();
-  return prev.slice(0, m.index).trim();
+  const before = m ? prev.slice(0, m.index) : prev;
+  return before.replace(LEGACY_INTRO_RE, "").trim();
 }
 
-/** Cabeçalho curto do grupo (sem "total X/Y"): QRM mostra a faixa; Q-SNA, total + faixa. */
+/** Cabeçalho curto do grupo: "QRM=42, <faixa>" e "Q-SNA=46, <faixa>". */
 function groupHead(g: FindingGroup): string {
   const band = bandLabel(g);
-  if (g.kind === "qrm") return band ? `QRM: ${band}` : "QRM:";
-  if (g.kind === "qsna") {
-    const num = g.total !== null ? `${g.total}` : "";
-    const tail = [num, band].filter(Boolean).join(" ");
-    return tail ? `Q-SNA: ${tail}` : "Q-SNA:";
+  const abbr = g.kind === "qrm" ? "QRM" : g.kind === "qsna" ? "Q-SNA" : null;
+  if (abbr) {
+    const lead = g.total !== null ? `${abbr}=${g.total}` : abbr;
+    return band ? `${lead}, ${band}` : lead;
   }
   return `${g.instrument}:`;
 }
