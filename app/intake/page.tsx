@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ClipboardList, FilePlus2, Pencil } from "lucide-react";
+import { ClipboardList, FilePlus2, Pencil, ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { IntakeFormBuilder } from "@/components/intake-form-builder";
@@ -43,6 +44,12 @@ export default async function IntakePage() {
   return (
     <Shell>
       <header className="mb-8 pt-4">
+        <BackLink
+          fallbackHref="/settings"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> {ti("back")}
+        </BackLink>
         <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{ti("hubEyebrow")}</p>
         <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{ti("hubTitle")}</h1>
         <p className="mt-3 max-w-2xl text-black/55">{ti("hubSubtitle")}</p>
