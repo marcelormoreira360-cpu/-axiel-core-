@@ -1,10 +1,11 @@
 export const dynamic = "force-dynamic";
 
-import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2, Palette, Phone, Mail, Globe, MapPin, FileText } from "lucide-react";
+import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2, Palette, Phone, Mail, Globe, MapPin, FileText, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { revalidatePath } from "next/cache";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { LimitedList } from "@/components/limited-list";
@@ -105,6 +106,12 @@ export default async function ClinicsPage() {
   return (
     <Shell>
       <header className="mb-7">
+        <BackLink
+          fallbackHref="/settings"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Configurações</p>
         <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Configuração da clínica</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">Nome, URL de agendamento e perfil de prática.</p>
