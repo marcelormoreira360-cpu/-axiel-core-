@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
+import { BackLink } from "@/components/back-link";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getGoogleIntegrationStatus } from "@/services/google-calendar-service";
@@ -28,6 +30,7 @@ export default async function IntegrationsPage({
   searchParams: Promise<{ success?: string; error?: string }>;
 }) {
   const t = await getTranslations("settings.integrations");
+  const tc = await getTranslations("settings");
   const [profile, clinic] = await Promise.all([getCurrentUserProfile(), getCurrentClinic()]);
   const clinicId = profile?.clinic_id ?? clinic?.id;
   if (!clinicId) redirect("/dashboard");
@@ -69,6 +72,12 @@ export default async function IntegrationsPage({
   return (
     <Shell>
       <div className="mb-6">
+        <BackLink
+          fallbackHref="/settings"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> {tc("common.back")}
+        </BackLink>
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[4px]">{t("eyebrow")}</p>
         <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
           {t("title")}
