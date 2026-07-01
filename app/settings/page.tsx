@@ -26,7 +26,8 @@ const SETTINGS_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/lembretes", key: "lembretes" },
   { href: "/settings/whatsapp", key: "whatsapp" },
   { href: "/settings/voice", key: "voice" },
-  { href: "/intake", key: "intake" },
+  // "Formulários de intake" (/intake) consolidado em Formulários (migration 108).
+  // A página segue acessível por URL para consultar respostas antigas.
   { href: "/monetization", key: "monetization" },
   { href: "/follow-ups", key: "followUps" },
   { href: "/get-started", key: "getStarted" },

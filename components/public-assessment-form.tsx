@@ -87,11 +87,12 @@ export function PublicAssessmentForm({
     setAnswers((prev) => ({ ...prev, [qid]: value }));
   }
 
-  const { sectionScores, totalScore, maxPossible, percentage, answeredCount, totalQuestions } = useMemo(() => {
+  const { sectionScores, totalScore, maxPossible, percentage, answeredCount, totalQuestions, missingRequired } = useMemo(() => {
     let total = 0;
     let maxP = 0;
     let answered = 0;
     let totalQ = 0;
+    let missingReq = 0;
     const sScores: Record<string, { score: number; max: number }> = {};
     for (const section of template.assessment_sections) {
       let sScore = 0;
@@ -99,13 +100,18 @@ export function PublicAssessmentForm({
       for (const q of section.assessment_questions) {
         totalQ++;
         const v = answers[q.id];
-        if (q.question_type !== "text") {
-          if (typeof v === "number") { sScore += v; total += v; answered++; }
+        const isText = q.question_type === "text";
+        const isAnswered = isText ? typeof v === "string" && v.trim().length > 0 : typeof v === "number";
+        if (!isText) {
+          if (typeof v === "number") { sScore += v; total += v; }
           sMax += q.max_score;
           maxP += q.max_score;
-        } else {
-          if (typeof v === "string" && v.trim()) answered++;
         }
+        if (isAnswered) answered++;
+        // Perguntas com pontuação (scale/yes_no/número) são sempre obrigatórias
+        // para um score válido; texto livre é opcional, a menos que marcado.
+        const isRequired = !isText || q.is_required;
+        if (isRequired && !isAnswered) missingReq++;
       }
       sScores[section.id] = { score: sScore, max: sMax };
     }
@@ -116,14 +122,16 @@ export function PublicAssessmentForm({
       percentage: maxP > 0 ? Math.round((total / maxP) * 100) : 0,
       answeredCount: answered,
       totalQuestions: totalQ,
+      missingRequired: missingReq,
     };
   }, [answers, template]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    // Todas as perguntas são obrigatórias: bloqueia envio/avanço se faltar responder.
-    if (answeredCount < totalQuestions) {
-      setError(t("answerAll", { count: totalQuestions - answeredCount }));
+    // Bloqueia envio/avanço só se faltar responder alguma pergunta obrigatória
+    // (perguntas com pontuação, ou de texto marcadas como obrigatórias).
+    if (missingRequired > 0) {
+      setError(t("answerAll", { count: missingRequired }));
       return;
     }
     setSubmitting(true);
@@ -369,15 +377,15 @@ export function PublicAssessmentForm({
         </div>
       )}
 
-      {answeredCount < totalQuestions && (
+      {missingRequired > 0 && (
         <p className="text-[12px] text-[#8A5A06] bg-[#FDF8EE] border border-[#E9D8B0] rounded-[8px] px-[11px] py-[8px] text-center">
-          {t("answerAll", { count: totalQuestions - answeredCount })}
+          {t("answerAll", { count: missingRequired })}
         </p>
       )}
 
       <button
         type="submit"
-        disabled={submitting || advancing || answeredCount < totalQuestions}
+        disabled={submitting || advancing || missingRequired > 0}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
         {submitting || advancing ? t("submitting") : chain.length > 0 ? t("next") : t("submit")}
