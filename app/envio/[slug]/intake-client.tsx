@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { submitIntakeAction, lookupPatientAction } from "./actions";
 
 interface Props {
@@ -53,6 +54,7 @@ function fmtSize(bytes: number) {
 }
 
 export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Props) {
+  const t = useTranslations("publicForm.docUpload");
   const [step, setStep]               = useState<1 | 2 | 3>(1);
   const [lookupState, setLookupState] = useState<LookupState>("idle");
   const [isPending, startTransition]  = useTransition();
@@ -101,9 +103,9 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
   // ── Step 1: lookup by email ────────────────────────────────────────
   function handleLookup() {
     const trimmedEmail = email.trim();
-    if (!trimmedEmail) { setError("Digite seu e-mail para continuar."); return; }
+    if (!trimmedEmail) { setError(t("errEmailRequired")); return; }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(trimmedEmail)) { setError("E-mail inválido."); return; }
+    if (!emailRegex.test(trimmedEmail)) { setError(t("errEmailInvalid")); return; }
 
     setError(null);
     setLookupState("looking");
@@ -121,7 +123,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
   }
 
   function handleNewPatientContinue() {
-    if (!name.trim()) { setError("Preencha seu nome completo."); return; }
+    if (!name.trim()) { setError(t("errNameRequired")); return; }
     setError(null);
     setStep(2);
   }
@@ -175,10 +177,10 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
         {clinicName}
       </p>
       <h1 className="text-[22px] font-semibold text-[#0F1A2E] mt-1 text-center">
-        Envio de documentos
+        {t("title")}
       </h1>
       <p className="text-[13px] text-[#6B6A66] mt-1 text-center leading-relaxed">
-        Envie exames, fotos e observações diretamente para a sua ficha.
+        {t("subtitle")}
       </p>
     </div>
   );
@@ -195,7 +197,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
             <div className="h-1.5 flex-1 rounded-full" style={{ background: brand }} />
             <div className="h-1.5 flex-1 rounded-full bg-black/10" />
           </div>
-          <p className="text-[11px] font-medium text-[#A09E98] mb-5">Passo 1 de 2 — Identificação</p>
+          <p className="text-[11px] font-medium text-[#A09E98] mb-5">{t("step1")}</p>
 
           <div className="bg-white rounded-2xl border border-black/[.07] p-6 space-y-4">
 
@@ -210,27 +212,29 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                     {name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-[13px] font-semibold text-[#0F1A2E]">Olá, {name.split(" ")[0]}!</p>
-                    <p className="text-[11px] text-[#0F6E56]">Você já está cadastrado ✓</p>
+                    <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("greeting", { name: name.split(" ")[0] })}</p>
+                    <p className="text-[11px] text-[#0F6E56]">{t("recognized")}</p>
                   </div>
                 </div>
                 <p className="text-[12px] text-[#6B6A66]">
-                  Identificamos seu cadastro pelo e-mail <span className="font-medium text-[#0F1A2E]">{email}</span>.
-                  Clique em continuar para enviar seus arquivos.
+                  {t.rich("foundDesc", {
+                    email,
+                    hl: (chunks) => <span className="font-medium text-[#0F1A2E]">{chunks}</span>,
+                  })}
                 </p>
                 <button
                   onClick={() => { setError(null); setStep(2); }}
                   className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98]"
                   style={{ background: brand }}
                 >
-                  Continuar →
+                  {t("continue")}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setLookupState("idle"); setEmail(""); setName(""); setPatientId(null); }}
                   className="w-full text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition text-center"
                 >
-                  Não é você? Usar outro e-mail
+                  {t("notYou")}
                 </button>
               </>
             )}
@@ -239,11 +243,11 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
             {lookupState === "new" && (
               <>
                 <p className="text-[12px] text-[#6B6A66]">
-                  E-mail não encontrado. Complete seu cadastro para continuar.
+                  {t("notFound")}
                 </p>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    E-mail
+                    {t("email")}
                   </label>
                   <div className="w-full rounded-xl border border-black/10 bg-[#F4F3EF] px-4 py-3 text-[15px] text-[#6B6A66]">
                     {email}
@@ -251,13 +255,13 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    Nome completo <span className="text-red-400">*</span>
+                    {t("fullName")} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
+                    placeholder={t("namePlaceholder")}
                     autoComplete="name"
                     autoFocus
                     className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
@@ -265,13 +269,13 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    Telefone / WhatsApp
+                    {t("phone")}
                   </label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(00) 00000-0000"
+                    placeholder={t("phonePlaceholder")}
                     autoComplete="tel"
                     inputMode="tel"
                     className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] focus:outline-none focus:border-black/30"
@@ -279,7 +283,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    Data de nascimento
+                    {t("dob")}
                   </label>
                   <input
                     type="date"
@@ -291,23 +295,23 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                 </div>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    Sexo
+                    {t("sex")}
                   </label>
                   <select
                     value={sex}
                     onChange={(e) => setSex(e.target.value)}
                     className="w-full rounded-xl border border-black/15 px-4 py-3 text-[15px] bg-white focus:outline-none focus:border-black/30"
                   >
-                    <option value="">Prefiro não informar</option>
-                    <option value="female">Feminino</option>
-                    <option value="male">Masculino</option>
-                    <option value="other">Outro</option>
+                    <option value="">{t("sexNone")}</option>
+                    <option value="female">{t("sexFemale")}</option>
+                    <option value="male">{t("sexMale")}</option>
+                    <option value="other">{t("sexOther")}</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                      Peso (kg)
+                      {t("weight")}
                     </label>
                     <input
                       type="number" min={0} max={400} step="0.1" inputMode="decimal"
@@ -319,7 +323,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                      Altura (cm)
+                      {t("height")}
                     </label>
                     <input
                       type="number" min={0} max={260} step="1" inputMode="numeric"
@@ -335,14 +339,14 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                   className="w-full rounded-xl py-3.5 text-[15px] font-semibold text-white transition active:scale-[.98]"
                   style={{ background: brand }}
                 >
-                  Continuar →
+                  {t("continue")}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setLookupState("idle"); setName(""); setPhone(""); }}
                   className="w-full text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition text-center"
                 >
-                  ← Usar outro e-mail
+                  {t("backToEmail")}
                 </button>
               </>
             )}
@@ -352,14 +356,14 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
               <>
                 <div>
                   <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-1.5">
-                    E-mail <span className="text-red-400">*</span>
+                    {t("email")} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => { setEmail(e.target.value); setError(null); }}
                     onKeyDown={(e) => e.key === "Enter" && handleLookup()}
-                    placeholder="seu@email.com"
+                    placeholder={t("emailPlaceholder")}
                     autoComplete="email"
                     inputMode="email"
                     autoFocus
@@ -378,9 +382,9 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                       </svg>
-                      Verificando…
+                      {t("checking")}
                     </span>
-                  ) : "Continuar →"}
+                  ) : t("continue")}
                 </button>
               </>
             )}
@@ -391,7 +395,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
           </div>
 
           <p className="text-[11px] text-[#D3D1C7] text-center mt-5 leading-relaxed">
-            Suas informações são enviadas com segurança e ficam restritas à equipe da clínica.
+            {t("securityNote")}
           </p>
         </div>
       </div>
@@ -425,7 +429,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
             <div className="h-1.5 flex-1 rounded-full" style={{ background: brand }} />
             <div className="h-1.5 flex-1 rounded-full" style={{ background: brand }} />
           </div>
-          <p className="text-[11px] font-medium text-[#A09E98] mb-5">Passo 2 de 2 — Arquivos e observações</p>
+          <p className="text-[11px] font-medium text-[#A09E98] mb-5">{t("step2")}</p>
 
           <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
             {/* Drop zone */}
@@ -444,10 +448,10 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
               </div>
               <div className="text-center">
                 <p className="text-[14px] font-medium text-[#0F1A2E]">
-                  Toque para selecionar arquivos
+                  {t("dropTitle")}
                 </p>
                 <p className="text-[12px] text-[#A09E98] mt-0.5">
-                  Fotos, PDFs · até 15 MB por arquivo
+                  {t("dropHint")}
                 </p>
               </div>
             </div>
@@ -501,12 +505,12 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
             {/* Notes */}
             <div className="bg-white rounded-2xl border border-black/[.07] p-4">
               <label className="block text-[11px] font-semibold uppercase tracking-[.08em] text-[#6B6A66] mb-2">
-                Observações (opcional)
+                {t("notesLabel")}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Descreva seus sintomas, histórico recente, dúvidas ou qualquer informação que queira passar à sua clínica..."
+                placeholder={t("notesPlaceholder")}
                 rows={4}
                 className="w-full text-[14px] text-[#0F1A2E] placeholder:text-[#C4C2BB] focus:outline-none resize-none leading-relaxed"
               />
@@ -530,16 +534,16 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                   </svg>
-                  Enviando…
+                  {t("sending")}
                 </span>
               ) : (
-                `Enviar ${files.length > 0 ? `${files.length} arquivo${files.length > 1 ? "s" : ""}` : "observação"}`
+                files.length > 0 ? t("submitFiles", { count: files.length }) : t("submitNoteOnly")
               )}
             </button>
           </form>
 
           <p className="text-[11px] text-[#D3D1C7] text-center mt-5">
-            Seus arquivos chegam diretamente na ficha da clínica, seguros e criptografados.
+            {t("filesFooter")}
           </p>
         </div>
       </div>
@@ -561,29 +565,29 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
         </div>
 
         <h1 className="text-[24px] font-semibold text-[#0F1A2E] mb-2">
-          Enviado com sucesso!
+          {t("doneTitle")}
         </h1>
         <p className="text-[14px] text-[#6B6A66] leading-relaxed mb-2">
-          Suas informações chegaram na {clinicName}.
+          {t("doneDesc", { clinicName })}
         </p>
         <p className="text-[13px] text-[#A09E98] leading-relaxed">
-          A equipe da clínica já pode visualizar seus documentos e observações na sua ficha.
+          {t("doneHint")}
         </p>
 
         <div className="mt-8 bg-white rounded-2xl border border-black/[.07] p-5 text-left space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">Resumo do envio</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">{t("summaryTitle")}</p>
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-[#6B6A66]">Paciente</span>
+            <span className="text-[13px] text-[#6B6A66]">{t("summaryPatient")}</span>
             <span className="text-[13px] font-medium text-[#0F1A2E]">{name || email}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-[#6B6A66]">Arquivos</span>
+            <span className="text-[13px] text-[#6B6A66]">{t("summaryFiles")}</span>
             <span className="text-[13px] font-medium text-[#0F1A2E]">
-              {files.length > 0 ? `${files.length} arquivo${files.length > 1 ? "s" : ""}` : "Apenas observação"}
+              {files.length > 0 ? t("filesCount", { count: files.length }) : t("noteOnly")}
             </span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[13px] text-[#6B6A66]">Clínica</span>
+            <span className="text-[13px] text-[#6B6A66]">{t("summaryClinic")}</span>
             <span className="text-[13px] font-medium text-[#0F1A2E]">{clinicName}</span>
           </div>
         </div>
@@ -601,7 +605,7 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
           }}
           className="mt-6 text-[13px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
         >
-          Enviar mais arquivos
+          {t("sendMore")}
         </button>
       </div>
     </div>

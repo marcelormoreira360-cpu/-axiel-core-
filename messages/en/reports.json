@@ -1,4 +1,26 @@
 {
+  "charts": {
+    "periodMonths": "{count, plural, one {# month} other {# months}}",
+    "totalsRevenue": "revenue",
+    "totalsSessions": "sessions",
+    "totalsNewPatients": "new patients",
+    "mainChartTitle": "Revenue (bars) · Sessions (line)",
+    "legendRevenue": "Revenue",
+    "legendSessions": "Sessions",
+    "tooltipRevenue": "Revenue",
+    "tooltipSessions": "Sessions",
+    "tooltipNewPatients": "New patients",
+    "newPatientsTitle": "New patients per month",
+    "emptyNewPatients": "No new patients in this period.",
+    "paymentMethodsTitle": "Payment methods",
+    "emptyPayments": "No payments recorded.",
+    "sessionTypesTitle": "Session types",
+    "emptySessions": "No sessions recorded.",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
+    "sourcesTitle": "Booking sources",
+    "emptySources": "No appointments in this period.",
+    "appointmentsCount": "{count, plural, one {# appointment} other {# appointments}}"
+  },
   "page": {
     "eyebrow": "Clinic",
     "title": "Reports",

@@ -6,12 +6,6 @@ import { Check, Zap, Building2, Star, ArrowRight } from "lucide-react";
 import { AXIEL_PLANS, formatPlanPrice, type CurrencyCode, type PlanConfig } from "@/modules/billing/plan-config";
 import { track } from "@/lib/analytics";
 
-const CURRENCY_LABELS: Record<CurrencyCode, string> = {
-  BRL: "🇧🇷 R$",
-  USD: "🇺🇸 US$",
-  EUR: "🇪🇺 €",
-};
-
 const PLAN_ICONS: Record<string, React.ReactNode> = {
   starter:      <Zap className="h-4 w-4" />,
   professional: <Star className="h-4 w-4" />,
@@ -111,7 +105,7 @@ function PlanCard({ plan, currency, appUrl }: { plan: PlanConfig; currency: Curr
       {/* CTA */}
       {isEnterprise ? (
         <a
-          href="mailto:contato@axielcore.com?subject=Enterprise AXIEL"
+          href={`mailto:contato@axielcore.com?subject=${encodeURIComponent(t("enterpriseMailSubject"))}`}
           onClick={() => track("plan_selected", { plan: plan.slug, currency, source: "pricing" })}
           className="block text-center py-[11px] rounded-[10px] text-[12px] font-semibold text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#ECEAE4] transition"
         >
@@ -298,7 +292,7 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
                     : "text-[#6B6A66] hover:text-[#0F1A2E]",
                 ].join(" ")}
               >
-                {CURRENCY_LABELS[c]}
+                {t(`currencyLabels.${c}`)}
               </button>
             ))}
           </div>
