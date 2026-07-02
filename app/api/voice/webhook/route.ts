@@ -44,7 +44,7 @@ function xmlEscape(s: string): string {
 
 // Encode conversation history as a compact base64url string for URL params.
 // We only carry the last 6 messages (~3 turns) to keep URLs short.
-export function encodeHistory(messages: Array<{ role: string; content: string }>): string {
+function encodeHistory(messages: Array<{ role: string; content: string }>): string {
   return Buffer.from(JSON.stringify(messages.slice(-6))).toString("base64url");
 }
 

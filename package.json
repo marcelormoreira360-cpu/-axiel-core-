@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "npm run check:terminology && next lint",
+    "lint": "npm run check:terminology && eslint .",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
     "verify:i18n": "node scripts/verify-i18n.mjs",
     "check:terminology": "node scripts/check-terminology.mjs",
