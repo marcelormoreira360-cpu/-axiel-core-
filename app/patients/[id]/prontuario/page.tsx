@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft, Printer, FileText, Video, ExternalLink } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
@@ -11,16 +12,16 @@ import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = { params: Promise<{ id: string }> };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 }
 
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
+function formatDateTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -29,15 +30,16 @@ function formatDateTime(iso: string) {
   });
 }
 
-const SOAP_LABELS: Record<string, string> = {
-  subjective:      "Subjetivo",
-  objective:       "Objetivo",
-  assessment_note: "Avaliação",
-  plan:            "Plano",
-};
-
 export default async function ProntuarioPage({ params }: Props) {
   const { id } = await params;
+  const t = await getTranslations("patientProfile.prontuario");
+  const locale = await getLocale();
+  const soapLabels: Record<string, string> = {
+    subjective:      t("soap.subjective"),
+    objective:       t("soap.objective"),
+    assessment_note: t("soap.assessment"),
+    plan:            t("soap.plan"),
+  };
   // A-06: fetch clinic first so we can scope getPatientById to the caller's clinic
   const clinic = await getCurrentClinic();
   const [patient, sessionRecords, appointments] = await Promise.all([
@@ -80,7 +82,7 @@ export default async function ProntuarioPage({ params }: Props) {
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
         <div className="flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Prontuário</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
             {patient.full_name}
           </h1>
@@ -91,7 +93,7 @@ export default async function ProntuarioPage({ params }: Props) {
           className="flex items-center gap-1.5 rounded-lg border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <Printer className="h-3.5 w-3.5" />
-          Imprimir
+          {t("print")}
         </Link>
       </div>
 
@@ -99,10 +101,10 @@ export default async function ProntuarioPage({ params }: Props) {
       <div className="rounded-2xl border border-black/[.07] bg-white p-5 mb-5">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: "Data de nascimento", value: patient.date_of_birth ? formatDate(patient.date_of_birth) : "—" },
-            { label: "Telefone", value: patient.phone ?? "—" },
-            { label: "Sessões registradas", value: String(totalSessions) },
-            { label: "Última sessão", value: lastSession ? formatDate(lastSession.starts_at) : "—" },
+            { label: t("dob"), value: patient.date_of_birth ? formatDate(patient.date_of_birth, locale) : "—" },
+            { label: t("phone"), value: patient.phone ?? "—" },
+            { label: t("sessionsRecorded"), value: String(totalSessions) },
+            { label: t("lastSession"), value: lastSession ? formatDate(lastSession.starts_at, locale) : "—" },
           ].map((item) => (
             <div key={item.label}>
               <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em] mb-0.5">{item.label}</p>
@@ -112,7 +114,7 @@ export default async function ProntuarioPage({ params }: Props) {
         </div>
         {patient.notes && (
           <div className="mt-4 pt-4 border-t border-black/[.05] dark:border-white/[.06]">
-            <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em] mb-1">Observações gerais</p>
+            <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em] mb-1">{t("generalNotes")}</p>
             <p className="text-[12px] text-[#6B6A66] leading-relaxed whitespace-pre-line">{patient.notes}</p>
           </div>
         )}
@@ -122,9 +124,9 @@ export default async function ProntuarioPage({ params }: Props) {
       {sorted.length === 0 ? (
         <div className="rounded-2xl border border-black/[.07] bg-white p-8 text-center">
           <FileText className="h-8 w-8 text-[#D3D1C7] dark:text-white/25 mx-auto mb-3" />
-          <p className="text-[13px] font-medium text-[#0F1A2E]">Nenhum registro de sessão ainda</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{t("emptyTitle")}</p>
           <p className="text-[12px] text-[#A09E98] mt-1">
-            As anotações feitas durante as sessões aparecerão aqui.
+            {t("emptyHelper")}
           </p>
         </div>
       ) : (
@@ -136,8 +138,8 @@ export default async function ProntuarioPage({ params }: Props) {
             {sorted.map((rec) => {
               const appt = apptMap.get(rec.appointment_id) ?? rec.appointments;
               const sessionDate = appt
-                ? formatDateTime((appt as { starts_at: string }).starts_at)
-                : formatDateTime(rec.updated_at);
+                ? formatDateTime((appt as { starts_at: string }).starts_at, locale)
+                : formatDateTime(rec.updated_at, locale);
 
               const hasSoap =
                 rec.soap_mode &&
@@ -169,7 +171,7 @@ export default async function ProntuarioPage({ params }: Props) {
                           href={`/schedule/${rec.appointment_id}/session`}
                           className="text-[11px] text-[#A09E98] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] transition"
                         >
-                          Editar
+                          {t("edit")}
                         </Link>
                       </div>
                     </div>
@@ -184,7 +186,7 @@ export default async function ProntuarioPage({ params }: Props) {
                             return (
                               <div key={key} className="rounded-xl bg-[#FAFAF8] border border-black/[.05] dark:border-white/[.06] p-3">
                                 <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-1">
-                                  {SOAP_LABELS[key]}
+                                  {soapLabels[key]}
                                 </p>
                                 <p className="text-[12px] text-[#0F1A2E] leading-relaxed whitespace-pre-line">
                                   {value}
@@ -200,7 +202,7 @@ export default async function ProntuarioPage({ params }: Props) {
                         <div>
                           {hasSoap && (
                             <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-1">
-                              Notas adicionais
+                              {t("additionalNotes")}
                             </p>
                           )}
                           <p className="text-[12px] text-[#0F1A2E] leading-relaxed whitespace-pre-line">
@@ -213,7 +215,7 @@ export default async function ProntuarioPage({ params }: Props) {
                       {rec.key_observations?.length > 0 && (
                         <div>
                           <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-2">
-                            Observações-chave
+                            {t("keyObservations")}
                           </p>
                           <ul className="flex flex-wrap gap-1.5">
                             {rec.key_observations.map((obs, i) => (
@@ -230,14 +232,14 @@ export default async function ProntuarioPage({ params }: Props) {
 
                       {/* Empty record */}
                       {!hasSoap && !rec.notes && rec.key_observations?.length === 0 && (
-                        <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 italic">Sessão sem anotações.</p>
+                        <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 italic">{t("emptySession")}</p>
                       )}
 
                       {/* Zoom recordings */}
                       {(recordingsByAppt.get(rec.appointment_id) ?? []).length > 0 && (
                         <div className="pt-2 border-t border-black/[.05] dark:border-white/[.06]">
                           <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-2">
-                            Gravações
+                            {t("recordings")}
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {(recordingsByAppt.get(rec.appointment_id) ?? []).map((zr) => (
@@ -250,12 +252,12 @@ export default async function ProntuarioPage({ params }: Props) {
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:underline"
                                   >
-                                    {zr.file_type === "MP4" ? "Vídeo" : zr.file_type === "M4A" ? "Áudio" : zr.file_type ?? "Arquivo"}
+                                    {zr.file_type === "MP4" ? t("video") : zr.file_type === "M4A" ? t("audio") : zr.file_type ?? t("file")}
                                     <ExternalLink className="h-2.5 w-2.5" />
                                   </a>
                                 ) : (
                                   <span className="text-[11px] text-[#A09E98]">
-                                    {zr.file_type ?? "Arquivo"}
+                                    {zr.file_type ?? t("file")}
                                   </span>
                                 )}
                               </div>

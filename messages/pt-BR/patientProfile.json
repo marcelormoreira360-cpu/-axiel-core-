@@ -107,5 +107,50 @@
     "notInformed": "não informado",
     "errorName": "O nome é obrigatório.",
     "errorSave": "Não foi possível salvar. Tente novamente."
+  },
+  "prontuario": {
+    "eyebrow": "Prontuário",
+    "print": "Imprimir",
+    "dob": "Data de nascimento",
+    "phone": "Telefone",
+    "sessionsRecorded": "Sessões registradas",
+    "lastSession": "Última sessão",
+    "generalNotes": "Observações gerais",
+    "emptyTitle": "Nenhum registro de sessão ainda",
+    "emptyHelper": "As anotações feitas durante as sessões aparecerão aqui.",
+    "edit": "Editar",
+    "additionalNotes": "Notas adicionais",
+    "keyObservations": "Observações-chave",
+    "recordings": "Gravações",
+    "emptySession": "Sessão sem anotações.",
+    "video": "Vídeo",
+    "audio": "Áudio",
+    "file": "Arquivo",
+    "soap": {
+      "subjective": "Subjetivo",
+      "objective": "Objetivo",
+      "assessment": "Avaliação",
+      "plan": "Plano"
+    },
+    "printPage": {
+      "docTitle": "Prontuário — {name}",
+      "back": "Voltar ao prontuário",
+      "clinicFallback": "Clínica",
+      "electronicRecord": "Prontuário Eletrônico",
+      "printedAt": "Impresso em {date}",
+      "totalSessions": "Total de sessões: {count}",
+      "email": "E-mail",
+      "notesLabel": "Observações:",
+      "sessionHistory": "Histórico de sessões",
+      "empty": "Nenhum registro de sessão.",
+      "generatedBy": "Documento gerado pelo AXIEL Core",
+      "sessionCount": "{count, plural, one {# sessão} other {# sessões}}",
+      "soap": {
+        "subjective": "S — Subjetivo",
+        "objective": "O — Objetivo",
+        "assessment": "A — Avaliação",
+        "plan": "P — Plano"
+      }
+    }
   }
 }

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getPatientById } from "@/services/patient-service";
 import { getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
@@ -6,25 +7,26 @@ import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = { params: Promise<{ id: string }> };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
 }
-function formatDateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
+function formatDateTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
 }
 
-const SOAP_LABELS: Record<string, string> = {
-  subjective:      "S — Subjetivo",
-  objective:       "O — Objetivo",
-  assessment_note: "A — Avaliação",
-  plan:            "P — Plano",
-};
-
 export default async function ProntuarioPrintPage({ params }: Props) {
   const { id } = await params;
+  const t = await getTranslations("patientProfile.prontuario");
+  const locale = await getLocale();
+  const soapLabels: Record<string, string> = {
+    subjective:      t("printPage.soap.subjective"),
+    objective:       t("printPage.soap.objective"),
+    assessment_note: t("printPage.soap.assessment"),
+    plan:            t("printPage.soap.plan"),
+  };
   // A-06: scope getPatientById to the caller's clinic
   const clinic = await getCurrentClinic();
   const [patient, sessionRecords, appointments] = await Promise.all([
@@ -39,16 +41,16 @@ export default async function ProntuarioPrintPage({ params }: Props) {
   const sorted = [...sessionRecords].sort(
     (a, b) => new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime(),
   );
-  const printedAt = new Date().toLocaleString("pt-BR", {
+  const printedAt = new Date().toLocaleString(locale, {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
 
   return (
-    <html lang="pt-BR">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
-        <title>Prontuário — {patient.full_name}</title>
+        <title>{t("printPage.docTitle", { name: patient.full_name })}</title>
         <style>{`
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: Georgia, serif; font-size: 11pt; color: #111; background: white; }
@@ -92,18 +94,18 @@ export default async function ProntuarioPrintPage({ params }: Props) {
         <div className="page">
           {/* Back button — hidden when printing */}
           <a href={`/patients/${id}`} className="no-print">
-            ← Voltar ao prontuário
+            ← {t("printPage.back")}
           </a>
 
           {/* Header */}
           <div className="header">
             <div>
-              <div className="clinic-name">{clinic?.name ?? "Clínica"}</div>
-              <div style={{ fontSize: "9pt", color: "#888", marginTop: "2px" }}>Prontuário Eletrônico</div>
+              <div className="clinic-name">{clinic?.name ?? t("printPage.clinicFallback")}</div>
+              <div style={{ fontSize: "9pt", color: "#888", marginTop: "2px" }}>{t("printPage.electronicRecord")}</div>
             </div>
             <div className="print-date">
-              <div>Impresso em {printedAt}</div>
-              <div style={{ marginTop: "2px" }}>Total de sessões: {sorted.length}</div>
+              <div>{t("printPage.printedAt", { date: printedAt })}</div>
+              <div style={{ marginTop: "2px" }}>{t("printPage.totalSessions", { count: sorted.length })}</div>
             </div>
           </div>
 
@@ -112,37 +114,37 @@ export default async function ProntuarioPrintPage({ params }: Props) {
             <div className="patient-name">{patient.full_name}</div>
             <div className="patient-meta">
               <div className="meta-item">
-                <label>Data de nascimento</label>
-                <span>{patient.date_of_birth ? formatDate(patient.date_of_birth) : "—"}</span>
+                <label>{t("dob")}</label>
+                <span>{patient.date_of_birth ? formatDate(patient.date_of_birth, locale) : "—"}</span>
               </div>
               <div className="meta-item">
-                <label>Telefone</label>
+                <label>{t("phone")}</label>
                 <span>{patient.phone ?? "—"}</span>
               </div>
               <div className="meta-item">
-                <label>E-mail</label>
+                <label>{t("printPage.email")}</label>
                 <span>{patient.email ?? "—"}</span>
               </div>
             </div>
             {patient.notes && (
               <div className="patient-notes" style={{ marginTop: "10px" }}>
-                <strong>Observações:</strong> {patient.notes}
+                <strong>{t("printPage.notesLabel")}</strong> {patient.notes}
               </div>
             )}
           </div>
 
           {/* Sessions */}
-          <div className="section-title">Histórico de sessões</div>
+          <div className="section-title">{t("printPage.sessionHistory")}</div>
 
           {sorted.length === 0 && (
-            <p style={{ color: "#aaa", fontStyle: "italic" }}>Nenhum registro de sessão.</p>
+            <p style={{ color: "#aaa", fontStyle: "italic" }}>{t("printPage.empty")}</p>
           )}
 
           {sorted.map((rec, index) => {
             const appt = apptMap.get(rec.appointment_id) ?? rec.appointments;
             const sessionDate = appt
-              ? formatDateTime((appt as { starts_at: string }).starts_at)
-              : formatDateTime(rec.updated_at);
+              ? formatDateTime((appt as { starts_at: string }).starts_at, locale)
+              : formatDateTime(rec.updated_at, locale);
             const durationMin = (appt as { duration_minutes?: number })?.duration_minutes;
 
             const hasSoap =
@@ -171,7 +173,7 @@ export default async function ProntuarioPrintPage({ params }: Props) {
                         if (!value) return null;
                         return (
                           <div key={key} className="soap-field">
-                            <div className="soap-label">{SOAP_LABELS[key]}</div>
+                            <div className="soap-label">{soapLabels[key]}</div>
                             <div className="soap-value">{value}</div>
                           </div>
                         );
@@ -181,14 +183,14 @@ export default async function ProntuarioPrintPage({ params }: Props) {
 
                   {rec.notes && (
                     <div className="free-notes">
-                      {hasSoap && <strong style={{ fontSize: "8pt", textTransform: "uppercase", letterSpacing: ".05em", color: "#888" }}>Notas adicionais<br /></strong>}
+                      {hasSoap && <strong style={{ fontSize: "8pt", textTransform: "uppercase", letterSpacing: ".05em", color: "#888" }}>{t("additionalNotes")}<br /></strong>}
                       {rec.notes}
                     </div>
                   )}
 
                   {rec.key_observations?.length > 0 && (
                     <div>
-                      <div className="obs-title">Observações-chave</div>
+                      <div className="obs-title">{t("keyObservations")}</div>
                       <div className="obs-list">
                         {rec.key_observations.map((obs, i) => (
                           <span key={i} className="obs-tag">{obs}</span>
@@ -205,8 +207,8 @@ export default async function ProntuarioPrintPage({ params }: Props) {
 
           {/* Footer */}
           <div className="footer">
-            <span>{clinic?.name ?? "Clínica"} · Documento gerado pelo AXIEL Core</span>
-            <span>{patient.full_name} · {sorted.length} sessão(ões)</span>
+            <span>{clinic?.name ?? t("printPage.clinicFallback")} · {t("printPage.generatedBy")}</span>
+            <span>{patient.full_name} · {t("printPage.sessionCount", { count: sorted.length })}</span>
           </div>
         </div>
 
