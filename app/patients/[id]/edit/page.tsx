@@ -155,6 +155,21 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
+          {/* Idioma das mensagens ao paciente (e-mail, WhatsApp, push) */}
+          <div>
+            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("locale")}</label>
+            <select
+              name="locale"
+              defaultValue={patient.locale ?? ""}
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+            >
+              <option value="">{t("localeAuto")}</option>
+              <option value="pt-BR">{t("localePtBR")}</option>
+              <option value="en">{t("localeEn")}</option>
+              <option value="pt-PT">{t("localePtPT")}</option>
+            </select>
+          </div>
+
           {/* Notas */}
           <div>
             <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("notes")}</label>

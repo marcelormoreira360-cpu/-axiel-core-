@@ -44,6 +44,21 @@ export async function getServerT(locale: string | null | undefined, namespace: s
  * (clinic_owner). Fallback para pt-BR. Usa admin client pois roda em
  * contextos sem sessão (cron/webhook).
  */
+/**
+ * Locale para mensagens AO PACIENTE: o preferido dele (patients.locale) e,
+ * na falta, o da clínica. Nunca assuma pt-BR direto — clínica nos EUA com
+ * terapeuta pt-BR mandava tudo em português ao paciente americano.
+ */
+export async function resolvePatientLocale(
+  patientLocale: string | null | undefined,
+  clinicId: string | null | undefined,
+): Promise<Locale> {
+  if (patientLocale === "pt-BR" || patientLocale === "en" || patientLocale === "pt-PT") {
+    return patientLocale as Locale;
+  }
+  return resolveClinicLocale(clinicId);
+}
+
 export async function resolveClinicLocale(clinicId: string | null | undefined): Promise<Locale> {
   if (!clinicId) return DEFAULT_LOCALE;
   try {

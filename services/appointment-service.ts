@@ -120,7 +120,7 @@ export async function createAppointment(input: {
   const { data, error } = await supabase
     .from("appointments")
     .insert({ ...input, created_by: user?.id ?? null })
-    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes, price_cents)")
+    .select("*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)")
     .single();
 
   if (error) throw error;
@@ -554,6 +554,7 @@ async function sendConfirmationSideEffect(appt: Appointment) {
     patientName: patient.full_name,
     patientPhone: patient.phone ?? null,
     patientEmail: patient.email ?? null,
+    patientLocale: (patient as { locale?: string | null }).locale ?? null,
     clinicName: clinic?.name ?? "nossa clínica",
     startsAt: appt.starts_at,
     durationMinutes: appt.duration_minutes,

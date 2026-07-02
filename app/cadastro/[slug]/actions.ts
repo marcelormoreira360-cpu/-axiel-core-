@@ -87,10 +87,16 @@ export async function submitSelfRegistrationAction(
     existing = data ?? null;
   }
 
+  // Idioma escolhido na página pública (cookie AXIEL_LOCALE) vira o locale do paciente
+  const { cookies } = await import("next/headers");
+  const rawLocale = (await cookies()).get("AXIEL_LOCALE")?.value;
+  const patientLocale = rawLocale === "pt-BR" || rawLocale === "en" || rawLocale === "pt-PT" ? rawLocale : null;
+
   const addressFields = {
     full_name: fullName,
     email,
     phone,
+    ...(patientLocale ? { locale: patientLocale } : {}),
     cpf,
     date_of_birth: dob,
     sex,

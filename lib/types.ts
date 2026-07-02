@@ -53,6 +53,8 @@ export type Patient = {
   clinic_id: string;
   created_by: string | null;
   full_name: string;
+  /** Idioma preferido do paciente para mensagens (null = herda o da clínica) */
+  locale?: "pt-BR" | "en" | "pt-PT" | null;
   first_name: string | null;
   last_name: string | null;
   email: string | null;

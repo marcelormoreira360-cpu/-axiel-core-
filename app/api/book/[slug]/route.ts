@@ -102,6 +102,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     return NextResponse.json({ error: "Data de agendamento inválida.", code: "DATE_TOO_FAR" }, { status: 400 });
   }
 
+  // Idioma preferido do paciente, capturado do cookie do site público.
+  // Validado contra os locales suportados; ausente/ inválido = null (herda da clínica).
+  const rawLocale = req.cookies.get("AXIEL_LOCALE")?.value;
+  const bookingLocale =
+    rawLocale === "pt-BR" || rawLocale === "en" || rawLocale === "pt-PT" ? rawLocale : null;
+  const isEn = bookingLocale === "en";
+
   const supabase = createSupabaseAdminClient();
 
   const { data: clinic } = await supabase
@@ -148,16 +155,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   // SEC-05: fetch existing email so we only update if the field was empty
   const { data: existing } = await supabase
     .from("patients")
-    .select("id, email")
+    .select("id, email, locale")
     .eq("clinic_id", clinic.id)
     .eq("phone", normalizedPhone)
     .maybeSingle();
 
-  let existingByEmail: { id: string; email: string | null } | null = null;
+  let existingByEmail: { id: string; email: string | null; locale: string | null } | null = null;
   if (!existing && email) {
     const { data } = await supabase
       .from("patients")
-      .select("id, email")
+      .select("id, email, locale")
       .eq("clinic_id", clinic.id)
       .eq("email", email)
       .maybeSingle();
@@ -171,13 +178,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     // SEC-05: only enrich record if fields were previously empty
     const updates: Record<string, string> = {};
     if (email && !existingPatient.email) updates.email = email;
+    if (bookingLocale && !existingPatient.locale) updates.locale = bookingLocale;
     if (Object.keys(updates).length > 0) {
       await supabase.from("patients").update(updates).eq("id", patientId);
     }
   } else {
     const { data: newPatient, error: patientError } = await supabase
       .from("patients")
-      .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active" })
+      .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active", locale: bookingLocale })
       .select("id")
       .single();
     if (patientError) return NextResponse.json({ error: "Erro ao registrar paciente." }, { status: 500 });
@@ -247,6 +255,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
             startsAt: starts_at,
             timeZone: clinicTz,
             joinUrl: meeting.join_url,
+            locale: bookingLocale,
           }).catch((e) => log.error("Zoom email failed", e as Error, { appointment_id: appointment.id }));
         }
       }
@@ -357,6 +366,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     hour: "2-digit", minute: "2-digit",
     timeZone: clinicTz,
   });
+  // Data no idioma do paciente para o push dele (staff continua pt)
+  const patientApptDate = new Date(starts_at).toLocaleString(isEn ? "en-US" : "pt-BR", {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: clinicTz,
+  });
   import("@/services/push-service").then(({ sendPushToClinic, sendPushToPatient }) =>
     Promise.allSettled([
       sendPushToClinic(clinic.id, {
@@ -367,8 +382,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       }),
       // Notify the patient on their device
       sendPushToPatient(patientId, {
-        title: "Sessão confirmada ✓",
-        body:  `${sessionType.name} · ${apptDate}`,
+        title: isEn ? "Session confirmed ✓" : "Sessão confirmada ✓",
+        body:  `${sessionType.name} · ${patientApptDate}`,
         tag:   `booking-confirm-${appointment.id}`,
       }),
     ])
@@ -392,41 +407,67 @@ async function sendZoomConfirmationEmail(opts: {
   startsAt: string;
   joinUrl: string;
   timeZone: string;
+  locale?: string | null;
 }) {
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
 
+  const isEn = opts.locale === "en";
+  const dateLocale = isEn ? "en-US" : "pt-BR";
   const date = new Date(opts.startsAt);
-  const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: opts.timeZone });
-  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: opts.timeZone });
+  const dateStr = date.toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: opts.timeZone });
+  const timeStr = date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: opts.timeZone });
+
+  const s = isEn
+    ? {
+        subject: `Your online session link — ${opts.clinicName}`,
+        heading: "Online session confirmed 🖥️",
+        intro: `Hi, ${opts.firstName}! Your <strong>${opts.sessionName}</strong> session
+          with <strong>${opts.clinicName}</strong> has been confirmed.`,
+        dateLabel: "DATE AND TIME",
+        dateTime: `${dateStr} at ${timeStr}`,
+        button: "Join Zoom meeting",
+        directAccess: "Or open the link directly:",
+        sentBy: `Sent by ${opts.clinicName} via AXIEL Core`,
+      }
+    : {
+        subject: `Link da sua sessão online — ${opts.clinicName}`,
+        heading: "Sessão online confirmada 🖥️",
+        intro: `Olá, ${opts.firstName}! Sua sessão de <strong>${opts.sessionName}</strong>
+          com <strong>${opts.clinicName}</strong> foi confirmada.`,
+        dateLabel: "DATA E HORA",
+        dateTime: `${dateStr} às ${timeStr}`,
+        button: "Entrar na reunião Zoom",
+        directAccess: "Ou acesse diretamente:",
+        sentBy: `Enviado por ${opts.clinicName} via AXIEL Core`,
+      };
 
   await resend.emails.send({
     from: DEFAULT_FROM_EMAIL,
     to: opts.to,
-    subject: `Link da sua sessão online — ${opts.clinicName}`,
+    subject: s.subject,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0F1A2E">
-        <h2 style="font-size:20px;font-weight:700;margin:0 0 8px">Sessão online confirmada 🖥️</h2>
+        <h2 style="font-size:20px;font-weight:700;margin:0 0 8px">${s.heading}</h2>
         <p style="margin:0 0 16px;color:#6B6A66;font-size:14px">
-          Olá, ${opts.firstName}! Sua sessão de <strong>${opts.sessionName}</strong>
-          com <strong>${opts.clinicName}</strong> foi confirmada.
+          ${s.intro}
         </p>
         <div style="background:#F4F3EF;border-radius:10px;padding:16px 20px;margin-bottom:24px">
-          <p style="margin:0 0 4px;font-size:13px;color:#A09E98;font-weight:600;text-transform:uppercase;letter-spacing:.05em">DATA E HORA</p>
-          <p style="margin:0;font-size:16px;font-weight:600">${dateStr} às ${timeStr}</p>
+          <p style="margin:0 0 4px;font-size:13px;color:#A09E98;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${s.dateLabel}</p>
+          <p style="margin:0;font-size:16px;font-weight:600">${s.dateTime}</p>
         </div>
         <a href="${opts.joinUrl}"
            style="display:inline-block;background:#0F6E56;color:#fff;font-weight:600;font-size:15px;
                   padding:12px 28px;border-radius:8px;text-decoration:none;margin-bottom:20px">
-          Entrar na reunião Zoom
+          ${s.button}
         </a>
         <p style="font-size:12px;color:#A09E98;margin:0">
-          Ou acesse diretamente:<br>
+          ${s.directAccess}<br>
           <a href="${opts.joinUrl}" style="color:#0F6E56;word-break:break-all">${opts.joinUrl}</a>
         </p>
         <hr style="border:none;border-top:1px solid #E8E6E2;margin:24px 0">
         <p style="font-size:11px;color:#A09E98;margin:0">
-          Enviado por ${opts.clinicName} via AXIEL Core · <a href="${APP_URL}" style="color:#A09E98">${APP_URL}</a>
+          ${s.sentBy} · <a href="${APP_URL}" style="color:#A09E98">${APP_URL}</a>
         </p>
       </div>
     `,
