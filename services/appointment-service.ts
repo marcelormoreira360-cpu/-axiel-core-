@@ -220,13 +220,18 @@ export async function confirmAppointmentByToken(
     if (pErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
   }
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("appointments")
     .update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirm_token_hash: null, confirm_expires_at: null })
     .eq("id", info.id)
-    .eq("status", "pending");
+    .eq("status", "pending")
+    .select("id");
 
   if (error) return { ok: false, error: "Erro ao confirmar o horário. Tente novamente." };
+  // 0 linhas = outro submit confirmou primeiro; não rode os side-effects em dobro.
+  if (!updated || updated.length === 0) {
+    return { ok: false, error: "Este agendamento já foi confirmado ou não está mais disponível." };
+  }
   return { ok: true, clinicId: info.clinic_id, patientId: info.patient?.id, appointmentId: info.id, startsAt: info.starts_at };
 }
 

@@ -123,9 +123,11 @@ export default async function SchedulePage() {
     const patient = appointment.patients;
     if (patient?.phone) {
       try {
+        const { getClinicTimezone } = await import("@/services/clinic-service");
+        const tz = await getClinicTimezone(appointment.clinic_id);
         const date = new Date(startsAt);
-        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
         const firstName = patient.full_name.split(" ")[0];
         const body =
           `Olá, ${firstName}! ✅\n\n` +

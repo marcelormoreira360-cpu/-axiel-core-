@@ -7,7 +7,7 @@ export interface TimeSlot {
  * Convert a wall-clock date+time in the given IANA timezone to a UTC Date.
  * Uses the standard "probe + offset" method so DST transitions are handled correctly.
  */
-function wallClockToUTC(dateStr: string, timeStr: string, tz: string): Date {
+export function wallClockToUTC(dateStr: string, timeStr: string, tz: string): Date {
   const [year, month, day] = dateStr.split("-").map(Number);
   const [h, m] = timeStr.split(":").map(Number);
 

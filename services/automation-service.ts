@@ -9,6 +9,18 @@ import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
+// Timezone por clínica com cache de instância (o fuso raramente muda e o cron
+// processa muitos follow-ups da mesma clínica por execução).
+const clinicTzCache = new Map<string, string>();
+async function getClinicTz(clinicId: string): Promise<string> {
+  const hit = clinicTzCache.get(clinicId);
+  if (hit) return hit;
+  const { getClinicTimezone } = await import("@/services/clinic-service");
+  const tz = await getClinicTimezone(clinicId);
+  clinicTzCache.set(clinicId, tz);
+  return tz;
+}
+
 // Resolves plan slug for a clinic using the admin client (no session required).
 // Falls back to "starter" when the clinic has no subscription row.
 async function getClinicPlanSlug(
@@ -195,6 +207,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
   }
 
   async function processFollowUp(fu: FollowUpRow): Promise<"sent" | "failed" | "skipped"> {
+    const tz = await getClinicTz(fu.clinic_id as string);
     const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null } | null;
     const appt    = fu.appointments as { id: string; starts_at: string } | null;
 
@@ -216,14 +229,14 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       const ruleId = tag.replace("custom:", "");
       const tpl = clinicCustomRules.get(fu.clinic_id as string)?.get(ruleId);
       body = tpl
-        ? interpolateTemplate(tpl, first, appt?.starts_at ?? null)
+        ? interpolateTemplate(tpl, first, appt?.starts_at ?? null, tz)
         : `Olá, ${first}! 🌿\n\nTemos uma mensagem para você. Entre em contato se precisar de algo.`;
     } else {
       const ruleKey = TAG_TO_RULE_KEY[tag];
       const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
       body = customTpl
-        ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null)
-        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null);
+        ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null, tz)
+        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null, tz);
     }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
@@ -319,13 +332,14 @@ async function sendReminderEmail(
   if (!patient.email) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
   const locale = await resolveClinicLocale(fu.clinic_id);
+  const tz = await getClinicTz(fu.clinic_id);
   const t = await getServerT(locale, "emails");
   const first = patient.full_name.split(" ")[0];
   const dateStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" })
+    ? new Date(appt.starts_at).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: tz })
     : t("apptReminder.fallbackDate");
   const timeStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+    ? new Date(appt.starts_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz })
     : t("apptReminder.fallbackTime");
 
   const subject = t("apptReminder.subject", { time: timeStr });
@@ -589,8 +603,9 @@ export async function sendAppointmentConfirmation(params: {
   if (patientEmail === DEMO_PATIENT_EMAIL) return;
 
   const first = patientName.split(" ")[0];
-  const dateStr = new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-  const timeStr = new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const tz = await getClinicTz(clinicId);
+  const dateStr = new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+  const timeStr = new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
   const supabase = createSupabaseAdminClient();
   const useCase = "appointment_confirmation" as const;
 
@@ -624,8 +639,8 @@ export async function sendAppointmentConfirmation(params: {
     const fromAddress = DEFAULT_FROM_EMAIL;
     const locale = await resolveClinicLocale(clinicId);
     const t = await getServerT(locale, "emails");
-    const dateStrEmail = new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" });
-    const timeStrEmail = new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+    const dateStrEmail = new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+    const timeStrEmail = new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz });
     const subject = t("apptConfirm.subject", { date: dateStrEmail, time: timeStrEmail });
     const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
     const whatsappUrl = clinicRow?.whatsapp_number

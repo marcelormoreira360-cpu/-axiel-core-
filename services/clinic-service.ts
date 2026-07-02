@@ -164,6 +164,24 @@ export async function getClinicSettings(clinicId: string): Promise<{
   };
 }
 
+// Timezone canônico da clínica: coluna clinic_settings.timezone (é o que
+// /settings/regional grava). Admin client para funcionar em rotas públicas,
+// webhooks e crons; o JSONB settings.timezone é legado e fica como fallback.
+export async function getClinicTimezone(clinicId: string): Promise<string> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("clinic_settings")
+    .select("timezone, settings")
+    .eq("clinic_id", clinicId)
+    .maybeSingle();
+  return (
+    (data?.timezone as string | null)
+    ?? ((data?.settings as Record<string, unknown> | null)?.timezone as string | undefined)
+    ?? "America/Sao_Paulo"
+  );
+}
+
 // ── Catálogo de testes clínicos presenciais (Feature 3 — bateria da clínica) ────
 export async function getClinicalTestCatalog(clinicId: string): Promise<string[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");

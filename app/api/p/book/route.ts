@@ -94,9 +94,11 @@ export async function POST(req: NextRequest) {
   // ── WhatsApp confirmation (non-blocking) ──────────────────────────────────────
   if (patient?.phone) {
     try {
+      const { getClinicTimezone } = await import("@/services/clinic-service");
+      const tz = await getClinicTimezone(link.clinic_id as string);
       const date = new Date(starts_at);
-      const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-      const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+      const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+      const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
       const firstName = (patient.full_name as string).split(" ")[0];
       await sendWhatsAppText(
         patient.phone as string,

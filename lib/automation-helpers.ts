@@ -12,13 +12,14 @@
 export function interpolateTemplate(
   template: string,
   firstName: string,
-  startsAt: string | null
+  startsAt: string | null,
+  timeZone?: string
 ): string {
   const time = startsAt
-    ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+    ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
     : "horário agendado";
   const date = startsAt
-    ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })
+    ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone })
     : "data agendada";
   return template
     .replace(/{{nome}}/g, firstName)
@@ -35,13 +36,14 @@ export function interpolateTemplate(
 export function buildMessage(
   tag: string,
   fullName: string,
-  startsAt: string | null
+  startsAt: string | null,
+  timeZone?: string
 ): string {
   const first = fullName.split(" ")[0];
 
   if (tag === "d-1") {
     const time = startsAt
-      ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+      ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
       : "horário agendado";
     return `Olá, ${first}! 👋\n\nLembrete: sua sessão é *amanhã* às ${time}. 📅\n\nAté lá!`;
   }
