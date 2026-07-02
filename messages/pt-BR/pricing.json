@@ -36,6 +36,12 @@
       "white_label": "White-label"
     }
   },
+  "currencyLabels": {
+    "BRL": "🇧🇷 R$",
+    "USD": "🇺🇸 US$",
+    "EUR": "🇪🇺 €"
+  },
+  "enterpriseMailSubject": "Enterprise AXIEL",
   "navLogin": "Entrar",
   "heroEyebrow": "Pricing · Planos",
   "heroTitleLine1": "Infraestrutura premium",
@@ -53,7 +59,7 @@
   "startTrial": "Começar grátis por 14 dias →",
   "perMonthBRL": "/mês",
   "perMonthUSD": "/mo",
-  "perMonthEUR": "/mois",
+  "perMonthEUR": "/mês",
   "features": {
     "leads": "CRM de leads e funil de pacientes",
     "schedule": "Agenda + booking público",

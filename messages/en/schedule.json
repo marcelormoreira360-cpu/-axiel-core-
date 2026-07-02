@@ -7,6 +7,20 @@
     "statReviews": "Reviews",
     "noClinic": "User must be assigned to a clinic."
   },
+  "actions": {
+    "noClinic": "User must be assigned to a clinic.",
+    "noClinicShort": "User has no clinic.",
+    "requiredFields": "Patient and time are required.",
+    "patientNotFound": "Patient not found.",
+    "missingEmailOrLink": "Missing email or link.",
+    "clinicFallback": "Clinic",
+    "emailSubject": "Confirm your appointment — {clinicName}",
+    "emailGreeting": "Hello!",
+    "emailReserved": "{clinicName} has reserved a time for you.",
+    "emailReservedWithDate": "{clinicName} has reserved a time for you: {dateLabel}.",
+    "emailConfirmCta": "Confirm the time and complete your registration at this link:",
+    "emailSendError": "Failed to send the email."
+  },
   "new": {
     "title": "Schedule session",
     "subtitle": "Patient, treatment, date and time"

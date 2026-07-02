@@ -4,6 +4,7 @@ import { Building2, Users, Brain, Dumbbell, Heart, Leaf, Sparkles, CheckCircle2,
 import Link from "next/link";
 import Image from "next/image";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { Card } from "@/components/card";
@@ -19,43 +20,17 @@ import type { ClinicProfile } from "@/lib/types";
 
 const PROFILES: {
   id: ClinicProfile;
-  label: string;
-  examples: string;
   icon: React.ReactNode;
 }[] = [
-  {
-    id: "integrativa",
-    label: "Integrativa / Funcional",
-    examples: "Medicina funcional · Acupuntura · Longevidade",
-    icon: <Leaf className="h-4 w-4" />,
-  },
-  {
-    id: "fisioterapia",
-    label: "Fisioterapia / Reabilitação",
-    examples: "Fisioterapia · Quiropraxia · Osteopatia",
-    icon: <Dumbbell className="h-4 w-4" />,
-  },
-  {
-    id: "saude_mental",
-    label: "Saúde Mental",
-    examples: "Psicologia · Terapia · Coaching terapêutico",
-    icon: <Brain className="h-4 w-4" />,
-  },
-  {
-    id: "nutricao",
-    label: "Nutrição",
-    examples: "Nutrição clínica · Nutrição esportiva",
-    icon: <Heart className="h-4 w-4" />,
-  },
-  {
-    id: "wellness",
-    label: "Wellness / Bem-estar",
-    examples: "Wellness center · Estética · Biohacking",
-    icon: <Sparkles className="h-4 w-4" />,
-  },
+  { id: "integrativa", icon: <Leaf className="h-4 w-4" /> },
+  { id: "fisioterapia", icon: <Dumbbell className="h-4 w-4" /> },
+  { id: "saude_mental", icon: <Brain className="h-4 w-4" /> },
+  { id: "nutricao", icon: <Heart className="h-4 w-4" /> },
+  { id: "wellness", icon: <Sparkles className="h-4 w-4" /> },
 ];
 
 export default async function ClinicsPage() {
+  const t = await getTranslations("clinics");
   const [clinics, users, myClinic] = await Promise.all([
     getClinicsForUser().catch((e) => { console.error("[/clinics] getClinicsForUser error:", e?.message ?? e); return []; }),
     getUsersForCurrentScope().catch((e) => { console.error("[/clinics] getUsersForCurrentScope error:", e?.message ?? e); return []; }),
@@ -70,7 +45,10 @@ export default async function ClinicsPage() {
     const id = String(formData.get("id") ?? "");
     const name = String(formData.get("name") ?? "").trim();
     const slug = String(formData.get("slug") ?? "").trim();
-    if (!id || !name || !slug) throw new Error("Campos obrigatórios.");
+    if (!id || !name || !slug) {
+      const tAction = await getTranslations("clinics");
+      throw new Error(tAction("errors.requiredFields"));
+    }
     await updateClinic(id, { name, slug });
     revalidatePath("/clinics");
     revalidatePath("/settings");
@@ -110,11 +88,11 @@ export default async function ClinicsPage() {
           fallbackHref="/settings"
           className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Configurações
+          <ArrowLeft className="h-3.5 w-3.5" /> {t("header.back")}
         </BackLink>
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Configurações</p>
-        <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Configuração da clínica</h1>
-        <p className="text-[12px] text-[#A09E98] mt-[2px]">Nome, URL de agendamento e perfil de prática.</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("header.eyebrow")}</p>
+        <h1 className="mt-1 text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("header.title")}</h1>
+        <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("header.subtitle")}</p>
       </header>
 
       {/* ── Minha clínica — nome e slug ── */}
@@ -122,7 +100,7 @@ export default async function ClinicsPage() {
         <div className="space-y-[14px]">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-              Nome e URL
+              {t("sections.nameUrl")}
             </p>
             <Card className="p-[16px]">
               <ClinicEditForm
@@ -137,12 +115,12 @@ export default async function ClinicsPage() {
           {/* ── Perfil da clínica ── */}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-              Perfil de prática
+              {t("sections.practiceProfile")}
             </p>
             <Card className="p-[16px]">
-              <p className="text-[13px] text-[#0F1A2E] font-medium mb-[4px]">Tipo de clínica</p>
+              <p className="text-[13px] text-[#0F1A2E] font-medium mb-[4px]">{t("profileCard.title")}</p>
               <p className="text-[12px] text-[#A09E98] mb-[14px]">
-                Define os tipos de sessão padrão, terminologia e formulários sugeridos pelo AXIEL.
+                {t("profileCard.subtitle")}
               </p>
               <div className="grid gap-[8px] sm:grid-cols-2">
                 {PROFILES.map((profile) => {
@@ -171,13 +149,13 @@ export default async function ClinicsPage() {
                             "text-[12px] font-semibold",
                             isActive ? "text-[#085041]" : "text-[#0F1A2E]",
                           ].join(" ")}>
-                            {profile.label}
+                            {t(`profiles.${profile.id}.label`)}
                           </p>
                           <p className={[
                             "text-[11px] mt-[1px] leading-relaxed",
                             isActive ? "text-[#0F6E56]" : "text-[#A09E98]",
                           ].join(" ")}>
-                            {profile.examples}
+                            {t(`profiles.${profile.id}.examples`)}
                           </p>
                         </div>
                         {isActive && (
@@ -194,11 +172,11 @@ export default async function ClinicsPage() {
           {/* ── Contato e localização ── */}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-              Contato e localização
+              {t("sections.contact")}
             </p>
             <Card className="p-[16px]">
               <p className="text-[12px] text-[#A09E98] mb-[14px]">
-                Exibido na página de agendamento online e usado para emissão de notas fiscais.
+                {t("contact.subtitle")}
               </p>
               <form action={updateClinicContactAction} className="space-y-[12px]">
                 <input type="hidden" name="id" value={myClinic.id} />
@@ -206,13 +184,13 @@ export default async function ClinicsPage() {
                 {/* Descrição */}
                 <div>
                   <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                    <FileText className="h-3 w-3" /> Descrição curta
+                    <FileText className="h-3 w-3" /> {t("contact.description")}
                   </label>
                   <textarea
                     name="description"
                     rows={2}
                     defaultValue={myClinic.description ?? ""}
-                    placeholder="Ex: Clínica especializada em medicina integrativa e funcional em São Paulo."
+                    placeholder={t("contact.descriptionPlaceholder")}
                     className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] resize-none transition"
                   />
                 </div>
@@ -221,13 +199,13 @@ export default async function ClinicsPage() {
                   {/* Telefone */}
                   <div>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                      <Phone className="h-3 w-3" /> Telefone
+                      <Phone className="h-3 w-3" /> {t("contact.phone")}
                     </label>
                     <input
                       name="phone"
                       type="tel"
                       defaultValue={myClinic.phone ?? ""}
-                      placeholder="(11) 99999-9999"
+                      placeholder={t("contact.phonePlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
@@ -235,13 +213,13 @@ export default async function ClinicsPage() {
                   {/* Email de contato */}
                   <div>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                      <Mail className="h-3 w-3" /> Email de contato
+                      <Mail className="h-3 w-3" /> {t("contact.email")}
                     </label>
                     <input
                       name="contact_email"
                       type="email"
                       defaultValue={myClinic.contact_email ?? ""}
-                      placeholder="contato@suaclinica.com.br"
+                      placeholder={t("contact.emailPlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
@@ -249,13 +227,13 @@ export default async function ClinicsPage() {
                   {/* Site */}
                   <div>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                      <Globe className="h-3 w-3" /> Site
+                      <Globe className="h-3 w-3" /> {t("contact.website")}
                     </label>
                     <input
                       name="website"
                       type="url"
                       defaultValue={myClinic.website ?? ""}
-                      placeholder="https://suaclinica.com.br"
+                      placeholder={t("contact.websitePlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
@@ -263,12 +241,12 @@ export default async function ClinicsPage() {
                   {/* CNPJ */}
                   <div>
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                      <FileText className="h-3 w-3" /> CNPJ
+                      <FileText className="h-3 w-3" /> {t("contact.taxId")}
                     </label>
                     <input
                       name="cnpj"
                       defaultValue={myClinic.cnpj ?? ""}
-                      placeholder="00.000.000/0001-00"
+                      placeholder={t("contact.taxIdPlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
@@ -276,34 +254,34 @@ export default async function ClinicsPage() {
                   {/* Endereço */}
                   <div className="sm:col-span-2">
                     <label className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">
-                      <MapPin className="h-3 w-3" /> Endereço
+                      <MapPin className="h-3 w-3" /> {t("contact.address")}
                     </label>
                     <input
                       name="address_line"
                       defaultValue={myClinic.address_line ?? ""}
-                      placeholder="Rua Exemplo, 123 — Sala 45"
+                      placeholder={t("contact.addressPlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
 
                   {/* Cidade */}
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Cidade</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("contact.city")}</label>
                     <input
                       name="city"
                       defaultValue={myClinic.city ?? ""}
-                      placeholder="São Paulo"
+                      placeholder={t("contact.cityPlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
 
                   {/* Estado */}
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">Estado</label>
+                    <label className="block text-[11px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("contact.state")}</label>
                     <input
                       name="state"
                       defaultValue={myClinic.state ?? ""}
-                      placeholder="SP"
+                      placeholder={t("contact.statePlaceholder")}
                       maxLength={2}
                       className="w-full text-[13px] text-[#0F1A2E] border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition uppercase"
                     />
@@ -315,7 +293,7 @@ export default async function ClinicsPage() {
                     type="submit"
                     className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-[14px] py-[7px] rounded-[8px] transition"
                   >
-                    Salvar contato
+                    {t("contact.save")}
                   </button>
                 </div>
               </form>
@@ -325,25 +303,25 @@ export default async function ClinicsPage() {
           {/* ── Identidade visual (atalho) ── */}
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-              Identidade visual
+              {t("sections.branding")}
             </p>
             <Link href="/settings/branding">
               <Card className="p-[16px] flex items-center justify-between hover:border-black/[.15] transition group">
                 <div className="flex items-center gap-3">
                   {myClinic.logo_url ? (
-                    <Image src={myClinic.logo_url} alt="Logo" width={36} height={36} className="h-9 w-9 rounded-[8px] object-contain border border-black/[.07]" />
+                    <Image src={myClinic.logo_url} alt={t("branding.logoAlt")} width={36} height={36} className="h-9 w-9 rounded-[8px] object-contain border border-black/[.07]" />
                   ) : (
                     <div className="h-9 w-9 rounded-[8px] border border-black/[.07] bg-[#F4F3EF] flex items-center justify-center">
                       <Palette className="h-4 w-4 text-[#A09E98]" />
                     </div>
                   )}
                   <div>
-                    <p className="text-[13px] font-medium text-[#0F1A2E]">Logo e cor primária</p>
+                    <p className="text-[13px] font-medium text-[#0F1A2E]">{t("branding.title")}</p>
                     <p className="text-[11px] text-[#A09E98] mt-[1px]">
                       {myClinic.primary_color
-                        ? `Cor ativa: ${myClinic.primary_color}`
-                        : "Nenhuma cor configurada"}
-                      {myClinic.logo_url ? " · Logo enviado" : " · Sem logo"}
+                        ? t("branding.activeColor", { color: myClinic.primary_color })
+                        : t("branding.noColor")}
+                      {myClinic.logo_url ? t("branding.logoUploaded") : t("branding.noLogo")}
                     </p>
                   </div>
                 </div>
@@ -354,7 +332,7 @@ export default async function ClinicsPage() {
                       style={{ backgroundColor: myClinic.primary_color }}
                     />
                   )}
-                  <span className="text-[12px] text-[#0F6E56] group-hover:underline">Editar →</span>
+                  <span className="text-[12px] text-[#0F6E56] group-hover:underline">{t("branding.edit")}</span>
                 </div>
               </Card>
             </Link>
@@ -366,7 +344,7 @@ export default async function ClinicsPage() {
       {canMultiClinic && clinics.filter((c) => c.id !== myClinic?.id).length > 0 && (
         <div className="mt-8">
           <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-            Outras clínicas
+            {t("sections.otherClinics")}
           </p>
           <div className="grid gap-3">
             {clinics.filter((c) => c.id !== myClinic?.id).slice(0, 5).map((clinic) => (
@@ -378,7 +356,7 @@ export default async function ClinicsPage() {
             {clinics.filter((c) => c.id !== myClinic?.id).length > 5 && (
               <LimitedList
                 items={clinics.filter((c) => c.id !== myClinic?.id).slice(5)}
-                detailsLabel={`Ver mais ${clinics.length - 5} clínicas`}
+                detailsLabel={t("list.moreClinics", { count: clinics.length - 5 })}
                 renderItem={(clinic) => (
                   <Card key={clinic.id}>
                     <h2 className="font-semibold text-[14px]">{clinic.name}</h2>
@@ -394,26 +372,26 @@ export default async function ClinicsPage() {
       {clinics.length === 0 && (
         <EmptyState
           icon={<Building2 className="h-7 w-7" />}
-          title="Nenhuma clínica conectada"
-          text="Conclua o onboarding para criar sua clínica e desbloquear o workspace."
+          title={t("emptyClinics.title")}
+          text={t("emptyClinics.text")}
           href="/onboarding"
-          action="Iniciar onboarding"
+          action={t("emptyClinics.action")}
         />
       )}
 
       {/* ── Equipe ── */}
       <div className="mt-8">
         <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-[8px]">
-          Equipe
+          {t("sections.team")}
         </p>
         <div className="grid gap-3">
           {users.slice(0, 5).map((user) => (
             <Card key={user.id} className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-[14px] font-semibold text-[#0F1A2E]">
-                  {user.full_name || user.email || "Sem nome"}
+                  {user.full_name || user.email || t("team.noName")}
                 </p>
-                <p className="mt-[2px] text-[12px] text-black/50">{user.email ?? "Sem e-mail"}</p>
+                <p className="mt-[2px] text-[12px] text-black/50">{user.email ?? t("team.noEmail")}</p>
               </div>
               <span className="rounded-full bg-[#F4F3EF] px-3 py-1 text-[11px] font-medium text-[#6B6A66]">
                 {roleLabels[user.role]}
@@ -423,14 +401,14 @@ export default async function ClinicsPage() {
           {users.length > 5 && (
             <LimitedList
               items={users.slice(5)}
-              detailsLabel={`Ver mais ${users.length - 5} membros`}
+              detailsLabel={t("team.moreMembers", { count: users.length - 5 })}
               renderItem={(user) => (
                 <Card key={user.id} className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-[14px] font-semibold text-[#0F1A2E]">
-                      {user.full_name || user.email || "Sem nome"}
+                      {user.full_name || user.email || t("team.noName")}
                     </p>
-                    <p className="mt-[2px] text-[12px] text-black/50">{user.email ?? "Sem e-mail"}</p>
+                    <p className="mt-[2px] text-[12px] text-black/50">{user.email ?? t("team.noEmail")}</p>
                   </div>
                   <span className="rounded-full bg-[#F4F3EF] px-3 py-1 text-[11px] font-medium text-[#6B6A66]">
                     {roleLabels[user.role]}
@@ -442,10 +420,10 @@ export default async function ClinicsPage() {
           {users.length === 0 && (
             <EmptyState
               icon={<Users className="h-7 w-7" />}
-              title="Nenhum membro na equipe"
-              text="Convide o primeiro profissional quando a clínica estiver pronta."
+              title={t("team.emptyTitle")}
+              text={t("team.emptyText")}
               href="/settings/equipe"
-              action="Convidar equipe"
+              action={t("team.emptyAction")}
             />
           )}
         </div>

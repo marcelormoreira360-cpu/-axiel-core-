@@ -3,6 +3,27 @@
     "back": "Configurações",
     "eyebrow": "Configurações"
   },
+  "monetization": {
+    "offerForm": {
+      "title": "Nova oferta",
+      "subtitle": "Pacotes de sessões e assinaturas.",
+      "nameLabel": "Nome da oferta",
+      "namePlaceholder": "Ex: Pacote 4 sessões",
+      "typeLabel": "Tipo",
+      "typePackage": "Pacote de sessões",
+      "typeMembership": "Assinatura recorrente",
+      "billingLabel": "Cobrança",
+      "billingMonthly": "Mensal",
+      "billingYearly": "Anual",
+      "sessionsLabel": "Sessões",
+      "priceLabel": "Valor (R$)",
+      "pricePlaceholder": "0,00",
+      "currencyLabel": "Moeda",
+      "descriptionLabel": "Descrição (opcional)",
+      "descriptionPlaceholder": "Descrição interna da oferta",
+      "submit": "Salvar oferta"
+    }
+  },
   "hub": {
     "title": "Ferramentas avançadas",
     "subtitle": "Você raramente precisará acessar esta página no dia a dia.",

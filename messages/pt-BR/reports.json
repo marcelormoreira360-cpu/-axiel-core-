@@ -1,4 +1,26 @@
 {
+  "charts": {
+    "periodMonths": "{count, plural, one {# mês} other {# meses}}",
+    "totalsRevenue": "receita",
+    "totalsSessions": "sessões",
+    "totalsNewPatients": "novos pacientes",
+    "mainChartTitle": "Receita (barras) · Sessões (linha)",
+    "legendRevenue": "Receita",
+    "legendSessions": "Sessões",
+    "tooltipRevenue": "Receita",
+    "tooltipSessions": "Sessões",
+    "tooltipNewPatients": "Novos pacientes",
+    "newPatientsTitle": "Novos pacientes por mês",
+    "emptyNewPatients": "Nenhum paciente novo no período.",
+    "paymentMethodsTitle": "Métodos de pagamento",
+    "emptyPayments": "Nenhum pagamento registrado.",
+    "sessionTypesTitle": "Tipos de sessão",
+    "emptySessions": "Nenhuma sessão registrada.",
+    "sessionsCount": "{count, plural, one {# sessão} other {# sessões}}",
+    "sourcesTitle": "Origem dos agendamentos",
+    "emptySources": "Nenhum agendamento no período.",
+    "appointmentsCount": "{count, plural, one {# agendamento} other {# agendamentos}}"
+  },
   "page": {
     "eyebrow": "Clínica",
     "title": "Relatórios",

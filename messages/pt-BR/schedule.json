@@ -7,6 +7,20 @@
     "statReviews": "Reviews",
     "noClinic": "Usuário precisa estar vinculado a uma clínica."
   },
+  "actions": {
+    "noClinic": "Usuário precisa estar vinculado a uma clínica.",
+    "noClinicShort": "Usuário sem clínica.",
+    "requiredFields": "Paciente e horário são obrigatórios.",
+    "patientNotFound": "Paciente não encontrado.",
+    "missingEmailOrLink": "E-mail ou link ausente.",
+    "clinicFallback": "Clínica",
+    "emailSubject": "Confirme seu agendamento — {clinicName}",
+    "emailGreeting": "Olá!",
+    "emailReserved": "A {clinicName} reservou um horário para você.",
+    "emailReservedWithDate": "A {clinicName} reservou um horário para você: {dateLabel}.",
+    "emailConfirmCta": "Confirme o horário e complete seu cadastro neste link:",
+    "emailSendError": "Erro ao enviar e-mail."
+  },
   "new": {
     "title": "Agendar sessão",
     "subtitle": "Paciente, tratamento, data e horário"

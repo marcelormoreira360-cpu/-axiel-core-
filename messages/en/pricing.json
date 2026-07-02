@@ -36,6 +36,12 @@
       "white_label": "White-label"
     }
   },
+  "currencyLabels": {
+    "BRL": "🇧🇷 R$",
+    "USD": "🇺🇸 US$",
+    "EUR": "🇪🇺 €"
+  },
+  "enterpriseMailSubject": "Enterprise AXIEL",
   "navLogin": "Log in",
   "heroEyebrow": "Pricing · Plans",
   "heroTitleLine1": "Premium infrastructure",

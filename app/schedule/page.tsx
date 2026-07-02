@@ -78,8 +78,9 @@ export default async function SchedulePage() {
 
   async function createSessionAction(formData: FormData) {
     "use server";
+    const t = await getTranslations("schedule.actions");
     const profile = await getCurrentUserProfile();
-    if (!profile?.clinic_id) throw new Error("User must be assigned to a clinic.");
+    if (!profile?.clinic_id) throw new Error(t("noClinic"));
 
     const startsAt = String(formData.get("starts_at") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
@@ -100,7 +101,7 @@ export default async function SchedulePage() {
       patientId = newPatient.id;
     }
 
-    if (!patientId || !startsAt) throw new Error("Paciente e horário são obrigatórios.");
+    if (!patientId || !startsAt) throw new Error(t("requiredFields"));
 
     const appointment = await createAppointment({
       clinic_id: profile.clinic_id,
@@ -159,8 +160,9 @@ export default async function SchedulePage() {
     formData: FormData,
   ): Promise<{ url?: string; phone?: string | null; email?: string | null; patientName?: string; error?: string }> {
     "use server";
+    const t = await getTranslations("schedule.actions");
     const profile = await getCurrentUserProfile();
-    if (!profile?.clinic_id) return { error: "Usuário sem clínica." };
+    if (!profile?.clinic_id) return { error: t("noClinicShort") };
 
     const startsAt = String(formData.get("starts_at") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
@@ -183,11 +185,11 @@ export default async function SchedulePage() {
     } else if (patientId) {
       const { getPatientById } = await import("@/services/patient-service");
       const p = await getPatientById(patientId, profile.clinic_id);
-      if (!p) return { error: "Paciente não encontrado." };
+      if (!p) return { error: t("patientNotFound") };
       phone = p.phone; email = p.email; patientName = p.full_name;
     }
 
-    if (!patientId || !startsAt) return { error: "Paciente e horário são obrigatórios." };
+    if (!patientId || !startsAt) return { error: t("requiredFields") };
 
     const { token } = await createPendingAppointmentWithToken({
       clinic_id: profile.clinic_id,
@@ -211,28 +213,33 @@ export default async function SchedulePage() {
     formData: FormData,
   ): Promise<{ ok: boolean; error?: string }> {
     "use server";
+    const t = await getTranslations("schedule.actions");
     const profile = await getCurrentUserProfile();
-    if (!profile?.clinic_id) return { ok: false, error: "Usuário sem clínica." };
+    if (!profile?.clinic_id) return { ok: false, error: t("noClinicShort") };
     const to = String(formData.get("email") ?? "").trim();
     const url = String(formData.get("url") ?? "").trim();
     const dateLabel = String(formData.get("date_label") ?? "").trim();
-    if (!to || !url) return { ok: false, error: "E-mail ou link ausente." };
+    if (!to || !url) return { ok: false, error: t("missingEmailOrLink") };
 
     const clinic = await getCurrentClinic();
-    const clinicName = clinic?.name ?? "Clínica";
+    const clinicName = clinic?.name ?? t("clinicFallback");
     try {
       await sendSimpleEmail({
         to,
-        subject: `Confirme seu agendamento — ${clinicName}`,
+        subject: t("emailSubject", { clinicName }),
         html:
-          `<p>Olá!</p>` +
-          `<p>A ${clinicName} reservou um horário para você${dateLabel ? `: <b>${dateLabel}</b>` : ""}.</p>` +
-          `<p>Confirme o horário e complete seu cadastro neste link:</p>` +
+          `<p>${t("emailGreeting")}</p>` +
+          `<p>${
+            dateLabel
+              ? t("emailReservedWithDate", { clinicName, dateLabel: `<b>${dateLabel}</b>` })
+              : t("emailReserved", { clinicName })
+          }</p>` +
+          `<p>${t("emailConfirmCta")}</p>` +
           `<p><a href="${url}">${url}</a></p>`,
       });
       return { ok: true };
     } catch {
-      return { ok: false, error: "Erro ao enviar e-mail." };
+      return { ok: false, error: t("emailSendError") };
     }
   }
 
@@ -244,8 +251,9 @@ export default async function SchedulePage() {
 
   async function deleteSessionAction(id: string) {
     "use server";
+    const t = await getTranslations("schedule.actions");
     const profile = await getCurrentUserProfile();
-    if (!profile?.clinic_id) throw new Error("Usuário sem clínica.");
+    if (!profile?.clinic_id) throw new Error(t("noClinicShort"));
     await softDeleteAppointment(id, profile.clinic_id);
     revalidatePath("/schedule");
   }

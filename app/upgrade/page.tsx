@@ -1,52 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SignOutButton } from "@/components/sign-out-button";
 
 // ─── Plan card data ────────────────────────────────────────────────────────────
 
+const FEATURE_KEYS = ["feature1", "feature2", "feature3", "feature4"] as const;
+
 const PLANS = [
-  {
-    slug: "starter",
-    name: "Starter",
-    price: "R$ 147/mês",
-    popular: false,
-    features: [
-      "Até 3 usuários",
-      "Até 150 pacientes",
-      "Agenda e prontuário",
-      "Formulários de intake",
-    ],
-  },
-  {
-    slug: "professional",
-    name: "Professional",
-    price: "R$ 297/mês",
-    popular: true,
-    features: [
-      "Até 10 usuários",
-      "Até 1.000 pacientes",
-      "IA para insights clínicos",
-      "Portal do paciente + automações",
-    ],
-  },
-  {
-    slug: "scale",
-    name: "Scale",
-    price: "R$ 697/mês",
-    popular: false,
-    features: [
-      "Usuários e pacientes ilimitados",
-      "WhatsApp + relatórios avançados",
-      "Permissões avançadas",
-      "Até 3 unidades",
-    ],
-  },
+  { slug: "starter", name: "Starter", price: "R$ 147/mês", popular: false },
+  { slug: "professional", name: "Professional", price: "R$ 297/mês", popular: true },
+  { slug: "scale", name: "Scale", price: "R$ 697/mês", popular: false },
 ] as const;
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default async function UpgradePage() {
+  const t = await getTranslations("upgrade");
   // Verify user is authenticated — unauthenticated access → login
   const supabase = await createSupabaseServerClient();
   const {
@@ -67,7 +38,7 @@ export default async function UpgradePage() {
           href="/billing"
           className="text-[12px] text-white/50 hover:text-white/80 transition"
         >
-          Ver detalhes do plano →
+          {t("viewPlanDetails")}
         </Link>
       </header>
 
@@ -90,16 +61,15 @@ export default async function UpgradePage() {
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
             <span className="text-[11px] font-semibold text-amber-400 uppercase tracking-widest">
-              Período de avaliação encerrado
+              {t("trialEndedBadge")}
             </span>
           </div>
 
           <h1 className="text-[28px] sm:text-[32px] font-semibold tracking-[-0.03em] text-white leading-tight mb-3">
-            Seu período de avaliação encerrou
+            {t("title")}
           </h1>
           <p className="text-[14px] text-white/55 leading-relaxed">
-            Escolha um plano para continuar usando o AXIEL Core e manter acesso
-            a todos os seus dados clínicos.
+            {t("subtitle")}
           </p>
         </div>
 
@@ -117,7 +87,7 @@ export default async function UpgradePage() {
               {/* Popular badge */}
               {plan.popular && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0F6E56] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap">
-                  Mais popular
+                  {t("mostPopular")}
                 </span>
               )}
 
@@ -133,8 +103,8 @@ export default async function UpgradePage() {
 
               {/* Features */}
               <ul className="space-y-2 mb-6 flex-1">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex items-start gap-2">
+                {FEATURE_KEYS.map((featureKey) => (
+                  <li key={featureKey} className="flex items-start gap-2">
                     <svg
                       className="w-3.5 h-3.5 text-[#0F6E56] mt-0.5 shrink-0"
                       viewBox="0 0 24 24"
@@ -147,7 +117,7 @@ export default async function UpgradePage() {
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                     <span className="text-[12px] text-[#4A4A4A] leading-snug">
-                      {feature}
+                      {t(`plans.${plan.slug}.${featureKey}`)}
                     </span>
                   </li>
                 ))}
@@ -164,7 +134,7 @@ export default async function UpgradePage() {
                       : "bg-[#F4F3EF] text-[#0F1A2E] hover:bg-[#EBEBEA]"
                   }`}
                 >
-                  Assinar {plan.name}
+                  {t("subscribe", { plan: plan.name })}
                 </button>
               </form>
             </div>
@@ -173,8 +143,7 @@ export default async function UpgradePage() {
 
         {/* Trust note */}
         <p className="text-[11px] text-white/30 mt-8 text-center">
-          Pagamentos seguros via Stripe. Cancele a qualquer momento. Sem taxa de
-          setup.
+          {t("trustNote")}
         </p>
       </main>
 
@@ -184,7 +153,7 @@ export default async function UpgradePage() {
           href="/billing"
           className="text-[11px] text-white/40 hover:text-white/70 transition"
         >
-          Gerenciar assinatura
+          {t("manageSubscription")}
         </Link>
         <span className="text-white/20 text-[10px]">•</span>
         <div className="[&_button]:text-[11px] [&_button]:text-white/40 [&_button]:hover:text-white/70 [&_button]:p-0 [&_button]:h-auto [&_button]:bg-transparent [&_button]:hover:bg-transparent [&_button]:w-auto [&_button]:justify-center">

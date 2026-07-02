@@ -3,6 +3,27 @@
     "back": "Settings",
     "eyebrow": "Settings"
   },
+  "monetization": {
+    "offerForm": {
+      "title": "New offer",
+      "subtitle": "Session packages and memberships.",
+      "nameLabel": "Offer name",
+      "namePlaceholder": "E.g.: 4-session package",
+      "typeLabel": "Type",
+      "typePackage": "Session package",
+      "typeMembership": "Recurring membership",
+      "billingLabel": "Billing",
+      "billingMonthly": "Monthly",
+      "billingYearly": "Yearly",
+      "sessionsLabel": "Sessions",
+      "priceLabel": "Price (R$)",
+      "pricePlaceholder": "0.00",
+      "currencyLabel": "Currency",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Internal description of the offer",
+      "submit": "Save offer"
+    }
+  },
   "hub": {
     "title": "Advanced tools",
     "subtitle": "You'll rarely need to visit this page day to day.",

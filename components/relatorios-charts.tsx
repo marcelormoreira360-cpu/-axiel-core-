@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useClinicCurrency } from "@/components/currency-provider";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -73,6 +73,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 // ── Main chart: Revenue bars + Sessions line ─────────────────────────────────
 
 function MainChart({ data }: { data: MonthlyPoint[] }) {
+  const t = useTranslations("reports.charts");
   const currency = useClinicCurrency();
   const locale = useLocale();
   const maxRevenue = Math.max(...data.map((d) => d.revenue_cents), 1);
@@ -114,8 +115,8 @@ function MainChart({ data }: { data: MonthlyPoint[] }) {
             color: "#0F1A2E",
           }}
           formatter={(value, name) => {
-            if (name === "revenue_cents") return [fmtBRL(value as number, currency, locale), "Receita"];
-            if (name === "sessions") return [value, "Sessões"];
+            if (name === "revenue_cents") return [fmtBRL(value as number, currency, locale), t("tooltipRevenue")];
+            if (name === "sessions") return [value, t("tooltipSessions")];
             return [value, name];
           }}
           labelFormatter={(label) => {
@@ -148,11 +149,12 @@ function MainChart({ data }: { data: MonthlyPoint[] }) {
 // ── New patients chart ────────────────────────────────────────────────────────
 
 function NewPatientsChart({ data }: { data: MonthlyPoint[] }) {
+  const t = useTranslations("reports.charts");
   const hasData = data.some((d) => d.new_patients > 0);
   if (!hasData) {
     return (
       <p className="text-[12px] text-[#D3D1C7] text-center py-6">
-        Nenhum paciente novo no período.
+        {t("emptyNewPatients")}
       </p>
     );
   }
@@ -182,7 +184,7 @@ function NewPatientsChart({ data }: { data: MonthlyPoint[] }) {
             fontSize: 11,
             color: "#0F1A2E",
           }}
-          formatter={(v) => [v, "Novos pacientes"]}
+          formatter={(v) => [v, t("tooltipNewPatients")]}
           labelFormatter={(label) => {
             const d = data.find((p) => p.label === label);
             return d?.fullLabel ?? label;
@@ -202,10 +204,11 @@ function NewPatientsChart({ data }: { data: MonthlyPoint[] }) {
 // ── Breakdown sections ────────────────────────────────────────────────────────
 
 function PaymentMethodSection({ methods }: { methods: MethodBreakdown[] }) {
+  const t = useTranslations("reports.charts");
   const currency = useClinicCurrency();
   const locale = useLocale();
   if (methods.length === 0) {
-    return <p className="text-[12px] text-[#D3D1C7]">Nenhum pagamento registrado.</p>;
+    return <p className="text-[12px] text-[#D3D1C7]">{t("emptyPayments")}</p>;
   }
   const maxVal = methods[0].amount_cents;
   return (
@@ -225,8 +228,9 @@ function PaymentMethodSection({ methods }: { methods: MethodBreakdown[] }) {
 }
 
 function ServicesSection({ services }: { services: ServiceBreakdownItem[] }) {
+  const t = useTranslations("reports.charts");
   if (services.length === 0) {
-    return <p className="text-[12px] text-[#D3D1C7]">Nenhuma sessão registrada.</p>;
+    return <p className="text-[12px] text-[#D3D1C7]">{t("emptySessions")}</p>;
   }
   const maxSessions = services[0].sessions;
   return (
@@ -237,7 +241,7 @@ function ServicesSection({ services }: { services: ServiceBreakdownItem[] }) {
           label={s.name}
           value={s.sessions}
           max={maxSessions}
-          sub={`${s.sessions} sessões`}
+          sub={t("sessionsCount", { count: s.sessions })}
           color="#2A7BC1"
         />
       ))}
@@ -246,8 +250,9 @@ function ServicesSection({ services }: { services: ServiceBreakdownItem[] }) {
 }
 
 function SourcesSection({ sources }: { sources: SourceBreakdownItem[] }) {
+  const t = useTranslations("reports.charts");
   if (sources.length === 0) {
-    return <p className="text-[12px] text-[#D3D1C7]">Nenhum agendamento no período.</p>;
+    return <p className="text-[12px] text-[#D3D1C7]">{t("emptySources")}</p>;
   }
   const maxCount = sources[0].count;
   return (
@@ -258,7 +263,7 @@ function SourcesSection({ sources }: { sources: SourceBreakdownItem[] }) {
           label={s.source}
           value={s.count}
           max={maxCount}
-          sub={`${s.count} agendamento${s.count !== 1 ? "s" : ""}`}
+          sub={t("appointmentsCount", { count: s.count })}
           color="#E8A100"
         />
       ))}
@@ -271,6 +276,7 @@ function SourcesSection({ sources }: { sources: SourceBreakdownItem[] }) {
 type Period = 3 | 6 | 12;
 
 export function RelatoriosCharts({ data }: { data: ReportTimeSeries }) {
+  const t = useTranslations("reports.charts");
   const currency = useClinicCurrency();
   const locale = useLocale();
   const [period, setPeriod] = useState<Period>(6);
@@ -282,9 +288,9 @@ export function RelatoriosCharts({ data }: { data: ReportTimeSeries }) {
   const totalPatients = sliced.reduce((s, d) => s + d.new_patients, 0);
 
   const PERIODS: { label: string; value: Period }[] = [
-    { label: "3 meses",  value: 3  },
-    { label: "6 meses",  value: 6  },
-    { label: "12 meses", value: 12 },
+    { label: t("periodMonths", { count: 3 }),  value: 3  },
+    { label: t("periodMonths", { count: 6 }),  value: 6  },
+    { label: t("periodMonths", { count: 12 }), value: 12 },
   ];
 
   return (
@@ -309,39 +315,39 @@ export function RelatoriosCharts({ data }: { data: ReportTimeSeries }) {
           ))}
         </div>
         <div className="flex gap-[14px] text-[11px] text-[#A09E98]">
-          <span><span className="font-semibold text-[#0F6E56]">{fmtBRL(totalRevenue, currency, locale)}</span> receita</span>
-          <span><span className="font-semibold text-[#2A7BC1]">{totalSessions}</span> sessões</span>
-          <span><span className="font-semibold text-[#7B5EA7]">{totalPatients}</span> novos pacientes</span>
+          <span><span className="font-semibold text-[#0F6E56]">{fmtBRL(totalRevenue, currency, locale)}</span> {t("totalsRevenue")}</span>
+          <span><span className="font-semibold text-[#2A7BC1]">{totalSessions}</span> {t("totalsSessions")}</span>
+          <span><span className="font-semibold text-[#7B5EA7]">{totalPatients}</span> {t("totalsNewPatients")}</span>
         </div>
       </div>
 
       {/* Main chart */}
-      <Section title="Receita (barras) · Sessões (linha)">
+      <Section title={t("mainChartTitle")}>
         <div className="flex items-center gap-4 mb-3">
           <span className="flex items-center gap-[5px] text-[10px] text-[#A09E98]">
-            <span className="inline-block w-3 h-[10px] rounded-[2px] bg-[#0F6E56] opacity-85" /> Receita
+            <span className="inline-block w-3 h-[10px] rounded-[2px] bg-[#0F6E56] opacity-85" /> {t("legendRevenue")}
           </span>
           <span className="flex items-center gap-[5px] text-[10px] text-[#A09E98]">
-            <span className="inline-block w-3 h-px bg-[#2A7BC1]" /> Sessões
+            <span className="inline-block w-3 h-px bg-[#2A7BC1]" /> {t("legendSessions")}
           </span>
         </div>
         <MainChart data={sliced} />
       </Section>
 
       {/* New patients */}
-      <Section title="Novos pacientes por mês">
+      <Section title={t("newPatientsTitle")}>
         <NewPatientsChart data={sliced} />
       </Section>
 
       {/* Breakdowns grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-[14px]">
-        <Section title="Métodos de pagamento">
+        <Section title={t("paymentMethodsTitle")}>
           <PaymentMethodSection methods={data.paymentMethods} />
         </Section>
-        <Section title="Tipos de sessão">
+        <Section title={t("sessionTypesTitle")}>
           <ServicesSection services={data.services} />
         </Section>
-        <Section title="Origem dos agendamentos">
+        <Section title={t("sourcesTitle")}>
           <SourcesSection sources={data.sources} />
         </Section>
       </div>
