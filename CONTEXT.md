@@ -1,7 +1,21 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 01/07/2026 (33)
+> Atualizado em: 01/07/2026 (34)
+
+## 🟢 Varredura completa + 5 lotes de correção (01/07/2026, sessão 2) — TUDO MERGEADO E NO AR
+
+> `tsc` 0. **`npm run lint` FUNCIONA de novo (0 erros)**. `verify:i18n` **43** namespaces (novo: `leads`) 0/0. **311 testes verdes**. `next build` ok. Migrations **109 e 110 aplicadas na prod** (`bfuulpvzedcrpmmjxles`). Core agora em **migration 110**. PRs #58–#61 mergeados (squash) e deployados.
+
+Varredura de auditoria (3 agentes: saúde do código, segurança, UX/i18n + advisors do Supabase) seguida de execução em 5 lotes:
+
+1. **Segurança (PR #58):** (a) IDOR cross-tenant CRÍTICO fechado: `deletePatientDocument` agora exige `clinic_id` (usava admin client filtrando só por id — qualquer staff logado de outra clínica deletava documento/arquivo de PHI alheio); (b) `/api/patients/export` e `/api/reports/{pacientes,pagamentos,sessoes,leads}` agora exigem gestor/dono (`isFinanceApiAllowed`) — antes qualquer `read_only_staff` baixava CSV com PII da base inteira; (c) `accept-invite` valida que o e-mail da conta bate com o e-mail do convite (não confia mais só no `userId` do body); (d) webhook Asaas devolve 5xx em erro de banco (Asaas reentrega; antes pagamento podia ficar não-conciliado em silêncio).
+2. **Build/lint (PR #59):** `npm run lint` estava quebrado em 2 camadas — `check:terminology` com ~200 falsos positivos (agora analisa SÓ copy visível: literais de string e texto JSX; ignora imports/comentários/identificadores/chaves i18n/interpolações/testes) e `next lint` removido no Next 16 (script migrado p/ `eslint .` + `eslint.config.mjs` flat config novo, next/core-web-vitals). 8 erros reais do ESLint corrigidos. `export encodeHistory` removido do webhook de voz (o erro pré-existente do build MORREU). `npm audit fix`: 2 high eliminadas (form-data, tmp); restam 4 moderate presas ao exceljs (fix seria downgrade breaking).
+3. **Banco (migrations 109/110, APLICADAS na prod):** 109 = revoke EXECUTE das 24 funções SECURITY DEFINER expostas via /rest/v1/rpc (triggers: revogado de todos; helpers de RLS `can_access_clinic` etc.: authenticated MANTÉM — são avaliados dentro das policies; `check_rate_limit` só service_role) + 18 índices duplicados dropados + 5 FKs indexadas. 110 = bucket `clinic-assets` sem listagem pública (logo continua servindo por URL pública, verificado HTTP 200). Advisor de anon zerou; os 11 warnings restantes de authenticated são intencionais. **PENDENTE (só Marcelo, painel Supabase): ligar leaked password protection (Auth → senhas comprometidas/HaveIBeenPwned).**
+4. **UX (PR #60):** `mobile-bottom-nav` saiu do pt-BR cravado (chaves de `nav.json`, novo grupo `mobile`); telas de lead (`/leads/[id]` EN cravado + `/leads/new` PT cravado) migradas p/ namespace novo **`leads`** (pt-BR+en, registrado em `i18n/request.ts`); aria-label em 19 botões só-ícone (setas da agenda = `calendar.prevPeriod/nextPeriod`, X de modais = `common.actions.close`); **`/trends` linkada na sidebar** (nav.clinic.trends).
+5. **Limpeza (PR #61):** 10 componentes órfãos deletados (~1.100 linhas: conjunto `product-*`, `health-agent-panel`, `body-map-field`, `patient-demographics-panel`); **`_BRIEF_BIO3_MOBILE.md` FECHADO** (pirâmide fluida `w-full max-w-[260px]`, botões `w-full sm:w-auto` c/ tap target 44px, form 1 coluna — só CSS, `sm:` restaura o desktop); os 2 `confirm()` cravados migrados p/ i18n (`insights.deleteButton.confirm`, `common.actions.confirmRemoveNamed` com ICU `{name}`).
+
+**Backlog que a varredura deixou anotado (não feito):** ~387 strings pt-BR cravadas em 83 .tsx (piores: patients/new c/ lista de países, onboarding-flow, clinics, upgrade, landing, schedule, pricing); questionários Q-SNA/QRM só em PT p/ paciente EN (linha antiga); Stripe 6 majors atrás (16→22, atualizar com calma); 79 `console.error` fora do `lib/logger` (não chegam ao Sentry); kanban de leads com drag HTML5 (sem touch — migrar p/ dnd-kit); 49 `multiple_permissive_policies` (24 em `patient_payments` — consolidar policies em migration futura); 160 índices sem uso (avaliar dropar após meses de métrica); pt-PT inexistente; triagem dos 13 `_BRIEF_*.md` da raiz (mobile Bio³ agora está feito).
 
 ## 🟢 Captação, UX e consolidação de formulários (01/07/2026) — TUDO MERGEADO E NO AR
 
