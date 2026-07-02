@@ -11,7 +11,8 @@
     "confirm": "Confirm",
     "close": "Close",
     "viewMore": "View more",
-    "viewAll": "View all"
+    "viewAll": "View all",
+    "confirmRemoveNamed": "Remove \"{name}\"? This action cannot be undone."
   },
   "terms": {
     "insight": "Insight",

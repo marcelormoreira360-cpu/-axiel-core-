@@ -27,5 +27,8 @@
     "nextSteps": "Próximos passos",
     "keepUpdatedTitle": "Mantenha o registro atualizado",
     "keepUpdatedText": "Adicione notas após a próxima interação para o painel guiar a equipe."
+  },
+  "deleteButton": {
+    "confirm": "Excluir este caso? Ele sai da ficha para você gerar um novo. (Reversível.)"
   }
 }

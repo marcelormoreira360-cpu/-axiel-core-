@@ -30,7 +30,7 @@ const BAND_ICON: Record<BandIconKey, typeof CheckCircle2> = {
 const LAB_DYS: Record<string, number> = { normal: 0, leve: 25, moderado: 50, alto: 85 };
 
 const inputCls =
-  "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56]/50 transition";
+  "w-full min-h-[44px] sm:min-h-0 text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56]/50 transition";
 
 // ── Pílula de banda (cor + ícone + rótulo) — acessível ───────────────────────
 function BandPill({ band, label, className = "" }: { band: Band; label: string; className?: string }) {
@@ -48,7 +48,7 @@ function BandPill({ band, label, className = "" }: { band: Band; label: string; 
 // ── Pirâmide (cor CONTÍNUA verde→amarelo→vermelho pela gravidade do eixo) ─────
 // Cor = severidade (disfunção do eixo) · número = PESO do eixo no total (soma 100%).
 // Ordem fixa topo→base: Biomecânico (topo) / Bioquímico (meio) / Bioemocional (base).
-function NeuroPyramid({ data, className = "w-[190px] h-[120px] shrink-0" }: { data: { dys: number | null; share: number | null; isPriority: boolean }[]; className?: string }) {
+function NeuroPyramid({ data, className = "w-full max-w-[260px] h-auto mx-auto shrink-0" }: { data: { dys: number | null; share: number | null; isPriority: boolean }[]; className?: string }) {
   const polys = ["120,10 150,54 90,54", "90,54 150,54 182,98 58,98", "58,98 182,98 214,142 26,142"];
   const cy = [46, 84, 128];
   return (
@@ -85,7 +85,7 @@ function ScaleButtons({ value, onSelect }: { value: string; onSelect: (v: string
             key={n}
             onClick={() => onSelect(String(n))}
             aria-pressed={active}
-            className="w-[28px] h-[28px] rounded-[7px] text-[12px] font-medium border transition hover:opacity-80"
+            className="w-[36px] h-[40px] sm:w-[28px] sm:h-[28px] rounded-[7px] text-[12px] font-medium border transition hover:opacity-80"
             style={
               active
                 ? { background: c.stroke, color: "#fff", borderColor: c.stroke }
@@ -206,27 +206,27 @@ export function PatientNeuroIdPanel({
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-      <div className="flex items-center justify-between mb-[6px]">
+      <div className="flex flex-col gap-[8px] sm:flex-row sm:items-center sm:justify-between mb-[6px]">
         <div className="flex items-center gap-[6px]">
           <Activity className="h-4 w-4 text-[#A09E98]" />
           <p className="text-[13px] font-medium text-[#0F1A2E]">{t("title")}</p>
         </div>
-        <div className="flex items-center gap-[10px]">
+        <div className="flex flex-col gap-[6px] sm:flex-row sm:items-center sm:gap-[10px]">
           {map && hasReport && (
             <a href={`/api/patients/${patientId}/neuro-id/pdf`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-[4px] text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
               <FileText className="h-3 w-3" /> {t("viewPdf")}
             </a>
           )}
           {!assessing && map && assessmentId && (
             <button type="button" onClick={startEdit}
-              className="flex items-center gap-[4px] text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
               <Pencil className="h-3 w-3" /> {t("editAssessment")}
             </button>
           )}
           {!assessing && (
             <button type="button" onClick={startNew}
-              className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-[#0F6E56]/25 sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition">
               <Plus className="h-3 w-3" /> {t("newAssessment")}
             </button>
           )}
@@ -238,26 +238,26 @@ export function PatientNeuroIdPanel({
       {map ? (
         <div className="space-y-[12px]">
           {map.status === "auto_draft" && (
-            <div className="rounded-[10px] border border-[#C77D17]/30 bg-[#FFF8E7] px-[12px] py-[10px] flex items-start justify-between gap-3 flex-wrap">
-              <p className="text-[11px] text-[#633806] flex items-start gap-1.5">
+            <div className="rounded-[10px] border border-[#C77D17]/30 bg-[#FFF8E7] px-[12px] py-[10px] flex flex-col gap-[8px] sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <p className="text-[11px] text-[#633806] flex items-start gap-1.5 min-w-0">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px]" />
                 {t("autoDraftBanner")}
               </p>
               <button type="button" onClick={() => { startNew(); handleImport(); }}
-                className="text-[11px] font-medium text-white bg-[#C77D17] hover:bg-[#A8650F] rounded-[8px] px-[12px] py-[6px] transition shrink-0">
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#C77D17] hover:bg-[#A8650F] rounded-[8px] px-[12px] py-[6px] transition shrink-0">
                 {t("reviewComplete")}
               </button>
             </div>
           )}
           {/* Resumo escaneável: índice-herói + pirâmide pequena (assinatura) */}
-          <div className="flex items-center gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px] flex-wrap">
-            <div className="shrink-0 flex flex-col items-center gap-[3px]">
-              <NeuroPyramid data={pyramidData} className="w-[120px] h-[76px]" />
-              <p className="text-[8px] text-[#A09E98] text-center leading-tight max-w-[124px]">{t("pyramidShareCaption")}</p>
+          <div className="flex flex-col items-center gap-[12px] sm:flex-row sm:items-center sm:gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px]">
+            <div className="w-full sm:w-auto shrink-0 flex flex-col items-center gap-[3px]">
+              <NeuroPyramid data={pyramidData} className="w-full max-w-[200px] h-auto mx-auto sm:w-[120px] sm:h-[76px] sm:mx-0" />
+              <p className="text-[8px] text-[#A09E98] text-center leading-tight max-w-[200px] sm:max-w-[124px]">{t("pyramidShareCaption")}</p>
             </div>
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 w-full text-center sm:text-left">
               <p className="text-[10px] text-[#A09E98] leading-snug">{t("indexCaption")}</p>
-              <div className="flex items-baseline gap-[8px] flex-wrap mt-[2px]">
+              <div className="flex items-baseline justify-center sm:justify-start gap-[8px] flex-wrap mt-[2px]">
                 <p className="text-[40px] font-semibold leading-none" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
                   {generalDys === null ? "—" : `${generalDys}%`}
                 </p>
@@ -267,7 +267,7 @@ export function PatientNeuroIdPanel({
                 <p className="text-[11px] text-[#0F1A2E] mt-[4px]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
               )}
               {map.is_partial && (
-                <p className="text-[11px] text-[#C77D17] flex items-center gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
+                <p className="text-[11px] text-[#C77D17] flex items-center justify-center sm:justify-start gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
               )}
             </div>
           </div>
@@ -352,7 +352,7 @@ export function PatientNeuroIdPanel({
             <p className="text-[10px] text-[#A09E98]">{t("importHint")}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <button type="button" disabled={importing} onClick={handleImport}
-                className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center gap-1">
+                className="w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center justify-center sm:justify-start gap-1">
                 <Download className="h-3 w-3" /> {importing ? t("importing") : t("importBtn")}
               </button>
               {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
@@ -374,7 +374,7 @@ export function PatientNeuroIdPanel({
           {PILLARS.map((pillar) => (
             <div key={pillar}>
               <p className="text-[11px] font-semibold text-[#0F1A2E] mb-[6px]">{t(`pillar.${pillar}`)}</p>
-              <div className="grid gap-[8px] sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
                 {DEFAULT_CATALOG
                   .filter((it) => it.pillar === pillar && (!it.auto || (vals[it.code] ?? "") !== ""))
                   .map((it) => {
@@ -421,11 +421,12 @@ export function PatientNeuroIdPanel({
             </div>
           ))}
 
-          <div className="flex gap-[8px]">
-            <button type="submit" className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition">
+          <div className="flex items-center gap-[8px]">
+            <button type="submit" className="w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition">
               {editing ? t("saveCorrection") : t("compute")}
             </button>
-            <button type="button" onClick={closeForm} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+            <button type="button" onClick={closeForm} aria-label={tCommon("close")}
+              className="shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-[#A09E98] hover:text-[#0F1A2E] transition">
               <X className="h-4 w-4" />
             </button>
           </div>
