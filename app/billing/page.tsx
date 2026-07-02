@@ -43,7 +43,7 @@ export default async function BillingPage() {
   }
 
   return (
-    <Shell>
+    <Shell billingLockExempt>
       {/* Header */}
       <div className="mb-[20px]">
         <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[2px]">

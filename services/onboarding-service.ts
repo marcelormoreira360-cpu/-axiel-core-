@@ -358,6 +358,33 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
   await supabase.from("working_hours").upsert(hourRows, { onConflict: "clinic_id,day_of_week" });
 
+  // Trial REAL: a clínica nasce com assinatura 'trialing' do Professional
+  // (trial_days do plano). Antes o "14 dias grátis" era só texto — sem
+  // registro, o trial nunca começava e ninguém era convertido no fim dele.
+  try {
+    const { data: existingSub } = await supabase
+      .from("subscriptions")
+      .select("id")
+      .eq("clinic_id", clinicId!)
+      .maybeSingle();
+    if (!existingSub) {
+      const { data: proPlan } = await supabase
+        .from("plans")
+        .select("id, trial_days")
+        .eq("code", "professional")
+        .maybeSingle();
+      if (proPlan) {
+        const days = (proPlan.trial_days as number | null) ?? 14;
+        await supabase.from("subscriptions").insert({
+          clinic_id: clinicId!,
+          plan_id: proPlan.id,
+          status: "trialing",
+          trial_ends_at: new Date(Date.now() + days * 86_400_000).toISOString(),
+        });
+      }
+    }
+  } catch { /* non-critical */ }
+
   // Non-critical: semeia o MÉTODO (Q-SNA + QRM + Anamnese do perfil) como
   // Formulários (assessment_templates, slot intake). Substitui o antigo seed de
   // intake_forms (sistema aposentado pelo PR #55, que não chegava ao paciente).
