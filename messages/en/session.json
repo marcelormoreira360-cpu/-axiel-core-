@@ -38,6 +38,7 @@
     "transcribeError": "Transcription error",
     "keyObs": "Key observations",
     "obsPlaceholder": "e.g. calm breathing...",
+    "addObservation": "Add observation",
     "noObs": "No observations yet.",
     "obsCount": "{count}/12 observations",
     "vitalsTitle": "Vitals reported by the patient",

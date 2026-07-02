@@ -79,6 +79,8 @@
   },
   "calendar": {
     "today": "Today",
+    "prevPeriod": "Previous period",
+    "nextPeriod": "Next period",
     "all": "All",
     "scheduleAt": "Schedule at {time}",
     "views": {

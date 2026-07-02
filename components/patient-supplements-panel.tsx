@@ -40,6 +40,7 @@ function AddItemForm({
   onClose: () => void;
 }) {
   const t = useTranslations("patientPanels.supplements");
+  const tCommon = useTranslations("common.actions");
   const [name, setName] = useState("");
   const [dosage, setDosage] = useState("");
   const [buyUrl, setBuyUrl] = useState("");
@@ -123,7 +124,7 @@ function AddItemForm({
         >
           {t("addItem")}
         </button>
-        <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
           <X className="h-4 w-4" />
         </button>
       </div>

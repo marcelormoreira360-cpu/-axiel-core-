@@ -118,7 +118,7 @@ export function FormInvitationPanel({
       {selected && !generatedUrl && (
         <div className="flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] rounded-[8px]">
           <span className="text-[12px] text-[#085041] font-medium flex-1">{selected.full_name}</span>
-          <button type="button" onClick={clear} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+          <button type="button" onClick={clear} aria-label="Limpar seleção" className="text-[#A09E98] hover:text-[#0F1A2E] transition">
             <X className="h-3 w-3" />
           </button>
         </div>

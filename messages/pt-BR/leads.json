@@ -1,0 +1,63 @@
+{
+  "profile": {
+    "back": "Voltar ao pipeline",
+    "eyebrow": "PERFIL DO LEAD",
+    "openPatient": "Abrir ficha do paciente",
+    "convertCard": {
+      "eyebrow": "Pronto para avançar",
+      "title": "Converta este lead em paciente quando ele estiver pronto para começar.",
+      "helper": "O sistema copia contato, notas, origem e queixa principal para uma nova ficha de paciente."
+    },
+    "contact": {
+      "title": "Contato",
+      "helper": "Simples e fácil de ler.",
+      "name": "Nome",
+      "phone": "Telefone",
+      "email": "E-mail",
+      "source": "Origem",
+      "mainComplaint": "Queixa principal",
+      "notAdded": "Não informado"
+    },
+    "notes": {
+      "title": "Notas",
+      "helper": "O que a equipe precisa saber.",
+      "empty": "Sem notas ainda."
+    },
+    "nextSteps": "Próximos passos para este lead",
+    "send": {
+      "title": "Enviar mensagem simples",
+      "helper": "Nutrição de lead. Sem conselho médico.",
+      "emailTitle": "E-mail para este lead",
+      "emailHelper": "Follow-up simples e amigável.",
+      "smsTitle": "SMS para este lead",
+      "smsHelper": "Follow-up curto por SMS."
+    },
+    "aiTitle": "Insights de IA do lead"
+  },
+  "new": {
+    "eyebrow": "NOVO LEAD",
+    "title": "Adicionar lead",
+    "helper": "Capture o contato rapidamente. O pipeline cuida do resto.",
+    "fullName": "Nome completo",
+    "fullNamePlaceholder": "Nome do lead",
+    "email": "E-mail",
+    "emailPlaceholder": "email@exemplo.com",
+    "phone": "Telefone",
+    "phonePlaceholder": "(00) 90000-0000",
+    "mainComplaint": "Queixa principal",
+    "mainComplaintPlaceholder": "Com o que precisa de ajuda?",
+    "source": "Origem",
+    "sourceOptions": {
+      "instagram": "Instagram",
+      "google": "Google",
+      "facebook": "Facebook",
+      "website": "Website",
+      "referral": "Indicação",
+      "other": "Outro"
+    },
+    "notes": "Observação rápida",
+    "notesPlaceholder": "Sobre o que perguntou?",
+    "save": "Salvar lead",
+    "cancel": "Cancelar"
+  }
+}

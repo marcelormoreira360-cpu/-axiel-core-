@@ -79,6 +79,8 @@
   },
   "calendar": {
     "today": "Hoje",
+    "prevPeriod": "Período anterior",
+    "nextPeriod": "Próximo período",
     "all": "Todos",
     "scheduleAt": "Agendar às {time}",
     "views": {

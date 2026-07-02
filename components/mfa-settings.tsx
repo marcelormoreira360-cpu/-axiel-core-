@@ -9,6 +9,7 @@ type Factor = { id: string; status: "verified" | "unverified"; factor_type: stri
 
 export function MfaSettings() {
   const t = useTranslations("settings.mfa");
+  const tCommon = useTranslations("common.actions");
   const supabase = createSupabaseBrowserClient();
   const [factors, setFactors] = useState<Factor[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,7 +120,7 @@ export function MfaSettings() {
         <div className="rounded-xl border border-axiel-line p-5 space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-axiel-ink">{t("setupTitle")}</p>
-            <button type="button" onClick={cancelEnrollment} className="text-black/30 hover:text-black transition">
+            <button type="button" onClick={cancelEnrollment} aria-label={tCommon("close")} className="text-black/30 hover:text-black transition">
               <X className="h-4 w-4" />
             </button>
           </div>

@@ -110,6 +110,7 @@ export function PatientNeuroIdPanel({
   assessmentId?: string | null; initialValues?: Record<string, string>; initialAutoCodes?: string[];
 }) {
   const t = useTranslations("neuroId");
+  const tCommon = useTranslations("common.actions");
   const [assessing, setAssessing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>({});
@@ -424,7 +425,7 @@ export function PatientNeuroIdPanel({
             <button type="submit" className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition">
               {editing ? t("saveCorrection") : t("compute")}
             </button>
-            <button type="button" onClick={closeForm} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+            <button type="button" onClick={closeForm} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
               <X className="h-4 w-4" />
             </button>
           </div>

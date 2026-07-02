@@ -10,27 +10,29 @@ import {
   Menu,
 } from "lucide-react";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 const PRIMARY_NAV = [
-  { href: "/dashboard",   label: "Início",     icon: LayoutDashboard },
-  { href: "/schedule",    label: "Agenda",     icon: Calendar },
-  { href: "/patients",    label: "Pacientes",  icon: Users },
-  { href: "/financeiro",  label: "Financeiro", icon: Banknote },
+  { href: "/dashboard",   labelKey: "mobile.home",     icon: LayoutDashboard },
+  { href: "/schedule",    labelKey: "main.schedule",   icon: Calendar },
+  { href: "/patients",    labelKey: "main.patients",   icon: Users },
+  { href: "/financeiro",  labelKey: "main.financeiro", icon: Banknote },
 ];
 
 const MORE_NAV = [
-  { href: "/leads",        label: "Leads" },
-  { href: "/inbox",        label: "Mensagens" },
-  { href: "/forms",        label: "Formulários" },
-  { href: "/results",      label: "Resultados" },
-  { href: "/analytics",    label: "Analytics" },
-  { href: "/actions",      label: "AI Insights" },
-  { href: "/settings",     label: "Configurações" },
+  { href: "/leads",        labelKey: "main.leads" },
+  { href: "/inbox",        labelKey: "main.inbox" },
+  { href: "/forms",        labelKey: "main.forms" },
+  { href: "/results",      labelKey: "clinic.results" },
+  { href: "/analytics",    labelKey: "clinic.analytics" },
+  { href: "/actions",      labelKey: "main.actions" },
+  { href: "/settings",     labelKey: "clinic.settings" },
 ];
 
 export function MobileBottomNav() {
   const pathname = usePathname();
   const [showMore, setShowMore] = useState(false);
+  const t = useTranslations("nav");
 
   // Hide on onboarding, auth, public pages and large screens (handled via CSS)
   const hidden =
@@ -75,7 +77,7 @@ export function MobileBottomNav() {
                         : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.07]",
                     ].join(" ")}
                   >
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 );
               })}
@@ -101,7 +103,7 @@ export function MobileBottomNav() {
                 <span
                   className={`text-[9px] font-medium leading-none ${active ? "text-[#0F6E56]" : "text-[#A09E98] dark:text-[#6B6A66]"}`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
                 {active && (
                   <span className="absolute bottom-0 h-[2px] w-8 rounded-full bg-[#0F6E56]" />
@@ -123,7 +125,7 @@ export function MobileBottomNav() {
             <span
               className={`text-[9px] font-medium leading-none ${showMore ? "text-[#0F6E56]" : "text-[#A09E98] dark:text-[#6B6A66]"}`}
             >
-              Mais
+              {t("sections.more")}
             </span>
           </button>
         </div>
