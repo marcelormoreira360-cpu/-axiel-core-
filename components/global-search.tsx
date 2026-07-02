@@ -225,7 +225,7 @@ export function GlobalSearch() {
             <div className="px-[16px] py-[32px] text-center">
               <p className="text-[13px] text-[#A09E98]">
                 Nenhum resultado para{" "}
-                <span className="font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">"{query}"</span>
+                <span className="font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">“{query}”</span>
               </p>
             </div>
           )}

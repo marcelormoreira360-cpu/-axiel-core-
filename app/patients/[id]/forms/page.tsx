@@ -60,7 +60,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
             <ClipboardList className="h-5 w-5 text-[#A09E98]" />
           </div>
           <p className="text-[13px] text-[#A09E98] mb-[4px]">Nenhum formulário preenchido ainda.</p>
-          <p className="text-[11px] text-[#D3D1C7]">Clique em "Novo formulário" para aplicar um questionário.</p>
+          <p className="text-[11px] text-[#D3D1C7]">Clique em “Novo formulário” para aplicar um questionário.</p>
         </div>
       ) : (
         <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">

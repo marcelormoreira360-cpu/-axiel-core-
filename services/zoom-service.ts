@@ -85,7 +85,6 @@ export async function removeClinicZoomCredentials(clinicId: string): Promise<voi
     .eq("clinic_id", clinicId)
     .maybeSingle();
   const current = (existing?.settings ?? {}) as Record<string, unknown>;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { zoom: _removed, ...rest } = current;
   await supabase
     .from("clinic_settings")

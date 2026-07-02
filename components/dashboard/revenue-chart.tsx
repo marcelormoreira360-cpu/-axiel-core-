@@ -35,7 +35,6 @@ function fmtMoney(cents: number, currency: string, locale: string) {
 }
 
 function makeTooltip(labels: { revenue: string; sessions: string }, fmt: (c: number) => string) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function CustomTooltip({ active, payload, label }: any) {
     if (!active || !payload?.length) return null;
     const revenue = payload.find((p: { dataKey: string }) => p.dataKey === "revenue")?.value ?? 0;

@@ -69,7 +69,7 @@ export function LgpdRequestsClient({ requests: initial, clinicId }: { requests: 
                 </div>
                 {patient?.email && <p className="text-[12px] text-black/40">{patient.email}</p>}
                 {req.reason && (
-                  <p className="text-[12px] text-black/60 mt-1 italic">"{req.reason}"</p>
+                  <p className="text-[12px] text-black/60 mt-1 italic">“{req.reason}”</p>
                 )}
                 <p className="text-[11px] text-black/30 mt-1">
                   Solicitado em {formatDate(req.requested_at)}
