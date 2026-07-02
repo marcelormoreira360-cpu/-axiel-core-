@@ -8,6 +8,8 @@ import { createLogger } from "@/lib/logger";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { getClinicTimezone } from "@/services/clinic-service";
+import { hasAppointmentConflict } from "@/services/appointment-service";
+import { normalizePhoneDigits } from "@/lib/phone";
 
 const log = createLogger("book");
 
@@ -125,8 +127,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   if (!sessionType) return NextResponse.json({ error: "Tipo de sessão não encontrado." }, { status: 404 });
 
+  // Slot pode ter sido tomado entre o carregamento da página e o submit
+  if (await hasAppointmentConflict({
+    clinic_id: clinic.id,
+    starts_at,
+    duration_minutes: sessionType.duration_minutes,
+    practitioner_id: practitioner_id || null,
+  })) {
+    return NextResponse.json(
+      { error: "Este horário acabou de ser reservado. Escolha outro.", code: "SLOT_TAKEN" },
+      { status: 409 },
+    );
+  }
+
   // Find or create patient
-  const normalizedPhone = phone.replace(/\s/g, "");
+  const normalizedPhone = normalizePhoneDigits(phone) ?? phone.replace(/\D/g, "");
   let patientId: string;
 
   // BUG-01: separate .eq() calls to avoid PostgREST filter injection

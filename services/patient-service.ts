@@ -107,7 +107,8 @@ export async function findOrCreatePatientForBooking(input: {
   const name = input.full_name.trim();
   const email = input.email?.trim().toLowerCase() || null;
   const phoneRaw = input.phone?.trim() || null;
-  const phoneDigits = phoneRaw ? phoneRaw.replace(/\D/g, "") || null : null;
+  const { normalizePhoneDigits } = await import("@/lib/phone");
+  const phoneDigits = normalizePhoneDigits(phoneRaw);
 
   let existing: Patient | null = null;
   if (email) {
