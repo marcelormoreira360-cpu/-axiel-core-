@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { UserPlus, Mail, X } from "lucide-react";
+import { UserPlus, Mail, X, Link2, Check } from "lucide-react";
 import { INVITABLE_ROLES, isManager } from "@/lib/team-utils";
 import type { TeamMember, TeamInvite } from "@/services/team-service";
 import {
@@ -44,6 +44,7 @@ function initials(name: string | null) {
 
 export function EquipeClient({ members, invites, currentUserId, currentUserRole }: Props) {
   const t = useTranslations("settings.equipe");
+  const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
   const tRoles = useTranslations("common.roles");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -191,6 +192,20 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-600">
                   {t("pending")}
                 </span>
+                {canManage && (
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`${window.location.origin}/join/${inv.token_hash}`);
+                      setCopiedInviteId(inv.id);
+                      setTimeout(() => setCopiedInviteId(null), 2000);
+                    }}
+                    className="flex items-center gap-1 rounded-lg border border-black/[.10] dark:border-white/[.10] px-2 py-1 text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
+                    title={t("copyLinkHint")}
+                  >
+                    {copiedInviteId === inv.id ? <Check className="h-3 w-3 text-[#0F6E56]" /> : <Link2 className="h-3 w-3" />}
+                    {copiedInviteId === inv.id ? t("copied") : t("copyLink")}
+                  </button>
+                )}
                 {canManage && (
                   <button
                     onClick={() => handleRevoke(inv.id)}

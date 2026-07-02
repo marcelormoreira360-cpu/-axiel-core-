@@ -241,7 +241,10 @@
     "flashRemoved": "Membro removido.",
     "flashRevoked": "Convite revogado.",
     "confirmRemove": "Remover {name} da clínica?",
-    "thisMember": "este membro"
+    "thisMember": "este membro",
+    "copyLink": "Copiar link",
+    "copied": "Copiado!",
+    "copyLinkHint": "Copiar o link do convite para enviar por WhatsApp"
   },
   "practitioners": {
     "subtitle": "Configure o perfil público de cada profissional da equipe. Ative \"Agenda pública\" para que o paciente possa escolher o profissional ao agendar online.",
