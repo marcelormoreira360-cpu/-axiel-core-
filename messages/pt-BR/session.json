@@ -12,7 +12,11 @@
     "intakeCount": "({count, plural, one {# resposta} other {# respostas}})",
     "chiefComplaint": "Queixa principal",
     "caseSummary": "Resumo do caso",
-    "lastSessionTests": "Testes da última sessão"
+    "lastSessionTests": "Testes da última sessão",
+    "wrapUpTitle": "Pós-atendimento",
+    "chargeHint": "Gere um link de pagamento desta sessão e envie ao paciente.",
+    "alreadyPaid": "Sessão já paga",
+    "scheduleFollowUp": "Agendar retorno"
   },
   "panel": {
     "patientFallback": "Paciente",

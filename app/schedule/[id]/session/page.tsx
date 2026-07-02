@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
-import { ArrowLeft, Video } from "lucide-react";
+import { ArrowLeft, CalendarPlus, Video } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
+import { ChargeSessionButton } from "@/app/financeiro/charge-session-button";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SessionRecordingPanel } from "@/components/session-recording-panel";
 import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
@@ -31,7 +33,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const t = await getTranslations("session.page");
   const locale = await getLocale();
 
-  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog, isPaid] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
     getPatientIntakeResponses(appointment.patient_id),
@@ -39,6 +41,16 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
     getSessionRecordsByPatient(appointment.patient_id),
     getPatientById(appointment.patient_id),
     getClinicalTestCatalog(appointment.clinic_id),
+    // Checagem barata: a sessão já tem pagamento confirmado? (mesma guarda do endpoint de cobrança)
+    (async () => {
+      const supabase = await createSupabaseServerClient();
+      const { count } = await supabase
+        .from("patient_payments")
+        .select("id", { count: "exact", head: true })
+        .eq("appointment_id", id)
+        .eq("status", "paid");
+      return (count ?? 0) > 0;
+    })(),
   ]);
 
   // Sugestão de testes na sessão: catálogo da clínica + bateria da última sessão (dedup)
@@ -246,6 +258,36 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
           />
         </div>
       )}
+
+      {/* Pós-atendimento: cobrança da sessão + agendar retorno em um lugar só */}
+      <div className="mt-6 bg-white border border-black/[.07] rounded-[12px] p-[15px]">
+        <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[10px]">
+          {t("wrapUpTitle")}
+        </p>
+        <div className="flex flex-wrap items-start justify-between gap-[14px]">
+          <div className="flex-1 min-w-[220px]">
+            {isPaid ? (
+              <span className="inline-block text-[11px] font-medium text-[#0F6E56] bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-full px-[10px] py-[3px]">
+                {t("alreadyPaid")}
+              </span>
+            ) : (
+              <>
+                <p className="text-[11px] text-[#6B6A66] mb-[6px]">{t("chargeHint")}</p>
+                <div className="w-full sm:max-w-[420px] [&>div]:text-left">
+                  <ChargeSessionButton appointmentId={id} />
+                </div>
+              </>
+            )}
+          </div>
+          <Link
+            href={`/schedule/new?patient_id=${appointment.patient_id}`}
+            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[12px] py-[7px] transition shrink-0"
+          >
+            <CalendarPlus className="h-3.5 w-3.5" />
+            {t("scheduleFollowUp")}
+          </Link>
+        </div>
+      </div>
     </Shell>
   );
 }

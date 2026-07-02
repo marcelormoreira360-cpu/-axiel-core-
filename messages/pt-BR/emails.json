@@ -119,5 +119,14 @@
     "body1d": "Este é o último aviso: após essa data, o acesso da sua clínica será suspenso até a contratação de um plano. Seus dados ficam guardados em segurança e tudo volta exatamente de onde parou.",
     "cta": "Escolher meu plano →",
     "footerAuto": "Este aviso é enviado automaticamente pelo AXIEL Core durante o período de teste."
+  },
+  "neuroIdReport": {
+    "subject": "Seu relatório está pronto — {clinic}",
+    "greeting": "Olá, {name}!",
+    "greetingNoName": "Olá!",
+    "intro": "Seu relatório do Mapa Bio³ está pronto. O documento completo segue em anexo (PDF).",
+    "outro": "Qualquer dúvida sobre o conteúdo, fale com a sua clínica. Estamos aqui para acompanhar você.",
+    "pushTitle": "Seu relatório está pronto",
+    "pushBody": "Sua clínica enviou o seu relatório do Mapa Bio³ por e-mail."
   }
 }

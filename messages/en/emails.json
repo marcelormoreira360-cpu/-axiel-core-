@@ -119,5 +119,14 @@
     "body1d": "This is the final notice: after that date, your clinic's access will be suspended until a plan is subscribed. Your data is kept safe and everything resumes exactly where you left off.",
     "cta": "Choose my plan →",
     "footerAuto": "This notice is sent automatically by AXIEL Core during the trial period."
+  },
+  "neuroIdReport": {
+    "subject": "Your report is ready — {clinic}",
+    "greeting": "Hi, {name}!",
+    "greetingNoName": "Hi!",
+    "intro": "Your Bio³ Map report is ready. The full document is attached as a PDF.",
+    "outro": "If you have any questions about the content, reach out to your clinic. We're here to support you.",
+    "pushTitle": "Your report is ready",
+    "pushBody": "Your clinic has sent your Bio³ Map report by email."
   }
 }

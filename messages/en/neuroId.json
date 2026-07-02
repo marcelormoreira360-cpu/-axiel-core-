@@ -78,5 +78,10 @@
   "attentionTitle": "Points of attention",
   "phq9Alert": "Clinical alert: PHQ-9 item 9 (ideation) flagged ({value}/3). Assess risk per your protocol — do not ignore.",
   "autoDraftBanner": "Partial map generated from answers — complete the physical exam (Biomechanical) to finalize.",
-  "reviewComplete": "Review and complete"
+  "reviewComplete": "Review and complete",
+  "sendToPatient": "Send to patient",
+  "sendingToPatient": "Sending...",
+  "sentToPatient": "Sent to patient",
+  "sendToPatientError": "Could not send. Please try again.",
+  "sendNoEmail": "Patient has no email on file. Add an email to the profile to send the report."
 }

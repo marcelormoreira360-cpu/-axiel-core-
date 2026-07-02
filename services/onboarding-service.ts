@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { LeadSource } from "@/lib/types";
 import { createAppointment } from "@/services/appointment-service";
-import { createIntakeFormWithQuestions } from "@/services/intake-service";
 import { createLead } from "@/services/lead-service";
 import { createPatient } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
@@ -359,31 +358,64 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
 
   await supabase.from("working_hours").upsert(hourRows, { onConflict: "clinic_id,day_of_week" });
 
-  // Non-critical: create intake form — swallow errors (e.g. duplicate name on re-run)
+  // Non-critical: semeia o MÉTODO (Q-SNA + QRM + Anamnese do perfil) como
+  // Formulários (assessment_templates, slot intake). Substitui o antigo seed de
+  // intake_forms (sistema aposentado pelo PR #55, que não chegava ao paciente).
   try {
-    await createIntakeFormWithQuestions({
-      clinic_id: clinicId!,
-      name: getIntakeFormName(clinicProfile),
-      description: "Formulário de anamnese criado automaticamente no onboarding.",
-      questions: intakeQuestions.map((question) => ({
-        label: question,
-        question_type: "long_text",
-        is_required: false,
-      })),
+    const { seedMethodTemplatesForClinic } = await import("@/services/assessment-seed-service");
+    await seedMethodTemplatesForClinic(clinicId!, {
+      anamnese: { name: getIntakeFormName(clinicProfile), questions: intakeQuestions },
     });
-  } catch { /* already exists or non-critical */ }
+  } catch { /* non-critical */ }
 
-  // Non-critical: invite staff member
+  // Non-critical: invite staff member (e envia o e-mail — antes o convite era
+  // criado mas o convidado nunca ficava sabendo)
   if (input.staffEmail.trim()) {
     try {
+      const inviteToken = randomUUID();
+      const inviteEmail = input.staffEmail.trim().toLowerCase();
       await supabase.from("invites").insert({
         clinic_id: clinicId!,
-        email: input.staffEmail.trim().toLowerCase(),
+        email: inviteEmail,
         role: "front_desk",
-        token_hash: randomUUID(),
+        token_hash: inviteToken,
         invited_by: profile.id,
         status: "pending",
       });
+      try {
+        const { Resend } = await import("resend");
+        const { DEFAULT_FROM_EMAIL, APP_URL } = await import("@/lib/constants");
+        const { getServerT, resolveClinicLocale } = await import("@/lib/email-i18n");
+        const locale = await resolveClinicLocale(clinicId!);
+        const t = await getServerT(locale, "emails");
+        const tRoles = await getServerT(locale, "common");
+        const roleLabel = tRoles("roles.front_desk");
+        const joinUrl = `${APP_URL}/join/${inviteToken}`;
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: DEFAULT_FROM_EMAIL,
+          to: inviteEmail,
+          subject: t("invite.subject", { clinic: clinicName }),
+          html: `
+            <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+              <h2 style="font-size:20px;font-weight:700;color:#0F1A2E;margin:0 0 8px">
+                ${t("invite.heading", { clinic: clinicName })}
+              </h2>
+              <p style="font-size:14px;color:#6B6A66;margin:0 0 24px">
+                ${t.markup("invite.body", { role: roleLabel, b: (c) => `<strong>${c}</strong>` })}
+              </p>
+              <a href="${joinUrl}"
+                 style="display:inline-block;background:#0B1F3A;color:white;text-decoration:none;
+                        font-size:14px;font-weight:600;padding:12px 24px;border-radius:8px">
+                ${t("invite.cta")}
+              </a>
+              <p style="font-size:12px;color:#A09E98;margin:24px 0 0">
+                ${t("invite.footer")}
+              </p>
+            </div>
+          `,
+        });
+      } catch { /* e-mail é melhor-esforço; o convite já está criado */ }
     } catch { /* already invited */ }
   }
 

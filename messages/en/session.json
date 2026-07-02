@@ -12,7 +12,11 @@
     "intakeCount": "({count, plural, one {# answer} other {# answers}})",
     "chiefComplaint": "Chief complaint",
     "caseSummary": "Case summary",
-    "lastSessionTests": "Last session tests"
+    "lastSessionTests": "Last session tests",
+    "wrapUpTitle": "After the visit",
+    "chargeHint": "Generate a payment link for this session and send it to the patient.",
+    "alreadyPaid": "Session already paid",
+    "scheduleFollowUp": "Schedule follow-up"
   },
   "panel": {
     "patientFallback": "Patient",
