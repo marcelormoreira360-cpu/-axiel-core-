@@ -2,6 +2,7 @@
 
 import { useState, useActionState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { createBrowserClient } from "@supabase/ssr";
 import {
   ArrowLeft, ArrowRight, Brain, CheckCircle2, Clock,
@@ -11,51 +12,35 @@ import { completeOnboardingAction } from "@/app/onboarding/actions";
 import { track } from "@/lib/analytics";
 
 // ── Step labels ───────────────────────────────────────────────────
-const STEPS = ["Perfil", "Nome", "Horários", "Equipe"];
+const STEP_KEYS = ["profile", "name", "hours", "team"] as const;
 
 // ── Data ──────────────────────────────────────────────────────────
-const PROFILES = [
-  {
-    id: "integrativa",
-    label: "Integrativa / Funcional",
-    examples: "Medicina funcional · Acupuntura · Medicina integrativa · Longevidade",
-    icon: <Leaf className="h-5 w-5" />,
-  },
-  {
-    id: "fisioterapia",
-    label: "Fisioterapia / Reabilitação",
-    examples: "Fisioterapia · Quiropraxia · Osteopatia · Massoterapia",
-    icon: <Dumbbell className="h-5 w-5" />,
-  },
-  {
-    id: "saude_mental",
-    label: "Saúde Mental",
-    examples: "Psicologia · Terapia · Burnout · Estresse · Coaching terapêutico",
-    icon: <Brain className="h-5 w-5" />,
-  },
-  {
-    id: "nutricao",
-    label: "Nutrição",
-    examples: "Nutrição clínica · Nutrição esportiva · Comportamento alimentar",
-    icon: <Heart className="h-5 w-5" />,
-  },
-  {
-    id: "wellness",
-    label: "Wellness / Bem-estar",
-    examples: "Wellness center · Estética avançada · Spa clínico · Biohacking",
-    icon: <Sparkles className="h-5 w-5" />,
-  },
+const PROFILE_META = [
+  { id: "integrativa",  icon: <Leaf className="h-5 w-5" /> },
+  { id: "fisioterapia", icon: <Dumbbell className="h-5 w-5" /> },
+  { id: "saude_mental", icon: <Brain className="h-5 w-5" /> },
+  { id: "nutricao",     icon: <Heart className="h-5 w-5" /> },
+  { id: "wellness",     icon: <Sparkles className="h-5 w-5" /> },
 ] as const;
 
-const HOURS_OPTIONS = [
-  { id: "weekdays", label: "Dias úteis",  summary: "Seg–Sex, 9h–17h" },
-  { id: "extended", label: "Estendido",   summary: "Seg–Sex, 8h–18h" },
-  { id: "flexible", label: "Flexível",    summary: "Seg–Sáb, horário simples" },
-] as const;
+const HOURS_KEYS = ["weekdays", "extended", "flexible"] as const;
 
 // ── Component ─────────────────────────────────────────────────────
 export function OnboardingFlow() {
   const router = useRouter();
+  const t = useTranslations("onboarding.flow");
+
+  const STEPS = STEP_KEYS.map((key) => t(`stepLabels.${key}`));
+  const PROFILES = PROFILE_META.map((p) => ({
+    ...p,
+    label: t(`profiles.${p.id}.label`),
+    examples: t(`profiles.${p.id}.examples`),
+  }));
+  const HOURS_OPTIONS = HOURS_KEYS.map((id) => ({
+    id,
+    label: t(`hours.${id}.label`),
+    summary: t(`hours.${id}.summary`),
+  }));
   const [actionState, formAction, isPending] = useActionState(completeOnboardingAction, null);
 
   const [step,          setStep]          = useState(0);

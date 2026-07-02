@@ -1,0 +1,90 @@
+{
+  "header": {
+    "back": "Settings",
+    "eyebrow": "Settings",
+    "title": "Clinic setup",
+    "subtitle": "Name, booking URL, and practice profile."
+  },
+  "errors": {
+    "requiredFields": "Required fields missing."
+  },
+  "sections": {
+    "nameUrl": "Name and URL",
+    "practiceProfile": "Practice profile",
+    "contact": "Contact and location",
+    "branding": "Visual identity",
+    "otherClinics": "Other clinics",
+    "team": "Team"
+  },
+  "profileCard": {
+    "title": "Clinic type",
+    "subtitle": "Sets the default session types, terminology, and forms suggested by AXIEL."
+  },
+  "profiles": {
+    "integrativa": {
+      "label": "Integrative / Functional",
+      "examples": "Functional medicine · Acupuncture · Longevity"
+    },
+    "fisioterapia": {
+      "label": "Physical Therapy / Rehabilitation",
+      "examples": "Physical therapy · Chiropractic · Osteopathy"
+    },
+    "saude_mental": {
+      "label": "Mental Health",
+      "examples": "Psychology · Therapy · Therapeutic coaching"
+    },
+    "nutricao": {
+      "label": "Nutrition",
+      "examples": "Clinical nutrition · Sports nutrition"
+    },
+    "wellness": {
+      "label": "Wellness / Well-being",
+      "examples": "Wellness center · Aesthetics · Biohacking"
+    }
+  },
+  "contact": {
+    "subtitle": "Shown on your online booking page and used for invoicing.",
+    "description": "Short description",
+    "descriptionPlaceholder": "E.g.: Clinic specializing in integrative and functional medicine in São Paulo.",
+    "phone": "Phone",
+    "phonePlaceholder": "(555) 123-4567",
+    "email": "Contact email",
+    "emailPlaceholder": "contact@yourclinic.com",
+    "website": "Website",
+    "websitePlaceholder": "https://yourclinic.com",
+    "taxId": "Tax ID (CNPJ)",
+    "taxIdPlaceholder": "00.000.000/0001-00",
+    "address": "Address",
+    "addressPlaceholder": "123 Example St — Suite 45",
+    "city": "City",
+    "cityPlaceholder": "São Paulo",
+    "state": "State",
+    "statePlaceholder": "SP",
+    "save": "Save contact"
+  },
+  "branding": {
+    "logoAlt": "Logo",
+    "title": "Logo and primary color",
+    "activeColor": "Active color: {color}",
+    "noColor": "No color configured",
+    "logoUploaded": " · Logo uploaded",
+    "noLogo": " · No logo",
+    "edit": "Edit →"
+  },
+  "list": {
+    "moreClinics": "View {count} more clinics"
+  },
+  "emptyClinics": {
+    "title": "No clinic connected",
+    "text": "Complete onboarding to create your clinic and unlock the workspace.",
+    "action": "Start onboarding"
+  },
+  "team": {
+    "noName": "No name",
+    "noEmail": "No email",
+    "moreMembers": "View {count} more members",
+    "emptyTitle": "No team members",
+    "emptyText": "Invite your first practitioner when the clinic is ready.",
+    "emptyAction": "Invite team"
+  }
+}

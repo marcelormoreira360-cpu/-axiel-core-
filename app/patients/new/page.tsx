@@ -1,92 +1,92 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { createPatientAction } from "./actions";
 
-// Full international dial codes — sorted by country name
+// Full international dial codes — names resolved per-locale via Intl.DisplayNames
 const COUNTRY_CODES = [
-  { code: "+55",  flag: "🇧🇷", label: "Brasil" },
-  { code: "+1",   flag: "🇺🇸", label: "EUA / Canadá" },
-  { code: "+351", flag: "🇵🇹", label: "Portugal" },
-  { code: "+34",  flag: "🇪🇸", label: "Espanha" },
-  { code: "+49",  flag: "🇩🇪", label: "Alemanha" },
-  { code: "+44",  flag: "🇬🇧", label: "Reino Unido" },
-  { code: "+33",  flag: "🇫🇷", label: "França" },
-  { code: "+39",  flag: "🇮🇹", label: "Itália" },
-  { code: "+54",  flag: "🇦🇷", label: "Argentina" },
-  { code: "+56",  flag: "🇨🇱", label: "Chile" },
-  { code: "+57",  flag: "🇨🇴", label: "Colômbia" },
-  { code: "+52",  flag: "🇲🇽", label: "México" },
-  { code: "+51",  flag: "🇵🇪", label: "Peru" },
-  { code: "+598", flag: "🇺🇾", label: "Uruguai" },
-  { code: "+595", flag: "🇵🇾", label: "Paraguai" },
-  { code: "+593", flag: "🇪🇨", label: "Equador" },
-  { code: "+591", flag: "🇧🇴", label: "Bolívia" },
-  { code: "+58",  flag: "🇻🇪", label: "Venezuela" },
-  { code: "+53",  flag: "🇨🇺", label: "Cuba" },
-  { code: "+506", flag: "🇨🇷", label: "Costa Rica" },
-  { code: "+507", flag: "🇵🇦", label: "Panamá" },
-  { code: "+504", flag: "🇭🇳", label: "Honduras" },
-  { code: "+502", flag: "🇬🇹", label: "Guatemala" },
-  { code: "+503", flag: "🇸🇻", label: "El Salvador" },
-  { code: "+505", flag: "🇳🇮", label: "Nicarágua" },
-  { code: "+509", flag: "🇭🇹", label: "Haiti" },
-  { code: "+1809",flag: "🇩🇴", label: "República Dominicana" },
-  { code: "+81",  flag: "🇯🇵", label: "Japão" },
-  { code: "+82",  flag: "🇰🇷", label: "Coreia do Sul" },
-  { code: "+86",  flag: "🇨🇳", label: "China" },
-  { code: "+91",  flag: "🇮🇳", label: "Índia" },
-  { code: "+61",  flag: "🇦🇺", label: "Austrália" },
-  { code: "+64",  flag: "🇳🇿", label: "Nova Zelândia" },
-  { code: "+27",  flag: "🇿🇦", label: "África do Sul" },
-  { code: "+20",  flag: "🇪🇬", label: "Egito" },
-  { code: "+234", flag: "🇳🇬", label: "Nigéria" },
-  { code: "+254", flag: "🇰🇪", label: "Quênia" },
-  { code: "+212", flag: "🇲🇦", label: "Marrocos" },
-  { code: "+213", flag: "🇩🇿", label: "Argélia" },
-  { code: "+216", flag: "🇹🇳", label: "Tunísia" },
-  { code: "+966", flag: "🇸🇦", label: "Arábia Saudita" },
-  { code: "+971", flag: "🇦🇪", label: "Emirados Árabes" },
-  { code: "+972", flag: "🇮🇱", label: "Israel" },
-  { code: "+90",  flag: "🇹🇷", label: "Turquia" },
-  { code: "+7",   flag: "🇷🇺", label: "Rússia" },
-  { code: "+48",  flag: "🇵🇱", label: "Polônia" },
-  { code: "+31",  flag: "🇳🇱", label: "Países Baixos" },
-  { code: "+32",  flag: "🇧🇪", label: "Bélgica" },
-  { code: "+41",  flag: "🇨🇭", label: "Suíça" },
-  { code: "+43",  flag: "🇦🇹", label: "Áustria" },
-  { code: "+46",  flag: "🇸🇪", label: "Suécia" },
-  { code: "+47",  flag: "🇳🇴", label: "Noruega" },
-  { code: "+45",  flag: "🇩🇰", label: "Dinamarca" },
-  { code: "+358", flag: "🇫🇮", label: "Finlândia" },
-  { code: "+353", flag: "🇮🇪", label: "Irlanda" },
-  { code: "+30",  flag: "🇬🇷", label: "Grécia" },
-  { code: "+420", flag: "🇨🇿", label: "República Tcheca" },
-  { code: "+36",  flag: "🇭🇺", label: "Hungria" },
-  { code: "+40",  flag: "🇷🇴", label: "Romênia" },
-  { code: "+380", flag: "🇺🇦", label: "Ucrânia" },
+  { code: "+55",  flag: "🇧🇷", regions: ["BR"] },
+  { code: "+1",   flag: "🇺🇸", regions: ["US", "CA"] },
+  { code: "+351", flag: "🇵🇹", regions: ["PT"] },
+  { code: "+34",  flag: "🇪🇸", regions: ["ES"] },
+  { code: "+49",  flag: "🇩🇪", regions: ["DE"] },
+  { code: "+44",  flag: "🇬🇧", regions: ["GB"] },
+  { code: "+33",  flag: "🇫🇷", regions: ["FR"] },
+  { code: "+39",  flag: "🇮🇹", regions: ["IT"] },
+  { code: "+54",  flag: "🇦🇷", regions: ["AR"] },
+  { code: "+56",  flag: "🇨🇱", regions: ["CL"] },
+  { code: "+57",  flag: "🇨🇴", regions: ["CO"] },
+  { code: "+52",  flag: "🇲🇽", regions: ["MX"] },
+  { code: "+51",  flag: "🇵🇪", regions: ["PE"] },
+  { code: "+598", flag: "🇺🇾", regions: ["UY"] },
+  { code: "+595", flag: "🇵🇾", regions: ["PY"] },
+  { code: "+593", flag: "🇪🇨", regions: ["EC"] },
+  { code: "+591", flag: "🇧🇴", regions: ["BO"] },
+  { code: "+58",  flag: "🇻🇪", regions: ["VE"] },
+  { code: "+53",  flag: "🇨🇺", regions: ["CU"] },
+  { code: "+506", flag: "🇨🇷", regions: ["CR"] },
+  { code: "+507", flag: "🇵🇦", regions: ["PA"] },
+  { code: "+504", flag: "🇭🇳", regions: ["HN"] },
+  { code: "+502", flag: "🇬🇹", regions: ["GT"] },
+  { code: "+503", flag: "🇸🇻", regions: ["SV"] },
+  { code: "+505", flag: "🇳🇮", regions: ["NI"] },
+  { code: "+509", flag: "🇭🇹", regions: ["HT"] },
+  { code: "+1809",flag: "🇩🇴", regions: ["DO"] },
+  { code: "+81",  flag: "🇯🇵", regions: ["JP"] },
+  { code: "+82",  flag: "🇰🇷", regions: ["KR"] },
+  { code: "+86",  flag: "🇨🇳", regions: ["CN"] },
+  { code: "+91",  flag: "🇮🇳", regions: ["IN"] },
+  { code: "+61",  flag: "🇦🇺", regions: ["AU"] },
+  { code: "+64",  flag: "🇳🇿", regions: ["NZ"] },
+  { code: "+27",  flag: "🇿🇦", regions: ["ZA"] },
+  { code: "+20",  flag: "🇪🇬", regions: ["EG"] },
+  { code: "+234", flag: "🇳🇬", regions: ["NG"] },
+  { code: "+254", flag: "🇰🇪", regions: ["KE"] },
+  { code: "+212", flag: "🇲🇦", regions: ["MA"] },
+  { code: "+213", flag: "🇩🇿", regions: ["DZ"] },
+  { code: "+216", flag: "🇹🇳", regions: ["TN"] },
+  { code: "+966", flag: "🇸🇦", regions: ["SA"] },
+  { code: "+971", flag: "🇦🇪", regions: ["AE"] },
+  { code: "+972", flag: "🇮🇱", regions: ["IL"] },
+  { code: "+90",  flag: "🇹🇷", regions: ["TR"] },
+  { code: "+7",   flag: "🇷🇺", regions: ["RU"] },
+  { code: "+48",  flag: "🇵🇱", regions: ["PL"] },
+  { code: "+31",  flag: "🇳🇱", regions: ["NL"] },
+  { code: "+32",  flag: "🇧🇪", regions: ["BE"] },
+  { code: "+41",  flag: "🇨🇭", regions: ["CH"] },
+  { code: "+43",  flag: "🇦🇹", regions: ["AT"] },
+  { code: "+46",  flag: "🇸🇪", regions: ["SE"] },
+  { code: "+47",  flag: "🇳🇴", regions: ["NO"] },
+  { code: "+45",  flag: "🇩🇰", regions: ["DK"] },
+  { code: "+358", flag: "🇫🇮", regions: ["FI"] },
+  { code: "+353", flag: "🇮🇪", regions: ["IE"] },
+  { code: "+30",  flag: "🇬🇷", regions: ["GR"] },
+  { code: "+420", flag: "🇨🇿", regions: ["CZ"] },
+  { code: "+36",  flag: "🇭🇺", regions: ["HU"] },
+  { code: "+40",  flag: "🇷🇴", regions: ["RO"] },
+  { code: "+380", flag: "🇺🇦", regions: ["UA"] },
 ];
 
-// World countries for address
-const WORLD_COUNTRIES = [
-  "Brasil", "Argentina", "Bolívia", "Chile", "Colômbia", "Equador",
-  "Guiana", "Guiana Francesa", "Paraguai", "Peru", "Suriname", "Uruguai",
-  "Venezuela", "Costa Rica", "Cuba", "El Salvador", "Guatemala", "Haiti",
-  "Honduras", "Jamaica", "México", "Nicarágua", "Panamá", "Porto Rico",
-  "República Dominicana", "Trinidad e Tobago",
-  "Portugal", "Espanha", "França", "Itália", "Alemanha", "Reino Unido",
-  "Países Baixos", "Bélgica", "Suíça", "Áustria", "Suécia", "Noruega",
-  "Dinamarca", "Finlândia", "Irlanda", "Grécia", "Polônia", "República Tcheca",
-  "Hungria", "Romênia", "Ucrânia", "Rússia", "Turquia",
-  "EUA", "Canadá", "Austrália", "Nova Zelândia",
-  "Japão", "China", "Coreia do Sul", "Índia", "Tailândia", "Singapura",
-  "Indonésia", "Malásia", "Filipinas", "Vietnã",
-  "Arábia Saudita", "Emirados Árabes Unidos", "Israel", "Egito", "Marrocos",
-  "Argélia", "Tunísia", "África do Sul", "Nigéria", "Quênia", "Angola",
-  "Moçambique", "Cabo Verde", "São Tomé e Príncipe",
-].sort((a, b) => a.localeCompare(b, "pt"));
+// World countries for address — ISO 3166-1 alpha-2, names resolved per-locale
+const WORLD_COUNTRY_CODES = [
+  "BR", "AR", "BO", "CL", "CO", "EC",
+  "GY", "GF", "PY", "PE", "SR", "UY",
+  "VE", "CR", "CU", "SV", "GT", "HT",
+  "HN", "JM", "MX", "NI", "PA", "PR",
+  "DO", "TT",
+  "PT", "ES", "FR", "IT", "DE", "GB",
+  "NL", "BE", "CH", "AT", "SE", "NO",
+  "DK", "FI", "IE", "GR", "PL", "CZ",
+  "HU", "RO", "UA", "RU", "TR",
+  "US", "CA", "AU", "NZ",
+  "JP", "CN", "KR", "IN", "TH", "SG",
+  "ID", "MY", "PH", "VN",
+  "SA", "AE", "IL", "EG", "MA",
+  "DZ", "TN", "ZA", "NG", "KE", "AO",
+  "MZ", "CV", "ST",
+];
 
 export default async function NewPatientPage({
   searchParams,
@@ -95,6 +95,13 @@ export default async function NewPatientPage({
 }) {
   const { name } = await searchParams;
   const t = await getTranslations("patients.new");
+  const locale = await getLocale();
+  const regionNames = new Intl.DisplayNames([locale], { type: "region" });
+  const countryName = (iso: string) => regionNames.of(iso) ?? iso;
+  const worldCountries = WORLD_COUNTRY_CODES
+    .map((iso) => countryName(iso))
+    .sort((a, b) => a.localeCompare(b, locale));
+  const defaultCountry = countryName("BR");
   const prefillName = name ? decodeURIComponent(name) : "";
   const [prefillFirst, ...restWords] = prefillName.trim().split(/\s+/);
   const prefillLast = restWords.join(" ");
@@ -144,8 +151,8 @@ export default async function NewPatientPage({
                     className="min-h-[52px] rounded-xl border border-axiel-line bg-white px-3 text-sm outline-none focus:border-black/30 dark:focus:border-white/30 transition w-[130px] shrink-0"
                   >
                     {COUNTRY_CODES.map((c) => (
-                      <option key={c.code + c.label} value={c.code}>
-                        {c.flag} {c.code} {c.label}
+                      <option key={c.code + c.regions.join("-")} value={c.code}>
+                        {c.flag} {c.code} {c.regions.map(countryName).join(" / ")}
                       </option>
                     ))}
                   </select>
@@ -190,8 +197,8 @@ export default async function NewPatientPage({
               </div>
               <label className="grid gap-2 text-sm font-semibold">
                 {t("country")}
-                <select name="country" defaultValue="Brasil" className={inputCls}>
-                  {WORLD_COUNTRIES.map((c) => (
+                <select name="country" defaultValue={defaultCountry} className={inputCls}>
+                  {worldCountries.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>

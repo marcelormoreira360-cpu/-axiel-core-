@@ -1,0 +1,90 @@
+{
+  "header": {
+    "back": "Configurações",
+    "eyebrow": "Configurações",
+    "title": "Configuração da clínica",
+    "subtitle": "Nome, URL de agendamento e perfil de prática."
+  },
+  "errors": {
+    "requiredFields": "Campos obrigatórios."
+  },
+  "sections": {
+    "nameUrl": "Nome e URL",
+    "practiceProfile": "Perfil de prática",
+    "contact": "Contato e localização",
+    "branding": "Identidade visual",
+    "otherClinics": "Outras clínicas",
+    "team": "Equipe"
+  },
+  "profileCard": {
+    "title": "Tipo de clínica",
+    "subtitle": "Define os tipos de sessão padrão, terminologia e formulários sugeridos pelo AXIEL."
+  },
+  "profiles": {
+    "integrativa": {
+      "label": "Integrativa / Funcional",
+      "examples": "Medicina funcional · Acupuntura · Longevidade"
+    },
+    "fisioterapia": {
+      "label": "Fisioterapia / Reabilitação",
+      "examples": "Fisioterapia · Quiropraxia · Osteopatia"
+    },
+    "saude_mental": {
+      "label": "Saúde Mental",
+      "examples": "Psicologia · Terapia · Coaching terapêutico"
+    },
+    "nutricao": {
+      "label": "Nutrição",
+      "examples": "Nutrição clínica · Nutrição esportiva"
+    },
+    "wellness": {
+      "label": "Wellness / Bem-estar",
+      "examples": "Wellness center · Estética · Biohacking"
+    }
+  },
+  "contact": {
+    "subtitle": "Exibido na página de agendamento online e usado para emissão de notas fiscais.",
+    "description": "Descrição curta",
+    "descriptionPlaceholder": "Ex: Clínica especializada em medicina integrativa e funcional em São Paulo.",
+    "phone": "Telefone",
+    "phonePlaceholder": "(11) 99999-9999",
+    "email": "Email de contato",
+    "emailPlaceholder": "contato@suaclinica.com.br",
+    "website": "Site",
+    "websitePlaceholder": "https://suaclinica.com.br",
+    "taxId": "CNPJ",
+    "taxIdPlaceholder": "00.000.000/0001-00",
+    "address": "Endereço",
+    "addressPlaceholder": "Rua Exemplo, 123 — Sala 45",
+    "city": "Cidade",
+    "cityPlaceholder": "São Paulo",
+    "state": "Estado",
+    "statePlaceholder": "SP",
+    "save": "Salvar contato"
+  },
+  "branding": {
+    "logoAlt": "Logo",
+    "title": "Logo e cor primária",
+    "activeColor": "Cor ativa: {color}",
+    "noColor": "Nenhuma cor configurada",
+    "logoUploaded": " · Logo enviado",
+    "noLogo": " · Sem logo",
+    "edit": "Editar →"
+  },
+  "list": {
+    "moreClinics": "Ver mais {count} clínicas"
+  },
+  "emptyClinics": {
+    "title": "Nenhuma clínica conectada",
+    "text": "Conclua o onboarding para criar sua clínica e desbloquear o workspace.",
+    "action": "Iniciar onboarding"
+  },
+  "team": {
+    "noName": "Sem nome",
+    "noEmail": "Sem e-mail",
+    "moreMembers": "Ver mais {count} membros",
+    "emptyTitle": "Nenhum membro na equipe",
+    "emptyText": "Convide o primeiro profissional quando a clínica estiver pronta.",
+    "emptyAction": "Convidar equipe"
+  }
+}

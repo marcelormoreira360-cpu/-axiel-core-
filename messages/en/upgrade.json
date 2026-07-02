@@ -1,0 +1,30 @@
+{
+  "viewPlanDetails": "View plan details →",
+  "trialEndedBadge": "Trial period ended",
+  "title": "Your trial period has ended",
+  "subtitle": "Choose a plan to keep using AXIEL Core and retain access to all your clinical data.",
+  "mostPopular": "Most popular",
+  "subscribe": "Subscribe to {plan}",
+  "trustNote": "Secure payments via Stripe. Cancel anytime. No setup fee.",
+  "manageSubscription": "Manage subscription",
+  "plans": {
+    "starter": {
+      "feature1": "Up to 3 users",
+      "feature2": "Up to 150 patients",
+      "feature3": "Scheduling and medical records",
+      "feature4": "Intake forms"
+    },
+    "professional": {
+      "feature1": "Up to 10 users",
+      "feature2": "Up to 1,000 patients",
+      "feature3": "AI-powered clinical insights",
+      "feature4": "Patient portal + automations"
+    },
+    "scale": {
+      "feature1": "Unlimited users and patients",
+      "feature2": "WhatsApp + advanced reports",
+      "feature3": "Advanced permissions",
+      "feature4": "Up to 3 locations"
+    }
+  }
+}

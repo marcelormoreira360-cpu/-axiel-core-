@@ -57,5 +57,86 @@
       "hint": "Add a teammate to the clinic.",
       "action": "Invite"
     }
+  },
+  "flow": {
+    "stepLabels": {
+      "profile": "Profile",
+      "name": "Name",
+      "hours": "Hours",
+      "team": "Team"
+    },
+    "progress": "Step {current} of {total}",
+    "profiles": {
+      "integrativa": {
+        "label": "Integrative / Functional",
+        "examples": "Functional medicine · Acupuncture · Integrative medicine · Longevity"
+      },
+      "fisioterapia": {
+        "label": "Physical Therapy / Rehabilitation",
+        "examples": "Physical therapy · Chiropractic · Osteopathy · Massage therapy"
+      },
+      "saude_mental": {
+        "label": "Mental Health",
+        "examples": "Psychology · Therapy · Burnout · Stress · Therapeutic coaching"
+      },
+      "nutricao": {
+        "label": "Nutrition",
+        "examples": "Clinical nutrition · Sports nutrition · Eating behavior"
+      },
+      "wellness": {
+        "label": "Wellness / Well-being",
+        "examples": "Wellness center · Advanced aesthetics · Clinical spa · Biohacking"
+      }
+    },
+    "hours": {
+      "weekdays": { "label": "Weekdays", "summary": "Mon–Fri, 9am–5pm" },
+      "extended": { "label": "Extended", "summary": "Mon–Fri, 8am–6pm" },
+      "flexible": { "label": "Flexible", "summary": "Mon–Sat, simple hours" }
+    },
+    "stepProfile": {
+      "eyebrow": "First step",
+      "title": "What is your clinic's profile?",
+      "subtitle": "AXIEL will set up session types, forms, and terminology automatically for you."
+    },
+    "stepName": {
+      "eyebrow": "Profile: {label}",
+      "title": "What is your clinic called?",
+      "subtitle": "This is the name your team will see inside AXIEL.",
+      "namePlaceholder": "E.g.: {label} Clinical Center",
+      "nameTooShort": "Name too short — minimum 2 characters.",
+      "logoLabel": "Clinic logo",
+      "logoOptional": "(optional)",
+      "logoPreviewAlt": "Logo preview",
+      "logoChange": "Change logo",
+      "logoUpload": "Upload logo",
+      "logoHint": "PNG, JPG · max 2 MB"
+    },
+    "stepHours": {
+      "eyebrow": "Schedule setup",
+      "title": "What are your business hours?",
+      "subtitle": "You can fine-tune this later in Settings."
+    },
+    "stepTeam": {
+      "eyebrow": "Last step (optional)",
+      "title": "Invite a teammate",
+      "subtitle": "Skip this step if you prefer to add your team later.",
+      "emailPlaceholder": "colleague@yourclinic.com",
+      "selfInviteWarning": "This is your own email. The invitation should go to a different colleague. You are already the clinic owner."
+    },
+    "summary": {
+      "title": "AXIEL will automatically create",
+      "sessionTypes": "Session types for {label}",
+      "anamnesisForm": "Personalized anamnesis form",
+      "demoData": "Demo patient and lead",
+      "schedule": "Schedule with the selected hours"
+    },
+    "terms": "I have read and accept the AXIEL Core <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>, including the processing of health data under the LGPD (Law 13.709/2018).",
+    "successCreated": "Clinic created! Redirecting…",
+    "back": "Back",
+    "continue": "Continue",
+    "fillNameToContinue": "Enter the clinic name to continue",
+    "createClinic": "Create my clinic",
+    "redirecting": "Redirecting…",
+    "creating": "Creating clinic…"
   }
 }
