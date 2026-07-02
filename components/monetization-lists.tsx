@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { BadgeDollarSign, PackagePlus, Pencil, Trash2, X, Check } from "lucide-react";
 import type { MonetizationOffer, PatientOffer } from "@/lib/types";
 import { Card } from "@/components/card";
@@ -19,6 +20,7 @@ export function OfferList({
   editAction?: (formData: FormData) => Promise<void>;
   deleteAction?: (formData: FormData) => Promise<void>;
 }) {
+  const tActions = useTranslations("common.actions");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -36,7 +38,7 @@ export function OfferList({
 
   function handleDelete(offer: MonetizationOffer) {
     if (!deleteAction) return;
-    if (!confirm(`Remover "${offer.name}"? Esta ação não pode ser desfeita.`)) return;
+    if (!confirm(tActions("confirmRemoveNamed", { name: offer.name }))) return;
     const fd = new FormData();
     fd.set("id", offer.id);
     setPendingId(offer.id + "-delete");

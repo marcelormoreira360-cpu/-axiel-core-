@@ -27,5 +27,8 @@
     "nextSteps": "Next Steps",
     "keepUpdatedTitle": "Keep the record updated",
     "keepUpdatedText": "Add notes after the next interaction so the dashboard can guide the team."
+  },
+  "deleteButton": {
+    "confirm": "Delete this case? It leaves the profile so you can generate a new one. (Reversible.)"
   }
 }

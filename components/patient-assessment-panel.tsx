@@ -24,7 +24,7 @@ type Props = {
 };
 
 const inputCls =
-  "w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition";
+  "w-full min-h-[44px] sm:min-h-0 px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition";
 
 function fieldDefault(value: string | number | null | undefined): string {
   return value === null || value === undefined ? "" : String(value);
@@ -160,7 +160,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         <p className="text-[10px] text-[#6B6A66] leading-snug">{t("findingsHint")}</p>
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" disabled={importing} onClick={handleImportFindings}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+            className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
             {importing ? <AiButtonSpinner /> : <Download className="h-3 w-3" />} {importing ? t("importingFindings") : t("importFindings")}
           </button>
           {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
@@ -175,7 +175,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         <p className="text-[10px] text-[#6B6A66] leading-snug">{t("atmHint")}</p>
         <div className="flex items-center gap-2 flex-wrap">
           <button type="button" disabled={suggestingAtm} onClick={handleSuggestAtm}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+            className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
             {suggestingAtm ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {suggestingAtm ? t("atmSuggesting") : t("atmSuggest")}
           </button>
           {atmMsg && <span className="text-[10px] text-[#0F6E56]">{atmMsg}</span>}
@@ -224,7 +224,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
         {!medData ? (
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" disabled={medLoading} onClick={handleSuggestMed}
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+              className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
               {medLoading ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {medLoading ? t("medExtracting") : t("medExtract")}
             </button>
             {medMsg && <span className="text-[10px] text-[#0F6E56]">{medMsg}</span>}
@@ -248,11 +248,11 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
             <p className="text-[9px] text-[#A09E98] leading-snug">{t("medScoreNote")}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <button type="button" disabled={medLoading} onClick={handleConfirmMed}
-                className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
+                className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
                 {medLoading ? <AiButtonSpinner /> : <Check className="h-3 w-3" />} {medLoading ? t("saving") : t("medConfirm")}
               </button>
               <button type="button" onClick={() => { setMedData(null); setMedMsg(null); }}
-                className="text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">{t("cancel")}</button>
+                className="inline-flex items-center min-h-[44px] sm:min-h-0 text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] transition">{t("cancel")}</button>
               {medMsg && <span className="text-[10px] text-red-500">{medMsg}</span>}
             </div>
           </div>
@@ -331,9 +331,9 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
           {state?.error && (
             <p className="flex items-center gap-1 text-[11px] text-red-500"><AlertCircle className="h-3 w-3" /> {state.error}</p>
           )}
-          <div className="flex items-center gap-[10px]">
+          <div className="flex items-center gap-[10px] flex-wrap">
             <button type="submit" disabled={isPending}
-              className="inline-flex items-center gap-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[14px] py-[7px] transition">
+              className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[14px] py-[7px] transition">
               <Check className="h-3.5 w-3.5" /> {isPending ? t("saving") : t("save")}
             </button>
             {state?.ok && !isPending && (
