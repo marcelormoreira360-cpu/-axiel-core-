@@ -22,7 +22,7 @@ export function OrderDeliverButton({ orderId }: { orderId: string }) {
       <button
         onClick={deliver}
         disabled={isPending}
-        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] disabled:opacity-50 rounded-md px-2 py-1 transition"
+        className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 disabled:opacity-50 rounded-md px-2 py-1 transition"
       >
         <Check className="h-3 w-3" /> {isPending ? "…" : "Marcar entregue"}
       </button>

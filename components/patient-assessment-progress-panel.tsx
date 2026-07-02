@@ -27,7 +27,7 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
         {item.latest_response_id ? (
           <Link
             href={`/patients/${patientId}/forms/${item.latest_response_id}`}
-            className="inline-flex items-center gap-1 text-[13px] font-medium text-[#0F1A2E] hover:text-[#0F6E56] transition group/q"
+            className="inline-flex items-center gap-1 text-[13px] font-medium text-[#0F1A2E] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] transition group/q"
           >
             {item.template_name}
             <ChevronRight className="h-3 w-3 text-[#C4C2BC] group-hover/q:text-[#0F6E56] transition" />
@@ -54,7 +54,7 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
             {item.latestTotal != null && <span className="opacity-70">· {item.latestTotal} pts</span>}
           </span>
           {item.flaggedCount > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C0392B] bg-[#C0392B]/10 rounded-full px-[8px] py-[2px]">
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C0392B] dark:text-[#F2B8B5] bg-[#C0392B]/10 rounded-full px-[8px] py-[2px]">
               {item.flaggedCount} {item.flaggedCount === 1 ? "item no máximo" : "itens no máximo"}
             </span>
           )}
@@ -92,7 +92,7 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
         <button
           onClick={resend}
           disabled={isPending}
-          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] disabled:opacity-50 rounded-md px-2 py-1 transition"
+          className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 disabled:opacity-50 rounded-md px-2 py-1 transition"
         >
           <Send className="h-3 w-3" /> {isPending ? "…" : "Reavaliar"}
         </button>

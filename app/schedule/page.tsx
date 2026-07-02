@@ -275,7 +275,7 @@ export default async function SchedulePage() {
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] capitalize">{today}</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2] capitalize">{today}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {t("todayCount", { count: todayAppointments.length })}
           </p>
@@ -283,7 +283,7 @@ export default async function SchedulePage() {
         {profile?.clinic_id && (
           <Link
             href="/schedule/new"
-            className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12] dark:border-white/[.12]"
           >
             {t("newSession")}
           </Link>
@@ -292,28 +292,28 @@ export default async function SchedulePage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-[10px] mb-[22px]">
-        <div className="bg-[#0F1A2E] rounded-[10px] px-[14px] py-[12px]">
+        <div className="bg-[#0F1A2E] dark:bg-[#0A0F1A] rounded-[10px] px-[14px] py-[12px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-white/50 mb-[6px]">{t("statToday")}</p>
           <p className="text-[26px] font-semibold tracking-[-0.04em] leading-none text-white">
             {todayAppointments.length}
           </p>
         </div>
-        <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[14px] py-[12px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">{t("statNext")}</p>
-          <p className="text-[18px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">
+          <p className="text-[18px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2]">
             {nextSession ? formatTime(nextSession.starts_at, locale) : "—"}
           </p>
         </div>
-        <div className="bg-white border border-black/[.07] rounded-[10px] px-[14px] py-[12px]">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[14px] py-[12px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">{t("statReviews")}</p>
-          <p className="text-[26px] font-semibold tracking-[-0.04em] leading-none text-[#0F1A2E]">
+          <p className="text-[26px] font-semibold tracking-[-0.04em] leading-none text-[#0F1A2E] dark:text-[#E8E6E2]">
             {openReviews}
           </p>
         </div>
       </div>
 
       {!profile?.clinic_id ? (
-        <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[16px] py-[14px]">
           <p className="text-[13px] text-[#A09E98]">{t("noClinic")}</p>
         </div>
       ) : (

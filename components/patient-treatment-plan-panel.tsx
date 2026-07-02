@@ -16,9 +16,9 @@ import {
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const STATUS_COLORS: Record<string, string> = {
-  active:    "bg-[#E1F5EE] text-[#085041]",
-  paused:    "bg-[#FFF3E0] text-amber-700",
-  completed: "bg-[#E8F0FE] text-[#3B6BE4]",
+  active:    "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  paused:    "bg-[#FFF3E0] dark:bg-[#C77D17]/[.15] text-amber-700 dark:text-amber-300",
+  completed: "bg-[#E8F0FE] dark:bg-[#3B6BE4]/[.15] text-[#3B6BE4]",
   cancelled: "bg-[#F4F3EF] text-[#A09E98]",
 };
 
@@ -60,7 +60,7 @@ function StepRow({
   return (
     <div className={[
       "flex items-start gap-[8px] group rounded-[8px] px-[8px] py-[7px] transition",
-      optimistic ? "opacity-60" : "hover:bg-[#FAFAF8]",
+      optimistic ? "opacity-60" : "hover:bg-[#FAFAF8] dark:hover:bg-white/[.04]",
     ].join(" ")}>
       <button
         type="button"
@@ -69,8 +69,8 @@ function StepRow({
         className={`shrink-0 mt-[1px] transition ${planActive ? "hover:scale-110" : "cursor-default"}`}
       >
         {optimistic
-          ? <CheckCircle2 className="h-4 w-4 text-[#0F6E56]" />
-          : <Circle className="h-4 w-4 text-[#D3D1C7]" />
+          ? <CheckCircle2 className="h-4 w-4 text-[#0F6E56] dark:text-[#9FE1CB]" />
+          : <Circle className="h-4 w-4 text-[#D3D1C7] dark:text-white/25" />
         }
       </button>
 
@@ -82,7 +82,7 @@ function StepRow({
           <p className="text-[11px] text-[#A09E98] mt-[1px]">{step.description}</p>
         )}
         {step.due_date && !optimistic && (
-          <p className="text-[10px] text-[#D3D1C7] mt-[1px]">{t("stepUntil", { date: formatDate(step.due_date, locale) })}</p>
+          <p className="text-[10px] text-[#D3D1C7] dark:text-white/25 mt-[1px]">{t("stepUntil", { date: formatDate(step.due_date, locale) })}</p>
         )}
       </div>
 
@@ -90,7 +90,7 @@ function StepRow({
         <button
           type="button"
           onClick={handleDelete}
-          className="shrink-0 opacity-0 group-hover:opacity-100 text-[#D3D1C7] hover:text-red-400 transition mt-[2px]"
+          className="shrink-0 opacity-0 group-hover:opacity-100 text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition mt-[2px]"
         >
           <Trash2 className="h-3 w-3" />
         </button>
@@ -131,13 +131,13 @@ function AddStepForm({
         required
         autoFocus
         placeholder={t("stepForm.placeholder")}
-        className="w-full px-[9px] py-[6px] rounded-[7px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+        className="w-full px-[9px] py-[6px] rounded-[7px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
       />
       <div className="flex gap-[6px]">
         <input
           type="date"
           name="due_date"
-          className="flex-1 px-[9px] py-[6px] rounded-[7px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+          className="flex-1 px-[9px] py-[6px] rounded-[7px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
         />
         <button
           type="submit"
@@ -149,7 +149,7 @@ function AddStepForm({
           type="button"
           onClick={onClose}
           aria-label={tCommon("close")}
-          className="text-[#A09E98] hover:text-[#0F1A2E] transition"
+          className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
         >
           <X className="h-3.5 w-3.5" />
         </button>
@@ -178,7 +178,7 @@ function CreatePlanForm({
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[11px] bg-[#FAFAF8] border-b border-black/[.06]">
         <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -194,7 +194,7 @@ function CreatePlanForm({
             required
             autoFocus
             placeholder={t("planTitlePlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -204,7 +204,7 @@ function CreatePlanForm({
             name="goal"
             rows={2}
             placeholder={t("goalPlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] resize-none transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] resize-none transition"
           />
         </div>
 
@@ -213,7 +213,7 @@ function CreatePlanForm({
           <input
             type="date"
             name="target_end_at"
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -224,7 +224,7 @@ function CreatePlanForm({
             inputMode="decimal"
             name="plan_value"
             placeholder={t("valuePlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -287,14 +287,14 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
               <p className="text-[11px] text-[#6B6A66] mt-[3px] line-clamp-2">{plan.goal}</p>
             )}
             {plan.plan_value_cents != null && (
-              <p className="text-[11px] font-medium text-[#0F6E56] mt-[4px]">{money(plan.plan_value_cents)}</p>
+              <p className="text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] mt-[4px]">{money(plan.plan_value_cents)}</p>
             )}
           </div>
 
           <button
             type="button"
             onClick={() => setExpanded((v) => !v)}
-            className="shrink-0 text-[#A09E98] hover:text-[#0F1A2E] transition mt-[2px]"
+            className="shrink-0 text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition mt-[2px]"
           >
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -305,7 +305,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
           <div className="mt-[10px]">
             <div className="flex items-center justify-between mb-[4px]">
               <span className="text-[10px] text-[#A09E98]">{t("stepsProgress", { done, total })}</span>
-              <span className="text-[10px] font-medium text-[#0F6E56]">{pct}%</span>
+              <span className="text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB]">{pct}%</span>
             </div>
             <div className="h-[5px] bg-[#F4F3EF] rounded-full overflow-hidden">
               <div
@@ -328,7 +328,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
               ))}
             </div>
           ) : (
-            <p className="text-[12px] text-[#D3D1C7] px-[8px] py-[4px]">
+            <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 px-[8px] py-[4px]">
               {t("noSteps")}
             </p>
           )}
@@ -346,7 +346,7 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
               <button
                 type="button"
                 onClick={() => setAddingStep(true)}
-                className="flex items-center gap-[5px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F6E56] transition mt-[6px] px-[8px]"
+                className="flex items-center gap-[5px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] transition mt-[6px] px-[8px]"
               >
                 <Plus className="h-3 w-3" /> {t("addStep")}
               </button>
@@ -355,12 +355,12 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
 
           {/* Status actions */}
           {isActive && (
-            <div className="flex gap-[6px] mt-[12px] pt-[10px] border-t border-black/[.05]">
+            <div className="flex gap-[6px] mt-[12px] pt-[10px] border-t border-black/[.05] dark:border-white/[.06]">
               <button
                 type="button"
                 disabled={changingStatus}
                 onClick={() => handleStatus("completed")}
-                className="text-[10px] font-medium text-[#3B6BE4] border border-[#3B6BE4]/30 hover:bg-[#E8F0FE] rounded-[6px] px-[10px] py-[5px] transition"
+                className="text-[10px] font-medium text-[#3B6BE4] border border-[#3B6BE4]/30 hover:bg-[#E8F0FE] dark:hover:bg-[#3B6BE4]/20 rounded-[6px] px-[10px] py-[5px] transition"
               >
                 {t("markCompleted")}
               </button>
@@ -368,19 +368,19 @@ function PlanCard({ plan, patientId }: { plan: TreatmentPlan; patientId: string 
                 type="button"
                 disabled={changingStatus}
                 onClick={() => handleStatus("paused")}
-                className="text-[10px] font-medium text-amber-700 border border-amber-200 hover:bg-[#FFF3E0] rounded-[6px] px-[10px] py-[5px] transition"
+                className="text-[10px] font-medium text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 hover:bg-[#FFF3E0] dark:hover:bg-[#C77D17]/20 rounded-[6px] px-[10px] py-[5px] transition"
               >
                 {t("pause")}
               </button>
             </div>
           )}
           {plan.status === "paused" && (
-            <div className="flex gap-[6px] mt-[12px] pt-[10px] border-t border-black/[.05]">
+            <div className="flex gap-[6px] mt-[12px] pt-[10px] border-t border-black/[.05] dark:border-white/[.06]">
               <button
                 type="button"
                 disabled={changingStatus}
                 onClick={() => handleStatus("active")}
-                className="text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[5px] transition"
+                className="text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/25 rounded-[6px] px-[10px] py-[5px] transition"
               >
                 {t("reactivate")}
               </button>
@@ -415,14 +415,14 @@ export function PatientTreatmentPlanPanel({
           <ClipboardList className="h-3.5 w-3.5 text-[#A09E98]" />
           <p className="text-[11px] font-medium text-[#6B6A66]">
             {t("title")}
-            {activePlan && <span className="text-[#0F6E56] ml-[4px]">{t("activeSuffix")}</span>}
+            {activePlan && <span className="text-[#0F6E56] dark:text-[#9FE1CB] ml-[4px]">{t("activeSuffix")}</span>}
           </p>
         </div>
         {!creating && !activePlan && (
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Plus className="h-3 w-3" /> {t("createPlan")}
           </button>
@@ -431,7 +431,7 @@ export function PatientTreatmentPlanPanel({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             <Plus className="h-3 w-3" /> {t("newPlan")}
           </button>
@@ -446,7 +446,7 @@ export function PatientTreatmentPlanPanel({
       {/* Empty state */}
       {plans.length === 0 && !creating && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
+          <p className="text-[12px] text-[#D3D1C7] dark:text-white/25">{t("empty")}</p>
         </div>
       )}
 
@@ -457,7 +457,7 @@ export function PatientTreatmentPlanPanel({
       {otherPlans.length > 0 && (
         <div className="space-y-[4px]">
           {otherPlans.length > 0 && (
-            <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">
+            <p className="text-[10px] font-medium text-[#D3D1C7] dark:text-white/25 uppercase tracking-[.06em] px-[2px]">
               {t("previous")}
             </p>
           )}

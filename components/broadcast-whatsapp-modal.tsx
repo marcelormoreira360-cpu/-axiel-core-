@@ -142,7 +142,7 @@ export function BroadcastWhatsAppModal() {
                   {step === "done" ? t("headerDone") : t("header")}
                 </h2>
               </div>
-              <button onClick={handleClose} aria-label={t("close")} className="text-[#A09E98] hover:text-[#6B6A66] transition">
+              <button onClick={handleClose} aria-label={t("close")} className="text-[#A09E98] hover:text-[#6B6A66] dark:hover:text-[#9E9C97] transition">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -161,14 +161,14 @@ export function BroadcastWhatsAppModal() {
             {/* ── Done state ── */}
             {step === "done" && result && (
               <div className="p-5 space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-[#E1F5EE] rounded-[12px]">
-                  <CheckCircle2 className="w-6 h-6 text-[#0F6E56] shrink-0" />
+                <div className="flex items-center gap-3 p-4 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[12px]">
+                  <CheckCircle2 className="w-6 h-6 text-[#0F6E56] dark:text-[#9FE1CB] shrink-0" />
                   <div>
-                    <p className="text-[14px] font-semibold text-[#0F1A2E]">
+                    <p className="text-[14px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
                       {t("doneSummary", { sent: result.sent, total: result.total })}
                     </p>
                     {result.failed > 0 && (
-                      <p className="text-[12px] text-[#6B6A66] mt-[2px]">
+                      <p className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97] mt-[2px]">
                         {t("doneFailed", { failed: result.failed })}
                       </p>
                     )}
@@ -238,13 +238,13 @@ export function BroadcastWhatsAppModal() {
                   <button
                     type="button"
                     onClick={() => setSegmentOpen((o) => !o)}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-[8px] border border-black/[.08] dark:border-white/[.1] bg-white dark:bg-[#1C2333] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] hover:border-black/20 transition"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-[8px] border border-black/[.08] dark:border-white/[.1] bg-white dark:bg-[#1C2333] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] hover:border-black/20 dark:hover:border-white/20 transition"
                   >
                     <span className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-[#A09E98]" />
                       {t(selectedSeg.labelKey)}
                       {count !== null && (
-                        <span className="text-[11px] px-[6px] py-[1px] rounded-full bg-[#E1F5EE] text-[#0F6E56] font-medium">
+                        <span className="text-[11px] px-[6px] py-[1px] rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB] font-medium">
                           {loadingCount ? "…" : t("patientsCount", { count })}
                         </span>
                       )}
@@ -261,7 +261,7 @@ export function BroadcastWhatsAppModal() {
                           onClick={() => { setSegment(s.value); setSegmentOpen(false); }}
                           className={`w-full text-left px-3 py-3 hover:bg-[#F8F7F4] dark:hover:bg-white/[.04] transition ${s.value === segment ? "bg-[#F0FAF6] dark:bg-[#0F6E56]/10" : ""}`}
                         >
-                          <p className={`text-[13px] font-medium ${s.value === segment ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
+                          <p className={`text-[13px] font-medium ${s.value === segment ? "text-[#0F6E56] dark:text-[#9FE1CB]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
                             {t(s.labelKey)}
                           </p>
                           <p className="text-[11px] text-[#A09E98] mt-[1px]">{t(s.descKey)}</p>
@@ -298,7 +298,7 @@ export function BroadcastWhatsAppModal() {
                         key={v}
                         type="button"
                         onClick={() => insertVar(v)}
-                        className="text-[11px] px-2 py-[2px] rounded-md bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#E8E6E2] transition font-mono"
+                        className="text-[11px] px-2 py-[2px] rounded-md bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#E8E6E2] dark:hover:bg-white/[.08] transition font-mono"
                       >
                         {v}
                       </button>
@@ -312,17 +312,17 @@ export function BroadcastWhatsAppModal() {
                     <button
                       type="button"
                       onClick={() => setShowPreview((v) => !v)}
-                      className="inline-flex items-center gap-1 text-[12px] text-[#0F6E56] hover:underline"
+                      className="inline-flex items-center gap-1 text-[12px] text-[#0F6E56] dark:text-[#9FE1CB] hover:underline"
                     >
                       {showPreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                       {showPreview ? t("previewHide") : t("previewShow")}
                     </button>
 
                     {showPreview && (
-                      <div className="mt-2 bg-[#E1F5EE] rounded-[10px] px-4 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#0F6E56] mb-2">{t("previewHow")}</p>
-                        <div className="bg-white rounded-[8px] px-3 py-2 shadow-sm">
-                          <p className="text-[13px] text-[#0F1A2E] whitespace-pre-wrap leading-relaxed">
+                      <div className="mt-2 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[10px] px-4 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#0F6E56] dark:text-[#9FE1CB] mb-2">{t("previewHow")}</p>
+                        <div className="bg-white dark:bg-[#111827] rounded-[8px] px-3 py-2 shadow-sm">
+                          <p className="text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] whitespace-pre-wrap leading-relaxed">
                             {applyVars(message)}
                           </p>
                         </div>
@@ -343,7 +343,7 @@ export function BroadcastWhatsAppModal() {
                 <div className="flex items-center justify-between pt-1">
                   <button
                     onClick={handleClose}
-                    className="text-[13px] text-[#A09E98] hover:text-[#6B6A66] transition"
+                    className="text-[13px] text-[#A09E98] hover:text-[#6B6A66] dark:hover:text-[#9E9C97] transition"
                   >
                     {t("cancel")}
                   </button>

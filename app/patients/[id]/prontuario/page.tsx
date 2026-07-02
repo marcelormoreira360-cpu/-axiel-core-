@@ -75,7 +75,7 @@ export default async function ProntuarioPage({ params }: Props) {
       <div className="flex items-center gap-3 mb-7 flex-wrap">
         <BackLink
           fallbackHref={`/patients/${id}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
@@ -88,7 +88,7 @@ export default async function ProntuarioPage({ params }: Props) {
         <Link
           href={`/patients/${id}/prontuario/print`}
           target="_blank"
-          className="flex items-center gap-1.5 rounded-lg border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="flex items-center gap-1.5 rounded-lg border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <Printer className="h-3.5 w-3.5" />
           Imprimir
@@ -111,7 +111,7 @@ export default async function ProntuarioPage({ params }: Props) {
           ))}
         </div>
         {patient.notes && (
-          <div className="mt-4 pt-4 border-t border-black/[.05]">
+          <div className="mt-4 pt-4 border-t border-black/[.05] dark:border-white/[.06]">
             <p className="text-[10px] text-[#A09E98] uppercase tracking-[.05em] mb-1">Observações gerais</p>
             <p className="text-[12px] text-[#6B6A66] leading-relaxed whitespace-pre-line">{patient.notes}</p>
           </div>
@@ -121,7 +121,7 @@ export default async function ProntuarioPage({ params }: Props) {
       {/* Timeline */}
       {sorted.length === 0 ? (
         <div className="rounded-2xl border border-black/[.07] bg-white p-8 text-center">
-          <FileText className="h-8 w-8 text-[#D3D1C7] mx-auto mb-3" />
+          <FileText className="h-8 w-8 text-[#D3D1C7] dark:text-white/25 mx-auto mb-3" />
           <p className="text-[13px] font-medium text-[#0F1A2E]">Nenhum registro de sessão ainda</p>
           <p className="text-[12px] text-[#A09E98] mt-1">
             As anotações feitas durante as sessões aparecerão aqui.
@@ -130,7 +130,7 @@ export default async function ProntuarioPage({ params }: Props) {
       ) : (
         <div className="relative">
           {/* Vertical line */}
-          <div className="absolute left-[19px] top-0 bottom-0 w-px bg-black/[.06]" />
+          <div className="absolute left-[19px] top-0 bottom-0 w-px bg-black/[.06] dark:bg-white/[.07]" />
 
           <div className="space-y-4 pl-10">
             {sorted.map((rec) => {
@@ -150,7 +150,7 @@ export default async function ProntuarioPage({ params }: Props) {
 
                   <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
                     {/* Session header */}
-                    <div className="flex items-center justify-between px-5 py-3 border-b border-black/[.05] bg-[#FAFAF8]">
+                    <div className="flex items-center justify-between px-5 py-3 border-b border-black/[.05] dark:border-white/[.06] bg-[#FAFAF8]">
                       <div>
                         <p className="text-[12px] font-semibold text-[#0F1A2E]">{sessionDate}</p>
                         {(appt as { duration_minutes?: number })?.duration_minutes && (
@@ -161,13 +161,13 @@ export default async function ProntuarioPage({ params }: Props) {
                       </div>
                       <div className="flex items-center gap-2">
                         {hasSoap && (
-                          <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[10px] font-medium text-[#0F6E56]">
+                          <span className="rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 px-2 py-0.5 text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB]">
                             SOAP
                           </span>
                         )}
                         <Link
                           href={`/schedule/${rec.appointment_id}/session`}
-                          className="text-[11px] text-[#A09E98] hover:text-[#0F6E56] transition"
+                          className="text-[11px] text-[#A09E98] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] transition"
                         >
                           Editar
                         </Link>
@@ -182,7 +182,7 @@ export default async function ProntuarioPage({ params }: Props) {
                             const value = rec[key];
                             if (!value) return null;
                             return (
-                              <div key={key} className="rounded-xl bg-[#FAFAF8] border border-black/[.05] p-3">
+                              <div key={key} className="rounded-xl bg-[#FAFAF8] border border-black/[.05] dark:border-white/[.06] p-3">
                                 <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-1">
                                   {SOAP_LABELS[key]}
                                 </p>
@@ -230,25 +230,25 @@ export default async function ProntuarioPage({ params }: Props) {
 
                       {/* Empty record */}
                       {!hasSoap && !rec.notes && rec.key_observations?.length === 0 && (
-                        <p className="text-[12px] text-[#D3D1C7] italic">Sessão sem anotações.</p>
+                        <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 italic">Sessão sem anotações.</p>
                       )}
 
                       {/* Zoom recordings */}
                       {(recordingsByAppt.get(rec.appointment_id) ?? []).length > 0 && (
-                        <div className="pt-2 border-t border-black/[.05]">
+                        <div className="pt-2 border-t border-black/[.05] dark:border-white/[.06]">
                           <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-2">
                             Gravações
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {(recordingsByAppt.get(rec.appointment_id) ?? []).map((zr) => (
                               <div key={zr.id} className="flex items-center gap-1.5">
-                                <Video className="h-3 w-3 text-[#0F6E56]" />
+                                <Video className="h-3 w-3 text-[#0F6E56] dark:text-[#9FE1CB]" />
                                 {zr.play_url ? (
                                   <a
                                     href={zr.play_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:underline"
+                                    className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:underline"
                                   >
                                     {zr.file_type === "MP4" ? "Vídeo" : zr.file_type === "M4A" ? "Áudio" : zr.file_type ?? "Arquivo"}
                                     <ExternalLink className="h-2.5 w-2.5" />

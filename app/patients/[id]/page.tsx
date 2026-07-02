@@ -63,9 +63,9 @@ function formatDate(value: string | null | undefined, locale: string) {
 }
 
 function statusClasses(status: string) {
-  if (status === "active") return "bg-[#E1F5EE] text-[#085041]";
+  if (status === "active") return "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]";
   if (status === "archived") return "bg-[#F4F3EF] text-[#A09E98]";
-  return "bg-[#FAEEDA] text-[#633806]";
+  return "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]";
 }
 
 function statusKey(status: string): "active" | "inactive" | "archived" {
@@ -228,7 +228,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           </span>
         )}
         {referralInfo.referred.length > 0 && (
-          <span className="text-[#0F6E56] font-medium">
+          <span className="text-[#0F6E56] dark:text-[#9FE1CB] font-medium">
             {t("referral.brought", { count: referralInfo.referred.length })}
             <span className="text-[#A09E98] font-normal"> ({referralInfo.referred.map((r) => r.full_name).join(", ")})</span>
           </span>
@@ -242,12 +242,12 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
 
         {/* Col 1 — stats */}
-        <div className="p-[20px] lg:border-r border-black/[.05]">
+        <div className="p-[20px] lg:border-r border-black/[.05] dark:border-white/[.06]">
           {/* Sessions count */}
           <div className="bg-white border border-black/[.07] rounded-[12px] p-[13px] mb-3">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{t("stats.sessions")}</p>
             <p className="text-[30px] font-medium tracking-[-0.04em] text-[#0F1A2E] leading-none">{appointments.length}</p>
-            <p className="text-[11px] text-[#0F6E56] mt-[4px]">
+            <p className="text-[11px] text-[#0F6E56] dark:text-[#9FE1CB] mt-[4px]">
               {lastSession ? t("stats.lastSession", { date: formatDate(lastSession.starts_at, locale) }) : t("stats.noSessions")}
             </p>
             {(activePackage || activeSub) && (
@@ -260,8 +260,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
                     <span className={[
                       "text-[10px] font-medium px-[7px] py-[2px] rounded-full",
                       activeSub.status === "past_due"
-                        ? "bg-amber-50 text-amber-600"
-                        : "bg-blue-50 text-blue-600",
+                        ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                        : "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
                     ].join(" ")}>
                       {activeSub.status === "past_due" ? "⚠️ " : "↻ "}
                       {activeSub.plan_name as string}
@@ -302,35 +302,35 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <div className="mt-3 flex flex-col gap-2">
             <Link
               href={`/patients/${patient.id}/forms/new`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-lg px-3 py-2.5 transition"
             >
               <span>{t("quickActions.fillForm")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/insights`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-lg px-3 py-2.5 transition"
             >
               <span>AI {tc("insightsLower")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/evolution`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-lg px-3 py-2.5 transition"
             >
               <span>{t("quickActions.evolution")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/portal-link`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-lg px-3 py-2.5 transition"
             >
               <span>{t("quickActions.portal")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </Link>
             <Link
               href={`/patients/${patient.id}/messages`}
-              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-lg px-3 py-2.5 transition"
+              className="flex items-center justify-between text-[12px] text-[#0F1A2E] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-lg px-3 py-2.5 transition"
             >
               <span>{t("quickActions.portalMessages")}</span>
               <svg className="w-3 h-3 text-[#A09E98]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
@@ -339,10 +339,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         </div>
 
         {/* Col 2 — session timeline */}
-        <div className="p-[20px] lg:border-r border-black/[.05]">
+        <div className="p-[20px] lg:border-r border-black/[.05] dark:border-white/[.06]">
           <div className="flex items-center justify-between mb-3">
             <p className="text-[12px] font-medium text-[#0F1A2E]">{t("history.title")}</p>
-            <Link href="/schedule" className="text-[11px] text-[#0F6E56] hover:underline">{t("history.viewAll")}</Link>
+            <Link href="/schedule" className="text-[11px] text-[#0F6E56] dark:text-[#9FE1CB] hover:underline">{t("history.viewAll")}</Link>
           </div>
 
           {appointments.length === 0 ? (
@@ -360,21 +360,21 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               {appointments.slice(0, 6).map((appt, i) => (
                 <div key={appt.id} className="flex gap-[10px] mb-3 group">
                   <div className="flex flex-col items-center">
-                    <div className={`w-2 h-2 rounded-full shrink-0 mt-[3px] ${i === 0 ? "bg-[#0F6E56]" : "bg-[#D3D1C7]"}`} />
+                    <div className={`w-2 h-2 rounded-full shrink-0 mt-[3px] ${i === 0 ? "bg-[#0F6E56]" : "bg-[#D3D1C7] dark:bg-white/[.10]"}`} />
                     {i < appointments.slice(0, 6).length - 1 && (
-                      <div className="w-px flex-1 bg-black/[.08] mt-[2px]" />
+                      <div className="w-px flex-1 bg-black/[.08] dark:bg-white/[.09] mt-[2px]" />
                     )}
                   </div>
                   <div className="pb-3 min-w-0 flex-1">
                     <p className="text-[9px] text-[#A09E98]">{formatDate(appt.starts_at, locale)}</p>
                     <div className="flex items-center gap-2">
-                      <Link href={`/schedule/${appt.id}/session`} className="text-[11px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] transition">
+                      <Link href={`/schedule/${appt.id}/session`} className="text-[11px] font-medium text-[#0F1A2E] group-hover:text-[#0F6E56] dark:group-hover:text-[#9FE1CB] transition">
                         {tc("session")} {appointments.length - i}
                       </Link>
                       {i === 0 && (
                         <Link
                           href={`/teleconsulta/${appt.id}`}
-                          className="text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] hover:bg-[#0F6E56] hover:text-white px-[6px] py-[2px] rounded-full transition"
+                          className="text-[9px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#0F6E56] hover:text-white px-[6px] py-[2px] rounded-full transition"
                         >
                           {t("actions.telehealth")}
                         </Link>
@@ -393,18 +393,18 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         {/* Col 3 — latest insight */}
         <div className="p-[20px]">
           {latestInsight ? (
-            <div className="bg-[#F0FAF6] border border-[#9FE1CB] rounded-[12px] p-[14px]">
+            <div className="bg-[#F0FAF6] dark:bg-[#0F6E56]/[.10] border border-[#9FE1CB] dark:border-[#0F6E56]/40 rounded-[12px] p-[14px]">
               <div className="flex items-center gap-[6px] mb-[10px]">
-                <svg className="w-[14px] h-[14px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
-                <span className="text-[10px] font-medium text-[#0F6E56] tracking-[.06em] uppercase">{t("insight.latest")}</span>
+                <svg className="w-[14px] h-[14px] text-[#0F6E56] dark:text-[#9FE1CB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                <span className="text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] tracking-[.06em] uppercase">{t("insight.latest")}</span>
               </div>
-              <span className={`text-[10px] px-2 py-[2px] rounded-full inline-block mb-[10px] ${latestInsight.review_status === "final" ? "bg-[#E1F5EE] text-[#085041]" : "bg-[#FAEEDA] text-[#633806]"}`}>
+              <span className={`text-[10px] px-2 py-[2px] rounded-full inline-block mb-[10px] ${latestInsight.review_status === "final" ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]" : "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]"}`}>
                 {latestInsight.review_status === "final" ? t("insight.final") : t("insight.inReview")}
               </span>
               {latestInsight.output?.structured_summary?.overview && (
                 <div className="flex gap-[7px] items-start mb-[7px]">
                   <span className="w-1 h-1 rounded-full bg-[#0F6E56] mt-[5px] shrink-0" />
-                  <p className="text-[11px] text-[#085041] leading-relaxed line-clamp-3">
+                  <p className="text-[11px] text-[#085041] dark:text-[#9FE1CB] leading-relaxed line-clamp-3">
                     {latestInsight.output.structured_summary.overview}
                   </p>
                 </div>
@@ -412,14 +412,14 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
               {latestInsight.output?.structured_summary?.current_status && (
                 <div className="flex gap-[7px] items-start mb-[7px]">
                   <span className="w-1 h-1 rounded-full bg-[#0F6E56] mt-[5px] shrink-0" />
-                  <p className="text-[11px] text-[#085041] leading-relaxed line-clamp-2">
+                  <p className="text-[11px] text-[#085041] dark:text-[#9FE1CB] leading-relaxed line-clamp-2">
                     {latestInsight.output.structured_summary.current_status}
                   </p>
                 </div>
               )}
-              <div className="mt-3 pt-[10px] border-t border-[#9FE1CB] flex items-center gap-[5px]">
-                <svg className="w-[13px] h-[13px] text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-                <span className="text-[10px] text-[#0F6E56]">{t("insight.aiDisclaimer")}</span>
+              <div className="mt-3 pt-[10px] border-t border-[#9FE1CB] dark:border-[#0F6E56]/40 flex items-center gap-[5px]">
+                <svg className="w-[13px] h-[13px] text-[#0F6E56] dark:text-[#9FE1CB]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{t("insight.aiDisclaimer")}</span>
               </div>
             </div>
           ) : (
@@ -448,7 +448,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       <div>
         <div className="flex items-center justify-between mb-2">
           <p className="text-[12px] font-medium text-[#0F1A2E]">{t("insight.all")}</p>
-          <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] hover:underline">
+          <Link href={`/patients/${patient.id}/insights`} className="text-[11px] text-[#0F6E56] dark:text-[#9FE1CB] hover:underline">
             {t("insight.viewAll")}
           </Link>
         </div>
@@ -463,18 +463,18 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       <div className={[
         "rounded-[10px] border px-[15px] py-[11px] flex items-center gap-[10px]",
         pendingReviews > 0
-          ? "bg-[#FAEEDA] border-[#F5C47F]"
-          : "bg-[#E1F5EE] border-[#9FE1CB]",
+          ? "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] border-[#F5C47F] dark:border-[#C77D17]/40"
+          : "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 border-[#9FE1CB] dark:border-[#0F6E56]/40",
       ].join(" ")}>
         <div className="flex-1 min-w-0">
-          <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806]" : "text-[#085041]"].join(" ")}>
+          <p className={["text-[11px] font-medium", pendingReviews > 0 ? "text-[#633806] dark:text-[#E8B04B]" : "text-[#085041] dark:text-[#9FE1CB]"].join(" ")}>
             {pendingReviews > 0
               ? t("nextStep.pending", { count: pendingReviews })
               : t("nextStep.title")
             }
           </p>
           {pendingReviews === 0 && latestInsight?.output?.structured_summary?.current_status && (
-            <p className="text-[11px] text-[#0F6E56] mt-[2px] line-clamp-1">
+            <p className="text-[11px] text-[#0F6E56] dark:text-[#9FE1CB] mt-[2px] line-clamp-1">
               {latestInsight.output.structured_summary.current_status}
             </p>
           )}
@@ -502,7 +502,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     nota_voz: <QuickVoiceNote patientId={patient.id} existingNotes={patient.notes ?? ""} />,
     plano_suplementos: (
       <details className="group">
-        <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] transition">
+        <summary className="cursor-pointer list-none flex items-center justify-between px-[16px] py-[11px] bg-white border border-black/[.07] rounded-[12px] hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] transition">
           <span className="text-[13px] font-medium text-[#0F1A2E]">{t("accordion.planSupplements")}</span>
           <span className="text-[#A09E98] text-[12px] leading-none transition group-open:rotate-180">▾</span>
         </summary>
@@ -556,7 +556,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       {/* Back */}
       <BackLink
         fallbackHref="/patients"
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
+        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         {t("back")}
@@ -564,7 +564,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Patient header (fixo no topo) ── */}
       <div className="bg-white border-b border-black/[.07] rounded-t-[12px] px-[22px] py-5 flex items-center gap-4 mb-0">
-        <div className="w-12 h-12 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[15px] font-medium text-[#0F6E56] shrink-0">
+        <div className="w-12 h-12 rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center text-[15px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] shrink-0">
           {initials(patient.full_name)}
         </div>
         <div className="flex-1 min-w-0">
@@ -600,35 +600,35 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             href={`/api/reports/paciente/${patient.id}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.exportPdf")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           </a>
           <Link
             href={`/patients/${patient.id}/edit`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.edit")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </Link>
           <Link
             href={`/patients/${patient.id}/intake`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.intake")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
           </Link>
           <Link
             href={`/patients/${patient.id}/prontuario`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.chart")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
           </Link>
           <Link
             href={`/schedule/new?patient_id=${patient.id}`}
-            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="w-[30px] h-[30px] rounded-lg bg-white border border-black/[.1] flex items-center justify-center text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.schedule")}
           >
             <svg className="w-[14px] h-[14px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>

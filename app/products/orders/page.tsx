@@ -28,10 +28,10 @@ const ORDER_STATUS_LABELS: Record<DbOrder["status"], string> = {
 };
 
 const ORDER_STATUS_CLASSES: Record<DbOrder["status"], string> = {
-  draft: "bg-[#F4F3EF] text-[#6B6A66]",
+  draft: "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]",
   pending: "bg-[#FEF3C7] text-[#92400E]",
-  paid: "bg-[#E1F5EE] text-[#0F6E56]",
-  delivered: "bg-[#E1F5EE] text-[#0F6E56]",
+  paid: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]",
+  delivered: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]",
   canceled: "bg-[#FEE2E2] text-[#991B1B]",
 };
 
@@ -77,12 +77,12 @@ export default async function ProductOrdersPage() {
         <div className="flex items-center gap-[10px]">
           <BackLink
             fallbackHref="/products"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
           </BackLink>
           <div>
-            <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
+            <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
               Pedidos de produtos
             </h1>
             <p className="text-[12px] text-[#A09E98] mt-[2px]">
@@ -111,12 +111,12 @@ export default async function ProductOrdersPage() {
           {orders.map((order) => (
             <div
               key={order.id}
-              className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]"
+              className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[16px] py-[14px]"
             >
               {/* Order ID + status */}
               <div className="flex items-start justify-between gap-2 mb-[8px]">
                 <div>
-                  <p className="text-[12px] font-medium text-[#0F1A2E] font-mono">
+                  <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] font-mono">
                     #{order.id.slice(0, 8).toUpperCase()}
                   </p>
                   <p className="text-[11px] text-[#A09E98] mt-[1px]">
@@ -132,10 +132,10 @@ export default async function ProductOrdersPage() {
 
               {/* Total + payment */}
               <div className="flex items-center justify-between">
-                <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
+                <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
                   {formatBRL(order.total_cents, order.currency)}
                 </p>
-                <span className="text-[11px] text-[#6B6A66]">
+                <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
                   {PAYMENT_STATUS_LABELS[order.payment_status]}
                 </span>
               </div>
@@ -145,14 +145,14 @@ export default async function ProductOrdersPage() {
 
               {/* Cobrança (pedidos não pagos) */}
               {order.payment_status !== "paid" && order.status !== "canceled" && order.total_cents > 0 && (
-                <div className="mt-[10px] pt-[10px] border-t border-black/[.05]">
+                <div className="mt-[10px] pt-[10px] border-t border-black/[.05] dark:border-white/[.05]">
                   <OrderChargeButtons orderId={order.id} asaasEnabled={asaasEnabled} />
                 </div>
               )}
 
               {/* Fulfillment (pago, ainda não entregue) */}
               {order.payment_status === "paid" && order.status === "paid" && (
-                <div className="mt-[10px] pt-[10px] border-t border-black/[.05]">
+                <div className="mt-[10px] pt-[10px] border-t border-black/[.05] dark:border-white/[.05]">
                   <OrderDeliverButton orderId={order.id} />
                 </div>
               )}

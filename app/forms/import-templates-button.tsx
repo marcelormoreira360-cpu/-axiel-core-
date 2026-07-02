@@ -57,7 +57,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition"
+        className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition"
       >
         <Download className="h-3 w-3" />
         {t("button", { count: remaining.length })}
@@ -71,16 +71,16 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
             onClick={() => setOpen(false)}
             className="absolute inset-0 bg-[#0F1A2E]/30 backdrop-blur-[2px]"
           />
-          <div className="relative w-full max-w-[520px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-5 max-h-[80vh] overflow-y-auto">
+          <div className="relative w-full max-w-[520px] bg-white dark:bg-[#111827] rounded-[16px] border border-black/[.08] dark:border-white/[.08] shadow-xl p-5 max-h-[80vh] overflow-y-auto">
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("library")}</p>
-                <h2 className="text-[16px] font-medium text-[#0F1A2E] mt-[2px]">{t("importValidated")}</h2>
+                <h2 className="text-[16px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mt-[2px]">{t("importValidated")}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -99,13 +99,13 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
                   <div
                     key={tpl.key}
                     className={`flex items-center gap-3 px-[12px] py-[10px] rounded-[10px] border transition ${
-                      isDone ? "border-[#0F6E56]/20 bg-[#F0FAF6]" : "border-black/[.07] bg-white"
+                      isDone ? "border-[#0F6E56]/20 bg-[#F0FAF6] dark:bg-[#0F6E56]/[.10]" : "border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827]"
                     }`}
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-[6px] mb-[2px]">
-                        <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{tpl.name}</p>
-                        <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-semibold ${TAG_COLORS[tpl.tag] ?? "bg-[#F4F3EF] text-[#6B6A66]"}`}>
+                        <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{tpl.name}</p>
+                        <span className={`shrink-0 rounded-full px-[6px] py-[1px] text-[9px] font-semibold ${TAG_COLORS[tpl.tag] ?? "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]"}`}>
                           {tpl.tag}
                         </span>
                       </div>
@@ -113,7 +113,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
                     </div>
 
                     {isDone ? (
-                      <div className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56]">
+                      <div className="shrink-0 flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB]">
                         <Check className="h-3.5 w-3.5" /> {t("imported")}
                       </div>
                     ) : (
@@ -133,7 +133,7 @@ export function ImportTemplatesButton({ available, actionEntries }: Props) {
             </div>
 
             {remaining.filter((k) => !done.includes(k)).length === 0 && catalog.length > 0 && (
-              <p className="mt-4 text-center text-[12px] text-[#0F6E56] font-medium">
+              <p className="mt-4 text-center text-[12px] text-[#0F6E56] dark:text-[#9FE1CB] font-medium">
                 {t("allImported")}
               </p>
             )}

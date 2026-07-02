@@ -78,12 +78,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
       <div className="flex items-center gap-[10px] mb-[20px] flex-wrap">
         <BackLink
           fallbackHref={`/patients/${appointment.patient_id}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
         <div className="flex-1">
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
             {patientName} · {t("subtitle")}
           </p>
@@ -101,7 +101,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         ) : (
           <Link
             href={teleconsultaHref}
-            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[12px] py-[7px] transition"
+            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] dark:bg-white/[.10] hover:bg-[#1a2d4a] dark:hover:bg-white/[.16] rounded-[8px] px-[12px] py-[7px] transition"
           >
             <Video className="h-3.5 w-3.5" />
             {teleconsultaLabel}
@@ -121,17 +121,17 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
 
       {/* Queixa principal + resumo do caso — fixos em toda sessão (Feature 2) */}
       {(patient?.chief_complaint || patient?.case_summary) && (
-        <div className="mb-5 bg-[#E1F5EE] border border-[#0F6E56]/20 rounded-[12px] p-[15px]">
+        <div className="mb-5 bg-[#E1F5EE] dark:bg-[#0F6E56]/[.10] border border-[#0F6E56]/20 rounded-[12px] p-[15px]">
           {patient?.chief_complaint && (
             <div className="mb-[8px]">
               <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("chiefComplaint")}</p>
-              <p className="text-[14px] font-medium text-[#0F1A2E]">{patient.chief_complaint}</p>
+              <p className="text-[14px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{patient.chief_complaint}</p>
             </div>
           )}
           {patient?.case_summary && (
             <div>
               <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("caseSummary")}</p>
-              <p className="text-[12px] text-[#3A4A42] leading-relaxed whitespace-pre-wrap">{patient.case_summary}</p>
+              <p className="text-[12px] text-[#3A4A42] dark:text-[#9E9C97] leading-relaxed whitespace-pre-wrap">{patient.case_summary}</p>
             </div>
           )}
         </div>
@@ -139,7 +139,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
 
       {/* Contexto do paciente — anamnese, assessments, última sessão */}
       {(intakeResponses.length > 0 || assessmentResponses.length > 0 || prevRecords.length > 0) && (
-        <div className="mb-5 bg-[#F8F7F4] border border-black/[.07] rounded-[12px] p-[15px]">
+        <div className="mb-5 bg-[#F8F7F4] dark:bg-white/[.04] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[12px]">
             {t("context")}
           </p>
@@ -148,12 +148,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {/* Última sessão — key observations */}
             {prevRecords.length > 0 && ((prevRecords[0].key_observations as string[] | null) ?? []).length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastSessionObs")}</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[5px]">{t("lastSessionObs")}</p>
                 <div className="space-y-[3px]">
                   {((prevRecords[0].key_observations as string[] | null) ?? []).slice(0, 3).map((obs, i) => (
                     <div key={i} className="flex gap-[7px] items-start">
                       <span className="w-1 h-1 rounded-full bg-[#0F6E56] mt-[5px] shrink-0" />
-                      <p className="text-[11px] text-[#6B6A66] leading-relaxed">{obs}</p>
+                      <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{obs}</p>
                     </div>
                   ))}
                 </div>
@@ -163,12 +163,12 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {/* Testes clínicos da última sessão */}
             {prevRecords.length > 0 && ((prevRecords[0].clinical_tests as { name: string; result: string; notes?: string }[] | null) ?? []).length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastSessionTests")}</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[5px]">{t("lastSessionTests")}</p>
                 <div className="space-y-[3px]">
                   {((prevRecords[0].clinical_tests as { name: string; result: string; notes?: string }[] | null) ?? []).slice(0, 6).map((ct, i) => (
                     <div key={i} className="flex gap-[6px] flex-wrap">
                       <span className="text-[10px] text-[#A09E98]">{ct.name}:</span>
-                      <span className="text-[10px] text-[#0F1A2E]">{ct.result || "—"}{ct.notes ? ` (${ct.notes})` : ""}</span>
+                      <span className="text-[10px] text-[#0F1A2E] dark:text-[#E8E6E2]">{ct.result || "—"}{ct.notes ? ` (${ct.notes})` : ""}</span>
                     </div>
                   ))}
                 </div>
@@ -178,7 +178,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {/* Assessment mais recente */}
             {assessmentResponses.length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">{t("lastForm")}</p>
+                <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[5px]">{t("lastForm")}</p>
                 {(() => {
                   const resp = assessmentResponses[0];
                   const pct = resp.score_percentage ?? 0;
@@ -188,7 +188,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                   return (
                     <div className="flex items-center gap-[10px]">
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] text-[#0F1A2E] truncate">{name}</p>
+                        <p className="text-[11px] text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{name}</p>
                         <p className="text-[10px] text-[#A09E98]">{filledDate}</p>
                       </div>
                       <div className="flex items-center gap-[6px] shrink-0">
@@ -200,13 +200,13 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                             {grade.label}
                           </span>
                         )}
-                        <div className="w-[60px] h-[4px] bg-[#E5E3DC] rounded-full overflow-hidden">
+                        <div className="w-[60px] h-[4px] bg-[#E5E3DC] dark:bg-white/[.10] rounded-full overflow-hidden">
                           <div
                             className={["h-full rounded-full", pct >= 70 ? "bg-[#FF6B4A]" : pct >= 40 ? "bg-[#F5A623]" : "bg-[#0F6E56]"].join(" ")}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
-                        <span className="text-[12px] font-medium text-[#0F1A2E]">{Math.round(pct)}%</span>
+                        <span className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{Math.round(pct)}%</span>
                       </div>
                     </div>
                   );
@@ -217,7 +217,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             {/* Anamnese — top 3 respostas */}
             {intakeResponses.length > 0 && (
               <div>
-                <p className="text-[11px] font-medium text-[#0F1A2E] mb-[5px]">
+                <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[5px]">
                   {t("intake")} <span className="font-normal text-[#A09E98]">{t("intakeCount", { count: intakeResponses.length })}</span>
                 </p>
                 <div className="space-y-[4px]">
@@ -228,7 +228,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
                     return (
                       <div key={r.id} className="flex gap-[6px] flex-wrap">
                         <span className="text-[10px] text-[#A09E98]">{label}:</span>
-                        <span className="text-[10px] text-[#0F1A2E]">{answer.slice(0, 80)}{answer.length > 80 ? "…" : ""}</span>
+                        <span className="text-[10px] text-[#0F1A2E] dark:text-[#E8E6E2]">{answer.slice(0, 80)}{answer.length > 80 ? "…" : ""}</span>
                       </div>
                     );
                   })}
@@ -260,7 +260,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
       )}
 
       {/* Pós-atendimento: cobrança da sessão + agendar retorno em um lugar só */}
-      <div className="mt-6 bg-white border border-black/[.07] rounded-[12px] p-[15px]">
+      <div className="mt-6 bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
         <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[10px]">
           {t("wrapUpTitle")}
         </p>
@@ -272,7 +272,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
               </span>
             ) : (
               <>
-                <p className="text-[11px] text-[#6B6A66] mb-[6px]">{t("chargeHint")}</p>
+                <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] mb-[6px]">{t("chargeHint")}</p>
                 <div className="w-full sm:max-w-[420px] [&>div]:text-left">
                   <ChargeSessionButton appointmentId={id} />
                 </div>
@@ -281,7 +281,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
           </div>
           <Link
             href={`/schedule/new?patient_id=${appointment.patient_id}`}
-            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[12px] py-[7px] transition shrink-0"
+            className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] dark:bg-white/[.10] hover:bg-[#1a2d4a] dark:hover:bg-white/[.16] rounded-[8px] px-[12px] py-[7px] transition shrink-0"
           >
             <CalendarPlus className="h-3.5 w-3.5" />
             {t("scheduleFollowUp")}

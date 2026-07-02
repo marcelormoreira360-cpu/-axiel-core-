@@ -55,7 +55,7 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
         </BackLink>
         <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
+            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold dark:text-[#9FE1CB]">{t("eyebrow")}</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{lead.full_name}</h1>
             <p className="mt-3 text-black/55">{leadStageLabels[lead.stage]} · {lead.source}</p>
           </div>
@@ -63,7 +63,7 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
             {lead.converted_patient_id ? (
               <Link
                 href={`/patients/${lead.converted_patient_id}`}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-700 shadow-sm transition hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-6 py-4 text-sm font-semibold text-emerald-700 dark:text-emerald-400 shadow-sm transition hover:-translate-y-0.5"
               >
                 <UserCheck className="h-4 w-4" />
                 {t("openPatient")}
@@ -79,7 +79,7 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
       {lead.converted_patient_id ? null : (
         <Card className="mb-4 flex flex-col gap-4 border-axiel-line bg-white p-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-axiel-gold">{t("convertCard.eyebrow")}</p>
+            <p className="text-sm font-semibold text-axiel-gold dark:text-[#9FE1CB]">{t("convertCard.eyebrow")}</p>
             <p className="mt-1 text-lg font-semibold tracking-tight">{t("convertCard.title")}</p>
             <p className="mt-1 text-sm text-black/50">{t("convertCard.helper")}</p>
           </div>
@@ -90,8 +90,8 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
       <section className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <Card className="p-6">
           <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-axiel-soft">
-              <UserRound className="h-5 w-5 text-axiel-gold" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-axiel-soft dark:bg-white/[.04]">
+              <UserRound className="h-5 w-5 text-axiel-gold dark:text-[#9FE1CB]" />
             </div>
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">{t("contact.title")}</h2>
@@ -136,8 +136,8 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
 
           <Card className="p-6">
             <div className="mb-4 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-axiel-soft">
-                <Send className="h-5 w-5 text-axiel-gold" />
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-axiel-soft dark:bg-white/[.04]">
+                <Send className="h-5 w-5 text-axiel-gold dark:text-[#9FE1CB]" />
               </div>
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">{t("send.title")}</h2>

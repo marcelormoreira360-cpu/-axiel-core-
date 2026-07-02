@@ -79,7 +79,7 @@ export function AiInsightReviewCard({ patientId, insight, liveId }: { patientId:
         <form action={generateAction}>
           <button
             type="submit"
-            className="rounded-xl px-4 py-3 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 hover:text-axiel-text-primary"
+            className="rounded-xl px-4 py-3 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]"
           >
             <span className="inline-flex items-center gap-2">
               <RefreshCw className="h-3.5 w-3.5" /> New draft
@@ -90,15 +90,15 @@ export function AiInsightReviewCard({ patientId, insight, liveId }: { patientId:
         <DeleteInsightButton patientId={patientId} insightId={insight.id} />
       </div>
 
-      <p className="rounded-xl bg-yellow-50 px-4 py-3 text-xs font-medium text-yellow-800">{AI_INSIGHT_LABEL}</p>
+      <p className="rounded-xl bg-yellow-50 dark:bg-yellow-500/10 px-4 py-3 text-xs font-medium text-yellow-800 dark:text-yellow-300">{AI_INSIGHT_LABEL}</p>
 
-      <details className="group rounded-xl bg-gray-50 px-4 py-3 text-sm text-axiel-text-secondary">
+      <details className="group rounded-xl bg-gray-50 dark:bg-white/[.05] px-4 py-3 text-sm text-axiel-text-secondary">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-axiel-text-primary">
           <span>View details</span>
           <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
         </summary>
 
-        <div className="mt-4 space-y-4 border-t border-gray-100 pt-4">
+        <div className="mt-4 space-y-4 border-t border-gray-100 dark:border-white/[.08] pt-4">
           {output?.structured_summary?.key_context?.length ? (
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-axiel-text-secondary">Key context</p>

@@ -37,12 +37,12 @@ export function FinanceAIPanel({ initial }: Props) {
   }
 
   return (
-    <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
+    <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05] dark:border-white/[.05]">
         <div className="flex items-center gap-2">
           <Sparkles className="h-[14px] w-[14px] text-[#0F6E56]" />
-          <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
+          <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</p>
           {insight && (
             <span className="text-[10px] text-[#A09E98]">· {timeAgo(insight.generated_at)}</span>
           )}
@@ -69,7 +69,7 @@ export function FinanceAIPanel({ initial }: Props) {
             <Sparkles className="h-5 w-5 text-[#0F6E56]" />
           </div>
           <div>
-            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("emptyTitle")}</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("emptyTitle")}</p>
             <p className="text-[11px] text-[#A09E98] mt-0.5 max-w-[220px]">
               {t("emptyDesc")}
             </p>
@@ -77,7 +77,7 @@ export function FinanceAIPanel({ initial }: Props) {
           <button
             onClick={handleGenerate}
             disabled={isPending}
-            className="rounded-lg bg-[#0B1F3A] px-4 py-1.5 text-[11px] font-medium text-white hover:bg-black transition disabled:opacity-50"
+            className="rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-4 py-1.5 text-[11px] font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition disabled:opacity-50"
           >
             {t("generateNow")}
           </button>
@@ -92,10 +92,10 @@ export function FinanceAIPanel({ initial }: Props) {
       )}
 
       {insight && (
-        <div className="divide-y divide-black/[.04]">
+        <div className="divide-y divide-black/[.04] dark:divide-white/[.05]">
           {/* Summary */}
           <div className="px-4 py-3">
-            <p className="text-[11px] text-[#6B6A66] leading-relaxed">{insight.summary}</p>
+            <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{insight.summary}</p>
           </div>
 
           {/* Alerts */}
@@ -109,7 +109,7 @@ export function FinanceAIPanel({ initial }: Props) {
                 {insight.alerts.map((a, i) => (
                   <li key={i} className="flex items-start gap-1.5">
                     <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-amber-400" />
-                    <p className="text-[11px] text-[#6B6A66] leading-relaxed">{a}</p>
+                    <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{a}</p>
                   </li>
                 ))}
               </ul>
@@ -127,7 +127,7 @@ export function FinanceAIPanel({ initial }: Props) {
                 {insight.opportunities.map((o, i) => (
                   <li key={i} className="flex items-start gap-1.5">
                     <span className="mt-1 h-1 w-1 shrink-0 rounded-full bg-[#0F6E56]" />
-                    <p className="text-[11px] text-[#6B6A66] leading-relaxed">{o}</p>
+                    <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{o}</p>
                   </li>
                 ))}
               </ul>
@@ -144,10 +144,10 @@ export function FinanceAIPanel({ initial }: Props) {
               <ol className="space-y-1">
                 {insight.suggestions.map((s, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F4F3EF] text-[9px] font-bold text-[#0F1A2E]">
+                    <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F4F3EF] dark:bg-white/[.06] text-[9px] font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">
                       {i + 1}
                     </span>
-                    <p className="text-[11px] text-[#6B6A66] leading-relaxed">{s}</p>
+                    <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{s}</p>
                   </li>
                 ))}
               </ol>
@@ -156,12 +156,12 @@ export function FinanceAIPanel({ initial }: Props) {
 
           {/* Projection */}
           {insight.projection && (
-            <div className="px-4 py-3 bg-[#FAFAF8]">
+            <div className="px-4 py-3 bg-[#FAFAF8] dark:bg-white/[.03]">
               <div className="flex items-center gap-1.5 mb-1">
                 <TrendingUp className="h-[11px] w-[11px] text-[#0B1F3A]" />
                 <p className="text-[10px] font-semibold uppercase tracking-[.06em] text-[#0B1F3A]">{t("projection")}</p>
               </div>
-              <p className="text-[11px] text-[#6B6A66] leading-relaxed">{insight.projection}</p>
+              <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{insight.projection}</p>
             </div>
           )}
         </div>

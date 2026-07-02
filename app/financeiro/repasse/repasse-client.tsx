@@ -83,21 +83,21 @@ export function RepasseClient({ rules, history, professionals }: Props) {
       )}
 
       {/* ── Regras de repasse ── */}
-      <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05]">
+      <div className="rounded-2xl border border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827] overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05] dark:border-white/[.05]">
           <div>
-            <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("rulesTitle")}</p>
+            <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("rulesTitle")}</p>
             <p className="text-[11px] text-[#A09E98] mt-0.5">{t("rulesDesc")}</p>
           </div>
         </div>
 
         {/* Existing rules */}
         {rules.length > 0 && (
-          <div className="divide-y divide-black/[.04]">
+          <div className="divide-y divide-black/[.04] dark:divide-white/[.05]">
             {rules.map((rule) => (
               <div key={rule.id} className="flex items-center justify-between px-5 py-3">
                 <div>
-                  <p className="text-[13px] font-medium text-[#0F1A2E]">{rule.professional_name ?? rule.user_id}</p>
+                  <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{rule.professional_name ?? rule.user_id}</p>
                   <p className="text-[11px] text-[#A09E98]">{rule.professional_email ?? ""}</p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -117,12 +117,12 @@ export function RepasseClient({ rules, history, professionals }: Props) {
 
         {/* Add new rule */}
         {available.length > 0 && (
-          <form onSubmit={handleSaveRule} className="px-5 py-4 border-t border-black/[.04] bg-[#FAFAF8]">
-            <p className="text-[11px] font-medium text-[#0F1A2E] mb-3">{t("addPro")}</p>
+          <form onSubmit={handleSaveRule} className="px-5 py-4 border-t border-black/[.04] dark:border-white/[.04] bg-[#FAFAF8] dark:bg-white/[.03]">
+            <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-3">{t("addPro")}</p>
             <div className="flex items-end gap-3 flex-wrap">
               <div className="flex-1 min-w-[180px]">
                 <label className="text-[11px] text-[#A09E98] mb-1 block">{t("professional")}</label>
-                <select name="user_id" required className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none">
+                <select name="user_id" required className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none">
                   <option value="">{t("select")}</option>
                   {available.map((p) => (
                     <option key={p.id} value={p.id}>{p.full_name ?? p.email ?? p.id}</option>
@@ -139,13 +139,13 @@ export function RepasseClient({ rules, history, professionals }: Props) {
                   step="0.5"
                   placeholder="60"
                   required
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                  className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none"
                 />
               </div>
               <button
                 type="submit"
                 disabled={isPending}
-                className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-medium text-white hover:bg-black transition disabled:opacity-50"
+                className="rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-4 py-2 text-sm font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition disabled:opacity-50"
               >
                 {t("save")}
               </button>
@@ -162,10 +162,10 @@ export function RepasseClient({ rules, history, professionals }: Props) {
 
       {/* ── Calcular repasse do mês ── */}
       {rules.length > 0 && (
-        <div className="rounded-2xl border border-black/[.07] bg-white p-5">
+        <div className="rounded-2xl border border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827] p-5">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("calcTitle")}</p>
+              <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("calcTitle")}</p>
               <p className="text-[11px] text-[#A09E98] mt-0.5">
                 {t("calcDesc", { month: currentMonth })}
               </p>
@@ -173,7 +173,7 @@ export function RepasseClient({ rules, history, professionals }: Props) {
             <button
               onClick={handleCalculate}
               disabled={isPending}
-              className="rounded-lg bg-[#0B1F3A] px-4 py-2 text-sm font-medium text-white hover:bg-black transition disabled:opacity-50"
+              className="rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-4 py-2 text-sm font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition disabled:opacity-50"
             >
               {isPending ? t("calculating") : t("calcNow")}
             </button>
@@ -183,30 +183,30 @@ export function RepasseClient({ rules, history, professionals }: Props) {
 
       {/* ── Histórico ── */}
       {history.length > 0 && (
-        <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
-          <div className="px-5 py-4 border-b border-black/[.05]">
-            <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("historyTitle")}</p>
+        <div className="rounded-2xl border border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827] overflow-hidden">
+          <div className="px-5 py-4 border-b border-black/[.05] dark:border-white/[.05]">
+            <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("historyTitle")}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-black/[.05] bg-[#FAFAF8]">
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colPro")}</th>
-                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colMonth")}</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colSessions")}</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colGross")}</th>
-                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colRepasse")}</th>
-                  <th className="px-5 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-black/40">{t("colStatus")}</th>
+                <tr className="border-b border-black/[.05] dark:border-white/[.05] bg-[#FAFAF8] dark:bg-white/[.03]">
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colPro")}</th>
+                  <th className="px-5 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colMonth")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colSessions")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colGross")}</th>
+                  <th className="px-5 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colRepasse")}</th>
+                  <th className="px-5 py-2.5 text-center text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">{t("colStatus")}</th>
                   <th className="px-5 py-2.5" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[.04]">
+              <tbody className="divide-y divide-black/[.04] dark:divide-white/[.05]">
                 {history.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-[#FAFAF8] transition">
-                    <td className="px-5 py-3 text-[12px] font-medium text-[#0F1A2E]">{entry.professional_name ?? "—"}</td>
-                    <td className="px-5 py-3 text-[12px] text-[#6B6A66]">{entry.period_month}</td>
-                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E]">{entry.sessions_count}</td>
-                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E]">{money(entry.gross_revenue_cents)}</td>
+                  <tr key={entry.id} className="hover:bg-[#FAFAF8] dark:hover:bg-white/[.03] transition">
+                    <td className="px-5 py-3 text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{entry.professional_name ?? "—"}</td>
+                    <td className="px-5 py-3 text-[12px] text-[#6B6A66] dark:text-[#9E9C97]">{entry.period_month}</td>
+                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E] dark:text-[#E8E6E2]">{entry.sessions_count}</td>
+                    <td className="px-5 py-3 text-[12px] text-right text-[#0F1A2E] dark:text-[#E8E6E2]">{money(entry.gross_revenue_cents)}</td>
                     <td className="px-5 py-3 text-[13px] font-semibold text-right text-[#0F6E56]">{money(entry.repasse_cents)}</td>
                     <td className="px-5 py-3 text-center">
                       <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-medium ${

@@ -23,7 +23,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
     <Shell>
       <Link
         href={`/patients/${id}`}
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
+        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         {patient.full_name}
@@ -44,7 +44,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               name="full_name"
               required
               defaultValue={patient.full_name}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
 
@@ -57,7 +57,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="email"
                 defaultValue={patient.email ?? ""}
                 placeholder={t("emailPh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
@@ -67,7 +67,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="phone"
                 defaultValue={patient.phone ?? ""}
                 placeholder={t("phonePh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
           </div>
@@ -80,7 +80,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               name="cpf"
               defaultValue={patient.cpf ?? ""}
               placeholder={t("cpfPh")}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
 
@@ -92,7 +92,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 type="date"
                 name="date_of_birth"
                 defaultValue={patient.date_of_birth ?? ""}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
@@ -100,7 +100,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               <select
                 name="status"
                 defaultValue={patient.status}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
               >
                 <option value="active">{t("statusActive")}</option>
                 <option value="inactive">{t("statusInactive")}</option>
@@ -118,7 +118,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="sex"
                 defaultValue={patient.sex ?? ""}
                 placeholder={t("sexPh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
@@ -128,7 +128,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="city"
                 defaultValue={patient.city ?? ""}
                 placeholder={t("cityPh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
@@ -139,7 +139,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="weight_kg"
                 defaultValue={patient.weight_kg ?? ""}
                 placeholder={t("weightPh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
             <div>
@@ -150,7 +150,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 name="height_cm"
                 defaultValue={patient.height_cm ?? ""}
                 placeholder={t("heightPh")}
-                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
           </div>
@@ -161,7 +161,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             <select
               name="locale"
               defaultValue={patient.locale ?? ""}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
             >
               <option value="">{t("localeAuto")}</option>
               <option value="pt-BR">{t("localePtBR")}</option>
@@ -178,7 +178,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               rows={4}
               defaultValue={patient.notes ?? ""}
               placeholder={t("notesPh")}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
             />
           </div>
 
@@ -188,7 +188,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             <select
               name="referred_by_patient_id"
               defaultValue={patient.referred_by_patient_id ?? ""}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
             >
               <option value="">{t("referredByNone")}</option>
               {referrerOptions.map((p) => (
@@ -207,7 +207,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </button>
             <Link
               href={`/patients/${id}`}
-              className="text-[13px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] rounded-[8px] px-[20px] py-[9px] transition"
+              className="text-[13px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-[8px] px-[20px] py-[9px] transition"
             >
               {t("cancel")}
             </Link>
@@ -216,9 +216,9 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
       </div>
 
       {/* ── Zona de perigo (LGPD) ──────────────────────────────────────────── */}
-      <div className="bg-white border border-red-100 rounded-[12px] overflow-hidden max-w-xl mt-6">
-        <div className="px-[20px] py-[16px] border-b border-red-100 bg-red-50/40">
-          <p className="text-[14px] font-semibold text-red-700">{t("dangerTitle")}</p>
+      <div className="bg-white border border-red-100 dark:border-red-500/25 rounded-[12px] overflow-hidden max-w-xl mt-6">
+        <div className="px-[20px] py-[16px] border-b border-red-100 dark:border-red-500/25 bg-red-50/40 dark:bg-red-500/[.08]">
+          <p className="text-[14px] font-semibold text-red-700 dark:text-red-400">{t("dangerTitle")}</p>
           <p className="text-[11px] text-red-500 mt-[2px]">
             {t("dangerSubtitle")}
           </p>
@@ -238,7 +238,7 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                   e.preventDefault();
                 }
               }}
-              className="shrink-0 text-[12px] font-medium text-red-600 border border-red-200 bg-white hover:bg-red-50 rounded-[8px] px-[14px] py-[7px] transition whitespace-nowrap"
+              className="shrink-0 text-[12px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 bg-white hover:bg-red-50 dark:hover:bg-red-500/10 rounded-[8px] px-[14px] py-[7px] transition whitespace-nowrap"
             >
               {t("anonymizeBtn")}
             </button>

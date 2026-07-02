@@ -28,20 +28,20 @@ export default async function NfsePage() {
     return (
       <Shell>
         <div className="mb-7">
-          <BackLink fallbackHref="/financeiro" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+          <BackLink fallbackHref="/financeiro" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 dark:text-white/45 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
             <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
           </BackLink>
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
         </div>
-        <div className="rounded-2xl border border-black/[.07] bg-white p-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#F4F3EF]">
+        <div className="rounded-2xl border border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827] p-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#F4F3EF] dark:bg-white/[.06]">
             <Settings className="h-6 w-6 text-[#A09E98]" />
           </div>
-          <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("notConfigured")}</p>
+          <p className="text-[14px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("notConfigured")}</p>
           <p className="text-[12px] text-[#A09E98] mt-1 mb-5">{t("notConfiguredDesc")}</p>
           <Link
             href="/settings/integrations/nfse"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-5 py-2 text-[12px] font-medium text-white hover:bg-black transition"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-5 py-2 text-[12px] font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition"
           >
             <Settings className="h-3.5 w-3.5" />
             {t("configure")}
@@ -58,18 +58,18 @@ export default async function NfsePage() {
   return (
     <Shell>
       <div className="mb-7">
-        <BackLink fallbackHref="/financeiro" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition">
+        <BackLink fallbackHref="/financeiro" className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 dark:text-white/45 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
           <ArrowLeft className="h-3.5 w-3.5" /> Financeiro
         </BackLink>
         <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
-            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 dark:text-white/35">{t("eyebrow")}</p>
+            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
             <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
           </div>
           <Link
             href="/settings/integrations/nfse"
-            className="flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition"
+            className="flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             <Settings className="h-3.5 w-3.5" />
             {t("settings")}
@@ -84,9 +84,9 @@ export default async function NfsePage() {
           { label: t("kpiTotal"), value: (totalCents / 100).toLocaleString(locale, { style: "currency", currency: __cur }) },
           { label: t("kpiProcessing"), value: totalProcessing },
         ].map((m) => (
-          <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-4">
+          <div key={m.label} className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] p-4">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-1">{m.label}</p>
-            <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">{m.value}</p>
+            <p className="text-[20px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">{m.value}</p>
           </div>
         ))}
       </div>

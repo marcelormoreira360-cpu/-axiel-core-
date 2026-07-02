@@ -24,7 +24,7 @@ export function FormQuestionCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="rounded-2xl border border-axiel-line bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-axiel-line bg-white dark:bg-[#111827] p-5 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-axiel-text-primary">Question {index + 1}</p>
         <ButtonSecondary type="button" className="px-3 py-2 text-sm" onClick={onRemove} aria-label="Remove question">
@@ -37,7 +37,7 @@ export function FormQuestionCard({
           <span className="text-sm font-medium text-axiel-text-secondary">Question</span>
           <input
             name="question_label"
-            className="mt-2 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+            className="mt-2 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
             value={question.label}
             onChange={(event) => onChange({ ...question, label: event.target.value })}
             placeholder="Write a simple question"
@@ -48,7 +48,7 @@ export function FormQuestionCard({
           <span className="text-sm font-medium text-axiel-text-secondary">Type</span>
           <select
             name="question_type"
-            className="mt-2 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+            className="mt-2 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
             value={question.question_type}
             onChange={(event) => onChange({ ...question, question_type: event.target.value as FormQuestionType })}
           >
@@ -63,7 +63,7 @@ export function FormQuestionCard({
         <label className="mt-4 block">
           <span className="text-sm font-medium text-axiel-text-secondary">Options</span>
           <input
-            className="mt-2 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+            className="mt-2 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
             value={question.options}
             onChange={(event) => onChange({ ...question, options: event.target.value })}
             placeholder="Option A, Option B, Option C"

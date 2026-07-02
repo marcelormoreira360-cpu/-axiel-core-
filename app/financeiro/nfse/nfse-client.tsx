@@ -18,7 +18,7 @@ interface Props {
 const STATUS_CLS: Record<string, string> = {
   processing: "bg-amber-50 text-amber-600",
   issued:     "bg-[#E1F5EE] text-[#0F6E56]",
-  cancelled:  "bg-[#F4F3EF] text-[#A09E98] line-through",
+  cancelled:  "bg-[#F4F3EF] dark:bg-white/[.06] text-[#A09E98] line-through",
   error:      "bg-red-50 text-red-600",
 };
 
@@ -99,7 +99,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
       <div className="flex justify-end">
         <button
           onClick={() => { setShowModal(true); setError(null); setCpfValue(""); setCpfError(null); }}
-          className="flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-4 py-2 text-[12px] font-medium text-white hover:bg-black transition"
+          className="flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-4 py-2 text-[12px] font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition"
         >
           <Plus className="h-3.5 w-3.5" />
           {t("emit")}
@@ -107,9 +107,9 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
       </div>
 
       {/* Invoices table */}
-      <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
-        <div className="px-5 py-4 border-b border-black/[.05]">
-          <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("issuedTitle")}</p>
+      <div className="rounded-2xl border border-black/[.07] dark:border-white/[.07] bg-white dark:bg-[#111827] overflow-hidden">
+        <div className="px-5 py-4 border-b border-black/[.05] dark:border-white/[.05]">
+          <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("issuedTitle")}</p>
         </div>
 
         {invoices.length === 0 ? (
@@ -121,7 +121,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-black/[.05] bg-[#FAFAF8]">
+                <tr className="border-b border-black/[.05] dark:border-white/[.05] bg-[#FAFAF8] dark:bg-white/[.03]">
                   {[
                     { label: t("colDate"), right: false },
                     { label: t("colBorrower"), right: false },
@@ -130,26 +130,26 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                     { label: t("colStatus"), right: false },
                     { label: "", right: false },
                   ].map((h, i) => (
-                    <th key={i} className={`px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/40 ${h.right ? "text-right" : "text-left"}`}>{h.label}</th>
+                    <th key={i} className={`px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-black/40 dark:text-white/40 ${h.right ? "text-right" : "text-left"}`}>{h.label}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/[.04]">
+              <tbody className="divide-y divide-black/[.04] dark:divide-white/[.05]">
                 {invoices.map((inv) => {
                   const stCls = STATUS_CLS[inv.status] ?? STATUS_CLS.processing;
                   return (
-                    <tr key={inv.id} className="hover:bg-[#FAFAF8] transition">
-                      <td className="px-4 py-3 text-[12px] text-[#6B6A66] whitespace-nowrap">
+                    <tr key={inv.id} className="hover:bg-[#FAFAF8] dark:hover:bg-white/[.03] transition">
+                      <td className="px-4 py-3 text-[12px] text-[#6B6A66] dark:text-[#9E9C97] whitespace-nowrap">
                         {new Date(inv.created_at).toLocaleDateString(locale)}
                       </td>
-                      <td className="px-4 py-3 text-[12px] font-medium text-[#0F1A2E]">
+                      <td className="px-4 py-3 text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">
                         {inv.borrower_name ?? "—"}
                         {inv.borrower_cpf && <span className="text-[10px] text-[#A09E98] ml-1">({inv.borrower_cpf})</span>}
                       </td>
-                      <td className="px-4 py-3 text-[12px] font-semibold text-right text-[#0F1A2E]">
+                      <td className="px-4 py-3 text-[12px] font-semibold text-right text-[#0F1A2E] dark:text-[#E8E6E2]">
                         {money(inv.amount_cents)}
                       </td>
-                      <td className="px-4 py-3 text-[12px] text-right text-[#6B6A66]">
+                      <td className="px-4 py-3 text-[12px] text-right text-[#6B6A66] dark:text-[#9E9C97]">
                         {inv.nfse_number ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -177,7 +177,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                             <button
                               onClick={() => handleSync(inv.id)}
                               disabled={isPending}
-                              className="flex items-center gap-1 text-[11px] text-[#A09E98] hover:text-[#0F1A2E] transition disabled:opacity-50"
+                              className="flex items-center gap-1 text-[11px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition disabled:opacity-50"
                               title={t("syncTitle")}
                             >
                               <RefreshCw className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`} />
@@ -206,10 +206,10 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
       {/* Emit modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.07]">
-              <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("modalTitle")}</p>
-              <button onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+          <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-xl w-full max-w-md">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.07] dark:border-white/[.07]">
+              <p className="text-[14px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("modalTitle")}</p>
+              <button onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -221,9 +221,9 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Patient selector */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("patientOpt")}</label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("patientOpt")}</label>
                 <select
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                  className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none"
                   value={selectedPatientId}
                   onChange={(e) => setSelectedPatientId(e.target.value)}
                 >
@@ -237,50 +237,50 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Borrower name */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("borrowerName")} <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("borrowerName")} <span className="text-red-400">*</span></label>
                 <input
                   name="borrower_name"
                   required
                   defaultValue={selectedPatient?.full_name ?? ""}
                   key={selectedPatientId + "_name"}
                   placeholder={t("borrowerNamePlaceholder")}
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                  className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 {/* CPF */}
                 <div>
-                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("cpfOpt")}</label>
+                  <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("cpfOpt")}</label>
                   <input
                     name="borrower_cpf"
                     value={cpfValue}
                     onChange={handleCpfChange}
                     placeholder="000.000.000-00"
                     inputMode="numeric"
-                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${cpfError ? "border-red-400" : "border-black/15"}`}
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none ${cpfError ? "border-red-400" : "border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2]"}`}
                   />
                   {cpfError && <p className="text-[10px] text-red-500 mt-1">{cpfError}</p>}
                 </div>
                 {/* Email */}
                 <div>
-                  <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("emailOpt")}</label>
+                  <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("emailOpt")}</label>
                   <input
                     name="borrower_email"
                     type="email"
                     defaultValue={selectedPatient?.email ?? ""}
                     key={selectedPatientId + "_email"}
                     placeholder={t("emailPlaceholder")}
-                    className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                    className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none"
                   />
                 </div>
               </div>
 
               {/* Amount */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("amount")} <span className="text-red-400">*</span></label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("amount")} <span className="text-red-400">*</span></label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#6B6A66]">R$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[13px] text-[#6B6A66] dark:text-[#9E9C97]">R$</span>
                   <input
                     name="amount_reais"
                     required
@@ -288,7 +288,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                     min="0.01"
                     step="0.01"
                     placeholder="0,00"
-                    className="w-full rounded-lg border border-black/15 pl-9 pr-3 py-2 text-sm focus:outline-none"
+                    className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] pl-9 pr-3 py-2 text-sm focus:outline-none"
                   />
                 </div>
                 <p className="text-[10px] text-[#A09E98] mt-1">{t("amountHint")}</p>
@@ -296,11 +296,11 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
 
               {/* Service description */}
               <div>
-                <label className="block text-[11px] font-medium text-[#6B6A66] mb-1.5">{t("serviceDesc")}</label>
+                <label className="block text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5">{t("serviceDesc")}</label>
                 <input
                   name="service_description"
                   defaultValue={defaultServiceDescription}
-                  className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none"
+                  className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none"
                 />
               </div>
 
@@ -308,14 +308,14 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
                 <button
                   type="button"
                   onClick={() => { setShowModal(false); setCpfValue(""); setCpfError(null); }}
-                  className="flex-1 rounded-lg border border-black/15 py-2 text-[12px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+                  className="flex-1 rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] py-2 text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
                 >
                   {t("cancel")}
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 rounded-lg bg-[#0B1F3A] py-2 text-[12px] font-medium text-white hover:bg-black transition disabled:opacity-50"
+                  className="flex-1 rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] py-2 text-[12px] font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition disabled:opacity-50"
                 >
                   {isPending ? t("emitting") : t("emit")}
                 </button>

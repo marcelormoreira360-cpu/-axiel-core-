@@ -16,9 +16,9 @@ const sourceLabels: Record<string, string> = {
 };
 
 const stageColors: Record<LeadStage, { dot: string; badge: string }> = {
-  new_lead:             { dot: "bg-[#0F6E56]",  badge: "bg-[#E1F5EE] text-[#085041]" },
-  contacted:            { dot: "bg-[#0C447C]",  badge: "bg-[#E6F1FB] text-[#0C447C]" },
-  scheduled:            { dot: "bg-[#633806]",  badge: "bg-[#FAEEDA] text-[#633806]" },
+  new_lead:             { dot: "bg-[#0F6E56]",  badge: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]" },
+  contacted:            { dot: "bg-[#0C447C]",  badge: "bg-[#E6F1FB] dark:bg-[#3B6BE4]/[.15] text-[#0C447C] dark:text-[#8FBFF5]" },
+  scheduled:            { dot: "bg-[#633806]",  badge: "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]" },
   converted_to_patient: { dot: "bg-[#A09E98]",  badge: "bg-[#F4F3EF] text-[#6B6A66]" },
 };
 
@@ -46,7 +46,7 @@ function LeadCard({
       draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className="bg-white border border-black/[.07] rounded-[10px] px-[13px] py-[11px] cursor-grab active:cursor-grabbing hover:border-black/[.14] hover:shadow-sm transition group"
+      className="bg-white border border-black/[.07] rounded-[10px] px-[13px] py-[11px] cursor-grab active:cursor-grabbing hover:border-black/[.14] dark:hover:border-white/[.14] hover:shadow-sm transition group"
     >
       <Link href={`/leads/${lead.id}`} className="block">
         <div className="flex items-center gap-[9px] mb-[7px]">
@@ -133,8 +133,8 @@ export function LeadPipelineBoard({ leads }: { leads: Lead[] }) {
               className={[
                 "rounded-[12px] border p-[12px] min-h-[400px] transition",
                 isActive
-                  ? "border-[#0F6E56]/30 bg-[#F0FAF6]"
-                  : "border-black/[.07] bg-[#F4F3EF]/60",
+                  ? "border-[#0F6E56]/30 bg-[#F0FAF6] dark:bg-[#0F6E56]/[.10]"
+                  : "border-black/[.07] bg-[#F4F3EF]/60 dark:bg-white/[.04]",
               ].join(" ")}
             >
               {/* Column header */}
@@ -161,7 +161,7 @@ export function LeadPipelineBoard({ leads }: { leads: Lead[] }) {
                 ))}
 
                 {column.leads.length === 0 && (
-                  <div className="flex items-center justify-center h-[80px] rounded-[8px] border border-dashed border-black/[.10]">
+                  <div className="flex items-center justify-center h-[80px] rounded-[8px] border border-dashed border-black/[.10] dark:border-white/[.10]">
                     <p className="text-[11px] text-[#A09E98]">Drop here</p>
                   </div>
                 )}

@@ -45,10 +45,10 @@ export function RegisterPaymentModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#111827] p-6 shadow-xl">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#0F1A2E]">{t("title")}</h2>
-          <button onClick={onClose} className="text-black/35 hover:text-[#0F1A2E] transition">
+          <h2 className="text-lg font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h2>
+          <button onClick={onClose} className="text-black/35 dark:text-white/35 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
@@ -61,12 +61,12 @@ export function RegisterPaymentModal({
 
           {/* Paciente */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("patient")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("patient")}</label>
             <select
               name="patient_id"
               defaultValue={defaultPatientId}
               required
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
+              className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
             >
               <option value="">{t("selectPatient")}</option>
               {patients.map((p) => (
@@ -77,9 +77,9 @@ export function RegisterPaymentModal({
 
           {/* Valor */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("amount")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("amount")}</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/40">R$</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-black/40 dark:text-white/40">R$</span>
               <input
                 name="amount"
                 type="text"
@@ -87,19 +87,19 @@ export function RegisterPaymentModal({
                 defaultValue={defaultAmountStr}
                 placeholder="0,00"
                 required
-                className="w-full rounded-lg border border-black/15 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
+                className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
               />
             </div>
           </div>
 
           {/* Forma de pagamento */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("method")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("method")}</label>
             <div className="grid grid-cols-2 gap-2">
               {METHOD_KEYS.map((m) => (
                 <label
                   key={m}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm has-[:checked]:border-[#0B1F3A] has-[:checked]:bg-[#0B1F3A]/[.04] transition"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-3 py-2 text-sm has-[:checked]:border-[#0B1F3A] has-[:checked]:bg-[#0B1F3A]/[.04] transition"
                 >
                   <input type="radio" name="payment_method" value={m} required className="accent-[#0B1F3A]" />
                   {tm(m)}
@@ -110,35 +110,35 @@ export function RegisterPaymentModal({
 
           {/* Data */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("date")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("date")}</label>
             <input
               name="paid_at"
               type="date"
               defaultValue={new Date().toISOString().slice(0, 10)}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
+              className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
             />
           </div>
 
           {/* Notas */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("notes")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("notes")}</label>
             <input
               name="notes"
               type="text"
               placeholder={t("notesPlaceholder")}
-              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
+              className="w-full rounded-lg border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0B1F3A]/20"
             />
           </div>
 
           {/* Situação: recebido x pendente (conciliação manual) */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("status")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("status")}</label>
             <div className="grid grid-cols-2 gap-2">
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm has-[:checked]:border-[#0F6E56] has-[:checked]:bg-[#0F6E56]/[.05] transition">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-3 py-2 text-sm has-[:checked]:border-[#0F6E56] has-[:checked]:bg-[#0F6E56]/[.05] transition">
                 <input type="radio" name="status" value="paid" defaultChecked className="accent-[#0F6E56]" />
                 {t("statusPaid")}
               </label>
-              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 px-3 py-2 text-sm has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 transition">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-black/10 dark:border-white/10 px-3 py-2 text-sm has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50 transition">
                 <input type="radio" name="status" value="pending" className="accent-amber-500" />
                 {t("statusPending")}
               </label>
@@ -148,12 +148,12 @@ export function RegisterPaymentModal({
 
           {/* Comprovante (opcional) */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F1A2E]">{t("proof")}</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("proof")}</label>
             <input
               name="proof"
               type="file"
               accept="image/*,application/pdf"
-              className="w-full text-sm text-[#6B6A66] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F4F3EF] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#0F1A2E] hover:file:bg-[#e9e8e3]"
+              className="w-full text-sm text-[#6B6A66] dark:text-[#9E9C97] file:mr-3 file:rounded-lg file:border-0 file:bg-[#F4F3EF] dark:file:bg-white/[.08] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#0F1A2E] dark:file:text-[#E8E6E2] hover:file:bg-[#e9e8e3] dark:hover:file:bg-white/[.12]"
             />
             <p className="mt-1 text-xs text-[#A09E98]">{t("proofHint")}</p>
           </div>
@@ -164,14 +164,14 @@ export function RegisterPaymentModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-xl border border-black/15 py-2.5 text-sm font-medium text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+              className="flex-1 rounded-xl border border-black/15 dark:border-white/15 dark:bg-transparent dark:text-[#E8E6E2] py-2.5 text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             >
               {t("cancel")}
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 rounded-xl bg-[#0B1F3A] py-2.5 text-sm font-medium text-white hover:bg-black disabled:opacity-50 transition"
+              className="flex-1 rounded-xl bg-[#0B1F3A] dark:bg-white/[.10] py-2.5 text-sm font-medium text-white hover:bg-black dark:hover:bg-white/[.16] disabled:opacity-50 transition"
             >
               {isPending ? t("saving") : t("submit")}
             </button>

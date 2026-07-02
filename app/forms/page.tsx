@@ -69,13 +69,13 @@ export default async function FormsPage() {
     <Shell>
       <BackLink
         fallbackHref="/settings/personalizar"
-        className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 dark:text-white/45 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
       >
         <ArrowLeft className="h-3.5 w-3.5" /> {tSettings("common.back")}
       </BackLink>
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {t("count", { count: templates.length })}
           </p>
@@ -84,21 +84,21 @@ export default async function FormsPage() {
           <div className="flex items-center gap-[8px]">
             {!hasQRM && (
               <form action={importQRMAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQRM")}
                 </button>
               </form>
             )}
             {!hasQSNA && (
               <form action={importQSNAAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQSNA")}
                 </button>
               </form>
             )}
             {!hasQSNAEN && (
               <form action={importQSNAENAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQSNAEN")}
                 </button>
               </form>
@@ -106,7 +106,7 @@ export default async function FormsPage() {
             <ImportTemplatesButton available={availableToImport} actionEntries={actionEntries} />
             <Link
               href="/forms/new"
-              className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
+              className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12] dark:border-white/[.12]"
             >
               <Plus className="h-3.5 w-3.5" /> {t("newForm")}
             </Link>
@@ -115,7 +115,7 @@ export default async function FormsPage() {
       </div>
 
       {templates.length === 0 ? (
-        <div className="bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[24px] text-center">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[20px] py-[24px] text-center">
           <p className="text-[13px] text-[#A09E98] mb-[4px]">{t("empty")}</p>
           <p className="text-[11px] text-[#D3D1C7]">
             {t("emptyHint")}
@@ -126,21 +126,21 @@ export default async function FormsPage() {
           {templates.map((tpl) => (
             <div
               key={tpl.id}
-              className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] flex items-center justify-between"
+              className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[16px] py-[14px] flex items-center justify-between"
             >
               <div className="flex items-center gap-[10px]">
-                <div className="w-8 h-8 rounded-[8px] bg-[#F4F3EF] flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-[8px] bg-[#F4F3EF] dark:bg-white/[.06] flex items-center justify-center shrink-0">
                   <FileText className="h-4 w-4 text-[#A09E98]" />
                 </div>
                 <div>
-                  <p className="text-[13px] font-medium text-[#0F1A2E]">{tpl.name}</p>
+                  <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{tpl.name}</p>
                   {tpl.description && (
                     <p className="text-[11px] text-[#A09E98] mt-[1px]">{tpl.description}</p>
                   )}
                   {tpl.placement?.length > 0 && (
                     <div className="flex flex-wrap gap-[4px] mt-[5px]">
                       {tpl.placement.map((slot) => (
-                        <span key={slot} className="text-[10px] px-[7px] py-[1px] rounded-full bg-[#E1F5EE] text-[#085041]">
+                        <span key={slot} className="text-[10px] px-[7px] py-[1px] rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]">
                           {tSlots(slot)}
                         </span>
                       ))}
@@ -155,7 +155,7 @@ export default async function FormsPage() {
                 />
                 <Link
                   href={`/forms/${tpl.id}/edit`}
-                  className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] rounded-[6px] px-[10px] py-[5px] transition"
+                  className="flex items-center gap-[5px] text-[11px] text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.08] dark:border-white/[.08] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] rounded-[6px] px-[10px] py-[5px] transition"
                 >
                   <Pencil className="h-3 w-3" /> {t("edit")}
                 </Link>

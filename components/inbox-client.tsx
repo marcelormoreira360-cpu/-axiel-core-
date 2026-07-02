@@ -78,7 +78,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
         <button
           onClick={() => fetchConversations(true)}
           disabled={refreshing}
-          className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-xs text-black/50 hover:bg-black/[.04] transition disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-xl border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-xs text-black/50 hover:bg-black/[.04] transition disabled:opacity-50"
         >
           <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
           Atualizar
@@ -93,7 +93,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Buscar paciente ou mensagem…"
-          className="w-full rounded-xl border border-black/[.10] pl-9 pr-3 py-2.5 text-sm text-[#0F1A2E] placeholder:text-black/30 focus:outline-none focus:border-black/25 bg-white"
+          className="w-full rounded-xl border border-black/[.10] dark:border-white/[.10] pl-9 pr-3 py-2.5 text-sm text-[#0F1A2E] placeholder:text-black/30 focus:outline-none focus:border-black/25 bg-white"
         />
       </div>
 

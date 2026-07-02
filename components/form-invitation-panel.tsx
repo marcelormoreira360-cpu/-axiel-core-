@@ -82,23 +82,23 @@ export function FormInvitationPanel({
           }}
           placeholder="Buscar paciente..."
           autoComplete="off"
-          className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+          className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
 
       {filtered.length > 0 && !selected && (
-        <div className="bg-white border border-black/[.08] rounded-[8px] overflow-hidden shadow-sm">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.08] dark:border-white/[.08] rounded-[8px] overflow-hidden shadow-sm">
           {filtered.map((p, i) => (
             <button
               key={p.id}
               type="button"
               onClick={() => pick(p)}
               className={[
-                "w-full text-left px-[12px] py-[9px] hover:bg-[#F4F3EF] transition flex items-center gap-[8px]",
-                i !== filtered.length - 1 ? "border-b border-black/[.05]" : "",
+                "w-full text-left px-[12px] py-[9px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition flex items-center gap-[8px]",
+                i !== filtered.length - 1 ? "border-b border-black/[.05] dark:border-white/[.05]" : "",
               ].join(" ")}
             >
-              <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[9px] font-medium text-[#0F6E56] shrink-0">
+              <div className="w-6 h-6 rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center text-[9px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] shrink-0">
                 {p.full_name
                   .trim()
                   .split(/\s+/)
@@ -108,7 +108,7 @@ export function FormInvitationPanel({
                   .toUpperCase()}
               </div>
               <div>
-                <p className="text-[12px] font-medium text-[#0F1A2E]">{p.full_name}</p>
+                <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{p.full_name}</p>
                 {p.email && <p className="text-[10px] text-[#A09E98]">{p.email}</p>}
               </div>
             </button>
@@ -117,9 +117,9 @@ export function FormInvitationPanel({
       )}
 
       {selected && !generatedUrl && (
-        <div className="flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] rounded-[8px]">
-          <span className="text-[12px] text-[#085041] font-medium flex-1">{selected.full_name}</span>
-          <button type="button" onClick={clear} aria-label="Limpar seleção" className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+        <div className="flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[8px]">
+          <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1">{selected.full_name}</span>
+          <button type="button" onClick={clear} aria-label="Limpar seleção" className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -137,12 +137,12 @@ export function FormInvitationPanel({
         </button>
       ) : (
         <div className="space-y-[8px]">
-          <div className="flex items-center gap-[6px] px-[10px] py-[7px] bg-[#E1F5EE] rounded-[8px]">
-            <span className="text-[12px] text-[#085041] font-medium flex-1 truncate">{selected?.full_name}</span>
+          <div className="flex items-center gap-[6px] px-[10px] py-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[8px]">
+            <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1 truncate">{selected?.full_name}</span>
           </div>
-          <div className="bg-[#FAFAF8] border border-black/[.08] rounded-[8px] px-[10px] py-[8px]">
+          <div className="bg-[#FAFAF8] dark:bg-white/[.04] border border-black/[.08] dark:border-white/[.08] rounded-[8px] px-[10px] py-[8px]">
             <p className="text-[10px] text-[#A09E98] mb-[4px]">Link gerado (válido por 15 dias)</p>
-            <p className="text-[11px] text-[#0F1A2E] break-all font-mono leading-relaxed">{generatedUrl}</p>
+            <p className="text-[11px] text-[#0F1A2E] dark:text-[#E8E6E2] break-all font-mono leading-relaxed">{generatedUrl}</p>
           </div>
           <div className="flex gap-[6px]">
             <button
@@ -151,8 +151,8 @@ export function FormInvitationPanel({
               className={[
                 "flex-1 flex items-center justify-center gap-[5px] text-[12px] font-medium rounded-[8px] py-[8px] transition border",
                 copied
-                  ? "bg-[#E1F5EE] text-[#085041] border-[#0F6E56]/20"
-                  : "bg-white text-[#0F1A2E] border-black/[.10] hover:bg-[#F4F3EF]",
+                  ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB] border-[#0F6E56]/20"
+                  : "bg-white dark:bg-[#111827] text-[#0F1A2E] dark:text-[#E8E6E2] border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]",
               ].join(" ")}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -170,7 +170,7 @@ export function FormInvitationPanel({
           <button
             type="button"
             onClick={() => { setGeneratedUrl(null); clear(); }}
-            className="w-full text-[11px] text-[#A09E98] hover:text-[#0F1A2E] transition"
+            className="w-full text-[11px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             Gerar para outro paciente
           </button>

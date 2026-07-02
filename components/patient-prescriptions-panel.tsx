@@ -24,11 +24,11 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
       "flex items-start gap-[10px] rounded-[10px] px-[12px] py-[10px] border transition",
       item.is_active
         ? "bg-white border-black/[.07]"
-        : "bg-[#FAFAF8] border-black/[.05] opacity-50",
+        : "bg-[#FAFAF8] border-black/[.05] dark:border-white/[.06] opacity-50",
     ].join(" ")}>
       <div className={[
         "w-7 h-7 rounded-[7px] flex items-center justify-center shrink-0 mt-[1px]",
-        isMed ? "bg-[#FFF3E0] text-[#E8A100]" : "bg-[#E1F5EE] text-[#0F6E56]",
+        isMed ? "bg-[#FFF3E0] dark:bg-[#C77D17]/[.15] text-[#E8A100]" : "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]",
       ].join(" ")}>
         {isMed ? <Pill className="h-3.5 w-3.5" /> : <Leaf className="h-3.5 w-3.5" />}
       </div>
@@ -47,7 +47,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
             <button
               type="submit"
               title={t("endTitle")}
-              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-amber-500 transition"
+              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-amber-500 transition"
             >
               <StopCircle className="h-3.5 w-3.5" />
             </button>
@@ -56,7 +56,7 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
             <button
               type="submit"
               title={t("removeTitle")}
-              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
+              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition"
             >
               <X className="h-3 w-3" />
             </button>
@@ -81,7 +81,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
         <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E]">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -101,8 +101,8 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
                 "flex items-center gap-[5px] text-[11px] font-medium rounded-[7px] px-[10px] py-[6px] border transition",
                 type === pt
                   ? pt === "supplement"
-                    ? "bg-[#E1F5EE] border-[#0F6E56]/30 text-[#085041]"
-                    : "bg-[#FFF3E0] border-amber-300 text-amber-700"
+                    ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 border-[#0F6E56]/30 text-[#085041] dark:text-[#9FE1CB]"
+                    : "bg-[#FFF3E0] dark:bg-[#C77D17]/[.15] border-amber-300 dark:border-amber-500/40 text-amber-700 dark:text-amber-300"
                   : "bg-[#FAFAF8] border-black/[.08] text-[#A09E98]",
               ].join(" ")}
             >
@@ -119,7 +119,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
             name="name"
             required
             placeholder={type === "supplement" ? t("supplementPlaceholder") : t("medicationPlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -130,7 +130,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
               type="text"
               name="dosage"
               placeholder={t("dosagePlaceholder")}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
@@ -139,7 +139,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
               type="text"
               name="frequency"
               placeholder={t("frequencyPlaceholder")}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
         </div>
@@ -151,7 +151,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
               type="date"
               name="start_date"
               defaultValue={new Date().toISOString().split("T")[0]}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
@@ -160,7 +160,7 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
               type="text"
               name="notes"
               placeholder={t("notesPlaceholder")}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
         </div>
@@ -204,7 +204,7 @@ export function PatientPrescriptionsPanel({
             <Link
               href={`/patients/${patientId}/prescriptions/print`}
               target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] transition"
+              className="flex items-center gap-[4px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
             >
               <Printer className="h-3 w-3" /> {t("print")}
             </Link>
@@ -213,7 +213,7 @@ export function PatientPrescriptionsPanel({
             <button
               type="button"
               onClick={() => setAdding(true)}
-              className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+              className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
             >
               <Plus className="h-3 w-3" /> {t("add")}
             </button>
@@ -225,7 +225,7 @@ export function PatientPrescriptionsPanel({
 
       {active.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
+          <p className="text-[12px] text-[#D3D1C7] dark:text-white/25">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-[4px]">
@@ -243,7 +243,7 @@ export function PatientPrescriptionsPanel({
           )}
           {inactive.length > 0 && (
             <div className="space-y-[4px] mt-[8px]">
-              <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
+              <p className="text-[10px] font-medium text-[#D3D1C7] dark:text-white/25 uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
               {inactive.map((p) => <PrescriptionCard key={p.id} item={p} patientId={patientId} />)}
             </div>
           )}

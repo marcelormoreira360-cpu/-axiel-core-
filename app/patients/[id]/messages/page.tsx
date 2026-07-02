@@ -22,7 +22,7 @@ export default async function PatientMessagesPage({
         <div className="flex items-center gap-3 mb-4">
           <BackLink
             fallbackHref={`/patients/${patientId}`}
-            className="flex items-center gap-1 text-[12px] text-black/40 hover:text-[#0F1A2E] transition"
+            className="flex items-center gap-1 text-[12px] text-black/40 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Voltar ao paciente
@@ -32,7 +32,7 @@ export default async function PatientMessagesPage({
         {/* Header */}
         <div className="flex items-center gap-3 mb-5">
           <div className="w-9 h-9 rounded-full bg-[#0F6E56]/10 flex items-center justify-center shrink-0">
-            <MessageCircle className="h-4 w-4 text-[#0F6E56]" />
+            <MessageCircle className="h-4 w-4 text-[#0F6E56] dark:text-[#9FE1CB]" />
           </div>
           <div>
             <h1 className="text-[15px] font-semibold text-[#0F1A2E]">{patient.full_name}</h1>

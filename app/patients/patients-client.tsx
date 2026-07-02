@@ -16,9 +16,9 @@ const JOURNEY_STAGES: ClinicalJourneyStage[] = [
 
 const JOURNEY_TONE_CLASSES: Record<JourneyStageTone, string> = {
   neutral:   "bg-[#F4F3EF] text-[#6B6A66]",
-  active:    "bg-[#E1F5EE] text-[#085041]",
-  attention: "bg-[#FFF8E7] text-[#633806]",
-  risk:      "bg-[#FEE2E2] text-[#991B1B]",
+  active:    "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  attention: "bg-[#FFF8E7] dark:bg-[#C77D17]/[.12] text-[#633806] dark:text-[#E8B04B]",
+  risk:      "bg-[#FEE2E2] dark:bg-[#B42318]/[.18] text-[#991B1B] dark:text-[#F2B8B5]",
 };
 
 function initials(name: string) {
@@ -26,9 +26,9 @@ function initials(name: string) {
 }
 
 function statusClasses(status: string) {
-  if (status === "active") return "bg-[#E1F5EE] text-[#085041]";
+  if (status === "active") return "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]";
   if (status === "archived") return "bg-[#F4F3EF] text-[#A09E98]";
-  return "bg-[#FAEEDA] text-[#633806]";
+  return "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]";
 }
 
 function statusKey(status: string): "active" | "inactive" | "archived" {
@@ -163,7 +163,7 @@ export function PatientsClient({
           <a
             href="/api/patients/export"
             download
-            className="flex items-center gap-1.5 text-[12px] font-medium text-black/60 border border-black/[.10] hover:bg-black/[.04] rounded-xl px-3 py-1.5 transition"
+            className="flex items-center gap-1.5 text-[12px] font-medium text-black/60 border border-black/[.10] dark:border-white/[.10] hover:bg-black/[.04] rounded-xl px-3 py-1.5 transition"
           >
             <Download className="w-[13px] h-[13px]" />
             {t("exportCsv")}
@@ -188,12 +188,12 @@ export function PatientsClient({
               placeholder={t("searchPlaceholder")}
               value={query}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full pl-[32px] pr-[10px] py-[8px] text-[13px] bg-white border border-black/[.09] rounded-lg outline-none focus:ring-2 focus:ring-[#0F6E56]/20 focus:border-[#0F6E56] placeholder:text-[#C4C2BA] text-[#0F1A2E] transition"
+              className="w-full pl-[32px] pr-[10px] py-[8px] text-[13px] bg-white border border-black/[.09] dark:border-white/[.09] rounded-lg outline-none focus:ring-2 focus:ring-[#0F6E56]/20 focus:border-[#0F6E56] placeholder:text-[#C4C2BA] text-[#0F1A2E] transition"
             />
             {query && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#A09E98] hover:text-[#0F1A2E] transition text-[13px] leading-none"
+                className="absolute right-[10px] top-1/2 -translate-y-1/2 text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition text-[13px] leading-none"
                 aria-label={t("clearSearch")}
               >
                 ✕
@@ -217,14 +217,14 @@ export function PatientsClient({
                     "inline-flex items-center gap-[5px] px-[10px] py-[4px] rounded-full text-[11px] font-medium transition",
                     active
                       ? "bg-[#0F6E56] text-white"
-                      : "bg-white border border-black/[.09] text-[#6B6966] hover:border-[#0F6E56]/40 hover:text-[#0F6E56]",
+                      : "bg-white border border-black/[.09] dark:border-white/[.09] text-[#6B6966] dark:text-[#9E9C97] hover:border-[#0F6E56]/40 hover:text-[#0F6E56] dark:hover:text-[#9FE1CB]",
                   ].join(" ")}
                 >
                   {t(`tabs.${tabKey}`)}
                   <span
                     className={[
                       "px-[5px] py-[1px] rounded-full text-[10px]",
-                      active ? "bg-white/20 text-white" : "bg-black/[.06] text-[#6B6966]",
+                      active ? "bg-white/20 text-white" : "bg-black/[.06] dark:bg-white/[.07] text-[#6B6966] dark:text-[#9E9C97]",
                     ].join(" ")}
                   >
                     {count}
@@ -254,7 +254,7 @@ export function PatientsClient({
           <p className="text-[13px] text-[#A09E98]">{t("emptyTitle")}</p>
           <Link
             href="/patients/new"
-            className="mt-3 inline-flex text-[12px] font-medium text-[#0F6E56] hover:underline"
+            className="mt-3 inline-flex text-[12px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:underline"
           >
             {t("registerFirst")}
           </Link>
@@ -268,7 +268,7 @@ export function PatientsClient({
           </p>
           <button
             onClick={() => { handleSearchChange(""); setStatusFilter("all"); setPractitionerFilter("all"); setStageFilter("all"); }}
-            className="mt-2 text-[12px] text-[#0F6E56] hover:underline"
+            className="mt-2 text-[12px] text-[#0F6E56] dark:text-[#9FE1CB] hover:underline"
           >
             {t("clearFilters")}
           </button>
@@ -288,8 +288,8 @@ export function PatientsClient({
                 key={patient.id}
                 href={`/patients/${patient.id}`}
                 className={[
-                  "flex items-center gap-[12px] px-[15px] py-[12px] hover:bg-[#F4F3EF] transition group",
-                  i !== filtered.length - 1 ? "border-b border-black/[.05]" : "",
+                  "flex items-center gap-[12px] px-[15px] py-[12px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition group",
+                  i !== filtered.length - 1 ? "border-b border-black/[.05] dark:border-white/[.06]" : "",
                 ].join(" ")}
               >
                 {/* Avatar */}
@@ -312,7 +312,7 @@ export function PatientsClient({
 
                 {/* Recent badge */}
                 {recentPatientIds.indexOf(patient.id) < 5 && (
-                  <span className="text-[10px] px-2 py-[2px] rounded-full shrink-0 bg-[#E6F1FB] text-[#0C447C]">
+                  <span className="text-[10px] px-2 py-[2px] rounded-full shrink-0 bg-[#E6F1FB] dark:bg-[#3B6BE4]/[.15] text-[#0C447C] dark:text-[#8FBFF5]">
                     {t("recent")}
                   </span>
                 )}
@@ -331,7 +331,7 @@ export function PatientsClient({
 
                 {/* Arrow */}
                 <svg
-                  className="w-3.5 h-3.5 text-[#D3D1C7] group-hover:text-[#0F6E56] transition shrink-0"
+                  className="w-3.5 h-3.5 text-[#D3D1C7] dark:text-white/25 group-hover:text-[#0F6E56] dark:group-hover:text-[#9FE1CB] transition shrink-0"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -365,13 +365,13 @@ export function PatientsClient({
             {page > 1 ? (
               <Link
                 href={`?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page - 1) }).toString()}`}
-                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
               >
                 <ChevronLeft className="w-[12px] h-[12px]" />
                 {t("prev")}
               </Link>
             ) : (
-              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
+              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] dark:border-white/[.06] text-[11px] text-[#D3D1C7] dark:text-white/25 cursor-not-allowed">
                 <ChevronLeft className="w-[12px] h-[12px]" />
                 {t("prev")}
               </span>
@@ -379,13 +379,13 @@ export function PatientsClient({
             {page < totalPages ? (
               <Link
                 href={`?${new URLSearchParams({ ...(query ? { q: query } : {}), page: String(page + 1) }).toString()}`}
-                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+                className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.1] text-[11px] text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
               >
                 {t("next")}
                 <ChevronRight className="w-[12px] h-[12px]" />
               </Link>
             ) : (
-              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] text-[11px] text-[#D3D1C7] cursor-not-allowed">
+              <span className="flex items-center gap-[4px] px-[10px] h-[28px] rounded-[7px] border border-black/[.05] dark:border-white/[.06] text-[11px] text-[#D3D1C7] dark:text-white/25 cursor-not-allowed">
                 {t("next")}
                 <ChevronRight className="w-[12px] h-[12px]" />
               </span>

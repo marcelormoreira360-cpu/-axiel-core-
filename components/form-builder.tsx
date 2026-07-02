@@ -39,7 +39,7 @@ export function FormBuilder({ action }: { action?: (formData: FormData) => void 
             <span className="text-sm font-medium text-axiel-text-secondary">Form name</span>
             <input
               name="name"
-              className="mt-2 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+              className="mt-2 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
               defaultValue="Initial Patient Intake"
               placeholder="Form name"
             />
@@ -49,7 +49,7 @@ export function FormBuilder({ action }: { action?: (formData: FormData) => void 
             <span className="text-sm font-medium text-axiel-text-secondary">Category</span>
             <select
               name="category"
-              className="mt-2 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+              className="mt-2 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
               defaultValue="Initial Assessment"
             >
               {FORM_CATEGORIES.map((category) => (
@@ -63,7 +63,7 @@ export function FormBuilder({ action }: { action?: (formData: FormData) => void 
           <span className="text-sm font-medium text-axiel-text-secondary">Short description</span>
           <textarea
             name="description"
-            className="mt-2 min-h-24 w-full rounded-xl border border-axiel-line bg-white px-4 py-3 outline-none focus:border-axiel-primary"
+            className="mt-2 min-h-24 w-full rounded-xl border border-axiel-line bg-white dark:bg-[#111827] px-4 py-3 outline-none focus:border-axiel-primary"
             placeholder="Describe when this form should be used."
           />
         </label>
@@ -91,7 +91,7 @@ export function FormBuilder({ action }: { action?: (formData: FormData) => void 
         ))}
 
         {questions.length > 5 && (
-          <details className="rounded-2xl border border-axiel-line bg-white p-5">
+          <details className="rounded-2xl border border-axiel-line bg-white dark:bg-[#111827] p-5">
             <summary className="cursor-pointer text-sm font-medium text-axiel-text-primary">View details</summary>
             <p className="mt-3 text-sm text-axiel-text-secondary">{questions.length - 5} extra questions are hidden to keep this page calm.</p>
           </details>

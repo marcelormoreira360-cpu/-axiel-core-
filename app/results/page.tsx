@@ -9,7 +9,7 @@ import { getClinicCurrency } from "@/services/finance-service";
 
 const ResultsChart = dynamic(
   () => import("@/components/results-chart").then((m) => m.ResultsChart),
-  { loading: () => <div className="h-[252px] animate-pulse rounded-[12px] bg-black/[.03]" /> }
+  { loading: () => <div className="h-[252px] animate-pulse rounded-[12px] bg-black/[.03] dark:bg-white/[.04]" /> }
 );
 
 const ResultsExportButton = dynamic(
@@ -57,7 +57,7 @@ export default async function ResultsPage({
       <div className="mb-[18px] flex items-start justify-between gap-[12px]">
         <div>
           <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("eyebrow")}</p>
-          <h1 className="mt-[4px] text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
+          <h1 className="mt-[4px] text-[20px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
             {t("title")}
           </h1>
           <p className="mt-[2px] text-[12px] text-[#A09E98]">
@@ -80,7 +80,7 @@ export default async function ResultsPage({
               "px-[12px] py-[6px] rounded-[8px] text-[11px] font-medium transition",
               months === opt
                 ? "bg-[#0F1A2E] text-white"
-                : "bg-white border border-black/[.09] text-[#6B6A66] hover:bg-[#F4F3EF]",
+                : "bg-white dark:bg-[#111827] border border-black/[.09] dark:border-white/[.09] text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]",
             ].join(" ")}
           >
             {t("periodMonths", { count: opt })}
@@ -96,9 +96,9 @@ export default async function ResultsPage({
           { label: t("kpiReturn"),      value: `${data.return_rate}%`,               sub: t("activePatients", { count: data.active_patients }), green: data.return_rate >= 60 },
           { label: t("kpiConversion"),  value: `${data.conversion_rate}%`,           sub: t("newThisPeriod", { count: data.new_patients }) },
         ].map((m) => (
-          <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+          <div key={m.label} className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] p-[13px]">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{m.label}</p>
-            <p className={`text-[20px] font-medium tracking-[-0.03em] leading-none ${m.green ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
+            <p className={`text-[20px] font-medium tracking-[-0.03em] leading-none ${m.green ? "text-[#0F6E56] dark:text-[#9FE1CB]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
               {m.value}
             </p>
             <p className="text-[10px] mt-[3px] text-[#A09E98]">{m.sub}</p>
@@ -119,12 +119,12 @@ export default async function ResultsPage({
         <div className="space-y-[12px]">
 
           {/* Serviços */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">{t("servicesTitle")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[12px]">{t("servicesTitle")}</p>
             {data.services.length === 0 ? (
               <p className="text-[12px] text-[#A09E98]">
                 {t("noServices")}{" "}
-                <span className="text-[#0F6E56]">{t("noServicesHint")}</span>
+                <span className="text-[#0F6E56] dark:text-[#9FE1CB]">{t("noServicesHint")}</span>
               </p>
             ) : (
               <div className="space-y-[8px]">
@@ -135,15 +135,15 @@ export default async function ResultsPage({
                   return (
                     <div key={s.name}>
                       <div className="flex items-center justify-between mb-[3px]">
-                        <span className="text-[12px] text-[#0F1A2E] font-medium">{s.name}</span>
+                        <span className="text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] font-medium">{s.name}</span>
                         <div className="flex items-center gap-[10px]">
                           <span className="text-[11px] text-[#A09E98]">{t("sessionsCount", { count: s.sessions })}</span>
                           {s.revenue_cents > 0 && (
-                            <span className="text-[11px] font-medium text-[#0F6E56]">{fmt(s.revenue_cents)}</span>
+                            <span className="text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB]">{fmt(s.revenue_cents)}</span>
                           )}
                         </div>
                       </div>
-                      <div className="h-[5px] rounded-full bg-[#F4F3EF]">
+                      <div className="h-[5px] rounded-full bg-[#F4F3EF] dark:bg-white/[.06]">
                         <div
                           className="h-full rounded-full bg-[#0F6E56]"
                           style={{ width: `${pct}%` }}
@@ -157,8 +157,8 @@ export default async function ResultsPage({
           </div>
 
           {/* Origem dos agendamentos */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[12px]">{t("sourcesTitle")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[12px]">{t("sourcesTitle")}</p>
             {data.sources.length === 0 ? (
               <p className="text-[12px] text-[#A09E98]">
                 {t("noSources")}
@@ -172,10 +172,10 @@ export default async function ResultsPage({
                   return (
                     <div key={s.source}>
                       <div className="flex items-center justify-between mb-[3px]">
-                        <span className="text-[12px] text-[#0F1A2E]">{s.source}</span>
+                        <span className="text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2]">{s.source}</span>
                         <span className="text-[11px] text-[#A09E98]">{s.count} ({pct}%)</span>
                       </div>
-                      <div className="h-[5px] rounded-full bg-[#F4F3EF]">
+                      <div className="h-[5px] rounded-full bg-[#F4F3EF] dark:bg-white/[.06]">
                         <div
                           className="h-full rounded-full bg-[#3D2E8F]"
                           style={{ width: `${pct}%` }}
@@ -215,8 +215,8 @@ export default async function ResultsPage({
           <ResultsInsights months={months} />
 
           {/* Métricas de retenção */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-[10px]">Retenção e engajamento</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px]">Retenção e engajamento</p>
             <div className="space-y-[10px]">
               {[
                 { label: "Taxa de retorno",         value: `${data.return_rate}%`,              note: "pacientes que voltaram" },
@@ -226,10 +226,10 @@ export default async function ResultsPage({
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between">
                   <div>
-                    <p className="text-[12px] text-[#0F1A2E]">{m.label}</p>
+                    <p className="text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2]">{m.label}</p>
                     <p className="text-[10px] text-[#A09E98]">{m.note}</p>
                   </div>
-                  <p className="text-[15px] font-semibold text-[#0F1A2E]">{m.value}</p>
+                  <p className="text-[15px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{m.value}</p>
                 </div>
               ))}
             </div>

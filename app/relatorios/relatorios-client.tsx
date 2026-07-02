@@ -44,37 +44,37 @@ export function RelatoriosClient() {
   return (
     <div className="space-y-4">
       {/* ── Filtro de período ── */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] p-4">
+      <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-4">
         <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">
           {t("filterTitle")}
         </p>
         <div className="flex items-center gap-4 flex-wrap">
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">{t("from")}</label>
+            <label className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">{t("from")}</label>
             <input
               type="date"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
-              className="rounded-[8px] border border-black/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
+              className="rounded-[8px] border border-black/15 dark:border-white/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
             />
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">{t("to")}</label>
+            <label className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">{t("to")}</label>
             <input
               type="date"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              className="rounded-[8px] border border-black/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
+              className="rounded-[8px] border border-black/15 dark:border-white/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
             />
           </div>
-          <div className="h-4 w-px bg-black/10 hidden sm:block" />
+          <div className="h-4 w-px bg-black/10 dark:bg-white/10 hidden sm:block" />
           <div className="flex items-center gap-2">
-            <label className="text-[11px] text-[#6B6A66]">{t("repasseMonth")}</label>
+            <label className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">{t("repasseMonth")}</label>
             <input
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="rounded-[8px] border border-black/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
+              className="rounded-[8px] border border-black/15 dark:border-white/15 px-3 py-1.5 text-[12px] focus:outline-none focus:border-[#0F6E56]/40"
             />
           </div>
         </div>
@@ -88,15 +88,15 @@ export function RelatoriosClient() {
           const isLeads = r.icon === "leads";
           const isPdf   = r.icon === "pdf";
 
-          const iconBg    = isPdf ? "bg-[#FEF3C7]" : isLeads ? "bg-[#E8F0FE]" : "bg-[#E1F5EE]";
-          const iconColor = isPdf ? "text-amber-600" : isLeads ? "text-blue-600" : "text-[#0F6E56]";
+          const iconBg    = isPdf ? "bg-[#FEF3C7]" : isLeads ? "bg-[#E8F0FE]" : "bg-[#E1F5EE] dark:bg-[#0F6E56]/20";
+          const iconColor = isPdf ? "text-amber-600" : isLeads ? "text-blue-600" : "text-[#0F6E56] dark:text-[#9FE1CB]";
 
           const sep = url.includes("?") ? "&" : "?";
 
           return (
             <div
               key={r.id}
-              className="bg-white border border-black/[.07] rounded-[12px] p-4 flex flex-col gap-3"
+              className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-4 flex flex-col gap-3"
             >
               <div className="flex items-start gap-3">
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px] ${iconBg}`}>
@@ -105,10 +105,10 @@ export function RelatoriosClient() {
                               <Table2   className={`h-4 w-4 ${iconColor}`} />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[13px] font-semibold text-[#0F1A2E]">{t(`reports.${r.id}.title`)}</p>
+                  <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t(`reports.${r.id}.title`)}</p>
                   <div className="flex items-center gap-1 flex-wrap mt-0.5">
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-amber-50 text-amber-600">PDF</span>
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E1F5EE] text-[#0F6E56]">CSV</span>
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]">CSV</span>
                     <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-[#E8F5E9] text-[#2E7D32]">XLS</span>
                   </div>
                   <p className="text-[11px] text-[#A09E98] mt-1 leading-relaxed">{t(`reports.${r.id}.desc`)}</p>
@@ -133,7 +133,7 @@ export function RelatoriosClient() {
                 <a
                   href={`${url}${sep}format=csv`}
                   download
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#E1F5EE] text-[#0F6E56] hover:bg-[#d0f0e6]"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-[8px] py-2 text-[11px] font-medium transition bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB] hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30"
                 >
                   <Download className="h-3 w-3" />
                   CSV

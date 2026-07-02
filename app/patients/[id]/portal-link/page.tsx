@@ -41,7 +41,7 @@ export default async function PatientPortalLinkPage({
 
   return (
     <Shell>
-      <BackLink fallbackHref={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft">
+      <BackLink fallbackHref={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft dark:hover:bg-[#0F6E56]/[.12]">
         <ArrowLeft className="h-4 w-4" /> Voltar ao paciente
       </BackLink>
 
@@ -84,10 +84,10 @@ export default async function PatientPortalLinkPage({
                   const isActive = !link.revoked_at && new Date(link.expires_at).getTime() > Date.now();
 
                   return (
-                    <div key={link.id} className="rounded-[1.5rem] bg-axiel-soft p-4">
+                    <div key={link.id} className="rounded-[1.5rem] bg-axiel-soft dark:bg-white/[.04] p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-black/75">Expira em {formatDate(link.expires_at)}</p>
+                          <p className="text-sm font-semibold text-black/75 dark:text-white/75">Expira em {formatDate(link.expires_at)}</p>
                           <p className="mt-1 text-xs text-black/40">
                             {link.revoked_at ? "Revogado" : link.last_viewed_at ? `Visualizado em ${formatDate(link.last_viewed_at)}` : "Ainda não visualizado"}
                           </p>
@@ -96,7 +96,7 @@ export default async function PatientPortalLinkPage({
                       </div>
                       {isActive ? (
                         <form action={revokeAction} className="mt-3">
-                          <button className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black/55 transition hover:bg-black/5">
+                          <button className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black/55 transition hover:bg-black/5 dark:hover:bg-white/5">
                             Revogar link
                           </button>
                         </form>
@@ -105,7 +105,7 @@ export default async function PatientPortalLinkPage({
                   );
                 })
               ) : (
-                <p className="rounded-[1.5rem] bg-axiel-soft p-4 text-sm text-black/45">Nenhum link gerado ainda.</p>
+                <p className="rounded-[1.5rem] bg-axiel-soft dark:bg-white/[.04] p-4 text-sm text-black/45">Nenhum link gerado ainda.</p>
               )}
             </div>
           </Card>

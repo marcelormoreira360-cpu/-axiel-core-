@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import Image from "next/image";
 import { cookies } from "next/headers";
 import { ReactNode } from "react";
@@ -134,7 +135,7 @@ export async function Shell({
               )}
             </div>
             <NotificationBell />
-            {/* DarkModeToggle escondido: ~12 telas principais ainda não têm variantes dark: (backlog auditoria 2); reexibir quando o dark mode existir de verdade */}
+            <DarkModeToggle />
           </div>
           <div className="mb-2">
             <LanguageSwitcher />
@@ -166,7 +167,7 @@ export async function Shell({
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <NotificationBell />
-            {/* DarkModeToggle escondido: ~12 telas principais ainda não têm variantes dark: (backlog auditoria 2); reexibir quando o dark mode existir de verdade */}
+            <DarkModeToggle />
             <SignOutButton />
           </div>
         </div>

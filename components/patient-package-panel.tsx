@@ -62,18 +62,18 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
   return (
     <div className={[
       "rounded-[12px] border px-[14px] py-[14px] transition",
-      pkg.is_active ? "bg-white border-black/[.07]" : "bg-[#FAFAF8] border-black/[.05] opacity-60",
+      pkg.is_active ? "bg-white border-black/[.07]" : "bg-[#FAFAF8] border-black/[.05] dark:border-white/[.06] opacity-60",
     ].join(" ")}>
       <div className="flex items-start justify-between gap-2 mb-[12px]">
         <div className="flex items-center gap-[8px]">
-          <div className="w-7 h-7 rounded-[7px] bg-[#E1F5EE] flex items-center justify-center shrink-0">
-            <Package className="h-3.5 w-3.5 text-[#0F6E56]" />
+          <div className="w-7 h-7 rounded-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center shrink-0">
+            <Package className="h-3.5 w-3.5 text-[#0F6E56] dark:text-[#9FE1CB]" />
           </div>
           <div>
             <p className="text-[13px] font-medium text-[#0F1A2E] flex items-center gap-[6px]">
               {pkg.name}
               {pkg.auto_renew && (
-                <span className="inline-flex items-center gap-[3px] text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-full px-[6px] py-[2px]">
+                <span className="inline-flex items-center gap-[3px] text-[9px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-full px-[6px] py-[2px]">
                   <RefreshCw className="h-2 w-2" /> {t("auto")}
                 </span>
               )}
@@ -87,7 +87,7 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
               <button
                 type="submit"
                 title={t("endTitle")}
-                className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-amber-500 transition"
+                className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-amber-500 transition"
               >
                 <StopCircle className="h-3.5 w-3.5" />
               </button>
@@ -96,7 +96,7 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
               <button
                 type="submit"
                 title={t("removeTitle")}
-                className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
+                className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -143,7 +143,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
         <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E]">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -159,7 +159,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
             name="name"
             required
             placeholder={t("namePlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -172,7 +172,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
               required
               min="1"
               placeholder="10"
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
@@ -182,7 +182,7 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
               name="start_date"
               required
               defaultValue={new Date().toISOString().split("T")[0]}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
         </div>
@@ -193,21 +193,21 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
             type="text"
             name="notes"
             placeholder={t("notesPlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div
           onClick={() => setAutoRenew((v) => !v)}
-          className="flex items-center justify-between rounded-[8px] border border-black/[.08] px-[10px] py-[8px] cursor-pointer hover:bg-[#FAFAF8] transition select-none"
+          className="flex items-center justify-between rounded-[8px] border border-black/[.08] px-[10px] py-[8px] cursor-pointer hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] transition select-none"
         >
           <div className="flex items-center gap-[7px]">
-            <RefreshCw className="h-3 w-3 text-[#0F6E56]" />
+            <RefreshCw className="h-3 w-3 text-[#0F6E56] dark:text-[#9FE1CB]" />
             <span className="text-[12px] text-[#0F1A2E]">{t("autoRenew")}</span>
           </div>
           <div className={[
             "w-8 h-4 rounded-full transition-colors duration-200 relative",
-            autoRenew ? "bg-[#0F6E56]" : "bg-[#D3D1C7]",
+            autoRenew ? "bg-[#0F6E56]" : "bg-[#D3D1C7] dark:bg-white/[.10]",
           ].join(" ")}>
             <div className={[
               "absolute top-[2px] w-3 h-3 bg-white rounded-full shadow transition-transform duration-200",
@@ -252,7 +252,7 @@ export function PatientPackagePanel({
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Plus className="h-3 w-3" /> {t("add")}
           </button>
@@ -263,7 +263,7 @@ export function PatientPackagePanel({
 
       {active.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
+          <p className="text-[12px] text-[#D3D1C7] dark:text-white/25">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-[8px]">
@@ -273,7 +273,7 @@ export function PatientPackagePanel({
 
       {inactive.length > 0 && (
         <div className="space-y-[8px] mt-[4px]">
-          <p className="text-[10px] font-medium text-[#D3D1C7] uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
+          <p className="text-[10px] font-medium text-[#D3D1C7] dark:text-white/25 uppercase tracking-[.06em] px-[2px]">{t("ended")}</p>
           {inactive.map((p) => <PackageCard key={p.id} pkg={p} patientId={patientId} />)}
         </div>
       )}

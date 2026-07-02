@@ -18,9 +18,9 @@ interface Props {
 
 const JOURNEY_TONE_CLASSES: Record<JourneyStageTone, string> = {
   neutral:   "bg-[#F4F3EF] text-[#6B6A66]",
-  active:    "bg-[#E1F5EE] text-[#085041]",
-  attention: "bg-[#FFF8E7] text-[#633806]",
-  risk:      "bg-[#FEE2E2] text-[#991B1B]",
+  active:    "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  attention: "bg-[#FFF8E7] dark:bg-[#C77D17]/[.12] text-[#633806] dark:text-[#E8B04B]",
+  risk:      "bg-[#FEE2E2] dark:bg-[#B42318]/[.18] text-[#991B1B] dark:text-[#F2B8B5]",
 };
 
 function ScoreRing({ score }: { score: number }) {
@@ -91,7 +91,7 @@ export function PatientIntelligenceStrip({ engagement, journey }: Props) {
               → {t(`journey.next.${journey.stage}`)}
             </span>
           </div>
-          <div className="w-px h-8 bg-black/[.07] shrink-0 hidden sm:block" />
+          <div className="w-px h-8 bg-black/[.07] dark:bg-white/[.08] shrink-0 hidden sm:block" />
         </>
       )}
 
@@ -104,7 +104,7 @@ export function PatientIntelligenceStrip({ engagement, journey }: Props) {
         </div>
       </div>
 
-      <div className="w-px h-8 bg-black/[.07] shrink-0 hidden sm:block" />
+      <div className="w-px h-8 bg-black/[.07] dark:bg-white/[.08] shrink-0 hidden sm:block" />
 
       {/* Churn risk badge */}
       <div className="flex items-center gap-[7px]">
@@ -114,7 +114,7 @@ export function PatientIntelligenceStrip({ engagement, journey }: Props) {
         </span>
       </div>
 
-      <div className="w-px h-8 bg-black/[.07] shrink-0 hidden sm:block" />
+      <div className="w-px h-8 bg-black/[.07] dark:bg-white/[.08] shrink-0 hidden sm:block" />
 
       {/* Key stats */}
       <div className="flex items-center gap-[20px] flex-wrap">
@@ -151,7 +151,7 @@ export function PatientIntelligenceStrip({ engagement, journey }: Props) {
       {/* Churn alert (only for medium/high risk) */}
       {(churnRisk === "medium" || churnRisk === "high") && (
         <>
-          <div className="w-px h-8 bg-black/[.07] shrink-0 hidden sm:block" />
+          <div className="w-px h-8 bg-black/[.07] dark:bg-white/[.08] shrink-0 hidden sm:block" />
           <p className={[
             "text-[11px] italic",
             churnRisk === "high" ? "text-red-500" : "text-orange-500",

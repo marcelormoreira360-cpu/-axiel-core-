@@ -102,18 +102,18 @@ export default async function NewAppointmentPage({
       <div className="flex items-center gap-[10px] mb-[24px]">
         <BackLink
           fallbackHref="/schedule"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("new.title")}</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("new.title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">{t("new.subtitle")}</p>
         </div>
       </div>
 
       {!profile?.clinic_id ? (
-        <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[16px] py-[14px]">
           <p className="text-[13px] text-[#A09E98]">{t("page.noClinic")}</p>
         </div>
       ) : (

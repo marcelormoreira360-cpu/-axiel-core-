@@ -8,7 +8,7 @@ import { getNpsKPIs, getOccupancyKPIs, getAlertsKPIs } from "@/modules/analytics
 import dynamicImport from "next/dynamic";
 const NpsTrendChart = dynamicImport(
   () => import("@/components/analytics/nps-trend-chart").then((m) => m.NpsTrendChart),
-  { loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] dark:bg-white/[.04] animate-pulse" /> },
 );
 
 export const metadata: Metadata = { title: "Analytics | AXIEL Core" };
@@ -80,7 +80,7 @@ export default async function AnalyticsPage() {
         </div>
 
         {!clinic ? (
-          <p className="text-sm text-black/40">{t("noClinic")}</p>
+          <p className="text-sm text-black/40 dark:text-white/40">{t("noClinic")}</p>
         ) : (
           <>
 
@@ -93,7 +93,7 @@ export default async function AnalyticsPage() {
               </h2>
 
               {nps && nps.total === 0 ? (
-                <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-6 text-center text-sm text-black/40">
+                <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-6 text-center text-sm text-black/40 dark:text-white/40">
                   {t("noRatings")}
                 </div>
               ) : nps ? (
@@ -115,7 +115,7 @@ export default async function AnalyticsPage() {
                     {/* Promotores */}
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("promoters")}</p>
-                      <p className="text-2xl font-bold text-[#0F6E56]">{nps.promotersPct}%</p>
+                      <p className="text-2xl font-bold text-[#0F6E56] dark:text-[#9FE1CB]">{nps.promotersPct}%</p>
                       <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("note910")}</p>
                     </div>
 
@@ -193,7 +193,7 @@ export default async function AnalyticsPage() {
 
                     <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("completed")}</p>
-                      <p className="text-2xl font-bold text-[#0F6E56]">{occupancy.completed}</p>
+                      <p className="text-2xl font-bold text-[#0F6E56] dark:text-[#9FE1CB]">{occupancy.completed}</p>
                       <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("completedNote")}</p>
                     </div>
 

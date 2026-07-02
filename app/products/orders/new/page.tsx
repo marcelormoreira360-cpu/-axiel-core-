@@ -20,10 +20,10 @@ export default async function NewProductOrderPage() {
   return (
     <Shell>
       <div className="mb-6">
-        <BackLink fallbackHref="/products/orders" className="inline-flex items-center gap-1.5 text-[12px] text-[#6B6A66] hover:text-[#0F1A2E] transition mb-3">
+        <BackLink fallbackHref="/products/orders" className="inline-flex items-center gap-1.5 text-[12px] text-[#6B6A66] dark:text-[#9E9C97] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition mb-3">
           <ArrowLeft className="h-3.5 w-3.5" /> Pedidos
         </BackLink>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Novo pedido</h1>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">Novo pedido</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">Selecione produtos e quantidades para gerar um pedido.</p>
       </div>
 

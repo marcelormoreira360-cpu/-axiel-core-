@@ -30,7 +30,7 @@ const BAND_ICON: Record<BandIconKey, typeof CheckCircle2> = {
 const LAB_DYS: Record<string, number> = { normal: 0, leve: 25, moderado: 50, alto: 85 };
 
 const inputCls =
-  "w-full min-h-[44px] sm:min-h-0 text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56]/50 transition";
+  "w-full min-h-[44px] sm:min-h-0 text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56]/50 transition";
 
 // ── Pílula de banda (cor + ícone + rótulo) — acessível ───────────────────────
 function BandPill({ band, label, className = "" }: { band: Band; label: string; className?: string }) {
@@ -237,27 +237,27 @@ export function PatientNeuroIdPanel({
         <div className="flex flex-col gap-[6px] sm:flex-row sm:items-center sm:gap-[10px]">
           {map && hasReport && (
             <a href={`/api/patients/${patientId}/neuro-id/pdf`} target="_blank" rel="noopener noreferrer"
-              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
               <FileText className="h-3 w-3" /> {t("viewPdf")}
             </a>
           )}
           {map && hasReport && (
             <button type="button" onClick={handleSendToPatient} disabled={!patientEmail || sending}
               title={!patientEmail ? t("sendNoEmail") : undefined}
-              className={`flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${sendState === "sent" ? "text-[#0F6E56]" : "text-[#6B6A66] hover:text-[#0F1A2E]"}`}>
+              className={`flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${sendState === "sent" ? "text-[#0F6E56] dark:text-[#9FE1CB]" : "text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]"}`}>
               {sendState === "sent" ? <Check className="h-3 w-3" /> : <Send className="h-3 w-3" />}
               {sending ? t("sendingToPatient") : sendState === "sent" ? t("sentToPatient") : t("sendToPatient")}
             </button>
           )}
           {!assessing && map && assessmentId && (
             <button type="button" onClick={startEdit}
-              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
               <Pencil className="h-3 w-3" /> {t("editAssessment")}
             </button>
           )}
           {!assessing && (
             <button type="button" onClick={startNew}
-              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-[#0F6E56]/25 sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition">
+              className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-[#0F6E56]/25 sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition">
               <Plus className="h-3 w-3" /> {t("newAssessment")}
             </button>
           )}
@@ -265,7 +265,7 @@ export function PatientNeuroIdPanel({
       </div>
 
       {sendState === "error" && (
-        <p className="text-[10px] text-[#991B1B] mb-[6px] text-right">{sendError ?? t("sendToPatientError")}</p>
+        <p className="text-[10px] text-[#991B1B] dark:text-[#F2B8B5] mb-[6px] text-right">{sendError ?? t("sendToPatientError")}</p>
       )}
 
       <p className="text-[10px] text-[#A09E98] leading-snug mb-[12px] border-l-2 border-[#D9A441]/40 pl-2">{t("disclaimer")}</p>
@@ -273,8 +273,8 @@ export function PatientNeuroIdPanel({
       {map ? (
         <div className="space-y-[12px]">
           {map.status === "auto_draft" && (
-            <div className="rounded-[10px] border border-[#C77D17]/30 bg-[#FFF8E7] px-[12px] py-[10px] flex flex-col gap-[8px] sm:flex-row sm:items-start sm:justify-between sm:gap-3">
-              <p className="text-[11px] text-[#633806] flex items-start gap-1.5 min-w-0">
+            <div className="rounded-[10px] border border-[#C77D17]/30 bg-[#FFF8E7] dark:bg-[#C77D17]/[.12] px-[12px] py-[10px] flex flex-col gap-[8px] sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <p className="text-[11px] text-[#633806] dark:text-[#E8B04B] flex items-start gap-1.5 min-w-0">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px]" />
                 {t("autoDraftBanner")}
               </p>
@@ -302,7 +302,7 @@ export function PatientNeuroIdPanel({
                 <p className="text-[11px] text-[#0F1A2E] mt-[4px]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
               )}
               {map.is_partial && (
-                <p className="text-[11px] text-[#C77D17] flex items-center justify-center sm:justify-start gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
+                <p className="text-[11px] text-[#C77D17] dark:text-[#E8B04B] flex items-center justify-center sm:justify-start gap-1 mt-[2px]"><AlertCircle className="h-3 w-3 shrink-0" /> {t("partialHint")}</p>
               )}
             </div>
           </div>
@@ -376,30 +376,30 @@ export function PatientNeuroIdPanel({
           <input type="hidden" name="patient_id" value={patientId} />
           {editing && assessmentId && <input type="hidden" name="assessment_id" value={assessmentId} />}
           {editing && (
-            <p className="text-[11px] text-[#6B6A66] bg-[#EEF6F2] border border-[#0F6E56]/20 rounded-[8px] px-[10px] py-[7px] flex items-start gap-1.5">
-              <Pencil className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#0F6E56]" /> {t("editingHint")}
+            <p className="text-[11px] text-[#6B6A66] bg-[#EEF6F2] dark:bg-[#0F6E56]/[.10] border border-[#0F6E56]/20 rounded-[8px] px-[10px] py-[7px] flex items-start gap-1.5">
+              <Pencil className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#0F6E56] dark:text-[#9FE1CB]" /> {t("editingHint")}
             </p>
           )}
 
           {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA) */}
           <div className="rounded-[8px] border border-[#0F6E56]/20 bg-white p-[10px] space-y-[8px]">
-            <p className="text-[11px] font-semibold text-[#0F1A2E] flex items-center gap-1"><Download className="h-3 w-3 text-[#0F6E56]" /> {t("importTitle")}</p>
+            <p className="text-[11px] font-semibold text-[#0F1A2E] flex items-center gap-1"><Download className="h-3 w-3 text-[#0F6E56] dark:text-[#9FE1CB]" /> {t("importTitle")}</p>
             <p className="text-[10px] text-[#A09E98]">{t("importHint")}</p>
             <div className="flex items-center gap-2 flex-wrap">
               <button type="button" disabled={importing} onClick={handleImport}
                 className="w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition inline-flex items-center justify-center sm:justify-start gap-1">
                 <Download className="h-3 w-3" /> {importing ? t("importing") : t("importBtn")}
               </button>
-              {importMsg && <span className="text-[10px] text-[#0F6E56]">{importMsg}</span>}
+              {importMsg && <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{importMsg}</span>}
             </div>
             {phq9Alert !== null && (
-              <p className="text-[11px] text-[#991B1B] bg-[#FEE2E2] rounded-[6px] px-[8px] py-[6px] flex items-start gap-1">
+              <p className="text-[11px] text-[#991B1B] dark:text-[#F2B8B5] bg-[#FEE2E2] dark:bg-[#B42318]/[.18] rounded-[6px] px-[8px] py-[6px] flex items-start gap-1">
                 <ShieldAlert className="h-3.5 w-3.5 shrink-0 mt-[1px]" /> {t("phq9Alert", { value: phq9Alert })}
               </p>
             )}
             {unanswered.length > 0 && (
-              <p className="text-[11px] text-[#633806] bg-[#FFF8E7] border border-[#C77D17]/30 rounded-[6px] px-[8px] py-[6px] flex items-start gap-1.5">
-                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#C77D17]" /> {t("unansweredHint", { list: unanswered.join(", ") })}
+              <p className="text-[11px] text-[#633806] dark:text-[#E8B04B] bg-[#FFF8E7] dark:bg-[#C77D17]/[.12] border border-[#C77D17]/30 rounded-[6px] px-[8px] py-[6px] flex items-start gap-1.5">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px] text-[#C77D17] dark:text-[#E8B04B]" /> {t("unansweredHint", { list: unanswered.join(", ") })}
               </p>
             )}
           </div>
@@ -421,10 +421,10 @@ export function PatientNeuroIdPanel({
                     <label key={it.code} className="block">
                       <span className="text-[11px] text-[#6B6A66] mb-[2px] flex items-center justify-between gap-2">
                         <span>{it.label}
-                          {it.partial && <span className="text-[#C77D17]"> · {t("optional")}</span>}
-                          {autoCodes.has(it.code) && <span className="text-[#0F6E56]"> · {t("autoTag")}</span>}
+                          {it.partial && <span className="text-[#C77D17] dark:text-[#E8B04B]"> · {t("optional")}</span>}
+                          {autoCodes.has(it.code) && <span className="text-[#0F6E56] dark:text-[#9FE1CB]"> · {t("autoTag")}</span>}
                           {origins[it.code] && <span className="text-[#A09E98]"> · {t("normalizedFrom", { ratio: origins[it.code] })}</span>}
-                          {pendingCodes.has(it.code) && raw === "" && <span className="text-[#C77D17]"> · {t("pendingTag")}</span>}
+                          {pendingCodes.has(it.code) && raw === "" && <span className="text-[#C77D17] dark:text-[#E8B04B]"> · {t("pendingTag")}</span>}
                         </span>
                         {band && <BandPill band={band} label={bandLabel(band, it.band_type)} />}
                       </span>
@@ -461,7 +461,7 @@ export function PatientNeuroIdPanel({
               {editing ? t("saveCorrection") : t("compute")}
             </button>
             <button type="button" onClick={closeForm} aria-label={tCommon("close")}
-              className="shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-[#A09E98] hover:text-[#0F1A2E] transition">
+              className="shrink-0 min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 inline-flex items-center justify-center text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
               <X className="h-4 w-4" />
             </button>
           </div>

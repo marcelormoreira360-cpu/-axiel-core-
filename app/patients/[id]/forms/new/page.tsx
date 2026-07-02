@@ -34,7 +34,7 @@ export default async function FillFormPage({ params, searchParams }: Props) {
       <div className="flex items-center gap-[10px] mb-[24px]">
         <BackLink
           fallbackHref={`/patients/${patientId}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
@@ -54,7 +54,7 @@ export default async function FillFormPage({ params, searchParams }: Props) {
             <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
               <p className="text-[13px] text-[#A09E98]">
                 {t.rich("emptyHint", {
-                  a: (c) => <Link href="/forms/new" className="text-[#0F6E56] hover:underline">{c}</Link>,
+                  a: (c) => <Link href="/forms/new" className="text-[#0F6E56] dark:text-[#9FE1CB] hover:underline">{c}</Link>,
                 })}
               </p>
             </div>
@@ -63,7 +63,7 @@ export default async function FillFormPage({ params, searchParams }: Props) {
             <Link
               key={tpl.id}
               href={`/patients/${patientId}/forms/new?template=${tpl.id}`}
-              className="block bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6] transition"
+              className="block bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6] dark:hover:bg-[#0F6E56]/[.12] transition"
             >
               <p className="text-[13px] font-medium text-[#0F1A2E]">{tpl.name}</p>
               {tpl.description && (

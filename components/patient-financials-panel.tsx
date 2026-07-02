@@ -59,7 +59,7 @@ export function PatientFinancialsPanel({ financials, currency, locale }: Props) 
             <Metric label={t("avgTicket")} value={money(f.average_ticket_cents)} strong />
           </div>
 
-          <div className="h-px bg-black/[.06] my-[14px]" />
+          <div className="h-px bg-black/[.06] dark:bg-white/[.07] my-[14px]" />
 
           {/* Secondary metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-[14px]">
@@ -98,7 +98,7 @@ function Metric({
   tone?: "default" | "attention" | "muted";
 }) {
   const valueColor =
-    tone === "attention" ? "text-[#7C3D04]" : tone === "muted" ? "text-[#A09E98]" : "text-[#0F1A2E]";
+    tone === "attention" ? "text-[#7C3D04] dark:text-[#E8B04B]" : tone === "muted" ? "text-[#A09E98]" : "text-[#0F1A2E]";
   return (
     <div>
       <p className="text-[10px] text-[#A09E98] tracking-[.04em] uppercase">{label}</p>

@@ -54,7 +54,7 @@ export function ChargeSessionButton({ appointmentId }: { appointmentId: string }
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="flex-1 min-w-0 text-[10px] text-[#6B6A66] bg-[#F4F3EF] border border-black/[.06] rounded-md px-2 py-1"
+            className="flex-1 min-w-0 text-[10px] text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] border border-black/[.06] dark:border-white/[.06] rounded-md px-2 py-1"
           />
           <button
             onClick={copy}
@@ -66,7 +66,7 @@ export function ChargeSessionButton({ appointmentId }: { appointmentId: string }
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 text-[10px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] rounded-md px-2 py-1 transition"
+            className="shrink-0 text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] rounded-md px-2 py-1 transition"
           >
             {t("open")}
           </a>
