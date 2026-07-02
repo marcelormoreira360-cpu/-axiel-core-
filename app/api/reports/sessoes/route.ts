@@ -16,6 +16,9 @@ function escCsv(val: string | number | null | undefined): string {
 export async function GET(req: Request) {
   const clinic = await getCurrentClinic();
   if (!clinic) return new Response("Unauthorized", { status: 401 });
+  if (!(await (await import("@/lib/require-finance-access")).isFinanceApiAllowed())) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const url    = new URL(req.url);
   const from   = url.searchParams.get("from")   ?? undefined;
