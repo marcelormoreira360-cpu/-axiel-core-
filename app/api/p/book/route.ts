@@ -4,7 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { sendAppointmentConfirmation } from "@/services/email-service";
-import { resolveClinicLocale } from "@/lib/email-i18n";
+import { resolvePatientLocale } from "@/lib/email-i18n";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
 
   // ── Fetch patient and clinic info for the WhatsApp confirmation ───────────────
   const [{ data: patient }, { data: clinic }] = await Promise.all([
-    supabase.from("patients").select("full_name, phone, email").eq("id", link.patient_id).maybeSingle(),
+    supabase.from("patients").select("full_name, phone, email, locale").eq("id", link.patient_id).maybeSingle(),
     supabase.from("clinics").select("name").eq("id", link.clinic_id).maybeSingle(),
   ]);
 
@@ -109,14 +109,17 @@ export async function POST(req: NextRequest) {
     try {
       const { getClinicTimezone } = await import("@/services/clinic-service");
       const tz = await getClinicTimezone(link.clinic_id as string);
+      // Mensagem no idioma do paciente (patients.locale); default pt
+      const isEn = typeof patient.locale === "string" && patient.locale.startsWith("en");
+      const dateLocale = isEn ? "en-US" : "pt-BR";
       const date = new Date(starts_at);
-      const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
-      const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+      const dateStr = date.toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+      const timeStr = date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: tz });
       const firstName = (patient.full_name as string).split(" ")[0];
-      await sendWhatsAppText(
-        patient.phone as string,
-        `Olá, ${firstName}! ✅\n\nSeu agendamento foi confirmado:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic?.name ?? ""}`,
-      );
+      const message = isEn
+        ? `Hi, ${firstName}! ✅\n\nYour appointment has been confirmed:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic?.name ?? ""}`
+        : `Olá, ${firstName}! ✅\n\nSeu agendamento foi confirmado:\n📅 ${dateStr}\n🕐 ${timeStr}\n🩺 ${sessionType.name}\n\n${clinic?.name ?? ""}`;
+      await sendWhatsAppText(patient.phone as string, message);
     } catch {
       /* non-blocking */
     }
@@ -137,7 +140,7 @@ export async function POST(req: NextRequest) {
       sessionTypeName: sessionType.name,
       startsAt: starts_at,
       portalUrl: portalLink ? `${appUrl}/p/${token}` : undefined,
-      locale: await resolveClinicLocale(link.clinic_id),
+      locale: await resolvePatientLocale(patient?.locale as string | null, link.clinic_id),
     });
   }
 

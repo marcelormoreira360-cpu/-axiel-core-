@@ -4,7 +4,7 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { AppointmentConfirmationEmail } from "@/components/email/appointment-confirmation-email";
 import { AppointmentReminderEmail } from "@/components/email/appointment-reminder-email";
 import { sendNpsRequest } from "@/services/email-service";
-import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { getServerT, resolveClinicLocale, resolvePatientLocale } from "@/lib/email-i18n";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -150,7 +150,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
   const { data: followUps, error } = await supabase
     .from("follow_ups")
-    .select("*, patients(id, full_name, phone, email), appointments(id, starts_at)")
+    .select("*, patients(id, full_name, phone, email, locale), appointments(id, starts_at)")
     .eq("status", "pending")
     .eq("channel", "whatsapp")
     .or(`notes.in.(d-1,nps,d+3,d+30),notes.like.custom:%`)
@@ -226,7 +226,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
   async function processFollowUp(fu: FollowUpRow): Promise<"sent" | "failed" | "skipped"> {
     const tz = await getClinicTz(fu.clinic_id as string);
-    const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null } | null;
+    const patient = fu.patients as { id: string; full_name: string; phone: string | null; email: string | null; locale?: string | null } | null;
     const appt    = fu.appointments as { id: string; starts_at: string } | null;
 
     if (!patient?.phone) {
@@ -254,7 +254,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
       body = customTpl
         ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null, tz)
-        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null, tz);
+        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null, tz, patient.locale ?? "pt-BR");
     }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
@@ -263,7 +263,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     if (tag === "d-1") {
       import("@/services/push-service").then(({ sendPushToPatient }) =>
         sendPushToPatient(patient.id, {
-          title: "Lembrete de sessão",
+          title: (patient.locale ?? "").startsWith("en") ? "Session reminder" : "Lembrete de sessão",
           body,
           tag: `d1-${fu.id}`,
         }).catch(() => {})
@@ -356,12 +356,12 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 async function sendReminderEmail(
   supabase: ReturnType<typeof createSupabaseAdminClient>,
   fu: { id: string; clinic_id: string; appointment_id: string | null },
-  patient: { id: string; full_name: string; email: string | null },
+  patient: { id: string; full_name: string; email: string | null; locale?: string | null },
   appt: { id: string; starts_at: string } | null,
 ) {
   if (!patient.email) return;
   const resend = new Resend(process.env.RESEND_API_KEY);
-  const locale = await resolveClinicLocale(fu.clinic_id);
+  const locale = await resolvePatientLocale(patient.locale, fu.clinic_id);
   const tz = await getClinicTz(fu.clinic_id);
   const t = await getServerT(locale, "emails");
   const first = patient.full_name.split(" ")[0];
@@ -623,29 +623,38 @@ export async function sendAppointmentConfirmation(params: {
   patientName: string;
   patientPhone: string | null;
   patientEmail: string | null;
+  patientLocale?: string | null;
   clinicName: string;
   startsAt: string;
   durationMinutes: number;
 }): Promise<void> {
-  const { clinicId, patientId, appointmentId, patientName, patientPhone, patientEmail, clinicName, startsAt, durationMinutes } = params;
+  const { clinicId, patientId, appointmentId, patientName, patientPhone, patientEmail, patientLocale, clinicName, startsAt, durationMinutes } = params;
 
   // A-05: never send real messages to the onboarding demo patient
   if (patientEmail === DEMO_PATIENT_EMAIL) return;
 
   const first = patientName.split(" ")[0];
   const tz = await getClinicTz(clinicId);
-  const dateStr = new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
-  const timeStr = new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+  const msgLocale = await resolvePatientLocale(patientLocale, clinicId);
+  const enMsg = msgLocale.startsWith("en");
+  const fmtLocale = enMsg ? "en-US" : "pt-BR";
+  const dateStr = new Date(startsAt).toLocaleDateString(fmtLocale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+  const timeStr = new Date(startsAt).toLocaleTimeString(fmtLocale, { hour: "2-digit", minute: "2-digit", timeZone: tz });
   const supabase = createSupabaseAdminClient();
   const useCase = "appointment_confirmation" as const;
 
   if (patientPhone) {
-    const body =
-      `Olá, ${first}! ✅\n\n` +
-      `Sua sessão foi confirmada:\n` +
-      `📅 *${dateStr}* às *${timeStr}*\n` +
-      `⏱ ${durationMinutes} minutos\n\n` +
-      `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`;
+    const body = enMsg
+      ? `Hi, ${first}! ✅\n\n` +
+        `Your session is confirmed:\n` +
+        `📅 *${dateStr}* at *${timeStr}*\n` +
+        `⏱ ${durationMinutes} minutes\n\n` +
+        `If anything comes up, contact the clinic. See you there! 🌿`
+      : `Olá, ${first}! ✅\n\n` +
+        `Sua sessão foi confirmada:\n` +
+        `📅 *${dateStr}* às *${timeStr}*\n` +
+        `⏱ ${durationMinutes} minutos\n\n` +
+        `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`;
 
     try {
       await sendWhatsAppText(patientPhone, body);
@@ -667,7 +676,7 @@ export async function sendAppointmentConfirmation(params: {
   if (patientEmail) {
     const resend = new Resend(process.env.RESEND_API_KEY);
     const fromAddress = DEFAULT_FROM_EMAIL;
-    const locale = await resolveClinicLocale(clinicId);
+    const locale = msgLocale;
     const t = await getServerT(locale, "emails");
     const dateStrEmail = new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
     const timeStrEmail = new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz });

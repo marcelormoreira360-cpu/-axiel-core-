@@ -125,17 +125,25 @@ export default async function SchedulePage() {
       try {
         const { getClinicTimezone } = await import("@/services/clinic-service");
         const tz = await getClinicTimezone(appointment.clinic_id);
+        const en = ((patient as { locale?: string | null }).locale ?? "").startsWith("en");
+        const fmt = en ? "en-US" : "pt-BR";
         const date = new Date(startsAt);
-        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: tz });
-        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: tz });
+        const dateStr = date.toLocaleDateString(fmt, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+        const timeStr = date.toLocaleTimeString(fmt, { hour: "2-digit", minute: "2-digit", timeZone: tz });
         const firstName = patient.full_name.split(" ")[0];
-        const body =
-          `Olá, ${firstName}! ✅\n\n` +
-          `Sua sessão foi confirmada:\n` +
-          `📅 ${dateStr}\n` +
-          `🕐 ${timeStr}\n` +
-          `⏱ ${duration} minutos\n\n` +
-          `Até lá!`;
+        const body = en
+          ? `Hi, ${firstName}! ✅\n\n` +
+            `Your session is confirmed:\n` +
+            `📅 ${dateStr}\n` +
+            `🕐 ${timeStr}\n` +
+            `⏱ ${duration} minutes\n\n` +
+            `See you there!`
+          : `Olá, ${firstName}! ✅\n\n` +
+            `Sua sessão foi confirmada:\n` +
+            `📅 ${dateStr}\n` +
+            `🕐 ${timeStr}\n` +
+            `⏱ ${duration} minutos\n\n` +
+            `Até lá!`;
         await sendWhatsAppText(patient.phone, body);
       } catch {
         // WhatsApp failure does not block appointment creation
