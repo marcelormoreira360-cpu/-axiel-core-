@@ -28,6 +28,7 @@ export function CreateSessionModal({
   emailLinkAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
 }) {
   const t = useTranslations("schedule.modal");
+  const tCommon = useTranslations("common.actions");
   const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -174,6 +175,7 @@ export function CreateSessionModal({
             <button
               type="button"
               onClick={onClose}
+              aria-label={tCommon("close")}
               className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
             >
               <X className="h-3.5 w-3.5" />
@@ -259,6 +261,7 @@ export function CreateSessionModal({
           <button
             type="button"
             onClick={onClose}
+            aria-label={tCommon("close")}
             className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
           >
             <X className="h-3.5 w-3.5" />

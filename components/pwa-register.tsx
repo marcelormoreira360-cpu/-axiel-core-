@@ -65,6 +65,7 @@ export function PwaRegister() {
       </button>
       <button
         onClick={handleDismiss}
+        aria-label="Fechar"
         className="shrink-0 text-white/40 hover:text-white/70 transition"
       >
         <X className="h-4 w-4" />

@@ -77,6 +77,7 @@ export function SessionDrawer({
             <button
               type="button"
               onClick={onClose}
+              aria-label={t("close")}
               className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
             >
               <X className="h-3.5 w-3.5" />

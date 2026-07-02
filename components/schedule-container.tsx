@@ -1369,6 +1369,7 @@ export function ScheduleContainer({
               <button
                 type="button"
                 onClick={navigatePrev}
+                aria-label={t("prevPeriod")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -1379,6 +1380,7 @@ export function ScheduleContainer({
               <button
                 type="button"
                 onClick={navigateNext}
+                aria-label={t("nextPeriod")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
               >
                 <ChevronRight className="h-3.5 w-3.5" />

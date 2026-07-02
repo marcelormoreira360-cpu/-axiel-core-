@@ -20,6 +20,7 @@
     "assinaturas": "Subscriptions",
     "results": "Results",
     "analytics": "Analytics",
+    "trends": "Trends",
     "profissionais": "Team",
     "relatorios": "Reports",
     "settings": "Settings"
@@ -33,5 +34,8 @@
     "hotmart": "Hotmart",
     "billing": "Billing"
   },
-  "support": "Support"
+  "support": "Support",
+  "mobile": {
+    "home": "Home"
+  }
 }

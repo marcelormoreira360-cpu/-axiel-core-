@@ -507,6 +507,7 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
               <button
                 type="button"
                 onClick={addObservation}
+                aria-label={t("addObservation")}
                 className="w-8 h-8 flex items-center justify-center rounded-[8px] bg-[#0F1A2E] text-white hover:bg-[#1a2d4a] transition shrink-0 self-center"
               >
                 <Plus className="h-3.5 w-3.5" />

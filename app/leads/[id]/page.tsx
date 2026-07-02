@@ -16,9 +16,11 @@ import { sendManualCommunicationAction } from "@/app/communications/actions";
 import { buildLeadVariables, defaultCommunicationTemplates, renderCommunicationTemplate } from "@/modules/communications/templates";
 import { ConvertLeadButton } from "@/components/convert-lead-button";
 import { convertLeadToPatientAction } from "@/app/leads/[id]/actions";
+import { getTranslations } from "next-intl/server";
 
 export default async function LeadProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const t = await getTranslations("leads.profile");
   const lead = await getLeadById(id);
 
   if (!lead) notFound();
@@ -49,11 +51,11 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
     <Shell>
       <header className="mb-8 pt-4">
         <BackLink fallbackHref="/leads" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
-          <ArrowLeft className="h-4 w-4" /> Back to pipeline
+          <ArrowLeft className="h-4 w-4" /> {t("back")}
         </BackLink>
         <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">LEAD PROFILE</p>
+            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{lead.full_name}</h1>
             <p className="mt-3 text-black/55">{leadStageLabels[lead.stage]} · {lead.source}</p>
           </div>
@@ -64,7 +66,7 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-50 px-6 py-4 text-sm font-semibold text-emerald-700 shadow-sm transition hover:-translate-y-0.5"
               >
                 <UserCheck className="h-4 w-4" />
-                Open patient profile
+                {t("openPatient")}
               </Link>
             ) : (
               <ConvertLeadButton leadId={lead.id} action={convertLeadToPatientAction} />
@@ -77,9 +79,9 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
       {lead.converted_patient_id ? null : (
         <Card className="mb-4 flex flex-col gap-4 border-axiel-line bg-white p-6 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-axiel-gold">Ready to move forward</p>
-            <p className="mt-1 text-lg font-semibold tracking-tight">Convert this lead into a patient when they are ready to begin.</p>
-            <p className="mt-1 text-sm text-black/50">The system will copy contact info, notes, source, and main complaint into a new patient profile.</p>
+            <p className="text-sm font-semibold text-axiel-gold">{t("convertCard.eyebrow")}</p>
+            <p className="mt-1 text-lg font-semibold tracking-tight">{t("convertCard.title")}</p>
+            <p className="mt-1 text-sm text-black/50">{t("convertCard.helper")}</p>
           </div>
           <ConvertLeadButton leadId={lead.id} action={convertLeadToPatientAction} />
         </Card>
@@ -92,45 +94,45 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
               <UserRound className="h-5 w-5 text-axiel-gold" />
             </div>
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Contact info</h2>
-              <p className="text-sm text-black/50">Simple and easy to read.</p>
+              <h2 className="text-2xl font-semibold tracking-tight">{t("contact.title")}</h2>
+              <p className="text-sm text-black/50">{t("contact.helper")}</p>
             </div>
           </div>
 
           <div className="space-y-3">
             <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-xs uppercase tracking-[0.18em] text-black/35">Name</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-black/35">{t("contact.name")}</p>
               <p className="mt-2 font-semibold">{lead.full_name}</p>
             </div>
             <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-xs uppercase tracking-[0.18em] text-black/35">Phone</p>
-              <p className="mt-2 flex items-center gap-2 font-semibold"><Phone className="h-4 w-4 text-black/35" /> {lead.phone || "Not added"}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-black/35">{t("contact.phone")}</p>
+              <p className="mt-2 flex items-center gap-2 font-semibold"><Phone className="h-4 w-4 text-black/35" /> {lead.phone || t("contact.notAdded")}</p>
             </div>
             <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-xs uppercase tracking-[0.18em] text-black/35">Email</p>
-              <p className="mt-2 flex items-center gap-2 font-semibold"><Mail className="h-4 w-4 text-black/35" /> {lead.email || "Not added"}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-black/35">{t("contact.email")}</p>
+              <p className="mt-2 flex items-center gap-2 font-semibold"><Mail className="h-4 w-4 text-black/35" /> {lead.email || t("contact.notAdded")}</p>
             </div>
             <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-xs uppercase tracking-[0.18em] text-black/35">Source</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-black/35">{t("contact.source")}</p>
               <p className="mt-2 font-semibold capitalize">{lead.source}</p>
             </div>
             <div className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md">
-              <p className="text-xs uppercase tracking-[0.18em] text-black/35">Main complaint</p>
-              <p className="mt-2 font-semibold">{lead.main_complaint || "Not added"}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-black/35">{t("contact.mainComplaint")}</p>
+              <p className="mt-2 font-semibold">{lead.main_complaint || t("contact.notAdded")}</p>
             </div>
           </div>
         </Card>
 
         <div className="space-y-4">
           <Card className="p-6">
-            <h2 className="text-2xl font-semibold tracking-tight">Notes</h2>
-            <p className="mt-1 text-sm text-black/50">What the team needs to know.</p>
+            <h2 className="text-2xl font-semibold tracking-tight">{t("notes.title")}</h2>
+            <p className="mt-1 text-sm text-black/50">{t("notes.helper")}</p>
             <div className="mt-5 min-h-44 rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md leading-7 text-black/65">
-              {lead.notes || "No notes yet."}
+              {lead.notes || t("notes.empty")}
             </div>
           </Card>
 
-<ActionSuggestionsPanel title="Next Steps for this lead" actions={actionSuggestions} />
+<ActionSuggestionsPanel title={t("nextSteps")} actions={actionSuggestions} />
 
           <Card className="p-6">
             <div className="mb-4 flex items-center gap-3">
@@ -138,14 +140,14 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
                 <Send className="h-5 w-5 text-axiel-gold" />
               </div>
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Send simple message</h2>
-                <p className="text-sm text-black/50">Lead nurturing. No medical advice.</p>
+                <h2 className="text-2xl font-semibold tracking-tight">{t("send.title")}</h2>
+                <p className="text-sm text-black/50">{t("send.helper")}</p>
               </div>
             </div>
             <div className="grid gap-3">
               <SendMessageBox
-                title="Email this lead"
-                helper="Simple, friendly follow-up."
+                title={t("send.emailTitle")}
+                helper={t("send.emailHelper")}
                 channel="email"
                 recipient={lead.email}
                 subject={leadEmailTemplate.subject}
@@ -154,8 +156,8 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
                 hiddenFields={{ lead_id: lead.id, use_case: "lead_nurturing", return_to: `/leads/${lead.id}` }}
               />
               <SendMessageBox
-                title="Text this lead"
-                helper="Short SMS follow-up."
+                title={t("send.smsTitle")}
+                helper={t("send.smsHelper")}
                 channel="sms"
                 recipient={lead.phone}
                 body={leadSmsBody}
@@ -166,7 +168,7 @@ export default async function LeadProfilePage({ params }: { params: Promise<{ id
           </Card>
 
 
-          <GuidedAiInsightsPanel title="Lead AI insights" {...aiInsights} compact />
+          <GuidedAiInsightsPanel title={t("aiTitle")} {...aiInsights} compact />
         </div>
       </section>
     </Shell>

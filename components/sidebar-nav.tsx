@@ -35,6 +35,7 @@ const clinicNav = [
   { href: "/assinaturas",   key: "assinaturas" },
   { href: "/results",       key: "results" },
   { href: "/analytics",     key: "analytics" },
+  { href: "/trends",        key: "trends" },
   // "Equipe" (dashboard de desempenho por profissional) fica fora do menu
   // enquanto a clínica é solo — não há profissionais para comparar. A página
   // segue acessível por /profissionais; reavaliar quando houver equipe.

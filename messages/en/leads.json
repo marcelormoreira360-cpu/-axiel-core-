@@ -1,0 +1,63 @@
+{
+  "profile": {
+    "back": "Back to pipeline",
+    "eyebrow": "LEAD PROFILE",
+    "openPatient": "Open patient profile",
+    "convertCard": {
+      "eyebrow": "Ready to move forward",
+      "title": "Convert this lead into a patient when they are ready to begin.",
+      "helper": "The system will copy contact info, notes, source, and main complaint into a new patient profile."
+    },
+    "contact": {
+      "title": "Contact info",
+      "helper": "Simple and easy to read.",
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "source": "Source",
+      "mainComplaint": "Main complaint",
+      "notAdded": "Not added"
+    },
+    "notes": {
+      "title": "Notes",
+      "helper": "What the team needs to know.",
+      "empty": "No notes yet."
+    },
+    "nextSteps": "Next Steps for this lead",
+    "send": {
+      "title": "Send simple message",
+      "helper": "Lead nurturing. No medical advice.",
+      "emailTitle": "Email this lead",
+      "emailHelper": "Simple, friendly follow-up.",
+      "smsTitle": "Text this lead",
+      "smsHelper": "Short SMS follow-up."
+    },
+    "aiTitle": "Lead AI insights"
+  },
+  "new": {
+    "eyebrow": "NEW LEAD",
+    "title": "Add lead",
+    "helper": "Capture the contact quickly. The pipeline handles the rest.",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Lead name",
+    "email": "Email",
+    "emailPlaceholder": "email@example.com",
+    "phone": "Phone",
+    "phonePlaceholder": "(000) 000-0000",
+    "mainComplaint": "Main complaint",
+    "mainComplaintPlaceholder": "What do they need help with?",
+    "source": "Source",
+    "sourceOptions": {
+      "instagram": "Instagram",
+      "google": "Google",
+      "facebook": "Facebook",
+      "website": "Website",
+      "referral": "Referral",
+      "other": "Other"
+    },
+    "notes": "Quick note",
+    "notesPlaceholder": "What did they ask about?",
+    "save": "Save lead",
+    "cancel": "Cancel"
+  }
+}

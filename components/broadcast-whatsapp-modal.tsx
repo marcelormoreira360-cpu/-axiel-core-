@@ -142,7 +142,7 @@ export function BroadcastWhatsAppModal() {
                   {step === "done" ? t("headerDone") : t("header")}
                 </h2>
               </div>
-              <button onClick={handleClose} className="text-[#A09E98] hover:text-[#6B6A66] transition">
+              <button onClick={handleClose} aria-label={t("close")} className="text-[#A09E98] hover:text-[#6B6A66] transition">
                 <X className="w-5 h-5" />
               </button>
             </div>

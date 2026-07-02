@@ -94,6 +94,7 @@ export function ShareFormButton({ templateId, templateName, patients }: Props) {
               <button
                 type="button"
                 onClick={handleClose}
+                aria-label={t("close")}
                 className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
               >
                 <X className="h-3.5 w-3.5" />

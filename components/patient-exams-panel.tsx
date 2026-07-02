@@ -105,6 +105,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
 
 function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () => void }) {
   const t = useTranslations("patientPanels.exams.form");
+  const tCommon = useTranslations("common.actions");
   const [results, setResults] = useState<ResultDraft[]>([
     { biomarker: "", value: "", unit: "", ref_min: "", ref_max: "" },
   ]);
@@ -164,7 +165,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
         <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <button type="button" onClick={onClose} className="text-[#A09E98] hover:text-[#0F1A2E]">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E]">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
