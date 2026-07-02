@@ -82,6 +82,11 @@ export const DEFAULT_QUESTION_MAP: QuestionMapEntry[] = [
   { source: "assessment", template_match: "Q-SNA", section_match: "EMOCIONAL",      catalog_code: "qsna_emocional" },
   { source: "assessment", template_match: "Q-SNA", section_match: "GASTROINTESTINAL",catalog_code: "qsna_gi_visceral" },
   { source: "assessment", template_match: "Q-SNA", section_match: "NEUROCOGNITIVA", catalog_code: "qsna_neurocognitiva" },
+  // Q-SNA em inglês: mesmas dimensões, títulos de seção em inglês. (GASTROINTESTINAL
+  // já casa por substring; faltam SLEEP / EMOTIONAL / NEUROCOGNITIVE.)
+  { source: "assessment", template_match: "Q-SNA", section_match: "SLEEP",          catalog_code: "qsna_sono" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "EMOTIONAL",      catalog_code: "qsna_emocional" },
+  { source: "assessment", template_match: "Q-SNA", section_match: "NEUROCOGNITIVE", catalog_code: "qsna_neurocognitiva" },
 
   // ── PHQ-9 / GAD-7 (total do template) ──
   { source: "assessment", template_match: "PHQ-9", section_match: null, catalog_code: "phq9_depressao" },

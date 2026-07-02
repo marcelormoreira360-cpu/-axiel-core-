@@ -20,6 +20,7 @@
     "count": "{count, plural, one {# active template} other {# active templates}}",
     "importQRM": "Import Q.R.M.",
     "importQSNA": "Import Q-SNA",
+    "importQSNAEN": "Import Q-SNA (EN)",
     "newForm": "New form",
     "empty": "No forms created yet.",
     "emptyHint": "Click \"Import Q-SNA\" to add the Autonomic Nervous System questionnaire, or create a new one.",

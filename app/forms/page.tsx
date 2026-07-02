@@ -7,7 +7,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatients } from "@/services/patient-service";
 import { FileText, Plus, Pencil, ClipboardList, ArrowLeft } from "lucide-react";
 import {
-  importQSNAAction, importQRMAction, deleteTemplateAction,
+  importQSNAAction, importQSNAENAction, importQRMAction, deleteTemplateAction,
   importPHQ9PTAction, importPHQ9ENAction, importGAD7PTAction, importGAD7ENAction,
   importHPAPTAction, importHPAENAction, importMSQENAction,
 } from "@/app/forms/actions";
@@ -29,6 +29,9 @@ export default async function FormsPage() {
 
   const hasQSNA = templates.some((t) =>
     t.name.toLowerCase().includes("q-sna") || t.name.toLowerCase().includes("nervoso autônomo")
+  );
+  const hasQSNAEN = templates.some((t) =>
+    t.name.toLowerCase().includes("autonomic nervous system")
   );
   const hasQRM = templates.some((t) =>
     t.name.toLowerCase().includes("q.r.m") || t.name.toLowerCase().includes("rastreamento metabólico")
@@ -90,6 +93,13 @@ export default async function FormsPage() {
               <form action={importQSNAAction}>
                 <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQSNA")}
+                </button>
+              </form>
+            )}
+            {!hasQSNAEN && (
+              <form action={importQSNAENAction}>
+                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[6px] px-[10px] py-[6px] transition">
+                  {t("importQSNAEN")}
                 </button>
               </form>
             )}

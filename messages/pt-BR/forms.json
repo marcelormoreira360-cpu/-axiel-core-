@@ -20,6 +20,7 @@
     "count": "{count, plural, one {# modelo ativo} other {# modelos ativos}}",
     "importQRM": "Importar Q.R.M.",
     "importQSNA": "Importar Q-SNA",
+    "importQSNAEN": "Importar Q-SNA (EN)",
     "newForm": "Novo formulário",
     "empty": "Nenhum formulário criado ainda.",
     "emptyHint": "Clique em \"Importar Q-SNA\" para adicionar o questionário do Sistema Nervoso Autônomo, ou crie um novo.",

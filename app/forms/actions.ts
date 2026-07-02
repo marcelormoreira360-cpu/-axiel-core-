@@ -581,6 +581,160 @@ export async function importHPAPTAction()   { await runImport(HPA_PT_TEMPLATE); 
 export async function importHPAENAction()   { await runImport(HPA_EN_TEMPLATE); }
 export async function importMSQENAction()   { await runImport(MSQ_EN_TEMPLATE); }
 
+// Versão em INGLÊS do Q-SNA (mesma estrutura/escala/faixas do PT). O nome contém
+// "Q-SNA", então o motor Bio³ e o "Importar achados" reconhecem por template_match;
+// as seções em inglês são mapeadas em question-map.ts (SLEEP/EMOTIONAL/NEUROCOGNITIVE).
+const QSNA_EN_TEMPLATE = {
+  name: "Q-SNA — Autonomic Nervous System Dysfunction",
+  description: "Assesses autonomic nervous system dysfunction across 9 clinical dimensions.",
+  instructions:
+    "Rate each symptom based on the past 30 days.\n0 – Never or rarely experienced\n1 – Occasionally experienced, mild impact\n2 – Occasionally experienced, severe impact\n3 – Frequently experienced, mild impact\n4 – Frequently experienced, severe impact",
+  sections: [
+    {
+      title: "CARDIOVASCULAR / AUTONOMIC",
+      questions: [
+        "Palpitations or rapid/irregular heartbeat at rest",
+        "Blood pressure instability (at rest or under stress)",
+        "Dizziness or lightheadedness when standing up",
+        "Intolerance to heat or cold with blood pressure changes",
+        "Chest discomfort without structural heart disease diagnosis",
+      ],
+    },
+    {
+      title: "RESPIRATORY",
+      questions: [
+        "Short, irregular, or interrupted breathing under stress",
+        "Shortness of breath not proportional to physical effort",
+        "Worsening respiratory symptoms during emotional distress",
+        "Snoring, sleep apnea, or non-restorative sleep related to breathing",
+        "Difficulty coordinating breathing with relaxation",
+      ],
+    },
+    {
+      title: "GASTROINTESTINAL / VISCERAL",
+      questions: [
+        "Frequent reflux, nausea, or heartburn",
+        "Recurrent constipation or diarrhea without clear cause",
+        "Abdominal pain associated with stress",
+        "\"Knot in the stomach\" sensation during anxiety",
+        "Appetite changes not explained by diet",
+      ],
+    },
+    {
+      title: "INFLAMMATORY / IMMUNOLOGICAL",
+      questions: [
+        "Frequent or prolonged infections",
+        "Diagnosis of autoimmune diseases",
+        "Chronic inflammatory symptoms (arthritis, gastritis, dermatitis)",
+        "Fatigue after long-lasting infectious processes",
+        "Prior lab tests with elevated CRP/IL-6/TNF-α",
+      ],
+    },
+    {
+      title: "ENDOCRINE / METABOLIC",
+      questions: [
+        "Unexplained weight changes (not related to diet or activity)",
+        "Persistent fatigue despite adequate sleep",
+        "Hair loss, skin changes, or brittle nails",
+        "Menstrual irregularities / early menopause / andropause",
+        "Prior lab abnormalities (cortisol, insulin, TSH, T4, testosterone, estrogen)",
+      ],
+    },
+    {
+      title: "SLEEP / BIOLOGICAL RHYTHMS",
+      questions: [
+        "Difficulty falling asleep",
+        "Waking up multiple times during the night",
+        "Non-restorative sleep despite sufficient hours",
+        "Excessive daytime sleepiness",
+        "Circadian rhythm disruptions (e.g., jet lag, shift work)",
+      ],
+    },
+    {
+      title: "NEUROCOGNITIVE / EXECUTIVE FUNCTION",
+      questions: [
+        "Difficulty concentrating on simple tasks",
+        "Frequent forgetfulness under pressure",
+        "Repetitive thoughts or excessive worry",
+        "Feeling mentally \"stuck\" when making decisions",
+        "Reduced creativity or cognitive flexibility",
+      ],
+    },
+    {
+      title: "EMOTIONAL / PSYCHOSOCIAL",
+      questions: [
+        "Persistent anxiety or daily worry",
+        "Depressed mood or loss of interest",
+        "Frequent irritability or exaggerated emotional reactions",
+        "Difficulty recovering after stressful events",
+        "Hypervigilance or difficulty relaxing",
+      ],
+    },
+    {
+      title: "AGING / VITALITY",
+      questions: [
+        "Chronic fatigue disproportionate to effort",
+        "Slow recovery after physical activity or stress",
+        "Progressive loss of strength or vitality",
+        "Reduced motivation for enjoyable activities",
+        "Frequent diffuse pain without clear diagnosis",
+      ],
+    },
+  ],
+};
+
+async function importTemplateFromDef(
+  def: { name: string; description: string; instructions: string; sections: { title: string; questions: string[] }[] },
+) {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+
+  const supabase = await createSupabaseServerClient();
+  const clinicId = profile.clinic_id;
+
+  const { data: template, error: tErr } = await supabase
+    .from("assessment_templates")
+    .insert({
+      clinic_id: clinicId,
+      name: def.name,
+      description: def.description,
+      instructions: def.instructions,
+      is_active: true,
+    })
+    .select("id")
+    .single();
+  if (tErr) throw tErr;
+
+  for (let si = 0; si < def.sections.length; si++) {
+    const sec = def.sections[si];
+    const { data: section, error: sErr } = await supabase
+      .from("assessment_sections")
+      .insert({ template_id: template.id, title: sec.title, order_index: si })
+      .select("id")
+      .single();
+    if (sErr) throw sErr;
+
+    const questionRows = sec.questions.map((text, qi) => ({
+      template_id: template.id,
+      section_id: section.id,
+      text,
+      question_type: "scale",
+      min_score: 0,
+      max_score: 4,
+      order_index: qi,
+      is_required: false,
+    }));
+    const { error: qErr } = await supabase.from("assessment_questions").insert(questionRows);
+    if (qErr) throw qErr;
+  }
+
+  revalidatePath("/forms");
+}
+
+export async function importQSNAENAction() {
+  await importTemplateFromDef(QSNA_EN_TEMPLATE);
+}
+
 export async function importQSNAAction() {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
