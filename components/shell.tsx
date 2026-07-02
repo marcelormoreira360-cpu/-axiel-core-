@@ -14,7 +14,7 @@ import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 import { getClinicSubscription } from "@/services/billing-service";
 import { getClinicCurrency } from "@/services/finance-service";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { CurrencyProvider } from "@/components/currency-provider";
 
 export async function Shell({
@@ -22,12 +22,15 @@ export async function Shell({
   userName,
   userRole,
   fullWidth = false,
+  billingLockExempt = false,
 }: {
   children: ReactNode;
   userName?: string | null;
   userRole?: string | null;
   /** Remove max-w-5xl e reduz padding — ideal para páginas de agenda/tabela */
   fullWidth?: boolean;
+  /** Páginas de escape do lock de trial expirado (/upgrade, /billing) */
+  billingLockExempt?: boolean;
 }) {
   const initials = userName
     ? userName.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()
@@ -75,6 +78,7 @@ export async function Shell({
   const clinicName = clinic?.name ?? "AXIEL";
 
   // Moeda da clínica (BRL/USD/EUR) — vem da config da clínica, não do idioma.
+  const tShell = await getTranslations("common");
   const [clinicCurrency, shellLocale] = await Promise.all([
     clinicId ? getClinicCurrency(clinicId).catch(() => "BRL") : Promise.resolve("BRL"),
     getLocale().catch(() => "pt-BR"),
@@ -205,7 +209,22 @@ export async function Shell({
 
         <div className={fullWidth ? "px-4 py-4 lg:px-6 lg:py-5" : "mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8"}>
           <CurrencyProvider currency={clinicCurrency} locale={shellLocale}>
-            {children}
+            {trialExpired && !billingLockExempt ? (
+              <div className="mx-auto max-w-lg py-16 text-center">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl">⏳</div>
+                <h1 className="text-2xl font-semibold tracking-tight text-[#0F1A2E]">{tShell("trialLock.title")}</h1>
+                <p className="mt-3 text-sm text-black/55">{tShell("trialLock.body")}</p>
+                <Link
+                  href="/upgrade"
+                  className="mt-8 inline-flex items-center justify-center rounded-lg bg-axiel-blue px-8 py-3 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5"
+                >
+                  {tShell("trialLock.cta")}
+                </Link>
+                <p className="mt-4 text-xs text-black/35">{tShell("trialLock.helper")}</p>
+              </div>
+            ) : (
+              <>{children}</>
+            )}
           </CurrencyProvider>
         </div>
       </main>
