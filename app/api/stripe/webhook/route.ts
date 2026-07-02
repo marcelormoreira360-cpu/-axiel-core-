@@ -145,6 +145,21 @@ async function resolveStripePaymentMethod(
 // Idempotente por stripe_payment_intent_id — eventos duplicados não duplicam linhas.
 async function handleCheckoutSessionPaid(session: Stripe.Checkout.Session) {
   const type = session.metadata?.type;
+
+  // Pix/Boleto: pedido de produto só confirma via async_payment_succeeded,
+  // então o pedido também precisa ser baixado aqui (service é idempotente).
+  if (type === "product_order") {
+    if (session.metadata?.order_id) {
+      const intentId =
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : (session.payment_intent?.id ?? null);
+      const { markProductOrderPaid } = await import("@/services/product-order-service");
+      await markProductOrderPaid(session.metadata.order_id, { stripePaymentIntentId: intentId });
+    }
+    return;
+  }
+
   if (type !== "session_payment" && type !== "patient_purchase") return;
 
   const supabaseAdmin = createSupabaseAdminClient();

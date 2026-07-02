@@ -7,6 +7,7 @@ import { detectLanguage } from "@/lib/whatsapp-lang";
 import { createLogger } from "@/lib/logger";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { getClinicTimezone } from "@/services/clinic-service";
 
 const log = createLogger("book");
 
@@ -109,6 +110,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     .maybeSingle();
 
   if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
+
+  // Horários exibidos ao paciente sempre no fuso da clínica (o servidor roda em UTC)
+  const clinicTz = await getClinicTimezone(clinic.id);
 
   // Fetch is_online alongside other session type fields
   const { data: sessionType } = await supabase
@@ -226,6 +230,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
             clinicName: clinic.name as string,
             sessionName: sessionType.name,
             startsAt: starts_at,
+            timeZone: clinicTz,
             joinUrl: meeting.join_url,
           }).catch((e) => log.error("Zoom email failed", e as Error, { appointment_id: appointment.id }));
         }
@@ -264,14 +269,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
       if (lang === "en") {
         templateName = "booking_confirmation_en";
         langCode = "en_US";
-        const dateStr = date.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long" });
-        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+        const dateStr = date.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", timeZone: clinicTz });
+        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: clinicTz });
         dateTimeStr = `${dateStr} at ${timeStr}`;
       } else {
         templateName = "confirmacao_agendamento";
         langCode = "pt_BR";
-        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" });
-        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: clinicTz });
+        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: clinicTz });
         dateTimeStr = `${dateStr} às ${timeStr}`;
       }
 
@@ -335,6 +340,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
   const apptDate = new Date(starts_at).toLocaleString("pt-BR", {
     weekday: "short", day: "numeric", month: "short",
     hour: "2-digit", minute: "2-digit",
+    timeZone: clinicTz,
   });
   import("@/services/push-service").then(({ sendPushToClinic, sendPushToPatient }) =>
     Promise.allSettled([
@@ -370,13 +376,14 @@ async function sendZoomConfirmationEmail(opts: {
   sessionName: string;
   startsAt: string;
   joinUrl: string;
+  timeZone: string;
 }) {
   const { Resend } = await import("resend");
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   const date = new Date(opts.startsAt);
-  const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: opts.timeZone });
+  const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: opts.timeZone });
 
   await resend.emails.send({
     from: DEFAULT_FROM_EMAIL,

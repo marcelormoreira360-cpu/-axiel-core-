@@ -30,12 +30,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   // Fetch timezone from clinic_settings (fall back to Brasília if not set)
   const { data: clinicSettings } = await supabase
     .from("clinic_settings")
-    .select("settings")
+    .select("timezone, settings")
     .eq("clinic_id", clinic.id)
     .maybeSingle();
 
+  // Coluna `timezone` é a canônica (é o que /settings/regional grava);
+  // o JSONB settings.timezone é legado e fica como fallback.
   const timezone: string =
-    (clinicSettings?.settings as Record<string, unknown> | null)?.timezone as string
+    (clinicSettings?.timezone as string | null)
+    ?? ((clinicSettings?.settings as Record<string, unknown> | null)?.timezone as string | undefined)
     ?? "America/Sao_Paulo";
 
   // Compute UTC boundaries for the requested wall-clock date in the clinic's TZ.

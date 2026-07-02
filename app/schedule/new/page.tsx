@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { wallClockToUTC } from "@/lib/booking-utils";
+import { getClinicTimezone } from "@/services/clinic-service";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
@@ -82,7 +84,7 @@ export default async function NewAppointmentPage({
     await createAppointment({
       clinic_id: profile.clinic_id,
       patient_id: patientId,
-      starts_at: new Date(`${date}T${time}:00`).toISOString(),
+      starts_at: wallClockToUTC(date, time, await getClinicTimezone(profile.clinic_id)).toISOString(),
       duration_minutes: duration,
       session_type_id: sessionTypeId,
       source,
