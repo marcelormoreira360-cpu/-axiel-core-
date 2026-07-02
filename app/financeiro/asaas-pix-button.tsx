@@ -64,7 +64,7 @@ export function AsaasChargeButton({
             readOnly
             value={url}
             onFocus={(e) => e.currentTarget.select()}
-            className="flex-1 min-w-0 text-[10px] text-[#6B6A66] bg-[#F4F3EF] border border-black/[.06] rounded-md px-2 py-1"
+            className="flex-1 min-w-0 text-[10px] text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] border border-black/[.06] dark:border-white/[.06] rounded-md px-2 py-1"
           />
           <button
             onClick={copy}
@@ -76,7 +76,7 @@ export function AsaasChargeButton({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="shrink-0 text-[10px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] rounded-md px-2 py-1 transition"
+            className="shrink-0 text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] rounded-md px-2 py-1 transition"
           >
             {t("open")}
           </a>
@@ -90,7 +90,7 @@ export function AsaasChargeButton({
       <button
         onClick={generate}
         disabled={loading}
-        className="text-[10px] font-medium text-[#0B1F3A] border border-[#0B1F3A]/20 bg-[#0B1F3A]/[.04] hover:bg-[#0B1F3A]/[.08] disabled:opacity-50 rounded-md px-2.5 py-1 transition"
+        className="text-[10px] font-medium text-[#0B1F3A] dark:text-[#E8E6E2] border border-[#0B1F3A]/20 dark:border-white/[.15] bg-[#0B1F3A]/[.04] dark:bg-white/[.06] hover:bg-[#0B1F3A]/[.08] dark:hover:bg-white/[.10] disabled:opacity-50 rounded-md px-2.5 py-1 transition"
       >
         {loading ? t("generating") : label}
       </button>

@@ -61,20 +61,20 @@ export default async function FinanceiroPage() {
     <Shell>
       <div className="mb-6 flex items-start justify-between flex-wrap gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 dark:text-white/35">{t("eyebrow")}</p>
+          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/financeiro/relatorio"
-            className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
+            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
           >
             {t("report")}
           </Link>
           <Link
             href="/financeiro/nfse"
-            className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] px-3 py-1.5 rounded-lg transition"
+            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
           >
             {t("nfse")}
           </Link>
@@ -118,9 +118,9 @@ export default async function FinanceiroPage() {
             green: unpaid.length === 0,
           },
         ].map((m) => (
-          <div key={m.label} className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+          <div key={m.label} className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] p-[13px]">
             <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{m.label}</p>
-            <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] leading-none">{m.value}</p>
+            <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2] leading-none">{m.value}</p>
             <p className={`text-[10px] mt-[3px] ${m.green ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>{m.sub}</p>
           </div>
         ))}
@@ -132,13 +132,13 @@ export default async function FinanceiroPage() {
         <div className="space-y-4">
 
           {/* Receita últimos 6 meses */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-4">{t("revenue6mo")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[16px]">
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-4">{t("revenue6mo")}</p>
             <div className="flex items-end gap-2 h-24">
               {monthly.map((m) => (
                 <div key={m.month} className="flex flex-1 flex-col items-center gap-1">
                   <div
-                    className="w-full rounded-t-md bg-[#0B1F3A] transition-all"
+                    className="w-full rounded-t-md bg-[#0B1F3A] dark:bg-white/[.25] transition-all"
                     style={{ height: `${Math.round((m.cents / maxMonthly) * 80)}px`, minHeight: m.cents > 0 ? "4px" : "0" }}
                     title={formatMoney(m.cents, __cur, locale)}
                   />
@@ -149,25 +149,25 @@ export default async function FinanceiroPage() {
           </div>
 
           {/* Pagamentos recentes */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
-              <p className="text-[12px] font-medium text-[#0F1A2E]">{t("recentPayments")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05] dark:border-white/[.05]">
+              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("recentPayments")}</p>
             </div>
             {confirmedPayments.length === 0 ? (
               <p className="px-4 py-6 text-[12px] text-[#A09E98]">{t("noPayments")}</p>
             ) : (
-              <div className="divide-y divide-black/[.04]">
+              <div className="divide-y divide-black/[.04] dark:divide-white/[.05]">
                 {confirmedPayments.slice(0, 15).map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAFAF8] transition">
+                  <div key={p.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#FAFAF8] dark:hover:bg-white/[.03] transition">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{p.patient_name ?? "—"}</p>
+                      <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{p.patient_name ?? "—"}</p>
                       <p className="text-[10px] text-[#A09E98]">
                         {new Date(p.paid_at).toLocaleDateString(locale)}
                         {p.session_type_name ? ` · ${p.session_type_name}` : ""}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[13px] font-semibold text-[#0F1A2E]">{formatMoney(p.amount_cents, __cur, locale)}</p>
+                      <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{formatMoney(p.amount_cents, __cur, locale)}</p>
                       <p className="text-[10px] text-[#A09E98]">{methodLabel(p.payment_method ?? "")}</p>
                     </div>
                   </div>
@@ -185,8 +185,8 @@ export default async function FinanceiroPage() {
           <FinanceAIPanel initial={cachedInsight} />
 
           {/* Por forma de pagamento */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] p-4">
-            <p className="text-[12px] font-medium text-[#0F1A2E] mb-3">{t("byMethod")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-4">
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-3">{t("byMethod")}</p>
             {Object.keys(kpis.revenueThisMonthByMethod).length === 0 ? (
               <p className="text-[11px] text-[#A09E98]">{t("noMethodData")}</p>
             ) : (
@@ -196,12 +196,12 @@ export default async function FinanceiroPage() {
                   .map(([method, cents]) => (
                     <div key={method}>
                       <div className="flex items-center justify-between mb-0.5">
-                        <p className="text-[11px] text-[#6B6A66]">{methodLabel(method)}</p>
-                        <p className="text-[11px] font-medium text-[#0F1A2E]">{formatMoney(cents, __cur, locale)}</p>
+                        <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">{methodLabel(method)}</p>
+                        <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{formatMoney(cents, __cur, locale)}</p>
                       </div>
-                      <div className="h-1.5 w-full rounded-full bg-[#F4F3EF]">
+                      <div className="h-1.5 w-full rounded-full bg-[#F4F3EF] dark:bg-white/[.06]">
                         <div
-                          className="h-1.5 rounded-full bg-[#0B1F3A]"
+                          className="h-1.5 rounded-full bg-[#0B1F3A] dark:bg-white/[.25]"
                           style={{ width: `${Math.round((cents / kpis.revenueThisMonth) * 100)}%` }}
                         />
                       </div>
@@ -212,9 +212,9 @@ export default async function FinanceiroPage() {
           </div>
 
           {/* Sessões não pagas */}
-          <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
-              <p className="text-[12px] font-medium text-[#0F1A2E]">{t("unpaidTitle")}</p>
+          <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05] dark:border-white/[.05]">
+              <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("unpaidTitle")}</p>
               {unpaid.length > 0 && (
                 <span className="text-[10px] font-medium bg-amber-50 text-amber-600 rounded-full px-2 py-0.5">{unpaid.length}</span>
               )}
@@ -222,7 +222,7 @@ export default async function FinanceiroPage() {
             {unpaid.length === 0 ? (
               <p className="px-4 py-4 text-[11px] text-[#0F6E56]">{t("allPaid")}</p>
             ) : (
-              <div className="divide-y divide-black/[.04] max-h-72 overflow-y-auto">
+              <div className="divide-y divide-black/[.04] dark:divide-white/[.05] max-h-72 overflow-y-auto">
                 {unpaid.slice(0, 10).map((u) => (
                   <FinanceiroUnpaidRow key={u.appointment_id} session={u} locale={locale} currency={__cur} asaasEnabled={asaasPix} />
                 ))}
@@ -255,7 +255,7 @@ function FinanceiroUnpaidRow({
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{session.patient_name}</p>
+          <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{session.patient_name}</p>
           <p className="text-[10px] text-[#A09E98]">
             {new Date(session.starts_at).toLocaleDateString(locale)}
             {session.session_type_name ? ` · ${session.session_type_name}` : ""}

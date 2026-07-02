@@ -28,7 +28,7 @@ export default async function ProductsPage() {
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Produtos</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">Produtos</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {products.length > 0
               ? `${products.length} produto${products.length !== 1 ? "s" : ""} no catálogo`
@@ -37,7 +37,7 @@ export default async function ProductsPage() {
         </div>
         <Link
           href="/products/new"
-          className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
+          className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12] dark:border-white/[.12]"
         >
           + Novo produto
         </Link>
@@ -66,7 +66,7 @@ export default async function ProductsPage() {
                   "rounded-[10px] border px-[14px] py-[12px]",
                   stat.accent
                     ? "bg-[#0F1A2E] border-transparent"
-                    : "bg-white border-black/[.07]",
+                    : "bg-white dark:bg-[#111827] border-black/[.07] dark:border-white/[.07]",
                 ].join(" ")}
               >
                 <p
@@ -78,7 +78,7 @@ export default async function ProductsPage() {
                 </p>
                 <p
                   className={`text-[26px] font-semibold tracking-[-0.04em] leading-none ${
-                    stat.accent ? "text-white" : "text-[#0F1A2E]"
+                    stat.accent ? "text-white" : "text-[#0F1A2E] dark:text-[#E8E6E2]"
                   }`}
                 >
                   {stat.value}
@@ -92,12 +92,12 @@ export default async function ProductsPage() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] flex flex-col gap-[10px]"
+                className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] px-[16px] py-[14px] flex flex-col gap-[10px]"
               >
                 {/* Header row */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium text-[#0F1A2E] truncate leading-snug">
+                    <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate leading-snug">
                       {product.name}
                     </p>
                     <p className="text-[11px] text-[#A09E98] mt-[2px]">{product.category}</p>
@@ -105,8 +105,8 @@ export default async function ProductsPage() {
                   <span
                     className={`shrink-0 text-[10px] font-medium px-[8px] py-[2px] rounded-full ${
                       product.is_active
-                        ? "bg-[#E1F5EE] text-[#0F6E56]"
-                        : "bg-[#F4F3EF] text-[#6B6A66]"
+                        ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]"
+                        : "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]"
                     }`}
                   >
                     {product.is_active ? "Ativo" : "Inativo"}
@@ -115,14 +115,14 @@ export default async function ProductsPage() {
 
                 {/* Description */}
                 {product.description && (
-                  <p className="text-[11px] text-[#6B6A66] leading-relaxed line-clamp-2">
+                  <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed line-clamp-2">
                     {product.description}
                   </p>
                 )}
 
                 {/* Price + inventory row */}
                 <div className="flex items-center justify-between">
-                  <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
+                  <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
                     {formatMoney(product.price_cents, __cur, __loc)}
                   </p>
                   <div className="flex items-center gap-[5px]">
@@ -135,7 +135,7 @@ export default async function ProductsPage() {
                           : "bg-[#FF6B4A]"
                       }`}
                     />
-                    <span className="text-[11px] text-[#6B6A66]">
+                    <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
                       {product.inventory_quantity} em estoque
                     </span>
                   </div>
@@ -156,7 +156,7 @@ export default async function ProductsPage() {
                   />
                   <button
                     type="submit"
-                    className="text-[11px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] transition px-[10px] py-[5px] rounded-lg w-full mt-[2px]"
+                    className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[10px] py-[5px] rounded-lg w-full mt-[2px]"
                   >
                     {product.is_active ? "Desativar" : "Ativar"}
                   </button>

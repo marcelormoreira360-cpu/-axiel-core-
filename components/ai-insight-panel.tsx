@@ -50,12 +50,12 @@ export function AiInsightPanel({
       <Card className="bg-white">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-axiel-soft">
-              <Brain className="h-6 w-6 text-axiel-gold" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-axiel-soft dark:bg-white/[.04]">
+              <Brain className="h-6 w-6 text-axiel-gold dark:text-[#9FE1CB]" />
             </div>
             <div>
               <p className="text-xs font-semibold tracking-[0.22em] text-black/35">AI INSIGHTS</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black/85 md:text-4xl">Simple insight review</h1>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-black/85 dark:text-white/85 md:text-4xl">Simple insight review</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-black/55">
                 Review the insight, approve it, or request changes. Technical details stay hidden unless needed.
               </p>
@@ -79,9 +79,9 @@ export function AiInsightPanel({
       </Card>
 
       {error ? (
-        <Card className="border-red-100 bg-red-50">
-          <p className="text-sm font-semibold text-red-700">AI insight could not be updated.</p>
-          <p className="mt-2 text-sm text-red-600">{error}</p>
+        <Card className="border-red-100 dark:border-red-500/25 bg-red-50 dark:bg-red-500/10">
+          <p className="text-sm font-semibold text-red-700 dark:text-red-400">AI insight could not be updated.</p>
+          <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>
         </Card>
       ) : null}
 
@@ -105,8 +105,8 @@ export function AiInsightPanel({
               <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
             </summary>
 
-            <div className="mt-5 grid gap-5 border-t border-black/[0.06] pt-5 lg:grid-cols-2">
-              <div className="rounded-3xl bg-axiel-soft p-5">
+            <div className="mt-5 grid gap-5 border-t border-black/[0.06] dark:border-white/[.07] pt-5 lg:grid-cols-2">
+              <div className="rounded-3xl bg-axiel-soft dark:bg-white/[.04] p-5">
                 <p className="text-sm font-semibold text-black/70">Next Steps</p>
                 <div className="mt-3 space-y-2">
                   {output.practitioner_review_points.slice(0, 5).map((item) => (
@@ -116,7 +116,7 @@ export function AiInsightPanel({
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-axiel-soft p-5">
+              <div className="rounded-3xl bg-axiel-soft dark:bg-white/[.04] p-5">
                 <p className="text-sm font-semibold text-black/70">Validation history</p>
                 <div className="mt-3 space-y-2">
                   {validationEvents.slice(0, 5).map((event) => (
@@ -131,11 +131,11 @@ export function AiInsightPanel({
                 </div>
               </div>
 
-              <div className="rounded-3xl bg-amber-50 p-5 lg:col-span-2">
-                <p className="text-sm font-semibold text-amber-900">Safety note</p>
-                <p className="mt-2 text-sm leading-6 text-amber-800">{AI_INSIGHT_LABEL}</p>
-                <p className="mt-2 text-sm leading-6 text-amber-800">Status: {aiInsightStatusLabel(insight.review_status)}</p>
-                {output.safety_note ? <p className="mt-2 text-sm leading-6 text-amber-800">{output.safety_note}</p> : null}
+              <div className="rounded-3xl bg-amber-50 dark:bg-amber-500/10 p-5 lg:col-span-2">
+                <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">Safety note</p>
+                <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-300">{AI_INSIGHT_LABEL}</p>
+                <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-300">Status: {aiInsightStatusLabel(insight.review_status)}</p>
+                {output.safety_note ? <p className="mt-2 text-sm leading-6 text-amber-800 dark:text-amber-300">{output.safety_note}</p> : null}
               </div>
             </div>
           </details>

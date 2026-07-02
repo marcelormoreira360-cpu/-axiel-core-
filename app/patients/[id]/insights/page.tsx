@@ -45,7 +45,7 @@ export default async function PatientInsightsPage({ params, searchParams }: Prop
       <div className="flex items-center gap-[10px] mb-[20px]">
         <BackLink
           fallbackHref={`/patients/${patient.id}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
@@ -59,10 +59,10 @@ export default async function PatientInsightsPage({ params, searchParams }: Prop
         const allSent = deliveryResult.email === "sent" || deliveryResult.whatsapp === "sent";
         const anyFailed = deliveryResult.email === "failed" || deliveryResult.whatsapp === "failed";
         const tone = anyFailed
-          ? "bg-[#FDECEC] border-[#F5B5B5] text-[#8A1F1F]"
+          ? "bg-[#FDECEC] dark:bg-[#B42318]/[.18] border-[#F5B5B5] dark:border-[#B42318]/40 text-[#8A1F1F] dark:text-[#F2B8B5]"
           : allSent
-            ? "bg-[#E1F5EE] border-[#9FE1CB] text-[#085041]"
-            : "bg-[#FBF3E0] border-[#EBD9A8] text-[#7A5A12]";
+            ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 border-[#9FE1CB] dark:border-[#0F6E56]/40 text-[#085041] dark:text-[#9FE1CB]"
+            : "bg-[#FBF3E0] dark:bg-[#C77D17]/[.15] border-[#EBD9A8] dark:border-[#C77D17]/30 text-[#7A5A12] dark:text-[#E8B04B]";
         return (
           <div className={`mb-4 border rounded-[10px] px-[15px] py-[11px] ${tone}`}>
             <p className="text-[12px] font-medium mb-[3px]">Envio do relatório ao paciente</p>
@@ -74,11 +74,11 @@ export default async function PatientInsightsPage({ params, searchParams }: Prop
 
       {/* Sugestão de follow-up pós-aprovação */}
       {approved === "1" && suggestFollowup === "1" && (
-        <div className="mb-4 bg-[#E1F5EE] border border-[#9FE1CB] rounded-[10px] px-[15px] py-[11px] flex items-center gap-[10px]">
-          <svg className="w-4 h-4 text-[#0F6E56] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="mb-4 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 border border-[#9FE1CB] dark:border-[#0F6E56]/40 rounded-[10px] px-[15px] py-[11px] flex items-center gap-[10px]">
+          <svg className="w-4 h-4 text-[#0F6E56] dark:text-[#9FE1CB] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          <p className="flex-1 text-[12px] text-[#085041]">Insight aprovado. Deseja criar um follow-up para este paciente?</p>
+          <p className="flex-1 text-[12px] text-[#085041] dark:text-[#9FE1CB]">Insight aprovado. Deseja criar um follow-up para este paciente?</p>
           <Link
             href={`/follow-ups?patient_id=${id}`}
             className="shrink-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] px-[10px] py-[4px] rounded-[6px] transition"

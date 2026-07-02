@@ -248,15 +248,15 @@ export function GlobalSearch() {
                       active ? "bg-[#F4F3EF] dark:bg-white/[.06]" : "hover:bg-[#FAFAF8] dark:hover:bg-white/[.03]"
                     }`}
                   >
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-[#E1F5EE] flex items-center justify-center">
-                      <User className="h-3.5 w-3.5 text-[#0F6E56]" />
+                    <div className="w-8 h-8 shrink-0 rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center">
+                      <User className="h-3.5 w-3.5 text-[#0F6E56] dark:text-[#9FE1CB]" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{p.full_name}</p>
                       <p className="text-[11px] text-[#A09E98] truncate">{p.email ?? p.phone ?? "—"}</p>
                     </div>
                     <span className={`text-[10px] px-[7px] py-[2px] rounded-full shrink-0 ${
-                      p.status === "active" ? "bg-[#E1F5EE] text-[#085041]" : "bg-[#F4F3EF] text-[#A09E98]"
+                      p.status === "active" ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]" : "bg-[#F4F3EF] dark:bg-white/[.06] text-[#A09E98]"
                     }`}>
                       {p.status === "active" ? "Ativo" : p.status === "inactive" ? "Inativo" : "Arquivado"}
                     </span>

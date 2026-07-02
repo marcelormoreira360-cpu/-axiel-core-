@@ -26,7 +26,7 @@ export function PatientFunctionalExamsPanel({
   const [examType, setExamType] = useState<string>("neurometria");
 
   const inputCls =
-    "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56]/50 transition";
+    "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56]/50 transition";
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
@@ -37,7 +37,7 @@ export function PatientFunctionalExamsPanel({
         <button
           type="button"
           onClick={() => setAdding((v) => !v)}
-          className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+          className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
         >
           {adding ? <X className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
           {adding ? t("cancel") : t("add")}
@@ -89,7 +89,7 @@ export function PatientFunctionalExamsPanel({
             <details key={exam.id} className="group border border-black/[.06] rounded-[10px] px-[12px] py-[10px]">
               <summary className="flex items-center justify-between gap-[8px] cursor-pointer list-none">
                 <div className="flex items-center gap-[7px] min-w-0">
-                  <Activity className="h-[14px] w-[14px] text-[#0F6E56] shrink-0" />
+                  <Activity className="h-[14px] w-[14px] text-[#0F6E56] dark:text-[#9FE1CB] shrink-0" />
                   <div className="min-w-0">
                     <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{typeLabel(t, exam)}</p>
                     <p className="text-[10px] text-[#A09E98]">
@@ -104,7 +104,7 @@ export function PatientFunctionalExamsPanel({
               )}
               <MetricsGate exam={exam} patientId={patientId} t={t} locale={locale} />
               <form action={deleteFunctionalExamAction.bind(null, exam.id, patientId)} className="mt-[8px]">
-                <button type="submit" className="inline-flex items-center gap-1 text-[10px] font-medium text-[#B42318]/80 hover:text-[#B42318] transition" aria-label={t("delete")}>
+                <button type="submit" className="inline-flex items-center gap-1 text-[10px] font-medium text-[#B42318]/80 dark:text-[#F2B8B5]/80 hover:text-[#B42318] dark:hover:text-[#F2B8B5] transition" aria-label={t("delete")}>
                   <Trash2 className="h-[12px] w-[12px]" /> {t("delete")}
                 </button>
               </form>
@@ -139,20 +139,20 @@ function MetricsGate({
   const codes = Object.keys(draft);
 
   const numCls =
-    "w-[88px] text-[12px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[7px] px-[8px] py-[5px] outline-none focus:border-[#0F6E56]/50 transition";
+    "w-[88px] text-[12px] text-[#0F1A2E] bg-white border border-black/[.10] dark:border-white/[.10] rounded-[7px] px-[8px] py-[5px] outline-none focus:border-[#0F6E56]/50 transition";
 
   return (
     <div className="mt-[12px] border border-[#0F6E56]/15 bg-[#0F6E56]/[.03] rounded-[10px] p-[12px]">
       <div className="flex items-center justify-between gap-[8px] mb-[8px]">
         <span className="inline-flex items-center gap-[5px] text-[11px] font-medium text-[#0F1A2E]">
-          <Sparkles className="h-[13px] w-[13px] text-[#0F6E56]" /> {t("metrics.title")}
+          <Sparkles className="h-[13px] w-[13px] text-[#0F6E56] dark:text-[#9FE1CB]" /> {t("metrics.title")}
         </span>
         {reviewed ? (
-          <span className="inline-flex items-center gap-[3px] text-[10px] font-medium text-[#0F6E56]">
+          <span className="inline-flex items-center gap-[3px] text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB]">
             <Check className="h-[11px] w-[11px]" /> {t("metrics.reviewed")}
           </span>
         ) : (
-          <span className="text-[10px] font-medium text-[#B7791F]">{t("metrics.pending")}</span>
+          <span className="text-[10px] font-medium text-[#B7791F] dark:text-[#E8B04B]">{t("metrics.pending")}</span>
         )}
       </div>
       <p className="text-[10px] text-[#6B6A66] mb-[10px] leading-relaxed">{t("metrics.hint")}</p>
@@ -162,7 +162,7 @@ function MetricsGate({
           const meta = EXAM_METRIC_META[code];
           return (
             <div key={code} className="flex items-center justify-between gap-[8px]">
-              <label htmlFor={`${exam.id}-${code}`} className="text-[11px] text-[#3B3A36] min-w-0 truncate">
+              <label htmlFor={`${exam.id}-${code}`} className="text-[11px] text-[#3B3A36] dark:text-[#E8E6E2] min-w-0 truncate">
                 {meta?.label ?? code}
                 {meta?.unit ? <span className="text-[#A09E98]"> ({meta.unit})</span> : null}
               </label>

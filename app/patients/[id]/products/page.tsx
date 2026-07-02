@@ -16,14 +16,14 @@ const STATUS_LABELS: Record<DbPatientProduct["status"], string> = {
 };
 
 const STATUS_CLASSES: Record<DbPatientProduct["status"], string> = {
-  active: "bg-[#E1F5EE] text-[#0F6E56]",
-  paused: "bg-[#FEF3C7] text-[#92400E]",
+  active: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]",
+  paused: "bg-[#FEF3C7] dark:bg-[#C77D17]/[.15] text-[#92400E] dark:text-[#E8B04B]",
   completed: "bg-[#F4F3EF] text-[#6B6A66]",
-  canceled: "bg-[#FEE2E2] text-[#991B1B]",
+  canceled: "bg-[#FEE2E2] dark:bg-[#B42318]/[.18] text-[#991B1B] dark:text-[#F2B8B5]",
 };
 
 const inputClass =
-  "w-full rounded-[10px] border border-black/[.10] bg-white px-[13px] py-[9px] text-[13px] text-[#0F1A2E] placeholder-[#A09E98] outline-none focus:border-[#0F6E56] transition";
+  "w-full rounded-[10px] border border-black/[.10] dark:border-white/[.10] bg-white px-[13px] py-[9px] text-[13px] text-[#0F1A2E] placeholder-[#A09E98] outline-none focus:border-[#0F6E56] transition";
 
 const labelClass = "flex flex-col gap-[5px] text-[12px] font-medium text-[#0F1A2E]";
 
@@ -60,7 +60,7 @@ export default async function PatientProductsPage({
       <div className="flex items-center gap-[10px] mb-[24px]">
         <BackLink
           fallbackHref={`/patients/${id}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
@@ -128,7 +128,7 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="status" value="paused" />
                       <button
                         type="submit"
-                        className="text-[11px] font-medium text-[#92400E] bg-[#FEF3C7] hover:bg-[#FDE68A] transition px-[10px] py-[5px] rounded-lg"
+                        className="text-[11px] font-medium text-[#92400E] dark:text-[#E8B04B] bg-[#FEF3C7] dark:bg-[#C77D17]/[.15] hover:bg-[#FDE68A] dark:hover:bg-[#C77D17]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         Pausar
                       </button>
@@ -139,7 +139,7 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="status" value="completed" />
                       <button
                         type="submit"
-                        className="text-[11px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] transition px-[10px] py-[5px] rounded-lg"
+                        className="text-[11px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[10px] py-[5px] rounded-lg"
                       >
                         Concluir
                       </button>
@@ -150,7 +150,7 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="status" value="canceled" />
                       <button
                         type="submit"
-                        className="text-[11px] font-medium text-[#991B1B] bg-[#FEE2E2] hover:bg-[#FECACA] transition px-[10px] py-[5px] rounded-lg"
+                        className="text-[11px] font-medium text-[#991B1B] dark:text-[#F2B8B5] bg-[#FEE2E2] dark:bg-[#B42318]/[.18] hover:bg-[#FECACA] dark:hover:bg-[#B42318]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         Cancelar
                       </button>
@@ -166,7 +166,7 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="status" value="active" />
                       <button
                         type="submit"
-                        className="text-[11px] font-medium text-[#0F6E56] bg-[#E1F5EE] hover:bg-[#C3EBD8] transition px-[10px] py-[5px] rounded-lg"
+                        className="text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#C3EBD8] dark:hover:bg-[#0F6E56]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         Reativar
                       </button>
@@ -177,7 +177,7 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="status" value="canceled" />
                       <button
                         type="submit"
-                        className="text-[11px] font-medium text-[#991B1B] bg-[#FEE2E2] hover:bg-[#FECACA] transition px-[10px] py-[5px] rounded-lg"
+                        className="text-[11px] font-medium text-[#991B1B] dark:text-[#F2B8B5] bg-[#FEE2E2] dark:bg-[#B42318]/[.18] hover:bg-[#FECACA] dark:hover:bg-[#B42318]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         Cancelar
                       </button>

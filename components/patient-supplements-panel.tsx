@@ -16,13 +16,13 @@ import {
 } from "@/app/patients/[id]/supplements/actions";
 
 const inputCls =
-  "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56]/50 transition";
+  "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56]/50 transition";
 
 const STATUS_CLASSES: Record<string, string> = {
   draft:    "bg-[#F4F3EF] text-[#6B6A66]",
-  reviewed: "bg-[#FFF8E7] text-[#633806]",
-  approved: "bg-[#E1F5EE] text-[#085041]",
-  sent:     "bg-[#E8F0FE] text-[#3B6BE4]",
+  reviewed: "bg-[#FFF8E7] dark:bg-[#C77D17]/[.12] text-[#633806] dark:text-[#E8B04B]",
+  approved: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  sent:     "bg-[#E8F0FE] dark:bg-[#3B6BE4]/[.15] text-[#3B6BE4]",
 };
 
 // ── Add-item form (com auxílio do catálogo) ──────────────────────────────────
@@ -124,7 +124,7 @@ function AddItemForm({
         >
           {t("addItem")}
         </button>
-        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -180,7 +180,7 @@ function OutputPreview({
               href={it.buy_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[#0F6E56] hover:underline ml-2"
+              className="inline-flex items-center gap-1 text-[#0F6E56] dark:text-[#9FE1CB] hover:underline ml-2"
             >
               <ExternalLink className="h-3 w-3" /> {t("buy")}
             </a>
@@ -221,7 +221,7 @@ function RecommendationCard({
         <button
           type="button"
           onClick={() => deleteSupplementRecommendationAction(rec.id, patientId)}
-          className="text-[#D3D1C7] hover:text-red-400 transition shrink-0"
+          className="text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition shrink-0"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -251,7 +251,7 @@ function RecommendationCard({
                 <button
                   type="button"
                   onClick={() => deleteSupplementItemAction(it.id, patientId)}
-                  className="opacity-0 group-hover:opacity-100 text-[#D3D1C7] hover:text-red-400 transition shrink-0"
+                  className="opacity-0 group-hover:opacity-100 text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition shrink-0"
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>
@@ -275,7 +275,7 @@ function RecommendationCard({
           <button
             type="button"
             onClick={() => setAddingItem(true)}
-            className="flex items-center gap-[5px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F6E56] transition mt-[8px]"
+            className="flex items-center gap-[5px] text-[11px] font-medium text-[#A09E98] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] transition mt-[8px]"
           >
             <Plus className="h-3 w-3" /> {t("addItem")}
           </button>
@@ -286,7 +286,7 @@ function RecommendationCard({
         <button
           type="button"
           onClick={() => approveSupplementRecommendationAction(rec.id, patientId)}
-          className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[8px] px-[12px] py-[6px] transition mt-[12px]"
+          className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/25 rounded-[8px] px-[12px] py-[6px] transition mt-[12px]"
         >
           <ShieldCheck className="h-3.5 w-3.5" /> {t("approve")}
         </button>
@@ -296,7 +296,7 @@ function RecommendationCard({
       {isApproved && (
         <>
           <OutputPreview rec={rec} clinicName={clinicName} />
-          <p className="text-[10px] text-[#0F6E56] mt-[8px] flex items-center gap-1">
+          <p className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB] mt-[8px] flex items-center gap-1">
             <Check className="h-3 w-3" /> {t("inReportNote")}
           </p>
         </>
@@ -331,7 +331,7 @@ export function PatientSupplementsPanel({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Plus className="h-3 w-3" /> {t("newRecommendation")}
           </button>
@@ -373,7 +373,7 @@ export function PatientSupplementsPanel({
             >
               {t("create")}
             </button>
-            <button type="button" onClick={() => setCreating(false)} className="text-[#A09E98] hover:text-[#0F1A2E] transition">
+            <button type="button" onClick={() => setCreating(false)} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
               <X className="h-4 w-4" />
             </button>
           </div>

@@ -83,7 +83,7 @@ export default async function FollowUpsPage() {
         <div>
           <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
           <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
-          <p className="mt-3 max-w-2xl text-black/55">{t("subtitle")}</p>
+          <p className="mt-3 max-w-2xl text-black/55 dark:text-white/55">{t("subtitle")}</p>
         </div>
       </header>
 
@@ -94,13 +94,13 @@ export default async function FollowUpsPage() {
           <p className="mt-2 text-4xl font-semibold">{pending.length}</p>
         </Card>
         <Card className="p-6">
-          <CalendarClock className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">{t("kpiCompleted")}</p>
+          <CalendarClock className="h-5 w-5 text-black/30 dark:text-white/30" />
+          <p className="mt-3 text-sm text-black/45 dark:text-white/45">{t("kpiCompleted")}</p>
           <p className="mt-2 text-4xl font-semibold">{completed.length}</p>
         </Card>
         <Card className="p-6">
-          <Sparkles className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">{t("kpiAi")}</p>
+          <Sparkles className="h-5 w-5 text-black/30 dark:text-white/30" />
+          <p className="mt-3 text-sm text-black/45 dark:text-white/45">{t("kpiAi")}</p>
           <p className="mt-2 text-2xl font-semibold">{t("kpiTiming")}</p>
         </Card>
       </section>
@@ -109,7 +109,7 @@ export default async function FollowUpsPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-2xl font-semibold tracking-tight">{t("listTitle")}</h2>
-            <p className="text-sm text-black/40">{t("manualReview")}</p>
+            <p className="text-sm text-black/40 dark:text-white/40">{t("manualReview")}</p>
           </div>
           <FollowUpList followUps={followUps} completeAction={completeFollowUpAction} cancelAction={cancelFollowUpAction} sendAction={sendManualCommunicationAction} />
         </div>
@@ -123,19 +123,19 @@ export default async function FollowUpsPage() {
             <FollowUpForm patients={patients} action={createFollowUpAction} />
           )}
 
-          <Card className="bg-white">
+          <Card className="bg-white dark:bg-[#111827]">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white dark:bg-[#111827]">
                 <Sparkles className="h-5 w-5 text-axiel-gold" />
               </div>
               <div>
                 <h2 className="font-semibold">{FOLLOW_UP_AI_LABEL}</h2>
-                <p className="text-xs text-black/45">{t("aiTimingSub")}</p>
+                <p className="text-xs text-black/45 dark:text-white/45">{t("aiTimingSub")}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
               {reviewPrompts.map((prompt) => (
-                <p key={prompt} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm text-sm leading-5 text-black/55">{prompt}</p>
+                <p key={prompt} className="rounded-xl border border-axiel-line bg-white dark:bg-[#111827] p-6 shadow-sm text-sm leading-5 text-black/55 dark:text-white/55">{prompt}</p>
               ))}
             </div>
           </Card>

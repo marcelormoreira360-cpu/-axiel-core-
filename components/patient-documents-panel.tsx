@@ -7,15 +7,15 @@ import type { PatientDocument } from "@/services/patient-document-service";
 import { deleteDocumentAction } from "@/app/patients/[id]/documentos/actions";
 
 const SOURCE_COLORS: Record<PatientDocument["source"], string> = {
-  clinic:  "bg-[#E6F1FB] text-[#0C447C]",
-  intake:  "bg-[#E1F5EE] text-[#085041]",
-  portal:  "bg-[#F0E8FB] text-[#5C2D91]",
+  clinic:  "bg-[#E6F1FB] dark:bg-[#3B6BE4]/[.15] text-[#0C447C] dark:text-[#8FBFF5]",
+  intake:  "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  portal:  "bg-[#F0E8FB] dark:bg-[#5C2D91]/[.25] text-[#5C2D91] dark:text-[#C9B3E8]",
 };
 
 function FileTypeIcon({ type }: { type: PatientDocument["file_type"] }) {
   if (type === "image") {
     return (
-      <svg className="h-5 w-5 text-[#0C447C]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="h-5 w-5 text-[#0C447C] dark:text-[#8FBFF5]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
         <polyline points="21 15 16 10 5 21"/>
       </svg>
@@ -80,7 +80,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
 
   return (
     <div className="rounded-2xl border border-black/[.07] bg-white overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05]">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-black/[.05] dark:border-white/[.06]">
         <div>
           <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("title")}</p>
           <p className="text-[11px] text-[#A09E98] mt-0.5">
@@ -92,7 +92,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
             href={intakeUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-black/15 px-3 py-1.5 text-[11px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
+            className="flex items-center gap-1.5 rounded-lg border border-black/15 dark:border-white/15 px-3 py-1.5 text-[11px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
           >
             <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -114,12 +114,12 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
           <p className="text-[13px] text-[#A09E98]">
             {t("emptyTitle")}
             {intakeUrl && (
-              <> {t("emptyShareBefore")} <a href={intakeUrl} target="_blank" className="text-[#0B1F3A] underline underline-offset-2">{t("emptyLinkText")}</a> {t("emptyShareAfter")}</>
+              <> {t("emptyShareBefore")} <a href={intakeUrl} target="_blank" className="text-[#0B1F3A] dark:text-[#E8E6E2] underline underline-offset-2">{t("emptyLinkText")}</a> {t("emptyShareAfter")}</>
             )}
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-black/[.04]">
+        <div className="divide-y divide-black/[.04] dark:divide-white/[.06]">
           {documents.map((doc) => (
             <div key={doc.id} className="flex items-center gap-3 px-5 py-3">
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#F4F3EF]">
@@ -141,7 +141,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
                 href={`/api/documents/${doc.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 text-[#A09E98] hover:text-[#0B1F3A] transition"
+                className="shrink-0 text-[#A09E98] hover:text-[#0B1F3A] dark:hover:text-[#E8E6E2] transition"
                 title={t("download")}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

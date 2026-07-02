@@ -15,7 +15,7 @@ function timeAgo(iso: string): string {
 }
 
 function ScoreBadge({ pct }: { pct: number }) {
-  const color = pct >= 70 ? "bg-red-50 text-red-500" : pct >= 40 ? "bg-amber-50 text-amber-600" : "bg-[#E1F5EE] text-[#0F6E56]";
+  const color = pct >= 70 ? "bg-red-50 dark:bg-red-500/10 text-red-500" : pct >= 40 ? "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]";
   return (
     <span className={`text-[10px] font-semibold px-[8px] py-[3px] rounded-full ${color}`}>
       {Math.round(pct)}%
@@ -34,7 +34,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
         <div className="flex items-center gap-[10px]">
           <BackLink
             fallbackHref={`/patients/${id}`}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
           </BackLink>
@@ -60,11 +60,11 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
             <ClipboardList className="h-5 w-5 text-[#A09E98]" />
           </div>
           <p className="text-[13px] text-[#A09E98] mb-[4px]">Nenhum formulário preenchido ainda.</p>
-          <p className="text-[11px] text-[#D3D1C7]">Clique em “Novo formulário” para aplicar um questionário.</p>
+          <p className="text-[11px] text-[#D3D1C7] dark:text-white/25">Clique em “Novo formulário” para aplicar um questionário.</p>
         </div>
       ) : (
         <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
-          <div className="divide-y divide-black/[.04]">
+          <div className="divide-y divide-black/[.04] dark:divide-white/[.06]">
             {responses.map((r) => {
               const templateName = (r as any).assessment_templates?.name ?? "Formulário";
               const pct = r.score_percentage ?? 0;
@@ -72,7 +72,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
                 <Link
                   key={r.id}
                   href={`/patients/${id}/forms/${r.id}`}
-                  className="flex items-center gap-[12px] px-[16px] py-[13px] hover:bg-[#FAFAF8] transition group"
+                  className="flex items-center gap-[12px] px-[16px] py-[13px] hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] transition group"
                 >
                   {/* Icon */}
                   <div className="w-8 h-8 rounded-[8px] bg-[#F4F3EF] flex items-center justify-center shrink-0">
@@ -86,7 +86,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
                       <span className="text-[10px] text-[#A09E98]">{timeAgo(r.filled_at)}</span>
                       {r.total_score !== null && (
                         <>
-                          <span className="text-[#D3D1C7]">·</span>
+                          <span className="text-[#D3D1C7] dark:text-white/25">·</span>
                           <span className="text-[10px] text-[#A09E98]">
                             {r.total_score}/{r.max_possible_score} pts
                           </span>
@@ -99,7 +99,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
                   {r.score_percentage !== null && <ScoreBadge pct={pct} />}
 
                   {/* Arrow */}
-                  <svg className="w-3 h-3 text-[#D3D1C7] group-hover:text-[#A09E98] transition shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg className="w-3 h-3 text-[#D3D1C7] dark:text-white/25 group-hover:text-[#A09E98] transition shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="m9 18 6-6-6-6"/>
                   </svg>
                 </Link>

@@ -28,13 +28,13 @@ function KpiCard({ label, value, sub, icon: Icon }: {
   icon: React.ElementType;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-black/[.07] p-5">
+    <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
       <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">{label}</p>
-        <Icon className="h-4 w-4 text-black/20" />
+        <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 dark:text-white/35">{label}</p>
+        <Icon className="h-4 w-4 text-black/20 dark:text-white/20" />
       </div>
-      <p className="text-[24px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">{value}</p>
-      {sub && <p className="text-[11px] text-black/40 mt-1">{sub}</p>}
+      <p className="text-[24px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">{value}</p>
+      {sub && <p className="text-[11px] text-black/40 dark:text-white/40 mt-1">{sub}</p>}
     </div>
   );
 }
@@ -49,9 +49,9 @@ function MonthlyTooltip({ active, payload, label }: MonthlyTooltipProps) {
   const money = useFormatMoney();
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-black/[.08] rounded-xl shadow-sm px-3 py-2">
-      <p className="text-[11px] font-semibold text-black/40 mb-0.5">{label}</p>
-      <p className="text-[13px] font-semibold text-[#0F1A2E]">
+    <div className="bg-white dark:bg-[#111827] border border-black/[.08] dark:border-white/[.08] rounded-xl shadow-sm px-3 py-2">
+      <p className="text-[11px] font-semibold text-black/40 dark:text-white/40 mb-0.5">{label}</p>
+      <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
         {money(payload[0].value ?? 0)}
       </p>
     </div>
@@ -131,8 +131,8 @@ export function FinanceReportClient() {
               className={[
                 "px-3 py-1.5 rounded-lg text-[12px] font-medium transition",
                 period === p.value
-                  ? "bg-[#0F1A2E] text-white"
-                  : "bg-white border border-black/[.10] text-black/60 hover:bg-black/[.04]",
+                  ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white"
+                  : "bg-white dark:bg-[#111827] border border-black/[.10] dark:border-white/[.10] text-black/60 dark:text-white/60 hover:bg-black/[.04] dark:hover:bg-white/[.06]",
               ].join(" ")}
             >
               {p.label}
@@ -143,7 +143,7 @@ export function FinanceReportClient() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => exportCSV(data, t, locale)}
-              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
+              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 dark:text-white/60 hover:bg-black/[.04] dark:hover:bg-white/[.06] transition"
             >
               <Download className="h-3.5 w-3.5" />
               CSV
@@ -152,7 +152,7 @@ export function FinanceReportClient() {
               href={`/api/finance/report/pdf?period=${period}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 hover:bg-black/[.04] transition"
+              className="flex items-center gap-1.5 rounded-xl border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-[12px] font-medium text-black/60 dark:text-white/60 hover:bg-black/[.04] dark:hover:bg-white/[.06] transition"
             >
               <Download className="h-3.5 w-3.5" />
               PDF
@@ -163,14 +163,14 @@ export function FinanceReportClient() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-black/30" />
+          <Loader2 className="h-6 w-6 animate-spin text-black/30 dark:text-white/30" />
         </div>
       ) : !data ? (
-        <div className="text-center py-20 text-sm text-black/40">{t("loadError")}</div>
+        <div className="text-center py-20 text-sm text-black/40 dark:text-white/40">{t("loadError")}</div>
       ) : (
         <>
           {/* Period label */}
-          <p className="text-[13px] font-medium text-black/50 capitalize">{data.period.label}</p>
+          <p className="text-[13px] font-medium text-black/50 dark:text-white/50 capitalize">{data.period.label}</p>
 
           {/* KPI cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -198,8 +198,8 @@ export function FinanceReportClient() {
 
           {/* Monthly revenue trend chart */}
           {data.monthlyTrend.length >= 2 && (
-            <div className="bg-white rounded-2xl border border-black/[.07] p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 mb-4">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 dark:text-white/35 mb-4">
                 {t("monthlyTrend")}
               </p>
               <ResponsiveContainer width="100%" height={200}>
@@ -251,15 +251,15 @@ export function FinanceReportClient() {
           )}
 
           {data.paymentCount === 0 ? (
-            <div className="bg-white rounded-2xl border border-black/[.07] p-10 text-center">
-              <p className="text-sm font-medium text-[#0F1A2E]">{t("noPaymentsTitle")}</p>
-              <p className="text-xs text-black/40 mt-1">{t("noPaymentsDesc")}</p>
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-10 text-center">
+              <p className="text-sm font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("noPaymentsTitle")}</p>
+              <p className="text-xs text-black/40 dark:text-white/40 mt-1">{t("noPaymentsDesc")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Revenue by session type */}
-              <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5 space-y-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 dark:text-white/35">
                   {t("byType")}
                 </p>
                 <div className="space-y-2.5">
@@ -269,21 +269,21 @@ export function FinanceReportClient() {
                     return (
                       <div key={st.sessionTypeId ?? "none"}>
                         <div className="flex items-baseline justify-between mb-1">
-                          <span className="text-[12px] font-medium text-[#0F1A2E] truncate max-w-[55%]">
+                          <span className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate max-w-[55%]">
                             {st.sessionTypeName}
                           </span>
-                          <span className="text-[12px] text-black/60 shrink-0">
+                          <span className="text-[12px] text-black/60 dark:text-white/60 shrink-0">
                             {money(st.totalCents)}
-                            <span className="text-black/35 ml-1">({pct}%)</span>
+                            <span className="text-black/35 dark:text-white/35 ml-1">({pct}%)</span>
                           </span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-black/[.06] overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-black/[.06] dark:bg-white/[.08] overflow-hidden">
                           <div
                             className="h-full rounded-full bg-[#0F6E56] transition-all duration-500"
                             style={{ width: `${barPct}%` }}
                           />
                         </div>
-                        <p className="text-[10px] text-black/35 mt-0.5">
+                        <p className="text-[10px] text-black/35 dark:text-white/35 mt-0.5">
                           {t("typeStats", { count: st.count, avg: money(st.avgTicketCents) })}
                         </p>
                       </div>
@@ -293,8 +293,8 @@ export function FinanceReportClient() {
               </div>
 
               {/* Top patients */}
-              <div className="bg-white rounded-2xl border border-black/[.07] p-5 space-y-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5 space-y-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 dark:text-white/35">
                   {t("topPatients")}
                 </p>
                 <div className="space-y-2">
@@ -302,22 +302,22 @@ export function FinanceReportClient() {
                     const pct = Math.round((p.totalCents / data.totalRevenueCents) * 100);
                     return (
                       <div key={p.patientId} className="flex items-center gap-3">
-                        <span className="text-[11px] font-bold text-black/25 w-4 text-right shrink-0">
+                        <span className="text-[11px] font-bold text-black/25 dark:text-white/25 w-4 text-right shrink-0">
                           {i + 1}
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline justify-between">
-                            <span className="text-[12px] font-medium text-[#0F1A2E] truncate">{p.patientName}</span>
-                            <span className="text-[12px] text-black/60 shrink-0 ml-2">{money(p.totalCents)}</span>
+                            <span className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{p.patientName}</span>
+                            <span className="text-[12px] text-black/60 dark:text-white/60 shrink-0 ml-2">{money(p.totalCents)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <div className="flex-1 h-1 rounded-full bg-black/[.06]">
+                            <div className="flex-1 h-1 rounded-full bg-black/[.06] dark:bg-white/[.08]">
                               <div
                                 className="h-full rounded-full bg-[#0F6E56]/50"
                                 style={{ width: `${pct}%` }}
                               />
                             </div>
-                            <span className="text-[10px] text-black/30 shrink-0">{pct}%</span>
+                            <span className="text-[10px] text-black/30 dark:text-white/30 shrink-0">{pct}%</span>
                           </div>
                         </div>
                       </div>
@@ -330,43 +330,43 @@ export function FinanceReportClient() {
 
           {/* Payments table */}
           {data.paymentCount > 0 && (
-            <div className="bg-white rounded-2xl border border-black/[.07] overflow-hidden">
-              <div className="px-5 py-4 border-b border-black/[.06] flex items-center justify-between">
-                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35">
+            <div className="bg-white dark:bg-[#111827] rounded-2xl border border-black/[.07] dark:border-white/[.07] overflow-hidden">
+              <div className="px-5 py-4 border-b border-black/[.06] dark:border-white/[.06] flex items-center justify-between">
+                <p className="text-[11px] font-semibold uppercase tracking-[.12em] text-black/35 dark:text-white/35">
                   {t("historyTitle")}
                 </p>
-                <span className="text-[11px] text-black/35">{t("records", { count: data.paymentCount })}</span>
+                <span className="text-[11px] text-black/35 dark:text-white/35">{t("records", { count: data.paymentCount })}</span>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-[12px]">
                   <thead>
-                    <tr className="border-b border-black/[.05]">
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colDate")}</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colPatient")}</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden sm:table-cell">{t("colType")}</th>
-                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 hidden md:table-cell">{t("colPayment")}</th>
-                      <th className="text-right px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35">{t("colAmount")}</th>
+                    <tr className="border-b border-black/[.05] dark:border-white/[.05]">
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 dark:text-white/35">{t("colDate")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 dark:text-white/35">{t("colPatient")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 dark:text-white/35 hidden sm:table-cell">{t("colType")}</th>
+                      <th className="text-left px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 dark:text-white/35 hidden md:table-cell">{t("colPayment")}</th>
+                      <th className="text-right px-5 py-2.5 text-[10px] font-semibold uppercase tracking-[.08em] text-black/35 dark:text-white/35">{t("colAmount")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {data.payments.map((p) => (
-                      <tr key={p.id} className="border-b border-black/[.04] hover:bg-black/[.02] transition">
-                        <td className="px-5 py-3 text-black/55 whitespace-nowrap">{formatDate(p.paidAt, locale)}</td>
-                        <td className="px-5 py-3 font-medium text-[#0F1A2E]">{p.patientName}</td>
-                        <td className="px-5 py-3 text-black/55 hidden sm:table-cell">{p.sessionTypeName}</td>
-                        <td className="px-5 py-3 text-black/55 hidden md:table-cell">{p.method}</td>
-                        <td className="px-5 py-3 text-right font-semibold text-[#0F1A2E]">
+                      <tr key={p.id} className="border-b border-black/[.04] dark:border-white/[.04] hover:bg-black/[.02] dark:hover:bg-white/[.04] transition">
+                        <td className="px-5 py-3 text-black/55 dark:text-white/55 whitespace-nowrap">{formatDate(p.paidAt, locale)}</td>
+                        <td className="px-5 py-3 font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{p.patientName}</td>
+                        <td className="px-5 py-3 text-black/55 dark:text-white/55 hidden sm:table-cell">{p.sessionTypeName}</td>
+                        <td className="px-5 py-3 text-black/55 dark:text-white/55 hidden md:table-cell">{p.method}</td>
+                        <td className="px-5 py-3 text-right font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">
                           {money(p.amountCents)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="bg-black/[.02]">
-                      <td colSpan={4} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[.08em] text-black/40">
+                    <tr className="bg-black/[.02] dark:bg-white/[.04]">
+                      <td colSpan={4} className="px-5 py-3 text-[11px] font-semibold uppercase tracking-[.08em] text-black/40 dark:text-white/40">
                         {t("total")}
                       </td>
-                      <td className="px-5 py-3 text-right font-bold text-[#0F1A2E]">
+                      <td className="px-5 py-3 text-right font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">
                         {money(data.totalRevenueCents)}
                       </td>
                     </tr>

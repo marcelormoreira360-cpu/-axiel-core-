@@ -18,11 +18,11 @@ const STATUS_PT: Record<string, string> = {
 };
 
 const STATUS_CLS: Record<string, string> = {
-  completed: "bg-[#E1F5EE] text-[#085041]",
-  confirmed: "bg-[#E1F5EE] text-[#085041]",
+  completed: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  confirmed: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
   scheduled: "bg-[#F4F3EF] text-[#6B6A66]",
-  pending: "bg-[#FAEEDA] text-[#633806]",
-  no_show: "bg-red-50 text-red-600",
+  pending: "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]",
+  no_show: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
   cancelled: "bg-[#F4F3EF] text-[#A09E98]",
 };
 
@@ -61,11 +61,11 @@ export function PatientTreatmentFollowupPanel({
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[22px] py-[16px]">
       <div className="flex items-center justify-between mb-[12px]">
         <span className="flex items-center gap-[7px] text-[13px] font-medium text-[#0F1A2E]">
-          <ClipboardList className="h-[16px] w-[16px] text-[#0F6E56]" /> Acompanhamento do tratamento
+          <ClipboardList className="h-[16px] w-[16px] text-[#0F6E56] dark:text-[#9FE1CB]" /> Acompanhamento do tratamento
         </span>
         <Link
           href={`/schedule/new?patient_id=${patientId}`}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] border border-black/[.08] rounded-[6px] px-[10px] py-[5px] hover:bg-[#F0FAF6] transition"
+          className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-black/[.08] rounded-[6px] px-[10px] py-[5px] hover:bg-[#F0FAF6] dark:hover:bg-[#0F6E56]/[.12] transition"
         >
           <Plus className="h-3 w-3" /> Nova sessão
         </Link>
@@ -76,7 +76,7 @@ export function PatientTreatmentFollowupPanel({
           Nenhuma sessão ainda. Cada sessão registra notas, vitais e a evolução do paciente.
         </p>
       ) : (
-        <div className="divide-y divide-black/[.05] border-t border-black/[.05]">
+        <div className="divide-y divide-black/[.05] dark:divide-white/[.06] border-t border-black/[.05] dark:border-white/[.06]">
           {list.map((a) => {
             const rec = recordByAppt.get(a.id);
             const snippet = noteSnippet(rec);
@@ -85,7 +85,7 @@ export function PatientTreatmentFollowupPanel({
               <Link
                 key={a.id}
                 href={`/schedule/${a.id}/session`}
-                className="flex items-start gap-[10px] py-[10px] -mx-[6px] px-[6px] rounded-[6px] hover:bg-[#FAFAF8] transition group"
+                className="flex items-start gap-[10px] py-[10px] -mx-[6px] px-[6px] rounded-[6px] hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] transition group"
               >
                 <span className="text-[11px] text-[#A09E98] w-[64px] shrink-0 pt-[2px]">{fmtDate(a.starts_at)}</span>
                 <div className="flex-1 min-w-0">
@@ -95,7 +95,7 @@ export function PatientTreatmentFollowupPanel({
                       {STATUS_PT[status] ?? status}
                     </span>
                     {rec?.soap_mode && (
-                      <span className="text-[10px] bg-[#E1F5EE] text-[#085041] rounded-[4px] px-[6px] py-[1px]">SOAP</span>
+                      <span className="text-[10px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB] rounded-[4px] px-[6px] py-[1px]">SOAP</span>
                     )}
                   </div>
                   {snippet ? (
@@ -104,7 +104,7 @@ export function PatientTreatmentFollowupPanel({
                     <p className="text-[11px] text-[#C4A05A] mt-[3px]">Sem nota — abrir para registrar.</p>
                   )}
                 </div>
-                <ChevronRight className="h-[15px] w-[15px] text-[#D3D1C7] group-hover:text-[#0F6E56] transition self-center shrink-0" />
+                <ChevronRight className="h-[15px] w-[15px] text-[#D3D1C7] dark:text-white/25 group-hover:text-[#0F6E56] dark:group-hover:text-[#9FE1CB] transition self-center shrink-0" />
               </Link>
             );
           })}

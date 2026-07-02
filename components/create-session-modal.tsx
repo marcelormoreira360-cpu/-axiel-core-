@@ -167,27 +167,27 @@ export function CreateSessionModal({
       />
 
       {linkResult ? (
-        <div className="relative w-full max-w-[420px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-6">
+        <div className="relative w-full max-w-[420px] bg-white dark:bg-[#111827] rounded-[16px] border border-black/[.08] dark:border-white/[.08] shadow-xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div>
               <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("linkReadyTitle")}</p>
-              <h2 className="text-[16px] font-medium tracking-[-0.02em] text-[#0F1A2E] mt-[2px] capitalize">{dateLabel}</h2>
+              <h2 className="text-[16px] font-medium tracking-[-0.02em] text-[#0F1A2E] dark:text-[#E8E6E2] mt-[2px] capitalize">{dateLabel}</h2>
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label={tCommon("close")}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
             >
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
 
-          <p className="text-[12px] text-[#6B6A66] mb-3 leading-relaxed">{t("linkReadyDesc")}</p>
+          <p className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97] mb-3 leading-relaxed">{t("linkReadyDesc")}</p>
 
           {/* Link + copiar */}
           <div className="flex items-center gap-[6px] mb-3">
-            <span className="flex-1 text-[11px] font-mono text-[#6B6A66] bg-[#F4F3EF] rounded-[6px] px-[10px] py-[8px] truncate">
+            <span className="flex-1 text-[11px] font-mono text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] rounded-[6px] px-[10px] py-[8px] truncate">
               {linkResult.url}
             </span>
             <button
@@ -215,7 +215,7 @@ export function CreateSessionModal({
                 type="button"
                 disabled={emailState === "sending" || emailState === "sent"}
                 onClick={() => sendEmail(linkResult.email!, linkResult.url)}
-                className="w-full flex items-center justify-center gap-[7px] text-[12px] font-medium text-[#0F1A2E] border border-black/[.12] hover:bg-[#F4F3EF] disabled:opacity-50 rounded-[8px] py-[9px] transition"
+                className="w-full flex items-center justify-center gap-[7px] text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] border border-black/[.12] dark:border-white/[.12] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] disabled:opacity-50 rounded-[8px] py-[9px] transition"
               >
                 <Mail className="h-3.5 w-3.5" />
                 {emailState === "sent" ? t("emailSent") : emailState === "sending" ? t("emailSending") : emailState === "error" ? t("emailError") : t("sendEmail")}
@@ -226,7 +226,7 @@ export function CreateSessionModal({
           <button
             type="button"
             onClick={onClose}
-            className="w-full mt-4 text-[12px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] transition"
+            className="w-full mt-4 text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
           >
             {t("done")}
           </button>
@@ -234,7 +234,7 @@ export function CreateSessionModal({
       ) : (
       <form
         action={submit}
-        className="relative w-full max-w-[420px] bg-white rounded-[16px] border border-black/[.08] shadow-xl p-6"
+        className="relative w-full max-w-[420px] bg-white dark:bg-[#111827] rounded-[16px] border border-black/[.08] dark:border-white/[.08] shadow-xl p-6"
       >
         <input
           type="hidden"
@@ -250,7 +250,7 @@ export function CreateSessionModal({
         <div className="flex items-start justify-between mb-5">
           <div>
             <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("title")}</p>
-            <h2 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] mt-[2px]">
+            <h2 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2] mt-[2px]">
               {slot.label}
               {slot.date && (
                 <span className="ml-2 text-[13px] font-normal text-[#A09E98]">
@@ -263,7 +263,7 @@ export function CreateSessionModal({
             type="button"
             onClick={onClose}
             aria-label={tCommon("close")}
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] transition"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             <X className="h-3.5 w-3.5" />
           </button>
@@ -272,19 +272,19 @@ export function CreateSessionModal({
         {/* Patient section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-[6px]">
-            <label className="text-[11px] font-medium text-[#6B6A66]">{t("patient")}</label>
-            <div className="flex rounded-[7px] border border-black/[.08] overflow-hidden text-[11px]">
+            <label className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97]">{t("patient")}</label>
+            <div className="flex rounded-[7px] border border-black/[.08] dark:border-white/[.08] overflow-hidden text-[11px]">
               <button
                 type="button"
                 onClick={switchToExisting}
-                className={`px-3 py-1 transition font-medium ${!isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+                className={`px-3 py-1 transition font-medium ${!isNewPatient ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
               >
                 {t("existing")}
               </button>
               <button
                 type="button"
                 onClick={switchToNew}
-                className={`px-3 py-1 transition font-medium ${isNewPatient ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+                className={`px-3 py-1 transition font-medium ${isNewPatient ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
               >
                 {t("new")}
               </button>
@@ -308,24 +308,24 @@ export function CreateSessionModal({
                   }}
                   placeholder={t("searchPlaceholder")}
                   autoComplete="off"
-                  className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
 
               {query.trim().length > 0 && !selectedPatient && (
-                <div className="mt-[4px] bg-white border border-black/[.08] rounded-[8px] overflow-hidden shadow-sm">
+                <div className="mt-[4px] bg-white dark:bg-[#111827] border border-black/[.08] dark:border-white/[.08] rounded-[8px] overflow-hidden shadow-sm">
                   {filtered.map((patient) => (
                     <button
                       key={patient.id}
                       type="button"
                       onClick={() => pickPatient(patient)}
-                      className="w-full text-left px-[12px] py-[9px] hover:bg-[#F4F3EF] transition flex items-center gap-[8px] border-b border-black/[.05]"
+                      className="w-full text-left px-[12px] py-[9px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition flex items-center gap-[8px] border-b border-black/[.05] dark:border-white/[.05]"
                     >
                       <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[9px] font-medium text-[#0F6E56] shrink-0">
                         {patient.full_name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-[12px] font-medium text-[#0F1A2E]">{patient.full_name}</p>
+                        <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{patient.full_name}</p>
                         {patient.email && <p className="text-[10px] text-[#A09E98]">{patient.email}</p>}
                       </div>
                     </button>
@@ -334,7 +334,7 @@ export function CreateSessionModal({
                     <button
                       type="button"
                       onClick={switchToNew}
-                      className="w-full text-left px-[12px] py-[9px] hover:bg-[#F0FAF6] transition flex items-center gap-[8px]"
+                      className="w-full text-left px-[12px] py-[9px] hover:bg-[#F0FAF6] dark:hover:bg-[#0F6E56]/[.10] transition flex items-center gap-[8px]"
                     >
                       <div className="w-6 h-6 rounded-full bg-[#E1F5EE] flex items-center justify-center shrink-0">
                         <UserPlus className="h-3 w-3 text-[#0F6E56]" />
@@ -346,12 +346,12 @@ export function CreateSessionModal({
               )}
 
               {selectedPatient && (
-                <div className="mt-[4px] flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] rounded-[8px]">
-                  <span className="text-[12px] text-[#085041] font-medium flex-1">{selectedPatient.full_name}</span>
+                <div className="mt-[4px] flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/[.15] rounded-[8px]">
+                  <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1">{selectedPatient.full_name}</span>
                   <button
                     type="button"
                     onClick={() => { setSelectedPatient(null); setQuery(""); inputRef.current?.focus(); }}
-                    className="text-[#A09E98] hover:text-[#0F1A2E] transition"
+                    className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -368,7 +368,7 @@ export function CreateSessionModal({
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder={t("namePlaceholder")}
-                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
               <div className="grid grid-cols-2 gap-[6px]">
                 <input
@@ -376,14 +376,14 @@ export function CreateSessionModal({
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder={t("emailPlaceholder")}
-                  className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
                 <input
                   type="tel"
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
                   placeholder={t("phonePlaceholder")}
-                  className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+                  className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
               <p className="text-[10px] text-[#A09E98]">{t("newHint")}</p>
@@ -394,7 +394,7 @@ export function CreateSessionModal({
         {/* Treatment type */}
         <div className="mb-5">
           <div className="flex items-center justify-between mb-[6px]">
-            <label className="text-[11px] font-medium text-[#6B6A66]">{t("treatmentType")}</label>
+            <label className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97]">{t("treatmentType")}</label>
             <button
               type="button"
               onClick={() => router.push("/settings/session-types")}
@@ -406,7 +406,7 @@ export function CreateSessionModal({
           </div>
           <div className="max-h-[200px] overflow-y-auto space-y-[5px] pr-[2px]">
             {sessionTypes.length === 0 ? (
-              <div className="px-[12px] py-[9px] rounded-[8px] border border-[#0F6E56] bg-[#F0FAF6] flex items-center justify-between">
+              <div className="px-[12px] py-[9px] rounded-[8px] border border-[#0F6E56] bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12] flex items-center justify-between">
                 <span className="text-[12px] font-medium text-[#0F6E56]">{t("defaultType")}</span>
                 <span className="text-[11px] text-[#0F6E56]">{t("minutes", { count: 60 })}</span>
               </div>
@@ -420,11 +420,11 @@ export function CreateSessionModal({
                   className={[
                     "w-full flex items-center justify-between px-[12px] py-[9px] rounded-[8px] border text-left transition",
                     isSelected
-                      ? "border-[#0F6E56] bg-[#F0FAF6]"
-                      : "border-black/[.08] hover:border-black/[.16] bg-white",
+                      ? "border-[#0F6E56] bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12]"
+                      : "border-black/[.08] dark:border-white/[.08] hover:border-black/[.16] dark:hover:border-white/[.24] bg-white dark:bg-[#111827]",
                   ].join(" ")}
                 >
-                  <span className={`text-[12px] font-medium ${isSelected ? "text-[#0F6E56]" : "text-[#0F1A2E]"}`}>
+                  <span className={`text-[12px] font-medium ${isSelected ? "text-[#0F6E56]" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}`}>
                     {type.name}
                   </span>
                   <span className={`text-[11px] ${isSelected ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
@@ -439,18 +439,18 @@ export function CreateSessionModal({
         {/* Mode toggle: confirmar agora x enviar link */}
         {canSendLink && (
           <div className="mb-4">
-            <div className="flex rounded-[8px] border border-black/[.08] overflow-hidden text-[11px]">
+            <div className="flex rounded-[8px] border border-black/[.08] dark:border-white/[.08] overflow-hidden text-[11px]">
               <button
                 type="button"
                 onClick={() => setMode("now")}
-                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "now" ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "now" ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
               >
                 {t("modeNow")}
               </button>
               <button
                 type="button"
                 onClick={() => setMode("link")}
-                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "link" ? "bg-[#0F1A2E] text-white" : "text-[#6B6A66] hover:bg-[#F4F3EF]"}`}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${mode === "link" ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
               >
                 {t("modeLink")}
               </button>
@@ -470,7 +470,7 @@ export function CreateSessionModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 text-[12px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] transition"
+            className="flex-1 text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] rounded-[8px] py-[9px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
           >
             {t("cancel")}
           </button>

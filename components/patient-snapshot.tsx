@@ -60,9 +60,9 @@ export function buildPatientSnapshot(input: {
 }
 
 function snapshotStatusTone(status: PatientJourneySnapshot["latest_insight_status"]) {
-  if (status === "Final") return "bg-emerald-50 text-emerald-700 ring-emerald-100";
-  if (status === "In Review") return "bg-amber-50 text-amber-800 ring-amber-100";
-  return "bg-slate-100 text-slate-500 ring-slate-200";
+  if (status === "Final") return "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 ring-emerald-100 dark:ring-emerald-500/20";
+  if (status === "In Review") return "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-300 ring-amber-100 dark:ring-amber-500/20";
+  return "bg-slate-100 dark:bg-white/[.08] text-slate-500 ring-slate-200 dark:ring-white/10";
 }
 
 export function PatientSnapshot({

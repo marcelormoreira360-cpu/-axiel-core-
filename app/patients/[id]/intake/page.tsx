@@ -57,7 +57,7 @@ export default async function PatientIntakePage({ params }: { params: Promise<{ 
           {canEditForm && activeForm && (
             <Link
               href={`/intake/${activeForm.id}/edit`}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65 hover:bg-axiel-soft transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/65 hover:bg-axiel-soft dark:hover:bg-white/[.06] transition"
             >
               <Pencil className="h-3.5 w-3.5" /> {ti("editQuestions")}
             </Link>

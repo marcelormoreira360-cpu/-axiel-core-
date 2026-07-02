@@ -43,7 +43,7 @@ export function PatientSectionsForm({ initial }: { initial: ClinicPatientSection
             <button
               type="button"
               {...handleProps}
-              className="shrink-0 cursor-grab active:cursor-grabbing text-[#C4C2BC] hover:text-[#6B6A66] touch-none p-0.5"
+              className="shrink-0 cursor-grab active:cursor-grabbing text-[#C4C2BC] hover:text-[#6B6A66] dark:hover:text-[#9E9C97] touch-none p-0.5"
               title={t("drag")}
               aria-label={t("drag")}
             >
@@ -60,7 +60,7 @@ export function PatientSectionsForm({ initial }: { initial: ClinicPatientSection
             <button
               type="button"
               onClick={() => toggle(s)}
-              className="shrink-0 inline-flex items-center gap-1 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] border border-black/[.08] rounded-[8px] px-[10px] py-[5px] transition"
+              className="shrink-0 inline-flex items-center gap-1 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] border border-black/[.08] rounded-[8px] px-[10px] py-[5px] transition"
               title={s.is_visible ? t("hide") : t("show")}
             >
               {s.is_visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}

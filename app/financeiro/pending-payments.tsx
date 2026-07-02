@@ -43,7 +43,7 @@ function PendingRow({ payment, locale }: { payment: PendingPayment; locale: stri
     <div className="px-4 py-3">
       <div className="flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-[12px] font-medium text-[#0F1A2E] truncate">{payment.patient_name ?? "—"}</p>
+          <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{payment.patient_name ?? "—"}</p>
           <p className="text-[10px] text-[#A09E98]">
             {new Date(payment.paid_at).toLocaleDateString(locale)} · {methodLabel(payment.payment_method)}
           </p>
@@ -54,7 +54,7 @@ function PendingRow({ payment, locale }: { payment: PendingPayment; locale: stri
         {payment.proof_path && (
           <button
             onClick={openProof}
-            className="text-[10px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] rounded-md px-2 py-1 transition"
+            className="text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] rounded-md px-2 py-1 transition"
           >
             {t("viewProof")}
           </button>
@@ -62,7 +62,7 @@ function PendingRow({ payment, locale }: { payment: PendingPayment; locale: stri
         <button
           onClick={discard}
           disabled={isPending}
-          className="text-[10px] font-medium text-[#A09E98] border border-black/[.10] hover:bg-[#F4F3EF] hover:text-rose-500 disabled:opacity-50 rounded-md px-2 py-1 transition"
+          className="text-[10px] font-medium text-[#A09E98] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] hover:text-rose-500 disabled:opacity-50 rounded-md px-2 py-1 transition"
         >
           {t("discard")}
         </button>
@@ -89,9 +89,9 @@ export function PendingPayments({
   const t = useTranslations("finance.pending");
 
   return (
-    <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05]">
-        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
+    <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-black/[.05] dark:border-white/[.05]">
+        <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</p>
         {payments.length > 0 && (
           <span className="text-[10px] font-medium bg-amber-50 text-amber-600 rounded-full px-2 py-0.5">
             {payments.length}
@@ -101,7 +101,7 @@ export function PendingPayments({
       {payments.length === 0 ? (
         <p className="px-4 py-4 text-[11px] text-[#0F6E56]">{t("empty")}</p>
       ) : (
-        <div className="divide-y divide-black/[.04] max-h-80 overflow-y-auto">
+        <div className="divide-y divide-black/[.04] dark:divide-white/[.05] max-h-80 overflow-y-auto">
           {payments.map((p) => (
             <PendingRow key={p.id} payment={p} locale={locale} />
           ))}

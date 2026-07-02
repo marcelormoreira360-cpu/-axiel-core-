@@ -15,7 +15,7 @@ const STATUS_OPTS = [
 ] as const;
 
 const STATUS_BADGE_CLS: Record<string, string> = {
-  scheduled: "bg-[#F4F3EF] text-[#6B6A66]",
+  scheduled: "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]",
   confirmed: "bg-[#EFF6FF] text-[#2563EB]",
   completed: "bg-[#E1F5EE] text-[#0F6E56]",
   cancelled: "bg-red-50 text-red-500",
@@ -69,16 +69,16 @@ export function SessionDrawer({
       />
 
       {/* Panel */}
-      <aside className="relative w-full max-w-[380px] h-full bg-white border-l border-black/[.07] shadow-xl overflow-y-auto flex flex-col">
+      <aside className="relative w-full max-w-[380px] h-full bg-white dark:bg-[#111827] border-l border-black/[.07] dark:border-white/[.07] shadow-xl overflow-y-auto flex flex-col">
         {/* Header */}
-        <div className="px-[20px] pt-[20px] pb-[16px] border-b border-black/[.07]">
+        <div className="px-[20px] pt-[20px] pb-[16px] border-b border-black/[.07] dark:border-white/[.07]">
           <div className="flex items-start justify-between gap-3 mb-[14px]">
             <p className="text-[10px] font-medium tracking-[.10em] uppercase text-[#A09E98]">{t("title")}</p>
             <button
               type="button"
               onClick={onClose}
               aria-label={t("close")}
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             >
               <X className="h-3.5 w-3.5" />
             </button>
@@ -91,7 +91,7 @@ export function SessionDrawer({
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <p className="text-[16px] font-semibold text-[#0F1A2E] tracking-[-0.02em]">{patientName}</p>
+                <p className="text-[16px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] tracking-[-0.02em]">{patientName}</p>
                 <span className={`text-[10px] font-medium px-[7px] py-[2px] rounded-full ${badgeCls}`}>
                   {tStatus(currentStatus)}
                 </span>
@@ -107,20 +107,20 @@ export function SessionDrawer({
         <div className="flex-1 px-[20px] py-[16px] space-y-[12px]">
           {/* Notes preview */}
           {session.notes && (
-            <div className="bg-[#FAFAF8] border border-black/[.06] rounded-[10px] px-[12px] py-[10px]">
+            <div className="bg-[#FAFAF8] dark:bg-white/[.03] border border-black/[.06] dark:border-white/[.06] rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[10px] font-medium text-[#A09E98] mb-[4px]">{t("noteTitle")}</p>
-              <p className="text-[12px] text-[#0F1A2E] leading-relaxed line-clamp-3">{session.notes}</p>
+              <p className="text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] leading-relaxed line-clamp-3">{session.notes}</p>
             </div>
           )}
 
           {/* Previous sessions */}
           {session.previousSessions.length > 0 && (
-            <div className="bg-white border border-black/[.07] rounded-[10px] px-[12px] py-[10px]">
+            <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[10px] font-medium text-[#A09E98] mb-[8px]">{t("prevSessions")}</p>
               <div className="space-y-[6px]">
                 {session.previousSessions.slice(0, 4).map((item) => (
                   <div key={item.id} className="flex items-center justify-between">
-                    <span className="text-[11px] text-[#6B6A66]">
+                    <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
                       {new Date(item.starts_at).toLocaleDateString(locale, { day: "numeric", month: "short" })}
                     </span>
                     <span className="text-[11px] text-[#A09E98]">{t("minutes", { count: item.duration_minutes })}</span>
@@ -134,16 +134,16 @@ export function SessionDrawer({
           )}
 
           {session.previousSessions.length === 0 && (
-            <div className="bg-white border border-black/[.07] rounded-[10px] px-[12px] py-[10px]">
+            <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[11px] text-[#D3D1C7]">{t("firstSession")}</p>
             </div>
           )}
 
           {/* AI insight */}
           {session.snapshot?.latest_insight_summary && session.snapshot.latest_insight_status !== "Not ready" && (
-            <div className="bg-[#F0FAF6] border border-[#0F6E56]/15 rounded-[10px] px-[12px] py-[10px]">
+            <div className="bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12] border border-[#0F6E56]/15 rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[10px] font-medium text-[#0F6E56] mb-[4px]">{t("latestInsight")}</p>
-              <p className="text-[11px] text-[#085041] leading-relaxed line-clamp-4">
+              <p className="text-[11px] text-[#085041] dark:text-[#9FE1CB] leading-relaxed line-clamp-4">
                 {session.snapshot.latest_insight_summary}
               </p>
             </div>
@@ -151,7 +151,7 @@ export function SessionDrawer({
         </div>
 
         {/* Actions */}
-        <div className="px-[20px] pb-[20px] pt-[4px] space-y-[8px] border-t border-black/[.07]">
+        <div className="px-[20px] pb-[20px] pt-[4px] space-y-[8px] border-t border-black/[.07] dark:border-white/[.07]">
 
           {/* Status change buttons */}
           {updateStatusAction && currentStatus !== "completed" && (
@@ -212,7 +212,7 @@ export function SessionDrawer({
           <Link
             href={`/patients/${session.patient_id}`}
             onClick={onClose}
-            className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#0F1A2E] border border-black/[.10] hover:bg-[#F4F3EF] transition px-[14px] py-[10px] rounded-[8px]"
+            className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition px-[14px] py-[10px] rounded-[8px]"
           >
             <User className="h-3.5 w-3.5" />
             {t("viewProfile")}
@@ -220,7 +220,7 @@ export function SessionDrawer({
           <Link
             href="/follow-ups"
             onClick={onClose}
-            className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#6B6A66] border border-black/[.08] hover:bg-[#F4F3EF] transition px-[14px] py-[10px] rounded-[8px]"
+            className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.08] dark:border-white/[.08] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition px-[14px] py-[10px] rounded-[8px]"
           >
             <CalendarDays className="h-3.5 w-3.5" />
             {t("createFollowup")}

@@ -18,9 +18,9 @@ type ResultDraft = {
 
 function StatusBadge({ status }: { status: string }) {
   const t = useTranslations("patientPanels.exams.status");
-  if (status === "high") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-red-50 text-red-500">{t("high")}</span>;
-  if (status === "low") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-amber-50 text-amber-600">{t("low")}</span>;
-  if (status === "normal") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] text-[#085041]">{t("normal")}</span>;
+  if (status === "high") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-red-50 dark:bg-red-500/10 text-red-500">{t("high")}</span>;
+  if (status === "low") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400">{t("low")}</span>;
+  if (status === "normal") return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]">{t("normal")}</span>;
   return <span className="text-[10px] font-medium px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#A09E98]">—</span>;
 }
 
@@ -39,7 +39,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between px-[14px] py-[12px] hover:bg-[#FAFAF8] transition text-left"
+        className="w-full flex items-center justify-between px-[14px] py-[12px] hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] transition text-left"
       >
         <div className="flex items-center gap-[10px]">
           <div className="w-8 h-8 rounded-[8px] bg-[#F4F3EF] flex items-center justify-center shrink-0">
@@ -60,7 +60,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
             <button
               type="submit"
               onClick={(e) => e.stopPropagation()}
-              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] hover:text-red-400 transition"
+              className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition"
             >
               <Trash2 className="h-3 w-3" />
             </button>
@@ -70,8 +70,8 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
       </button>
 
       {open && exam.exam_results.length > 0 && (
-        <div className="border-t border-black/[.05]">
-          <div className="divide-y divide-black/[.04]">
+        <div className="border-t border-black/[.05] dark:border-white/[.06]">
+          <div className="divide-y divide-black/[.04] dark:divide-white/[.06]">
             {[...exam.exam_results]
               .sort((a, b) => {
                 const order = { high: 0, low: 1, unknown: 2, normal: 3 };
@@ -93,7 +93,7 @@ function ExamCard({ exam, patientId }: { exam: PatientExam; patientId: string })
               ))}
           </div>
           {exam.notes && (
-            <div className="px-[14px] py-[10px] bg-[#FAFAF8] border-t border-black/[.04]">
+            <div className="px-[14px] py-[10px] bg-[#FAFAF8] border-t border-black/[.04] dark:border-white/[.05]">
               <p className="text-[11px] text-[#6B6A66]">{exam.notes}</p>
             </div>
           )}
@@ -165,7 +165,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
     <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
       <div className="flex items-center justify-between px-[14px] py-[12px] bg-[#FAFAF8] border-b border-black/[.06]">
         <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E]">
+        <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]">
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
@@ -181,7 +181,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
               name="exam_date"
               required
               defaultValue={new Date().toISOString().split("T")[0]}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
@@ -190,13 +190,13 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
               type="text"
               name="lab_name"
               placeholder={t("labPlaceholder")}
-              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
         </div>
 
         {/* Upload foto/PDF → IA extrai os marcadores para revisar */}
-        <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] p-[10px] space-y-[6px]">
+        <div className="rounded-[8px] border border-[#0F6E56]/20 bg-[#F6FBF9] dark:bg-[#0F6E56]/[.10] p-[10px] space-y-[6px]">
           <p className="text-[10px] text-[#6B6A66] leading-snug">{t("uploadHint")}</p>
           <div className="flex items-center gap-2 flex-wrap">
             <input
@@ -211,7 +211,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
               {extracting ? <AiButtonSpinner /> : <Sparkles className="h-3 w-3" />} {extracting ? t("extracting") : t("extractAI")}
             </button>
           </div>
-          {extractMsg && <p className="text-[10px] text-[#0F6E56]">{extractMsg}</p>}
+          {extractMsg && <p className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{extractMsg}</p>}
         </div>
 
         {/* Biomarkers */}
@@ -237,7 +237,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   value={row.biomarker}
                   onChange={(e) => updateRow(i, "biomarker", e.target.value)}
                   placeholder="Ex: TSH"
-                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]"
+                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]"
                 />
                 <input
                   value={row.value}
@@ -246,13 +246,13 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   step="any"
                   placeholder="0.0"
                   style={stColor ? { borderColor: stColor, color: stColor, fontWeight: 600 } : undefined}
-                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
+                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
                 />
                 <input
                   value={row.unit}
                   onChange={(e) => updateRow(i, "unit", e.target.value)}
                   placeholder="mUI/L"
-                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
+                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
                 />
                 <input
                   value={row.ref_min}
@@ -260,7 +260,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   type="number"
                   step="any"
                   placeholder="—"
-                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
+                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
                 />
                 <input
                   value={row.ref_max}
@@ -268,13 +268,13 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                   type="number"
                   step="any"
                   placeholder="—"
-                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
+                  className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-center outline-none focus:border-[#0F6E56]"
                 />
                 <button
                   type="button"
                   onClick={() => removeRow(i)}
                   disabled={results.length === 1}
-                  className="text-[#D3D1C7] hover:text-red-400 disabled:opacity-0 transition"
+                  className="text-[#D3D1C7] dark:text-white/25 hover:text-red-400 disabled:opacity-0 transition"
                 >
                   <X className="h-3 w-3" />
                 </button>
@@ -285,7 +285,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
           <button
             type="button"
             onClick={addRow}
-            className="mt-[8px] flex items-center gap-[4px] text-[11px] text-[#0F6E56] hover:text-[#085041] transition"
+            className="mt-[8px] flex items-center gap-[4px] text-[11px] text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Plus className="h-3 w-3" /> {t("addMarker")}
           </button>
@@ -297,7 +297,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
             type="text"
             name="notes"
             placeholder={t("notesPlaceholder")}
-            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[10px] py-[7px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -328,7 +328,7 @@ export function PatientExamsPanel({ exams, patientId }: { exams: PatientExam[]; 
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            className="flex items-center gap-[4px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Plus className="h-3 w-3" /> {t("newExam")}
           </button>
@@ -339,7 +339,7 @@ export function PatientExamsPanel({ exams, patientId }: { exams: PatientExam[]; 
 
       {exams.length === 0 && !adding ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[12px]">
-          <p className="text-[12px] text-[#D3D1C7]">{t("empty")}</p>
+          <p className="text-[12px] text-[#D3D1C7] dark:text-white/25">{t("empty")}</p>
         </div>
       ) : (
         exams.map((exam) => (

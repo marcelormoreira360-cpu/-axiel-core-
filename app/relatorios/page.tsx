@@ -11,7 +11,7 @@ import { RelatoriosClient } from "./relatorios-client";
 import dynamic from "next/dynamic";
 const RelatoriosCharts = dynamic(
   () => import("@/components/relatorios-charts").then((m) => m.RelatoriosCharts),
-  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] dark:bg-white/[.04] animate-pulse" /> },
 );
 
 type DeltaT = (k: string) => string;
@@ -92,8 +92,8 @@ export default async function RelatoriosPage() {
     <Shell>
       {/* ── Header ── */}
       <div className="mb-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 dark:text-white/35">{t("eyebrow")}</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px]">
           {t("subtitle")}
         </p>
@@ -104,11 +104,11 @@ export default async function RelatoriosPage() {
         <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-3">{t("summaryTitle")}</p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-[10px]">
           {kpis.map((k) => (
-            <div key={k.label} className="bg-white border border-black/[.07] rounded-[10px] p-[13px]">
+            <div key={k.label} className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] p-[13px]">
               <p className="text-[10px] text-[#A09E98] tracking-[.04em] mb-[5px]">{k.label}</p>
-              <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] leading-none">{k.value}</p>
+              <p className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2] leading-none">{k.value}</p>
               <p className={`text-[10px] mt-[4px] ${
-                k.up === true  ? "text-[#0F6E56]" :
+                k.up === true  ? "text-[#0F6E56] dark:text-[#9FE1CB]" :
                 k.up === false ? "text-red-400"   :
                 "text-[#A09E98]"
               }`}>
@@ -121,7 +121,7 @@ export default async function RelatoriosPage() {
 
       {/* ── Funil de leads ── */}
       {totalLeads > 0 && (
-        <div className="mb-6 bg-white border border-black/[.07] rounded-[12px] p-[15px]">
+        <div className="mb-6 bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
           <p className="text-[10px] font-semibold uppercase tracking-[.08em] text-[#A09E98] mb-4">{t("funnelTitle")}</p>
           <div className="grid grid-cols-4 gap-2">
             {[

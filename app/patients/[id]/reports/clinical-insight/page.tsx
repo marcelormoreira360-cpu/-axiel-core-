@@ -21,7 +21,7 @@ export default async function ClinicalInsightPage({ params }: { params: Promise<
         </BackLink>
         <div className="mt-6 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
+            <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold dark:text-[#9FE1CB]">{t("eyebrow")}</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
             <p className="mt-3 max-w-2xl text-black/55">{t("subtitle")}</p>
           </div>

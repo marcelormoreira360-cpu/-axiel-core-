@@ -67,7 +67,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
     <div className="max-w-2xl space-y-5">
       {/* Paciente */}
       <div>
-        <label className="text-[12px] font-medium text-[#6B6A66] mb-1.5 block">Paciente (opcional)</label>
+        <label className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5 block">Paciente (opcional)</label>
         <select
           value={patientId}
           onChange={(e) => setPatientId(e.target.value)}
@@ -80,7 +80,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
 
       {/* Adicionar produto */}
       <div>
-        <label className="text-[12px] font-medium text-[#6B6A66] mb-1.5 block">Produtos</label>
+        <label className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5 block">Produtos</label>
         <div className="flex gap-2">
           <select
             value={pick}
@@ -93,7 +93,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
           <button
             onClick={addProduct}
             disabled={!pick}
-            className="shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] disabled:opacity-50 rounded-lg px-3 py-2 transition"
+            className="shrink-0 inline-flex items-center gap-1 text-[13px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 disabled:opacity-50 rounded-lg px-3 py-2 transition"
           >
             <Plus className="h-3.5 w-3.5" /> Adicionar
           </button>
@@ -106,7 +106,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
           {cart.map((l) => (
             <div key={l.product_id} className="flex items-center gap-3 px-4 py-3 border-b border-axiel-line last:border-b-0">
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{l.name}</p>
+                <p className="text-[13px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] truncate">{l.name}</p>
                 <p className="text-[11px] text-[#A09E98]">{money(l.unit_price_cents)} cada</p>
               </div>
               <input
@@ -116,7 +116,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
                 onChange={(e) => setQty(l.product_id, parseInt(e.target.value || "1", 10))}
                 className="w-16 px-2 py-1 rounded-md border border-axiel-line text-[13px] text-center outline-none focus:border-[#0F6E56] bg-axiel-surface"
               />
-              <p className="w-24 text-right text-[13px] font-semibold text-[#0F1A2E]">{money(l.unit_price_cents * l.quantity)}</p>
+              <p className="w-24 text-right text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{money(l.unit_price_cents * l.quantity)}</p>
               <button onClick={() => remove(l.product_id)} className="text-[#D3D1C7] hover:text-rose-500 transition">
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -128,7 +128,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
       {/* Taxa + notas */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[12px] font-medium text-[#6B6A66] mb-1.5 block">Taxa/frete (R$, opcional)</label>
+          <label className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5 block">Taxa/frete (R$, opcional)</label>
           <input
             value={taxStr}
             onChange={(e) => setTaxStr(e.target.value)}
@@ -138,7 +138,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
           />
         </div>
         <div>
-          <label className="text-[12px] font-medium text-[#6B6A66] mb-1.5 block">Observações</label>
+          <label className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-1.5 block">Observações</label>
           <input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -150,9 +150,9 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
 
       {/* Totais */}
       <div className="border-t border-axiel-line pt-4 space-y-1">
-        <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Subtotal</span><span>{money(subtotal)}</span></div>
-        {taxCents > 0 && <div className="flex justify-between text-[13px] text-[#6B6A66]"><span>Taxa/frete</span><span>{money(taxCents)}</span></div>}
-        <div className="flex justify-between text-[15px] font-semibold text-[#0F1A2E]"><span>Total</span><span>{money(total)}</span></div>
+        <div className="flex justify-between text-[13px] text-[#6B6A66] dark:text-[#9E9C97]"><span>Subtotal</span><span>{money(subtotal)}</span></div>
+        {taxCents > 0 && <div className="flex justify-between text-[13px] text-[#6B6A66] dark:text-[#9E9C97]"><span>Taxa/frete</span><span>{money(taxCents)}</span></div>}
+        <div className="flex justify-between text-[15px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]"><span>Total</span><span>{money(total)}</span></div>
       </div>
 
       {error && <p className="text-[13px] text-rose-500">{error}</p>}
@@ -160,7 +160,7 @@ export function NewOrderForm({ products, patients }: { products: Product[]; pati
       <div className="flex justify-end gap-2">
         <button
           onClick={() => router.push("/products/orders")}
-          className="text-[13px] font-medium text-[#6B6A66] border border-axiel-line hover:bg-axiel-background rounded-lg px-4 py-2 transition"
+          className="text-[13px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-axiel-line hover:bg-axiel-background rounded-lg px-4 py-2 transition"
         >
           Cancelar
         </button>

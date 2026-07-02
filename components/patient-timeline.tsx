@@ -91,7 +91,7 @@ export function PatientTimeline({ events, limit = 12, questionnaires }: Props) {
             {/* Events */}
             <div className="relative">
               {/* Vertical guide line */}
-              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-black/[.06]" />
+              <div className="absolute left-[7px] top-2 bottom-2 w-px bg-black/[.06] dark:bg-white/[.07]" />
 
               <div className="space-y-3">
                 {evts.map((ev) => {
@@ -120,7 +120,7 @@ export function PatientTimeline({ events, limit = 12, questionnaires }: Props) {
                         <div className="flex items-start justify-between gap-2">
                           <p className={[
                             "text-[12px] font-medium text-[#0F1A2E] leading-snug",
-                            ev.href ? "group-hover:text-[#0F6E56] transition-colors" : "",
+                            ev.href ? "group-hover:text-[#0F6E56] dark:group-hover:text-[#9FE1CB] transition-colors" : "",
                           ].join(" ")}>
                             {ev.title}
                           </p>
@@ -141,7 +141,7 @@ export function PatientTimeline({ events, limit = 12, questionnaires }: Props) {
                   );
 
                   return ev.href ? (
-                    <Link key={ev.id} href={ev.href} className="block hover:bg-[#FAFAF8] -mx-2 px-2 py-[3px] rounded-lg transition">
+                    <Link key={ev.id} href={ev.href} className="block hover:bg-[#FAFAF8] dark:hover:bg-white/[.04] -mx-2 px-2 py-[3px] rounded-lg transition">
                       {inner}
                     </Link>
                   ) : (

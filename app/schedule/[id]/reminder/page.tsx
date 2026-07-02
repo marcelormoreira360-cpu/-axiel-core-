@@ -22,16 +22,16 @@ export default async function AppointmentReminderPage({ params }: { params: Prom
   return (
     <Shell>
       <header className="mb-8 pt-4">
-        <BackLink fallbackHref="/schedule" className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow-sm">
+        <BackLink fallbackHref="/schedule" className="inline-flex items-center gap-2 rounded-lg bg-white dark:bg-[#111827] px-4 py-2 text-sm font-medium shadow-sm">
           <ArrowLeft className="h-4 w-4" /> Agenda
         </BackLink>
         <div className="mt-6 flex items-end justify-between gap-5">
           <div>
             <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">LEMBRETE</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Enviar lembrete de consulta</h1>
-            <p className="mt-3 text-black/55">Escolha o canal e personalize a mensagem antes de enviar.</p>
+            <p className="mt-3 text-black/55 dark:text-white/55">Escolha o canal e personalize a mensagem antes de enviar.</p>
           </div>
-          <div className="hidden h-14 w-14 items-center justify-center rounded-3xl bg-axiel-soft md:flex">
+          <div className="hidden h-14 w-14 items-center justify-center rounded-3xl bg-axiel-soft dark:bg-white/[.06] md:flex">
             <Bell className="h-6 w-6 text-axiel-gold" />
           </div>
         </div>
@@ -39,11 +39,11 @@ export default async function AppointmentReminderPage({ params }: { params: Prom
 
       <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
         <Card className="p-6">
-          <p className="text-xs uppercase tracking-[0.18em] text-black/35">Paciente</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-black/35 dark:text-white/35">Paciente</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">{appointment.patients?.full_name ?? "Paciente"}</h2>
-          <p className="mt-3 text-sm text-black/55">{new Date(appointment.starts_at).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</p>
-          <p className="mt-1 text-sm text-black/45">{appointment.duration_minutes} minutes</p>
-          {appointment.notes && <p className="mt-5 rounded-3xl bg-axiel-soft p-4 text-sm leading-6 text-black/55">{appointment.notes}</p>}
+          <p className="mt-3 text-sm text-black/55 dark:text-white/55">{new Date(appointment.starts_at).toLocaleString([], { dateStyle: "full", timeStyle: "short" })}</p>
+          <p className="mt-1 text-sm text-black/45 dark:text-white/45">{appointment.duration_minutes} minutes</p>
+          {appointment.notes && <p className="mt-5 rounded-3xl bg-axiel-soft dark:bg-white/[.06] p-4 text-sm leading-6 text-black/55 dark:text-white/55">{appointment.notes}</p>}
         </Card>
 
         <div className="space-y-4">

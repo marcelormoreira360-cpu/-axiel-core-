@@ -356,36 +356,33 @@ function DayView({
       {/* ── Grid ── */}
       <div
         ref={scrollRef}
+        className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px]"
         style={{
           display: "flex",
           height: BODY_H,
           overflowY: "auto",
-          background: "#fff",
-          border: "1px solid rgba(0,0,0,0.07)",
-          borderRadius: 12,
         }}
       >
         {/* Coluna de horários */}
         <div
+          className="bg-[#F4F3EF] dark:bg-white/[.04] border-r border-black/[.07] dark:border-white/[.07]"
           style={{
             width: TIME_COL_W,
             flexShrink: 0,
             height: GRID_HEIGHT,
             position: "relative",
-            background: "#F4F3EF",
-            borderRight: "1px solid rgba(0,0,0,0.07)",
           }}
         >
           {HOUR_LABELS.map((h) => (
             <div
               key={h}
+              className="text-[#0F1A2E] dark:text-[#E8E6E2]"
               style={{
                 position: "absolute",
                 top: (h - START_HOUR) * HOUR_HEIGHT + 4,
                 right: 8,
                 fontSize: 11,
                 fontWeight: 600,
-                color: "#0F1A2E",
                 lineHeight: 1,
                 userSelect: "none",
               }}
@@ -456,26 +453,28 @@ function DayView({
             return (
               <div
                 key={slot.label}
+                className={[
+                  slot.isBusinessHour ? "bg-white dark:bg-[#111827]" : "bg-[#FAFAF8] dark:bg-white/[.02]",
+                  isLast ? "" : "border-b border-black/[.05] dark:border-white/[.05]",
+                ].join(" ")}
                 style={{
                   position: "absolute",
                   left: 0,
                   right: 0,
                   top: i * HOUR_HEIGHT,
                   height: HOUR_HEIGHT,
-                  background: slot.isBusinessHour ? "#fff" : "#FAFAF8",
-                  borderBottom: isLast ? "none" : "1px solid rgba(0,0,0,0.05)",
                   pointerEvents: "none",
                   zIndex: 0,
                 }}
               >
                 {/* Linha 30min */}
                 <div
+                  className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
                   style={{
                     position: "absolute",
                     left: 0,
                     right: 0,
                     top: HOUR_HEIGHT / 2,
-                    borderTop: "1px dashed rgba(0,0,0,0.05)",
                   }}
                 />
               </div>
@@ -508,7 +507,7 @@ function DayView({
                   color: "transparent",
                   borderRadius: 6,
                 }}
-                className="hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] transition"
+                className="hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] dark:hover:bg-[#0F6E56]/[.10] transition"
               >
                 {slot.isBusinessHour ? "+ Agendar" : ""}
               </button>
@@ -905,29 +904,21 @@ function WeekView({
   return (
     <>
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-    <div
-      style={{
-        background: "#fff",
-        border: "1px solid rgba(0,0,0,0.07)",
-        borderRadius: 12,
-        overflow: "hidden",
-      }}
-    >
+    <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
       {/* ── Cabeçalho ── */}
       <div
+        className="border-b border-black/[.07] dark:border-white/[.07]"
         style={{
           display: "flex",
           height: HEADER_H,
-          borderBottom: "1px solid rgba(0,0,0,0.07)",
         }}
       >
         {/* Canto */}
         <div
+          className="bg-[#F4F3EF] dark:bg-white/[.04] border-r border-black/[.07] dark:border-white/[.07]"
           style={{
             width: TIME_COL_W,
             flexShrink: 0,
-            background: "#F4F3EF",
-            borderRight: "1px solid rgba(0,0,0,0.07)",
           }}
         />
         {/* Dias */}
@@ -938,6 +929,7 @@ function WeekView({
               key={date.toISOString()}
               type="button"
               onClick={() => onDayClick(date)}
+              className={isToday ? "bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12]" : "bg-white dark:bg-[#111827]"}
               style={{
                 flex: 1,
                 display: "flex",
@@ -946,8 +938,6 @@ function WeekView({
                 justifyContent: "center",
                 gap: 2,
                 cursor: "pointer",
-                background: isToday ? "#F0FAF6" : "#fff",
-                borderRight: "1px solid rgba(0,0,0,0.05)",
                 border: "none",
                 padding: "8px 0",
               }}
@@ -964,6 +954,7 @@ function WeekView({
                 {date.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "")}
               </span>
               <span
+                className={isToday ? "" : "text-[#0F1A2E] dark:text-[#E8E6E2]"}
                 style={{
                   fontSize: 15,
                   fontWeight: 700,
@@ -974,7 +965,7 @@ function WeekView({
                   justifyContent: "center",
                   borderRadius: "50%",
                   background: isToday ? "#0F6E56" : "transparent",
-                  color: isToday ? "#fff" : "#0F1A2E",
+                  color: isToday ? "#fff" : undefined,
                 }}
               >
                 {date.getDate()}
@@ -1000,25 +991,24 @@ function WeekView({
       >
         {/* ── Coluna de horários ── */}
         <div
+          className="bg-[#F4F3EF] dark:bg-white/[.04] border-r border-black/[.07] dark:border-white/[.07]"
           style={{
             width: TIME_COL_W,
             flexShrink: 0,
             height: GRID_HEIGHT,
             position: "relative",
-            background: "#F4F3EF",
-            borderRight: "1px solid rgba(0,0,0,0.07)",
           }}
         >
           {HOUR_LABELS.map((h) => (
             <div
               key={h}
+              className="text-[#0F1A2E] dark:text-[#E8E6E2]"
               style={{
                 position: "absolute",
                 top: (h - START_HOUR) * HOUR_HEIGHT + 4,
                 right: 8,
                 fontSize: 11,
                 fontWeight: 600,
-                color: "#0F1A2E",
                 lineHeight: 1,
                 userSelect: "none",
               }}
@@ -1035,12 +1025,11 @@ function WeekView({
             return (
               <div
                 key={date.toISOString()}
+                className={`border-r border-black/[.05] dark:border-white/[.05] ${isToday ? "bg-[#F8FFFE] dark:bg-[#0F6E56]/[.06]" : "bg-white dark:bg-[#111827]"}`}
                 style={{
                   flex: 1,
                   position: "relative",
                   height: GRID_HEIGHT,
-                  background: isToday ? "#F8FFFE" : "#fff",
-                  borderRight: "1px solid rgba(0,0,0,0.05)",
                 }}
               >
                 {/* Células clicáveis e droppable de 30 em 30 min */}
@@ -1088,12 +1077,12 @@ function WeekView({
                 {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
                   <div
                     key={`hr-${h}`}
+                    className="border-t border-black/[.08] dark:border-white/[.08]"
                     style={{
                       position: "absolute",
                       left: 0,
                       right: 0,
                       top: i * HOUR_HEIGHT,
-                      borderTop: "1px solid rgba(0,0,0,0.08)",
                       pointerEvents: "none",
                       zIndex: 2,
                     }}
@@ -1103,12 +1092,12 @@ function WeekView({
                 {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
                   <div
                     key={`hh-${h}`}
+                    className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
                     style={{
                       position: "absolute",
                       left: 0,
                       right: 0,
                       top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
-                      borderTop: "1px dashed rgba(0,0,0,0.05)",
                       pointerEvents: "none",
                       zIndex: 2,
                     }}
@@ -1189,12 +1178,12 @@ function MonthView({
   const currentMonth = navDate.getMonth();
 
   return (
-    <div className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-      <div className="grid grid-cols-7 border-b border-black/[.07]">
+    <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] overflow-hidden">
+      <div className="grid grid-cols-7 border-b border-black/[.07] dark:border-white/[.07]">
         {WEEKDAY_KEYS.map((key) => (
           <div
             key={key}
-            className="py-[8px] text-center text-[9px] font-medium tracking-[.08em] uppercase text-[#A09E98] border-r border-black/[.05] last:border-r-0"
+            className="py-[8px] text-center text-[9px] font-medium tracking-[.08em] uppercase text-[#A09E98] border-r border-black/[.05] dark:border-white/[.05] last:border-r-0"
           >
             {t(`weekdays.${key}`)}
           </div>
@@ -1214,16 +1203,16 @@ function MonthView({
               type="button"
               onClick={() => onDayClick(date)}
               className={[
-                "flex flex-col items-start p-[8px] min-h-[88px] border-r border-black/[.05] last:border-r-0 text-left transition hover:bg-[#F4F3EF]",
-                !isLastRow ? "border-b border-black/[.05]" : "",
-                isToday ? "bg-[#F0FAF6]" : "",
+                "flex flex-col items-start p-[8px] min-h-[88px] border-r border-black/[.05] dark:border-white/[.05] last:border-r-0 text-left transition hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]",
+                !isLastRow ? "border-b border-black/[.05] dark:border-white/[.05]" : "",
+                isToday ? "bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12]" : "",
                 !isCurrentMonth ? "opacity-35" : "",
               ].join(" ")}
             >
               <span
                 className={[
                   "text-[12px] font-medium w-6 h-6 flex items-center justify-center rounded-full mb-[4px]",
-                  isToday ? "bg-[#0F6E56] text-white" : "text-[#0F1A2E]",
+                  isToday ? "bg-[#0F6E56] text-white" : "text-[#0F1A2E] dark:text-[#E8E6E2]",
                 ].join(" ")}
               >
                 {date.getDate()}
@@ -1371,18 +1360,18 @@ export function ScheduleContainer({
                 type="button"
                 onClick={navigatePrev}
                 aria-label={t("prevPeriod")}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </button>
-              <span className="text-[12px] font-medium text-[#0F1A2E] min-w-[150px] text-center capitalize">
+              <span className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] min-w-[150px] text-center capitalize">
                 {navLabel}
               </span>
               <button
                 type="button"
                 onClick={navigateNext}
                 aria-label={t("nextPeriod")}
-                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+                className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] dark:border-white/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
               >
                 <ChevronRight className="h-3.5 w-3.5" />
               </button>
@@ -1402,7 +1391,7 @@ export function ScheduleContainer({
             <select
               value={filterPractitionerId}
               onChange={(e) => setFilterPractitionerId(e.target.value)}
-              className="h-7 rounded-lg border border-black/[.08] bg-[#F4F3EF] px-2 text-[11px] text-[#6B6A66] font-medium outline-none focus:border-[#0F6E56]/40 transition"
+              className="h-7 rounded-lg border border-black/[.08] dark:border-white/[.08] bg-[#F4F3EF] dark:bg-white/[.06] px-2 text-[11px] text-[#6B6A66] dark:text-[#9E9C97] font-medium outline-none focus:border-[#0F6E56]/40 transition"
             >
               <option value="all">{t("all")}</option>
               {practitioners.map((p) => (
@@ -1410,7 +1399,7 @@ export function ScheduleContainer({
               ))}
             </select>
           )}
-          <div className="flex items-center gap-[2px] bg-[#F4F3EF] rounded-[8px] p-[3px]">
+          <div className="flex items-center gap-[2px] bg-[#F4F3EF] dark:bg-white/[.06] rounded-[8px] p-[3px]">
             {(["dia", "semana", "mes"] as View[]).map((v) => (
               <button
                 key={v}
@@ -1419,8 +1408,8 @@ export function ScheduleContainer({
                 className={[
                   "text-[11px] font-medium px-[10px] py-[5px] rounded-[6px] capitalize transition",
                   view === v
-                    ? "bg-white text-[#0F1A2E] shadow-sm border border-black/[.06]"
-                    : "text-[#6B6A66] hover:text-[#0F1A2E]",
+                    ? "bg-white dark:bg-white/[.10] text-[#0F1A2E] dark:text-[#E8E6E2] shadow-sm border border-black/[.06] dark:border-white/[.06]"
+                    : "text-[#6B6A66] dark:text-[#9E9C97] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]",
                 ].join(" ")}
               >
                 {t(`views.${v}`)}

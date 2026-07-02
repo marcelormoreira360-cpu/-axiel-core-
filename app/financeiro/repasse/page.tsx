@@ -28,12 +28,12 @@ export default async function RepassePage() {
       <div className="mb-7">
         <BackLink
           fallbackHref="/financeiro"
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 hover:text-[#0F1A2E] transition"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-black/45 dark:text-white/45 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
         </BackLink>
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35 dark:text-white/35">{t("eyebrow")}</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
         <p className="text-[12px] text-[#A09E98] mt-[2px] max-w-xl">
           {t("subtitle")}
         </p>

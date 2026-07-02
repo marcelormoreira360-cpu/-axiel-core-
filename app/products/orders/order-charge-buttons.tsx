@@ -37,16 +37,16 @@ export function OrderChargeButtons({ orderId, asaasEnabled }: { orderId: string;
     return (
       <div className="flex items-center gap-1.5">
         <input readOnly value={url} onFocus={(e) => e.currentTarget.select()}
-          className="w-40 text-[10px] text-[#6B6A66] bg-axiel-background border border-axiel-line rounded-md px-2 py-1" />
-        <button onClick={copy} className="text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] rounded-md px-2 py-1 transition">
+          className="w-40 text-[10px] text-[#6B6A66] dark:text-[#9E9C97] bg-axiel-background border border-axiel-line rounded-md px-2 py-1" />
+        <button onClick={copy} className="text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 rounded-md px-2 py-1 transition">
           {copied ? "Copiado!" : "Copiar"}
         </button>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-[#6B6A66] border border-axiel-line hover:bg-axiel-background rounded-md px-2 py-1 transition">Abrir</a>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-axiel-line hover:bg-axiel-background rounded-md px-2 py-1 transition">Abrir</a>
       </div>
     );
   }
 
-  const btn = "text-[10px] font-medium text-[#0B1F3A] border border-[#0B1F3A]/20 bg-[#0B1F3A]/[.04] hover:bg-[#0B1F3A]/[.08] disabled:opacity-50 rounded-md px-2 py-1 transition";
+  const btn = "text-[10px] font-medium text-[#0B1F3A] dark:text-[#E8E6E2] border border-[#0B1F3A]/20 dark:border-white/[.15] bg-[#0B1F3A]/[.04] dark:bg-white/[.06] hover:bg-[#0B1F3A]/[.08] dark:hover:bg-white/[.08] disabled:opacity-50 rounded-md px-2 py-1 transition";
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap justify-end">

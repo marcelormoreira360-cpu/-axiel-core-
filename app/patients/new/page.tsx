@@ -100,7 +100,7 @@ export default async function NewPatientPage({
   const prefillLast = restWords.join(" ");
 
   const inputCls =
-    "min-h-[52px] rounded-xl border border-axiel-line bg-white px-4 text-base outline-none focus:border-black/30 transition";
+    "min-h-[52px] rounded-xl border border-axiel-line bg-white px-4 text-base outline-none focus:border-black/30 dark:focus:border-white/30 transition";
 
   return (
     <Shell>
@@ -141,7 +141,7 @@ export default async function NewPatientPage({
                   <select
                     name="country_code"
                     defaultValue="+55"
-                    className="min-h-[52px] rounded-xl border border-axiel-line bg-white px-3 text-sm outline-none focus:border-black/30 transition w-[130px] shrink-0"
+                    className="min-h-[52px] rounded-xl border border-axiel-line bg-white px-3 text-sm outline-none focus:border-black/30 dark:focus:border-white/30 transition w-[130px] shrink-0"
                   >
                     {COUNTRY_CODES.map((c) => (
                       <option key={c.code + c.label} value={c.code}>
@@ -205,7 +205,7 @@ export default async function NewPatientPage({
             <textarea
               name="notes"
               rows={3}
-              className="rounded-xl border border-axiel-line bg-white p-4 text-base outline-none focus:border-black/30 transition resize-none"
+              className="rounded-xl border border-axiel-line bg-white p-4 text-base outline-none focus:border-black/30 dark:focus:border-white/30 transition resize-none"
               placeholder={t("notesPlaceholder")}
             />
           </label>
@@ -220,7 +220,7 @@ export default async function NewPatientPage({
             </button>
             <Link
               href="/patients"
-              className="inline-flex min-h-[52px] items-center rounded-lg border border-axiel-line bg-white px-7 text-base font-semibold hover:bg-gray-50 transition"
+              className="inline-flex min-h-[52px] items-center rounded-lg border border-axiel-line bg-white px-7 text-base font-semibold hover:bg-gray-50 dark:hover:bg-white/[.06] transition"
             >
               {t("cancel")}
             </Link>

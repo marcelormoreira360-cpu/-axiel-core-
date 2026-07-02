@@ -83,16 +83,16 @@ export function OfferList({
           {/* Header row */}
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35 dark:text-white/35">
                 {OFFER_TYPE_LABELS[offer.offer_type]}
               </p>
               <h3 className="mt-2 text-xl font-semibold tracking-tight">{offer.name}</h3>
-              <p className="mt-2 text-sm leading-5 text-black/50">
+              <p className="mt-2 text-sm leading-5 text-black/50 dark:text-white/50">
                 {offer.description || "Flexible clinic-defined offer."}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${offer.is_active ? "bg-emerald-50 text-emerald-700" : "bg-black/5 text-black/45"}`}>
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${offer.is_active ? "bg-emerald-50 text-emerald-700" : "bg-black/5 dark:bg-white/10 text-black/45 dark:text-white/45"}`}>
                 {offer.is_active ? "Active" : "Paused"}
               </span>
               {editAction && (
@@ -103,7 +103,7 @@ export function OfferList({
                   className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-40
                     ${editingId === offer.id
                       ? "bg-axiel-ink/10 text-axiel-ink"
-                      : "text-black/30 hover:bg-black/5 hover:text-black/60"}`}
+                      : "text-black/30 dark:text-white/30 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black/60 dark:hover:text-white/60"}`}
                   title={editingId === offer.id ? "Cancelar edição" : "Editar"}
                 >
                   {editingId === offer.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
@@ -114,7 +114,7 @@ export function OfferList({
                   type="button"
                   onClick={() => handleDelete(offer)}
                   disabled={pendingId === offer.id + "-delete"}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-black/30 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
+                  className="flex h-7 w-7 items-center justify-center rounded-lg text-black/30 dark:text-white/30 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
                   title="Excluir"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -126,11 +126,11 @@ export function OfferList({
           {/* Price / sessions */}
           <div className="mt-5 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-axiel-soft p-4">
-              <p className="text-xs text-black/40">Price</p>
+              <p className="text-xs text-black/40 dark:text-white/40">Price</p>
               <p className="mt-1 text-xl font-semibold">{formatPrice(offer.price_cents, offer.currency)}</p>
             </div>
             <div className="rounded-2xl bg-axiel-soft p-4">
-              <p className="text-xs text-black/40">Sessions</p>
+              <p className="text-xs text-black/40 dark:text-white/40">Sessions</p>
               <p className="mt-1 text-xl font-semibold">
                 {offer.number_of_sessions}
                 {offer.offer_type === "membership" ? "/mês" : ""}
@@ -140,19 +140,19 @@ export function OfferList({
 
           {/* Inline edit form */}
           {editingId === offer.id && editAction && (
-            <form onSubmit={(e) => handleEdit(e, offer.id)} className="mt-4 space-y-3 rounded-xl border border-black/[.07] bg-black/[.02] p-4">
+            <form onSubmit={(e) => handleEdit(e, offer.id)} className="mt-4 space-y-3 rounded-xl border border-black/[.07] dark:border-white/[.07] bg-black/[.02] dark:bg-white/[.04] p-4">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40">Nome</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Nome</label>
                 <input
                   name="name"
                   required
                   defaultValue={offer.name}
-                  className="w-full rounded-lg border border-black/[.10] bg-white px-3 py-2 text-sm text-[#0F1A2E] outline-none focus:border-axiel-ink transition"
+                  className="w-full rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40">Preço (R$)</label>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Preço (R$)</label>
                   <input
                     name="price_brl"
                     type="number"
@@ -160,11 +160,11 @@ export function OfferList({
                     min={0}
                     step={0.01}
                     defaultValue={(offer.price_cents / 100).toFixed(2)}
-                    className="w-full rounded-lg border border-black/[.10] bg-white px-3 py-2 text-sm text-[#0F1A2E] outline-none focus:border-axiel-ink transition"
+                    className="w-full rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40">
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">
                     {offer.offer_type === "membership" ? "Sessões/mês" : "Nº sessões"}
                   </label>
                   <input
@@ -174,17 +174,17 @@ export function OfferList({
                     min={1}
                     max={500}
                     defaultValue={offer.number_of_sessions}
-                    className="w-full rounded-lg border border-black/[.10] bg-white px-3 py-2 text-sm text-[#0F1A2E] outline-none focus:border-axiel-ink transition"
+                    className="w-full rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                   />
                 </div>
               </div>
               {offer.offer_type === "membership" && (
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40">Cobrança</label>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Cobrança</label>
                   <select
                     name="billing_interval"
                     defaultValue={(offer as MonetizationOffer & { billing_interval?: string }).billing_interval ?? "monthly"}
-                    className="w-full rounded-lg border border-black/[.10] bg-white px-3 py-2 text-sm text-[#0F1A2E] outline-none focus:border-axiel-ink transition"
+                    className="w-full rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                   >
                     <option value="monthly">Mensal</option>
                     <option value="yearly">Anual</option>
@@ -192,12 +192,12 @@ export function OfferList({
                 </div>
               )}
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40">Descrição</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Descrição</label>
                 <textarea
                   name="description"
                   rows={2}
                   defaultValue={offer.description ?? ""}
-                  className="w-full resize-none rounded-lg border border-black/[.10] bg-white px-3 py-2 text-sm text-[#0F1A2E] outline-none focus:border-axiel-ink transition"
+                  className="w-full resize-none rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                 />
               </div>
               <div className="flex gap-2">
@@ -212,7 +212,7 @@ export function OfferList({
                 <button
                   type="button"
                   onClick={() => setEditingId(null)}
-                  className="rounded-lg border border-black/[.10] px-4 py-2 text-xs font-semibold text-black/50 transition hover:text-black/80"
+                  className="rounded-lg border border-black/[.10] dark:border-white/[.10] px-4 py-2 text-xs font-semibold text-black/50 dark:text-white/50 transition hover:text-black/80 dark:hover:text-white/80"
                 >
                   Cancelar
                 </button>
@@ -225,7 +225,7 @@ export function OfferList({
             type="button"
             onClick={() => handleToggle(offer)}
             disabled={pendingId === offer.id + "-toggle" || isPending}
-            className="mt-4 w-full rounded-xl border border-black/[.10] bg-white px-4 py-2.5 text-sm font-medium text-black/60 transition hover:bg-black/[.03] hover:text-black/80 disabled:opacity-50"
+            className="mt-4 w-full rounded-xl border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-4 py-2.5 text-sm font-medium text-black/60 dark:text-white/60 transition hover:bg-black/[.03] dark:hover:bg-white/[.06] hover:text-black/80 dark:hover:text-white/80 disabled:opacity-50"
           >
             {pendingId === offer.id + "-toggle"
               ? "Atualizando…"
@@ -263,16 +263,16 @@ export function PatientOfferList({ patientOffers }: { patientOffers: PatientOffe
           <Card key={item.id} className="p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35">{item.patients?.full_name ?? "Patient"}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35 dark:text-white/35">{item.patients?.full_name ?? "Patient"}</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-tight">{item.monetization_offers?.name ?? "Assigned offer"}</h3>
-                <p className="mt-1 text-sm text-black/45">{progress.remaining} sessions remaining • {item.status}</p>
+                <p className="mt-1 text-sm text-black/45 dark:text-white/45">{progress.remaining} sessions remaining • {item.status}</p>
               </div>
               <div className="min-w-44 rounded-2xl bg-axiel-soft p-4">
-                <p className="text-xs text-black/40">Used</p>
+                <p className="text-xs text-black/40 dark:text-white/40">Used</p>
                 <p className="mt-1 text-2xl font-semibold">{item.sessions_used}/{item.sessions_total}</p>
               </div>
             </div>
-            <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/5">
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
               <div className="h-full rounded-full bg-axiel-ink" style={{ width: `${progress.percentage}%` }} />
             </div>
           </Card>

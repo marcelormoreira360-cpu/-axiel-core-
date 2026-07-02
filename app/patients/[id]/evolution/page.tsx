@@ -7,7 +7,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import dynamic from "next/dynamic";
 const EvolutionCharts = dynamic(
   () => import("@/components/evolution-charts").then((m) => m.EvolutionCharts),
-  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] animate-pulse" /> },
+  { loading: () => <div className="h-48 rounded-[12px] bg-black/[.03] dark:bg-white/[.04] animate-pulse" /> },
 );
 
 function initials(name: string) {
@@ -32,7 +32,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
       {/* Back */}
       <Link
         href={`/patients/${id}`}
-        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] transition mb-5"
+        className="inline-flex items-center gap-1.5 text-[12px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition mb-5"
       >
         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         {patient.full_name}
@@ -40,7 +40,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
 
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-9 h-9 rounded-full bg-[#E1F5EE] flex items-center justify-center text-[13px] font-medium text-[#0F6E56] shrink-0">
+        <div className="w-9 h-9 rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center text-[13px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] shrink-0">
           {initials(patient.full_name)}
         </div>
         <div>
@@ -54,13 +54,13 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
           <p className="text-[13px] text-[#A09E98]">
             Nenhum dado de evolução ainda.
           </p>
-          <p className="text-[12px] text-[#D3D1C7] mt-[6px]">
+          <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 mt-[6px]">
             Adicione exames laboratoriais ou aplique formulários de assessment para visualizar a evolução.
           </p>
           <div className="flex justify-center gap-3 mt-5">
             <Link
               href={`/patients/${id}`}
-              className="text-[12px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+              className="text-[12px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
             >
               Ir para o perfil
             </Link>

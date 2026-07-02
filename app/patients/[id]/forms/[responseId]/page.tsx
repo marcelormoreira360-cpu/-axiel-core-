@@ -40,7 +40,7 @@ export default async function ViewResponsePage({ params }: Props) {
       <div className="flex items-center gap-[10px] mb-[24px]">
         <BackLink
           fallbackHref={`/patients/${patientId}`}
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
         </BackLink>
@@ -120,7 +120,7 @@ export default async function ViewResponsePage({ params }: Props) {
                 </span>
               )}
             </div>
-            <div className="divide-y divide-black/[.04]">
+            <div className="divide-y divide-black/[.04] dark:divide-white/[.06]">
               {section.assessment_questions.map((q) => {
                 const ans = answersMap[q.id];
                 const val = ans?.value_number ?? ans?.value_text ?? "—";
@@ -136,7 +136,7 @@ export default async function ViewResponsePage({ params }: Props) {
                         typeof val === "number" && val >= 3
                           ? "text-[#FF6B4A]"
                           : typeof val === "number" && val >= 1
-                          ? "text-[#0F6E56]"
+                          ? "text-[#0F6E56] dark:text-[#9FE1CB]"
                           : "text-[#0F1A2E]",
                       ].join(" ")}
                     >

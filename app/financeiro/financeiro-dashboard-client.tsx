@@ -16,7 +16,7 @@ export function FinanceiroDashboardClient({ patients }: Props) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-black transition"
+        className="inline-flex items-center gap-1.5 rounded-lg bg-[#0B1F3A] dark:bg-white/[.10] px-3 py-1.5 text-[12px] font-medium text-white hover:bg-black dark:hover:bg-white/[.16] transition"
       >
         + Novo pagamento
       </button>

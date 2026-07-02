@@ -29,14 +29,14 @@ export function PatientCaseSummaryCard({ patientId, chiefComplaint, caseSummary 
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px] mb-5">
       <div className="flex items-center justify-between gap-2 mb-[10px]">
         <div className="flex items-center gap-[7px]">
-          <Stethoscope className="h-3.5 w-3.5 text-[#0F6E56]" />
+          <Stethoscope className="h-3.5 w-3.5 text-[#0F6E56] dark:text-[#9FE1CB]" />
           <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
         </div>
         {!editing && (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
           >
             <Pencil className="h-3 w-3" /> {t("edit")}
           </button>
@@ -51,7 +51,7 @@ export function PatientCaseSummaryCard({ patientId, chiefComplaint, caseSummary 
               name="chief_complaint"
               defaultValue={chiefComplaint ?? ""}
               placeholder={t("chiefPlaceholder")}
-              className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
           </div>
           <div>
@@ -61,7 +61,7 @@ export function PatientCaseSummaryCard({ patientId, chiefComplaint, caseSummary 
               defaultValue={caseSummary ?? ""}
               rows={4}
               placeholder={t("summaryPlaceholder")}
-              className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
+              className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition resize-none"
             />
           </div>
           {state?.error && (
@@ -78,7 +78,7 @@ export function PatientCaseSummaryCard({ patientId, chiefComplaint, caseSummary 
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="inline-flex items-center gap-1 text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] rounded-[8px] px-[12px] py-[7px] transition"
+              className="inline-flex items-center gap-1 text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] rounded-[8px] px-[12px] py-[7px] transition"
             >
               <X className="h-3.5 w-3.5" /> {t("cancel")}
             </button>
