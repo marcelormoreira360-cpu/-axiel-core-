@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Search, X, Link2, Copy, Check, Send } from "lucide-react";
 import type { Patient } from "@/lib/types";
 import { createInvitationAction } from "@/app/forms/[id]/invite/actions";
@@ -50,7 +51,7 @@ export function FormInvitationPanel({
       const result = await createInvitationAction(templateId, selected.id);
       setGeneratedUrl(result.url);
     } catch {
-      // handle error silently — could add toast here
+      toast.error("Não foi possível gerar o link. Tente novamente.");
     } finally {
       setLoading(false);
     }

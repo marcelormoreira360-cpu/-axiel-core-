@@ -258,6 +258,18 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
+    // Lembrete D-1 também vai por push (o portal coleta patient_push_subscriptions,
+    // mas os lembretes só saíam por WhatsApp/e-mail). Melhor-esforço.
+    if (tag === "d-1") {
+      import("@/services/push-service").then(({ sendPushToPatient }) =>
+        sendPushToPatient(patient.id, {
+          title: "Lembrete de sessão",
+          body,
+          tag: `d1-${fu.id}`,
+        }).catch(() => {})
+      ).catch(() => {});
+    }
+
     // BUG-06: atomic claim — only update to "processing" if still "pending".
     // If two cron instances race, only one UPDATE will match (status = pending).
     // The other gets data=[] (0 rows) and should skip this follow_up.
