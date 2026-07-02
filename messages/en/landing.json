@@ -14,14 +14,14 @@
     "subtitle": "Scheduling, records, automatic WhatsApp, patient portal and AI insights — all integrated for physiotherapists, psychologists, nutritionists and wellness clinics.",
     "ctaCreate": "Create free account",
     "ctaHow": "See how it works",
-    "trialNote": "14 days free · No credit card · Cancel anytime"
+    "trialNote": "30 days free · No credit card · Cancel anytime"
   },
   "stats": {
     "clinics": "active clinics",
     "lessNoShows": "fewer no-shows with reminders",
     "savedPerMonth": "saved/month with AI",
     "freeTrial": "free to try",
-    "freeTrialValue": "14 days"
+    "freeTrialValue": "30 days"
   },
   "specialties": {
     "usedBy": "Used by professionals in:",
@@ -104,7 +104,7 @@
   "plans": {
     "eyebrow": "Plans",
     "title": "Simple. No surprises.",
-    "subtitle": "14 days free on any plan. No credit card to get started.",
+    "subtitle": "30 days free on any plan. No credit card to get started.",
     "mostPopular": "Most popular",
     "perMonth": "/month",
     "ctaStart": "Get started",
@@ -140,7 +140,7 @@
     "eyebrow": "Frequently asked questions",
     "title": "Quick answers.",
     "q1": "Do I need a credit card to start?",
-    "a1": "No. The 14-day trial is completely free and requires no credit card. You only pay if you decide to continue after the trial.",
+    "a1": "No. The 30-day trial is completely free and requires no credit card. You only pay if you decide to continue after the trial.",
     "q2": "Can I migrate my patients from another system?",
     "a2": "Yes. AXIEL accepts spreadsheet imports (CSV/Excel) with name, email, phone and date of birth. Your patients are added in minutes.",
     "q3": "Does automatic WhatsApp require a business account?",
@@ -162,7 +162,7 @@
     "title": "Ready to transform your clinic?",
     "subtitle": "Start today, no commitment. Set everything up in under 30 minutes.",
     "button": "Create free account",
-    "trialNote": "14 days free · No credit card"
+    "trialNote": "30 days free · No credit card"
   },
   "footer": {
     "rights": "© 2026 AXIEL Core. All rights reserved.",

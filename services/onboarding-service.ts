@@ -374,7 +374,7 @@ export async function completeGuidedOnboarding(input: GuidedOnboardingInput) {
         .eq("code", "professional")
         .maybeSingle();
       if (proPlan) {
-        const days = (proPlan.trial_days as number | null) ?? 14;
+        const days = (proPlan.trial_days as number | null) ?? 30;
         await supabase.from("subscriptions").insert({
           clinic_id: clinicId!,
           plan_id: proPlan.id,

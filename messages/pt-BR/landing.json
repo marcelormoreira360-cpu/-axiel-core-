@@ -14,14 +14,14 @@
     "subtitle": "Agenda, prontuário, WhatsApp automático, portal do paciente e insights de IA — tudo integrado para fisioterapeutas, psicólogos, nutricionistas e clínicas de wellness.",
     "ctaCreate": "Criar conta grátis",
     "ctaHow": "Ver como funciona",
-    "trialNote": "14 dias grátis · Sem cartão de crédito · Cancele quando quiser"
+    "trialNote": "30 dias grátis · Sem cartão de crédito · Cancele quando quiser"
   },
   "stats": {
     "clinics": "clínicas ativas",
     "lessNoShows": "menos faltas com lembretes",
     "savedPerMonth": "economizadas/mês com IA",
     "freeTrial": "grátis para testar",
-    "freeTrialValue": "14 dias"
+    "freeTrialValue": "30 dias"
   },
   "specialties": {
     "usedBy": "Usado por profissionais de:",
@@ -104,7 +104,7 @@
   "plans": {
     "eyebrow": "Planos",
     "title": "Simples. Sem surpresas.",
-    "subtitle": "14 dias grátis em qualquer plano. Sem cartão de crédito para começar.",
+    "subtitle": "30 dias grátis em qualquer plano. Sem cartão de crédito para começar.",
     "mostPopular": "Mais popular",
     "perMonth": "/mês",
     "ctaStart": "Começar agora",
@@ -140,7 +140,7 @@
     "eyebrow": "Dúvidas frequentes",
     "title": "Respostas rápidas.",
     "q1": "Preciso de cartão de crédito para começar?",
-    "a1": "Não. O período de teste de 14 dias é completamente grátis e não requer cartão de crédito. Você só paga se decidir continuar após o período de teste.",
+    "a1": "Não. O período de teste de 30 dias é completamente grátis e não requer cartão de crédito. Você só paga se decidir continuar após o período de teste.",
     "q2": "Posso migrar meus pacientes de outro sistema?",
     "a2": "Sim. O AXIEL aceita importação via planilha (CSV/Excel) com nome, email, telefone e data de nascimento. Em minutos seus pacientes estão cadastrados.",
     "q3": "O WhatsApp automático exige alguma conta business?",
@@ -162,7 +162,7 @@
     "title": "Pronto para transformar sua clínica?",
     "subtitle": "Comece hoje, sem compromisso. Configure tudo em menos de 30 minutos.",
     "button": "Criar conta grátis",
-    "trialNote": "14 dias grátis · Sem cartão de crédito"
+    "trialNote": "30 dias grátis · Sem cartão de crédito"
   },
   "footer": {
     "rights": "© 2026 AXIEL Core. Todos os direitos reservados.",
