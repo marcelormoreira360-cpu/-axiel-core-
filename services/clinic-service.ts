@@ -4,7 +4,7 @@ import type { Clinic } from "@/lib/types";
 
 export const ACTIVE_CLINIC_COOKIE = "axiel_active_clinic_id";
 
-export async function getClinicsForUser(): Promise<Clinic[]> {
+export const getClinicsForUser = cache(async (): Promise<Clinic[]> => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
 
@@ -33,7 +33,7 @@ export async function getClinicsForUser(): Promise<Clinic[]> {
 
   if (error) throw error;
   return (data ?? []) as Clinic[];
-}
+});
 
 const CLINIC_SELECT = "id, name, slug, logo_url, primary_color, report_tagline, clinic_profile, phone, contact_email, website, address_line, city, state, cnpj, description, status, created_at, updated_at";
 

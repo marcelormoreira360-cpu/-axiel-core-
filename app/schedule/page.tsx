@@ -11,7 +11,7 @@ import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
 import { scheduleAutomations } from "@/services/automation-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
-import { getPatients, findOrCreatePatientForBooking } from "@/services/patient-service";
+import { getPatientsLite, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { isPractitioner, getTeamMembers } from "@/services/team-service";
@@ -25,7 +25,7 @@ export default async function SchedulePage() {
 
   const [appointments, patients, openReviews, sessionTypes, clinic, teamMembers] = await Promise.all([
     getAppointments(clinicId, practitionerId),
-    getPatients(clinicId, practitionerId),
+    getPatientsLite(clinicId, practitionerId),
     getPendingAiInsightReviewCount(clinicId),
     getSessionTypes(clinicId),
     getCurrentClinic(),

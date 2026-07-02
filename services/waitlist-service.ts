@@ -31,6 +31,25 @@ export async function getWaitlist(clinicId: string): Promise<WaitlistEntry[]> {
   return (data ?? []) as WaitlistEntry[];
 }
 
+// Ficha do paciente só precisa da entrada DELE — buscar a fila inteira da
+// clínica com joins para achar 1 registro era desperdício.
+export async function getWaitlistEntryForPatient(
+  clinicId: string,
+  patientId: string,
+): Promise<WaitlistEntry | null> {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("waitlist_entries")
+    .select("*, patients(full_name, phone, email), session_types(name)")
+    .eq("clinic_id", clinicId)
+    .eq("patient_id", patientId)
+    .eq("status", "waiting")
+    .order("created_at", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return (data as WaitlistEntry | null) ?? null;
+}
+
 export async function getWaitlistCount(clinicId: string): Promise<number> {
   const supabase = createSupabaseAdminClient();
   const { count } = await supabase

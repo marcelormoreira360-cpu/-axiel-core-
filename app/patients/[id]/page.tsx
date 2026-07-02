@@ -48,7 +48,7 @@ import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
 import { WaitlistButton } from "@/components/waitlist-button";
-import { getWaitlist } from "@/services/waitlist-service";
+import { getWaitlistEntryForPatient } from "@/services/waitlist-service";
 import { getPatientSectionLayout } from "@/services/clinic-patient-sections-service";
 import { PATIENT_SECTION_ORDER } from "@/lib/patient-sections";
 import type { ReactNode } from "react";
@@ -111,34 +111,47 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   ]);
 
   const activeSub = activeSubscriptionResult.data;
-  const assessmentProgress = await getPatientAssessmentProgress(id);
 
-  // Campos da Avaliação configurados pela clínica (editáveis em /settings/avaliacao)
-  const assessmentFields = clinic?.id
-    ? await getClinicAssessmentFields(clinic.id, { activeOnly: true }).catch(() => [])
-    : [];
-
-  // Suplementos (catálogo ativo da clínica + recomendações do paciente)
-  const [supplementCatalog, supplementRecommendations] = await Promise.all([
+  // 2ª leva de dados independentes entre si: em paralelo (antes eram ~10
+  // round-trips seriais ao banco, +0,5s de TTFB na página mais usada).
+  const [
+    assessmentProgress,
+    assessmentFields,
+    supplementCatalog,
+    supplementRecommendations,
+    referralInfo,
+    neuroIdMap,
+    waitlistEntryRaw,
+    profile,
+    sectionLayout,
+  ] = await Promise.all([
+    getPatientAssessmentProgress(id),
+    clinic?.id ? getClinicAssessmentFields(clinic.id, { activeOnly: true }).catch(() => []) : Promise.resolve([]),
     clinic?.id ? getSupplementCatalog(clinic.id, { activeOnly: true }) : Promise.resolve([]),
     getPatientSupplementRecommendations(id),
+    clinic?.id
+      ? getPatientReferralInfo(id, clinic.id, patient.referred_by_patient_id)
+      : Promise.resolve({ referredByName: null, referred: [] as { id: string; full_name: string }[] }),
+    getLatestNeuroIdMap(id).catch(() => null),
+    clinic?.id ? getWaitlistEntryForPatient(clinic.id, id).catch(() => null) : Promise.resolve(null),
+    getCurrentUserProfile(),
+    clinic?.id
+      ? getPatientSectionLayout(clinic.id)
+      : Promise.resolve(PATIENT_SECTION_ORDER.map((key) => ({ key, visible: true }))),
   ]);
 
-  // Indicação paciente→paciente (quem indicou + quantos este trouxe)
-  const referralInfo = clinic?.id
-    ? await getPatientReferralInfo(id, clinic.id, patient.referred_by_patient_id)
-    : { referredByName: null, referred: [] as { id: string; full_name: string }[] };
-
-  // Mapa Bio³ (Índice Neuro ID) — scores mais recentes
-  const neuroIdMap = await getLatestNeuroIdMap(id).catch(() => null);
-  // Pontos de atenção — piores itens da última avaliação (barras, pior primeiro)
-  const attentionPoints = neuroIdMap?.assessment_id
-    ? await getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
-    : [];
-  // Valores crus da última avaliação — para "Rever / editar" (corrigir in-place)
-  const neuroEdit = neuroIdMap?.assessment_id
-    ? await getAssessmentRawValues(neuroIdMap.assessment_id).catch(() => ({ values: {}, autoCodes: [] }))
-    : { values: {}, autoCodes: [] };
+  // 3ª leva: só o que depende do resultado acima (mapa Bio³ e permissão)
+  const canSeeFinance = !!profile && isManager(profile.role);
+  const [attentionPoints, neuroEdit, patientFinancials, clinicCurrency] = await Promise.all([
+    neuroIdMap?.assessment_id
+      ? getNeuroIdAttentionPoints(neuroIdMap.assessment_id).catch(() => [])
+      : Promise.resolve([]),
+    neuroIdMap?.assessment_id
+      ? getAssessmentRawValues(neuroIdMap.assessment_id).catch(() => ({ values: {}, autoCodes: [] }))
+      : Promise.resolve({ values: {}, autoCodes: [] }),
+    canSeeFinance && clinic?.id ? getPatientFinancials(id, clinic.id) : Promise.resolve(null),
+    canSeeFinance && clinic?.id ? getClinicCurrency(clinic.id) : Promise.resolve("BRL"),
+  ]);
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
   const intakeUrl = clinic?.slug ? `${appUrl}/envio/${clinic.slug}` : undefined;
@@ -163,9 +176,8 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // Pacote ativo — usado para exibir o badge no card de sessões
   const activePackage = packages.find((p) => p.is_active) ?? null;
 
-  // ── Waitlist status for this patient ────────────────────────────────────────
-  const waitlistEntries = clinic?.id ? await getWaitlist(clinic.id).catch(() => []) : [];
-  const waitlistEntry = waitlistEntries.find((e) => e.patient_id === id && e.status === "waiting") ?? null;
+  // ── Waitlist status for this patient (buscado na leva paralela acima) ───────
+  const waitlistEntry = waitlistEntryRaw;
 
   // ── Intelligence — computed from already-loaded data (zero extra queries) ──
   const engagement = computePatientEngagement(appointments, patient);
@@ -178,13 +190,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     hasActivePackageOrSub: !!activePackage || !!activeSub,
   });
 
-  // ── Financeiro do paciente — só para gestores (dado financeiro restrito) ──
-  const profile = await getCurrentUserProfile();
-  const canSeeFinance = !!profile && isManager(profile.role);
-  const patientFinancials =
-    canSeeFinance && clinic?.id ? await getPatientFinancials(id, clinic.id) : null;
-  const clinicCurrency =
-    canSeeFinance && clinic?.id ? await getClinicCurrency(clinic.id) : "BRL";
   const timelineEvents = buildPatientTimeline(patient.id, {
     appointments,
     sessionRecords,
@@ -192,11 +197,6 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     exams,
     prescriptions,
   });
-
-  // ── Ordem/visibilidade das seções (config por clínica, /settings/personalizar) ──
-  const sectionLayout = clinic?.id
-    ? await getPatientSectionLayout(clinic.id)
-    : PATIENT_SECTION_ORDER.map((key) => ({ key, visible: true }));
 
   // Registro das seções: cada uma é um nó (ou null quando não há dado). A página
   // renderiza na ordem configurada, pulando as ocultas. O espaçamento vem do

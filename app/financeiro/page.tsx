@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { getPatients } from "@/services/patient-service";
+import { getPatientsLite } from "@/services/patient-service";
 import { redirect } from "next/navigation";
 import {
   getFinanceKPIs,
@@ -47,7 +47,7 @@ export default async function FinanceiroPage() {
     getPaymentsWithPatients(clinic.id, { limit: 30 }),
     getUnpaidSessions(clinic.id),
     getMonthlyRevenue(clinic.id),
-    getPatients(),
+    getPatientsLite(),
     getLatestFinanceInsight(clinic.id),
     getPendingPayments(clinic.id),
   ]);
