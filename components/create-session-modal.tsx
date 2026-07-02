@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { PatientLite } from "@/services/patient-service";
 import { useState, useTransition, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { X, Search, UserPlus, Settings2, Copy, Check, Link2, Mail } from "lucide-react";
@@ -20,7 +21,7 @@ export function CreateSessionModal({
   emailLinkAction,
 }: {
   slot: TimeSlot | null;
-  patients: Patient[];
+  patients: PatientLite[];
   sessionTypes: SessionType[];
   onClose: () => void;
   action: (formData: FormData) => Promise<void>;
@@ -33,7 +34,7 @@ export function CreateSessionModal({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [query, setQuery] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<PatientLite | null>(null);
   const [isNewPatient, setIsNewPatient] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -99,7 +100,7 @@ export function CreateSessionModal({
       ).slice(0, 6)
     : [];
 
-  function pickPatient(patient: Patient) {
+  function pickPatient(patient: PatientLite) {
     setSelectedPatient(patient);
     setQuery(patient.full_name);
   }

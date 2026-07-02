@@ -2,7 +2,14 @@ import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
-import { FinanceReportClient } from "@/components/finance-report-client";
+import dynamic from "next/dynamic";
+
+// recharts (~100KB gz) só carrega quando a página abre — mesmo padrão do
+// RevenueChart do dashboard.
+const FinanceReportClient = dynamic(
+  () => import("@/components/finance-report-client").then((m) => m.FinanceReportClient),
+  { loading: () => <div className="h-64 animate-pulse bg-black/[.03] rounded-xl" /> },
+);
 
 export default async function FinanceReportPage() {
   await (await import("@/lib/require-finance-access")).requireFinanceAccess();

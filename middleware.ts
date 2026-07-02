@@ -96,6 +96,14 @@ export async function middleware(request: NextRequest) {
   );
 
   const pathname = request.nextUrl.pathname;
+
+  // Fast-path: rota pública (webhooks, booking, portal, formulários) não paga
+  // a chamada de rede do auth.getUser() (~50-150ms em TODA request). Páginas
+  // /auth ficam de fora para manter o redirect logado→dashboard.
+  if (isPublicPath(pathname) && !pathname.startsWith("/auth")) {
+    return ensureReferralCookie(request, ensureLocaleCookie(request, response));
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user && !isPublicPath(pathname)) {
@@ -147,5 +155,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"],
+  // Exclui também assets estáticos (ícones, imagens, sw.js, manifest): eles não
+  // precisam de auth/cookies e pagavam a latência do middleware em toda carga.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?)$).*)",
+  ],
 };

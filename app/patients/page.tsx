@@ -1,5 +1,5 @@
 import { Shell } from "@/components/shell";
-import { getPatients, getPatientCount } from "@/services/patient-service";
+import { getPatientsLite, getPatientCount } from "@/services/patient-service";
 import { getAppointments } from "@/services/appointment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { isPractitioner, getTeamMembers, isManager } from "@/services/team-service";
@@ -27,7 +27,7 @@ export default async function PatientsPage({
   const isManagerMode = !!(profile && isManager(profile.role));
 
   const [patients, appointments, totalCount, teamMembers] = await Promise.all([
-    getPatients(clinicId, practitionerId, PAGE_SIZE, offset, search),
+    getPatientsLite(clinicId, practitionerId, PAGE_SIZE, offset, search),
     getAppointments(clinicId, practitionerId),
     getPatientCount(clinicId, practitionerId, search),
     isManagerMode && clinicId ? getTeamMembers(clinicId) : Promise.resolve([]),

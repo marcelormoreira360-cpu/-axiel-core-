@@ -31,6 +31,44 @@ export async function getPatients(
   return data ?? [];
 }
 
+// Versão leve da listagem: só as colunas que as telas de lista usam.
+// getPatients() com select(*) arrasta assessment_data/anamnese/notes (JSONB e
+// textos longos) — MBs de payload RSC em /patients, /schedule e /financeiro.
+export type PatientLite = Pick<
+  Patient,
+  "id" | "clinic_id" | "full_name" | "email" | "phone" | "status" | "created_at"
+> & { appointments?: { practitioner_id: string | null }[] };
+
+export async function getPatientsLite(
+  clinicId?: string,
+  practitionerId?: string,
+  limit = 500,
+  offset = 0,
+  search?: string,
+): Promise<PatientLite[]> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  let query = supabase
+    .from("patients")
+    .select("id, clinic_id, full_name, email, phone, status, created_at, appointments(practitioner_id)")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (clinicId) query = query.eq("clinic_id", clinicId);
+  if (practitionerId) query = query.eq("created_by", practitionerId);
+
+  if (search && search.trim()) {
+    const term = `%${search.trim()}%`;
+    query = query.or(`full_name.ilike.${term},email.ilike.${term},phone.ilike.${term}`);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as PatientLite[];
+}
+
 export async function getPatientCount(
   clinicId?: string,
   practitionerId?: string,

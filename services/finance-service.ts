@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { PatientPayment, PaymentMethod } from "@/lib/types";
 import { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, monthKey } from "@/lib/finance-utils";
@@ -10,7 +11,7 @@ export { formatBRL, paymentMethodLabel, currentMonthRange, prevMonthRange, month
 
 // ── Moeda da clínica ──────────────────────────────────────────────
 // Moeda padrão da clínica (BRL/USD/EUR), de clinic_settings. Cached por request.
-export async function getClinicCurrency(clinicId: string): Promise<string> {
+export const getClinicCurrency = cache(async (clinicId: string): Promise<string> => {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -21,7 +22,7 @@ export async function getClinicCurrency(clinicId: string): Promise<string> {
   const fromCol = (data?.default_currency as string | null) ?? null;
   const fromJson = ((data?.settings as Record<string, unknown> | null)?.default_currency as string | undefined) ?? null;
   return (fromCol || fromJson || "BRL").toUpperCase();
-}
+});
 
 // ── KPIs ─────────────────────────────────────────────────────────
 

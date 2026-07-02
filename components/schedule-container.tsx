@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import type { PatientLite } from "@/services/patient-service";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -241,7 +242,7 @@ function DayView({
 }: {
   sessions: ScheduleSession[];
   navDate: Date;
-  patients: Patient[];
+  patients: PatientLite[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   confirmLinkAction?: ConfirmLinkAction;
@@ -780,7 +781,7 @@ function WeekView({
   appointments: Appointment[];
   navDate: Date;
   onDayClick: (date: Date) => void;
-  patients: Patient[];
+  patients: PatientLite[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   confirmLinkAction?: ConfirmLinkAction;
@@ -1270,7 +1271,7 @@ export function ScheduleContainer({
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
-  patients: Patient[];
+  patients: PatientLite[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
   createConfirmationLinkAction?: ConfirmLinkAction;

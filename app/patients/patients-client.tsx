@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef } from "react";
+import type { PatientLite } from "@/services/patient-service";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -63,7 +64,7 @@ export function PatientsClient({
   practitioners,
   journeyByPatientId = {},
 }: {
-  patients: Patient[];
+  patients: PatientLite[];
   practitionerMode: boolean;
   recentPatientIds?: string[];
   page?: number;
