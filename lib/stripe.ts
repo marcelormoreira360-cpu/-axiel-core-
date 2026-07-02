@@ -4,7 +4,14 @@ if (!process.env.STRIPE_SECRET_KEY) {
   // Keep build-time safe in local setup; runtime routes will throw if missing.
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_missing");
+// apiVersion PINADA na versão do SDK: sem isso, as REQUESTS saem na versão
+// default da CONTA Stripe e o formato das respostas pode divergir dos tipos
+// do SDK (achado 1.3 da auditoria de robustez). O payload de WEBHOOK segue a
+// versão configurada no endpoint do painel — o handler lê formato novo e
+// legado onde muda (ex.: invoice.subscription → invoice.parent).
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_missing", {
+  apiVersion: "2026-06-24.dahlia",
+});
 
 export const stripePriceByPlanCode = {
   starter:      process.env.STRIPE_PRICE_STARTER,
