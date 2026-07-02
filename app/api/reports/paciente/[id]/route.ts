@@ -1,4 +1,5 @@
 import PDFDocument from "pdfkit";
+import { parseDob } from "@/lib/dob";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getPatientById } from "@/services/patient-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
@@ -106,7 +107,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   // ── Patient identity block ────────────────────────────────────────────────────
   const age = patient.date_of_birth
-    ? Math.floor((Date.now() - new Date(patient.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000))
+    ? Math.floor((Date.now() - parseDob(patient.date_of_birth).getTime()) / (365.25 * 24 * 3600 * 1000))
     : null;
 
   const blockH = 72 + (age !== null ? 13 : 0) + (patient.email ? 13 : 0) + (patient.phone ? 13 : 0);

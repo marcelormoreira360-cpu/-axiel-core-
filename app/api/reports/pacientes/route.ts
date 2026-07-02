@@ -1,4 +1,5 @@
 import { getCurrentClinic } from "@/services/clinic-service";
+import { parseDob } from "@/lib/dob";
 import { getPatients } from "@/services/patient-service";
 import { buildExcelBuffer, excelResponse } from "@/lib/excel-report";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
       p.full_name,
       p.email ?? "",
       p.phone ?? "",
-      p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+      p.date_of_birth ? parseDob(p.date_of_birth).toLocaleDateString(locale) : "",
       statusLoc(p.status),
       new Date(p.created_at).toLocaleDateString(locale),
     ]);
@@ -48,7 +49,7 @@ export async function GET(req: Request) {
       nome:         p.full_name,
       email:        p.email ?? "",
       telefone:     p.phone ?? "",
-      nascimento:   p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+      nascimento:   p.date_of_birth ? parseDob(p.date_of_birth).toLocaleDateString(locale) : "",
       status:       statusLoc(p.status),
       cadastrado:   new Date(p.created_at).toLocaleDateString(locale),
       observacoes:  p.notes ?? "",
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
     p.full_name,
     p.email ?? "",
     p.phone ?? "",
-    p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString(locale) : "",
+    p.date_of_birth ? parseDob(p.date_of_birth).toLocaleDateString(locale) : "",
     statusLoc(p.status),
     new Date(p.created_at).toLocaleDateString(locale),
     p.notes ?? "",

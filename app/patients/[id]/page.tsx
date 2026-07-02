@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseDob } from "@/lib/dob";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
@@ -58,6 +59,8 @@ function initials(name: string) {
 }
 
 function formatDate(value: string | null | undefined, locale: string) {
+  // DATE puro ("YYYY-MM-DD") ancora no meio-dia (evita off-by-one de fuso)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(value))) value = `${value}T12:00:00`;
   if (!value) return "—";
   return new Date(value).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric" });
 }
@@ -572,7 +575,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {t("patientSince", { since })}
             {patient.date_of_birth ? (() => {
-              const dob = new Date(patient.date_of_birth);
+              const dob = parseDob(patient.date_of_birth);
               const today = new Date();
               let age = today.getFullYear() - dob.getFullYear();
               if (today.getMonth() < dob.getMonth() || (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())) age--;

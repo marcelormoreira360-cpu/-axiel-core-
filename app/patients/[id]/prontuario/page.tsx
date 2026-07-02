@@ -13,6 +13,8 @@ import { getCurrentClinic } from "@/services/clinic-service";
 type Props = { params: Promise<{ id: string }> };
 
 function formatDate(iso: string, locale: string) {
+  // DATE puro ("YYYY-MM-DD") ancora no meio-dia (evita off-by-one de fuso)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) iso = `${iso}T12:00:00`;
   return new Date(iso).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",

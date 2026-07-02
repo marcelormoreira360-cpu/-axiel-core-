@@ -130,10 +130,8 @@ export async function getPatientAssessmentProgress(patientId: string): Promise<A
     .eq("patient_id", patientId);
 
   const templateIds = [...new Set((responses ?? []).map((r) => r.template_id as string).filter(Boolean))];
-  const results: AssessmentProgress[] = [];
-  for (const id of templateIds) {
-    const p = await getAssessmentProgress(patientId, id);
-    if (p) results.push(p);
-  }
-  return results;
+  // Em paralelo: o loop serial fazia 2-3 round-trips POR questionário
+  // (paciente com 5 questionários = ~13 queries em série na ficha e no portal)
+  const results = await Promise.all(templateIds.map((id) => getAssessmentProgress(patientId, id)));
+  return results.filter((p): p is AssessmentProgress => p !== null);
 }

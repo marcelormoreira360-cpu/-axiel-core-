@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { parseDob } from "@/lib/dob";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { TeleconsultaVideo } from "@/components/teleconsulta-video";
@@ -15,11 +16,13 @@ function formatTime(iso: string, locale: string) {
   return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
 }
 function formatDate(iso: string, locale: string) {
+  // DATE puro ("YYYY-MM-DD") ancora no meio-dia (evita off-by-one de fuso)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) iso = `${iso}T12:00:00`;
   return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
 }
 function age(dob?: string | null) {
   if (!dob) return null;
-  return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365));
+  return Math.floor((Date.now() - parseDob(dob).getTime()) / (1000 * 60 * 60 * 24 * 365));
 }
 
 export default async function TeleconsultaPage({ params }: { params: Promise<{ appointmentId: string }> }) {

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { parseDob } from "@/lib/dob";
 import { getPatientById } from "@/services/patient-service";
 import { getPatientPrescriptions } from "@/services/exams-service";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -14,7 +15,7 @@ function formatDate(iso: string) {
 
 function age(dob?: string | null) {
   if (!dob) return null;
-  return Math.floor((Date.now() - new Date(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
+  return Math.floor((Date.now() - parseDob(dob).getTime()) / (1000 * 60 * 60 * 24 * 365.25));
 }
 
 export default async function PrescriptionsPrintPage({ params }: Props) {
