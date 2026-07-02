@@ -223,7 +223,11 @@ async function sendPurchaseWelcome(
 function normalizePhone(raw: string): string | null {
   const digits = raw.replace(/\D/g, "");
   if (digits.length < 10) return null;
-  return digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+  // Armazena só dígitos (padrão único de dedup — ver lib/phone.ts).
+  // 10-11 dígitos = número local BR sem DDI → prefixa 55; mais que isso
+  // já veio com código de país (compras dos EUA não viram +55 inválido).
+  if (digits.length <= 11 && !digits.startsWith("55")) return `55${digits}`;
+  return digits;
 }
 
 // ── Recent purchases (for settings page) ─────────────────────────

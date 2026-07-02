@@ -31,13 +31,15 @@ function getFrom() {
 
 export async function sendWhatsAppText(to: string, body: string): Promise<void> {
   const client = getClient();
-  const toNumber = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+  const e164 = to.startsWith("whatsapp:") || to.startsWith("+") ? to : `+${to}`;
+  const toNumber = e164.startsWith("whatsapp:") ? e164 : `whatsapp:${e164}`;
   await client.messages.create({ from: getFrom(), to: toNumber, body });
 }
 
 export async function sendWhatsAppMedia(to: string, body: string, mediaUrl: string): Promise<void> {
   const client = getClient();
-  const toNumber = to.startsWith("whatsapp:") ? to : `whatsapp:${to}`;
+  const e164 = to.startsWith("whatsapp:") || to.startsWith("+") ? to : `+${to}`;
+  const toNumber = e164.startsWith("whatsapp:") ? e164 : `whatsapp:${e164}`;
   await client.messages.create({ from: getFrom(), to: toNumber, body, mediaUrl: [mediaUrl] });
 }
 

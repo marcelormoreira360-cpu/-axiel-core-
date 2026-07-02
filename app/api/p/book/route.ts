@@ -73,6 +73,19 @@ export async function POST(req: NextRequest) {
     supabase.from("clinics").select("name").eq("id", link.clinic_id).maybeSingle(),
   ]);
 
+  // Slot pode ter sido tomado entre o carregamento e o submit
+  const { hasAppointmentConflict } = await import("@/services/appointment-service");
+  if (await hasAppointmentConflict({
+    clinic_id: link.clinic_id as string,
+    starts_at,
+    duration_minutes: sessionType.duration_minutes,
+  })) {
+    return NextResponse.json(
+      { error: "Este horário acabou de ser reservado. Escolha outro.", code: "SLOT_TAKEN" },
+      { status: 409 },
+    );
+  }
+
   // ── Create appointment ────────────────────────────────────────────────────────
   const { data: appointment, error: apptError } = await supabase
     .from("appointments")

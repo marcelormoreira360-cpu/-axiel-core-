@@ -55,6 +55,45 @@ export async function getAppointments(
   return (data ?? []) as Appointment[];
 }
 
+/**
+ * Conflito de horário: mesma clínica, intervalo sobreposto e mesmo profissional
+ * (ou um dos lados sem profissional definido — clínica solo). Usa admin client
+ * para funcionar também nas rotas públicas de booking. Ignora canceladas/no-show.
+ */
+export async function hasAppointmentConflict(opts: {
+  clinic_id: string;
+  starts_at: string;
+  duration_minutes: number;
+  practitioner_id?: string | null;
+  exclude_appointment_id?: string | null;
+}): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+  const start = new Date(opts.starts_at);
+  const end = new Date(start.getTime() + opts.duration_minutes * 60_000);
+  // Janela retroativa de 8h cobre qualquer sessão longa que ainda possa sobrepor
+  const windowStart = new Date(start.getTime() - 8 * 60 * 60_000).toISOString();
+
+  const { data, error } = await supabase
+    .from("appointments")
+    .select("id, starts_at, duration_minutes, practitioner_id")
+    .eq("clinic_id", opts.clinic_id)
+    .gte("starts_at", windowStart)
+    .lt("starts_at", end.toISOString())
+    .not("status", "in", '("cancelled","no_show")');
+  if (error) throw error;
+
+  return (data ?? []).some((a) => {
+    if (opts.exclude_appointment_id && a.id === opts.exclude_appointment_id) return false;
+    const aStart = new Date(a.starts_at as string);
+    const aEnd = new Date(aStart.getTime() + ((a.duration_minutes as number | null) ?? 60) * 60_000);
+    const overlaps = aEnd > start && aStart < end;
+    if (!overlaps) return false;
+    const aPract = a.practitioner_id as string | null;
+    const mine = opts.practitioner_id ?? null;
+    return aPract === null || mine === null || aPract === mine;
+  });
+}
+
 export async function createAppointment(input: {
   clinic_id: string;
   patient_id: string;
@@ -73,6 +112,10 @@ export async function createAppointment(input: {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
+  if (await hasAppointmentConflict(input)) {
+    throw new Error("Conflito de horário: já existe uma sessão nesse período.");
+  }
 
   const { data, error } = await supabase
     .from("appointments")
@@ -120,6 +163,10 @@ export async function createPendingAppointmentWithToken(input: {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (await hasAppointmentConflict(input)) {
+    throw new Error("Conflito de horário: já existe uma sessão nesse período.");
+  }
 
   const token = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + (input.expiresInDays ?? 7) * 86_400_000).toISOString();

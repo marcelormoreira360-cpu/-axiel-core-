@@ -129,6 +129,24 @@ const TAG_TO_RULE_KEY: Record<string, string> = {
 // For D-1, also sends a reminder email when the patient has an email address.
 export async function processAutomations(): Promise<{ processed: number; sent: number; failed: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
+  const nowIso = new Date().toISOString();
+
+  // Agendamento pendente com confirmação expirada não pode segurar o horário
+  // para sempre (o /slots só libera cancelled/no_show).
+  await supabase
+    .from("appointments")
+    .update({ status: "cancelled", updated_at: nowIso })
+    .eq("status", "pending")
+    .not("confirm_expires_at", "is", null)
+    .lt("confirm_expires_at", nowIso);
+
+  // Follow-up preso em "processing" (função morreu entre o claim e o envio)
+  // volta para a fila depois de 30 min, em vez de sumir em silêncio.
+  await supabase
+    .from("follow_ups")
+    .update({ status: "pending", updated_at: nowIso })
+    .eq("status", "processing")
+    .lt("updated_at", new Date(Date.now() - 30 * 60_000).toISOString());
 
   const { data: followUps, error } = await supabase
     .from("follow_ups")
@@ -245,7 +263,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     // The other gets data=[] (0 rows) and should skip this follow_up.
     const { data: claimResult } = await supabase
       .from("follow_ups")
-      .update({ status: "processing" })
+      .update({ status: "processing", updated_at: new Date().toISOString() })
       .eq("id", fu.id)
       .eq("status", "pending")
       .select("id");
