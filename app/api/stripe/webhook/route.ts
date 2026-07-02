@@ -18,6 +18,19 @@ function toTimestamp(seconds?: number | null) {
   return seconds ? new Date(seconds * 1000).toISOString() : null;
 }
 
+// API 2025+ (Basil) moveu current_period_* da assinatura para os ITEMS; payloads
+// de endpoints pinados em versões antigas ainda trazem no topo. Lê os dois.
+function subscriptionPeriod(sub: Stripe.Subscription): { start?: number; end?: number } {
+  const legacy = sub as StripeSubscriptionWithPeriod;
+  const item = sub.items?.data?.[0] as unknown as
+    | { current_period_start?: number; current_period_end?: number }
+    | undefined;
+  return {
+    start: legacy.current_period_start ?? item?.current_period_start,
+    end: legacy.current_period_end ?? item?.current_period_end,
+  };
+}
+
 async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
   const supabase = createSupabaseAdminClient();
   const clinicId = subscription.metadata?.clinic_id;
@@ -54,8 +67,8 @@ async function syncSubscription(subscription: StripeSubscriptionWithPeriod) {
       plan_id: plan?.id ?? null,
       status: subscription.status,
       trial_ends_at: toTimestamp(subscription.trial_end),
-      current_period_starts_at: toTimestamp(subscription.current_period_start),
-      current_period_ends_at: toTimestamp(subscription.current_period_end),
+      current_period_starts_at: toTimestamp(subscriptionPeriod(subscription).start),
+      current_period_ends_at: toTimestamp(subscriptionPeriod(subscription).end),
       external_customer_id: typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id,
       external_subscription_id: subscription.id,
       metadata: {
@@ -312,8 +325,7 @@ export async function POST(request: Request) {
       const sub = await stripe.subscriptions.retrieve(String(session.subscription));
       const meta = sub.metadata ?? {};
       const supabaseAdmin = createSupabaseAdminClient();
-      const periodStart = (sub as StripeSubscriptionWithPeriod).current_period_start;
-      const periodEnd = (sub as StripeSubscriptionWithPeriod).current_period_end;
+      const { start: periodStart, end: periodEnd } = subscriptionPeriod(sub);
       await supabaseAdmin.from("patient_subscriptions").upsert(
         {
           clinic_id: meta.clinic_id,
@@ -401,7 +413,16 @@ export async function POST(request: Request) {
 
   if (event.type === "invoice.payment_failed" || event.type === "invoice.paid") {
     const invoice = event.data.object as Stripe.Invoice;
-    const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+    // API 2025+ (Basil): a assinatura mora em invoice.parent.subscription_details.
+    // Endpoints pinados em versões antigas ainda mandam invoice.subscription —
+    // lemos os dois formatos para não depender da versão do painel.
+    const legacySub = (invoice as unknown as { subscription?: string | { id: string } | null }).subscription;
+    const parentSub = invoice.parent?.subscription_details?.subscription;
+    const subscriptionId =
+      typeof parentSub === "string" ? parentSub
+      : parentSub?.id
+      ?? (typeof legacySub === "string" ? legacySub : legacySub?.id)
+      ?? null;
     const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
     const supabase = createSupabaseAdminClient();
 

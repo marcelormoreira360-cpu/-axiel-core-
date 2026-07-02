@@ -213,7 +213,7 @@ export async function processReferralConversion(referredClinicId: string): Promi
     try {
       const { stripe } = await import("@/lib/stripe");
       await stripe.subscriptions.update(referrerSub!.external_subscription_id as string, {
-        coupon: couponId,
+        discounts: [{ coupon: couponId }],
       });
 
       await supabase
