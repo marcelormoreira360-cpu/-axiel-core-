@@ -204,6 +204,17 @@ export async function acceptInvite(token: string, userId: string): Promise<void>
   const invite = await getInviteByToken(token);
   if (!invite) throw new Error("Convite inválido ou já utilizado.");
 
+  // O userId vem do cliente (a sessão pode ainda não ter propagado na aba nova),
+  // então o vínculo é validado contra o e-mail convidado: só a conta com o
+  // MESMO e-mail do convite pode aceitá-lo.
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+  if (authError || !authUser?.user?.email) {
+    throw new Error("Usuário inválido.");
+  }
+  if (authUser.user.email.toLowerCase() !== invite.email.toLowerCase()) {
+    throw new Error("Este convite foi emitido para outro e-mail.");
+  }
+
   // Link user to clinic with the invited role
   const { error: userError } = await supabase
     .from("users")

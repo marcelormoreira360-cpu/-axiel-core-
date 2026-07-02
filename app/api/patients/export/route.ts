@@ -16,6 +16,9 @@ export async function GET() {
   if (!profile?.clinic_id) {
     return new Response("Unauthorized", { status: 401 });
   }
+  if (!(await (await import("@/lib/require-finance-access")).isFinanceApiAllowed())) {
+    return new Response("Forbidden", { status: 403 });
+  }
 
   const clinicId = profile.clinic_id;
   const locale = await resolveClinicLocale(clinicId);

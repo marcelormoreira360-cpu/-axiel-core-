@@ -82,18 +82,26 @@ export async function uploadPatientDocument(
   return data as PatientDocument;
 }
 
-export async function deletePatientDocument(docId: string): Promise<void> {
+export async function deletePatientDocument(docId: string, clinicId: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
 
+  // Scoped por clinic_id: o admin client bypassa RLS, então o tenant-check é aqui
   const { data: doc } = await supabase
     .from("patient_documents")
     .select("file_path")
     .eq("id", docId)
+    .eq("clinic_id", clinicId)
     .single();
 
-  if (doc?.file_path) {
+  if (!doc) throw new Error("Documento não encontrado.");
+
+  if (doc.file_path) {
     await supabase.storage.from(BUCKET).remove([doc.file_path]);
   }
 
-  await supabase.from("patient_documents").delete().eq("id", docId);
+  await supabase
+    .from("patient_documents")
+    .delete()
+    .eq("id", docId)
+    .eq("clinic_id", clinicId);
 }

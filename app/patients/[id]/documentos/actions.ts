@@ -10,12 +10,12 @@ export async function deleteDocumentAction(
   patientId: string,
 ): Promise<{ error?: string }> {
   const profile = await getCurrentUserProfile();
-  if (!profile) return { error: "Sem permissão." };
+  if (!profile?.clinic_id) return { error: "Sem permissão." };
   // Managers and practitioners can delete documents
   if (profile.role === "read_only_staff") return { error: "Sem permissão para excluir." };
 
   try {
-    await deletePatientDocument(docId);
+    await deletePatientDocument(docId, profile.clinic_id);
     revalidatePath(`/patients/${patientId}`);
     return {};
   } catch (e) {
