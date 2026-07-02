@@ -33,6 +33,18 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
 
     if (!owners || owners.length === 0) return "skipped";
 
+    // Dedup por clínica/mês: se o cron rodar 2x (retry, timeout no meio do
+    // lote), o dono não recebe o relatório em dobro.
+    const { data: alreadySent } = await supabase
+      .from("communication_logs")
+      .select("id")
+      .eq("clinic_id", clinic.id)
+      .eq("use_case", "monthly_report")
+      .gte("created_at", firstOfThisMonth.toISOString())
+      .limit(1)
+      .maybeSingle();
+    if (alreadySent) return "skipped";
+
     const { data: authUser } = await supabase.auth.admin.getUserById(owners[0].id);
     const ownerEmail = authUser?.user?.email;
     if (!ownerEmail) return "skipped";
@@ -111,6 +123,16 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
       to: ownerEmail,
       subject: t("monthly.subject", { month: monthName, clinic: clinic.name }),
       html,
+    });
+
+    await supabase.from("communication_logs").insert({
+      clinic_id: clinic.id,
+      channel: "email",
+      use_case: "monthly_report",
+      recipient: ownerEmail,
+      body: t("monthly.subject", { month: monthName, clinic: clinic.name }),
+      status: "sent",
+      provider: "resend",
     });
 
     return "sent";

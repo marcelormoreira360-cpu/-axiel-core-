@@ -1,4 +1,5 @@
 import { getCurrentUserProfile } from "@/services/user-service";
+import { parseDob } from "@/lib/dob";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export const runtime = "nodejs";
@@ -78,7 +79,7 @@ export async function GET() {
       p.email ?? "",
       p.phone ?? "",
       p.date_of_birth
-        ? new Date(p.date_of_birth).toLocaleDateString(locale)
+        ? parseDob(p.date_of_birth).toLocaleDateString(locale)
         : "",
       p.city ?? "",
       p.state ?? "",

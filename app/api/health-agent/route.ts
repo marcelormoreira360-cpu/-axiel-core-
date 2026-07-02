@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { parseDob } from "@/lib/dob";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -124,7 +125,7 @@ async function buildPatientContext(
 
   const age = patient?.date_of_birth
     ? Math.floor(
-        (Date.now() - new Date(patient.date_of_birth).getTime()) /
+        (Date.now() - parseDob(patient.date_of_birth).getTime()) /
           (1000 * 60 * 60 * 24 * 365)
       )
     : null;

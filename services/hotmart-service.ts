@@ -102,6 +102,22 @@ export async function processHotmartWebhook(
     : event === "PURCHASE_CHARGEBACK" ? "chargeback"
     : "other";
 
+  // Máquina de estados: refunded/chargeback são FINAIS. Um retry fora de
+  // ordem de PURCHASE_APPROVED não pode reverter o status (o reembolso
+  // "sumia" dos KPIs, que somam receita de completed).
+  const { data: existingPurchase } = await supabase
+    .from("hotmart_purchases")
+    .select("status")
+    .eq("transaction_id", transactionId)
+    .maybeSingle();
+  if (
+    existingPurchase &&
+    ["refunded", "chargeback"].includes(existingPurchase.status as string) &&
+    !["refunded", "chargeback"].includes(status)
+  ) {
+    return { ok: true, action: "final_status_preserved" };
+  }
+
   await supabase.from("hotmart_purchases").upsert({
     clinic_id: clinicId,
     patient_id: patientId,
