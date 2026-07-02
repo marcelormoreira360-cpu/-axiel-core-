@@ -34,10 +34,10 @@ const steps = [
     icon: CalendarPlus,
   },
   {
-    key: "hasIntake" as const,
-    href: "/intake",
-    title: "Formulário de intake",
-    text: "Personalize as perguntas iniciais para novos pacientes.",
+    key: "hasForms" as const,
+    href: "/forms",
+    title: "Formulários e questionários",
+    text: "Personalize os formulários enviados aos seus pacientes.",
     icon: ClipboardList,
   },
 ] as const;
@@ -51,7 +51,7 @@ async function getCompletionStatus(clinicId: string): Promise<Record<StepKey, bo
     supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
     supabase.from("appointments").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
     supabase.from("leads").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
-    supabase.from("intake_forms").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId),
+    supabase.from("assessment_templates").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("is_active", true),
   ]);
 
   return {
@@ -59,7 +59,7 @@ async function getCompletionStatus(clinicId: string): Promise<Record<StepKey, bo
     hasPatient: (patients.count ?? 0) > 0,
     hasLead: (leads.count ?? 0) > 0,
     hasSession: (sessions.count ?? 0) > 0,
-    hasIntake: (forms.count ?? 0) > 0,
+    hasForms: (forms.count ?? 0) > 0,
   };
 }
 
@@ -67,7 +67,7 @@ export default async function GetStartedPage() {
   const clinic = await getCurrentClinic();
   const status = clinic
     ? await getCompletionStatus(clinic.id)
-    : { clinicProfile: false, hasPatient: false, hasLead: false, hasSession: false, hasIntake: false };
+    : { clinicProfile: false, hasPatient: false, hasLead: false, hasSession: false, hasForms: false };
 
   const completedCount = Object.values(status).filter(Boolean).length;
   const totalCount = steps.length;

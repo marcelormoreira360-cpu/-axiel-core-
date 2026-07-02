@@ -153,17 +153,20 @@ export default async function UpgradePage() {
                 ))}
               </ul>
 
-              {/* CTA */}
-              <Link
-                href="/billing"
-                className={`w-full text-center text-[13px] font-semibold py-2.5 rounded-xl transition ${
-                  plan.popular
-                    ? "bg-[#0F6E56] text-white hover:bg-[#0a5a46]"
-                    : "bg-[#F4F3EF] text-[#0F1A2E] hover:bg-[#EBEBEA]"
-                }`}
-              >
-                Assinar {plan.name}
-              </Link>
+              {/* CTA — vai direto ao checkout do Stripe (mesmo endpoint do /billing) */}
+              <form action="/api/stripe/checkout" method="POST">
+                <input type="hidden" name="planCode" value={plan.slug} />
+                <button
+                  type="submit"
+                  className={`w-full text-center text-[13px] font-semibold py-2.5 rounded-xl transition ${
+                    plan.popular
+                      ? "bg-[#0F6E56] text-white hover:bg-[#0a5a46]"
+                      : "bg-[#F4F3EF] text-[#0F1A2E] hover:bg-[#EBEBEA]"
+                  }`}
+                >
+                  Assinar {plan.name}
+                </button>
+              </form>
             </div>
           ))}
         </div>

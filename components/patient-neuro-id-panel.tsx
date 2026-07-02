@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Download, ShieldAlert } from "lucide-react";
+import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Download, ShieldAlert, Send, Check } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import {
   bandForDysfunction, bandForItem, severityColor, priorityPillars, sharesSummingTo100,
   type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
-import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, importQuestionnaireAnswersAction } from "@/app/patients/[id]/neuro-id/actions";
+import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, importQuestionnaireAnswersAction, sendNeuroIdReportToPatientAction } from "@/app/patients/[id]/neuro-id/actions";
 
 export type NeuroIdMapView = {
   fisico_pct: number | null;
@@ -104,14 +104,37 @@ export type AttentionPoint = { code: string; label: string; dysfunction: number 
 
 export function PatientNeuroIdPanel({
   map, patientId, hasReport, attentionPoints = [],
-  assessmentId = null, initialValues = {}, initialAutoCodes = [],
+  assessmentId = null, initialValues = {}, initialAutoCodes = [], patientEmail = null,
 }: {
   map: NeuroIdMapView; patientId: string; hasReport: boolean; attentionPoints?: AttentionPoint[];
   assessmentId?: string | null; initialValues?: Record<string, string>; initialAutoCodes?: string[];
+  patientEmail?: string | null;
 }) {
   const t = useTranslations("neuroId");
   const tCommon = useTranslations("common.actions");
   const [assessing, setAssessing] = useState(false);
+  const [sending, startSending] = useTransition();
+  const [sendState, setSendState] = useState<"idle" | "sent" | "error">("idle");
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  function handleSendToPatient() {
+    if (sending) return;
+    setSendState("idle");
+    setSendError(null);
+    startSending(async () => {
+      try {
+        const res = await sendNeuroIdReportToPatientAction(patientId);
+        if (res.ok) {
+          setSendState("sent");
+        } else {
+          setSendState("error");
+          setSendError(res.error ?? null);
+        }
+      } catch {
+        setSendState("error");
+      }
+    });
+  }
   const [editing, setEditing] = useState(false);
   const [vals, setVals] = useState<Record<string, string>>({});
   const [importing, setImporting] = useState(false);
@@ -218,6 +241,14 @@ export function PatientNeuroIdPanel({
               <FileText className="h-3 w-3" /> {t("viewPdf")}
             </a>
           )}
+          {map && hasReport && (
+            <button type="button" onClick={handleSendToPatient} disabled={!patientEmail || sending}
+              title={!patientEmail ? t("sendNoEmail") : undefined}
+              className={`flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium transition disabled:opacity-50 disabled:cursor-not-allowed ${sendState === "sent" ? "text-[#0F6E56]" : "text-[#6B6A66] hover:text-[#0F1A2E]"}`}>
+              {sendState === "sent" ? <Check className="h-3 w-3" /> : <Send className="h-3 w-3" />}
+              {sending ? t("sendingToPatient") : sendState === "sent" ? t("sentToPatient") : t("sendToPatient")}
+            </button>
+          )}
           {!assessing && map && assessmentId && (
             <button type="button" onClick={startEdit}
               className="flex items-center justify-center sm:justify-start gap-[4px] w-full sm:w-auto min-h-[44px] sm:min-h-0 rounded-[8px] sm:rounded-none border border-black/[.08] sm:border-0 px-[12px] sm:px-0 text-[11px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition">
@@ -232,6 +263,10 @@ export function PatientNeuroIdPanel({
           )}
         </div>
       </div>
+
+      {sendState === "error" && (
+        <p className="text-[10px] text-[#991B1B] mb-[6px] text-right">{sendError ?? t("sendToPatientError")}</p>
+      )}
 
       <p className="text-[10px] text-[#A09E98] leading-snug mb-[12px] border-l-2 border-[#D9A441]/40 pl-2">{t("disclaimer")}</p>
 

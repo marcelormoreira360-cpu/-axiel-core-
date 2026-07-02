@@ -236,7 +236,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
       </div>
     ) : null,
     mapa_bio3: (
-      <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} />
+      <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} patientEmail={patient.email ?? null} />
     ),
     resumo_rapido: (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-black/[.07] rounded-[12px] overflow-hidden">

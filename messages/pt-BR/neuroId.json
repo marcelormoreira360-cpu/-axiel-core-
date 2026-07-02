@@ -78,5 +78,10 @@
   "attentionTitle": "Pontos de atenção",
   "phq9Alert": "Atenção clínica: PHQ-9 item 9 (ideação) marcado ({value}/3). Avalie risco conforme seu protocolo — não ignore.",
   "autoDraftBanner": "Mapa parcial gerado pelas respostas — complete o exame físico (Biomecânico) para finalizar.",
-  "reviewComplete": "Revisar e completar"
+  "reviewComplete": "Revisar e completar",
+  "sendToPatient": "Enviar ao paciente",
+  "sendingToPatient": "Enviando...",
+  "sentToPatient": "Enviado ao paciente",
+  "sendToPatientError": "Não foi possível enviar. Tente novamente.",
+  "sendNoEmail": "Paciente sem e-mail cadastrado. Adicione um e-mail na ficha para enviar o relatório."
 }
