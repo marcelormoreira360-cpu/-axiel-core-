@@ -8,7 +8,6 @@ import { PushPrompt } from "@/components/push-prompt";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { GlobalSearch, SearchTriggerButton } from "@/components/global-search";
 import { SidebarNavigation, MobileNav } from "@/components/sidebar-nav";
-import { DarkModeToggle } from "@/components/dark-mode-toggle";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
@@ -131,7 +130,7 @@ export async function Shell({
               )}
             </div>
             <NotificationBell />
-            <DarkModeToggle />
+            {/* DarkModeToggle escondido: ~12 telas principais ainda não têm variantes dark: (backlog auditoria 2); reexibir quando o dark mode existir de verdade */}
           </div>
           <div className="mb-2">
             <LanguageSwitcher />
@@ -163,7 +162,7 @@ export async function Shell({
           <div className="flex items-center gap-2">
             <LanguageSwitcher />
             <NotificationBell />
-            <DarkModeToggle />
+            {/* DarkModeToggle escondido: ~12 telas principais ainda não têm variantes dark: (backlog auditoria 2); reexibir quando o dark mode existir de verdade */}
             <SignOutButton />
           </div>
         </div>
