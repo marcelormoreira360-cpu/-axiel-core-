@@ -24,7 +24,7 @@ export interface TeamInvite {
   role: AppRole;
   token_hash: string;
   invited_by: string | null;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "revoked" | "expired";
   created_at: string;
 }
 
@@ -116,12 +116,13 @@ export async function inviteTeamMember(
   const token = randomUUID();
 
   // Cancel any existing pending invite for this email+clinic
-  await supabase
+  const { error: cancelError } = await supabase
     .from("invites")
-    .update({ status: "rejected" })
+    .update({ status: "revoked" })
     .eq("clinic_id", clinicId)
     .eq("email", email.toLowerCase())
     .eq("status", "pending");
+  if (cancelError) throw cancelError;
 
   const { error } = await supabase.from("invites").insert({
     clinic_id:  clinicId,
@@ -177,7 +178,7 @@ export async function revokeInvite(inviteId: string): Promise<void> {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("invites")
-    .update({ status: "rejected" })
+    .update({ status: "revoked" })
     .eq("id", inviteId);
 
   if (error) throw error;

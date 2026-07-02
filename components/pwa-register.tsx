@@ -34,10 +34,23 @@ export function PwaRegister() {
   }, []);
 
   async function handleInstall() {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === "accepted") {
+    // O prompt nativo só pode ser usado UMA vez e alguns navegadores
+    // (Safari, browsers embutidos) disparam o evento mas não abrem o
+    // diálogo — nesses casos, orienta a instalação manual em vez de
+    // um clique que não faz nada.
+    if (!installPrompt) {
+      setShowBanner(false);
+      const { toast } = await import("sonner");
+      toast.info("Para instalar: menu do navegador → \"Instalar aplicativo\" (ou \"Adicionar à Tela de Início\" no iPhone).");
+      return;
+    }
+    try {
+      await installPrompt.prompt();
+      await installPrompt.userChoice;
+    } catch {
+      const { toast } = await import("sonner");
+      toast.info("Para instalar: menu do navegador → \"Instalar aplicativo\" (ou \"Adicionar à Tela de Início\" no iPhone).");
+    } finally {
       setShowBanner(false);
       setInstallPrompt(null);
     }

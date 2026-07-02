@@ -241,7 +241,10 @@
     "flashRemoved": "Member removed.",
     "flashRevoked": "Invite revoked.",
     "confirmRemove": "Remove {name} from the clinic?",
-    "thisMember": "this member"
+    "thisMember": "this member",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "copyLinkHint": "Copy the invite link to send via WhatsApp"
   },
   "practitioners": {
     "subtitle": "Configure each team practitioner's public profile. Enable \"Public schedule\" so patients can choose the practitioner when booking online.",
