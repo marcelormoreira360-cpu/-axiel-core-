@@ -7,6 +7,7 @@ import { detectLanguage } from "@/lib/whatsapp-lang";
 import type { Lang } from "@/lib/whatsapp-lang";
 import { createLogger } from "@/lib/logger";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 
 const log = createLogger("whatsapp");
 import {
@@ -62,6 +63,8 @@ async function getHistory(
   id: string | null;
   messages: ChatMessage[];
   botDisabled: boolean;
+  aiPaused: boolean;
+  lastHumanMessageAt: string | null;
   currentStepDb: number | null;
   clinicId: string | null;
   updatedAt: string | null;
@@ -69,7 +72,7 @@ async function getHistory(
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, current_step, clinic_id, updated_at")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, current_step, clinic_id, updated_at")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -79,21 +82,25 @@ async function getHistory(
     }
     const msgs = (data?.messages as ChatMessage[]) ?? [];
     const botDisabled = (data as unknown as { bot_disabled?: boolean } | null)?.bot_disabled ?? false;
+    const aiPaused = (data as unknown as { ai_paused?: boolean } | null)?.ai_paused ?? false;
+    const lastHumanMessageAt = (data as unknown as { last_human_message_at?: string | null } | null)?.last_human_message_at ?? null;
     const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
     const clinicId = (data as unknown as { clinic_id?: string | null } | null)?.clinic_id ?? null;
     const updatedAt = (data as unknown as { updated_at?: string } | null)?.updated_at ?? null;
-    log.debug("getHistory", { id: data?.id ?? "null", msgs: msgs.length, bot_disabled: botDisabled, phone: phone.slice(-4) });
+    log.debug("getHistory", { id: data?.id ?? "null", msgs: msgs.length, bot_disabled: botDisabled, ai_paused: aiPaused, phone: phone.slice(-4) });
     return {
       id: data?.id ?? null,
       messages: msgs,
       botDisabled,
+      aiPaused,
+      lastHumanMessageAt,
       currentStepDb,
       clinicId,
       updatedAt,
     };
   } catch (e) {
     log.error("getHistory exception", e, { phone: phone.slice(-4) });
-    return { id: null, messages: [], botDisabled: false, currentStepDb: null, clinicId: null, updatedAt: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, currentStepDb: null, clinicId: null, updatedAt: null };
   }
 }
 
@@ -480,6 +487,8 @@ export async function POST(req: NextRequest) {
             id: convId,
             messages: history,
             botDisabled,
+            aiPaused,
+            lastHumanMessageAt,
             currentStepDb,
             clinicId: convClinicId,
             updatedAt: convUpdatedAt,
@@ -512,8 +521,9 @@ export async function POST(req: NextRequest) {
             ...(isTimedOut ? { timeout_reset: true } : {}),
           });
 
-          // Human takeover — save message, don't reply
-          if (botDisabled) {
+          // Passagem de bastão: IA pausada ou humano respondeu há menos de 24h.
+          // Salva a mensagem do paciente e não responde.
+          if (shouldSilenceAi({ aiPaused, botDisabled, lastHumanMessageAt })) {
             await saveHistory(supabase, fromPhone, convId, [
               ...activeHistory,
               { role: "user", content: incomingText },

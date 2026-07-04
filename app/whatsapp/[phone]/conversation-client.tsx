@@ -2,8 +2,10 @@
 
 import { useRef, useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { WaConversation } from "@/services/whatsapp-conversation-service";
-import { toggleBotAction, sendManualReplyAction } from "@/app/whatsapp/actions";
+import { handoffStatus } from "@/lib/whatsapp-handoff";
+import { pauseAiAction, resumeAiAction, sendManualReplyAction } from "@/app/whatsapp/actions";
 
 interface Props {
   conversation: WaConversation;
@@ -39,18 +41,33 @@ function Bubble({ role, content }: { role: "user" | "assistant"; content: string
 
 export function WhatsAppConversationClient({ conversation }: Props) {
   const router = useRouter();
+  const t = useTranslations("whatsapp");
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState("");
   const [sendError, setSendError] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
+  // Passagem de bastão: active / paused / with_team
+  const status = handoffStatus({
+    aiPaused: conversation.ai_paused,
+    botDisabled: conversation.bot_disabled,
+    lastHumanMessageAt: conversation.last_human_message_at,
+  });
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [conversation.messages.length]);
 
-  function handleToggleBot() {
+  function handlePause() {
     startTransition(async () => {
-      await toggleBotAction(conversation.id, conversation.bot_disabled);
+      await pauseAiAction(conversation.id);
+      router.refresh();
+    });
+  }
+
+  function handleResume() {
+    startTransition(async () => {
+      await resumeAiAction(conversation.id);
       router.refresh();
     });
   }
@@ -75,46 +92,63 @@ export function WhatsAppConversationClient({ conversation }: Props) {
   return (
     <div className="flex flex-col gap-[12px]">
 
-      {/* Status bar + actions */}
+      {/* Passagem de bastão: estado da IA + controles */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[11px] flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-[8px]">
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${conversation.bot_disabled ? "bg-amber-400" : "bg-[#0F6E56]"}`}
-          />
-          <span className="text-[12px] font-medium text-[#0F1A2E]">
-            {conversation.bot_disabled
-              ? `Atendimento humano${conversation.handled_by_name ? ` — ${conversation.handled_by_name}` : ""}`
-              : "Bot respondendo automaticamente"}
+        <div className="flex flex-col gap-[2px] min-w-0">
+          <div className="flex items-center gap-[8px]">
+            <span
+              className={[
+                "w-2 h-2 rounded-full shrink-0",
+                status === "paused" ? "bg-red-400" : status === "with_team" ? "bg-amber-400" : "bg-[#0F6E56]",
+              ].join(" ")}
+            />
+            <span className="text-[12px] font-medium text-[#0F1A2E]">
+              {status === "paused"
+                ? conversation.handled_by_name
+                  ? t("handoff.pausedBy", { name: conversation.handled_by_name })
+                  : t("handoff.status.paused")
+                : status === "with_team"
+                ? t("handoff.status.withTeam")
+                : t("handoff.status.active")}
+            </span>
+          </div>
+          <span className="text-[10px] text-[#A09E98] pl-[16px]">
+            {status === "paused"
+              ? t("handoff.hint.paused")
+              : status === "with_team"
+              ? t("handoff.hint.withTeam")
+              : t("handoff.hint.active")}
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={handleToggleBot}
-          disabled={isPending}
-          className={[
-            "flex items-center gap-[6px] text-[11px] font-medium border rounded-[7px] px-[12px] py-[6px] transition disabled:opacity-50",
-            conversation.bot_disabled
-              ? "border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE]"
-              : "border-amber-200 text-amber-600 hover:bg-amber-50",
-          ].join(" ")}
-        >
-          {conversation.bot_disabled ? (
-            <>
+        <div className="flex items-center gap-[8px]">
+          {status !== "paused" && (
+            <button
+              type="button"
+              onClick={handlePause}
+              disabled={isPending}
+              className="flex items-center gap-[6px] text-[11px] font-medium border border-amber-200 text-amber-600 hover:bg-amber-50 rounded-[7px] px-[12px] py-[6px] transition disabled:opacity-50"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+              </svg>
+              {t("handoff.pause")}
+            </button>
+          )}
+          {status !== "active" && (
+            <button
+              type="button"
+              onClick={handleResume}
+              disabled={isPending}
+              className="flex items-center gap-[6px] text-[11px] font-medium border border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE] rounded-[7px] px-[12px] py-[6px] transition disabled:opacity-50"
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
               </svg>
-              Reativar bot
-            </>
-          ) : (
-            <>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              Assumir atendimento
-            </>
+              {t("handoff.resume")}
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Chat window */}
@@ -137,10 +171,8 @@ export function WhatsAppConversationClient({ conversation }: Props) {
       <form onSubmit={handleSend} className="bg-white border border-black/[.07] rounded-[12px] p-[12px]">
         <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[8px]">
           Resposta manual
-          {!conversation.bot_disabled && (
-            <span className="ml-2 normal-case font-normal">
-              (bot continuará respondendo — assuma o atendimento para parar o bot)
-            </span>
+          {status === "active" && (
+            <span className="ml-2 normal-case font-normal">{t("handoff.manualHint")}</span>
           )}
         </p>
         <div className="flex gap-[8px]">

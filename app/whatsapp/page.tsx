@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentUserProfile } from "@/services/user-service";
 import {
@@ -8,6 +9,7 @@ import {
   formatPhone,
   type WaConversation,
 } from "@/services/whatsapp-conversation-service";
+import { handoffStatus, type HandoffStatus } from "@/lib/whatsapp-handoff";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -19,7 +21,15 @@ function timeAgo(iso: string): string {
   return `${Math.floor(hrs / 24)}d atrás`;
 }
 
-function ConvRow({ conv }: { conv: WaConversation }) {
+function ConvRow({
+  conv,
+  status,
+  statusLabels,
+}: {
+  conv: WaConversation;
+  status: HandoffStatus;
+  statusLabels: Record<HandoffStatus, string>;
+}) {
   const last = getLastMessage(conv);
   const msgCount = conv.messages.length;
   const phoneForUrl = encodeURIComponent(conv.phone);
@@ -33,10 +43,10 @@ function ConvRow({ conv }: { conv: WaConversation }) {
       <div
         className={[
           "w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-medium shrink-0",
-          conv.handled_by_human
-            ? "bg-amber-50 text-amber-600"
-            : conv.bot_disabled
+          status === "paused"
             ? "bg-red-50 text-red-500"
+            : status === "with_team"
+            ? "bg-amber-50 text-amber-600"
             : "bg-[#E1F5EE] text-[#0F6E56]",
         ].join(" ")}
       >
@@ -49,9 +59,14 @@ function ConvRow({ conv }: { conv: WaConversation }) {
           <p className="text-[13px] font-medium text-[#0F1A2E] truncate">
             {formatPhone(conv.phone)}
           </p>
-          {conv.bot_disabled && (
-            <span className="text-[9px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-600 px-[6px] py-[1px] rounded-full shrink-0">
-              Operador
+          {status !== "active" && (
+            <span
+              className={[
+                "text-[9px] font-semibold uppercase tracking-wider px-[6px] py-[1px] rounded-full shrink-0",
+                status === "paused" ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-600",
+              ].join(" ")}
+            >
+              {statusLabels[status]}
             </span>
           )}
           {conv.linked_patient_id && (
@@ -82,7 +97,10 @@ function ConvRow({ conv }: { conv: WaConversation }) {
 }
 
 export default async function WhatsAppMonitorPage() {
-  const profile = await getCurrentUserProfile();
+  const [profile, t] = await Promise.all([
+    getCurrentUserProfile(),
+    getTranslations("whatsapp"),
+  ]);
   const clinicId = profile?.clinic_id ?? undefined;
 
   let convs: WaConversation[] = [];
@@ -99,10 +117,22 @@ export default async function WhatsAppMonitorPage() {
   }
 
   const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}/api/whatsapp/webhook`;
-  const fromNumber = process.env.TWILIO_FROM_NUMBER ?? "—";
+  const fromNumber = process.env.TWILIO_FROM_NUMBER ?? "-";
 
-  const humanConvs = convs.filter((c) => c.bot_disabled);
-  const botConvs = convs.filter((c) => !c.bot_disabled);
+  const statusLabels: Record<HandoffStatus, string> = {
+    active: t("handoff.status.active"),
+    paused: t("handoff.status.paused"),
+    with_team: t("handoff.status.withTeam"),
+  };
+  const statusOf = (c: WaConversation) =>
+    handoffStatus({
+      aiPaused: c.ai_paused,
+      botDisabled: c.bot_disabled,
+      lastHumanMessageAt: c.last_human_message_at,
+    });
+
+  const humanConvs = convs.filter((c) => statusOf(c) !== "active");
+  const botConvs = convs.filter((c) => statusOf(c) === "active");
 
   return (
     <Shell>
@@ -205,12 +235,12 @@ export default async function WhatsAppMonitorPage() {
           <div className="flex items-center gap-2 text-[11px] text-[#A09E98]">
             <span className="flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-[#0F6E56]" />
-              Bot ({botConvs.length})
+              {statusLabels.active} ({botConvs.length})
             </span>
             {humanConvs.length > 0 && (
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-amber-400" />
-                Operador ({humanConvs.length})
+                {t("handoff.legendHuman")} ({humanConvs.length})
               </span>
             )}
           </div>
@@ -231,7 +261,7 @@ export default async function WhatsAppMonitorPage() {
         ) : (
           <div className="divide-y divide-black/[.04]">
             {convs.map((conv) => (
-              <ConvRow key={conv.id} conv={conv} />
+              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} />
             ))}
           </div>
         )}

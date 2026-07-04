@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
+import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { createSupabaseAdminClient as _adminForBilling } from "@/lib/supabase-admin";
 
@@ -16,21 +17,23 @@ type BotConfig = { clinic_id?: string | null; [key: string]: unknown };
 
 // ─── Conversation History ────────────────────────────────────────────────────
 
-async function getHistory(supabase: SupabaseAdmin, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
+async function getHistory(supabase: SupabaseAdmin, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; clinicId: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, clinic_id")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id")
       .eq("phone", phone)
       .maybeSingle();
     return {
       id: data?.id ?? null,
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
+      aiPaused: data?.ai_paused ?? false,
+      lastHumanMessageAt: data?.last_human_message_at ?? null,
       clinicId: data?.clinic_id ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null };
   }
 }
 
@@ -232,11 +235,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Get conversation history + check bot_disabled
-    const { id: convId, messages: history, botDisabled, clinicId: convClinicId } = await getHistory(supabase, fromNumber);
+    // Get conversation history + estado da passagem de bastão
+    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } = await getHistory(supabase, fromNumber);
 
-    // If human has taken over, save the user message but don't reply
-    if (botDisabled) {
+    // Passagem de bastão: se a IA está pausada OU um humano respondeu há menos
+    // de 24h, salva a mensagem do paciente mas não responde.
+    if (shouldSilenceAi({ aiPaused, botDisabled, lastHumanMessageAt })) {
       const updatedMessages: ChatMessage[] = [
         ...history,
         { role: "user", content: incomingMessage },
