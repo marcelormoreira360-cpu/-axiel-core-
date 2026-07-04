@@ -1,7 +1,15 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 02/07/2026 (35)
+> Atualizado em: 04/07/2026 (36)
+
+## 🟢 Clara AI + passagem de bastão humano↔IA (04/07/2026) — NO AR
+
+> PRs **#79–#81** mergeados e deployados. Migrations **114 e 115 APLICADAS na prod** (Core em **migration 115**). 319 testes verdes (8 novos), verify:i18n 46 namespaces (novo: `whatsapp`).
+
+1. **Passagem de bastão (PR #79, migration 114):** `whatsapp_conversations` ganhou `ai_paused` + `last_human_message_at`. Resposta manual pela UI grava o timestamp; o bot conversacional NÃO responde se `ai_paused` OU `bot_disabled` (legado do opt-out da Meta) OU humano respondeu há <24h (`lib/whatsapp-handoff.ts`, testado). Gate aplicado nos 4 webhooks (Twilio WhatsApp, Meta WhatsApp/Facebook/Instagram — todos usam `whatsapp_conversations`, prefixos `fb_`/`ig_`). Transacionais (lembretes/confirmações/NPS/`/api/whatsapp/send`) ficam FORA do gate. UI de conversas: estado ("IA ativa/pausada/Com a equipe") + botões "Pausar IA" e "Devolver para a Clara" (`pauseAi`/`resumeAi` limpam os três sinais). Fora: `/api/meta/webhook` (tabela legada `meta_conversations`, pipeline já desativado).
+2. **Limite de instruções do bot 3k→12k (PRs #80/#81, migration 115):** o prompt operacional da Clara (~8,5k chars) estourava DOIS limites de 3.000 em `custom_instructions`: a validação da action (agora retorna `{ok,error}` legível em vez de throw — o Next mascara mensagens de exceção de server action em produção) e a check constraint do banco (`whatsapp_bot_configs_custom_instructions_length`, recriada em 12.000).
+3. **Clara v1.0 EM PRODUÇÃO na IFWC:** persona salva nas "Instruções adicionais" do WhatsApp Bot. Fonte: `../CLARA_PROMPT_OPERACIONAL_PT.md` (+ `_EN.md`), destilados do `../MANUAL OPERACIONAL DA CLARA AI.pdf` (225 caps) com adições: protocolo de emergência (911/192, 988/CVV 188), handoff, verificação de identidade e Fatos Oficiais (endereço Orlando, seg-sex 8h-18h, avaliação US$200 Orlando / US$500 SP / US$400 Maringá). Ao editar o bot da IFWC, manter arquivos e campo em sincronia.
 
 ## 🟢 Auditoria 2 + lotes 6–9 (01–02/07/2026) — TUDO MERGEADO E NO AR
 
