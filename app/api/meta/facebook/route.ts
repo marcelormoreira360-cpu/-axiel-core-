@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 
 export const runtime = "nodejs";
 
@@ -17,21 +18,23 @@ const IFWC_CLINIC_ID =
 async function getHistory(
   supabase: SupabaseAdmin,
   psid: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; clinicId: string | null }> {
+): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; clinicId: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, clinic_id")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id")
       .eq("phone", `fb_${psid}`)
       .maybeSingle();
     return {
       id: data?.id ?? null,
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
+      aiPaused: data?.ai_paused ?? false,
+      lastHumanMessageAt: data?.last_human_message_at ?? null,
       clinicId: data?.clinic_id ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null };
   }
 }
 
@@ -227,12 +230,13 @@ export async function POST(req: NextRequest) {
 
         if (!senderPsid || !messageText) continue;
 
-        const { id: convId, messages: history, botDisabled, clinicId: convClinicId } =
+        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } =
           await getHistory(supabase, senderPsid);
         const effectiveClinicId = convClinicId ?? IFWC_CLINIC_ID;
 
-        // Human takeover — save message, don't reply
-        if (botDisabled) {
+        // Passagem de bastão: IA pausada ou humano respondeu há menos de 24h.
+        // Salva a mensagem e não responde.
+        if (shouldSilenceAi({ aiPaused, botDisabled, lastHumanMessageAt })) {
           await saveHistory(supabase, senderPsid, convId, [
             ...history,
             { role: "user", content: messageText },
@@ -253,7 +257,7 @@ export async function POST(req: NextRequest) {
           ], effectiveClinicId);
           await supabase
             .from("whatsapp_conversations")
-            .update({ bot_disabled: true })
+            .update({ bot_disabled: true, ai_paused: true })
             .eq("phone", `fb_${senderPsid}`)
             .then(() => {}, () => {});
           await sendFacebookReply(senderPsid, handover, pageId);

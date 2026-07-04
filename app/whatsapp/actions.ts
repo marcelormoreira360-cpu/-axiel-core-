@@ -2,19 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { setBotDisabled, linkEntityToConversation } from "@/services/whatsapp-conversation-service";
+import { pauseAi, resumeAi, linkEntityToConversation } from "@/services/whatsapp-conversation-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
-// ── Toggle bot disabled for a conversation ─────────────────────────────────
+// ── Passagem de bastão: pausar IA / devolver para a Clara ──────────────────
 
-export async function toggleBotAction(
-  conversationId: string,
-  currentlyDisabled: boolean,
-): Promise<void> {
+export async function pauseAiAction(conversationId: string): Promise<void> {
   const profile = await getCurrentUserProfile();
   const name = profile?.full_name ?? "Operador";
-  await setBotDisabled(conversationId, !currentlyDisabled, name);
+  await pauseAi(conversationId, name);
+  revalidatePath("/whatsapp");
+}
+
+export async function resumeAiAction(conversationId: string): Promise<void> {
+  await resumeAi(conversationId);
   revalidatePath("/whatsapp");
 }
 
@@ -41,9 +43,15 @@ export async function sendManualReplyAction(
         ...(conv.messages as { role: string; content: string }[]),
         { role: "assistant", content: `[MANUAL] ${message.trim()}` },
       ].slice(-20);
+      // Passagem de bastão: registra a resposta humana. Com isso o bot
+      // conversacional fica em silêncio nesta conversa por 24h (lib/whatsapp-handoff).
       await supabase
         .from("whatsapp_conversations")
-        .update({ messages: updated, updated_at: new Date().toISOString() })
+        .update({
+          messages: updated,
+          last_human_message_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", conv.id);
     }
 

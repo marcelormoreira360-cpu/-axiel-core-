@@ -14,6 +14,8 @@ export type WaConversation = {
   handled_by_name: string | null;
   linked_patient_id: string | null;
   linked_lead_id: string | null;
+  ai_paused: boolean;
+  last_human_message_at: string | null;
 };
 
 export type WaStats = {
@@ -98,20 +100,44 @@ export async function getWaStats(clinicId?: string): Promise<WaStats> {
   return { total: all.length, newToday, messagesToday, botActive };
 }
 
-// ── Disable / enable bot for a conversation ────────────────────────────────
+// ── Passagem de bastão (pausar / devolver a IA) ────────────────────────────
 
-export async function setBotDisabled(
+/**
+ * Pausa a IA na conversa ("Pausar IA"). Também grava o legado bot_disabled
+ * por segurança: qualquer código antigo que só conheça bot_disabled continua
+ * respeitando a pausa.
+ */
+export async function pauseAi(
   conversationId: string,
-  disabled: boolean,
   handledByName?: string,
 ): Promise<void> {
   const supabase = createSupabaseAdminClient();
   await supabase
     .from("whatsapp_conversations")
     .update({
-      bot_disabled: disabled,
-      handled_by_human: disabled,
-      handled_by_name: disabled ? (handledByName ?? null) : null,
+      ai_paused: true,
+      bot_disabled: true,
+      handled_by_human: true,
+      handled_by_name: handledByName ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId);
+}
+
+/**
+ * Devolve a conversa para a Clara ("Devolver para a Clara"): limpa a pausa
+ * manual E a janela de 24h de atendimento humano.
+ */
+export async function resumeAi(conversationId: string): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  await supabase
+    .from("whatsapp_conversations")
+    .update({
+      ai_paused: false,
+      bot_disabled: false,
+      handled_by_human: false,
+      handled_by_name: null,
+      last_human_message_at: null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", conversationId);
@@ -148,6 +174,8 @@ type WaConversationRow = {
   handled_by_name: string | null;
   linked_patient_id: string | null;
   linked_lead_id: string | null;
+  ai_paused: boolean | null;
+  last_human_message_at: string | null;
 };
 
 function coerce(row: WaConversationRow): WaConversation {
@@ -163,6 +191,8 @@ function coerce(row: WaConversationRow): WaConversation {
     handled_by_name: row.handled_by_name ?? null,
     linked_patient_id: row.linked_patient_id ?? null,
     linked_lead_id: row.linked_lead_id ?? null,
+    ai_paused: row.ai_paused ?? false,
+    last_human_message_at: row.last_human_message_at ?? null,
   };
 }
 

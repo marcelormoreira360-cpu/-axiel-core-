@@ -1,0 +1,19 @@
+{
+  "handoff": {
+    "status": {
+      "active": "AI active",
+      "paused": "AI paused",
+      "withTeam": "With the team (24h)"
+    },
+    "pause": "Pause AI",
+    "resume": "Hand back to Clara",
+    "pausedBy": "AI paused by {name}",
+    "hint": {
+      "active": "Clara replies automatically in this conversation.",
+      "paused": "The AI stays silent until you hand the conversation back.",
+      "withTeam": "A team member replied less than 24h ago. The AI resumes on its own after 24h of silence, or now via hand-back."
+    },
+    "manualHint": "Sending a manual reply keeps Clara silent in this conversation for 24h.",
+    "legendHuman": "With the team"
+  }
+}

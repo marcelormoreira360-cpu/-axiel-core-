@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { getConversationByPhone, formatPhone } from "@/services/whatsapp-conversation-service";
+import { handoffStatus } from "@/lib/whatsapp-handoff";
 import { WhatsAppConversationClient } from "./conversation-client";
 
 type Props = { params: Promise<{ phone: string }> };
@@ -10,8 +12,17 @@ type Props = { params: Promise<{ phone: string }> };
 export default async function ConversationPage({ params }: Props) {
   const { phone: rawPhone } = await params;
   const phone = decodeURIComponent(rawPhone);
-  const conv = await getConversationByPhone(phone);
+  const [conv, t] = await Promise.all([
+    getConversationByPhone(phone),
+    getTranslations("whatsapp"),
+  ]);
   if (!conv) notFound();
+
+  const status = handoffStatus({
+    aiPaused: conv.ai_paused,
+    botDisabled: conv.bot_disabled,
+    lastHumanMessageAt: conv.last_human_message_at,
+  });
 
   return (
     <Shell>
@@ -29,10 +40,12 @@ export default async function ConversationPage({ params }: Props) {
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
             {conv.messages.length} mensagem{conv.messages.length !== 1 ? "s" : ""} ·{" "}
-            {conv.bot_disabled ? (
-              <span className="text-amber-600">Atendimento humano</span>
+            {status === "paused" ? (
+              <span className="text-red-500">{t("handoff.status.paused")}</span>
+            ) : status === "with_team" ? (
+              <span className="text-amber-600">{t("handoff.status.withTeam")}</span>
             ) : (
-              <span className="text-[#0F6E56]">Bot ativo</span>
+              <span className="text-[#0F6E56]">{t("handoff.status.active")}</span>
             )}
           </p>
         </div>

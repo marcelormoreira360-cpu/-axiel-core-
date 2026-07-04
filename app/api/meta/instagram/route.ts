@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 
 export const runtime = "nodejs";
 
@@ -55,20 +56,22 @@ function isValidInstagramSignature(signature: string | null, body: Buffer): bool
 async function getHistory(
   supabase: SupabaseAdmin,
   userId: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean }> {
+): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at")
       .eq("phone", `ig_${userId}`)
       .maybeSingle();
     return {
       id: data?.id ?? null,
       messages: (data?.messages as ChatMessage[]) ?? [],
       botDisabled: data?.bot_disabled ?? false,
+      aiPaused: data?.ai_paused ?? false,
+      lastHumanMessageAt: data?.last_human_message_at ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null };
   }
 }
 
@@ -292,7 +295,7 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        const { id: convId, messages: history, botDisabled } =
+        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt } =
           await getHistory(supabase, senderId);
 
         // Anti-eco: se a mensagem que chega é idêntica à última resposta do próprio
@@ -300,8 +303,9 @@ export async function POST(req: NextRequest) {
         const lastBotReply = [...history].reverse().find((m) => m.role === "assistant")?.content;
         if (lastBotReply && messageText === lastBotReply) continue;
 
-        // Human takeover — save message, don't reply
-        if (botDisabled) {
+        // Passagem de bastão: IA pausada ou humano respondeu há menos de 24h.
+        // Salva a mensagem e não responde.
+        if (shouldSilenceAi({ aiPaused, botDisabled, lastHumanMessageAt })) {
           await saveHistory(supabase, senderId, convId, [
             ...history,
             { role: "user", content: messageText },
@@ -323,7 +327,7 @@ export async function POST(req: NextRequest) {
           ], clinicId);
           await supabase
             .from("whatsapp_conversations")
-            .update({ bot_disabled: true })
+            .update({ bot_disabled: true, ai_paused: true })
             .eq("phone", `ig_${senderId}`)
             .then(() => {}, () => {});
           await sendInstagramReply(senderId, handover, igAccountId);

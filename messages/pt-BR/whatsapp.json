@@ -1,0 +1,19 @@
+{
+  "handoff": {
+    "status": {
+      "active": "IA ativa",
+      "paused": "IA pausada",
+      "withTeam": "Com a equipe (24h)"
+    },
+    "pause": "Pausar IA",
+    "resume": "Devolver para a Clara",
+    "pausedBy": "IA pausada por {name}",
+    "hint": {
+      "active": "A Clara responde automaticamente nesta conversa.",
+      "paused": "A IA fica em silêncio até você devolver a conversa.",
+      "withTeam": "Alguém da equipe respondeu há menos de 24h. A IA volta sozinha após 24h de silêncio, ou agora pela devolução."
+    },
+    "manualHint": "Ao enviar uma resposta manual, a Clara fica em silêncio nesta conversa por 24h.",
+    "legendHuman": "Com a equipe"
+  }
+}
