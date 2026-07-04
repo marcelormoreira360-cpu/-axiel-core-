@@ -306,19 +306,21 @@ export default async function LandingPage() {
           <p className="mt-4 text-xs text-black/35 dark:text-[#6B6A66]">{t("hero.microProof")}</p>
         </div>
 
-        {/* Slot do vídeo (Fase C) */}
-        {/* TODO: embed do vídeo Fase C */}
+        {/* Vídeo-tour (Fase C — v11 aprovada) */}
         <div id="tour" className="mx-auto mt-14 max-w-4xl scroll-mt-24">
-          <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-black/[.08] bg-gradient-to-br from-[#0F1A2E] via-[#122B3E] to-[#0F6E56] shadow-2xl dark:border-white/[.10]">
-            <div className="absolute inset-0 opacity-[.15]" style={{ backgroundImage: "radial-gradient(circle at 25% 30%, #9FE1CB 0, transparent 45%), radial-gradient(circle at 80% 75%, #9FE1CB 0, transparent 40%)" }} />
-            <div className="relative flex flex-col items-center gap-4 px-6 text-center">
-              <span className="flex h-20 w-20 items-center justify-center rounded-full bg-white/95 shadow-xl transition hover:scale-105">
-                <Play className="ml-1 h-8 w-8 fill-[#0F6E56] text-[#0F6E56]" />
-              </span>
-              <p className="text-sm font-semibold tracking-wide text-white">{t("hero.videoLabel")}</p>
-              <p className="text-xs text-white/50">{t("hero.videoSoon")}</p>
-            </div>
+          <div className="overflow-hidden rounded-2xl border border-black/[.08] bg-[#06080f] shadow-2xl dark:border-white/[.10]">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              poster="/landing/tour-poster.jpg"
+              aria-label={t("hero.videoLabel")}
+              className="aspect-video w-full"
+            >
+              <source src="/landing/tour-pt.mp4" type="video/mp4" />
+            </video>
           </div>
+          <p className="mt-3 text-center text-xs text-black/35 dark:text-[#6B6A66]">{t("hero.videoCaption")}</p>
         </div>
       </section>
 
