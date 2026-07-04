@@ -158,6 +158,6 @@ export const config = {
   // Exclui também assets estáticos (ícones, imagens, sw.js, manifest): eles não
   // precisam de auth/cookies e pagavam a latência do middleware em toda carga.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?|mp4|webm|mp3)$).*)",
   ],
 };
