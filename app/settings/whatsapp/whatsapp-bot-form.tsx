@@ -73,7 +73,11 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
     setSaveError(null);
     startTransition(async () => {
       try {
-        await saveWhatsAppBotConfig(formData);
+        const res = await saveWhatsAppBotConfig(formData);
+        if (!res.ok) {
+          setSaveError(res.error);
+          return;
+        }
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } catch (err) {
