@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
+import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 
 export const runtime = "nodejs";
 
@@ -221,6 +222,13 @@ export async function POST(req: NextRequest) {
       const pageId: string = entry.id;
 
       for (const event of entry.messaging ?? []) {
+        // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe
+        // 200 rápido (o LLM demora), e cada reenvio do MESMO evento gerava uma
+        // nova resposta do bot. Se o mid já foi processado, é retry — pula.
+        // Mensagens sem mid seguem o fluxo normal.
+        const mid: string | undefined = event.message?.mid;
+        if (await isDuplicateMetaMessage(supabase, mid)) continue;
+
         // Skip echoes and deliveries
         if (event.message?.is_echo) continue;
         if (!event.message) continue;

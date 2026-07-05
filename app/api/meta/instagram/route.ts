@@ -4,6 +4,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
+import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 
 export const runtime = "nodejs";
 
@@ -270,6 +271,13 @@ export async function POST(req: NextRequest) {
       const promptConfig = dbConfig ?? IFWC_DEFAULT_CONFIG;
 
       for (const event of entry.messaging ?? []) {
+        // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe
+        // 200 rápido (o LLM demora), e cada reenvio do MESMO evento gerava uma
+        // nova resposta do bot. Se o mid já foi processado, é retry — pula.
+        // Mensagens sem mid seguem o fluxo normal.
+        const mid: string | undefined = event.message?.mid;
+        if (await isDuplicateMetaMessage(supabase, mid)) continue;
+
         // Skip echoes (messages sent by the account itself). No Instagram o echo
         // NEM SEMPRE traz is_echo, então também ignoramos quando o remetente é a
         // própria conta (sender.id == igAccountId). Sem isso, a resposta do bot
