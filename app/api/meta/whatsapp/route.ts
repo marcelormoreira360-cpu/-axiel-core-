@@ -8,6 +8,7 @@ import type { Lang } from "@/lib/whatsapp-lang";
 import { createLogger } from "@/lib/logger";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
+import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 
 const log = createLogger("whatsapp");
 import {
@@ -408,14 +409,23 @@ export async function POST(req: NextRequest) {
         }
 
         for (const message of messages) {
+          // BUG-02: create one shared client per message — reused in all branches
+          // (audio peek, unsupported-type peek, and the main conversation flow)
+          const supabase = createSupabaseAdminClient();
+
+          // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não
+          // recebe 200 rápido (o LLM demora), e cada reenvio do MESMO evento
+          // gerava uma nova resposta do bot. Se o id da mensagem já foi
+          // processado, é retry — pula. Mensagens sem id seguem o fluxo normal.
+          if (await isDuplicateMetaMessage(supabase, message.id)) {
+            log.info("mensagem duplicada (retry da Meta) — ignorada", { mid: message.id });
+            continue;
+          }
+
           const fromPhone = message.from;
           const contactName = contacts.find((c) => c.wa_id === fromPhone)?.profile?.name ?? "";
 
           let incomingText = "";
-
-          // BUG-02: create one shared client per message — reused in all branches
-          // (audio peek, unsupported-type peek, and the main conversation flow)
-          const supabase = createSupabaseAdminClient();
 
           if (message.type === "text") {
             incomingText = (message as MetaTextMessage).text.body.trim();
