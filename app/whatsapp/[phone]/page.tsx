@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { getConversationByPhone, formatPhone } from "@/services/whatsapp-conversation-service";
 import { handoffStatus } from "@/lib/whatsapp-handoff";
+import { conversationChannel } from "@/lib/twilio-webhook-utils";
 import { WhatsAppConversationClient } from "./conversation-client";
 
 type Props = { params: Promise<{ phone: string }> };
@@ -39,6 +40,7 @@ export default async function ConversationPage({ params }: Props) {
             {formatPhone(conv.phone)}
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
+            {t(`channel.${conversationChannel(conv.phone)}`)} ·{" "}
             {conv.messages.length} mensagem{conv.messages.length !== 1 ? "s" : ""} ·{" "}
             {status === "paused" ? (
               <span className="text-red-500">{t("handoff.status.paused")}</span>

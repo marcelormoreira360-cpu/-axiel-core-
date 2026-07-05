@@ -203,6 +203,9 @@ export function getLastMessage(conv: WaConversation): WaMessage | null {
 }
 
 export function formatPhone(phone: string): string {
+  // Conversas de SMS ficam com o prefixo "sms_" no campo phone (evita colisão
+  // com o WhatsApp do mesmo número); exibe o telefone real.
+  if (phone.startsWith("sms_")) phone = phone.slice(4);
   const d = phone.replace(/\D/g, "");
   if (d.length === 13 && d.startsWith("55")) {
     // Brazilian: 55 + DDD(2) + 9digit
