@@ -58,11 +58,11 @@ function isValidInstagramSignature(signature: string | null, body: Buffer): bool
 async function getHistory(
   supabase: SupabaseAdmin,
   userId: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null }> {
+): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; updatedAt: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, ai_paused, last_human_message_at")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, updated_at")
       .eq("phone", `ig_${userId}`)
       .maybeSingle();
     return {
@@ -71,9 +71,37 @@ async function getHistory(
       botDisabled: data?.bot_disabled ?? false,
       aiPaused: data?.ai_paused ?? false,
       lastHumanMessageAt: data?.last_human_message_at ?? null,
+      updatedAt: data?.updated_at ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, updatedAt: null };
+  }
+}
+
+// Humano respondeu pela caixa de entrada do Instagram (fora do Core): registra
+// a mensagem e abre a janela de atendimento humano (IA pausa por 24h — mesma
+// regra de quando a equipe responde pela tela do Core).
+async function registerHumanReply(
+  supabase: SupabaseAdmin,
+  userId: string,
+  text: string,
+  clinicId: string,
+) {
+  try {
+    const now = new Date().toISOString();
+    const { data } = await supabase
+      .from("whatsapp_conversations")
+      .select("messages")
+      .eq("phone", `ig_${userId}`)
+      .maybeSingle();
+    const history = ((data?.messages as ChatMessage[]) ?? []);
+    const messages = text ? [...history, { role: "assistant" as const, content: text }].slice(-20) : history;
+    await supabase.from("whatsapp_conversations").upsert(
+      { phone: `ig_${userId}`, clinic_id: clinicId, messages, last_human_message_at: now, updated_at: now },
+      { onConflict: "phone" },
+    );
+  } catch (e) {
+    console.error(`[handoff] registerHumanReply failed for ig_${userId}:`, e);
   }
 }
 
@@ -264,12 +292,24 @@ export async function POST(req: NextRequest) {
         const mid: string | undefined = event.message?.mid;
         if (await isDuplicateMetaMessage(supabase, mid)) continue;
 
-        // Skip echoes (messages sent by the account itself). No Instagram o echo
-        // NEM SEMPRE traz is_echo, então também ignoramos quando o remetente é a
-        // própria conta (sender.id == igAccountId). Sem isso, a resposta do bot
-        // volta como webhook e vira um loop infinito.
-        if (event.message?.is_echo) continue;
-        if (event.sender?.id && event.sender.id === igAccountId) continue;
+        // Echo = mensagem enviada PELA conta (is_echo nem sempre vem no
+        // Instagram, então também detectamos por sender.id == igAccountId).
+        // Se o texto for uma resposta recente do próprio bot, é o eco da nossa
+        // Graph API — ignora (senão vira loop). Qualquer outro texto foi um
+        // HUMANO respondendo pelo app do Instagram → pausa a IA por 24h.
+        if (event.message?.is_echo || (event.sender?.id && event.sender.id === igAccountId)) {
+          const echoText: string = event.message?.text?.trim() ?? "";
+          const echoUserId: string | undefined = event.recipient?.id;
+          if (!echoUserId || echoUserId === igAccountId) continue;
+          const { messages: echoHistory } = await getHistory(supabase, echoUserId);
+          const recentBotReplies = echoHistory
+            .filter((m) => m.role === "assistant")
+            .slice(-3)
+            .map((m) => m.content.trim());
+          if (echoText && recentBotReplies.includes(echoText)) continue; // eco do próprio bot
+          await registerHumanReply(supabase, echoUserId, echoText, clinicId);
+          continue;
+        }
 
         const senderId: string = event.sender?.id;
         const messageText: string = event.message?.text?.trim() ?? "";
@@ -289,7 +329,7 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt } =
+        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, updatedAt } =
           await getHistory(supabase, senderId);
 
         // Anti-eco: se a mensagem que chega é idêntica à última resposta do próprio
@@ -333,8 +373,9 @@ export async function POST(req: NextRequest) {
           void autoCreateLead(supabase, senderId, clinicId, messageText);
         }
 
-        // Passo do funil estimado pelo histórico + regra de idioma (PT/EN)
-        const step = funnelStepFromHistory(history.length);
+        // Passo do funil estimado pelo histórico + regra de idioma (PT/EN);
+        // conversa parada há 48h+ volta ao acolhimento em vez de cair no passo 7.
+        const step = funnelStepFromHistory(history.length, updatedAt);
         const systemPrompt = buildSystemPrompt(promptConfig, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);

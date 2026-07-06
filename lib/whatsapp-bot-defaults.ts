@@ -160,6 +160,9 @@ ${stepBlock}
 "Quero pensar" → "Claro. Resumindo: avaliação, sessão, exames, relatórios e 60 dias de acompanhamento. Quando quiser, passo as próximas datas."
 "Funciona para mim?" → "Cada caso é avaliado individualmente. O objetivo é entender o que contribui para o seu quadro e montar uma direção personalizada."
 
+━━━ REGRA DE COERÊNCIA ━━━
+O passo acima é uma estimativa. Se a mensagem do paciente não corresponder a ele (ex.: uma nova saudação, conversa retomada depois de um tempo, pergunta solta, assunto fora do fluxo), NÃO siga o modelo do passo cegamente: responda de forma natural e acolhedora ao que a pessoa disse e retome do passo que fizer sentido pelo histórico. NUNCA diga que vai passar o contato para ${professional_name} confirmar o agendamento se o paciente não escolheu o período E informou o nome nesta conversa.
+
 Tom: acolhedor, humano, estilo WhatsApp. Mensagens curtas. Emoji discreto. Saudação SOMENTE no passo 1.
 ${custom_instructions ? `\nINSTRUÇÕES ADICIONAIS:\n${custom_instructions}` : ""}`;
 }
@@ -175,8 +178,19 @@ export const META_LANG_RULE =
   `Nunca misture idiomas na mesma resposta. ` +
   `Mantenha o idioma escolhido por toda a conversa, a menos que o paciente troque de idioma.`;
 
+// Conversa parada há mais tempo que isto volta ao passo 1 (acolhimento): sem o
+// reset, um "Oi" numa conversa antiga caía no passo 7 ("vou confirmar seu
+// agendamento") — frio e sem sentido para quem está recomeçando o papo.
+export const FUNNEL_RESET_MS = 48 * 60 * 60 * 1000;
+
 // Estima o passo do funil (1..7) pelo tamanho do histórico: ~1 passo por troca
 // (user + assistant). Sem isso o bot fica preso no passo 1 e repete a saudação.
-export function funnelStepFromHistory(historyLength: number): number {
+// lastActivityAt (updated_at da conversa) reseta o funil quando a conversa é
+// retomada depois de FUNNEL_RESET_MS.
+export function funnelStepFromHistory(historyLength: number, lastActivityAt?: string | null): number {
+  if (lastActivityAt) {
+    const ts = new Date(lastActivityAt).getTime();
+    if (!Number.isNaN(ts) && Date.now() - ts > FUNNEL_RESET_MS) return 1;
+  }
   return Math.min(7, Math.floor(historyLength / 2) + 1);
 }

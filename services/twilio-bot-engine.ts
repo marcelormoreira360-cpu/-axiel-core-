@@ -19,6 +19,7 @@ export type ConversationState = {
   aiPaused: boolean;
   lastHumanMessageAt: string | null;
   clinicId: string | null;
+  updatedAt: string | null;
 };
 
 // ─── Histórico da conversa ───────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export async function getConversationState(
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id, updated_at")
       .eq("phone", conversationKey)
       .maybeSingle();
     return {
@@ -40,9 +41,10 @@ export async function getConversationState(
       aiPaused: data?.ai_paused ?? false,
       lastHumanMessageAt: data?.last_human_message_at ?? null,
       clinicId: data?.clinic_id ?? null,
+      updatedAt: data?.updated_at ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null, updatedAt: null };
   }
 }
 

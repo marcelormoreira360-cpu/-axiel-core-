@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { parseTwilioParams, twimlMessage } from "@/lib/twilio-webhook-utils";
@@ -116,15 +116,13 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseAdminClient();
 
     // Load clinic-specific bot config or fall back to IFWC default
-    let systemPrompt: string;
+    let botConfig: Parameters<typeof buildSystemPrompt>[0] = IFWC_DEFAULT_CONFIG;
     let clinicIdFromConfig: string | null = null;
     try {
       const config = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;
       clinicIdFromConfig = (config as BotConfig)?.clinic_id ?? null;
-      systemPrompt = buildSystemPrompt(config ?? IFWC_DEFAULT_CONFIG);
-    } catch {
-      systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG);
-    }
+      if (config) botConfig = config;
+    } catch { /* keep IFWC default */ }
 
     // Feature gate — whatsapp_automation requires Professional plan or above.
     // Falls back silently (silent 200) so Twilio doesn't retry.
@@ -136,8 +134,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Get conversation history + estado da passagem de bastão
-    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } =
+    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
       await getConversationState(supabase, fromNumber);
+
+    // Passo do funil estimado pelo histórico (sem isso o bot fica preso no
+    // passo 1); conversa parada há 48h+ volta ao acolhimento.
+    const step = funnelStepFromHistory(history.length, updatedAt);
+    const systemPrompt = buildSystemPrompt(botConfig, step);
 
     // Passagem de bastão: se a IA está pausada OU um humano respondeu há menos
     // de 24h, salva a mensagem do paciente mas não responde.
