@@ -6,6 +6,7 @@ import {
   buildPriceObjectionReply,
   detectCity,
   buildPricingBlock,
+  buildBookingUrl,
 } from "../whatsapp-bot-helpers";
 import type { ChatMessage } from "../whatsapp-bot-helpers";
 import type { PricingLocation } from "../whatsapp-bot-defaults";
@@ -315,5 +316,18 @@ describe("buildPriceObjectionReply", () => {
   it("EN unknown step — generic fallback question", () => {
     const reply = buildPriceObjectionReply(99, BASE_CONFIG, "en");
     expect(reply).toContain("how can I best help you");
+  });
+});
+
+// ─── buildBookingUrl ──────────────────────────────────────────────────────────
+
+describe("buildBookingUrl", () => {
+  it("monta o link público de agendamento com o slug da clínica", () => {
+    expect(buildBookingUrl("minha-clinica")).toMatch(/\/book\/minha-clinica$/);
+  });
+
+  it("sem slug, cai no slug padrão ifwc", () => {
+    expect(buildBookingUrl(null)).toMatch(/\/book\/ifwc$/);
+    expect(buildBookingUrl(undefined)).toMatch(/\/book\/ifwc$/);
   });
 });

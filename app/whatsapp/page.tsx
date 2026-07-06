@@ -10,6 +10,7 @@ import {
   type WaConversation,
 } from "@/services/whatsapp-conversation-service";
 import { handoffStatus, type HandoffStatus } from "@/lib/whatsapp-handoff";
+import { conversationChannel, type ConversationChannel } from "@/lib/twilio-webhook-utils";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -25,10 +26,12 @@ function ConvRow({
   conv,
   status,
   statusLabels,
+  channelLabels,
 }: {
   conv: WaConversation;
   status: HandoffStatus;
   statusLabels: Record<HandoffStatus, string>;
+  channelLabels: Record<ConversationChannel, string>;
 }) {
   const last = getLastMessage(conv);
   const msgCount = conv.messages.length;
@@ -59,6 +62,9 @@ function ConvRow({
           <p className="text-[13px] font-medium text-[#0F1A2E] truncate">
             {formatPhone(conv.phone)}
           </p>
+          <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#F4F3EF] text-[#A09E98] px-[6px] py-[1px] rounded-full shrink-0">
+            {channelLabels[conversationChannel(conv.phone)]}
+          </span>
           {status !== "active" && (
             <span
               className={[
@@ -123,6 +129,12 @@ export default async function WhatsAppMonitorPage() {
     active: t("handoff.status.active"),
     paused: t("handoff.status.paused"),
     with_team: t("handoff.status.withTeam"),
+  };
+  const channelLabels: Record<ConversationChannel, string> = {
+    whatsapp: t("channel.whatsapp"),
+    messenger: t("channel.messenger"),
+    instagram: t("channel.instagram"),
+    sms: t("channel.sms"),
   };
   const statusOf = (c: WaConversation) =>
     handoffStatus({
@@ -261,7 +273,7 @@ export default async function WhatsAppMonitorPage() {
         ) : (
           <div className="divide-y divide-black/[.04]">
             {convs.map((conv) => (
-              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} />
+              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} channelLabels={channelLabels} />
             ))}
           </div>
         )}

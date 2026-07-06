@@ -1,115 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
-import { canUseFeature } from "@/modules/billing/feature-access";
-import { createSupabaseAdminClient as _adminForBilling } from "@/lib/supabase-admin";
+import { parseTwilioParams, twimlMessage } from "@/lib/twilio-webhook-utils";
+import {
+  getConversationState,
+  saveConversation,
+  autoCreateLeadFromChannel,
+  generateReply,
+  clinicHasWhatsAppAutomation,
+  type ChatMessage,
+} from "@/services/twilio-bot-engine";
 
 export const runtime = "nodejs";
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// A mecânica compartilhada com o canal de SMS (histórico, lead automático,
+// resposta OpenAI, gate de plano) vive em services/twilio-bot-engine.ts.
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
-type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 type BotConfig = { clinic_id?: string | null; [key: string]: unknown };
-
-// ─── Conversation History ────────────────────────────────────────────────────
-
-async function getHistory(supabase: SupabaseAdmin, phone: string): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; clinicId: string | null }> {
-  try {
-    const { data } = await supabase
-      .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id")
-      .eq("phone", phone)
-      .maybeSingle();
-    return {
-      id: data?.id ?? null,
-      messages: (data?.messages as ChatMessage[]) ?? [],
-      botDisabled: data?.bot_disabled ?? false,
-      aiPaused: data?.ai_paused ?? false,
-      lastHumanMessageAt: data?.last_human_message_at ?? null,
-      clinicId: data?.clinic_id ?? null,
-    };
-  } catch {
-    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null };
-  }
-}
-
-// Auto-create lead when unknown number contacts
-async function autoCreateLead(supabase: SupabaseAdmin, phone: string, clinicId: string, firstMessage: string) {
-  try {
-    // Check if already a patient or lead with this phone
-    const [{ count: patientCount }, { count: leadCount }] = await Promise.all([
-      supabase.from("patients").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("phone", phone),
-      supabase.from("leads").select("id", { count: "exact", head: true }).eq("clinic_id", clinicId).eq("phone", phone),
-    ]);
-    if ((patientCount ?? 0) > 0 || (leadCount ?? 0) > 0) return; // already known
-
-    await supabase.from("leads").insert({
-      clinic_id: clinicId,
-      full_name: `WhatsApp ${phone.slice(-4)}`,
-      phone,
-      source: "other",
-      stage: "new_lead",
-      notes: `Lead criado automaticamente via WhatsApp.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
-    });
-  } catch (e) {
-    console.error("auto-create lead failed:", e);
-  }
-}
-
-async function saveHistory(supabase: SupabaseAdmin, phone: string, id: string | null, messages: ChatMessage[], clinicId?: string | null) {
-  const payload: Record<string, unknown> = { phone, messages: messages.slice(-20), updated_at: new Date().toISOString() };
-  try {
-    if (id) {
-      const { error } = await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
-      if (error) console.error("[twilio] saveHistory UPDATE error:", error.message);
-    } else {
-      // BUG-01: upsert prevents duplicate rows when two rapid messages arrive simultaneously
-      if (clinicId) payload.clinic_id = clinicId;
-      const { error } = await supabase.from("whatsapp_conversations").upsert(payload, { onConflict: "phone" });
-      if (error) console.error("[twilio] saveHistory UPSERT error:", error.message);
-    }
-  } catch (e) {
-    console.error("[twilio] saveHistory exception:", e);
-  }
-}
-
-// ─── AI Reply ────────────────────────────────────────────────────────────────
-
-async function generateReply(
-  incomingMessage: string,
-  history: ChatMessage[],
-  systemPrompt: string,
-  apiKey: string
-): Promise<string> {
-  const messages = [
-    { role: "system" as const, content: systemPrompt },
-    ...history.slice(-12),
-    { role: "user" as const, content: incomingMessage },
-  ];
-
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(15_000), // INT-04: prevent webhook timeout on slow OpenAI responses
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-      max_tokens: 450,
-    }),
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    console.error("OpenAI error:", res.status, JSON.stringify(data));
-    return "";
-  }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
-}
 
 // ─── Audio transcription via Whisper ─────────────────────────────────────────
 
@@ -166,8 +75,7 @@ export async function POST(req: NextRequest) {
     const rawBody = await req.text();
     const signature = req.headers.get("x-twilio-signature");
     const url = `https://${req.headers.get("host")}${req.nextUrl.pathname}`;
-    const params: Record<string, string> = {};
-    new URLSearchParams(rawBody).forEach((v, k) => { params[k] = v; });
+    const params = parseTwilioParams(rawBody);
 
     if (!validateTwilioSignature(signature, url, params)) {
       console.warn("WhatsApp webhook: invalid Twilio signature — rejected");
@@ -198,7 +106,7 @@ export async function POST(req: NextRequest) {
       if (transcribed) {
         incomingMessage = transcribed;
       } else {
-        const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊</Message></Response>`;
+        const twiml = twimlMessage("Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊");
         return new NextResponse(twiml, { status: 200, headers: { "Content-Type": "text/xml" } });
       }
     }
@@ -221,22 +129,15 @@ export async function POST(req: NextRequest) {
     // Feature gate — whatsapp_automation requires Professional plan or above.
     // Falls back silently (silent 200) so Twilio doesn't retry.
     if (clinicIdFromConfig) {
-      const adminForBilling = _adminForBilling();
-      const { data: subRow } = await adminForBilling
-        .from("subscriptions")
-        .select("plans(code, slug)")
-        .eq("clinic_id", clinicIdFromConfig)
-        .maybeSingle();
-      const plans = (subRow?.plans as { code?: string | null; slug?: string | null } | null);
-      const planSlug = plans?.code ?? plans?.slug ?? "starter";
-      if (!canUseFeature({ planSlug }, "whatsapp_automation")) {
-        console.warn("[twilio] whatsapp_automation not available for clinic", clinicIdFromConfig, "plan:", planSlug);
+      if (!(await clinicHasWhatsAppAutomation(supabase, clinicIdFromConfig))) {
+        console.warn("[twilio] whatsapp_automation not available for clinic", clinicIdFromConfig);
         return new NextResponse("", { status: 200 });
       }
     }
 
     // Get conversation history + estado da passagem de bastão
-    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } = await getHistory(supabase, fromNumber);
+    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } =
+      await getConversationState(supabase, fromNumber);
 
     // Passagem de bastão: se a IA está pausada OU um humano respondeu há menos
     // de 24h, salva a mensagem do paciente mas não responde.
@@ -245,14 +146,19 @@ export async function POST(req: NextRequest) {
         ...history,
         { role: "user", content: incomingMessage },
       ];
-      void saveHistory(supabase, fromNumber, convId, updatedMessages, convClinicId ?? clinicIdFromConfig);
+      void saveConversation(supabase, fromNumber, convId, updatedMessages, convClinicId ?? clinicIdFromConfig);
       return new NextResponse("", { status: 200 }); // silent — human is handling
     }
 
     // Auto-create lead for new unknown contacts
     const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
     if (effectiveClinicId && !convId) {
-      void autoCreateLead(supabase, fromNumber, effectiveClinicId, incomingMessage);
+      void autoCreateLeadFromChannel(supabase, {
+        phone: fromNumber,
+        clinicId: effectiveClinicId,
+        firstMessage: incomingMessage,
+        channelLabel: "WhatsApp",
+      });
     }
 
     // Generate reply using clinic config
@@ -266,11 +172,10 @@ export async function POST(req: NextRequest) {
       { role: "user", content: incomingMessage },
       { role: "assistant", content: finalReply },
     ];
-    await saveHistory(supabase, fromNumber, convId, updatedMessages, effectiveClinicId);
+    await saveConversation(supabase, fromNumber, convId, updatedMessages, effectiveClinicId);
 
     // Respond via TwiML (works for both sandbox and production)
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Message>${finalReply.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Message></Response>`;
-    return new NextResponse(twiml, {
+    return new NextResponse(twimlMessage(finalReply), {
       status: 200,
       headers: { "Content-Type": "text/xml" },
     });

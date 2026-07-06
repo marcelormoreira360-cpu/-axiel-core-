@@ -4,6 +4,7 @@ import { validateMetaSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
+import { isOptOutRequest } from "@/lib/whatsapp-optout";
 
 export const runtime = "nodejs";
 
@@ -165,21 +166,7 @@ async function generateReply(
 }
 
 // ─── Opt-out / human escalation (exigência do App Review) ────────────────────
-// O paciente pode pedir para falar com uma pessoa. Frase-based (sem "parar"
-// sozinho) para evitar falso positivo em conversa clínica ("parar de sentir dor").
-const OPT_OUT_PATTERNS = [
-  "falar com atendente", "falar com um atendente", "falar com humano", "falar com um humano",
-  "falar com uma pessoa", "falar com alguem", "falar com a equipe", "falar com a recepcao",
-  "atendente", "atendimento humano", "quero um humano", "pessoa de verdade", "ser humano",
-  "talk to a human", "talk to a person", "talk to an agent", "speak to a human",
-  "speak to a person", "speak to an agent", "speak to someone", "real person",
-  "human agent", "live agent",
-];
-
-function isOptOutRequest(text: string): boolean {
-  const t = text.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  return OPT_OUT_PATTERNS.some((p) => t.includes(p));
-}
+// Detecção compartilhada entre canais em lib/whatsapp-optout.ts.
 
 // ─── GET — Meta webhook verification ─────────────────────────────────────────
 

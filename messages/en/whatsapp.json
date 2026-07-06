@@ -1,4 +1,10 @@
 {
+  "channel": {
+    "whatsapp": "WhatsApp",
+    "messenger": "Messenger",
+    "instagram": "Instagram",
+    "sms": "SMS"
+  },
   "handoff": {
     "status": {
       "active": "AI active",

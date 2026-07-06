@@ -79,6 +79,14 @@ export function buildPricingBlock(location: PricingLocation, lang: Lang): string
   return `*${label} — ${location.city}:*\n${lines.join("\n")}`;
 }
 
+// ─── Public booking link ──────────────────────────────────────────────────────
+
+/** Link público de agendamento da clínica (usado no passo 7 do funil e no SMS). */
+export function buildBookingUrl(clinicSlug?: string | null): string {
+  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app";
+  return `${base}/book/${clinicSlug ?? "ifwc"}`;
+}
+
 // ─── Fixed step templates ─────────────────────────────────────────────────────
 
 export function buildFixedReply(
@@ -108,7 +116,7 @@ export function buildFixedReply(
         return `Great! What's your name so I can reserve your spot? 😊`;
 
       case 7: {
-        const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/${bookingSlug}`;
+        const bookUrl = buildBookingUrl(bookingSlug);
         return `Perfect! I'll forward your contact to ${professional_name} 🙏\n\nIf you'd like to secure your date, you can book directly here:\n👉 ${bookUrl}\n\nWe'll be in touch soon to confirm 😊`;
       }
 
@@ -138,7 +146,7 @@ export function buildFixedReply(
       return `Ótimo! Qual é o seu nome para eu reservar a data? 😊`;
 
     case 7: {
-      const bookUrl = `${process.env.NEXT_PUBLIC_APP_URL ?? "https://axiel-core-6ikl.vercel.app"}/book/${bookingSlug}`;
+      const bookUrl = buildBookingUrl(bookingSlug);
       return `Perfeito! Vou passar seu contato para ${professional_name} 🙏\n\nSe quiser já garantir sua data, você pode agendar diretamente por aqui:\n👉 ${bookUrl}\n\nEm breve entraremos em contato para confirmar 😊`;
     }
 
