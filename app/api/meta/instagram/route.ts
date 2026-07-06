@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
@@ -281,8 +281,13 @@ export async function POST(req: NextRequest) {
         if (!extraClinic) continue;
         clinicId = extraClinic;
       }
-      // Persona do prompt: a config da clínica, ou a padrão IFWC para a conta extra.
-      const promptConfig = dbConfig ?? IFWC_DEFAULT_CONFIG;
+      // Persona do prompt: a config da conta, senão a config da CLÍNICA (conta
+      // extra, ex.: IG pessoal — antes caía na config de fábrica e perdia as
+      // custom_instructions da Clara), senão a padrão IFWC.
+      const promptConfig =
+        dbConfig ??
+        (await getWhatsAppBotConfigByClinicId(clinicId).catch(() => null)) ??
+        IFWC_DEFAULT_CONFIG;
 
       for (const event of entry.messaging ?? []) {
         // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe

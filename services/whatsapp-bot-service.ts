@@ -87,6 +87,26 @@ export async function getWhatsAppBotConfigByInstagramId(metaInstagramId: string)
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
+// Lookup por clinic_id para webhooks que atendem PELA clínica e não por um
+// identificador próprio do canal (Messenger e contas extras de Instagram):
+// sem isso esses canais rodavam com IFWC_DEFAULT_CONFIG e perdiam as
+// custom_instructions (persona Clara) salvas no banco.
+// Admin client porque webhooks rodam sem sessão de usuário.
+export async function getWhatsAppBotConfigByClinicId(clinicId: string): Promise<WhatsAppBotConfig | null> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("whatsapp_bot_configs")
+    .select("*")
+    .eq("clinic_id", clinicId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!data) return null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
+  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+}
+
 export async function upsertWhatsAppBotConfig(
   clinicId: string,
   input: Partial<Omit<WhatsAppBotConfig, "id" | "clinic_id">>

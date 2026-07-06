@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory, getWhatsAppBotConfigByClinicId } from "@/services/whatsapp-bot-service";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
@@ -315,7 +315,12 @@ export async function POST(req: NextRequest) {
         // Passo do funil estimado pelo histórico (sai do "preso no passo 1");
         // conversa parada há 48h+ volta ao acolhimento em vez de cair no passo 7.
         const step = funnelStepFromHistory(history.length, updatedAt);
-        const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG, step) + META_LANG_RULE;
+
+        // Config real da clínica (persona Clara nas custom_instructions, preços,
+        // idioma) — antes o Messenger rodava sempre com a config de fábrica.
+        const promptConfig =
+          (await getWhatsAppBotConfigByClinicId(effectiveClinicId).catch(() => null)) ?? IFWC_DEFAULT_CONFIG;
+        const systemPrompt = buildSystemPrompt(promptConfig, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";

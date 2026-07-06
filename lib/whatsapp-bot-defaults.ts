@@ -164,7 +164,7 @@ ${stepBlock}
 O passo acima é uma estimativa. Se a mensagem do paciente não corresponder a ele (ex.: uma nova saudação, conversa retomada depois de um tempo, pergunta solta, assunto fora do fluxo), NÃO siga o modelo do passo cegamente: responda de forma natural e acolhedora ao que a pessoa disse e retome do passo que fizer sentido pelo histórico. NUNCA diga que vai passar o contato para ${professional_name} confirmar o agendamento se o paciente não escolheu o período E informou o nome nesta conversa.
 
 Tom: acolhedor, humano, estilo WhatsApp. Mensagens curtas. Emoji discreto. Saudação SOMENTE no passo 1.
-${custom_instructions ? `\nINSTRUÇÕES ADICIONAIS:\n${custom_instructions}` : ""}`;
+${custom_instructions ? `\nINSTRUÇÕES ADICIONAIS (em persona, apresentação e tom, elas têm PRIORIDADE sobre os modelos dos passos acima — adapte os modelos ao estilo delas mantendo a sequência do funil):\n${custom_instructions}` : ""}`;
 }
 
 // Regra de idioma para os canais Meta (Messenger/Instagram), que atendem EUA + Brasil:
