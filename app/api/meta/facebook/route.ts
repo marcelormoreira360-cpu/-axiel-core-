@@ -15,16 +15,21 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 const IFWC_CLINIC_ID =
   process.env.META_BOT_CLINIC_ID ?? "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
 
+// Id do app Meta (AXIEL Core). Echoes com este app_id são as mensagens que o
+// próprio bot enviou pela Graph API; echoes de outro app (ou sem app_id) são
+// um HUMANO respondendo pela caixa de entrada do Messenger/Business Suite.
+const META_APP_ID = process.env.META_APP_ID ?? "1468755454577652";
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getHistory(
   supabase: SupabaseAdmin,
   psid: string
-): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; clinicId: string | null }> {
+): Promise<{ id: string | null; messages: ChatMessage[]; botDisabled: boolean; aiPaused: boolean; lastHumanMessageAt: string | null; clinicId: string | null; updatedAt: string | null }> {
   try {
     const { data } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, clinic_id, updated_at")
       .eq("phone", `fb_${psid}`)
       .maybeSingle();
     return {
@@ -34,9 +39,37 @@ async function getHistory(
       aiPaused: data?.ai_paused ?? false,
       lastHumanMessageAt: data?.last_human_message_at ?? null,
       clinicId: data?.clinic_id ?? null,
+      updatedAt: data?.updated_at ?? null,
     };
   } catch {
-    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, clinicId: null, updatedAt: null };
+  }
+}
+
+// Humano respondeu pela caixa de entrada do Messenger (fora do Core): registra
+// a mensagem no histórico e abre a janela de atendimento humano (a IA pausa por
+// 24h — mesma regra de quando a equipe responde pela tela do Core).
+async function registerHumanReply(
+  supabase: SupabaseAdmin,
+  conversationKey: string,
+  text: string,
+  clinicId: string,
+) {
+  try {
+    const now = new Date().toISOString();
+    const { data } = await supabase
+      .from("whatsapp_conversations")
+      .select("id, messages")
+      .eq("phone", conversationKey)
+      .maybeSingle();
+    const history = ((data?.messages as ChatMessage[]) ?? []);
+    const messages = text ? [...history, { role: "assistant" as const, content: text }].slice(-20) : history;
+    await supabase.from("whatsapp_conversations").upsert(
+      { phone: conversationKey, clinic_id: clinicId, messages, last_human_message_at: now, updated_at: now },
+      { onConflict: "phone" },
+    );
+  } catch (e) {
+    console.error(`[handoff] registerHumanReply failed for ${conversationKey}:`, e);
   }
 }
 
@@ -216,8 +249,23 @@ export async function POST(req: NextRequest) {
         const mid: string | undefined = event.message?.mid;
         if (await isDuplicateMetaMessage(supabase, mid)) continue;
 
-        // Skip echoes and deliveries
-        if (event.message?.is_echo) continue;
+        // Echo = mensagem enviada PELA página. Se veio do nosso app, é o próprio
+        // bot (ignora). Senão, foi um humano respondendo pelo app do Messenger/
+        // Business Suite → pausa a IA nesta conversa (janela de 24h).
+        if (event.message?.is_echo) {
+          const echoAppId = event.message?.app_id != null ? String(event.message.app_id) : null;
+          if (echoAppId === META_APP_ID) continue;
+          const userPsid: string | undefined = event.recipient?.id;
+          if (userPsid) {
+            await registerHumanReply(
+              supabase,
+              `fb_${userPsid}`,
+              event.message?.text?.trim() ?? "",
+              IFWC_CLINIC_ID,
+            );
+          }
+          continue;
+        }
         if (!event.message) continue;
 
         const senderPsid: string = event.sender?.id;
@@ -225,7 +273,7 @@ export async function POST(req: NextRequest) {
 
         if (!senderPsid || !messageText) continue;
 
-        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } =
+        const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
           await getHistory(supabase, senderPsid);
         const effectiveClinicId = convClinicId ?? IFWC_CLINIC_ID;
 
@@ -264,8 +312,9 @@ export async function POST(req: NextRequest) {
           void autoCreateLead(supabase, senderPsid, effectiveClinicId, messageText);
         }
 
-        // Passo do funil estimado pelo histórico (sai do "preso no passo 1")
-        const step = funnelStepFromHistory(history.length);
+        // Passo do funil estimado pelo histórico (sai do "preso no passo 1");
+        // conversa parada há 48h+ volta ao acolhimento em vez de cair no passo 7.
+        const step = funnelStepFromHistory(history.length, updatedAt);
         const systemPrompt = buildSystemPrompt(IFWC_DEFAULT_CONFIG, step) + META_LANG_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);

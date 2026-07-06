@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     // ── Histórico + passagem de bastão ─────────────────────────────────────
     const conversationKey = smsConversationKey(fromNumber);
-    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId } =
+    const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
       await getConversationState(supabase, conversationKey);
     const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
 
@@ -161,7 +161,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Prompt: persona/funil da clínica + regra do canal SMS ──────────────
-    const step = funnelStepFromHistory(history.length);
+    const step = funnelStepFromHistory(history.length, updatedAt);
     const bookingUrl = buildBookingUrl(botConfig?.clinic_slug);
     const systemPrompt =
       buildSystemPrompt(botConfig ?? IFWC_DEFAULT_CONFIG, step) + buildSmsChannelRule(bookingUrl);
