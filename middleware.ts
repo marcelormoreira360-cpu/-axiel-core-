@@ -33,7 +33,7 @@ function ensureReferralCookie(request: NextRequest, response: NextResponse): Nex
   return response;
 }
 
-const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade"];
+const publicRoutes = ["/", "/auth/login", "/termos", "/privacidade", "/privacy"];
 const publicPrefixes = [
   "/auth",
   "/api/public",

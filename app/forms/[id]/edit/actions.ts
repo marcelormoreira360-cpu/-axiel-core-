@@ -63,11 +63,17 @@ export async function updateFormAction(formData: FormData) {
             max: b.max === null || b.max === undefined || String(b.max) === "" ? null : Number(b.max),
             label: b.label.trim(),
             color: b.color || "#0F6E56",
+            // Preserva o texto interpretativo (mostrado ao respondente no formulário
+            // público). Omite quando vazio para não sujar o jsonb.
+            ...(b.description?.trim() ? { description: b.description.trim() } : {}),
           }));
       scoringConfig = {
         total_bands: sanitize(norm.total_bands),
         section_bands: sanitize(norm.section_bands),
         flag_item_max: norm.flag_item_max,
+        // Preserva o modo de matching (percentage_of_max vs absolute). Sem isto,
+        // salvar o MSQ da feira pela UI zeraria o modo e quebraria as faixas por %.
+        ...(norm.mode === "percentage_of_max" ? { mode: norm.mode } : {}),
       };
     }
   } catch {

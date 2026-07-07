@@ -3,6 +3,8 @@ import crypto from "crypto";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { gradeTotalByMode, isTopBand, normalizeScoringConfig } from "@/lib/assessment-grading";
+import { computeMsqSafetyFlags, type MsqAnswerWithContext } from "@/lib/msq-safety-notes";
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -22,8 +24,11 @@ const answerSchema = z.object({
 });
 
 // Cadastro do futuro paciente (só em link público de captação).
+// Fluxo FINAL: os 4 campos (nome, sobrenome, e-mail, telefone) são coletados no
+// INÍCIO e são OBRIGATÓRIOS. O front compõe full_name = `${first} ${last}`; aqui
+// exigimos full_name + email + phone não-vazios (validação de servidor).
 const contactSchema = z.object({
-  full_name: z.string().trim().min(1).max(120),
+  full_name: z.string().trim().max(120).nullable().optional(),
   email:     z.string().trim().max(200).nullable().optional(),
   phone:     z.string().trim().max(40).nullable().optional(),
   consent:   z.boolean(),
@@ -77,8 +82,24 @@ export async function POST(req: NextRequest) {
       // Honeypot: se preenchido, é bot — finge sucesso e ignora.
       if (contact?.website) return NextResponse.json({ ok: true });
 
-      if (!contact || !contact.consent || !contact.full_name?.trim()) {
-        return NextResponse.json({ error: "Dados de cadastro obrigatórios" }, { status: 400 });
+      // Consentimento é OBRIGATÓRIO.
+      if (!contact || !contact.consent) {
+        return NextResponse.json({ error: "Consentimento obrigatório" }, { status: 400 });
+      }
+
+      // Fluxo FINAL: nome (nome+sobrenome compostos no front), e-mail e telefone
+      // são TODOS obrigatórios. Validação de servidor (o front já bloqueia vazio).
+      const fullName = contact.full_name?.trim() || "";
+      const email = contact.email?.trim().toLowerCase() || null;
+      const phone = contact.phone ? (contact.phone.replace(/\D/g, "") || contact.phone.trim()) : null;
+      if (!fullName || !email || !phone) {
+        return NextResponse.json(
+          { error: "Nome, e-mail e telefone são obrigatórios" },
+          { status: 400 },
+        );
+      }
+      if (!EMAIL_RE.test(email)) {
+        return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
       }
 
       // Link reutilizável → rate limit por IP (não por token).
@@ -90,19 +111,56 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const email = contact.email?.trim().toLowerCase() || null;
-      if (email && !EMAIL_RE.test(email)) {
-        return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
-      }
-      const phone = contact.phone ? (contact.phone.replace(/\D/g, "") || contact.phone.trim()) : null;
-
-      // Nome do questionário para uma nota legível no lead.
+      // Nome do questionário + faixas de interpretação (para devolver a band ao front).
       const { data: tpl } = await supabase
         .from("assessment_templates")
-        .select("name")
+        .select("name, scoring_config")
         .eq("id", inv.template_id)
         .maybeSingle();
       const tplName = tpl?.name ?? "Questionário";
+      const scoringConfig = normalizeScoringConfig(tpl?.scoring_config);
+      // Faixa interpretativa correspondente ao total. Respeita o `mode` do config:
+      // percentage_of_max (MSQ da feira, bands em %) ou absolute (legado). null se o
+      // template não tiver scoring_config → o front mostra só o score, sem faixa.
+      const band = gradeTotalByMode(totalScore, maxScore, scoringConfig);
+
+      // ── Notas de segurança condicionais (MSQ da feira) ──────────────────────
+      // O backend calcula os flags {showA, showB, showC} a partir das respostas.
+      // Para casar sentinela/humor por SEÇÃO + TEXTO, resolvemos os UUIDs das
+      // respostas nos títulos/textos do template (o front só manda IDs).
+      let safetyFlags: { showA: boolean; showB: boolean; showC: boolean } | null = null;
+      try {
+        const { data: sections } = await supabase
+          .from("assessment_sections")
+          .select("id, title, assessment_questions(id, text)")
+          .eq("template_id", inv.template_id);
+
+        const sectionTitleById = new Map<string, string>();
+        const questionTextById = new Map<string, string>();
+        for (const s of (sections ?? []) as Array<{
+          id: string;
+          title: string | null;
+          assessment_questions: Array<{ id: string; text: string | null }> | null;
+        }>) {
+          if (s.title) sectionTitleById.set(s.id, s.title);
+          for (const q of s.assessment_questions ?? []) {
+            if (q.text) questionTextById.set(q.id, q.text);
+          }
+        }
+
+        const withContext: MsqAnswerWithContext[] = answers.map((a) => ({
+          section_title: a.section_id ? sectionTitleById.get(a.section_id) ?? null : null,
+          question_text: questionTextById.get(a.question_id) ?? null,
+          value_number: a.value_number,
+        }));
+        // Cond. B dispara quando o score cai na BANDA MAIS ALTA (101+), não mais
+        // por percentual. `isTopBand` resolve a partir do scoring_config (fonte única).
+        safetyFlags = computeMsqSafetyFlags(withContext, isTopBand(band, scoringConfig));
+      } catch (e) {
+        // Nunca derruba o submit por causa das notas de segurança.
+        console.error("MSQ safety flags falhou:", e);
+        safetyFlags = null;
+      }
 
       // Resumo por seção (aparece nas notas do lead).
       const sectionLines: string[] = [];
@@ -135,7 +193,7 @@ export async function POST(req: NextRequest) {
         await supabase
           .from("leads")
           .update({
-            full_name: contact.full_name.trim(),
+            full_name: fullName,
             phone: phone ?? undefined,
             notes: noteSummary,
             updated_at: new Date().toISOString(),
@@ -146,7 +204,7 @@ export async function POST(req: NextRequest) {
           .from("leads")
           .insert({
             clinic_id: inv.clinic_id,
-            full_name: contact.full_name.trim(),
+            full_name: fullName,
             email,
             phone,
             source: "public_form",
@@ -167,7 +225,7 @@ export async function POST(req: NextRequest) {
         template_id: inv.template_id,
         invitation_id: inv.id,
         lead_id: leadId,
-        full_name: contact.full_name.trim(),
+        full_name: fullName,
         email,
         phone,
         consent_ip: ip === "unknown" ? null : ip,
@@ -183,7 +241,16 @@ export async function POST(req: NextRequest) {
 
       // Não marca o convite como "completo" (é reutilizável) e não gera Bio³
       // (não há paciente ainda — isso acontece na conversão do lead).
-      return NextResponse.json({ ok: true, lead_id: leadId });
+      // Devolve o score + faixa para o front renderizar (funil value-first).
+      return NextResponse.json({
+        ok: true,
+        lead_id: leadId,
+        total_score: totalScore,
+        max_possible_score: maxScore,
+        score_percentage,
+        band: band ?? null,
+        safety_flags: safetyFlags,
+      });
     }
 
     // ── Link de PACIENTE (fluxo original) ────────────────────────────────────

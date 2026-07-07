@@ -2,7 +2,24 @@
 
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import type { TemplateWithStructure, AssessmentQuestion } from "@/lib/types";
+import type { TemplateWithStructure, AssessmentQuestion, ScoreBand } from "@/lib/types";
+
+// Contato do fecho da tela de resultado (convite, sem preço/agendamento).
+// Telefone em dígitos para o link tel: (a copy exibe o número formatado).
+const CONTACT_PHONE_DIGITS = "4079235710";
+const CONTACT_SITE_URL = "https://jifwc.com";
+
+/** Flags de nota de segurança condicional (MSQ da feira), calculados no backend. */
+type SafetyFlags = { showA: boolean; showB: boolean; showC: boolean };
+
+/** Resultado devolvido pelo backend no modo público (funil value-first). */
+type PublicResult = {
+  total_score: number;
+  max_possible_score: number;
+  score_percentage: number;
+  band: ScoreBand | null;
+  safety_flags: SafetyFlags | null;
+};
 
 const DEFAULT_SCALE_LABELS = [
   "Nunca ou quase nunca",
@@ -51,9 +68,10 @@ function ScaleInput({
 }
 
 export type PublicContact = {
+  /** Fluxo FINAL: nome (nome+sobrenome), e-mail e telefone são obrigatórios. */
   full_name: string;
-  email: string | null;
-  phone: string | null;
+  email: string;
+  phone: string;
   consent: boolean;
   /** honeypot anti-bot */
   website?: string;
@@ -82,6 +100,8 @@ export function PublicAssessmentForm({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Modo público (funil value-first): resultado devolvido pelo backend.
+  const [result, setResult] = useState<PublicResult | null>(null);
 
   function setAnswer(qid: string, value: number | string | null) {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -180,7 +200,18 @@ export function PublicAssessmentForm({
 
       // Confirma de fato o salvamento: exige ok:true do servidor (evita falso-positivo
       // se a requisição cair num redirect/HTML com status 200, ex.: login).
-      const body = await res.json().catch(() => ({} as { ok?: boolean; error?: string }));
+      const body = await res.json().catch(
+        () =>
+          ({} as {
+            ok?: boolean;
+            error?: string;
+            total_score?: number;
+            max_possible_score?: number;
+            score_percentage?: number;
+            band?: ScoreBand | null;
+            safety_flags?: SafetyFlags | null;
+          }),
+      );
       if (!res.ok || !body?.ok) {
         throw new Error(body?.error ?? t("errSave"));
       }
@@ -194,6 +225,16 @@ export function PublicAssessmentForm({
         return;
       }
 
+      // Modo público: guarda o resultado devolvido para renderizar score + faixa.
+      if (publicMode) {
+        setResult({
+          total_score: body.total_score ?? totalScore,
+          max_possible_score: body.max_possible_score ?? maxPossible,
+          score_percentage: body.score_percentage ?? percentage,
+          band: body.band ?? null,
+          safety_flags: body.safety_flags ?? null,
+        });
+      }
       setDone(true);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t("errSave"));
@@ -203,17 +244,136 @@ export function PublicAssessmentForm({
   }
 
   if (done) {
-    // Modo captação: mensagem calorosa, sem expor placar clínico ao prospecto.
+    // Modo captação: os dados já foram coletados no início, então a tela de
+    // resultado mostra APENAS o snapshot (score + faixa + interpretação + notas
+    // condicionais + CTA + rodapés). Sem convite de contato pós-score.
     if (publicMode) {
+      const r = result ?? {
+        total_score: totalScore,
+        max_possible_score: maxPossible,
+        score_percentage: percentage,
+        band: null as ScoreBand | null,
+        safety_flags: null as SafetyFlags | null,
+      };
+      const band = r.band;
+      const bandColor = band?.color || "#0F6E56";
+      const flags = r.safety_flags;
       return (
-        <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[40px] text-center">
-          <div className="w-14 h-14 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-[16px]">
-            <span className="text-[28px]">✓</span>
+        <div className="space-y-[16px]">
+          {/* Cartão de resultado FINAL (copy Aval): snapshot + score + faixa. */}
+          <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[28px]">
+            <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[4px] text-center">
+              {t("result.heading")}
+            </h2>
+
+            {/* "Your score: {score} of {max} ({percent}% — {band})" */}
+            <p className="text-[13px] text-[#4A4A46] text-center mb-[16px]">
+              {t("result.scoreLine", {
+                score: r.total_score,
+                max: r.max_possible_score,
+                percent: r.score_percentage,
+                band: band?.label ?? "—",
+              })}
+            </p>
+
+            <div className="h-[6px] rounded-full bg-[#F4F3EF] overflow-hidden max-w-[320px] mx-auto">
+              <div
+                className="h-full rounded-full transition-all"
+                style={{ width: `${r.score_percentage}%`, backgroundColor: bandColor }}
+              />
+            </div>
+
+            {/* Descrição da faixa (band description do scoring_config). */}
+            {band?.description && (
+              <div
+                className="mt-[20px] rounded-[12px] px-[16px] py-[14px]"
+                style={{ backgroundColor: `${bandColor}14`, border: `1px solid ${bandColor}33` }}
+              >
+                <div className="flex items-center gap-[8px] mb-[6px]">
+                  <span
+                    className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
+                    style={{ backgroundColor: bandColor }}
+                  />
+                  <p className="text-[14px] font-semibold" style={{ color: bandColor }}>
+                    {band.label}
+                  </p>
+                </div>
+                <p className="text-[13px] text-[#4A4A46] leading-relaxed">{band.description}</p>
+              </div>
+            )}
+
+            {/* "What this means" */}
+            <div className="mt-[20px]">
+              <p className="text-[13px] font-semibold text-[#0F1A2E] mb-[4px]">
+                {t("result.whatThisMeansTitle")}
+              </p>
+              <p className="text-[13px] text-[#4A4A46] leading-relaxed">
+                {t("result.whatThisMeansBody")}
+              </p>
+            </div>
+
+            {/* Notas de segurança CONDICIONAIS (A e C coexistem; B só sem A). */}
+            {flags?.showA && (
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0]">
+                <p className="text-[13px] text-[#7A5B12] leading-relaxed">{t("result.noteA")}</p>
+              </div>
+            )}
+            {flags?.showB && (
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0]">
+                <p className="text-[13px] text-[#7A5B12] leading-relaxed">{t("result.noteB")}</p>
+              </div>
+            )}
+            {flags?.showC && (
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#EAF4FB] border border-[#BBD9EC]">
+                <p className="text-[13px] text-[#1E4C6B] leading-relaxed">{t("result.noteC")}</p>
+              </div>
+            )}
+
+            {/* Fecho de contato (convite, sem preço/botão de agendamento). */}
+            <div className="mt-[22px]">
+              <p className="text-[13px] font-semibold text-[#0F1A2E] mb-[2px]">
+                {t("result.ctaTitle")}
+              </p>
+              <p className="text-[13px] text-[#4A4A46] leading-relaxed mb-[12px]">
+                {t("result.ctaBody")}
+              </p>
+              <div className="space-y-[6px]">
+                <p className="text-[13px] text-[#4A4A46]">
+                  {t("result.ctaCallLabel")}{" "}
+                  <a
+                    href={`tel:+1${CONTACT_PHONE_DIGITS}`}
+                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041]"
+                  >
+                    {t("result.ctaCallNumber")}
+                  </a>
+                </p>
+                <p className="text-[13px] text-[#4A4A46]">
+                  {t("result.ctaVisitLabel")}{" "}
+                  <a
+                    href={CONTACT_SITE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041]"
+                  >
+                    {t("result.ctaVisitSite")}
+                  </a>
+                </p>
+              </div>
+            </div>
           </div>
-          <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[8px]">{t("capture.publicDoneTitle")}</h2>
-          <p className="text-[13px] text-[#A09E98] leading-relaxed">
-            {t("capture.publicDoneDesc")}
-          </p>
+
+          {/* Rodapés PERMANENTES (toda tela de resultado): disclaimer, 988, 18+. */}
+          <div className="pt-[8px] space-y-[8px]">
+            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+              {t("result.footerDisclaimer")}
+            </p>
+            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+              {t("result.footer988")}
+            </p>
+            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+              {t("result.footerAge")}
+            </p>
+          </div>
         </div>
       );
     }

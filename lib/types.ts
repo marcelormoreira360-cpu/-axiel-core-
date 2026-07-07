@@ -586,13 +586,23 @@ export type ScoreBand = {
   max: number | null;
   label: string;
   color: string;
+  /** Texto interpretativo opcional exibido ao respondente (ex.: no formulário público). */
+  description?: string | null;
 };
+
+// Como as faixas do total são interpretadas:
+//  - "absolute" (padrão/legado): min/max das bands são o VALOR bruto do total.
+//  - "percentage_of_max": min/max das bands são PERCENTUAL do total possível
+//    (ex.: MSQ da feira) → o matching computa percent = total/max*100.
+export type ScoringMode = "absolute" | "percentage_of_max";
 
 // Configuração de pontuação por template (Feature 1 — grau de disfunção configurável).
 export type ScoringConfig = {
   total_bands: ScoreBand[];   // faixas sobre o total
   section_bands: ScoreBand[]; // faixas aplicadas à pontuação de cada seção
   flag_item_max: boolean;     // sinaliza itens que atingem a pontuação máxima
+  /** Modo de matching das total_bands. Ausente/desconhecido → "absolute" (legado). */
+  mode?: ScoringMode;
 };
 
 export type AssessmentTemplate = {
