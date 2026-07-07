@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, funnelStepFromHistory, getWhatsAppBotConfigByClinicId } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory, getWhatsAppBotConfigByClinicId } from "@/services/whatsapp-bot-service";
+import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
@@ -320,7 +321,13 @@ export async function POST(req: NextRequest) {
         // idioma) — antes o Messenger rodava sempre com a config de fábrica.
         const promptConfig =
           (await getWhatsAppBotConfigByClinicId(effectiveClinicId).catch(() => null)) ?? IFWC_DEFAULT_CONFIG;
-        const systemPrompt = buildSystemPrompt(promptConfig, step) + META_LANG_RULE;
+
+        // Idioma DETERMINÍSTICO por código (PT/EN base + passe de ES), como no
+        // Meta WhatsApp: não confiar só no LLM. Mapeia p/ o campo `language` do
+        // config para que o langNote E os templates saiam no idioma certo.
+        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+        const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
+        const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";

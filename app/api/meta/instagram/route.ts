@@ -1,7 +1,8 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { detectLanguage } from "@/lib/whatsapp-lang";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
@@ -378,10 +379,16 @@ export async function POST(req: NextRequest) {
           void autoCreateLead(supabase, senderId, clinicId, messageText);
         }
 
-        // Passo do funil estimado pelo histórico + regra de idioma (PT/EN);
+        // Passo do funil estimado pelo histórico + regra de idioma (PT/EN/ES);
         // conversa parada há 48h+ volta ao acolhimento em vez de cair no passo 7.
         const step = funnelStepFromHistory(history.length, updatedAt);
-        const systemPrompt = buildSystemPrompt(promptConfig, step) + META_LANG_RULE;
+
+        // Idioma DETERMINÍSTICO por código (PT/EN base + passe de ES), como no
+        // Meta WhatsApp: mapeia p/ o campo `language` do config para que o
+        // langNote E os templates saiam no idioma certo.
+        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+        const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
+        const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
