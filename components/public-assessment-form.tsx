@@ -1,13 +1,11 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import type { TemplateWithStructure, AssessmentQuestion, ScoreBand } from "@/lib/types";
-
-// Contato do fecho da tela de resultado (convite, sem preço/agendamento).
-// Telefone em dígitos para o link tel: (a copy exibe o número formatado).
-const CONTACT_PHONE_DIGITS = "4079235710";
-const CONTACT_SITE_URL = "https://jifwc.com";
+// Contato do fecho da tela de resultado (convite, sem preço/agendamento) —
+// fonte única compartilhada com o e-mail de resultado (lib/contact).
+import { CONTACT_PHONE_DIGITS, CONTACT_SITE_URL } from "@/lib/contact";
 
 /** Flags de nota de segurança condicional (MSQ da feira), calculados no backend. */
 type SafetyFlags = { showA: boolean; showB: boolean; showC: boolean };
@@ -94,6 +92,9 @@ export function PublicAssessmentForm({
   publicMode?: boolean;
 }) {
   const t = useTranslations("publicForm");
+  // Idioma ativo (cookie AXIEL_LOCALE, via LanguageSwitcher) — enviado ao backend
+  // para o e-mail de resultado sair no mesmo idioma da tela.
+  const locale = useLocale();
   const [advancing, setAdvancing] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number | string | null>>({});
   const [notes, setNotes] = useState("");
@@ -195,6 +196,7 @@ export function PublicAssessmentForm({
           max_possible_score: maxPossible,
           notes: notes.trim() || null,
           contact: contact ?? null,
+          locale,
         }),
       });
 

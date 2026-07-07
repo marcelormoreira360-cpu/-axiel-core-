@@ -115,5 +115,14 @@
     "footerDisclaimer": "Esta ferramenta tem fins educativos e de bem-estar e não substitui o atendimento médico.",
     "footer988": "Se você está passando por um momento difícil, há apoio disponível 24/7: ligue ou envie mensagem para o 988 (Veteranos: pressione 1).",
     "footerAge": "Para maiores de 18 anos, ou com um pai, mãe ou responsável."
+  },
+  "resultEmail": {
+    "subject": "Seu resultado · IFWC",
+    "greeting": "Olá, {name},",
+    "intro": "Aqui está o seu retrato de hoje. Guarde este e-mail, ele resume o que você respondeu.",
+    "scheduleLine": "Quer entender melhor? Vai ser um prazer te receber. Para agendar sua avaliação integrativa, ligue ou envie mensagem para (407) 923-5710, ou acesse jifwc.com.",
+    "clinicBlockTitle": "Fale com a gente",
+    "clinicPhoneLabel": "Telefone:",
+    "clinicSiteLabel": "Site:"
   }
 }

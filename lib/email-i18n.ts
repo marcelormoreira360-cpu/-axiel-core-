@@ -12,8 +12,9 @@ import type { EmailT } from "@/components/email/base-email";
 // (callable + rich + markup) — vale tanto para o namespace "emails" quanto "pdf".
 export type ServerT = EmailT;
 
-// Namespaces usados por e-mails e PDFs.
-const SERVER_NS = ["emails", "pdf", "common"] as const;
+// Namespaces usados por e-mails e PDFs. `publicForm` entra para o e-mail de
+// resultado do MSQ reaproveitar a copy JÁ APROVADA da tela (publicForm.result.*).
+const SERVER_NS = ["emails", "pdf", "common", "publicForm"] as const;
 
 async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
   const entries = await Promise.all(

@@ -115,5 +115,14 @@
     "footerDisclaimer": "This tool is for educational and wellness purposes and does not replace medical care.",
     "footer988": "If you're going through a hard time, support is available 24/7: call or text 988 (Veterans: press 1).",
     "footerAge": "For ages 18+, or with a parent or guardian."
+  },
+  "resultEmail": {
+    "subject": "Your wellness snapshot · IFWC",
+    "greeting": "Hi {name},",
+    "intro": "Here's your snapshot from today. Keep this email, it sums up what you shared.",
+    "scheduleLine": "Ready to go deeper? We'd love to see you. To schedule your integrative assessment, call or text (407) 923-5710, or visit jifwc.com.",
+    "clinicBlockTitle": "Get in touch",
+    "clinicPhoneLabel": "Phone:",
+    "clinicSiteLabel": "Website:"
   }
 }

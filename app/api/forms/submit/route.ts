@@ -44,6 +44,8 @@ const submitSchema = z.object({
   max_possible_score: z.number().nullable().optional(),
   notes:             z.string().max(2000).nullable().optional(),
   contact:           contactSchema.nullable().optional(),
+  // Idioma da submissão (tela pública) — usado para o e-mail de resultado.
+  locale:            z.string().max(10).nullable().optional(),
 });
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     if (!parsed.success) {
       return NextResponse.json({ error: "Dados inválidos", details: parsed.error.flatten() }, { status: 400 });
     }
-    const { token, answers, section_scores, total_score, max_possible_score, notes, contact } = parsed.data;
+    const { token, answers, section_scores, total_score, max_possible_score, notes, contact, locale } = parsed.data;
 
     const supabase = createSupabaseAdminClient();
     const token_hash = hashToken(token);
@@ -238,6 +240,25 @@ export async function POST(req: NextRequest) {
         notes: notes ?? null,
       });
       if (sErr) throw sErr;
+
+      // E-mail de RESULTADO ao respondente (funil value-first). Reaproveita a
+      // copy aprovada da tela + a mesma `band` já calculada. Não pode derrubar o
+      // submit: qualquer falha (Resend/i18n) é logada e ignorada.
+      try {
+        const { sendMsqResultEmail } = await import("@/services/msq-result-email-service");
+        await sendMsqResultEmail({
+          to: email,
+          fullName,
+          totalScore,
+          maxScore,
+          scorePercentage: score_percentage,
+          band: band ?? null,
+          safetyFlags,
+          locale,
+        });
+      } catch (e) {
+        console.error("MSQ result email (form submit) falhou:", e);
+      }
 
       // Não marca o convite como "completo" (é reutilizável) e não gera Bio³
       // (não há paciente ainda — isso acontece na conversão do lead).
