@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import {
   ArrowRight,
   Bell,
@@ -209,6 +209,9 @@ function Bio3Pyramid({ top, mid, base }: { top: string; mid: string; base: strin
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function LandingPage() {
   const t = await getTranslations("landing");
+  const locale = await getLocale();
+  const tourSrc = locale === "en" ? "/landing/tour-en.mp4" : "/landing/tour-pt.mp4";
+  const tourPoster = locale === "en" ? "/landing/tour-en-poster.jpg" : "/landing/tour-poster.jpg";
 
   const painCards = [
     { icon: UserX, title: t("pain.card1Title"), text: t("pain.card1Text") },
@@ -313,11 +316,12 @@ export default async function LandingPage() {
               controls
               playsInline
               preload="metadata"
-              poster="/landing/tour-poster.jpg"
+              poster={tourPoster}
               aria-label={t("hero.videoLabel")}
               className="aspect-video w-full"
+              key={tourSrc}
             >
-              <source src="/landing/tour-pt.mp4" type="video/mp4" />
+              <source src={tourSrc} type="video/mp4" />
             </video>
           </div>
           <p className="mt-3 text-center text-xs text-black/35 dark:text-[#6B6A66]">{t("hero.videoCaption")}</p>
