@@ -26,10 +26,13 @@ export async function sendAssessmentsToPatient(input: {
 
   const { data: patient } = await supabase
     .from("patients")
-    .select("full_name, email, phone")
+    .select("full_name, email, phone, locale")
     .eq("id", input.patientId)
     .maybeSingle();
   if (!patient) return { sent: 0, links: [] };
+
+  // Idioma das mensagens ao paciente (e-mail/WhatsApp): en x pt (default pt).
+  const isEn = String(patient.locale ?? "").toLowerCase().startsWith("en");
 
   const baseUrl = input.baseUrl || process.env.NEXT_PUBLIC_APP_URL || "";
   const links: { name: string; url: string; token: string }[] = [];
@@ -65,10 +68,11 @@ export async function sendAssessmentsToPatient(input: {
 
   const phone = patient.phone as string | null;
   if (phone) {
-    const intro = links.length > 1
-      ? `Por favor responda estes ${links.length} questionários:`
-      : "Por favor responda este questionário:";
-    const body = `Olá! ${intro}\n\n` + links.map((l) => `• ${l.name}: ${l.url}`).join("\n");
+    const intro = isEn
+      ? (links.length > 1 ? `Please fill out these ${links.length} questionnaires:` : "Please fill out this questionnaire:")
+      : (links.length > 1 ? `Por favor responda estes ${links.length} questionários:` : "Por favor responda este questionário:");
+    const greeting = isEn ? "Hi!" : "Olá!";
+    const body = `${greeting} ${intro}\n\n` + links.map((l) => `• ${l.name}: ${l.url}`).join("\n");
     try {
       const { sendWhatsAppText } = await import("@/services/whatsapp-service");
       await sendWhatsAppText(phone, body);
@@ -78,10 +82,12 @@ export async function sendAssessmentsToPatient(input: {
   const email = patient.email as string | null;
   if (email) {
     const items = links.map((l) => `<li style="margin:6px 0"><a href="${l.url}">${l.name}</a></li>`).join("");
-    const html = `<p>Olá,</p><p>Por favor responda ${links.length > 1 ? "os questionários" : "o questionário"} abaixo. Leva poucos minutos e ajuda muito no seu acompanhamento:</p><ul>${items}</ul><p>Obrigado!</p>`;
+    const html = isEn
+      ? `<p>Hi,</p><p>Please fill out the ${links.length > 1 ? "questionnaires" : "questionnaire"} below. It takes only a few minutes and helps a lot with your care:</p><ul>${items}</ul><p>Thank you!</p>`
+      : `<p>Olá,</p><p>Por favor responda ${links.length > 1 ? "os questionários" : "o questionário"} abaixo. Leva poucos minutos e ajuda muito no seu acompanhamento:</p><ul>${items}</ul><p>Obrigado!</p>`;
     try {
       const { sendSimpleEmail } = await import("@/services/email-service");
-      await sendSimpleEmail({ to: email, subject: "Seus questionários", html });
+      await sendSimpleEmail({ to: email, subject: isEn ? "Your questionnaires" : "Seus questionários", html });
     } catch { /* canal opcional */ }
   }
 
@@ -110,16 +116,32 @@ export async function sendOnboardingAssessments(appt: {
 
   const { data: templates } = await supabase
     .from("assessment_templates")
-    .select("id")
+    .select("id, locale")
     .eq("clinic_id", appt.clinic_id)
     .eq("is_active", true)
     .eq("send_on_first_appointment", true);
   if (!templates?.length) return { links: [] };
 
+  // Escolhe a versão do formulário no idioma do paciente (en x pt-BR).
+  // Se a clínica não tiver formulário no idioma do paciente, cai no que existir
+  // (não deixa o paciente sem intake por causa do idioma).
+  const { data: p } = await supabase
+    .from("patients")
+    .select("locale")
+    .eq("id", appt.patient_id)
+    .maybeSingle();
+  const wantEn = String(p?.locale ?? "").toLowerCase().startsWith("en");
+  const matches = templates.filter((t) =>
+    wantEn
+      ? String(t.locale ?? "").toLowerCase().startsWith("en")
+      : !String(t.locale ?? "").toLowerCase().startsWith("en"),
+  );
+  const chosen = matches.length > 0 ? matches : templates;
+
   const { links } = await sendAssessmentsToPatient({
     clinicId: appt.clinic_id,
     patientId: appt.patient_id,
-    templateIds: templates.map((t) => t.id as string),
+    templateIds: chosen.map((t) => t.id as string),
     supabase,
     baseUrl: appt.baseUrl,
   });
