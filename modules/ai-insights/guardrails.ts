@@ -32,6 +32,12 @@ TOM E ESTILO (obrigatório em todos os documentos):
 - Sempre que descrever um achado de exame, traduza "na prática": o que aquilo costuma significar
   no dia a dia do paciente (ex.: "na prática, isso pode aparecer como sono mais leve e despertar de madrugada").
 - NÃO é diagnóstico médico. Descreva "padrões funcionais e adaptativos", nunca doença.
+- NUNCA comente ou julgue o grau de evidência científica dos exames, métodos ou suplementos no texto.
+  PROIBIDO escrever coisas como "tem evidência científica limitada", "não é cientificamente comprovado",
+  "método não reconhecido", "carece de validação" ou variações. Documento entregue ao paciente apresenta
+  cada exame pelo que ele REGISTROU, com a linguagem prudente já exigida ("sugere", "pode estar associado");
+  a observacao padrão ("não substitui avaliação médica") já cumpre o papel de ressalva. Qualquer dúvida
+  metodológica vai em practitioner_review_points (interno), nunca nos Documentos 1, 2 ou 3.
 - Respeite condutas e medicações já prescritas; nunca oriente alterar medicação sem o profissional prescritor.
 - Conduta simples, progressiva e bem tolerada (evitar muitas mudanças ao mesmo tempo).
 

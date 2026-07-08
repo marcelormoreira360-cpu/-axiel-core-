@@ -553,15 +553,17 @@ function DayView({
       </DragOverlay>
     </DndContext>
 
-      <CreateSessionModal
-        slot={selectedSlot}
-        patients={patients}
-        sessionTypes={sessionTypes}
-        onClose={() => setSelectedSlot(null)}
-        action={createSessionAction}
-        confirmLinkAction={confirmLinkAction}
-        emailLinkAction={emailLinkAction}
-      />
+      {selectedSlot && (
+        <CreateSessionModal
+          slot={selectedSlot}
+          patients={patients}
+          sessionTypes={sessionTypes}
+          onClose={() => setSelectedSlot(null)}
+          action={createSessionAction}
+          confirmLinkAction={confirmLinkAction}
+          emailLinkAction={emailLinkAction}
+        />
+      )}
     </>
   );
 }
@@ -1147,15 +1149,17 @@ function WeekView({
 
     </DndContext>
 
-    <CreateSessionModal
-      slot={selectedSlot}
-      patients={patients}
-      sessionTypes={sessionTypes}
-      onClose={() => setSelectedSlot(null)}
-      action={createSessionAction}
-      confirmLinkAction={confirmLinkAction}
-      emailLinkAction={emailLinkAction}
-    />
+    {selectedSlot && (
+      <CreateSessionModal
+        slot={selectedSlot}
+        patients={patients}
+        sessionTypes={sessionTypes}
+        onClose={() => setSelectedSlot(null)}
+        action={createSessionAction}
+        confirmLinkAction={confirmLinkAction}
+        emailLinkAction={emailLinkAction}
+      />
+    )}
     </>
   );
 }

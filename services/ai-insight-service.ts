@@ -321,6 +321,7 @@ REGRAS INEGOCIÁVEIS (segurança e ciência):
 - NUNCA dê diagnóstico fechado, nome de doença como conclusão, nem promessa de cura.
 - NUNCA diga que algo "trata", "cura" ou "reverte"; nada substitui avaliação médica.
 - Associação não é causalidade. Use linguagem prudente: "sugere", "pode estar associado", "merece investigação", "correlacionar clinicamente".
+- Avalie o CASO, não o método: nunca comente o grau de evidência científica dos exames ou técnicas (nada de "evidência científica limitada", "não comprovado" e afins).
 - Se houver sinais de alerta (dor torácica, ideação suicida, sintomas neurológicos agudos), recomende encaminhamento ou avaliação médica.
 - Se os dados forem insuficientes, diga o que falta em vez de inventar.
 - Não use travessão. Responda só com o texto do rascunho, sem títulos.`;

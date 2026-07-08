@@ -1,6 +1,10 @@
 {
-  "invalidTitle": "Invalid or expired link",
-  "invalidDesc": "This link no longer exists. Ask your therapist for a new link.",
+  "invalidTitle": "Invalid link",
+  "invalidDesc": "This link does not exist. Ask your therapist for a new link.",
+  "expiredTitle": "This link has expired",
+  "expiredDesc": "The time to respond has passed. Ask your therapist for a new link.",
+  "completedTitle": "You've already answered",
+  "completedDesc": "Thank you! This questionnaire has already been completed and is on file. No need to fill it out again.",
   "eyebrow": "Questionnaire",
   "greeting": "Hi, {name}",
   "secureFooter": "AXIEL Core · Secure form",

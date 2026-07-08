@@ -45,6 +45,11 @@ export default async function ProntuarioPrintPage({ params }: Props) {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
   });
+  const contactLine = [
+    [clinic?.address_line, [clinic?.city, clinic?.state].filter(Boolean).join(" - ")].filter(Boolean).join(", "),
+    clinic?.phone,
+    clinic?.contact_email,
+  ].filter((s) => s && s.trim()).join(" · ");
 
   return (
     <html lang={locale}>
@@ -56,7 +61,11 @@ export default async function ProntuarioPrintPage({ params }: Props) {
           body { font-family: Georgia, serif; font-size: 11pt; color: #111; background: white; }
           .page { max-width: 780px; margin: 0 auto; padding: 40px 48px; }
           .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111; padding-bottom: 14px; margin-bottom: 20px; }
+          .brand { display: flex; align-items: center; gap: 14px; }
+          .clinic-logo { height: 52px; width: auto; }
           .clinic-name { font-size: 15pt; font-weight: bold; }
+          .clinic-tagline { font-size: 7.5pt; text-transform: uppercase; letter-spacing: .12em; color: #888; margin-top: 3px; }
+          .clinic-contact { font-size: 8pt; color: #888; margin-top: 3px; }
           .print-date { font-size: 9pt; color: #666; text-align: right; }
           .patient-section { margin-bottom: 24px; }
           .patient-name { font-size: 17pt; font-weight: bold; margin-bottom: 8px; }
@@ -97,11 +106,19 @@ export default async function ProntuarioPrintPage({ params }: Props) {
             ← {t("printPage.back")}
           </a>
 
-          {/* Header */}
+          {/* Header — papel timbrado */}
           <div className="header">
-            <div>
-              <div className="clinic-name">{clinic?.name ?? t("printPage.clinicFallback")}</div>
-              <div style={{ fontSize: "9pt", color: "#888", marginTop: "2px" }}>{t("printPage.electronicRecord")}</div>
+            <div className="brand">
+              {clinic?.logo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={clinic.logo_url} alt={clinic?.name ?? ""} className="clinic-logo" />
+              )}
+              <div>
+                <div className="clinic-name">{clinic?.name ?? t("printPage.clinicFallback")}</div>
+                {clinic?.report_tagline && <div className="clinic-tagline">{clinic.report_tagline}</div>}
+                {contactLine && <div className="clinic-contact">{contactLine}</div>}
+                <div style={{ fontSize: "9pt", color: "#888", marginTop: "2px" }}>{t("printPage.electronicRecord")}</div>
+              </div>
             </div>
             <div className="print-date">
               <div>{t("printPage.printedAt", { date: printedAt })}</div>

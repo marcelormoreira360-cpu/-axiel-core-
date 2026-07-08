@@ -48,11 +48,14 @@ export async function sendAssessmentsToPatient(input: {
 
     const token = crypto.randomBytes(32).toString("hex");
     const token_hash = crypto.createHash("sha256").update(token).digest("hex");
+    // 20 dias de validade (explícito, não depende só do default do banco).
+    const expires_at = new Date(Date.now() + 20 * 86_400_000).toISOString();
     const { error } = await supabase.from("assessment_invitations").insert({
       token_hash,
       template_id: tpl.id,
       patient_id: input.patientId,
       clinic_id: input.clinicId,
+      expires_at,
     });
     if (error) continue;
     links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}`, token });

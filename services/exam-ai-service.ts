@@ -28,6 +28,8 @@ Regras:
   (os de maior valor/intensidade no exame) e feche com 1–2 frases de síntese da leitura emocional.
 - Neurometria ou outros: extraia os 5–8 achados mais relevantes + 1 frase de síntese.
 - Linguagem acolhedora e PRUDENTE: "o exame sugere / registra / aponta", nunca diagnóstico fechado.
+- NUNCA comente o grau de evidência científica do exame ou do método (proibido "evidência científica
+  limitada", "não comprovado", "método não reconhecido" e variações). Descreva apenas o que o exame registrou.
 - Baseie-se SOMENTE no conteúdo do exame anexado. Se não der para ler, diga isso em 1 linha.
 - Saída em texto simples (pode usar bullets curtos). Sem títulos longos, sem repetir o cabeçalho do exame.
 `;

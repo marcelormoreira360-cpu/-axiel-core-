@@ -169,7 +169,7 @@ export async function createPendingAppointmentWithToken(input: {
   }
 
   const token = randomBytes(32).toString("hex");
-  const expires = new Date(Date.now() + (input.expiresInDays ?? 7) * 86_400_000).toISOString();
+  const expires = new Date(Date.now() + (input.expiresInDays ?? 20) * 86_400_000).toISOString();
 
   const { data, error } = await supabase
     .from("appointments")

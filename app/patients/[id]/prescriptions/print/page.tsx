@@ -39,6 +39,11 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
   });
   const patientAge = age(patient.date_of_birth);
   const practitioner = profile?.full_name ?? "";
+  const contactLine = [
+    [clinic?.address_line, [clinic?.city, clinic?.state].filter(Boolean).join(" - ")].filter(Boolean).join(", "),
+    clinic?.phone,
+    clinic?.contact_email,
+  ].filter((s) => s && s.trim()).join(" · ");
 
   return (
     <html lang="pt-BR">
@@ -52,8 +57,11 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
 
           /* Header */
           .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 14px; margin-bottom: 6px; }
+          .brand { display: flex; align-items: center; gap: 14px; }
+          .clinic-logo { height: 52px; width: auto; }
           .clinic-name { font-size: 16pt; font-weight: 700; letter-spacing: -.02em; color: #0F1A2E; }
           .clinic-sub { font-size: 9pt; color: #888; margin-top: 2px; }
+          .clinic-contact { font-size: 8pt; color: #888; margin-top: 3px; }
           .header-right { text-align: right; font-size: 9pt; color: #888; line-height: 1.6; }
           .divider-thick { border: none; border-top: 2.5px solid #0F1A2E; margin-bottom: 20px; }
 
@@ -110,11 +118,18 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
           {/* Back link */}
           <a href={`/patients/${id}`} className="no-print">← Voltar ao perfil</a>
 
-          {/* Clinic header */}
+          {/* Clinic header — papel timbrado */}
           <div className="header">
-            <div>
-              <div className="clinic-name">{clinic?.name ?? "Clínica"}</div>
-              <div className="clinic-sub">Medicina Integrativa</div>
+            <div className="brand">
+              {clinic?.logo_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={clinic.logo_url} alt={clinic?.name ?? ""} className="clinic-logo" />
+              )}
+              <div>
+                <div className="clinic-name">{clinic?.name ?? "Clínica"}</div>
+                <div className="clinic-sub">{clinic?.report_tagline?.trim() || "Medicina Integrativa"}</div>
+                {contactLine && <div className="clinic-contact">{contactLine}</div>}
+              </div>
             </div>
             <div className="header-right">
               <div>{printedAt}</div>

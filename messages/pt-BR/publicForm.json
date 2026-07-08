@@ -1,6 +1,10 @@
 {
-  "invalidTitle": "Link inválido ou expirado",
-  "invalidDesc": "Este link não existe mais. Peça ao seu terapeuta um novo link.",
+  "invalidTitle": "Link inválido",
+  "invalidDesc": "Este link não existe. Peça ao seu terapeuta um novo link.",
+  "expiredTitle": "Este link expirou",
+  "expiredDesc": "O prazo para responder passou. Peça ao seu terapeuta um novo link.",
+  "completedTitle": "Você já respondeu",
+  "completedDesc": "Obrigado! Este questionário já foi respondido e está na sua ficha. Não é preciso responder de novo.",
   "eyebrow": "Questionário",
   "greeting": "Olá, {name}",
   "secureFooter": "AXIEL Core · Formulário seguro",

@@ -4,6 +4,7 @@ import { Shell } from "@/components/shell";
 import { getPatientById, getClinicPatientsForPicker } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { updatePatientAction, anonymizePatientAction } from "./actions";
+import { AnonymizePatientButton } from "@/components/anonymize-patient-button";
 import { getTranslations } from "next-intl/server";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
@@ -230,19 +231,11 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
               {t("anonymizeDesc")}
             </p>
           </div>
-          <form action={anonymizePatientAction.bind(null, id)}>
-            <button
-              type="submit"
-              onClick={(e) => {
-                if (!confirm(confirmMsg)) {
-                  e.preventDefault();
-                }
-              }}
-              className="shrink-0 text-[12px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 bg-white hover:bg-red-50 dark:hover:bg-red-500/10 rounded-[8px] px-[14px] py-[7px] transition whitespace-nowrap"
-            >
-              {t("anonymizeBtn")}
-            </button>
-          </form>
+          <AnonymizePatientButton
+            action={anonymizePatientAction.bind(null, id)}
+            confirmMsg={confirmMsg}
+            label={t("anonymizeBtn")}
+          />
         </div>
       </div>
     </Shell>

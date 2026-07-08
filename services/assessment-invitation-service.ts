@@ -88,12 +88,15 @@ export async function createPublicCaptureInvitation(input: {
   return { token, invitation: data as AssessmentInvitation };
 }
 
-export async function getInvitationByToken(token: string): Promise<{
-  invitation: AssessmentInvitation;
-  template: TemplateWithStructure;
-  patientName: string | null;
-  isPublic: boolean;
-} | null> {
+// Resultado da resolução do token: distingue "já respondido" e "expirado" de
+// "inválido", para a rota /f mostrar a mensagem certa ao paciente.
+export type InvitationLookup =
+  | { status: "ok"; invitation: AssessmentInvitation; template: TemplateWithStructure; patientName: string | null; isPublic: boolean }
+  | { status: "completed" }
+  | { status: "expired" }
+  | { status: "invalid" };
+
+export async function getInvitationByToken(token: string): Promise<InvitationLookup> {
   const supabase = createSupabaseAdminClient();
   const token_hash = hashToken(token);
 
@@ -103,11 +106,11 @@ export async function getInvitationByToken(token: string): Promise<{
     .eq("token_hash", token_hash)
     .maybeSingle();
 
-  if (!inv) return null;
+  if (!inv) return { status: "invalid" };
   const isPublic = inv.kind === "public";
   // Link público reutilizável nunca "queima"; convite de paciente é de uso único.
-  if (!isPublic && inv.completed_at) return null; // already done
-  if (new Date(inv.expires_at) < new Date()) return null; // expired
+  if (!isPublic && inv.completed_at) return { status: "completed" }; // já respondido
+  if (new Date(inv.expires_at) < new Date()) return { status: "expired" }; // expirado
 
   // Get template structure
   const { data: template } = await supabase
@@ -116,7 +119,7 @@ export async function getInvitationByToken(token: string): Promise<{
     .eq("id", inv.template_id)
     .maybeSingle();
 
-  if (!template) return null;
+  if (!template) return { status: "invalid" };
 
   // Sort sections and questions using the strongly-typed cast
   const structured = template as unknown as TemplateWithStructure;
@@ -137,6 +140,7 @@ export async function getInvitationByToken(token: string): Promise<{
   }
 
   return {
+    status: "ok",
     invitation: inv as AssessmentInvitation,
     template: structured,
     patientName,

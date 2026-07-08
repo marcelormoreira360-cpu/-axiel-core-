@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { getInvitationByToken } from "@/services/assessment-invitation-service";
@@ -25,15 +24,20 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
   const t = await getTranslations("publicForm");
   const data = await getInvitationByToken(token);
 
-  if (!data) {
+  if (data.status !== "ok") {
+    // Mensagem específica: já respondido x expirado x inválido.
+    const view =
+      data.status === "completed"
+        ? { icon: "✅", title: t("completedTitle"), desc: t("completedDesc") }
+        : data.status === "expired"
+          ? { icon: "⏰", title: t("expiredTitle"), desc: t("expiredDesc") }
+          : { icon: "🔗", title: t("invalidTitle"), desc: t("invalidDesc") };
     return (
       <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-6">
         <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[32px] max-w-[400px] w-full text-center">
-          <p className="text-[32px] mb-[12px]">⏰</p>
-          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[8px]">{t("invalidTitle")}</h1>
-          <p className="text-[13px] text-[#A09E98]">
-            {t("invalidDesc")}
-          </p>
+          <p className="text-[32px] mb-[12px]">{view.icon}</p>
+          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[8px]">{view.title}</h1>
+          <p className="text-[13px] text-[#A09E98]">{view.desc}</p>
         </div>
       </div>
     );
