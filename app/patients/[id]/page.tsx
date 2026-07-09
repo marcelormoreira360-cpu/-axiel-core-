@@ -598,6 +598,15 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             isOnWaitlist={!!waitlistEntry}
             waitlistEntryId={waitlistEntry?.id ?? null}
           />
+          {/* Registrar sessão (SOAP) — leva à sessão mais recente; sem sessão, agenda */}
+          <Link
+            href={lastSession ? `/schedule/${lastSession.id}/session` : `/schedule/new?patient_id=${patient.id}`}
+            className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-white border border-black/[.1] text-[#0F1A2E] dark:text-[#E8E6E2] text-[11px] font-medium hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
+            title={t("actions.session")}
+          >
+            <svg className="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>
+            {t("actions.session")}
+          </Link>
           {/* Exportar PDF */}
           <a
             href={`/api/reports/paciente/${patient.id}`}

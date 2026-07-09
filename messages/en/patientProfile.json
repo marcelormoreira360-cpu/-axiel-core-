@@ -8,6 +8,7 @@
     "edit": "Edit patient",
     "intake": "Intake",
     "chart": "Medical record",
+    "session": "Record session",
     "schedule": "Schedule session",
     "startTelehealth": "Start telehealth",
     "telehealth": "Telehealth"
