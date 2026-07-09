@@ -128,5 +128,22 @@
     "outro": "If you have any questions about the content, reach out to your clinic. We're here to support you.",
     "pushTitle": "Your report is ready",
     "pushBody": "Your clinic has sent your Bio³ Map report by email."
+  },
+  "communications": {
+    "eyebrow": "Clinic",
+    "title": "Communications",
+    "subtitle": "Email and SMS for patients and leads",
+    "kpiSent": "Sent",
+    "kpiSentSub": "messages in history",
+    "kpiEmail": "Email",
+    "kpiEmailSub": "active templates",
+    "kpiSms": "SMS",
+    "kpiSmsSub": "active templates",
+    "kpiFailed": "Failures",
+    "kpiFailedSub": "failed sends",
+    "templatesTitle": "Message templates",
+    "installDefaults": "Create default templates",
+    "emptyTemplates": "No templates yet.",
+    "historyTitle": "Send history"
   }
 }

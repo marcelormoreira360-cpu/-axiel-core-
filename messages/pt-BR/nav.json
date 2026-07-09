@@ -37,5 +37,54 @@
   "support": "Suporte",
   "mobile": {
     "home": "Início"
+  },
+  "search": {
+    "open": "Abrir busca global",
+    "trigger": "Buscar…",
+    "placeholder": "Buscar pacientes, sessões, leads…",
+    "close": "Fechar",
+    "typeToSearch": "Digite para buscar pacientes, sessões ou leads.",
+    "keepTyping": "Continue digitando…",
+    "noResults": "Nenhum resultado para <q>“{query}”</q>",
+    "patients": "Pacientes",
+    "appointments": "Sessões",
+    "leads": "Leads",
+    "statusActive": "Ativo",
+    "statusInactive": "Inativo",
+    "statusArchived": "Arquivado",
+    "stages": {
+      "new_lead": "Novo",
+      "contacted": "Contactado",
+      "scheduled": "Agendado",
+      "converted_to_patient": "Convertido"
+    },
+    "durationMin": "{n} min",
+    "hintNavigate": "navegar",
+    "hintOpen": "abrir",
+    "hintClose": "fechar"
+  },
+  "notifications": {
+    "aria": "Notificações",
+    "title": "Notificações",
+    "attention": "{count, plural, one {# item requer atenção} other {# itens requerem atenção}}",
+    "allClear": "Tudo em ordem por aqui ✓",
+    "insights": "{count, plural, one {# insight aguardando review} other {# insights aguardando review}}",
+    "lgpd": "{count, plural, one {# solicitação LGPD pendente} other {# solicitações LGPD pendentes}}",
+    "followups": "{count, plural, one {# follow-up vencido} other {# follow-ups vencidos}}",
+    "leads": "{count, plural, one {# novo lead sem revisão} other {# novos leads sem revisão}}",
+    "forms": "{count, plural, one {# formulário aguardando resposta} other {# formulários aguardando resposta}}"
+  },
+  "errorPage": {
+    "brand": "AXIEL Core",
+    "title": "Algo deu errado",
+    "text": "O sistema protegeu seus dados e parou a ação com segurança. Tente novamente. Se o problema persistir, entre em contato com o suporte.",
+    "reference": "Referência: {digest}",
+    "retry": "Tentar novamente"
+  },
+  "notFoundPage": {
+    "brand": "AXIEL Core",
+    "title": "Página não encontrada",
+    "text": "Esta página não existe ou você não tem acesso a este registro.",
+    "cta": "Ir para o dashboard"
   }
 }

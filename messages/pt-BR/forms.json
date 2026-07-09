@@ -146,5 +146,26 @@
     "intake": "Intake (1º agendamento)",
     "session": "Por sessão",
     "portal": "Portal do paciente"
+  },
+  "patientList": {
+    "title": "Formulários",
+    "count": "{count, plural, one {1 resposta registrada} other {# respostas registradas}}",
+    "newForm": "Novo formulário",
+    "emptyTitle": "Nenhum formulário preenchido ainda.",
+    "emptyHint": "Clique em “Novo formulário” para aplicar um questionário.",
+    "fallbackName": "Formulário",
+    "points": "{score}/{max} pts",
+    "timeAgo": {
+      "today": "hoje",
+      "yesterday": "ontem",
+      "days": "{count}d atrás",
+      "months": "{count, plural, one {1 mês atrás} other {# meses atrás}}"
+    }
+  },
+  "response": {
+    "filledAt": "Preenchido em {date}",
+    "totalScore": "Pontuação total",
+    "sectionScore": "Pontuação por seção",
+    "notes": "Observações"
   }
 }

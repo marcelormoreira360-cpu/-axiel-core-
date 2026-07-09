@@ -21,5 +21,17 @@
   "colDate": "Data",
   "colPatient": "Paciente",
   "viewProfile": "Ver perfil",
-  "pagination": "{total} compras · página {page} de {pages}"
+  "pagination": "{total} compras · página {page} de {pages}",
+  "page": {
+    "subtitle": "Compras e assinaturas sincronizadas automaticamente",
+    "configure": "Configurar",
+    "kpiRevenue": "Receita total",
+    "kpiRevenueSub": "compras confirmadas",
+    "kpiPurchases": "Total de compras",
+    "kpiPurchasesSub": "{count} confirmadas",
+    "kpiCancelled": "Canceladas",
+    "kpiCancelledSub": "+ {count} reembolsadas",
+    "kpiChargebacks": "Chargebacks",
+    "kpiChargebacksSub": "contestações"
+  }
 }

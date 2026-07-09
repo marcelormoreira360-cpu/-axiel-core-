@@ -71,5 +71,34 @@
     "transcribing": "Transcrevendo…",
     "summarizing": "Gerando resumo IA…",
     "end": "Encerrar"
+  },
+  "zoomRecordings": {
+    "title": "Gravações Zoom",
+    "sync": "Sincronizar",
+    "syncing": "Sincronizando...",
+    "syncError": "Erro: {error}",
+    "syncNone": "Nenhuma gravação disponível ainda. Tente novamente em alguns minutos.",
+    "syncDone": "{count, plural, one {# gravação sincronizada} other {# gravações sincronizadas}}.",
+    "empty": "Nenhuma gravação disponível. A gravação aparece alguns minutos após o término da consulta.",
+    "emptyHint": "Clique em \"Sincronizar\" para buscar na Zoom.",
+    "watch": "Assistir",
+    "download": "Baixar",
+    "file": "Arquivo",
+    "types": {
+      "MP4": "Vídeo",
+      "M4A": "Áudio",
+      "TRANSCRIPT": "Transcrição",
+      "CHAT": "Chat",
+      "TIMELINE": "Timeline"
+    }
+  },
+  "zoomBanner": {
+    "title": "Sessão Online · Zoom",
+    "dateAt": "{date} às {time} · {name}",
+    "soon": "Em breve",
+    "joinAsHost": "Entrar como host",
+    "patientLink": "Link paciente:",
+    "copied": "Copiado",
+    "copy": "Copiar"
   }
 }

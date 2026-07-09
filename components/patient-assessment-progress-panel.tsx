@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { TrendingUp, TrendingDown, Minus, Send, Plus, ChevronRight } from "lucide-react";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
 import { resendAssessmentAction } from "@/app/patients/[id]/assessments/actions";
 
 function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId: string }) {
+  const t = useTranslations("patientPanels.assessmentProgress");
   const [isPending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -17,7 +19,7 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
     setMsg(null);
     startTransition(async () => {
       const res = await resendAssessmentAction(patientId, item.template_id);
-      setMsg(res.error ?? "Enviado!");
+      setMsg(res.error ?? t("sent"));
     });
   }
 
@@ -38,7 +40,7 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
         {delta != null && item.count > 1 && (
           <span className="inline-flex items-center gap-1 text-[11px] font-medium text-[#6B6A66] shrink-0">
             <Arrow className="h-3.5 w-3.5" />
-            {delta > 0 ? "+" : ""}{delta} pts
+            {t("pts", { delta: `${delta > 0 ? "+" : ""}${delta}` })}
           </span>
         )}
       </div>
@@ -51,11 +53,11 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
             style={{ color: item.grade.color, backgroundColor: `${item.grade.color}1A` }}
           >
             {item.grade.label}
-            {item.latestTotal != null && <span className="opacity-70">· {item.latestTotal} pts</span>}
+            {item.latestTotal != null && <span className="opacity-70">{t("totalPts", { n: item.latestTotal })}</span>}
           </span>
           {item.flaggedCount > 0 && (
             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-[#C0392B] dark:text-[#F2B8B5] bg-[#C0392B]/10 rounded-full px-[8px] py-[2px]">
-              {item.flaggedCount} {item.flaggedCount === 1 ? "item no máximo" : "itens no máximo"}
+              {t("flaggedMax", { count: item.flaggedCount })}
             </span>
           )}
         </div>
@@ -84,17 +86,17 @@ function ProgressRow({ item, patientId }: { item: AssessmentProgress; patientId:
       <div className="flex items-center justify-between mt-[4px]">
         <p className="text-[11px] text-[#A09E98]">
           {item.count > 1
-            ? `${item.baseline}% → ${item.latest}% · ${item.count} respostas`
+            ? t("progressMulti", { baseline: item.baseline ?? 0, latest: item.latest ?? 0, count: item.count })
             : item.count === 1
-              ? `${item.latest}% · 1 resposta`
-              : "sem respostas"}
+              ? t("progressOne", { latest: item.latest ?? 0 })
+              : t("progressNone")}
         </p>
         <button
           onClick={resend}
           disabled={isPending}
           className="inline-flex items-center gap-1 text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 disabled:opacity-50 rounded-md px-2 py-1 transition"
         >
-          <Send className="h-3 w-3" /> {isPending ? "…" : "Reavaliar"}
+          <Send className="h-3 w-3" /> {isPending ? "…" : t("resend")}
         </button>
       </div>
       {msg && <p className="text-[9px] text-[#6B6A66] mt-1 text-right">{msg}</p>}
@@ -109,22 +111,23 @@ export function PatientAssessmentProgressPanel({
   patientId: string;
   progress: AssessmentProgress[];
 }) {
+  const t = useTranslations("patientPanels.assessmentProgress");
   return (
     <div className="space-y-[10px]">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-[#0F1A2E]">Questionários</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{t("title")}</p>
           <p className="text-[11px] text-[#A09E98]">
             {progress.length === 0
-              ? "Nenhum questionário respondido ainda."
-              : `${progress.length} ${progress.length === 1 ? "questionário" : "questionários"}`}
+              ? t("emptySubtitle")
+              : t("count", { count: progress.length })}
           </p>
         </div>
         <Link
           href={`/patients/${patientId}/forms/new`}
           className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[10px] py-[5px] rounded-[6px] shrink-0"
         >
-          <Plus className="h-3 w-3" /> Preencher
+          <Plus className="h-3 w-3" /> {t("fill")}
         </Link>
       </div>
       {progress.length > 0 && (

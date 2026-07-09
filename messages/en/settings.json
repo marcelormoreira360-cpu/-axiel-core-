@@ -22,6 +22,45 @@
       "descriptionLabel": "Description (optional)",
       "descriptionPlaceholder": "Internal description of the offer",
       "submit": "Save offer"
+    },
+    "offerList": {
+      "emptyTitle": "No packages or memberships yet",
+      "emptyText": "Create your first offer so the clinic can sell sessions or memberships clearly.",
+      "emptyAction": "Create first offer",
+      "viewMore": "View {count} more offers",
+      "fallbackDescription": "Flexible clinic-defined offer.",
+      "active": "Active",
+      "paused": "Paused",
+      "cancelEdit": "Cancel edit",
+      "edit": "Edit",
+      "delete": "Delete",
+      "price": "Price",
+      "sessions": "Sessions",
+      "perMonth": "/month",
+      "nameLabel": "Name",
+      "priceLabel": "Price (R$)",
+      "sessionsPerMonth": "Sessions/month",
+      "numSessions": "Sessions count",
+      "billingLabel": "Billing",
+      "monthly": "Monthly",
+      "yearly": "Yearly",
+      "descriptionLabel": "Description",
+      "saving": "Saving…",
+      "save": "Save",
+      "cancel": "Cancel",
+      "updating": "Updating…",
+      "pause": "Pause",
+      "reactivate": "Reactivate"
+    },
+    "patientOffers": {
+      "emptyTitle": "No patient plans assigned",
+      "emptyText": "Assign a package or membership after creating an offer and adding a patient.",
+      "emptyAction": "Add patient",
+      "viewMore": "View {count} more assigned plans",
+      "patientFallback": "Patient",
+      "offerFallback": "Assigned offer",
+      "remainingStatus": "{count, plural, one {# session remaining} other {# sessions remaining}} • {status}",
+      "used": "Used"
     }
   },
   "hub": {
@@ -179,7 +218,20 @@
   },
   "lgpd": {
     "title": "Privacy & data protection",
-    "subtitle": "Manage patient data deletion requests (right to be forgotten)."
+    "subtitle": "Manage patient data deletion requests (right to be forgotten).",
+    "status": {
+      "pending": "Pending",
+      "in_review": "In review",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "empty": "No deletion requests received.",
+    "unknownPatient": "Unknown patient",
+    "requestedAt": "Requested on {date}",
+    "reviewedAt": "Reviewed on {date}",
+    "review": "Review",
+    "complete": "Complete",
+    "reject": "Reject"
   },
   "security": {
     "title": "Security",
@@ -583,7 +635,10 @@
     "saving": "Saving...",
     "save": "Save configuration",
     "savedMsg": "✓ Configuration saved. Bot active.",
-    "errSave": "Error saving. Please try again."
+    "errSave": "Error saving. Please try again.",
+    "metaPhoneIdPlaceholder": "e.g. 1031933676681061",
+    "metaInstagramIdPlaceholder": "e.g. 17841400000000000",
+    "verifyTokenSample": "your_verify_token"
   },
   "voice": {
     "back": "Settings",

@@ -153,5 +153,11 @@
         "plan": "P — Plan"
       }
     }
+  },
+  "evolution": {
+    "title": "Clinical evolution",
+    "emptyTitle": "No evolution data yet.",
+    "emptyHint": "Add lab results or apply assessment forms to visualize progress over time.",
+    "goToProfile": "Go to profile"
   }
 }

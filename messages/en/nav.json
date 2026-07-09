@@ -37,5 +37,54 @@
   "support": "Support",
   "mobile": {
     "home": "Home"
+  },
+  "search": {
+    "open": "Open global search",
+    "trigger": "Search…",
+    "placeholder": "Search patients, sessions, leads…",
+    "close": "Close",
+    "typeToSearch": "Type to search patients, sessions, or leads.",
+    "keepTyping": "Keep typing…",
+    "noResults": "No results for <q>“{query}”</q>",
+    "patients": "Patients",
+    "appointments": "Sessions",
+    "leads": "Leads",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "statusArchived": "Archived",
+    "stages": {
+      "new_lead": "New",
+      "contacted": "Contacted",
+      "scheduled": "Scheduled",
+      "converted_to_patient": "Converted"
+    },
+    "durationMin": "{n} min",
+    "hintNavigate": "navigate",
+    "hintOpen": "open",
+    "hintClose": "close"
+  },
+  "notifications": {
+    "aria": "Notifications",
+    "title": "Notifications",
+    "attention": "{count, plural, one {# item needs attention} other {# items need attention}}",
+    "allClear": "All clear here ✓",
+    "insights": "{count, plural, one {# insight awaiting review} other {# insights awaiting review}}",
+    "lgpd": "{count, plural, one {# pending LGPD request} other {# pending LGPD requests}}",
+    "followups": "{count, plural, one {# overdue follow-up} other {# overdue follow-ups}}",
+    "leads": "{count, plural, one {# new lead awaiting review} other {# new leads awaiting review}}",
+    "forms": "{count, plural, one {# form awaiting response} other {# forms awaiting response}}"
+  },
+  "errorPage": {
+    "brand": "AXIEL Core",
+    "title": "Something went wrong",
+    "text": "The system protected your data and safely stopped the action. Try again. If the problem persists, contact support.",
+    "reference": "Reference: {digest}",
+    "retry": "Try again"
+  },
+  "notFoundPage": {
+    "brand": "AXIEL Core",
+    "title": "Page not found",
+    "text": "This page does not exist or you do not have access to this record.",
+    "cta": "Go to dashboard"
   }
 }

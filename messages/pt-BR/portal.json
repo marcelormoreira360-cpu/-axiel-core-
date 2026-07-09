@@ -207,5 +207,20 @@
     "redirecting": "Redirecionando…",
     "errStart": "Erro ao iniciar pagamento.",
     "errNoUrl": "URL de pagamento não retornada."
+  },
+  "link": {
+    "back": "Voltar ao paciente",
+    "title": "Link do portal do paciente",
+    "description": "Crie um link privado para {name} acessar pelo celular. Não é necessário login. O link expira automaticamente em 7 dias.",
+    "create": "Criar link seguro",
+    "regenerate": "Gerar novo link",
+    "regenerateHint": "Gerar novo link desativa os links ativos anteriores e cria um novo link válido por 7 dias.",
+    "recent": "Links recentes",
+    "expires": "Expira em {date}",
+    "revoked": "Revogado",
+    "viewedAt": "Visualizado em {date}",
+    "notViewed": "Ainda não visualizado",
+    "revoke": "Revogar link",
+    "empty": "Nenhum link gerado ainda."
   }
 }

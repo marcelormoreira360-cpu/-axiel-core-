@@ -153,5 +153,11 @@
         "plan": "P — Plano"
       }
     }
+  },
+  "evolution": {
+    "title": "Evolução clínica",
+    "emptyTitle": "Nenhum dado de evolução ainda.",
+    "emptyHint": "Adicione exames laboratoriais ou aplique formulários de assessment para visualizar a evolução.",
+    "goToProfile": "Ir para o perfil"
   }
 }

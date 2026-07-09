@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, ReferenceArea, Legend,
@@ -9,8 +10,8 @@ import type { BiomarkerSeries, AssessmentSeries, VitalPoint } from "@/services/e
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function fmtDate(iso: string) {
-  return new Date(iso + (iso.length === 10 ? "T12:00:00" : "")).toLocaleDateString("pt-BR", {
+function fmtDate(iso: string, locale: string) {
+  return new Date(iso + (iso.length === 10 ? "T12:00:00" : "")).toLocaleDateString(locale, {
     day: "numeric", month: "short",
   });
 }
@@ -24,12 +25,14 @@ function statusColor(status: string) {
 // ── Biomarker chart ───────────────────────────────────────────────────────────
 
 function BiomarkerChart({ series }: { series: BiomarkerSeries }) {
+  const t = useTranslations("patientPanels.evolution");
+  const locale = useLocale();
   const hasRef = series.points.some((p) => p.ref_min != null || p.ref_max != null);
   const refMin = series.points.find((p) => p.ref_min != null)?.ref_min ?? null;
   const refMax = series.points.find((p) => p.ref_max != null)?.ref_max ?? null;
 
   const data = series.points.map((p) => ({
-    date: fmtDate(p.date),
+    date: fmtDate(p.date, locale),
     value: p.value,
     status: p.status,
     lab: p.lab_name,
@@ -55,7 +58,7 @@ function BiomarkerChart({ series }: { series: BiomarkerSeries }) {
           lastStatus === "low" ? "bg-amber-50 text-amber-600" :
           "bg-[#E1F5EE] text-[#085041]",
         ].join(" ")}>
-          {lastStatus === "high" ? "Alto" : lastStatus === "low" ? "Baixo" : "Normal"}
+          {lastStatus === "high" ? t("statusHigh") : lastStatus === "low" ? t("statusLow") : t("statusNormal")}
         </span>
       </div>
 
@@ -121,7 +124,7 @@ function BiomarkerChart({ series }: { series: BiomarkerSeries }) {
 
       {hasRef && refMin != null && refMax != null && (
         <p className="text-[10px] text-[#A09E98] mt-2">
-          Faixa de referência: {refMin}–{refMax} {series.unit ?? ""}
+          {t("refRange", { min: refMin, max: refMax, unit: series.unit ?? "" })}
         </p>
       )}
     </div>
@@ -131,8 +134,10 @@ function BiomarkerChart({ series }: { series: BiomarkerSeries }) {
 // ── Assessment chart ──────────────────────────────────────────────────────────
 
 function AssessmentChart({ series }: { series: AssessmentSeries }) {
+  const t = useTranslations("patientPanels.evolution");
+  const locale = useLocale();
   const data = series.points.map((p) => ({
-    date: fmtDate(p.date),
+    date: fmtDate(p.date, locale),
     score: Math.round(p.score_percentage),
     total: p.total_score,
     max: p.max_possible_score,
@@ -145,7 +150,7 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px]">
       <div className="flex items-start justify-between mb-3">
         <p className="text-[13px] font-medium text-[#0F1A2E]">{series.name}</p>
-        <span className="text-[10px] font-medium text-[#A09E98]">Score %</span>
+        <span className="text-[10px] font-medium text-[#A09E98]">{t("scorePct")}</span>
       </div>
 
       <ResponsiveContainer width="100%" height={160}>
@@ -173,7 +178,11 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
               color: "#0F1A2E",
             }}
             formatter={(val, _name, props) => [
-              `${val ?? ""}% (${(props as any).payload?.total ?? ""}/${(props as any).payload?.max ?? ""} pts)`,
+              t("tooltipScore", {
+                val: String(val ?? ""),
+                total: String((props as any).payload?.total ?? ""),
+                max: String((props as any).payload?.max ?? ""),
+              }),
               series.name,
             ]}
           />
@@ -192,10 +201,10 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
 
       <div className="flex items-center gap-4 mt-2">
         <span className="flex items-center gap-1 text-[10px] text-[#A09E98]">
-          <span className="inline-block w-3 h-px bg-amber-400" /> moderado ≥40%
+          <span className="inline-block w-3 h-px bg-amber-400" /> {t("legendModerate")}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-[#A09E98]">
-          <span className="inline-block w-3 h-px bg-red-400" /> elevado ≥70%
+          <span className="inline-block w-3 h-px bg-red-400" /> {t("legendHigh")}
         </span>
       </div>
     </div>
@@ -205,17 +214,21 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
 // ── Vitals chart ──────────────────────────────────────────────────────────────
 
 const VITAL_LINES = [
-  { key: "dor",     label: "Dor",     color: "#E05252" },
-  { key: "energia", label: "Energia", color: "#0F6E56" },
-  { key: "humor",   label: "Humor",   color: "#7B5EA7" },
-  { key: "sono",    label: "Sono",    color: "#2A7BC1" },
+  { key: "dor",     color: "#E05252" },
+  { key: "energia", color: "#0F6E56" },
+  { key: "humor",   color: "#7B5EA7" },
+  { key: "sono",    color: "#2A7BC1" },
 ] as const;
 
 function VitalsChart({ points }: { points: VitalPoint[] }) {
+  const t = useTranslations("patientPanels.evolution");
+  const locale = useLocale();
   const [visible, setVisible] = useState<Set<string>>(new Set(["dor", "energia", "humor", "sono"]));
 
+  const vitalLines = VITAL_LINES.map((l) => ({ ...l, label: t(`vitals.${l.key}`) }));
+
   const data = points.map((p) => ({
-    date: fmtDate(p.date),
+    date: fmtDate(p.date, locale),
     dor: p.dor,
     energia: p.energia,
     humor: p.humor,
@@ -234,15 +247,15 @@ function VitalsChart({ points }: { points: VitalPoint[] }) {
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[16px]">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <p className="text-[13px] font-medium text-[#0F1A2E]">Vitais por sessão</p>
-          <p className="text-[11px] text-[#A09E98]">Relatados pelo paciente · Escala 1–5</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E]">{t("vitalsTitle")}</p>
+          <p className="text-[11px] text-[#A09E98]">{t("vitalsSubtitle")}</p>
         </div>
-        <span className="text-[10px] text-[#A09E98]">{points.length} sessões</span>
+        <span className="text-[10px] text-[#A09E98]">{t("sessionsCount", { count: points.length })}</span>
       </div>
 
       {/* Legend / toggle */}
       <div className="flex flex-wrap gap-[8px] mb-[10px]">
-        {VITAL_LINES.map(({ key, label, color }) => (
+        {vitalLines.map(({ key, label, color }) => (
           <button
             key={key}
             type="button"
@@ -282,7 +295,7 @@ function VitalsChart({ points }: { points: VitalPoint[] }) {
             }}
             formatter={(val, name) => [
               val != null ? `${val}/5` : "—",
-              VITAL_LINES.find((l) => l.key === (name as string))?.label ?? (name as string),
+              vitalLines.find((l) => l.key === (name as string))?.label ?? (name as string),
             ]}
           />
           {VITAL_LINES.map(({ key, color }) =>
@@ -303,7 +316,7 @@ function VitalsChart({ points }: { points: VitalPoint[] }) {
       </ResponsiveContainer>
 
       <p className="text-[10px] text-[#A09E98] mt-2">
-        Clique nas legendas para mostrar/ocultar métricas. Dor: 1=sem dor, 5=intensa. Demais: 1=ruim, 5=ótimo.
+        {t("vitalsHint")}
       </p>
     </div>
   );
@@ -322,6 +335,7 @@ export function EvolutionCharts({
   assessments: AssessmentSeries[];
   vitals?: VitalPoint[];
 }) {
+  const t = useTranslations("patientPanels.evolution");
   const defaultTab: Tab = vitals.length > 0 ? "vitals" : biomarkers.length > 0 ? "biomarkers" : "assessments";
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [selectedBiomarker, setSelectedBiomarker] = useState<string | null>(null);
@@ -345,7 +359,7 @@ export function EvolutionCharts({
                 : "bg-white border-black/[.08] text-[#6B6A66] hover:bg-[#F4F3EF]",
             ].join(" ")}
           >
-            Vitais · {vitals.length}
+            {t("tabVitals", { count: vitals.length })}
           </button>
         )}
         {biomarkers.length > 0 && (
@@ -359,7 +373,7 @@ export function EvolutionCharts({
                 : "bg-white border-black/[.08] text-[#6B6A66] hover:bg-[#F4F3EF]",
             ].join(" ")}
           >
-            Biomarcadores · {biomarkers.length}
+            {t("tabBiomarkers", { count: biomarkers.length })}
           </button>
         )}
         {assessments.length > 0 && (
@@ -373,7 +387,7 @@ export function EvolutionCharts({
                 : "bg-white border-black/[.08] text-[#6B6A66] hover:bg-[#F4F3EF]",
             ].join(" ")}
           >
-            Formulários · {assessments.length}
+            {t("tabAssessments", { count: assessments.length })}
           </button>
         )}
       </div>
@@ -391,7 +405,7 @@ export function EvolutionCharts({
                 : "bg-white border-black/[.08] text-[#A09E98] hover:bg-[#F4F3EF]",
             ].join(" ")}
           >
-            Todos
+            {t("all")}
           </button>
           {biomarkers.map((b) => {
             const last = b.points[b.points.length - 1];

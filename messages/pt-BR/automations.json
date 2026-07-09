@@ -151,5 +151,22 @@
     "emptyTitle": "Nenhum acompanhamento ainda",
     "emptyText": "Nenhum lembrete criado. Crie um para que o paciente sempre saiba o próximo passo.",
     "emptyAction": "Criar lembrete"
+  },
+  "commLog": {
+    "empty": "Nenhuma mensagem enviada.",
+    "useCases": {
+      "appointment_reminder": "Lembrete",
+      "appointment_confirmation": "Confirmação",
+      "follow_up": "Follow-up",
+      "lead_nurturing": "Lead",
+      "package_low": "Pacote"
+    },
+    "sent": "Enviado",
+    "failed": "Falhou",
+    "queued": "Fila",
+    "now": "agora",
+    "minutesShort": "{n}min",
+    "hoursShort": "{n}h",
+    "daysShort": "{n}d"
   }
 }

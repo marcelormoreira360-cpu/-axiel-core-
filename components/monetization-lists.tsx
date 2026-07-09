@@ -21,6 +21,7 @@ export function OfferList({
   editAction?: (formData: FormData) => Promise<void>;
   deleteAction?: (formData: FormData) => Promise<void>;
 }) {
+  const t = useTranslations("settings.monetization.offerList");
   const tActions = useTranslations("common.actions");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -69,10 +70,10 @@ export function OfferList({
     return (
       <EmptyState
         icon={<PackagePlus className="h-7 w-7" />}
-        title="No packages or memberships yet"
-        text="Create your first offer so the clinic can sell sessions or memberships clearly."
+        title={t("emptyTitle")}
+        text={t("emptyText")}
         href="/monetization"
-        action="Create first offer"
+        action={t("emptyAction")}
       />
     );
   }
@@ -82,7 +83,7 @@ export function OfferList({
     <LimitedList
       items={offers}
       className="grid gap-3 md:grid-cols-2"
-      detailsLabel={`View ${Math.max(offers.length - 5, 0)} more offers`}
+      detailsLabel={t("viewMore", { count: Math.max(offers.length - 5, 0) })}
       renderItem={(offer) => (
         <Card key={offer.id} className="p-5">
           {/* Header row */}
@@ -93,12 +94,12 @@ export function OfferList({
               </p>
               <h3 className="mt-2 text-xl font-semibold tracking-tight">{offer.name}</h3>
               <p className="mt-2 text-sm leading-5 text-black/50 dark:text-white/50">
-                {offer.description || "Flexible clinic-defined offer."}
+                {offer.description || t("fallbackDescription")}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${offer.is_active ? "bg-emerald-50 text-emerald-700" : "bg-black/5 dark:bg-white/10 text-black/45 dark:text-white/45"}`}>
-                {offer.is_active ? "Active" : "Paused"}
+                {offer.is_active ? t("active") : t("paused")}
               </span>
               {editAction && (
                 <button
@@ -109,7 +110,7 @@ export function OfferList({
                     ${editingId === offer.id
                       ? "bg-axiel-ink/10 text-axiel-ink"
                       : "text-black/30 dark:text-white/30 hover:bg-black/5 dark:hover:bg-white/10 hover:text-black/60 dark:hover:text-white/60"}`}
-                  title={editingId === offer.id ? "Cancelar edição" : "Editar"}
+                  title={editingId === offer.id ? t("cancelEdit") : t("edit")}
                 >
                   {editingId === offer.id ? <X className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
                 </button>
@@ -120,7 +121,7 @@ export function OfferList({
                   onClick={() => handleDelete(offer)}
                   disabled={pendingId === offer.id + "-delete"}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-black/30 dark:text-white/30 transition hover:bg-red-50 hover:text-red-500 disabled:opacity-40"
-                  title="Excluir"
+                  title={t("delete")}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -131,14 +132,14 @@ export function OfferList({
           {/* Price / sessions */}
           <div className="mt-5 grid grid-cols-2 gap-2">
             <div className="rounded-2xl bg-axiel-soft p-4">
-              <p className="text-xs text-black/40 dark:text-white/40">Price</p>
+              <p className="text-xs text-black/40 dark:text-white/40">{t("price")}</p>
               <p className="mt-1 text-xl font-semibold">{formatPrice(offer.price_cents, offer.currency)}</p>
             </div>
             <div className="rounded-2xl bg-axiel-soft p-4">
-              <p className="text-xs text-black/40 dark:text-white/40">Sessions</p>
+              <p className="text-xs text-black/40 dark:text-white/40">{t("sessions")}</p>
               <p className="mt-1 text-xl font-semibold">
                 {offer.number_of_sessions}
-                {offer.offer_type === "membership" ? "/mês" : ""}
+                {offer.offer_type === "membership" ? t("perMonth") : ""}
               </p>
             </div>
           </div>
@@ -147,7 +148,7 @@ export function OfferList({
           {editingId === offer.id && editAction && (
             <form onSubmit={(e) => handleEdit(e, offer.id)} className="mt-4 space-y-3 rounded-xl border border-black/[.07] dark:border-white/[.07] bg-black/[.02] dark:bg-white/[.04] p-4">
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Nome</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">{t("nameLabel")}</label>
                 <input
                   name="name"
                   required
@@ -157,7 +158,7 @@ export function OfferList({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Preço (R$)</label>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">{t("priceLabel")}</label>
                   <input
                     name="price_brl"
                     type="number"
@@ -170,7 +171,7 @@ export function OfferList({
                 </div>
                 <div>
                   <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">
-                    {offer.offer_type === "membership" ? "Sessões/mês" : "Nº sessões"}
+                    {offer.offer_type === "membership" ? t("sessionsPerMonth") : t("numSessions")}
                   </label>
                   <input
                     name="number_of_sessions"
@@ -185,19 +186,19 @@ export function OfferList({
               </div>
               {offer.offer_type === "membership" && (
                 <div>
-                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Cobrança</label>
+                  <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">{t("billingLabel")}</label>
                   <select
                     name="billing_interval"
                     defaultValue={(offer as MonetizationOffer & { billing_interval?: string }).billing_interval ?? "monthly"}
                     className="w-full rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                   >
-                    <option value="monthly">Mensal</option>
-                    <option value="yearly">Anual</option>
+                    <option value="monthly">{t("monthly")}</option>
+                    <option value="yearly">{t("yearly")}</option>
                   </select>
                 </div>
               )}
               <div>
-                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">Descrição</label>
+                <label className="mb-1 block text-[10px] font-semibold uppercase tracking-[.07em] text-black/40 dark:text-white/40">{t("descriptionLabel")}</label>
                 <textarea
                   name="description"
                   rows={2}
@@ -212,14 +213,14 @@ export function OfferList({
                   className="flex items-center gap-1.5 rounded-lg bg-axiel-ink px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
                 >
                   <Check className="h-3.5 w-3.5" />
-                  {pendingId === offer.id + "-edit" ? "Salvando…" : "Salvar"}
+                  {pendingId === offer.id + "-edit" ? t("saving") : t("save")}
                 </button>
                 <button
                   type="button"
                   onClick={() => setEditingId(null)}
                   className="rounded-lg border border-black/[.10] dark:border-white/[.10] px-4 py-2 text-xs font-semibold text-black/50 dark:text-white/50 transition hover:text-black/80 dark:hover:text-white/80"
                 >
-                  Cancelar
+                  {t("cancel")}
                 </button>
               </div>
             </form>
@@ -233,10 +234,10 @@ export function OfferList({
             className="mt-4 w-full rounded-xl border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-4 py-2.5 text-sm font-medium text-black/60 dark:text-white/60 transition hover:bg-black/[.03] dark:hover:bg-white/[.06] hover:text-black/80 dark:hover:text-white/80 disabled:opacity-50"
           >
             {pendingId === offer.id + "-toggle"
-              ? "Atualizando…"
+              ? t("updating")
               : offer.is_active
-              ? "Pause"
-              : "Reactivate"}
+              ? t("pause")
+              : t("reactivate")}
           </button>
         </Card>
       )}
@@ -255,14 +256,16 @@ export function OfferList({
 }
 
 export function PatientOfferList({ patientOffers }: { patientOffers: PatientOffer[] }) {
+  const t = useTranslations("settings.monetization.patientOffers");
+
   if (patientOffers.length === 0) {
     return (
       <EmptyState
         icon={<BadgeDollarSign className="h-7 w-7" />}
-        title="No patient plans assigned"
-        text="Assign a package or membership after creating an offer and adding a patient."
+        title={t("emptyTitle")}
+        text={t("emptyText")}
         href="/patients/new"
-        action="Add patient"
+        action={t("emptyAction")}
       />
     );
   }
@@ -271,19 +274,19 @@ export function PatientOfferList({ patientOffers }: { patientOffers: PatientOffe
     <LimitedList
       items={patientOffers}
       className="space-y-3"
-      detailsLabel={`View ${Math.max(patientOffers.length - 5, 0)} more assigned plans`}
+      detailsLabel={t("viewMore", { count: Math.max(patientOffers.length - 5, 0) })}
       renderItem={(item) => {
         const progress = getPatientOfferProgress(item);
         return (
           <Card key={item.id} className="p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35 dark:text-white/35">{item.patients?.full_name ?? "Patient"}</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-tight">{item.monetization_offers?.name ?? "Assigned offer"}</h3>
-                <p className="mt-1 text-sm text-black/45 dark:text-white/45">{progress.remaining} sessions remaining • {item.status}</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35 dark:text-white/35">{item.patients?.full_name ?? t("patientFallback")}</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-tight">{item.monetization_offers?.name ?? t("offerFallback")}</h3>
+                <p className="mt-1 text-sm text-black/45 dark:text-white/45">{t("remainingStatus", { count: progress.remaining, status: item.status })}</p>
               </div>
               <div className="min-w-44 rounded-2xl bg-axiel-soft p-4">
-                <p className="text-xs text-black/40 dark:text-white/40">Used</p>
+                <p className="text-xs text-black/40 dark:text-white/40">{t("used")}</p>
                 <p className="mt-1 text-2xl font-semibold">{item.sessions_used}/{item.sessions_total}</p>
               </div>
             </div>

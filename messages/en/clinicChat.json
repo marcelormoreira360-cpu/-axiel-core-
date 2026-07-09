@@ -7,5 +7,23 @@
   "send": "Send",
   "footer": "Enter to send · Shift+Enter for new line · refreshes every 30s",
   "today": "Today",
-  "yesterday": "Yesterday"
+  "yesterday": "Yesterday",
+  "inbox": {
+    "title": "Messages",
+    "subtitle": "Patient conversations via the portal",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search patient or message…",
+    "emptySearchTitle": "No results found",
+    "emptySearchHint": "Try another name or word",
+    "emptyTitle": "No messages yet",
+    "emptyHint": "Patient conversations will appear here",
+    "you": "You:",
+    "now": "now",
+    "minutesShort": "{n}m",
+    "hoursShort": "{n}h",
+    "daysShort": "{n}d",
+    "autoRefresh": "Auto-refreshes every 30s"
+  },
+  "backToPatient": "Back to patient",
+  "portalSubtitle": "Patient portal · asynchronous chat"
 }

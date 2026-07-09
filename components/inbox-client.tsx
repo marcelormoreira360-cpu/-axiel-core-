@@ -2,21 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { MessageCircle, Search, Loader2, RefreshCw } from "lucide-react";
 import type { InboxConversation } from "@/app/api/inbox/route";
-
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins  = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days  = Math.floor(diff / 86_400_000);
-
-  if (mins < 1)   return "agora";
-  if (mins < 60)  return `${mins}m`;
-  if (hours < 24) return `${hours}h`;
-  if (days < 7)   return `${days}d`;
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short" });
-}
 
 function truncate(text: string, max = 72) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -27,6 +15,8 @@ interface InboxClientProps {
 }
 
 export function InboxClient({ initialConversations }: InboxClientProps) {
+  const t = useTranslations("clinicChat.inbox");
+  const locale = useLocale();
   const [conversations, setConversations] = useState<InboxConversation[]>(initialConversations);
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
@@ -60,20 +50,33 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
 
   const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0);
 
+  function timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins  = Math.floor(diff / 60_000);
+    const hours = Math.floor(diff / 3_600_000);
+    const days  = Math.floor(diff / 86_400_000);
+
+    if (mins < 1)   return t("now");
+    if (mins < 60)  return t("minutesShort", { n: mins });
+    if (hours < 24) return t("hoursShort", { n: hours });
+    if (days < 7)   return t("daysShort", { n: days });
+    return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short" });
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-[20px] font-semibold text-[#0F1A2E] flex items-center gap-2">
-            Mensagens
+            {t("title")}
             {totalUnread > 0 && (
               <span className="inline-flex items-center justify-center h-5 min-w-[20px] rounded-full bg-[#0F6E56] text-white text-[10px] font-bold px-1.5">
                 {totalUnread}
               </span>
             )}
           </h1>
-          <p className="text-xs text-black/40 mt-0.5">Conversas com pacientes via portal</p>
+          <p className="text-xs text-black/40 mt-0.5">{t("subtitle")}</p>
         </div>
         <button
           onClick={() => fetchConversations(true)}
@@ -81,7 +84,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
           className="flex items-center gap-1.5 rounded-xl border border-black/[.10] dark:border-white/[.10] px-3 py-1.5 text-xs text-black/50 hover:bg-black/[.04] transition disabled:opacity-50"
         >
           <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
-          Atualizar
+          {t("refresh")}
         </button>
       </div>
 
@@ -92,7 +95,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar paciente ou mensagem…"
+          placeholder={t("searchPlaceholder")}
           className="w-full rounded-xl border border-black/[.10] dark:border-white/[.10] pl-9 pr-3 py-2.5 text-sm text-[#0F1A2E] placeholder:text-black/30 focus:outline-none focus:border-black/25 bg-white"
         />
       </div>
@@ -105,12 +108,10 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
           </div>
           <div>
             <p className="text-sm font-medium text-[#0F1A2E]">
-              {search ? "Nenhum resultado encontrado" : "Nenhuma mensagem ainda"}
+              {search ? t("emptySearchTitle") : t("emptyTitle")}
             </p>
             <p className="text-xs text-black/40 mt-0.5">
-              {search
-                ? "Tente buscar por outro nome ou palavra"
-                : "As conversas dos pacientes aparecerão aqui"}
+              {search ? t("emptySearchHint") : t("emptyHint")}
             </p>
           </div>
         </div>
@@ -143,7 +144,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
                 <div className="flex items-center justify-between gap-2 mt-0.5">
                   <p className={`text-[12px] truncate ${conv.unreadCount > 0 ? "text-[#0F1A2E]" : "text-black/45"}`}>
                     {conv.lastDirection === "clinic_to_patient" && (
-                      <span className="text-black/30">Você: </span>
+                      <span className="text-black/30">{t("you")}{" "}</span>
                     )}
                     {truncate(conv.lastMessage)}
                   </p>
@@ -161,7 +162,7 @@ export function InboxClient({ initialConversations }: InboxClientProps) {
       )}
 
       <p className="text-center text-[10px] text-black/25 mt-6">
-        Atualiza automaticamente a cada 30s
+        {t("autoRefresh")}
       </p>
     </div>
   );

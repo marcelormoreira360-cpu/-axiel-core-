@@ -155,7 +155,12 @@
     "kpiIssued": "Emitidas (total)",
     "kpiTotal": "Valor total emitido",
     "kpiProcessing": "Em processamento",
-    "status": { "processing": "Processando", "issued": "Emitida", "cancelled": "Cancelada", "error": "Erro" },
+    "status": {
+      "processing": "Processando",
+      "issued": "Emitida",
+      "cancelled": "Cancelada",
+      "error": "Erro"
+    },
     "emit": "Emitir NFS-e",
     "issuedTitle": "Notas emitidas",
     "empty": "Nenhuma NFS-e emitida ainda.",
@@ -223,5 +228,52 @@
     "note": "Pix e Boleto podem levar alguns instantes para confirmar. Você já pode fechar esta página.",
     "cancelled": "Pagamento não concluído",
     "cancelledNote": "O pagamento foi cancelado. Você pode tentar novamente pelo link enviado pela clínica."
+  },
+  "subscriptions": {
+    "kpiTotal": "Total",
+    "kpiActive": "Ativos",
+    "kpiPastDue": "Em atraso",
+    "kpiMrr": "MRR estimado",
+    "filterAll": "Todos",
+    "filterActive": "Ativos",
+    "filterPastDue": "Em atraso",
+    "filterCanceled": "Cancelados",
+    "status": {
+      "active": "Ativo",
+      "trialing": "Teste",
+      "past_due": "Em atraso",
+      "paused": "Pausado",
+      "canceled": "Cancelado",
+      "incomplete": "Incompleto"
+    },
+    "empty": "Nenhuma assinatura encontrada.",
+    "emptyHint": "Crie ofertas do tipo \"Plano Mensal\" em <link>Planos e pacotes</link> para começar.",
+    "colPatient": "Paciente",
+    "colPlan": "Plano",
+    "colAmount": "Valor",
+    "colRenews": "Renova em",
+    "colStatus": "Status",
+    "yearly": "Anual",
+    "monthly": "Mensal",
+    "sessionsPerCycle": "{count} sessões/ciclo",
+    "footer": "Assinaturas gerenciadas via Stripe. Cancelamentos e reembolsos devem ser feitos no painel do Stripe."
+  },
+  "orders": {
+    "patientLabel": "Paciente (opcional)",
+    "walkIn": "Venda avulsa (sem paciente)",
+    "productsLabel": "Produtos",
+    "selectProduct": "Selecione um produto…",
+    "add": "Adicionar",
+    "each": "{price} cada",
+    "taxLabel": "Taxa/frete (opcional)",
+    "notesLabel": "Observações",
+    "notesPlaceholder": "Opcional",
+    "subtotal": "Subtotal",
+    "taxLine": "Taxa/frete",
+    "total": "Total",
+    "cancel": "Cancelar",
+    "creating": "Criando…",
+    "create": "Criar pedido",
+    "errNoProducts": "Adicione ao menos um produto."
   }
 }

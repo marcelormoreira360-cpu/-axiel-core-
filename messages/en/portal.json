@@ -207,5 +207,20 @@
     "redirecting": "Redirecting…",
     "errStart": "Error starting payment.",
     "errNoUrl": "Payment URL not returned."
+  },
+  "link": {
+    "back": "Back to patient",
+    "title": "Patient portal link",
+    "description": "Create a private link for {name} to access from their phone. No login required. The link expires automatically in 7 days.",
+    "create": "Create secure link",
+    "regenerate": "Generate new link",
+    "regenerateHint": "Generating a new link deactivates previous active links and creates a new one valid for 7 days.",
+    "recent": "Recent links",
+    "expires": "Expires on {date}",
+    "revoked": "Revoked",
+    "viewedAt": "Viewed on {date}",
+    "notViewed": "Not viewed yet",
+    "revoke": "Revoke link",
+    "empty": "No links generated yet."
   }
 }

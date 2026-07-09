@@ -30,5 +30,58 @@
   },
   "deleteButton": {
     "confirm": "Delete this case? It leaves the profile so you can generate a new one. (Reversible.)"
+  },
+  "reviewPanel": {
+    "eyebrow": "AI INSIGHTS",
+    "title": "Simple insight review",
+    "subtitle": "Review the insight, approve it, or request changes. Technical details stay hidden unless needed.",
+    "resend": "Resend to patient",
+    "resendNoContact": "Patient has no email or phone on file",
+    "generateNew": "Generate new draft",
+    "updateErrorTitle": "AI insight could not be updated.",
+    "emptyTitle": "No insight yet",
+    "emptyText": "Generate a first draft. It will stay in review until someone approves it.",
+    "viewDetails": "View details",
+    "nextSteps": "Next steps",
+    "noReviewPoints": "No review points available.",
+    "validationHistory": "Validation history",
+    "noValidationHistory": "No validation history yet.",
+    "safetyNote": "Safety note",
+    "status": "Status: {status}",
+    "backToProfile": "Back to patient profile",
+    "events": {
+      "approved_final": "Approved",
+      "requested_changes": "Adjustment requested",
+      "generated_pending_review": "Created for review",
+      "archived": "Hidden",
+      "reopened": "Reopened"
+    }
+  },
+  "reviewCard": {
+    "titleFallback": "Insight ready for review",
+    "summaryFallback": "A short summary is ready for review.",
+    "reviewerNotesPlaceholder": "Review notes (optional): click the 🎤 to dictate",
+    "sendOnApprove": "Send the documents to the patient by email and WhatsApp on approval",
+    "approve": "Approve",
+    "adjust": "Adjust",
+    "newDraft": "New draft",
+    "viewDetails": "View details",
+    "keyContext": "Key context",
+    "patterns": "Patterns",
+    "approvedAt": "Approved: {date}",
+    "changes": "Changes: {changes}"
+  },
+  "patientPage": {
+    "title": "AI Insights",
+    "deliveryTitle": "Report delivery to patient",
+    "channelSent": "✓ {label}: sent",
+    "channelSkipped": "• {label}: not sent (patient has no {contact} on file)",
+    "contactEmail": "email",
+    "contactPhone": "phone number",
+    "channelFailed": "✗ {label}: failed",
+    "channelFailedWithError": "✗ {label}: failed ({error})",
+    "channelNoReport": "• {label}: no report",
+    "followupPrompt": "Insight approved. Would you like to create a follow-up for this patient?",
+    "createFollowup": "Create follow-up"
   }
 }

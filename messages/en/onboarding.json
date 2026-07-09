@@ -89,9 +89,18 @@
       }
     },
     "hours": {
-      "weekdays": { "label": "Weekdays", "summary": "Mon–Fri, 9am–5pm" },
-      "extended": { "label": "Extended", "summary": "Mon–Fri, 8am–6pm" },
-      "flexible": { "label": "Flexible", "summary": "Mon–Sat, simple hours" }
+      "weekdays": {
+        "label": "Weekdays",
+        "summary": "Mon–Fri, 9am–5pm"
+      },
+      "extended": {
+        "label": "Extended",
+        "summary": "Mon–Fri, 8am–6pm"
+      },
+      "flexible": {
+        "label": "Flexible",
+        "summary": "Mon–Sat, simple hours"
+      }
     },
     "stepProfile": {
       "eyebrow": "First step",
@@ -103,7 +112,7 @@
       "title": "What is your clinic called?",
       "subtitle": "This is the name your team will see inside AXIEL.",
       "namePlaceholder": "E.g.: {label} Clinical Center",
-      "nameTooShort": "Name too short — minimum 2 characters.",
+      "nameTooShort": "Name too short: minimum 2 characters.",
       "logoLabel": "Clinic logo",
       "logoOptional": "(optional)",
       "logoPreviewAlt": "Logo preview",
@@ -138,5 +147,42 @@
     "createClinic": "Create my clinic",
     "redirecting": "Redirecting…",
     "creating": "Creating clinic…"
+  },
+  "getStarted": {
+    "eyebrow": "Setup",
+    "title": "Get started in minutes",
+    "subtitle": "Follow these steps once. After that, your routine lives in Home, Patients, Leads, and Schedule.",
+    "progress": "{completed} of {total} steps completed",
+    "allDone": "All set!",
+    "steps": {
+      "clinicProfile": {
+        "title": "Clinic profile",
+        "text": "Set up your clinic's name, contact info, and type."
+      },
+      "hasPatient": {
+        "title": "First patient",
+        "text": "Create a patient record."
+      },
+      "hasLead": {
+        "title": "First lead",
+        "text": "Start your patient acquisition pipeline."
+      },
+      "hasSession": {
+        "title": "First session",
+        "text": "Schedule a session on the calendar."
+      },
+      "hasForms": {
+        "title": "Forms and questionnaires",
+        "text": "Customize the forms sent to your patients."
+      }
+    }
+  },
+  "plan": {
+    "eyebrow": "Onboarding",
+    "title": "Choose your plan",
+    "subtitle": "Start simple. You can change plans at any time.",
+    "notSure": "Not sure yet?",
+    "continueTrial": "Continue with 14 days free →",
+    "noCard": "No card required. Pick a plan later in Settings → Billing."
   }
 }

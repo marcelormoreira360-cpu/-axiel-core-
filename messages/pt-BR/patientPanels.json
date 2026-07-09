@@ -358,5 +358,58 @@
       "br_formula": "Fórmula (BR)",
       "us_link": "Links (US)"
     }
+  },
+  "assessmentProgress": {
+    "title": "Questionários",
+    "emptySubtitle": "Nenhum questionário respondido ainda.",
+    "count": "{count, plural, one {# questionário} other {# questionários}}",
+    "fill": "Preencher",
+    "sent": "Enviado!",
+    "pts": "{delta} pts",
+    "totalPts": "· {n} pts",
+    "flaggedMax": "{count, plural, one {# item no máximo} other {# itens no máximo}}",
+    "progressMulti": "{baseline}% → {latest}% · {count} respostas",
+    "progressOne": "{latest}% · 1 resposta",
+    "progressNone": "sem respostas",
+    "resend": "Reavaliar"
+  },
+  "treatmentFollowup": {
+    "title": "Acompanhamento do tratamento",
+    "newSession": "Nova sessão",
+    "empty": "Nenhuma sessão ainda. Cada sessão registra notas, vitais e a evolução do paciente.",
+    "sessionFallback": "Sessão",
+    "noNote": "Sem nota: abrir para registrar.",
+    "status": {
+      "pending": "Aguardando",
+      "scheduled": "Agendada",
+      "confirmed": "Confirmada",
+      "completed": "Realizada",
+      "no_show": "Faltou",
+      "cancelled": "Cancelada"
+    }
+  },
+  "evolution": {
+    "statusHigh": "Alto",
+    "statusLow": "Baixo",
+    "statusNormal": "Normal",
+    "refRange": "Faixa de referência: {min}–{max} {unit}",
+    "scorePct": "Score %",
+    "tooltipScore": "{val}% ({total}/{max} pts)",
+    "legendModerate": "moderado ≥40%",
+    "legendHigh": "elevado ≥70%",
+    "vitals": {
+      "dor": "Dor",
+      "energia": "Energia",
+      "humor": "Humor",
+      "sono": "Sono"
+    },
+    "vitalsTitle": "Vitais por sessão",
+    "vitalsSubtitle": "Relatados pelo paciente · Escala 1–5",
+    "sessionsCount": "{count, plural, one {# sessão} other {# sessões}}",
+    "vitalsHint": "Clique nas legendas para mostrar/ocultar métricas. Dor: 1=sem dor, 5=intensa. Demais: 1=ruim, 5=ótimo.",
+    "tabVitals": "Vitais · {count}",
+    "tabBiomarkers": "Biomarcadores · {count}",
+    "tabAssessments": "Formulários · {count}",
+    "all": "Todos"
   }
 }

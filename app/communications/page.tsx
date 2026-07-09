@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCommunicationLogs, getCommunicationTemplates } from "@/services/communication-service";
@@ -7,6 +8,7 @@ import { CommunicationTemplateCard } from "@/components/communication-template-c
 import { CommunicationLogList } from "@/components/communication-log-list";
 
 export default async function CommunicationsPage() {
+  const t = await getTranslations("emails.communications");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
 
@@ -26,13 +28,13 @@ export default async function CommunicationsPage() {
       <div className="flex items-start justify-between mb-[20px]">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[2px]">
-            Clínica
+            {t("eyebrow")}
           </p>
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
-            Comunicações
+            {t("title")}
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            Email e SMS para pacientes e leads
+            {t("subtitle")}
           </p>
         </div>
         <ComposeModal templates={templates} />
@@ -41,26 +43,26 @@ export default async function CommunicationsPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[16px]">
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">ENVIADAS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("kpiSent")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{sentCount}</p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">mensagens no histórico</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("kpiSentSub")}</p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">EMAIL</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("kpiEmail")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{emailTemplates.length}</p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">templates ativos</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("kpiEmailSub")}</p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">SMS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("kpiSms")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{smsTemplates.length}</p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">templates ativos</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("kpiSmsSub")}</p>
         </div>
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">FALHAS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("kpiFailed")}</p>
           <p className={`text-[22px] font-semibold tracking-[-0.03em] leading-none ${failedCount > 0 ? "text-red-500" : "text-[#0F1A2E]"}`}>
             {failedCount}
           </p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">envios com erro</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("kpiFailedSub")}</p>
         </div>
       </div>
 
@@ -71,7 +73,7 @@ export default async function CommunicationsPage() {
         <div>
           <div className="flex items-center justify-between mb-[10px]">
             <p className="text-[13px] font-medium text-[#0F1A2E]">
-              Templates de mensagem
+              {t("templatesTitle")}
             </p>
             {templates.length === 0 && (
               <form action={installDefaultTemplatesAction}>
@@ -79,7 +81,7 @@ export default async function CommunicationsPage() {
                   type="submit"
                   className="text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[7px] px-[10px] py-[5px] transition"
                 >
-                  Criar templates padrão
+                  {t("installDefaults")}
                 </button>
               </form>
             )}
@@ -93,13 +95,13 @@ export default async function CommunicationsPage() {
                   <polyline points="22,6 12,13 2,6"/>
                 </svg>
               </div>
-              <p className="text-[13px] text-[#A09E98] mb-[12px]">Nenhum template ainda.</p>
+              <p className="text-[13px] text-[#A09E98] mb-[12px]">{t("emptyTemplates")}</p>
               <form action={installDefaultTemplatesAction}>
                 <button
                   type="submit"
                   className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#0A5842] rounded-[8px] px-[16px] py-[8px] transition"
                 >
-                  Criar templates padrão
+                  {t("installDefaults")}
                 </button>
               </form>
             </div>
@@ -114,7 +116,7 @@ export default async function CommunicationsPage() {
 
         {/* Histórico */}
         <div>
-          <p className="text-[13px] font-medium text-[#0F1A2E] mb-[10px]">Histórico de envios</p>
+          <p className="text-[13px] font-medium text-[#0F1A2E] mb-[10px]">{t("historyTitle")}</p>
           <CommunicationLogList logs={logs} />
         </div>
 

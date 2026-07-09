@@ -1,17 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Video, Download, RefreshCw, ExternalLink } from "lucide-react";
 import { syncZoomRecordingsAction } from "@/app/schedule/[id]/session/actions";
 import type { ZoomRecording } from "@/services/zoom-service";
 
-const FILE_TYPE_LABELS: Record<string, string> = {
-  MP4:        "Vídeo",
-  M4A:        "Áudio",
-  TRANSCRIPT: "Transcrição",
-  CHAT:       "Chat",
-  TIMELINE:   "Timeline",
-};
+const FILE_TYPE_KEYS = ["MP4", "M4A", "TRANSCRIPT", "CHAT", "TIMELINE"] as const;
+type FileTypeKey = (typeof FILE_TYPE_KEYS)[number];
 
 function formatDuration(start: string | null, end: string | null): string {
   if (!start || !end) return "";
@@ -36,8 +32,9 @@ export function ZoomRecordingsPanel({
   patientId,
   recordings: initialRecordings,
 }: Props) {
+  const t = useTranslations("teleconsulta.zoomRecordings");
   const [recordings, setRecordings] = useState(initialRecordings);
-  const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [syncMsg, setSyncMsg] = useState<{ kind: "error" | "info"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSync() {
@@ -50,11 +47,11 @@ export function ZoomRecordingsPanel({
         patientId,
       );
       if (result.error) {
-        setSyncMsg(`Erro: ${result.error}`);
+        setSyncMsg({ kind: "error", text: t("syncError", { error: result.error }) });
       } else if (result.synced === 0) {
-        setSyncMsg("Nenhuma gravação disponível ainda. Tente novamente em alguns minutos.");
+        setSyncMsg({ kind: "info", text: t("syncNone") });
       } else {
-        setSyncMsg(`${result.synced} gravação(ões) sincronizada(s).`);
+        setSyncMsg({ kind: "info", text: t("syncDone", { count: result.synced }) });
         // Refresh by reloading recordings from updated state
         window.location.reload();
       }
@@ -67,7 +64,7 @@ export function ZoomRecordingsPanel({
       <div className="flex items-center justify-between px-5 py-3 border-b border-black/[.05] bg-[#FAFAF8]">
         <div className="flex items-center gap-2">
           <Video className="h-4 w-4 text-[#0F1A2E]" />
-          <p className="text-[13px] font-semibold text-[#0F1A2E]">Gravações Zoom</p>
+          <p className="text-[13px] font-semibold text-[#0F1A2E]">{t("title")}</p>
           {recordings.length > 0 && (
             <span className="rounded-full bg-[#E1F5EE] px-2 py-0.5 text-[10px] font-medium text-[#0F6E56]">
               {recordings.length}
@@ -80,24 +77,24 @@ export function ZoomRecordingsPanel({
           className="flex items-center gap-1.5 rounded-[7px] border border-black/[.10] px-3 py-1.5 text-[11px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition disabled:opacity-50"
         >
           <RefreshCw className={`h-3 w-3 ${isPending ? "animate-spin" : ""}`} />
-          {isPending ? "Sincronizando..." : "Sincronizar"}
+          {isPending ? t("syncing") : t("sync")}
         </button>
       </div>
 
       <div className="px-5 py-4">
         {syncMsg && (
-          <p className={`text-[12px] mb-3 ${syncMsg.startsWith("Erro") ? "text-red-500" : "text-[#0F6E56]"}`}>
-            {syncMsg}
+          <p className={`text-[12px] mb-3 ${syncMsg.kind === "error" ? "text-red-500" : "text-[#0F6E56]"}`}>
+            {syncMsg.text}
           </p>
         )}
 
         {recordings.length === 0 ? (
           <div className="py-4 text-center">
             <p className="text-[12px] text-[#A09E98]">
-              Nenhuma gravação disponível. A gravação aparece alguns minutos após o término da consulta.
+              {t("empty")}
             </p>
             <p className="text-[11px] text-[#D3D1C7] mt-1">
-              Clique em &quot;Sincronizar&quot; para buscar na Zoom.
+              {t("emptyHint")}
             </p>
           </div>
         ) : (
@@ -109,7 +106,9 @@ export function ZoomRecordingsPanel({
               >
                 <div>
                   <p className="text-[12px] font-medium text-[#0F1A2E]">
-                    {FILE_TYPE_LABELS[rec.file_type ?? ""] ?? rec.file_type ?? "Arquivo"}
+                    {FILE_TYPE_KEYS.includes((rec.file_type ?? "") as FileTypeKey)
+                      ? t(`types.${rec.file_type as FileTypeKey}`)
+                      : rec.file_type ?? t("file")}
                   </p>
                   <p className="text-[11px] text-[#A09E98]">
                     {formatDuration(rec.recording_start, rec.recording_end)}
@@ -125,7 +124,7 @@ export function ZoomRecordingsPanel({
                       className="flex items-center gap-1 rounded-[6px] bg-[#0F1A2E] px-3 py-1.5 text-[11px] font-medium text-white hover:bg-black transition"
                     >
                       <ExternalLink className="h-3 w-3" />
-                      Assistir
+                      {t("watch")}
                     </a>
                   )}
                   {rec.download_url && (
@@ -136,7 +135,7 @@ export function ZoomRecordingsPanel({
                       className="flex items-center gap-1 rounded-[6px] border border-black/[.10] px-3 py-1.5 text-[11px] font-medium text-[#6B6A66] hover:bg-[#F4F3EF] transition"
                     >
                       <Download className="h-3 w-3" />
-                      Baixar
+                      {t("download")}
                     </a>
                   )}
                 </div>

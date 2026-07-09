@@ -1,22 +1,26 @@
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "agora";
-  if (mins < 60) return `${mins}min`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h`;
-  return `${Math.floor(hrs / 24)}d`;
-}
+import { getTranslations } from "next-intl/server";
 
-const USE_CASE_LABELS: Record<string, string> = {
-  appointment_reminder:    "Lembrete",
-  appointment_confirmation: "Confirmação",
-  follow_up:               "Follow-up",
-  lead_nurturing:          "Lead",
-  package_low:             "Pacote",
-};
+const USE_CASE_KEYS = new Set([
+  "appointment_reminder",
+  "appointment_confirmation",
+  "follow_up",
+  "lead_nurturing",
+  "package_low",
+]);
 
-export function CommunicationLogList({ logs }: { logs: Array<Record<string, unknown>> }) {
+export async function CommunicationLogList({ logs }: { logs: Array<Record<string, unknown>> }) {
+  const t = await getTranslations("automations.commLog");
+
+  function timeAgo(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return t("now");
+    if (mins < 60) return t("minutesShort", { n: mins });
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return t("hoursShort", { n: hrs });
+    return t("daysShort", { n: Math.floor(hrs / 24) });
+  }
+
   if (logs.length === 0) {
     return (
       <div className="bg-white border border-black/[.07] rounded-[14px] flex flex-col items-center justify-center py-[40px] px-[16px] text-center">
@@ -25,7 +29,7 @@ export function CommunicationLogList({ logs }: { logs: Array<Record<string, unkn
             <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </div>
-        <p className="text-[12px] text-[#A09E98]">Nenhuma mensagem enviada.</p>
+        <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
       </div>
     );
   }
@@ -37,7 +41,10 @@ export function CommunicationLogList({ logs }: { logs: Array<Record<string, unkn
           const isSent   = log.status === "sent";
           const isFailed = log.status === "failed";
           const isEmail  = log.channel === "email";
-          const useCase  = USE_CASE_LABELS[String(log.use_case ?? "")] ?? String(log.use_case ?? "");
+          const useCaseRaw = String(log.use_case ?? "");
+          const useCase  = USE_CASE_KEYS.has(useCaseRaw)
+            ? t(`useCases.${useCaseRaw as "appointment_reminder" | "appointment_confirmation" | "follow_up" | "lead_nurturing" | "package_low"}`)
+            : useCaseRaw;
           const body     = String(log.body ?? "");
 
           return (
@@ -76,7 +83,7 @@ export function CommunicationLogList({ logs }: { logs: Array<Record<string, unkn
                         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
                       </svg>
                     )}
-                    {isSent ? "Enviado" : isFailed ? "Falhou" : "Fila"}
+                    {isSent ? t("sent") : isFailed ? t("failed") : t("queued")}
                   </span>
                   <p className="text-[10px] text-[#D3D1C7] mt-[3px]">{timeAgo(String(log.created_at))}</p>
                 </div>

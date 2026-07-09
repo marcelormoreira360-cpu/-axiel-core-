@@ -22,6 +22,45 @@
       "descriptionLabel": "Descrição (opcional)",
       "descriptionPlaceholder": "Descrição interna da oferta",
       "submit": "Salvar oferta"
+    },
+    "offerList": {
+      "emptyTitle": "Nenhum pacote ou plano ainda",
+      "emptyText": "Crie sua primeira oferta para a clínica vender sessões ou planos com clareza.",
+      "emptyAction": "Criar primeira oferta",
+      "viewMore": "Ver mais {count} ofertas",
+      "fallbackDescription": "Oferta flexível definida pela clínica.",
+      "active": "Ativa",
+      "paused": "Pausada",
+      "cancelEdit": "Cancelar edição",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "price": "Preço",
+      "sessions": "Sessões",
+      "perMonth": "/mês",
+      "nameLabel": "Nome",
+      "priceLabel": "Preço (R$)",
+      "sessionsPerMonth": "Sessões/mês",
+      "numSessions": "Nº sessões",
+      "billingLabel": "Cobrança",
+      "monthly": "Mensal",
+      "yearly": "Anual",
+      "descriptionLabel": "Descrição",
+      "saving": "Salvando…",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "updating": "Atualizando…",
+      "pause": "Pausar",
+      "reactivate": "Reativar"
+    },
+    "patientOffers": {
+      "emptyTitle": "Nenhum plano de paciente atribuído",
+      "emptyText": "Atribua um pacote ou plano depois de criar uma oferta e cadastrar um paciente.",
+      "emptyAction": "Adicionar paciente",
+      "viewMore": "Ver mais {count} planos atribuídos",
+      "patientFallback": "Paciente",
+      "offerFallback": "Oferta atribuída",
+      "remainingStatus": "{count, plural, one {# sessão restante} other {# sessões restantes}} • {status}",
+      "used": "Utilizadas"
     }
   },
   "hub": {
@@ -179,7 +218,20 @@
   },
   "lgpd": {
     "title": "Privacidade e LGPD",
-    "subtitle": "Gerencie solicitações de exclusão de dados dos pacientes (LGPD — direito ao esquecimento)."
+    "subtitle": "Gerencie solicitações de exclusão de dados dos pacientes (LGPD — direito ao esquecimento).",
+    "status": {
+      "pending": "Pendente",
+      "in_review": "Em análise",
+      "completed": "Concluída",
+      "rejected": "Rejeitada"
+    },
+    "empty": "Nenhuma solicitação de exclusão recebida.",
+    "unknownPatient": "Paciente desconhecido",
+    "requestedAt": "Solicitado em {date}",
+    "reviewedAt": "Revisado em {date}",
+    "review": "Analisar",
+    "complete": "Concluir",
+    "reject": "Rejeitar"
   },
   "security": {
     "title": "Segurança",
@@ -583,7 +635,10 @@
     "saving": "Salvando...",
     "save": "Salvar configuração",
     "savedMsg": "✓ Configuração salva. Bot ativo.",
-    "errSave": "Erro ao salvar. Tente novamente."
+    "errSave": "Erro ao salvar. Tente novamente.",
+    "metaPhoneIdPlaceholder": "ex: 1031933676681061",
+    "metaInstagramIdPlaceholder": "ex: 17841400000000000",
+    "verifyTokenSample": "seu_token_verificacao"
   },
   "voice": {
     "back": "Configurações",

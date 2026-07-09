@@ -4,39 +4,35 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Loader2, CreditCard, AlertCircle, CheckCircle2, PauseCircle, XCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import type { PatientSubscriptionRow } from "@/app/api/subscriptions/route";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { formatMoney } from "@/lib/finance-utils";
 import { useFormatMoney } from "@/components/currency-provider";
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-
-function formatDate(iso: string | null) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" });
-}
-
-const STATUS_CONFIG: Record<
+const STATUS_STYLE: Record<
   string,
-  { label: string; icon: React.ReactElement; bg: string; text: string }
+  { icon: React.ReactElement; bg: string; text: string }
 > = {
-  active:    { label: "Ativo",     icon: <CheckCircle2 className="h-3.5 w-3.5" />, bg: "#F0FAF5", text: "#0F6E56" },
-  trialing:  { label: "Teste",     icon: <Clock className="h-3.5 w-3.5" />,        bg: "#EFF6FF", text: "#3B82F6" },
-  past_due:  { label: "Em atraso", icon: <AlertCircle className="h-3.5 w-3.5" />,  bg: "#FFFBEB", text: "#D97706" },
-  paused:    { label: "Pausado",   icon: <PauseCircle className="h-3.5 w-3.5" />,  bg: "#F9FAFB", text: "#6B7280" },
-  canceled:  { label: "Cancelado", icon: <XCircle className="h-3.5 w-3.5" />,      bg: "#FEF2F2", text: "#DC2626" },
-  incomplete: { label: "Incompleto", icon: <AlertCircle className="h-3.5 w-3.5" />, bg: "#FFFBEB", text: "#D97706" },
+  active:     { icon: <CheckCircle2 className="h-3.5 w-3.5" />, bg: "#F0FAF5", text: "#0F6E56" },
+  trialing:   { icon: <Clock className="h-3.5 w-3.5" />,        bg: "#EFF6FF", text: "#3B82F6" },
+  past_due:   { icon: <AlertCircle className="h-3.5 w-3.5" />,  bg: "#FFFBEB", text: "#D97706" },
+  paused:     { icon: <PauseCircle className="h-3.5 w-3.5" />,  bg: "#F9FAFB", text: "#6B7280" },
+  canceled:   { icon: <XCircle className="h-3.5 w-3.5" />,      bg: "#FEF2F2", text: "#DC2626" },
+  incomplete: { icon: <AlertCircle className="h-3.5 w-3.5" />,  bg: "#FFFBEB", text: "#D97706" },
 };
 
 function StatusBadge({ status }: { status: string }) {
-  const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.incomplete;
+  const t = useTranslations("finance.subscriptions.status");
+  const key = STATUS_STYLE[status] ? status : "incomplete";
+  const cfg = STATUS_STYLE[key];
   return (
     <span
       className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-[.1em] px-2 py-1 rounded-full"
       style={{ backgroundColor: cfg.bg, color: cfg.text }}
     >
       {cfg.icon}
-      {cfg.label}
+      {t(key as "active" | "trialing" | "past_due" | "paused" | "canceled" | "incomplete")}
     </span>
   );
 }
@@ -46,12 +42,18 @@ function StatusBadge({ status }: { status: string }) {
 type Stats = { total: number; activeCount: number; pastDueCount: number; mrr: number };
 
 export function AssinaturasClient() {
+  const t = useTranslations("finance.subscriptions");
   const money = useFormatMoney();
   const locale = useLocale();
   const [rows, setRows] = useState<PatientSubscriptionRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "active" | "past_due" | "canceled">("all");
+
+  const formatDate = useCallback((iso: string | null) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  }, [locale]);
 
   const fetchData = useCallback(async () => {
     const url = filter === "all" ? "/api/subscriptions" : `/api/subscriptions?status=${filter}`;
@@ -72,10 +74,10 @@ export function AssinaturasClient() {
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Total",          value: String(stats.total),       icon: CreditCard, color: "#0F1A2E" },
-            { label: "Ativos",         value: String(stats.activeCount), icon: CheckCircle2, color: "#0F6E56" },
-            { label: "Em atraso",      value: String(stats.pastDueCount), icon: AlertCircle, color: "#D97706" },
-            { label: "MRR estimado",   value: money(stats.mrr),      icon: CreditCard, color: "#3B82F6" },
+            { label: t("kpiTotal"),   value: String(stats.total),        icon: CreditCard,   color: "#0F1A2E" },
+            { label: t("kpiActive"),  value: String(stats.activeCount),  icon: CheckCircle2, color: "#0F6E56" },
+            { label: t("kpiPastDue"), value: String(stats.pastDueCount), icon: AlertCircle,  color: "#D97706" },
+            { label: t("kpiMrr"),     value: money(stats.mrr),           icon: CreditCard,   color: "#3B82F6" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-2xl border border-black/[.07] p-4">
               <div className="flex items-center justify-between mb-2">
@@ -101,7 +103,7 @@ export function AssinaturasClient() {
                 : "bg-white border border-black/[.10] text-black/60 hover:bg-black/[.04]",
             ].join(" ")}
           >
-            {{ all: "Todos", active: "Ativos", past_due: "Em atraso", canceled: "Cancelados" }[f]}
+            {{ all: t("filterAll"), active: t("filterActive"), past_due: t("filterPastDue"), canceled: t("filterCanceled") }[f]}
           </button>
         ))}
       </div>
@@ -115,24 +117,26 @@ export function AssinaturasClient() {
         ) : rows.length === 0 ? (
           <div className="text-center py-14">
             <CreditCard className="h-8 w-8 text-black/15 mx-auto mb-3" />
-            <p className="text-[13px] text-black/35">Nenhuma assinatura encontrada.</p>
+            <p className="text-[13px] text-black/35">{t("empty")}</p>
             <p className="text-[12px] text-black/25 mt-1">
-              Crie ofertas do tipo &quot;Plano Mensal&quot; em{" "}
-              <Link href="/monetization" className="underline hover:text-[#0F6E56]">
-                Planos e pacotes
-              </Link>
-              {" "}para começar.
+              {t.rich("emptyHint", {
+                link: (chunks) => (
+                  <Link href="/monetization" className="underline hover:text-[#0F6E56]">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           </div>
         ) : (
           <>
             {/* Desktop header */}
             <div className="hidden md:grid grid-cols-[2fr_2fr_1fr_1fr_1fr] gap-4 px-5 py-3 border-b border-black/[.05] text-[10px] font-semibold uppercase tracking-[.12em] text-black/30">
-              <span>Paciente</span>
-              <span>Plano</span>
-              <span>Valor</span>
-              <span>Renova em</span>
-              <span>Status</span>
+              <span>{t("colPatient")}</span>
+              <span>{t("colPlan")}</span>
+              <span>{t("colAmount")}</span>
+              <span>{t("colRenews")}</span>
+              <span>{t("colStatus")}</span>
             </div>
 
             <div className="divide-y divide-black/[.04]">
@@ -155,8 +159,8 @@ export function AssinaturasClient() {
                   <div>
                     <p className="text-[12px] text-[#0F1A2E]">{row.planName}</p>
                     <p className="text-[11px] text-black/35">
-                      {row.billingInterval === "yearly" ? "Anual" : "Mensal"}
-                      {row.sessionsPerCycle > 0 && ` · ${row.sessionsPerCycle} sessões/ciclo`}
+                      {row.billingInterval === "yearly" ? t("yearly") : t("monthly")}
+                      {row.sessionsPerCycle > 0 && ` · ${t("sessionsPerCycle", { count: row.sessionsPerCycle })}`}
                     </p>
                   </div>
 
@@ -190,7 +194,7 @@ export function AssinaturasClient() {
 
       {/* Tip */}
       <p className="text-[11px] text-black/25 text-center">
-        Assinaturas gerenciadas via Stripe. Cancelamentos e reembolsos devem ser feitos no painel do Stripe.
+        {t("footer")}
       </p>
     </div>
   );

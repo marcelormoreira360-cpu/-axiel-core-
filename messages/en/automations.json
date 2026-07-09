@@ -151,5 +151,22 @@
     "emptyTitle": "No follow-ups yet",
     "emptyText": "No reminders created. Create one so the patient always knows the next step.",
     "emptyAction": "Create reminder"
+  },
+  "commLog": {
+    "empty": "No messages sent.",
+    "useCases": {
+      "appointment_reminder": "Reminder",
+      "appointment_confirmation": "Confirmation",
+      "follow_up": "Follow-up",
+      "lead_nurturing": "Lead",
+      "package_low": "Package"
+    },
+    "sent": "Sent",
+    "failed": "Failed",
+    "queued": "Queued",
+    "now": "now",
+    "minutesShort": "{n}min",
+    "hoursShort": "{n}h",
+    "daysShort": "{n}d"
   }
 }

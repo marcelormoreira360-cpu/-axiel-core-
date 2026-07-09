@@ -148,5 +148,18 @@
     "emailError": "Erro ao enviar",
     "done": "Concluído",
     "waMessage": "Olá! Reservei um horário para você. Confirme e complete seu cadastro aqui: {url}"
+  },
+  "reminder": {
+    "back": "Agenda",
+    "eyebrow": "LEMBRETE",
+    "title": "Enviar lembrete de consulta",
+    "subtitle": "Escolha o canal e personalize a mensagem antes de enviar.",
+    "patientLabel": "Paciente",
+    "patientFallback": "Paciente",
+    "minutes": "{count} minutos",
+    "emailTitle": "Lembrete por e-mail",
+    "emailHelper": "Ideal para detalhes completos.",
+    "smsTitle": "Lembrete por SMS",
+    "smsHelper": "Rápido e direto."
   }
 }

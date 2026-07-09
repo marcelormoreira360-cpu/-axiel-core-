@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, BrainCircuit, Shield, CalendarClock, UserRoundSearch, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -18,20 +19,20 @@ type NotifKey = keyof NotificationCounts;
 const ITEMS: Array<{
   key: NotifKey;
   href: string;
-  label: (n: number) => string;
   dot: string;
   Icon: React.ElementType;
 }> = [
-  { key: "insights",  href: "/actions",        label: (n) => `${n} insight${n > 1 ? "s" : ""} aguardando review`,                            dot: "bg-[#0F6E56]",  Icon: BrainCircuit },
-  { key: "lgpd",      href: "/settings/lgpd",  label: (n) => `${n} solicitaç${n > 1 ? "ões" : "ão"} LGPD pendente${n > 1 ? "s" : ""}`,       dot: "bg-red-500",    Icon: Shield },
-  { key: "followups", href: "/patients",       label: (n) => `${n} follow-up${n > 1 ? "s" : ""} vencido${n > 1 ? "s" : ""}`,                 dot: "bg-amber-400",  Icon: CalendarClock },
-  { key: "leads",     href: "/leads",          label: (n) => `${n} novo${n > 1 ? "s" : ""} lead${n > 1 ? "s" : ""} sem revisão`,              dot: "bg-indigo-400", Icon: UserRoundSearch },
-  { key: "forms",     href: "/forms",          label: (n) => `${n} formulário${n > 1 ? "s" : ""} aguardando resposta`,                        dot: "bg-sky-400",    Icon: ClipboardCheck },
+  { key: "insights",  href: "/actions",        dot: "bg-[#0F6E56]",  Icon: BrainCircuit },
+  { key: "lgpd",      href: "/settings/lgpd",  dot: "bg-red-500",    Icon: Shield },
+  { key: "followups", href: "/patients",       dot: "bg-amber-400",  Icon: CalendarClock },
+  { key: "leads",     href: "/leads",          dot: "bg-indigo-400", Icon: UserRoundSearch },
+  { key: "forms",     href: "/forms",          dot: "bg-sky-400",    Icon: ClipboardCheck },
 ];
 
 const EMPTY: NotificationCounts = { insights: 0, lgpd: 0, followups: 0, leads: 0, forms: 0 };
 
 export function NotificationBell() {
+  const t = useTranslations("nav.notifications");
   const [counts, setCounts] = useState<NotificationCounts>(EMPTY);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -110,7 +111,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="relative flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/[.06] dark:hover:bg-white/[.08] transition-colors"
-        aria-label="Notificações"
+        aria-label={t("aria")}
       >
         <Bell className="w-[15px] h-[15px] text-[#0F1A2E] dark:text-[#E8E6E2]" strokeWidth={1.8} />
         {total > 0 && (
@@ -123,16 +124,16 @@ export function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#0B0F17] border border-black/[.07] dark:border-white/[.08] rounded-[12px] shadow-lg overflow-hidden min-w-[240px]">
           <div className="px-[14px] py-[10px] border-b border-black/[.05] dark:border-white/[.06]">
-            <p className="text-[11px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">Notificações</p>
+            <p className="text-[11px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</p>
             {total > 0 && (
               <p className="text-[10px] text-[#A09E98] mt-[1px]">
-                {total} ite{total === 1 ? "m" : "ns"} requer{total === 1 ? "" : "em"} atenção
+                {t("attention", { count: total })}
               </p>
             )}
           </div>
           <div className="py-[6px]">
             {total === 0 ? (
-              <p className="px-[14px] py-[10px] text-[12px] text-[#A09E98] dark:text-[#6B6A66]">Tudo em ordem por aqui ✓</p>
+              <p className="px-[14px] py-[10px] text-[12px] text-[#A09E98] dark:text-[#6B6A66]">{t("allClear")}</p>
             ) : (
               ITEMS.filter((item) => counts[item.key] > 0).map((item) => (
                 <Link
@@ -144,7 +145,7 @@ export function NotificationBell() {
                   <div className={`w-[6px] h-[6px] rounded-full shrink-0 ${item.dot}`} />
                   <item.Icon className="w-[13px] h-[13px] text-[#6B6A66] dark:text-[#A09E98] shrink-0" />
                   <span className="text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] leading-tight">
-                    {item.label(counts[item.key])}
+                    {t(item.key, { count: counts[item.key] })}
                   </span>
                 </Link>
               ))

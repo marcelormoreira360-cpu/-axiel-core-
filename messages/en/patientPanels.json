@@ -358,5 +358,58 @@
       "br_formula": "Formula (BR)",
       "us_link": "Links (US)"
     }
+  },
+  "assessmentProgress": {
+    "title": "Questionnaires",
+    "emptySubtitle": "No questionnaires answered yet.",
+    "count": "{count, plural, one {# questionnaire} other {# questionnaires}}",
+    "fill": "Fill out",
+    "sent": "Sent!",
+    "pts": "{delta} pts",
+    "totalPts": "· {n} pts",
+    "flaggedMax": "{count, plural, one {# item at maximum} other {# items at maximum}}",
+    "progressMulti": "{baseline}% → {latest}% · {count} responses",
+    "progressOne": "{latest}% · 1 response",
+    "progressNone": "no responses",
+    "resend": "Reassess"
+  },
+  "treatmentFollowup": {
+    "title": "Treatment follow-up",
+    "newSession": "New session",
+    "empty": "No sessions yet. Each session records notes, vitals, and the patient's progress.",
+    "sessionFallback": "Session",
+    "noNote": "No note: open to record.",
+    "status": {
+      "pending": "Pending",
+      "scheduled": "Scheduled",
+      "confirmed": "Confirmed",
+      "completed": "Completed",
+      "no_show": "No-show",
+      "cancelled": "Cancelled"
+    }
+  },
+  "evolution": {
+    "statusHigh": "High",
+    "statusLow": "Low",
+    "statusNormal": "Normal",
+    "refRange": "Reference range: {min}–{max} {unit}",
+    "scorePct": "Score %",
+    "tooltipScore": "{val}% ({total}/{max} pts)",
+    "legendModerate": "moderate ≥40%",
+    "legendHigh": "elevated ≥70%",
+    "vitals": {
+      "dor": "Pain",
+      "energia": "Energy",
+      "humor": "Mood",
+      "sono": "Sleep"
+    },
+    "vitalsTitle": "Vitals per session",
+    "vitalsSubtitle": "Patient-reported · Scale 1–5",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
+    "vitalsHint": "Click the legend to show/hide metrics. Pain: 1=no pain, 5=intense. Others: 1=poor, 5=great.",
+    "tabVitals": "Vitals · {count}",
+    "tabBiomarkers": "Biomarkers · {count}",
+    "tabAssessments": "Forms · {count}",
+    "all": "All"
   }
 }

@@ -103,7 +103,7 @@ export function OnboardingFlow() {
       {/* Progress bar */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[16px]">
         <div className="flex items-center justify-between mb-[10px]">
-          <span className="text-[11px] font-medium text-[#A09E98]">Passo {step + 1} de {STEPS.length}</span>
+          <span className="text-[11px] font-medium text-[#A09E98]">{t("progress", { current: step + 1, total: STEPS.length })}</span>
           <span className="text-[11px] font-medium text-[#A09E98]">{Math.round(progress)}%</span>
         </div>
         <div className="h-[4px] rounded-full bg-[#F4F3EF] overflow-hidden">
@@ -142,13 +142,13 @@ export function OnboardingFlow() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
-                Primeiro passo
+                {t("stepProfile.eyebrow")}
               </p>
               <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
-                Qual é o perfil da sua clínica?
+                {t("stepProfile.title")}
               </h2>
               <p className="text-[13px] text-[#A09E98] leading-relaxed">
-                O AXIEL vai configurar os tipos de sessão, formulários e terminologia automaticamente para você.
+                {t("stepProfile.subtitle")}
               </p>
             </div>
 
@@ -201,45 +201,45 @@ export function OnboardingFlow() {
               {selectedProfile.icon}
             </div>
             <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
-              Perfil: {selectedProfile.label}
+              {t("stepName.eyebrow", { label: selectedProfile.label })}
             </p>
             <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
-              Como se chama sua clínica?
+              {t("stepName.title")}
             </h2>
             <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
-              Esse é o nome que vai aparecer para sua equipe dentro do AXIEL.
+              {t("stepName.subtitle")}
             </p>
             <input
               type="text"
               value={clinicName}
               onChange={(e) => setClinicName(e.target.value)}
-              placeholder={`Ex: ${selectedProfile.label} Centro Clínico`}
+              placeholder={t("stepName.namePlaceholder", { label: selectedProfile.label })}
               maxLength={80}
               className="w-full px-[16px] py-[14px] rounded-[10px] border border-black/[.10] text-[18px] font-medium text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
             />
             {clinicName.trim().length > 0 && clinicName.trim().length < 2 && (
-              <p className="mt-2 text-[12px] text-red-500">Nome muito curto — mínimo 2 caracteres.</p>
+              <p className="mt-2 text-[12px] text-red-500">{t("stepName.nameTooShort")}</p>
             )}
 
             {/* Logo (optional) */}
             <div className="mt-[20px]">
               <label className="block text-sm font-medium text-[#0F1A2E] mb-2">
-                Logo da clínica <span className="text-black/30 font-normal">(opcional)</span>
+                {t("stepName.logoLabel")} <span className="text-black/30 font-normal">{t("stepName.logoOptional")}</span>
               </label>
               <div
                 onClick={() => logoInputRef.current?.click()}
                 className="flex items-center gap-3 cursor-pointer border border-dashed border-black/20 hover:border-[#0F6E56] rounded-xl p-3 transition"
               >
                 {logoPreview ? (
-                  <img src={logoPreview} alt="Logo preview" className="h-10 w-10 rounded-lg object-cover" />
+                  <img src={logoPreview} alt={t("stepName.logoPreviewAlt")} className="h-10 w-10 rounded-lg object-cover" />
                 ) : (
                   <div className="h-10 w-10 rounded-lg bg-[#F4F3EF] flex items-center justify-center shrink-0">
                     <Upload className="h-4 w-4 text-[#A09E98]" />
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-[#0F1A2E]">{logoPreview ? "Trocar logo" : "Enviar logo"}</p>
-                  <p className="text-xs text-black/40">PNG, JPG · máx 2 MB</p>
+                  <p className="text-sm text-[#0F1A2E]">{logoPreview ? t("stepName.logoChange") : t("stepName.logoUpload")}</p>
+                  <p className="text-xs text-black/40">{t("stepName.logoHint")}</p>
                 </div>
               </div>
               <input
@@ -264,13 +264,13 @@ export function OnboardingFlow() {
               <Clock className="h-5 w-5" />
             </div>
             <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
-              Configuração de agenda
+              {t("stepHours.eyebrow")}
             </p>
             <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
-              Qual é o horário de funcionamento?
+              {t("stepHours.title")}
             </h2>
             <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
-              Você pode ajustar detalhadamente depois nas Configurações.
+              {t("stepHours.subtitle")}
             </p>
             <div className="space-y-[8px]">
               {HOURS_OPTIONS.map((opt) => (
@@ -316,19 +316,19 @@ export function OnboardingFlow() {
                 <UserPlus className="h-5 w-5" />
               </div>
               <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[6px]">
-                Último passo (opcional)
+                {t("stepTeam.eyebrow")}
               </p>
               <h2 className="text-[28px] font-semibold tracking-[-0.03em] text-[#0F1A2E] mb-[6px]">
-                Convidar um colega de equipe
+                {t("stepTeam.title")}
               </h2>
               <p className="text-[13px] text-[#A09E98] leading-relaxed mb-[20px]">
-                Pule essa etapa se preferir adicionar a equipe depois.
+                {t("stepTeam.subtitle")}
               </p>
               <input
                 type="email"
                 value={staffEmail}
                 onChange={(e) => setStaffEmail(e.target.value)}
-                placeholder="colega@suaclinica.com.br"
+                placeholder={t("stepTeam.emailPlaceholder")}
                 className={[
                   "w-full px-[16px] py-[14px] rounded-[10px] border text-[16px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none transition",
                   isSelfInvite ? "border-amber-400 focus:border-amber-500" : "border-black/[.10] focus:border-[#0F6E56]",
@@ -338,8 +338,7 @@ export function OnboardingFlow() {
                 <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
                   <AlertCircle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                   <p className="text-[12px] text-amber-700">
-                    Esse é o seu próprio e-mail. O convite será enviado para um colega diferente.
-                    Você já é o proprietário da clínica.
+                    {t("stepTeam.selfInviteWarning")}
                   </p>
                 </div>
               )}
@@ -348,13 +347,13 @@ export function OnboardingFlow() {
             {/* Summary card */}
             <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] space-y-[10px]">
               <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">
-                O AXIEL vai criar automaticamente
+                {t("summary.title")}
               </p>
               {[
-                `Tipos de sessão para ${selectedProfile.label}`,
-                "Formulário de anamnese personalizado",
-                "Paciente e lead de demonstração",
-                "Agenda com os horários selecionados",
+                t("summary.sessionTypes", { label: selectedProfile.label }),
+                t("summary.anamnesisForm"),
+                t("summary.demoData"),
+                t("summary.schedule"),
               ].map((item) => (
                 <div key={item} className="flex items-center gap-[8px]">
                   <CheckCircle2 className="h-3.5 w-3.5 text-[#0F6E56] shrink-0" />
@@ -384,15 +383,18 @@ export function OnboardingFlow() {
                   </div>
                 </div>
                 <p className="text-[12px] text-[#6B6A66] leading-relaxed">
-                  Li e aceito os{" "}
-                  <a href="/termos" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
-                    Termos de Uso
-                  </a>{" "}
-                  e a{" "}
-                  <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
-                    Política de Privacidade
-                  </a>
-                  {" "}do AXIEL Core, incluindo o tratamento de dados de saúde conforme a LGPD (Lei 13.709/2018).
+                  {t.rich("terms", {
+                    terms: (chunks) => (
+                      <a href="/termos" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
+                        {chunks}
+                      </a>
+                    ),
+                    privacy: (chunks) => (
+                      <a href="/privacidade" target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] hover:underline font-medium">
+                        {chunks}
+                      </a>
+                    ),
+                  })}
                 </p>
               </label>
             </div>
@@ -411,7 +413,7 @@ export function OnboardingFlow() {
         {success && (
           <div className="mt-[12px] flex items-center gap-3 rounded-[12px] border border-green-200 bg-green-50 px-[16px] py-[14px]">
             <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
-            <p className="text-[13px] text-green-700">Clínica criada! Redirecionando…</p>
+            <p className="text-[13px] text-green-700">{t("successCreated")}</p>
           </div>
         )}
 
@@ -423,7 +425,7 @@ export function OnboardingFlow() {
             disabled={step === 0 || isPending || !!success}
             className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] disabled:opacity-30 transition"
           >
-            <ArrowLeft className="h-3.5 w-3.5" /> Voltar
+            <ArrowLeft className="h-3.5 w-3.5" /> {t("back")}
           </button>
 
           {step < STEPS.length - 1 ? (
@@ -431,10 +433,10 @@ export function OnboardingFlow() {
               type="button"
               onClick={() => setStep((s) => s + 1)}
               disabled={isPending || !canAdvance}
-              title={!canAdvance ? "Preencha o nome da clínica para continuar" : undefined}
+              title={!canAdvance ? t("fillNameToContinue") : undefined}
               className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] rounded-[8px] px-[16px] py-[9px] transition disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              Continuar <ArrowRight className="h-3.5 w-3.5" />
+              {t("continue")} <ArrowRight className="h-3.5 w-3.5" />
             </button>
           ) : (
             <button
@@ -445,10 +447,10 @@ export function OnboardingFlow() {
               {isPending || !!success ? (
                 <>
                   <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  {success ? "Redirecionando…" : "Criando clínica…"}
+                  {success ? t("redirecting") : t("creating")}
                 </>
               ) : (
-                <>Criar minha clínica <CheckCircle2 className="h-3.5 w-3.5" /></>
+                <>{t("createClinic")} <CheckCircle2 className="h-3.5 w-3.5" /></>
               )}
             </button>
           )}

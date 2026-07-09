@@ -21,5 +21,41 @@
     },
     "manualHint": "Sending a manual reply keeps Clara silent in this conversation for 24h.",
     "legendHuman": "With the team"
+  },
+  "page": {
+    "eyebrow": "Front desk",
+    "title": "WhatsApp Bot",
+    "subtitle": "Conversation monitor and AI assistant",
+    "configure": "Configure bot",
+    "kpiBot": "Bot status",
+    "botActive": "Active",
+    "botInactive": "Inactive",
+    "botVia": "via Twilio + GPT-4o-mini",
+    "kpiConversations": "Conversations",
+    "newToday": "+{count} today",
+    "noneToday": "no new ones today",
+    "kpiMessages": "Messages",
+    "messagesSub": "total in history",
+    "kpiOperator": "Operator",
+    "operatorNone": "bot replying to everyone",
+    "operatorSome": "conversations handled by humans",
+    "twilioConfigTitle": "Twilio setup",
+    "twilioConfigDesc": "Set the webhook below in the Twilio Console → WhatsApp Sandbox or purchased number:",
+    "number": "Number:",
+    "serviceErrorTitle": "⚠️ Service not configured",
+    "serviceErrorDesc": "Check that the <code>SUPABASE_SERVICE_ROLE_KEY</code> environment variables are configured in Vercel.",
+    "loadError": "Error loading conversations",
+    "convCount": "{count, plural, one {1 conversation} other {# conversations}}",
+    "emptyTitle": "No conversations yet.",
+    "emptyHint": "Set up the webhook in Twilio and send a test message.",
+    "patientBadge": "Patient",
+    "noMessages": "No messages",
+    "msgCount": "{count} msg",
+    "timeAgo": {
+      "now": "just now",
+      "minutes": "{count}min ago",
+      "hours": "{count}h ago",
+      "days": "{count}d ago"
+    }
   }
 }

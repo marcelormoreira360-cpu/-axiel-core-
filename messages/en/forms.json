@@ -146,5 +146,26 @@
     "intake": "Intake (1st booking)",
     "session": "Per session",
     "portal": "Patient portal"
+  },
+  "patientList": {
+    "title": "Forms",
+    "count": "{count, plural, one {1 response recorded} other {# responses recorded}}",
+    "newForm": "New form",
+    "emptyTitle": "No forms filled out yet.",
+    "emptyHint": "Click “New form” to apply a questionnaire.",
+    "fallbackName": "Form",
+    "points": "{score}/{max} pts",
+    "timeAgo": {
+      "today": "today",
+      "yesterday": "yesterday",
+      "days": "{count}d ago",
+      "months": "{count, plural, one {1 month ago} other {# months ago}}"
+    }
+  },
+  "response": {
+    "filledAt": "Filled out on {date}",
+    "totalScore": "Total score",
+    "sectionScore": "Score by section",
+    "notes": "Notes"
   }
 }

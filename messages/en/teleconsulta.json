@@ -71,5 +71,34 @@
     "transcribing": "Transcribing…",
     "summarizing": "Generating AI summary…",
     "end": "End"
+  },
+  "zoomRecordings": {
+    "title": "Zoom recordings",
+    "sync": "Sync",
+    "syncing": "Syncing...",
+    "syncError": "Error: {error}",
+    "syncNone": "No recordings available yet. Try again in a few minutes.",
+    "syncDone": "{count, plural, one {# recording synced} other {# recordings synced}}.",
+    "empty": "No recordings available. The recording appears a few minutes after the session ends.",
+    "emptyHint": "Click \"Sync\" to fetch from Zoom.",
+    "watch": "Watch",
+    "download": "Download",
+    "file": "File",
+    "types": {
+      "MP4": "Video",
+      "M4A": "Audio",
+      "TRANSCRIPT": "Transcript",
+      "CHAT": "Chat",
+      "TIMELINE": "Timeline"
+    }
+  },
+  "zoomBanner": {
+    "title": "Online Session · Zoom",
+    "dateAt": "{date} at {time} · {name}",
+    "soon": "Starting soon",
+    "joinAsHost": "Join as host",
+    "patientLink": "Patient link:",
+    "copied": "Copied",
+    "copy": "Copy"
   }
 }

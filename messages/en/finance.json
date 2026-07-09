@@ -155,7 +155,12 @@
     "kpiIssued": "Issued (total)",
     "kpiTotal": "Total amount issued",
     "kpiProcessing": "Processing",
-    "status": { "processing": "Processing", "issued": "Issued", "cancelled": "Cancelled", "error": "Error" },
+    "status": {
+      "processing": "Processing",
+      "issued": "Issued",
+      "cancelled": "Cancelled",
+      "error": "Error"
+    },
     "emit": "Issue invoice",
     "issuedTitle": "Issued invoices",
     "empty": "No invoices issued yet.",
@@ -223,5 +228,52 @@
     "note": "Pix and Boleto may take a few moments to confirm. You can close this page now.",
     "cancelled": "Payment not completed",
     "cancelledNote": "The payment was cancelled. You can try again using the link sent by the clinic."
+  },
+  "subscriptions": {
+    "kpiTotal": "Total",
+    "kpiActive": "Active",
+    "kpiPastDue": "Past due",
+    "kpiMrr": "Estimated MRR",
+    "filterAll": "All",
+    "filterActive": "Active",
+    "filterPastDue": "Past due",
+    "filterCanceled": "Canceled",
+    "status": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Past due",
+      "paused": "Paused",
+      "canceled": "Canceled",
+      "incomplete": "Incomplete"
+    },
+    "empty": "No subscriptions found.",
+    "emptyHint": "Create \"Monthly plan\" offers in <link>Plans and packages</link> to get started.",
+    "colPatient": "Patient",
+    "colPlan": "Plan",
+    "colAmount": "Amount",
+    "colRenews": "Renews on",
+    "colStatus": "Status",
+    "yearly": "Yearly",
+    "monthly": "Monthly",
+    "sessionsPerCycle": "{count} sessions/cycle",
+    "footer": "Subscriptions are managed via Stripe. Cancellations and refunds must be handled in the Stripe dashboard."
+  },
+  "orders": {
+    "patientLabel": "Patient (optional)",
+    "walkIn": "Walk-in sale (no patient)",
+    "productsLabel": "Products",
+    "selectProduct": "Select a product…",
+    "add": "Add",
+    "each": "{price} each",
+    "taxLabel": "Tax/shipping (optional)",
+    "notesLabel": "Notes",
+    "notesPlaceholder": "Optional",
+    "subtotal": "Subtotal",
+    "taxLine": "Tax/shipping",
+    "total": "Total",
+    "cancel": "Cancel",
+    "creating": "Creating…",
+    "create": "Create order",
+    "errNoProducts": "Add at least one product."
   }
 }

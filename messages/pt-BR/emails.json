@@ -128,5 +128,22 @@
     "outro": "Qualquer dúvida sobre o conteúdo, fale com a sua clínica. Estamos aqui para acompanhar você.",
     "pushTitle": "Seu relatório está pronto",
     "pushBody": "Sua clínica enviou o seu relatório do Mapa Bio³ por e-mail."
+  },
+  "communications": {
+    "eyebrow": "Clínica",
+    "title": "Comunicações",
+    "subtitle": "Email e SMS para pacientes e leads",
+    "kpiSent": "Enviadas",
+    "kpiSentSub": "mensagens no histórico",
+    "kpiEmail": "Email",
+    "kpiEmailSub": "templates ativos",
+    "kpiSms": "SMS",
+    "kpiSmsSub": "templates ativos",
+    "kpiFailed": "Falhas",
+    "kpiFailedSub": "envios com erro",
+    "templatesTitle": "Templates de mensagem",
+    "installDefaults": "Criar templates padrão",
+    "emptyTemplates": "Nenhum template ainda.",
+    "historyTitle": "Histórico de envios"
   }
 }

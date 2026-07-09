@@ -148,5 +148,18 @@
     "emailError": "Send failed",
     "done": "Done",
     "waMessage": "Hi! I've reserved a time for you. Confirm and complete your registration here: {url}"
+  },
+  "reminder": {
+    "back": "Schedule",
+    "eyebrow": "REMINDER",
+    "title": "Send appointment reminder",
+    "subtitle": "Choose the channel and personalize the message before sending.",
+    "patientLabel": "Patient",
+    "patientFallback": "Patient",
+    "minutes": "{count} minutes",
+    "emailTitle": "Email reminder",
+    "emailHelper": "Ideal for full details.",
+    "smsTitle": "SMS reminder",
+    "smsHelper": "Quick and direct."
   }
 }

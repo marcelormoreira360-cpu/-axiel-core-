@@ -193,5 +193,22 @@
     "transfer": "Transferência",
     "insurance": "Plano de saúde",
     "other": "Outro"
+  },
+  "prescriptions": {
+    "pageTitle": "Receituário: {name}",
+    "back": "← Voltar ao perfil",
+    "clinicFallback": "Clínica",
+    "taglineFallback": "Medicina Integrativa",
+    "docTitle": "Receituário",
+    "dob": "Data de nascimento",
+    "yearsSuffix": "{age} anos",
+    "phone": "Telefone",
+    "medications": "Medicamentos",
+    "supplements": "Suplementos e Fitoterápicos",
+    "since": "desde {date}",
+    "empty": "Nenhum item prescrito ativo.",
+    "professionalFallback": "Profissional de Saúde",
+    "generatedBy": "Gerado pelo AXIEL Core · {clinic}",
+    "validity": "Válido somente com assinatura do profissional"
   }
 }

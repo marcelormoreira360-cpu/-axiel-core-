@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import { Search, X, User, CalendarDays, Users, ArrowRight } from "lucide-react";
 
 /* ── Types ─────────────────────────────────────────────── */
@@ -42,8 +43,8 @@ export function openGlobalSearch() {
   window.dispatchEvent(new CustomEvent(OPEN_EVENT));
 }
 
-function ptDateTime(iso: string) {
-  return new Date(iso).toLocaleString("pt-BR", {
+function fmtDateTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleString(locale, {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -51,12 +52,7 @@ function ptDateTime(iso: string) {
   });
 }
 
-const stageLabel: Record<string, string> = {
-  new_lead: "Novo",
-  contacted: "Contactado",
-  scheduled: "Agendado",
-  converted_to_patient: "Convertido",
-};
+const STAGE_KEYS = new Set(["new_lead", "contacted", "scheduled", "converted_to_patient"]);
 
 type NavItem = { href: string };
 
@@ -72,14 +68,15 @@ function flatItems(results: SearchResults): NavItem[] {
 
 /* ── Sidebar trigger button (separate export) ────────────── */
 export function SearchTriggerButton() {
+  const t = useTranslations("nav.search");
   return (
     <button
       onClick={openGlobalSearch}
       className="w-full flex items-center gap-[8px] px-[10px] py-[7px] rounded-[8px] bg-white/60 dark:bg-white/[.05] border border-black/[.08] dark:border-white/[.07] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] hover:bg-white dark:hover:bg-white/[.08] transition text-[12px]"
-      aria-label="Abrir busca global"
+      aria-label={t("open")}
     >
       <Search className="h-3.5 w-3.5 shrink-0" />
-      <span className="flex-1 text-left truncate">Buscar…</span>
+      <span className="flex-1 text-left truncate">{t("trigger")}</span>
       <kbd className="hidden lg:inline-flex items-center text-[9px] font-medium bg-black/[.06] dark:bg-white/[.08] text-[#A09E98] rounded-[4px] px-[5px] py-[2px] leading-none">
         ⌘K
       </kbd>
@@ -89,6 +86,8 @@ export function SearchTriggerButton() {
 
 /* ── Modal (single global instance) ────────────────────── */
 export function GlobalSearch() {
+  const t = useTranslations("nav.search");
+  const locale = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -194,7 +193,7 @@ export function GlobalSearch() {
             ref={inputRef}
             value={query}
             onChange={handleInput}
-            placeholder="Buscar pacientes, sessões, leads…"
+            placeholder={t("placeholder")}
             className="flex-1 bg-transparent text-[15px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#C5C3BC] dark:placeholder:text-[#6B6A66] outline-none"
           />
           {loading && (
@@ -203,7 +202,7 @@ export function GlobalSearch() {
           <button
             onClick={() => setOpen(false)}
             className="shrink-0 text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
-            aria-label="Fechar"
+            aria-label={t("close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -214,9 +213,7 @@ export function GlobalSearch() {
           {!results && !loading && (
             <div className="px-[16px] py-[32px] text-center">
               <p className="text-[13px] text-[#A09E98]">
-                {query.length === 0
-                  ? "Digite para buscar pacientes, sessões ou leads."
-                  : "Continue digitando…"}
+                {query.length === 0 ? t("typeToSearch") : t("keepTyping")}
               </p>
             </div>
           )}
@@ -224,8 +221,12 @@ export function GlobalSearch() {
           {results && total === 0 && (
             <div className="px-[16px] py-[32px] text-center">
               <p className="text-[13px] text-[#A09E98]">
-                Nenhum resultado para{" "}
-                <span className="font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">“{query}”</span>
+                {t.rich("noResults", {
+                  query,
+                  q: (chunks) => (
+                    <span className="font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{chunks}</span>
+                  ),
+                })}
               </p>
             </div>
           )}
@@ -234,7 +235,7 @@ export function GlobalSearch() {
           {results && results.patients.length > 0 && (
             <section>
               <p className="px-[16px] pt-[12px] pb-[4px] text-[10px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">
-                Pacientes
+                {t("patients")}
               </p>
               {results.patients.map((p) => {
                 const idx = globalIdx++;
@@ -258,7 +259,7 @@ export function GlobalSearch() {
                     <span className={`text-[10px] px-[7px] py-[2px] rounded-full shrink-0 ${
                       p.status === "active" ? "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]" : "bg-[#F4F3EF] dark:bg-white/[.06] text-[#A09E98]"
                     }`}>
-                      {p.status === "active" ? "Ativo" : p.status === "inactive" ? "Inativo" : "Arquivado"}
+                      {p.status === "active" ? t("statusActive") : p.status === "inactive" ? t("statusInactive") : t("statusArchived")}
                     </span>
                     {active && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#A09E98]" />}
                   </button>
@@ -271,7 +272,7 @@ export function GlobalSearch() {
           {results && results.appointments.length > 0 && (
             <section>
               <p className="px-[16px] pt-[12px] pb-[4px] text-[10px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">
-                Sessões
+                {t("appointments")}
               </p>
               {results.appointments.map((a) => {
                 const idx = globalIdx++;
@@ -294,9 +295,9 @@ export function GlobalSearch() {
                         {a.patient_name}
                       </p>
                       <p className="text-[11px] text-[#A09E98] truncate">
-                        {ptDateTime(a.starts_at)}
+                        {fmtDateTime(a.starts_at, locale)}
                         {a.session_type_name ? ` · ${a.session_type_name}` : ""}
-                        {` · ${a.duration_minutes} min`}
+                        {` · ${t("durationMin", { n: a.duration_minutes })}`}
                       </p>
                     </div>
                     {active && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#A09E98]" />}
@@ -310,7 +311,7 @@ export function GlobalSearch() {
           {results && results.leads.length > 0 && (
             <section>
               <p className="px-[16px] pt-[12px] pb-[4px] text-[10px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">
-                Leads
+                {t("leads")}
               </p>
               {results.leads.map((l) => {
                 const idx = globalIdx++;
@@ -332,7 +333,7 @@ export function GlobalSearch() {
                       <p className="text-[11px] text-[#A09E98] truncate">{l.email ?? "—"}</p>
                     </div>
                     <span className="text-[10px] px-[7px] py-[2px] rounded-full shrink-0 bg-[#FEF3C7] text-[#92400E]">
-                      {stageLabel[l.stage] ?? l.stage}
+                      {STAGE_KEYS.has(l.stage) ? t(`stages.${l.stage}`) : l.stage}
                     </span>
                     {active && <ArrowRight className="h-3.5 w-3.5 shrink-0 text-[#A09E98]" />}
                   </button>
@@ -348,15 +349,15 @@ export function GlobalSearch() {
         <div className="flex items-center gap-[12px] px-[16px] py-[8px] border-t border-black/[.05] dark:border-white/[.05] bg-[#FAFAF8] dark:bg-[#0E1117]">
           <span className="flex items-center gap-[4px] text-[10px] text-[#C5C3BC]">
             <kbd className="bg-black/[.06] dark:bg-white/[.08] rounded-[3px] px-[4px] py-[1px] text-[9px]">↑↓</kbd>
-            navegar
+            {t("hintNavigate")}
           </span>
           <span className="flex items-center gap-[4px] text-[10px] text-[#C5C3BC]">
             <kbd className="bg-black/[.06] dark:bg-white/[.08] rounded-[3px] px-[4px] py-[1px] text-[9px]">↵</kbd>
-            abrir
+            {t("hintOpen")}
           </span>
           <span className="flex items-center gap-[4px] text-[10px] text-[#C5C3BC]">
             <kbd className="bg-black/[.06] dark:bg-white/[.08] rounded-[3px] px-[4px] py-[1px] text-[9px]">Esc</kbd>
-            fechar
+            {t("hintClose")}
           </span>
         </div>
       </div>

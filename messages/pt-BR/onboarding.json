@@ -89,9 +89,18 @@
       }
     },
     "hours": {
-      "weekdays": { "label": "Dias úteis", "summary": "Seg–Sex, 9h–17h" },
-      "extended": { "label": "Estendido", "summary": "Seg–Sex, 8h–18h" },
-      "flexible": { "label": "Flexível", "summary": "Seg–Sáb, horário simples" }
+      "weekdays": {
+        "label": "Dias úteis",
+        "summary": "Seg–Sex, 9h–17h"
+      },
+      "extended": {
+        "label": "Estendido",
+        "summary": "Seg–Sex, 8h–18h"
+      },
+      "flexible": {
+        "label": "Flexível",
+        "summary": "Seg–Sáb, horário simples"
+      }
     },
     "stepProfile": {
       "eyebrow": "Primeiro passo",
@@ -103,7 +112,7 @@
       "title": "Como se chama sua clínica?",
       "subtitle": "Esse é o nome que vai aparecer para sua equipe dentro do AXIEL.",
       "namePlaceholder": "Ex: {label} Centro Clínico",
-      "nameTooShort": "Nome muito curto — mínimo 2 caracteres.",
+      "nameTooShort": "Nome muito curto: mínimo 2 caracteres.",
       "logoLabel": "Logo da clínica",
       "logoOptional": "(opcional)",
       "logoPreviewAlt": "Prévia do logo",
@@ -138,5 +147,42 @@
     "createClinic": "Criar minha clínica",
     "redirecting": "Redirecionando…",
     "creating": "Criando clínica…"
+  },
+  "getStarted": {
+    "eyebrow": "Configuração",
+    "title": "Começar em minutos",
+    "subtitle": "Siga estes passos uma vez. Depois, a rotina fica em Home, Pacientes, Leads e Agenda.",
+    "progress": "{completed} de {total} passos concluídos",
+    "allDone": "Tudo pronto!",
+    "steps": {
+      "clinicProfile": {
+        "title": "Perfil da clínica",
+        "text": "Configure o nome, contato e tipo da sua clínica."
+      },
+      "hasPatient": {
+        "title": "Primeiro paciente",
+        "text": "Crie um cadastro de paciente."
+      },
+      "hasLead": {
+        "title": "Primeiro lead",
+        "text": "Inicie o pipeline de captação de pacientes."
+      },
+      "hasSession": {
+        "title": "Primeira sessão",
+        "text": "Agende uma sessão no calendário."
+      },
+      "hasForms": {
+        "title": "Formulários e questionários",
+        "text": "Personalize os formulários enviados aos seus pacientes."
+      }
+    }
+  },
+  "plan": {
+    "eyebrow": "Onboarding",
+    "title": "Escolha seu plano",
+    "subtitle": "Comece simples. Você pode mudar de plano a qualquer momento.",
+    "notSure": "Não tem certeza ainda?",
+    "continueTrial": "Continuar com 14 dias grátis →",
+    "noCard": "Sem cartão necessário. Escolha um plano depois em Configurações → Faturamento."
   }
 }
