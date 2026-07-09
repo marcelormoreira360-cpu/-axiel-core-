@@ -17,6 +17,8 @@ type PublicResult = {
   score_percentage: number;
   band: ScoreBand | null;
   safety_flags: SafetyFlags | null;
+  /** Ideação (PHQ-9) marcada: mostra recursos de crise no topo do resultado. */
+  crisis?: boolean;
 };
 
 const DEFAULT_SCALE_LABELS = [
@@ -212,6 +214,7 @@ export function PublicAssessmentForm({
             score_percentage?: number;
             band?: ScoreBand | null;
             safety_flags?: SafetyFlags | null;
+            crisis?: boolean;
           }),
       );
       if (!res.ok || !body?.ok) {
@@ -235,6 +238,7 @@ export function PublicAssessmentForm({
           score_percentage: body.score_percentage ?? percentage,
           band: body.band ?? null,
           safety_flags: body.safety_flags ?? null,
+          crisis: body.crisis ?? false,
         });
       }
       setDone(true);
@@ -262,6 +266,13 @@ export function PublicAssessmentForm({
       const flags = r.safety_flags;
       return (
         <div className="space-y-[16px]">
+          {/* CRISE (PHQ-9 ideação): recursos de apoio no TOPO, antes de tudo. */}
+          {r.crisis && (
+            <div className="rounded-[16px] px-[20px] py-[18px] bg-[#FEF3F2] border-2 border-[#FDA29B]">
+              <p className="text-[15px] font-semibold text-[#B42318] mb-[6px]">{t("result.crisisTitle")}</p>
+              <p className="text-[13px] text-[#7A271A] leading-relaxed whitespace-pre-line">{t("result.crisisBody")}</p>
+            </div>
+          )}
           {/* Cartão de resultado FINAL (copy Aval): snapshot + score + faixa. */}
           <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[28px]">
             <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[4px] text-center">

@@ -131,6 +131,10 @@ export async function POST(req: NextRequest) {
       // Para casar sentinela/humor por SEÇÃO + TEXTO, resolvemos os UUIDs das
       // respostas nos títulos/textos do template (o front só manda IDs).
       let safetyFlags: { showA: boolean; showB: boolean; showC: boolean } | null = null;
+      // Sinal de CRISE: item de ideação do PHQ-9 marcado (>=1). Detecção por texto,
+      // funciona em qualquer template que inclua a pergunta (PT ou EN).
+      let crisis = false;
+      const CRISIS_RE = /better off dead|hurting yourself|se ferir|estar morto|melhor estar morto/i;
       try {
         const { data: sections } = await supabase
           .from("assessment_sections")
@@ -158,6 +162,7 @@ export async function POST(req: NextRequest) {
         // Cond. B dispara quando o score cai na BANDA MAIS ALTA (101+), não mais
         // por percentual. `isTopBand` resolve a partir do scoring_config (fonte única).
         safetyFlags = computeMsqSafetyFlags(withContext, isTopBand(band, scoringConfig));
+        crisis = withContext.some((a) => (a.value_number ?? 0) >= 1 && CRISIS_RE.test(a.question_text ?? ""));
       } catch (e) {
         // Nunca derruba o submit por causa das notas de segurança.
         console.error("MSQ safety flags falhou:", e);
@@ -173,6 +178,7 @@ export async function POST(req: NextRequest) {
         }
       }
       const noteSummary =
+        (crisis ? `⚠️ URGENTE — sinal de ideação/autolesão (PHQ-9). Priorizar contato humano.\n` : "") +
         `Origem: link público — "${tplName}".\n` +
         `Pontuação: ${totalScore}/${maxScore} (${score_percentage}%).` +
         (sectionLines.length ? `\n${sectionLines.join("\n")}` : "") +
@@ -271,6 +277,7 @@ export async function POST(req: NextRequest) {
         score_percentage,
         band: band ?? null,
         safety_flags: safetyFlags,
+        crisis,
       });
     }
 
