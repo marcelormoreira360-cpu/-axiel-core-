@@ -8,6 +8,7 @@ import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { LimitedList } from "@/components/limited-list";
 import { formatPrice, getPatientOfferProgress, OFFER_TYPE_LABELS } from "@/modules/monetization/pricing";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export function OfferList({
   offers,
@@ -24,6 +25,7 @@ export function OfferList({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [deleteTarget, setDeleteTarget] = useState<MonetizationOffer | null>(null);
 
   function handleToggle(offer: MonetizationOffer) {
     const fd = new FormData();
@@ -38,14 +40,16 @@ export function OfferList({
 
   function handleDelete(offer: MonetizationOffer) {
     if (!deleteAction) return;
-    if (!confirm(tActions("confirmRemoveNamed", { name: offer.name }))) return;
+    setDeleteTarget(offer);
+  }
+
+  async function confirmDelete() {
+    if (!deleteAction || !deleteTarget) return;
     const fd = new FormData();
-    fd.set("id", offer.id);
-    setPendingId(offer.id + "-delete");
-    startTransition(async () => {
-      await deleteAction(fd);
-      setPendingId(null);
-    });
+    fd.set("id", deleteTarget.id);
+    setPendingId(deleteTarget.id + "-delete");
+    await deleteAction(fd);
+    setPendingId(null);
   }
 
   function handleEdit(e: React.FormEvent<HTMLFormElement>, offerId: string) {
@@ -74,6 +78,7 @@ export function OfferList({
   }
 
   return (
+    <>
     <LimitedList
       items={offers}
       className="grid gap-3 md:grid-cols-2"
@@ -236,6 +241,16 @@ export function OfferList({
         </Card>
       )}
     />
+
+    {/* Confirmação de exclusão de oferta */}
+    <ConfirmDialog
+      open={deleteTarget !== null}
+      description={tActions("confirmRemoveNamed", { name: deleteTarget?.name ?? "" })}
+      destructive
+      onConfirm={confirmDelete}
+      onClose={() => setDeleteTarget(null)}
+    />
+    </>
   );
 }
 

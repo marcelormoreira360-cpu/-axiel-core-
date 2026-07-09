@@ -1,10 +1,11 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import type { PatientDocument } from "@/services/patient-document-service";
 import { deleteDocumentAction } from "@/app/patients/[id]/documentos/actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 const SOURCE_COLORS: Record<PatientDocument["source"], string> = {
   clinic:  "bg-[#E6F1FB] dark:bg-[#3B6BE4]/[.15] text-[#0C447C] dark:text-[#8FBFF5]",
@@ -68,14 +69,16 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
   const t = useTranslations("patientPanels.documents");
   const locale = useLocale();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [deleteTarget, setDeleteTarget] = useState<{ docId: string; fileName: string } | null>(null);
 
   function handleDelete(docId: string, fileName: string) {
-    if (!confirm(t("confirmDelete", { name: fileName }))) return;
-    startTransition(async () => {
-      await deleteDocumentAction(docId, patientId);
-      router.refresh();
-    });
+    setDeleteTarget({ docId, fileName });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    await deleteDocumentAction(deleteTarget.docId, patientId);
+    router.refresh();
   }
 
   return (
@@ -152,7 +155,7 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
 
               <button
                 onClick={() => handleDelete(doc.id, doc.file_name)}
-                disabled={isPending}
+                disabled={deleteTarget !== null}
                 className="shrink-0 text-[#A09E98] hover:text-red-500 transition disabled:opacity-40"
                 title={t("delete")}
               >
@@ -167,6 +170,16 @@ export function PatientDocumentsPanel({ documents, patientId, intakeUrl }: Props
           ))}
         </div>
       )}
+
+      {/* Confirmação de exclusão de documento */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        description={t("confirmDelete", { name: deleteTarget?.fileName ?? "" })}
+        confirmLabel={t("delete")}
+        destructive
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

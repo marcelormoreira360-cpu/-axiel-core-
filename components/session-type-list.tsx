@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Props {
   sessionTypes: SessionType[];
@@ -40,6 +41,7 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
   const [isPending, startTransition] = useTransition();
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   function handleToggleOnline(id: string, current: boolean) {
     setPendingId(id + "-online");
@@ -66,12 +68,14 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
   }
 
   function handleDelete(id: string, name: string) {
-    if (!confirm(t("confirmDelete", { name }))) return;
-    setPendingId(id + "-delete");
-    startTransition(async () => {
-      await deleteAction(id);
-      setPendingId(null);
-    });
+    setDeleteTarget({ id, name });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setPendingId(deleteTarget.id + "-delete");
+    await deleteAction(deleteTarget.id);
+    setPendingId(null);
   }
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
@@ -377,6 +381,15 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
           })}
         </p>
       </div>
+
+      {/* Confirmação de exclusão de tipo de sessão */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        description={t("confirmDelete", { name: deleteTarget?.name ?? "" })}
+        destructive
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

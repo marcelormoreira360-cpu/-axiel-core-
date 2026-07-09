@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { UserPlus, Mail, X, Link2, Check } from "lucide-react";
 import { INVITABLE_ROLES, isManager } from "@/lib/team-utils";
 import type { TeamMember, TeamInvite } from "@/services/team-service";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   inviteMemberAction,
   updateRoleAction,
@@ -51,6 +52,7 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
   const [error, setError]   = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showInvite, setShowInvite] = useState(false);
+  const [removeTarget, setRemoveTarget] = useState<{ userId: string; name: string | null } | null>(null);
 
   const canManage = isManager(currentUserRole);
 
@@ -80,13 +82,15 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
   }
 
   function handleRemove(userId: string, name: string | null) {
-    if (!confirm(t("confirmRemove", { name: name ?? t("thisMember") }))) return;
-    startTransition(async () => {
-      const r = await removeMemberAction(userId);
-      if (r.error) { err(r.error); return; }
-      flash(t("flashRemoved"));
-      router.refresh();
-    });
+    setRemoveTarget({ userId, name });
+  }
+
+  async function confirmRemove() {
+    if (!removeTarget) return;
+    const r = await removeMemberAction(removeTarget.userId);
+    if (r.error) { err(r.error); return; }
+    flash(t("flashRemoved"));
+    router.refresh();
   }
 
   function handleRevoke(inviteId: string) {
@@ -221,6 +225,16 @@ export function EquipeClient({ members, invites, currentUserId, currentUserRole 
           </div>
         </div>
       )}
+
+      {/* Confirmação de remoção de membro */}
+      <ConfirmDialog
+        open={removeTarget !== null}
+        description={t("confirmRemove", { name: removeTarget?.name ?? t("thisMember") })}
+        confirmLabel={t("removeFromClinic")}
+        destructive
+        onConfirm={confirmRemove}
+        onClose={() => setRemoveTarget(null)}
+      />
 
       {/* Invite modal */}
       {showInvite && (

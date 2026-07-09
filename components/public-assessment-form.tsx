@@ -56,8 +56,8 @@ function ScaleInput({
                 ? "bg-[#E53E3E] border-[#E53E3E] text-white"
                 : n >= 1
                 ? "bg-[#0F6E56] border-[#0F6E56] text-white"
-                : "bg-[#0F1A2E] border-[#0F1A2E] text-white"
-              : "border-black/[.12] text-[#6B6A66] hover:border-[#0F6E56] hover:text-[#0F6E56] bg-white",
+                : "bg-[#0F1A2E] border-[#0F1A2E] text-white dark:bg-[#1C2333] dark:border-white/[.25]"
+              : "border-black/[.12] text-[#6B6A66] hover:border-[#0F6E56] hover:text-[#0F6E56] bg-white dark:bg-[#161B26] dark:border-white/[.12] dark:text-[#9E9C97] dark:hover:border-[#0F6E56] dark:hover:text-[#9FE1CB]",
           ].join(" ")}
         >
           {n}
@@ -268,19 +268,19 @@ export function PublicAssessmentForm({
         <div className="space-y-[16px]">
           {/* CRISE (PHQ-9 ideação): recursos de apoio no TOPO, antes de tudo. */}
           {r.crisis && (
-            <div className="rounded-[16px] px-[20px] py-[18px] bg-[#FEF3F2] border-2 border-[#FDA29B]">
-              <p className="text-[15px] font-semibold text-[#B42318] mb-[6px]">{t("result.crisisTitle")}</p>
-              <p className="text-[13px] text-[#7A271A] leading-relaxed whitespace-pre-line">{t("result.crisisBody")}</p>
+            <div className="rounded-[16px] px-[20px] py-[18px] bg-[#FEF3F2] border-2 border-[#FDA29B] dark:bg-[#3B1418] dark:border-[#F04438]">
+              <p className="text-[15px] font-semibold text-[#B42318] dark:text-[#FDA29B] mb-[6px]">{t("result.crisisTitle")}</p>
+              <p className="text-[13px] text-[#7A271A] dark:text-[#FECDCA] leading-relaxed whitespace-pre-line">{t("result.crisisBody")}</p>
             </div>
           )}
           {/* Cartão de resultado FINAL (copy Aval): snapshot + score + faixa. */}
-          <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[28px]">
-            <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[4px] text-center">
+          <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[16px] px-[24px] py-[28px]">
+            <h2 className="text-[20px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] mb-[4px] text-center">
               {t("result.heading")}
             </h2>
 
             {/* "Your score: {score} of {max} ({percent}% — {band})" */}
-            <p className="text-[13px] text-[#4A4A46] text-center mb-[16px]">
+            <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] text-center mb-[16px]">
               {t("result.scoreLine", {
                 score: r.total_score,
                 max: r.max_possible_score,
@@ -289,7 +289,7 @@ export function PublicAssessmentForm({
               })}
             </p>
 
-            <div className="h-[6px] rounded-full bg-[#F4F3EF] overflow-hidden max-w-[320px] mx-auto">
+            <div className="h-[6px] rounded-full bg-[#F4F3EF] dark:bg-white/[.08] overflow-hidden max-w-[320px] mx-auto">
               <div
                 className="h-full rounded-full transition-all"
                 style={{ width: `${r.score_percentage}%`, backgroundColor: bandColor }}
@@ -311,62 +311,62 @@ export function PublicAssessmentForm({
                     {band.label}
                   </p>
                 </div>
-                <p className="text-[13px] text-[#4A4A46] leading-relaxed">{band.description}</p>
+                <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">{band.description}</p>
               </div>
             )}
 
             {/* "What this means" */}
             <div className="mt-[20px]">
-              <p className="text-[13px] font-semibold text-[#0F1A2E] mb-[4px]">
+              <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] mb-[4px]">
                 {t("result.whatThisMeansTitle")}
               </p>
-              <p className="text-[13px] text-[#4A4A46] leading-relaxed">
+              <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">
                 {t("result.whatThisMeansBody")}
               </p>
             </div>
 
             {/* Notas de segurança CONDICIONAIS (A e C coexistem; B só sem A). */}
             {flags?.showA && (
-              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0]">
-                <p className="text-[13px] text-[#7A5B12] leading-relaxed">{t("result.noteA")}</p>
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0] dark:bg-amber-400/10 dark:border-amber-400/30">
+                <p className="text-[13px] text-[#7A5B12] dark:text-amber-300 leading-relaxed">{t("result.noteA")}</p>
               </div>
             )}
             {flags?.showB && (
-              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0]">
-                <p className="text-[13px] text-[#7A5B12] leading-relaxed">{t("result.noteB")}</p>
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#FDF6EC] border border-[#E9D8B0] dark:bg-amber-400/10 dark:border-amber-400/30">
+                <p className="text-[13px] text-[#7A5B12] dark:text-amber-300 leading-relaxed">{t("result.noteB")}</p>
               </div>
             )}
             {flags?.showC && (
-              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#EAF4FB] border border-[#BBD9EC]">
-                <p className="text-[13px] text-[#1E4C6B] leading-relaxed">{t("result.noteC")}</p>
+              <div className="mt-[16px] rounded-[12px] px-[16px] py-[12px] bg-[#EAF4FB] border border-[#BBD9EC] dark:bg-sky-400/10 dark:border-sky-400/30">
+                <p className="text-[13px] text-[#1E4C6B] dark:text-sky-300 leading-relaxed">{t("result.noteC")}</p>
               </div>
             )}
 
             {/* Fecho de contato (convite, sem preço/botão de agendamento). */}
             <div className="mt-[22px]">
-              <p className="text-[13px] font-semibold text-[#0F1A2E] mb-[2px]">
+              <p className="text-[13px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] mb-[2px]">
                 {t("result.ctaTitle")}
               </p>
-              <p className="text-[13px] text-[#4A4A46] leading-relaxed mb-[12px]">
+              <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed mb-[12px]">
                 {t("result.ctaBody")}
               </p>
               <div className="space-y-[6px]">
-                <p className="text-[13px] text-[#4A4A46]">
+                <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2]">
                   {t("result.ctaCallLabel")}{" "}
                   <a
                     href={`tel:+1${CONTACT_PHONE_DIGITS}`}
-                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041]"
+                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041] dark:text-[#9FE1CB] dark:hover:text-[#C6EDDF]"
                   >
                     {t("result.ctaCallNumber")}
                   </a>
                 </p>
-                <p className="text-[13px] text-[#4A4A46]">
+                <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2]">
                   {t("result.ctaVisitLabel")}{" "}
                   <a
                     href={CONTACT_SITE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041]"
+                    className="font-semibold text-[#0F6E56] underline hover:text-[#085041] dark:text-[#9FE1CB] dark:hover:text-[#C6EDDF]"
                   >
                     {t("result.ctaVisitSite")}
                   </a>
@@ -377,13 +377,13 @@ export function PublicAssessmentForm({
 
           {/* Rodapés PERMANENTES (toda tela de resultado): disclaimer, 988, 18+. */}
           <div className="pt-[8px] space-y-[8px]">
-            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+            <p className="text-[11px] text-[#A09E98] dark:text-[#6B6A66] leading-relaxed text-center">
               {t("result.footerDisclaimer")}
             </p>
-            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+            <p className="text-[11px] text-[#A09E98] dark:text-[#6B6A66] leading-relaxed text-center">
               {t("result.footer988")}
             </p>
-            <p className="text-[11px] text-[#A09E98] leading-relaxed text-center">
+            <p className="text-[11px] text-[#A09E98] dark:text-[#6B6A66] leading-relaxed text-center">
               {t("result.footerAge")}
             </p>
           </div>
@@ -391,20 +391,20 @@ export function PublicAssessmentForm({
       );
     }
     return (
-      <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[40px] text-center">
-        <div className="w-14 h-14 rounded-full bg-[#E1F5EE] flex items-center justify-center mx-auto mb-[16px]">
+      <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[16px] px-[24px] py-[40px] text-center">
+        <div className="w-14 h-14 rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 flex items-center justify-center mx-auto mb-[16px]">
           <span className="text-[28px]">✓</span>
         </div>
-        <h2 className="text-[20px] font-semibold text-[#0F1A2E] mb-[8px]">{t("doneTitle")}</h2>
-        <p className="text-[13px] text-[#A09E98] leading-relaxed">
+        <h2 className="text-[20px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] mb-[8px]">{t("doneTitle")}</h2>
+        <p className="text-[13px] text-[#A09E98] dark:text-[#6B6A66] leading-relaxed">
           {t("doneDesc")}
         </p>
-        <div className="mt-[24px] bg-[#F4F3EF] rounded-[12px] px-[16px] py-[12px]">
-          <p className="text-[11px] text-[#A09E98]">{t("totalScore")}</p>
-          <p className="text-[28px] font-bold text-[#0F1A2E] tracking-[-0.04em]">
-            {totalScore}<span className="text-[14px] text-[#A09E98] font-normal">/{maxPossible}</span>
+        <div className="mt-[24px] bg-[#F4F3EF] dark:bg-[#0B0F17] rounded-[12px] px-[16px] py-[12px]">
+          <p className="text-[11px] text-[#A09E98] dark:text-[#6B6A66]">{t("totalScore")}</p>
+          <p className="text-[28px] font-bold text-[#0F1A2E] dark:text-[#E8E6E2] tracking-[-0.04em]">
+            {totalScore}<span className="text-[14px] text-[#A09E98] dark:text-[#6B6A66] font-normal">/{maxPossible}</span>
           </p>
-          <div className="h-[4px] rounded-full bg-[#E1F5EE] mt-[6px] overflow-hidden">
+          <div className="h-[4px] rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 mt-[6px] overflow-hidden">
             <div className="h-full bg-[#0F6E56] rounded-full" style={{ width: `${percentage}%` }} />
           </div>
         </div>
@@ -419,14 +419,14 @@ export function PublicAssessmentForm({
   return (
     <form onSubmit={submit} className="space-y-[16px]">
       {/* Progress indicator */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
+      <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[16px] py-[12px]">
         <div className="flex items-center justify-between mb-[8px]">
-          <p className="text-[11px] font-medium text-[#6B6A66]">
+          <p className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97]">
             {t("answeredOf", { answered: answeredCount, total: totalQuestions })}
           </p>
-          <p className="text-[11px] font-semibold text-[#0F6E56]">{fillPercent}%</p>
+          <p className="text-[11px] font-semibold text-[#0F6E56] dark:text-[#9FE1CB]">{fillPercent}%</p>
         </div>
-        <div className="h-[5px] rounded-full bg-[#F4F3EF] overflow-hidden">
+        <div className="h-[5px] rounded-full bg-[#F4F3EF] dark:bg-[#0B0F17] overflow-hidden">
           <div
             className="h-full rounded-full bg-[#0F6E56] transition-all duration-300"
             style={{ width: `${fillPercent}%` }}
@@ -436,12 +436,12 @@ export function PublicAssessmentForm({
 
       {/* Instructions */}
       {template.instructions && (
-        <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-          <p className="text-[12px] font-medium text-[#0F1A2E] mb-[8px]">{template.instructions}</p>
+        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[16px] py-[14px]">
+          <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[8px]">{template.instructions}</p>
           <div className="space-y-[3px]">
             {scaleLabels.map((label: string, i: number) => (
-              <p key={i} className="text-[11px] text-[#6B6A66]">
-                <span className="font-semibold text-[#0F1A2E]">{i}</span> — {label}
+              <p key={i} className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
+                <span className="font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{i}</span> — {label}
               </p>
             ))}
           </div>
@@ -452,18 +452,18 @@ export function PublicAssessmentForm({
       {template.assessment_sections.map((section) => {
         const ss = sectionScores[section.id] ?? { score: 0, max: 0 };
         return (
-          <div key={section.id} className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
-            <div className="flex items-center justify-between px-[16px] py-[10px] bg-[#0F1A2E]">
+          <div key={section.id} className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] overflow-hidden">
+            <div className="flex items-center justify-between px-[16px] py-[10px] bg-[#0F1A2E] dark:bg-[#1C2333]">
               <p className="text-[11px] font-medium tracking-[.08em] uppercase text-white/80">{section.title}</p>
               <div className="flex items-center gap-[4px]">
                 <span className="text-[11px] font-semibold text-white">{ss.score}</span>
                 <span className="text-[10px] text-white/40">/{ss.max}</span>
               </div>
             </div>
-            <div className="divide-y divide-black/[.05]">
+            <div className="divide-y divide-black/[.05] dark:divide-white/[.06]">
               {section.assessment_questions.map((q) => (
                 <div key={q.id} className="px-[16px] py-[14px]">
-                  <p className="text-[13px] text-[#0F1A2E] mb-[10px] leading-snug">{q.text}</p>
+                  <p className="text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px] leading-snug">{q.text}</p>
                   {q.question_type === "scale" && (
                     <ScaleInput
                       question={q}
@@ -482,7 +482,7 @@ export function PublicAssessmentForm({
                             "px-[14px] py-[8px] rounded-[8px] text-[12px] font-medium border transition",
                             answers[q.id] === opt.value
                               ? "bg-[#0F6E56] border-[#0F6E56] text-white"
-                              : "border-black/[.12] text-[#6B6A66] hover:border-[#0F6E56] bg-white",
+                              : "border-black/[.12] text-[#6B6A66] hover:border-[#0F6E56] bg-white dark:bg-[#161B26] dark:border-white/[.12] dark:text-[#9E9C97] dark:hover:border-[#0F6E56]",
                           ].join(" ")}
                         >
                           {opt.label}
@@ -495,7 +495,7 @@ export function PublicAssessmentForm({
                       rows={2}
                       value={typeof answers[q.id] === "string" ? String(answers[q.id]) : ""}
                       onChange={(e) => setAnswer(q.id, e.target.value)}
-                      className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] resize-none transition"
+                      className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.12] dark:bg-[#1C2333] dark:text-[#E8E6E2] text-[13px] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] resize-none transition"
                     />
                   )}
                   {q.question_type === "number" && (
@@ -505,7 +505,7 @@ export function PublicAssessmentForm({
                       max={q.max_score}
                       value={typeof answers[q.id] === "number" ? String(answers[q.id]) : ""}
                       onChange={(e) => setAnswer(q.id, e.target.value ? Number(e.target.value) : null)}
-                      className="w-24 px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-center outline-none focus:border-[#0F6E56] transition"
+                      className="w-24 px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.12] dark:bg-[#1C2333] dark:text-[#E8E6E2] text-[13px] text-center outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
                     />
                   )}
                 </div>
@@ -516,13 +516,13 @@ export function PublicAssessmentForm({
       })}
 
       {/* Grand total */}
-      <div className="bg-[#0F1A2E] rounded-[12px] px-[16px] py-[14px]">
+      <div className="bg-[#0F1A2E] dark:bg-[#1C2333] rounded-[12px] px-[16px] py-[14px]">
         <div className="flex items-baseline justify-between mb-[8px]">
           <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">{t("total")}</p>
           <div className="flex items-baseline gap-[4px]">
             <span className="text-[26px] font-bold text-white tracking-[-0.04em]">{totalScore}</span>
             <span className="text-[12px] text-white/40">/{maxPossible}</span>
-            <span className="ml-[8px] text-[14px] font-semibold text-[#0F6E56]">{percentage}%</span>
+            <span className="ml-[8px] text-[14px] font-semibold text-[#0F6E56] dark:text-[#9FE1CB]">{percentage}%</span>
           </div>
         </div>
         <div className="h-[5px] rounded-full bg-white/10 overflow-hidden">
@@ -531,8 +531,8 @@ export function PublicAssessmentForm({
       </div>
 
       {/* Observations */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
-        <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">
+      <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[16px] py-[14px]">
+        <label className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-[6px] block">
           {t("notesLabel")}
         </label>
         <textarea
@@ -540,18 +540,18 @@ export function PublicAssessmentForm({
           onChange={(e) => setNotes(e.target.value)}
           rows={3}
           placeholder={t("notesPlaceholder")}
-          className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+          className="w-full resize-none rounded-[8px] border border-black/[.10] dark:border-white/[.12] dark:bg-[#1C2333] dark:text-[#E8E6E2] px-[10px] py-[8px] text-[13px] placeholder:text-[#D3D1C7] dark:placeholder:text-[#6B6A66] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
         />
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-[8px] px-[12px] py-[10px]">
-          <p className="text-[12px] text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-[8px] px-[12px] py-[10px]">
+          <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {missingRequired > 0 && (
-        <p className="text-[12px] text-[#8A5A06] bg-[#FDF8EE] border border-[#E9D8B0] rounded-[8px] px-[11px] py-[8px] text-center">
+        <p className="text-[12px] text-[#8A5A06] dark:text-amber-300 bg-[#FDF8EE] dark:bg-amber-400/10 border border-[#E9D8B0] dark:border-amber-400/30 rounded-[8px] px-[11px] py-[8px] text-center">
           {t("answerAll", { count: missingRequired })}
         </p>
       )}

@@ -71,7 +71,7 @@ export function PublicCaptureForm({
   if (step === "form" && contact) {
     return (
       <div>
-        <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[12px]">
+        <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#0F6E56] dark:text-[#9FE1CB] mb-[12px]">
           {t("capture.step2")}
         </p>
         <PublicAssessmentForm template={template} token={token} contact={contact} publicMode />
@@ -81,18 +81,18 @@ export function PublicCaptureForm({
 
   return (
     <form onSubmit={handleContinue} className="space-y-[16px]">
-      <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">
+      <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98] dark:text-[#6B6A66]">
         {t("capture.step1")}
       </p>
 
       {/* Disclosure do topo (Selo peça A): ferramenta educativa, não diagnóstico. */}
-      <div className="bg-[#F4F3EF] border border-black/[.06] rounded-[12px] px-[14px] py-[12px]">
-        <p className="text-[11px] text-[#6B6A66] leading-relaxed">{t("capture.disclosure")}</p>
+      <div className="bg-[#F4F3EF] dark:bg-[#0B0F17] border border-black/[.06] dark:border-white/[.07] rounded-[12px] px-[14px] py-[12px]">
+        <p className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">{t("capture.disclosure")}</p>
       </div>
 
-      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[16px] space-y-[14px]">
+      <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[16px] py-[16px] space-y-[14px]">
         <div>
-          <label className="text-[12px] font-medium text-[#0F1A2E] mb-[6px] block">
+          <label className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px] block">
             {t("capture.firstName")}
           </label>
           <input
@@ -101,12 +101,12 @@ export function PublicCaptureForm({
             onChange={(e) => setFirstName(e.target.value)}
             required
             autoComplete="given-name"
-            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] text-[14px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] dark:border-white/[.12] dark:bg-[#1C2333] text-[14px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div>
-          <label className="text-[12px] font-medium text-[#0F1A2E] mb-[6px] block">
+          <label className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px] block">
             {t("capture.lastName")}
           </label>
           <input
@@ -115,12 +115,12 @@ export function PublicCaptureForm({
             onChange={(e) => setLastName(e.target.value)}
             required
             autoComplete="family-name"
-            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] text-[14px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] dark:border-white/[.12] dark:bg-[#1C2333] text-[14px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div>
-          <label className="text-[12px] font-medium text-[#0F1A2E] mb-[6px] block">
+          <label className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px] block">
             {t("capture.email")}
           </label>
           <input
@@ -130,12 +130,12 @@ export function PublicCaptureForm({
             required
             autoComplete="email"
             inputMode="email"
-            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] text-[14px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] dark:border-white/[.12] dark:bg-[#1C2333] text-[14px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
           />
         </div>
 
         <div>
-          <label className="text-[12px] font-medium text-[#0F1A2E] mb-[6px] block">
+          <label className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px] block">
             {t("capture.phone")}
           </label>
           <input
@@ -145,7 +145,7 @@ export function PublicCaptureForm({
             required
             autoComplete="tel"
             inputMode="tel"
-            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] text-[14px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+            className="w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] dark:border-white/[.12] dark:bg-[#1C2333] text-[14px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] dark:focus:border-[#0F6E56] transition"
           />
         </div>
 
@@ -171,13 +171,13 @@ export function PublicCaptureForm({
             onChange={(e) => setConsent(e.target.checked)}
             className="mt-[2px] h-[16px] w-[16px] shrink-0 accent-[#0F6E56]"
           />
-          <span className="text-[12px] text-[#6B6A66] leading-relaxed">
+          <span className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">
             {t("capture.consentRequiredEn")}{" "}
             <a
               href={PRIVACY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#0F6E56] underline hover:text-[#085041]"
+              className="text-[#0F6E56] underline hover:text-[#085041] dark:text-[#9FE1CB] dark:hover:text-[#C6EDDF]"
             >
               {t("capture.consentPrivacyLink")}
             </a>
@@ -187,8 +187,8 @@ export function PublicCaptureForm({
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-[8px] px-[12px] py-[10px]">
-          <p className="text-[12px] text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-[8px] px-[12px] py-[10px]">
+          <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
@@ -199,7 +199,7 @@ export function PublicCaptureForm({
         {t("capture.continue")}
       </button>
 
-      <p className="text-center text-[11px] text-[#A09E98]">{t("capture.privacyNote")}</p>
+      <p className="text-center text-[11px] text-[#A09E98] dark:text-[#6B6A66]">{t("capture.privacyNote")}</p>
     </form>
   );
 }

@@ -14,6 +14,9 @@
     "viewAll": "View all",
     "confirmRemoveNamed": "Remove \"{name}\"? This action cannot be undone."
   },
+  "confirmDialog": {
+    "title": "Confirm action"
+  },
   "terms": {
     "insight": "Insight",
     "insights": "Insights",

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import type { MonetizationOffer } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
@@ -53,6 +54,7 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [formType, setFormType] = useState<string>("session_package");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -85,12 +87,14 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
   }
 
   function handleDelete(id: string, name: string) {
-    if (!confirm(t("confirmDelete", { name }))) return;
-    setPendingId(id + "-delete");
-    startTransition(async () => {
-      await deleteAction(id);
-      setPendingId(null);
-    });
+    setDeleteTarget({ id, name });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setPendingId(deleteTarget.id + "-delete");
+    await deleteAction(deleteTarget.id);
+    setPendingId(null);
   }
 
   // Group by type for display
@@ -402,6 +406,15 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
           {t.rich("infoTip", { b: (chunks) => <strong>{chunks}</strong> })}
         </p>
       </div>
+
+      {/* Confirmação de exclusão de oferta */}
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        description={t("confirmDelete", { name: deleteTarget?.name ?? "" })}
+        destructive
+        onConfirm={confirmDelete}
+        onClose={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

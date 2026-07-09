@@ -4,15 +4,16 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import { saveZoomCredentialsAction, removeZoomCredentialsAction } from "@/app/settings/integrations/actions";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export function ZoomCredentialsForm({ hasClinicCreds }: { hasClinicCreds: boolean }) {
   const t = useTranslations("settings.integrations");
   const [saving, startSave] = useTransition();
-  const [removing, startRemove] = useTransition();
   const [showSecret, setShowSecret] = useState(false);
   const [saved, setSaved] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRemoveConfirm, setShowRemoveConfirm] = useState(false);
 
   function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -26,11 +27,12 @@ export function ZoomCredentialsForm({ hasClinicCreds }: { hasClinicCreds: boolea
   }
 
   function handleRemove() {
-    if (!confirm(t("zoomConfirmRemove"))) return;
-    startRemove(async () => {
-      await removeZoomCredentialsAction();
-      setRemoved(true);
-    });
+    setShowRemoveConfirm(true);
+  }
+
+  async function confirmRemove() {
+    await removeZoomCredentialsAction();
+    setRemoved(true);
   }
 
   if (removed) {
@@ -55,7 +57,7 @@ export function ZoomCredentialsForm({ hasClinicCreds }: { hasClinicCreds: boolea
           <button
             type="button"
             onClick={handleRemove}
-            disabled={removing}
+            disabled={showRemoveConfirm}
             className="flex items-center gap-1 text-[11px] text-red-500 hover:text-red-700 transition disabled:opacity-50"
           >
             <Trash2 className="h-3 w-3" />
@@ -99,6 +101,16 @@ export function ZoomCredentialsForm({ hasClinicCreds }: { hasClinicCreds: boolea
           {saving ? t("zoomSaving") : saved ? t("zoomSavedBtn") : t("zoomSave")}
         </button>
       </form>
+
+      {/* Confirmação de remoção das credenciais Zoom */}
+      <ConfirmDialog
+        open={showRemoveConfirm}
+        description={t("zoomConfirmRemove")}
+        confirmLabel={t("zoomRemove")}
+        destructive
+        onConfirm={confirmRemove}
+        onClose={() => setShowRemoveConfirm(false)}
+      />
     </div>
   );
 }

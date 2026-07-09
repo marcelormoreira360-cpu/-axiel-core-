@@ -1,4 +1,38 @@
 {
+  "pipeline": {
+    "stages": {
+      "new_lead": {
+        "title": "Novo",
+        "short": "Novo",
+        "description": "Lead novo"
+      },
+      "contacted": {
+        "title": "Contatado",
+        "short": "Contatado",
+        "description": "Conversa iniciada"
+      },
+      "scheduled": {
+        "title": "Agendado",
+        "short": "Agendado",
+        "description": "Visita ou ligação marcada"
+      },
+      "converted_to_patient": {
+        "title": "Paciente",
+        "short": "Paciente",
+        "description": "Convertido"
+      }
+    },
+    "nextAction": {
+      "new_lead": "Contatar hoje",
+      "contacted": "Agendar visita",
+      "scheduled": "Preparar intake",
+      "converted_to_patient": "Abrir ficha do paciente"
+    },
+    "saving": "Salvando…",
+    "movedTo": "Movido para {stage}.",
+    "moveError": "Não foi possível mover este lead. Tente novamente.",
+    "dropHere": "Solte aqui"
+  },
   "profile": {
     "back": "Voltar ao pipeline",
     "eyebrow": "PERFIL DO LEAD",
@@ -59,5 +93,10 @@
     "notesPlaceholder": "Sobre o que perguntou?",
     "save": "Salvar lead",
     "cancel": "Cancelar"
+  },
+  "convert": {
+    "button": "Converter em paciente",
+    "converting": "Convertendo...",
+    "confirmDescription": "Tem certeza de que deseja converter este lead em paciente?"
   }
 }

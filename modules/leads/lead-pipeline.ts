@@ -1,49 +1,60 @@
 import type { Lead, LeadStage } from "@/lib/types";
 
-export const leadStages: Array<{ id: LeadStage; title: string; shortTitle: string; description: string }> = [
-  {
-    id: "new_lead",
-    title: "New",
-    shortTitle: "New",
-    description: "New lead",
-  },
-  {
-    id: "contacted",
-    title: "Contacted",
-    shortTitle: "Contacted",
-    description: "Conversation started",
-  },
-  {
-    id: "scheduled",
-    title: "Scheduled",
-    shortTitle: "Scheduled",
-    description: "Visit or call booked",
-  },
-  {
-    id: "converted_to_patient",
-    title: "Patient",
-    shortTitle: "Patient",
-    description: "Converted",
-  },
+export const leadStageOrder: LeadStage[] = [
+  "new_lead",
+  "contacted",
+  "scheduled",
+  "converted_to_patient",
 ];
 
-export const leadStageLabels: Record<LeadStage, string> = leadStages.reduce(
-  (labels, stage) => ({ ...labels, [stage.id]: stage.title }),
-  {} as Record<LeadStage, string>
-);
+// Chaves next-intl relativas ao namespace "leads".
+// Traduza no client com useTranslations("leads") ou no server com getTranslations("leads").
+export const leadStages: Array<{
+  id: LeadStage;
+  titleKey: string;
+  shortTitleKey: string;
+  descriptionKey: string;
+}> = leadStageOrder.map((id) => ({
+  id,
+  titleKey: `pipeline.stages.${id}.title`,
+  shortTitleKey: `pipeline.stages.${id}.short`,
+  descriptionKey: `pipeline.stages.${id}.description`,
+}));
+
+export function getNextLeadActionKey(lead: Lead): string {
+  if (lead.stage === "new_lead") return "pipeline.nextAction.new_lead";
+  if (lead.stage === "contacted") return "pipeline.nextAction.contacted";
+  if (lead.stage === "scheduled") return "pipeline.nextAction.scheduled";
+  return "pipeline.nextAction.converted_to_patient";
+}
+
+/**
+ * @deprecated Fallback em inglês para consumidores ainda não migrados para next-intl
+ * (app/leads/[id]/page.tsx e modules/ai-insights/contextual-placeholders.ts).
+ * Prefira leadStages[].titleKey com useTranslations("leads") / getTranslations("leads").
+ */
+export const leadStageLabels: Record<LeadStage, string> = {
+  new_lead: "New",
+  contacted: "Contacted",
+  scheduled: "Scheduled",
+  converted_to_patient: "Patient",
+};
+
+/**
+ * @deprecated Fallback em inglês; prefira getNextLeadActionKey + next-intl.
+ */
+export function getNextLeadAction(lead: Lead) {
+  if (lead.stage === "new_lead") return "Contact today";
+  if (lead.stage === "contacted") return "Book visit";
+  if (lead.stage === "scheduled") return "Prepare intake";
+  return "Open patient file";
+}
 
 export function groupLeadsByStage(leads: Lead[]) {
   return leadStages.map((stage) => ({
     ...stage,
     leads: leads.filter((lead) => lead.stage === stage.id),
   }));
-}
-
-export function getNextLeadAction(lead: Lead) {
-  if (lead.stage === "new_lead") return "Contact today";
-  if (lead.stage === "contacted") return "Book visit";
-  if (lead.stage === "scheduled") return "Prepare intake";
-  return "Open patient file";
 }
 
 export function getLeadPipelineSummary(leads: Lead[]) {

@@ -36,11 +36,11 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
           ? { icon: "⏰", title: t("expiredTitle"), desc: t("expiredDesc") }
           : { icon: "🔗", title: t("invalidTitle"), desc: t("invalidDesc") };
     return (
-      <div className="min-h-screen bg-[#FAFAF8] flex items-center justify-center p-6">
-        <div className="bg-white border border-black/[.07] rounded-[16px] px-[24px] py-[32px] max-w-[400px] w-full text-center">
+      <div className="min-h-screen bg-[#FAFAF8] dark:bg-[#0E1117] flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[16px] px-[24px] py-[32px] max-w-[400px] w-full text-center">
           <p className="text-[32px] mb-[12px]">{view.icon}</p>
-          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[8px]">{view.title}</h1>
-          <p className="text-[13px] text-[#A09E98]">{view.desc}</p>
+          <h1 className="text-[18px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[8px]">{view.title}</h1>
+          <p className="text-[13px] text-[#A09E98] dark:text-[#6B6A66]">{view.desc}</p>
         </div>
       </div>
     );
@@ -59,17 +59,17 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
 
   return (
     <NextIntlClientProvider locale={formLocale} messages={{ publicForm: m }}>
-      <div className="min-h-screen bg-[#FAFAF8] py-[32px] px-[16px]">
+      <div className="min-h-screen bg-[#FAFAF8] dark:bg-[#0E1117] py-[32px] px-[16px]">
         <div className="max-w-[640px] mx-auto">
           {/* Header */}
           <div className="mb-[24px]">
-            <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] mb-[4px]">
+            <p className="text-[11px] font-medium tracking-[.10em] uppercase text-[#A09E98] dark:text-[#6B6A66] mb-[4px]">
               {m.eyebrow}
             </p>
-            <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E]">
+            <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
               {data.template.name}
             </h1>
-            <p className="text-[13px] text-[#A09E98] mt-[2px]">{intro}</p>
+            <p className="text-[13px] text-[#A09E98] dark:text-[#6B6A66] mt-[2px]">{intro}</p>
           </div>
 
           {data.isPublic ? (
@@ -82,7 +82,7 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
             />
           )}
 
-          <p className="text-center text-[11px] text-[#D3D1C7] mt-[32px]">
+          <p className="text-center text-[11px] text-[#D3D1C7] dark:text-white/20 mt-[32px]">
             {m.secureFooter}
           </p>
         </div>

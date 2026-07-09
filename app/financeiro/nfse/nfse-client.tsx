@@ -8,6 +8,7 @@ import { formatCpf, validateCpf } from "@/lib/utils";
 import type { NfseInvoice } from "@/services/nfse-service";
 import { emitNfseAction, syncNfseAction, cancelNfseAction } from "./actions";
 import { useFormatMoney } from "@/components/currency-provider";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Props {
   invoices: NfseInvoice[];
@@ -25,6 +26,7 @@ const STATUS_CLS: Record<string, string> = {
 export function NfseClient({ invoices, defaultServiceDescription, patients }: Props) {
   const money = useFormatMoney();
   const t = useTranslations("finance.nfse");
+  const tActions = useTranslations("common.actions");
   const locale = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -34,6 +36,7 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const [cpfValue, setCpfValue] = useState("");
   const [cpfError, setCpfError] = useState<string | null>(null);
+  const [cancelTargetId, setCancelTargetId] = useState<string | null>(null);
 
   function flash(msg: string) { setSuccess(msg); setTimeout(() => setSuccess(null), 4000); }
 
@@ -78,13 +81,15 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
   }
 
   function handleCancel(localId: string) {
-    if (!confirm(t("confirmCancel"))) return;
-    startTransition(async () => {
-      const r = await cancelNfseAction(localId);
-      if (r.error) { setError(r.error); return; }
-      flash(t("flashCancelled"));
-      router.refresh();
-    });
+    setCancelTargetId(localId);
+  }
+
+  async function confirmCancel() {
+    if (!cancelTargetId) return;
+    const r = await cancelNfseAction(cancelTargetId);
+    if (r.error) { setError(r.error); return; }
+    flash(t("flashCancelled"));
+    router.refresh();
   }
 
   return (
@@ -202,6 +207,16 @@ export function NfseClient({ invoices, defaultServiceDescription, patients }: Pr
           </div>
         )}
       </div>
+
+      {/* Confirmação de cancelamento de NFS-e */}
+      <ConfirmDialog
+        open={cancelTargetId !== null}
+        description={t("confirmCancel")}
+        confirmLabel={tActions("confirm")}
+        destructive
+        onConfirm={confirmCancel}
+        onClose={() => setCancelTargetId(null)}
+      />
 
       {/* Emit modal */}
       {showModal && (

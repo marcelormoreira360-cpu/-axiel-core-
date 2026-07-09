@@ -1,4 +1,38 @@
 {
+  "pipeline": {
+    "stages": {
+      "new_lead": {
+        "title": "New",
+        "short": "New",
+        "description": "New lead"
+      },
+      "contacted": {
+        "title": "Contacted",
+        "short": "Contacted",
+        "description": "Conversation started"
+      },
+      "scheduled": {
+        "title": "Scheduled",
+        "short": "Scheduled",
+        "description": "Visit or call booked"
+      },
+      "converted_to_patient": {
+        "title": "Patient",
+        "short": "Patient",
+        "description": "Converted"
+      }
+    },
+    "nextAction": {
+      "new_lead": "Contact today",
+      "contacted": "Book visit",
+      "scheduled": "Prepare intake",
+      "converted_to_patient": "Open patient file"
+    },
+    "saving": "Saving…",
+    "movedTo": "Moved to {stage}.",
+    "moveError": "Could not move this lead. Try again.",
+    "dropHere": "Drop here"
+  },
   "profile": {
     "back": "Back to pipeline",
     "eyebrow": "LEAD PROFILE",
@@ -59,5 +93,10 @@
     "notesPlaceholder": "What did they ask about?",
     "save": "Save lead",
     "cancel": "Cancel"
+  },
+  "convert": {
+    "button": "Convert to patient",
+    "converting": "Converting...",
+    "confirmDescription": "Are you sure you want to convert this lead into a patient?"
   }
 }
