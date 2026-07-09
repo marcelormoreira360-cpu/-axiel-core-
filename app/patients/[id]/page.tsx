@@ -167,6 +167,13 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   );
   // appointments is sorted DESC, so last element is the soonest upcoming
   const nextSession = futureAppts[futureAppts.length - 1] ?? null;
+  // Alvo do botão "Registrar sessão": a sessão que está para acontecer (a próxima,
+  // que no dia é a de hoje) e, se não houver, a mais recente já realizada — é nela
+  // que o terapeuta abre o SOAP a cada atendimento do tratamento.
+  const mostRecentPast = [...appointments]
+    .filter((a) => a.starts_at < nowIso && a.status !== "cancelled" && a.status !== "no_show")
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0] ?? null;
+  const soapTargetSession = nextSession ?? mostRecentPast ?? lastSession;
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
@@ -600,7 +607,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           />
           {/* Registrar sessão (SOAP) — leva à sessão mais recente; sem sessão, agenda */}
           <Link
-            href={lastSession ? `/schedule/${lastSession.id}/session` : `/schedule/new?patient_id=${patient.id}`}
+            href={soapTargetSession ? `/schedule/${soapTargetSession.id}/session` : `/schedule/new?patient_id=${patient.id}`}
             className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-white border border-black/[.1] text-[#0F1A2E] dark:text-[#E8E6E2] text-[11px] font-medium hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
             title={t("actions.session")}
           >
