@@ -1,7 +1,17 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 09/07/2026 (38)
+> Atualizado em: 09/07/2026 (39)
+
+## 🟢 Auditoria 3 — lotes 6 e 7 (segurança + venda EN) (09/07/2026) — NO AR
+
+> Commit `8ca64d4`, deploy Vercel verde nos 2 projetos. Migration **123 APLICADA na prod** (`bfuulpvzedcrpmmjxles`). Gates: tsc 0, **357 testes**, verify:i18n 46/0/0, lint 0 erros, next build ok. Advisors security agora só os 11 SECURITY DEFINER deliberados + leaked password protection (toggle do Marcelo).
+
+**Segurança:** feed iCal sem PHI (notes fora do DESCRIPTION e do select) + rate limit 30/h por token+IP; `clinic-assets` com policies de escrita/leitura por pasta trazidas p/ migration ativa 123 (idempotente, leitura SEGUE restrita a membros, sem reintroduzir listagem pública da 110; comentário da 025 corrigido; `ical_secret` documentado como mantido em claro de propósito); link público de captação com teto de 200/dia por token; `checkRateLimitDb` loga warn no fail-open; PDF do Bio³ valida `clinic_id` explícito (404). **56 console.error/warn → lib/logger** em 31 arquivos (chegam ao Sentry); sobram só client component (app/error.tsx) e os console.warn (fora do escopo).
+
+**Venda EN:** IA em **2 níveis** (novo `lib/ai-language.ts`, helper `languageInstruction`): material do PACIENTE segue `patients.locale` via `resolvePatientLocale` (AI Insight/relatório, síntese de exame); material INTERNO segue idioma da clínica (sugestão ATM, insight financeiro, resumo teleconsulta, datas do business-analytics). Guarda-corpos clínicos intactos. `/upgrade` lê preço da tabela `plans` por moeda da clínica (helper `formatPriceCents` compartilhado com /pricing). Automações DEFAULT_RULES e history no idioma da clínica (getServerT). Auto-replies fixos WhatsApp/Meta/SMS no idioma do paciente (`resolveChatLocaleByPhone`) ou da clínica quando o canal não tem telefone (Messenger/IG).
+
+🔴 **PENDÊNCIA DE MARCELO (decisão comercial):** os planos no banco de prod têm `price_usd_cents`/`price_eur_cents` **NULL** (só starter R$49 e professional R$149 em BRL) → clínica US ainda vê BRL no /upgrade pelo fallback. O código está pronto; falta Marcelo definir os valores em USD/EUR (seed histórico da migration 007 sugeria US$ 49/129/299) p/ eu popular no banco. Também pendente: ligar leaked password protection no painel Supabase.
 
 ## 🟢 Auditoria 3 + 5 lotes de melhorias (09/07/2026) — TUDO NA MAIN E NO AR
 
