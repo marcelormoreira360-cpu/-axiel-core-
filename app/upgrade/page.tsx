@@ -3,16 +3,43 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SignOutButton } from "@/components/sign-out-button";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getClinicCurrency } from "@/services/finance-service";
+import { AXIEL_PLANS, formatPriceCents, type CurrencyCode } from "@/modules/billing/plan-config";
 
 // ─── Plan card data ────────────────────────────────────────────────────────────
 
 const FEATURE_KEYS = ["feature1", "feature2", "feature3", "feature4"] as const;
 
-const PLANS = [
-  { slug: "starter", name: "Starter", price: "R$ 147/mês", popular: false },
-  { slug: "professional", name: "Professional", price: "R$ 297/mês", popular: true },
-  { slug: "scale", name: "Scale", price: "R$ 697/mês", popular: false },
-] as const;
+// Planos exibidos no /upgrade (enterprise fica de fora: preço sob consulta).
+// A ordem aqui é a ordem dos cards.
+const UPGRADE_PLAN_SLUGS = ["starter", "professional", "scale"] as const;
+type UpgradePlanSlug = (typeof UPGRADE_PLAN_SLUGS)[number];
+
+type PlanRow = {
+  code: string | null;
+  slug: string | null;
+  name: string | null;
+  price_cents: number | null;
+  price_usd_cents: number | null;
+  price_eur_cents: number | null;
+  recommended: boolean | null;
+};
+
+// Preço na moeda da clínica a partir da linha do banco; se o plano não tiver
+// preço nessa moeda, cai para BRL com a formatação certa. A config estática
+// (AXIEL_PLANS) só entra como rede de segurança se a linha não existir no banco.
+function resolvePlanPrice(row: PlanRow | undefined, slug: UpgradePlanSlug, currency: CurrencyCode) {
+  const cfg = AXIEL_PLANS[slug];
+  const cents: Record<CurrencyCode, number | null> = {
+    BRL: row?.price_cents ?? cfg.priceCents,
+    USD: row?.price_usd_cents ?? cfg.priceUsdCents,
+    EUR: row?.price_eur_cents ?? cfg.priceEurCents,
+  };
+  const displayCurrency: CurrencyCode = cents[currency] !== null ? currency : "BRL";
+  const amount = cents[displayCurrency] ?? 0;
+  return formatPriceCents(amount, displayCurrency);
+}
 
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
@@ -25,6 +52,32 @@ export default async function UpgradePage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/auth/login");
+
+  // Moeda da clínica (clinic_settings.default_currency); sem clínica → BRL
+  const clinic = await getCurrentClinic();
+  const rawCurrency = clinic ? await getClinicCurrency(clinic.id) : "BRL";
+  const currency: CurrencyCode =
+    rawCurrency === "USD" || rawCurrency === "EUR" ? rawCurrency : "BRL";
+
+  // Planos do banco (mesma fonte do checkout/billing) com preços multi-moeda
+  const { data: planRows } = await supabase
+    .from("plans")
+    .select("code, slug, name, price_cents, price_usd_cents, price_eur_cents, recommended")
+    .eq("is_active", true);
+
+  const rows = (planRows ?? []) as PlanRow[];
+  const rowFor = (slug: UpgradePlanSlug) =>
+    rows.find((r) => (r.code ?? r.slug) === slug);
+
+  const plans = UPGRADE_PLAN_SLUGS.map((slug) => {
+    const row = rowFor(slug);
+    return {
+      slug,
+      name: row?.name ?? AXIEL_PLANS[slug].name,
+      price: `${resolvePlanPrice(row, slug, currency)}${t("perMonth")}`,
+      popular: row?.recommended ?? AXIEL_PLANS[slug].recommended ?? false,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[#0F1A2E] flex flex-col">
@@ -75,7 +128,7 @@ export default async function UpgradePage() {
 
         {/* Plan cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full max-w-3xl">
-          {PLANS.map((plan) => (
+          {plans.map((plan) => (
             <div
               key={plan.slug}
               className={`bg-white rounded-2xl border p-6 flex flex-col relative ${

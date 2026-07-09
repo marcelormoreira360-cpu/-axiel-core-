@@ -8,6 +8,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("send-report");
 
 export async function POST() {
   try {
@@ -115,7 +118,7 @@ export async function POST() {
 
     return NextResponse.json({ ok: true, email: authUser.email });
   } catch (e) {
-    console.error("[send-report] error:", e);
+    log.error("error", e);
     return NextResponse.json(
       { ok: false, error: e instanceof Error ? e.message : "Erro ao enviar relatório." },
       { status: 500 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("voice-webhook");
 
 export const runtime = "nodejs";
 
@@ -61,7 +64,7 @@ export async function POST(req: NextRequest) {
     new URLSearchParams(rawBody).forEach((v, k) => { params[k] = v; });
 
     if (!validateTwilioSignature(signature, url, params)) {
-      console.warn("Voice webhook: invalid Twilio signature");
+      log.warn("invalid Twilio signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -96,7 +99,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/xml; charset=utf-8" },
     });
   } catch (err) {
-    console.error("Voice webhook error:", err);
+    log.error("error", err);
     return new NextResponse(
       `<?xml version="1.0" encoding="UTF-8"?><Response><Say language="pt-BR">Desculpe, ocorreu um erro. Tente novamente mais tarde.</Say></Response>`,
       { status: 200, headers: { "Content-Type": "text/xml" } }

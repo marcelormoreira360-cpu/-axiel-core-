@@ -1,4 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("patient-trends");
 
 /**
  * Linha agregada e anonimizada da view `patient_trends_agg`.
@@ -32,7 +35,7 @@ export async function getPatientTrends(): Promise<PatientTrendsSummary> {
     .order("patient_count", { ascending: false });
 
   if (error) {
-    console.error("[getPatientTrends] %s", error.message);
+    log.error("getPatientTrends error", error);
     return { rows: [], totalConsented: 0, distinctCities: 0, byAgeBand: [] };
   }
 

@@ -1,4 +1,37 @@
 {
+  "defaults": {
+    "d_minus_1": {
+      "title": "Lembrete D-1",
+      "description": "Enviado 1 dia antes da sessão para reduzir no-show.",
+      "timing": "24h antes da sessão",
+      "template": "Olá, {nome}! 👋\n\nLembrete: sua sessão é *amanhã* às {horario}. 📅\n\nAté lá!"
+    },
+    "nps": {
+      "title": "NPS Pós-Sessão",
+      "description": "Pede avaliação 1 dia após a sessão para medir satisfação.",
+      "timing": "24h após a sessão",
+      "template": "Olá, {nome}! 🌿\n\nComo foi sua sessão de ontem? Sua avaliação nos ajuda a melhorar cada vez mais.\n\nAcesse seu portal pelo link que você recebeu e deixe sua nota: leva menos de 1 minuto! ⭐"
+    },
+    "d_plus_3": {
+      "title": "Acompanhamento D+3",
+      "description": "Verifica o bem-estar do paciente 3 dias após a sessão.",
+      "timing": "3 dias após a sessão",
+      "template": "Olá, {nome}! 😊\n\nJá se passaram alguns dias desde a sua sessão. Como está se sentindo?\n\nSe tiver dúvidas ou quiser agendar o próximo atendimento, estou aqui. 🌿"
+    },
+    "d_plus_30": {
+      "title": "Fidelização D+30",
+      "description": "Incentiva novo agendamento 30 dias após a última sessão.",
+      "timing": "30 dias após a sessão",
+      "template": "Olá, {nome}! 🌟\n\nFaz 30 dias desde a sua última sessão. Sentiu evolução? 💪\n\nQue tal agendar o próximo atendimento para continuar o seu progresso?"
+    }
+  },
+  "customTiming": {
+    "sameDay": "No dia da sessão",
+    "daysBefore": "{count, plural, one {1 dia antes da sessão} other {# dias antes da sessão}}",
+    "daysAfter": "{count, plural, one {1 dia após a sessão} other {# dias após a sessão}}"
+  },
+  "customDescBefore": "Enviado {count, plural, one {1 dia} other {# dias}} antes da sessão.",
+  "customDescAfter": "Enviado {count, plural, one {1 dia} other {# dias}} após a sessão.",
   "page": {
     "eyebrow": "Clínica",
     "title": "Automações",

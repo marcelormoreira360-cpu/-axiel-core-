@@ -5,6 +5,9 @@ import {
   processHotmartWebhook,
   type HotmartWebhookPayload,
 } from "@/services/hotmart-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("hotmart-webhook");
 
 /**
  * POST /api/webhooks/hotmart?clinic_id=<clinicId>
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(result);
   } catch (e) {
-    console.error("[hotmart-webhook]", e);
+    log.error("error", e);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

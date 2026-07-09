@@ -3,8 +3,11 @@ import crypto from "crypto";
 import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { createLogger } from "@/lib/logger";
 import { gradeTotalByMode, isTopBand, normalizeScoringConfig } from "@/lib/assessment-grading";
 import { computeMsqSafetyFlags, type MsqAnswerWithContext } from "@/lib/msq-safety-notes";
+
+const log = createLogger("forms-submit");
 
 function hashToken(token: string) {
   return crypto.createHash("sha256").update(token).digest("hex");
@@ -113,6 +116,16 @@ export async function POST(req: NextRequest) {
         );
       }
 
+      // Teto DIÁRIO por token do link público: 200 envios/dia. Protege contra
+      // flood distribuído (muitos IPs) enchendo leads/public_form_submissions
+      // por um único link de captação. Janela fixa de 24h.
+      if (!(await checkRateLimitDb(`public-form-daily:${token_hash}`, 200, 24 * 60 * 60_000))) {
+        return NextResponse.json(
+          { error: "Este link atingiu o limite diário de envios. Tente novamente amanhã." },
+          { status: 429 },
+        );
+      }
+
       // Nome do questionário + faixas de interpretação (para devolver a band ao front).
       const { data: tpl } = await supabase
         .from("assessment_templates")
@@ -165,7 +178,7 @@ export async function POST(req: NextRequest) {
         crisis = withContext.some((a) => (a.value_number ?? 0) >= 1 && CRISIS_RE.test(a.question_text ?? ""));
       } catch (e) {
         // Nunca derruba o submit por causa das notas de segurança.
-        console.error("MSQ safety flags falhou:", e);
+        log.error("MSQ safety flags falhou", e);
         safetyFlags = null;
       }
 
@@ -263,7 +276,7 @@ export async function POST(req: NextRequest) {
           locale,
         });
       } catch (e) {
-        console.error("MSQ result email (form submit) falhou:", e);
+        log.error("MSQ result email (form submit) falhou", e);
       }
 
       // Não marca o convite como "completo" (é reutilizável) e não gera Bio³
@@ -336,12 +349,12 @@ export async function POST(req: NextRequest) {
       const { autoUpsertNeuroIdDraft } = await import("@/services/neuro-id-service");
       await autoUpsertNeuroIdDraft(inv.patient_id, inv.clinic_id, supabase);
     } catch (e) {
-      console.error("Bio3 auto-draft (form submit) falhou:", e);
+      log.error("Bio3 auto-draft (form submit) falhou", e);
     }
 
     return NextResponse.json({ ok: true, response_id: response.id });
   } catch (err: unknown) {
-    console.error("Form submit error:", err);
+    log.error("Form submit error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

@@ -6,8 +6,12 @@ import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+
+const log = createLogger("messenger");
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -70,7 +74,7 @@ async function registerHumanReply(
       { onConflict: "phone" },
     );
   } catch (e) {
-    console.error(`[handoff] registerHumanReply failed for ${conversationKey}:`, e);
+    log.error("registerHumanReply failed", e, { conversation: conversationKey });
   }
 }
 
@@ -89,17 +93,17 @@ async function saveHistory(
   try {
     if (id) {
       const { error } = await supabase.from("whatsapp_conversations").update(payload).eq("id", id);
-      if (error) console.error("[messenger] saveHistory UPDATE error:", error.message);
+      if (error) log.error("saveHistory UPDATE error", { error: error.message });
     } else {
       // clinic_id é NOT NULL na tabela — sem ele o insert falha silenciosamente
       if (clinicId) payload.clinic_id = clinicId;
       const { error } = await supabase
         .from("whatsapp_conversations")
         .upsert(payload, { onConflict: "phone" });
-      if (error) console.error("[messenger] saveHistory UPSERT error:", error.message);
+      if (error) log.error("saveHistory UPSERT error", { error: error.message });
     }
   } catch (e) {
-    console.error("[messenger] saveHistory exception:", e);
+    log.error("saveHistory exception", e);
   }
 }
 
@@ -127,7 +131,7 @@ async function autoCreateLead(
       notes: `Lead criado automaticamente via Facebook Messenger.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
     });
   } catch (e) {
-    console.error("[messenger] auto-create lead failed:", e);
+    log.error("auto-create lead failed", e);
   }
 }
 
@@ -163,7 +167,7 @@ async function sendFacebookReply(recipientPsid: string, text: string, pageId: st
 
   if (!res.ok) {
     const err = await res.json();
-    console.error("Facebook Messenger send error:", JSON.stringify(err));
+    log.error("send error", { detail: JSON.stringify(err) });
     throw new Error(`Facebook API error: ${res.status}`);
   }
 }
@@ -193,7 +197,7 @@ async function generateReply(
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("OpenAI error (Facebook):", res.status, JSON.stringify(data));
+    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
     return "";
   }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
@@ -291,9 +295,10 @@ export async function POST(req: NextRequest) {
         // Opt-out / escalonamento humano: responde uma vez, marca a conversa
         // para um humano assumir (bot_disabled) e para de auto-responder.
         if (isOptOutRequest(messageText)) {
-          const handover =
-            "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏 " +
-            "(Of course! I'll let the team know and a person will reach out to you here shortly.)";
+          // Auto-reply fixo no idioma da clínica (PSID não identifica paciente
+          // por telefone); sem clínica, pt-BR.
+          const tReply = await getServerT(await resolveClinicLocale(effectiveClinicId), "whatsapp");
+          const handover = tReply("autoReply.handover");
           await saveHistory(supabase, senderPsid, convId, [
             ...history,
             { role: "user", content: messageText },
@@ -330,7 +335,11 @@ export async function POST(req: NextRequest) {
         const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
-        const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
+        let finalReply = reply;
+        if (!finalReply) {
+          const tReply = await getServerT(await resolveClinicLocale(effectiveClinicId), "whatsapp");
+          finalReply = tReply("autoReply.fallback");
+        }
 
         await saveHistory(supabase, senderPsid, convId, [
           ...history,
@@ -344,7 +353,7 @@ export async function POST(req: NextRequest) {
 
     return new NextResponse("", { status: 200 });
   } catch (err) {
-    console.error("Facebook Messenger webhook error:", err);
+    log.error("webhook error", err);
     return new NextResponse("", { status: 200 });
   }
 }

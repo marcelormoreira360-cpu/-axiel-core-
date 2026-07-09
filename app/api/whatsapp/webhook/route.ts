@@ -4,6 +4,8 @@ import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber, f
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { parseTwilioParams, twimlMessage } from "@/lib/twilio-webhook-utils";
+import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
 import {
   getConversationState,
   saveConversation,
@@ -14,6 +16,8 @@ import {
 } from "@/services/twilio-bot-engine";
 
 export const runtime = "nodejs";
+
+const log = createLogger("twilio-whatsapp");
 
 // A mecânica compartilhada com o canal de SMS (histórico, lead automático,
 // resposta OpenAI, gate de plano) vive em services/twilio-bot-engine.ts.
@@ -31,7 +35,7 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
 
     const audioRes = await fetch(mediaUrl, { headers: { Authorization: authHeader } });
     if (!audioRes.ok) {
-      console.error("Failed to fetch audio from Twilio:", audioRes.status);
+      log.error("failed to fetch audio from Twilio", { status: audioRes.status });
       return "";
     }
 
@@ -52,14 +56,14 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
 
     if (!whisperRes.ok) {
       const err = await whisperRes.json();
-      console.error("Whisper error:", JSON.stringify(err));
+      log.error("Whisper error", { detail: JSON.stringify(err) });
       return "";
     }
 
     const data = await whisperRes.json();
     return data.text?.trim() ?? "";
   } catch (err) {
-    console.error("Audio transcription error:", err);
+    log.error("audio transcription error", err);
     return "";
   }
 }
@@ -100,22 +104,9 @@ export async function POST(req: NextRequest) {
 
     if (!fromNumber) return new NextResponse("", { status: 200 });
 
-    // If audio, transcribe it
-    if (isAudio && mediaUrl) {
-      const transcribed = await transcribeAudio(mediaUrl, apiKey);
-      if (transcribed) {
-        incomingMessage = transcribed;
-      } else {
-        const twiml = twimlMessage("Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊");
-        return new NextResponse(twiml, { status: 200, headers: { "Content-Type": "text/xml" } });
-      }
-    }
-
-    if (!incomingMessage) return new NextResponse("", { status: 200 });
-
-    const supabase = createSupabaseAdminClient();
-
-    // Load clinic-specific bot config or fall back to IFWC default
+    // Load clinic-specific bot config or fall back to IFWC default.
+    // Carregado ANTES do tratamento de áudio para o auto-reply fixo sair no
+    // idioma do paciente/clínica (resolveChatLocaleByPhone precisa do clinic_id).
     let botConfig: Parameters<typeof buildSystemPrompt>[0] = IFWC_DEFAULT_CONFIG;
     let clinicIdFromConfig: string | null = null;
     try {
@@ -123,6 +114,22 @@ export async function POST(req: NextRequest) {
       clinicIdFromConfig = (config as BotConfig)?.clinic_id ?? null;
       if (config) botConfig = config;
     } catch { /* keep IFWC default */ }
+
+    // If audio, transcribe it
+    if (isAudio && mediaUrl) {
+      const transcribed = await transcribeAudio(mediaUrl, apiKey);
+      if (transcribed) {
+        incomingMessage = transcribed;
+      } else {
+        const t = await getServerT(await resolveChatLocaleByPhone(fromNumber, clinicIdFromConfig), "whatsapp");
+        const twiml = twimlMessage(t("autoReply.audioFail"));
+        return new NextResponse(twiml, { status: 200, headers: { "Content-Type": "text/xml" } });
+      }
+    }
+
+    if (!incomingMessage) return new NextResponse("", { status: 200 });
+
+    const supabase = createSupabaseAdminClient();
 
     // Feature gate — whatsapp_automation requires Professional plan or above.
     // Falls back silently (silent 200) so Twilio doesn't retry.
@@ -167,7 +174,13 @@ export async function POST(req: NextRequest) {
     // Generate reply using clinic config
     const reply = await generateReply(incomingMessage, history, systemPrompt, apiKey);
 
-    const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
+    // Fallback fixo no idioma do paciente (patients.locale pelo telefone) e,
+    // na falta, no idioma da clínica; sem clínica, pt-BR.
+    let finalReply = reply;
+    if (!finalReply) {
+      const t = await getServerT(await resolveChatLocaleByPhone(fromNumber, effectiveClinicId), "whatsapp");
+      finalReply = t("autoReply.fallback");
+    }
 
     // BUG-02: await the save so history is persisted before next message arrives
     const updatedMessages: ChatMessage[] = [
@@ -183,7 +196,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/xml" },
     });
   } catch (err) {
-    console.error("WhatsApp webhook error:", err);
+    log.error("webhook error", err);
     return new NextResponse("", { status: 200 });
   }
 }

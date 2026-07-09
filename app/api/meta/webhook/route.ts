@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature, checkRateLimit } from "@/lib/webhook-guard";
+import { getServerT } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+
+const log = createLogger("meta-webhook");
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -129,7 +133,7 @@ async function generateReply(
 
   const data = await res.json() as { choices?: { message?: { content?: string } }[] };
   if (!res.ok) {
-    console.error("OpenAI error:", res.status, JSON.stringify(data));
+    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
     return "";
   }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
@@ -158,7 +162,7 @@ async function sendMetaMessage(
 
   if (!res.ok) {
     const err = await res.json();
-    console.error(`Meta send error (${platform}):`, JSON.stringify(err));
+    log.error("Meta send error", { platform, detail: JSON.stringify(err) });
   }
 }
 
@@ -195,7 +199,7 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    console.error("Missing OPENAI_API_KEY");
+    log.error("missing OPENAI_API_KEY");
     return new NextResponse("OK", { status: 200 });
   }
 
@@ -212,7 +216,7 @@ export async function POST(req: NextRequest) {
 
     body = JSON.parse(rawBody.toString("utf-8")) as Record<string, unknown>;
   } catch (err) {
-    console.error("Meta webhook: failed to parse body", err);
+    log.error("failed to parse body", err);
     return new NextResponse("OK", { status: 200 });
   }
 
@@ -273,9 +277,13 @@ export async function POST(req: NextRequest) {
 
       // ── Generate AI reply ──
       const reply = await generateReply(messageText, history, platform, apiKey);
-      const finalReply =
-        reply ||
-        "Olá! Obrigada pela mensagem. 😊 Como posso ajudar você hoje?";
+      // Saudação fixa de fallback: esta rota legada não resolve clínica nem
+      // paciente, então cai no padrão pt-BR (DEFAULT_LOCALE) via i18n.
+      let finalReply = reply;
+      if (!finalReply) {
+        const tReply = await getServerT(null, "whatsapp");
+        finalReply = tReply("autoReply.greeting");
+      }
 
       // ── Persist history ──
       const updatedMessages: ChatMessage[] = [

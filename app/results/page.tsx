@@ -39,7 +39,7 @@ export default async function ResultsPage({
 
   const clinic = await getCurrentClinic();
   const __cur = await getClinicCurrency(clinic?.id ?? "");
-  const data = clinic ? await getBusinessAnalytics(clinic.id, months) : null;
+  const data = clinic ? await getBusinessAnalytics(clinic.id, months, locale) : null;
 
   if (!data) {
     return (

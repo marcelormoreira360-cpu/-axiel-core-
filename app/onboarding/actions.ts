@@ -1,6 +1,9 @@
 "use server";
 
 import { completeGuidedOnboarding, normalizeClinicSlug } from "@/services/onboarding-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("onboarding");
 
 export type OnboardingActionState =
   | { success: true }
@@ -58,7 +61,7 @@ export async function completeOnboardingAction(
     } else if (typeof err === "string") {
       msg = err;
     }
-    console.error("[onboarding] completeGuidedOnboarding error:", err);
+    log.error("completeGuidedOnboarding error", err);
     return {
       error: `Não foi possível criar a clínica: ${msg}`,
     };

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveLocale } from "@/i18n/get-locale";
+import { languageInstruction } from "@/lib/ai-language";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
@@ -20,6 +22,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Transcrição vazia" }, { status: 400 });
     }
 
+    // Resumo INTERNO (vai ao prontuário, equipe lê) → idioma da clínica (locale da UI).
+    const clinicLocale = await resolveLocale();
+
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -32,7 +37,7 @@ export async function POST(req: NextRequest) {
           {
             role: "system",
             content:
-              "Você é um assistente clínico especializado. Analise o relato de uma teleconsulta e extraia as informações de forma estruturada, clara e em português. Seja objetivo e clínico.",
+              `Você é um assistente clínico especializado. Analise o relato de uma teleconsulta e extraia as informações de forma estruturada e clara. Seja objetivo e clínico. ${languageInstruction(clinicLocale)} Mantenha os NOMES das chaves JSON exatamente como pedidos.`,
           },
           {
             role: "user",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getServerT, resolveClinicLocale, type ServerT } from "@/lib/email-i18n";
 import crypto from "node:crypto";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -35,49 +36,35 @@ export interface CustomRuleSettings {
 }
 
 // ── Default rule definitions ──────────────────────────────────────────────────
+// Título/descrição/timing/template saem do namespace `automations.defaults.*`
+// (messages/{locale}/automations.json) no idioma da CLÍNICA, resolvido em
+// runtime via getServerT (rota de API não tem request locale de componente).
 
-const DEFAULT_RULES: RuleDef[] = [
-  {
-    key: "d_minus_1",
-    tag: "d-1",
-    title: "Lembrete D-1",
-    description: "Enviado 1 dia antes da sessão para reduzir no-show.",
-    timing: "24h antes da sessão",
-    variables: ["{{nome}}", "{{horario}}", "{{data}}"],
-    defaultTemplate:
-      "Olá, {{nome}}! 👋\n\nLembrete: sua sessão é *amanhã* às {{horario}}. 📅\n\nAté lá!",
-  },
-  {
-    key: "nps",
-    tag: "nps",
-    title: "NPS Pós-Sessão",
-    description: "Pede avaliação 1 dia após a sessão para medir satisfação.",
-    timing: "24h após a sessão",
-    variables: ["{{nome}}"],
-    defaultTemplate:
-      "Olá, {{nome}}! 🌿\n\nComo foi sua sessão de ontem? Sua avaliação nos ajuda a melhorar cada vez mais.\n\nAcesse seu portal pelo link que você recebeu e deixe sua nota — leva menos de 1 minuto! ⭐",
-  },
-  {
-    key: "d_plus_3",
-    tag: "d+3",
-    title: "Acompanhamento D+3",
-    description: "Verifica o bem-estar do paciente 3 dias após a sessão.",
-    timing: "3 dias após a sessão",
-    variables: ["{{nome}}"],
-    defaultTemplate:
-      "Olá, {{nome}}! 😊\n\nJá se passaram alguns dias desde a sua sessão. Como está se sentindo?\n\nSe tiver dúvidas ou quiser agendar o próximo atendimento, estou aqui. 🌿",
-  },
-  {
-    key: "d_plus_30",
-    tag: "d+30",
-    title: "Fidelização D+30",
-    description: "Incentiva novo agendamento 30 dias após a última sessão.",
-    timing: "30 dias após a sessão",
-    variables: ["{{nome}}"],
-    defaultTemplate:
-      "Olá, {{nome}}! 🌟\n\nFaz 30 dias desde a sua última sessão — sentiu evolução? 💪\n\nQue tal agendar o próximo atendimento para continuar o seu progresso?",
-  },
+const DEFAULT_RULE_DEFS: Array<Pick<RuleDef, "key" | "tag" | "variables">> = [
+  { key: "d_minus_1", tag: "d-1",  variables: ["{{nome}}", "{{horario}}", "{{data}}"] },
+  { key: "nps",       tag: "nps",  variables: ["{{nome}}"] },
+  { key: "d_plus_3",  tag: "d+3",  variables: ["{{nome}}"] },
+  { key: "d_plus_30", tag: "d+30", variables: ["{{nome}}"] },
 ];
+
+// Os placeholders {{nome}}/{{horario}}/{{data}} são literais no template do
+// WhatsApp; passamos como argumentos ICU para não brigar com a sintaxe do
+// message format ({nome} no JSON → "{{nome}}" na saída).
+const TEMPLATE_PLACEHOLDERS = {
+  nome: "{{nome}}",
+  horario: "{{horario}}",
+  data: "{{data}}",
+};
+
+function buildDefaultRule(t: ServerT, def: Pick<RuleDef, "key" | "tag" | "variables">): RuleDef {
+  return {
+    ...def,
+    title: t(`defaults.${def.key}.title`),
+    description: t(`defaults.${def.key}.description`),
+    timing: t(`defaults.${def.key}.timing`),
+    defaultTemplate: t(`defaults.${def.key}.template`, TEMPLATE_PLACEHOLDERS),
+  };
+}
 
 // ── Auth helper ───────────────────────────────────────────────────────────────
 
@@ -102,6 +89,9 @@ export async function GET() {
   if (!clinicId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const admin = createSupabaseAdminClient();
+
+  // Regras padrão no idioma da clínica (dono/gerente), não do request
+  const t = await getServerT(await resolveClinicLocale(clinicId), "automations");
 
   // Load clinic settings
   const { data: cs } = await admin
@@ -129,7 +119,7 @@ export async function GET() {
   const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   // All tags we care about: default + custom
-  const defaultTags = DEFAULT_RULES.map((r) => r.tag);
+  const defaultTags = DEFAULT_RULE_DEFS.map((r) => r.tag);
   const customTags = customRules.map((r) => `custom:${r.id}`);
   const allTags = [...defaultTags, ...customTags];
 
@@ -153,26 +143,29 @@ export async function GET() {
     (rows ?? []).filter((r) => r.notes === tag).length;
 
   // Build default rules (excluding deleted)
-  const defaultResult: AutomacaoRule[] = DEFAULT_RULES
-    .filter((rule) => !deletedRules.includes(rule.key))
-    .map((rule) => ({
-      ...rule,
-      isEnabled: isEnabled(rule.key),
-      template: templateMap.get(rule.key) ?? rule.defaultTemplate,
-      sentLast30d: countBy(recent, rule.tag),
-      sentTotal: countBy(total, rule.tag),
-      isCustom: false,
-    }));
+  const defaultResult: AutomacaoRule[] = DEFAULT_RULE_DEFS
+    .filter((def) => !deletedRules.includes(def.key))
+    .map((def) => {
+      const rule = buildDefaultRule(t, def);
+      return {
+        ...rule,
+        isEnabled: isEnabled(rule.key),
+        template: templateMap.get(rule.key) ?? rule.defaultTemplate,
+        sentLast30d: countBy(recent, rule.tag),
+        sentTotal: countBy(total, rule.tag),
+        isCustom: false,
+      };
+    });
 
   // Build custom rules
   const customResult: AutomacaoRule[] = customRules.map((cr) => {
     const tag = `custom:${cr.id}`;
     const timingLabel =
       cr.offsetDays === 0
-        ? "No dia da sessão"
+        ? t("customTiming.sameDay")
         : cr.offsetDays < 0
-        ? `${Math.abs(cr.offsetDays)} dia${Math.abs(cr.offsetDays) > 1 ? "s" : ""} antes da sessão`
-        : `${cr.offsetDays} dia${cr.offsetDays > 1 ? "s" : ""} após a sessão`;
+        ? t("customTiming.daysBefore", { count: Math.abs(cr.offsetDays) })
+        : t("customTiming.daysAfter", { count: cr.offsetDays });
     return {
       key: `custom_${cr.id}`,
       tag,
@@ -220,10 +213,20 @@ export async function POST(request: Request) {
   const settings = (cs?.settings as Record<string, unknown> | null) ?? {};
   const customRules = (settings.custom_rules as CustomRuleSettings[] | undefined) ?? [];
 
+  // Descrição padrão no idioma da clínica quando o usuário não informa uma
+  let fallbackDescription = "";
+  if (!(body.description ?? "").trim()) {
+    const t = await getServerT(await resolveClinicLocale(clinicId), "automations");
+    fallbackDescription = t(
+      body.triggerType === "before_session" ? "customDescBefore" : "customDescAfter",
+      { count: Math.abs(body.offsetDays) },
+    );
+  }
+
   const newRule: CustomRuleSettings = {
     id: crypto.randomUUID(),
     title: body.title.trim(),
-    description: (body.description ?? "").trim() || `Enviado ${Math.abs(body.offsetDays)} dia(s) ${body.triggerType === "before_session" ? "antes" : "após"} a sessão.`,
+    description: (body.description ?? "").trim() || fallbackDescription,
     offsetDays: body.triggerType === "before_session" ? -Math.abs(body.offsetDays) : Math.abs(body.offsetDays),
     triggerType: body.triggerType,
     template: body.template.trim(),

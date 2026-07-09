@@ -50,6 +50,8 @@ export type NeuroIdMap = {
   computed_at: string;
   /** status da avaliação de origem: 'auto_draft' | 'draft' | 'final'. */
   status: string | null;
+  /** clínica dona da avaliação de origem (defense-in-depth de tenant nas rotas). */
+  clinic_id: string | null;
 };
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
@@ -180,16 +182,20 @@ export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promi
   const supabase = await getDb(client);
   const { data, error } = await supabase
     .from("patient_neuro_id_scores")
-    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status)")
+    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status, clinic_id)")
     .eq("patient_id", patientId)
     .order("computed_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
-  const a = (data as { patient_assessments?: { status?: string } | { status?: string }[] | null }).patient_assessments;
-  const status = (Array.isArray(a) ? a[0]?.status : a?.status) ?? null;
-  return { ...(data as unknown as NeuroIdMap), status };
+  const a = (data as { patient_assessments?: { status?: string; clinic_id?: string } | { status?: string; clinic_id?: string }[] | null }).patient_assessments;
+  const assessment = Array.isArray(a) ? a[0] : a;
+  return {
+    ...(data as unknown as NeuroIdMap),
+    status: assessment?.status ?? null,
+    clinic_id: assessment?.clinic_id ?? null,
+  };
 }
 
 // ── Pontos de atenção: piores itens da última avaliação (barras, pior primeiro) ─

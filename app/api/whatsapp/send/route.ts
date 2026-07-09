@@ -3,6 +3,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { sendWhatsAppText, formatReportForWhatsApp } from "@/services/whatsapp-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("whatsapp-send");
 
 export async function POST(req: NextRequest) {
   const supabase = await createSupabaseServerClient();
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
-    console.error("WhatsApp send error:", err);
+    log.error("WhatsApp send error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

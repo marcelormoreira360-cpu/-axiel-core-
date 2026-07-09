@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { exchangeGoogleCode, saveGoogleIntegration } from "@/services/google-calendar-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("google-callback");
 
 export const runtime = "nodejs";
 
@@ -20,7 +23,7 @@ export async function GET(req: Request) {
   try {
     const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (!secret) {
-      console.error("Google OAuth callback: CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
+      log.error("CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_config_error`);
     }
     const { payload, sig } = JSON.parse(Buffer.from(state, "base64url").toString()) as {
@@ -34,7 +37,7 @@ export async function GET(req: Request) {
     const expBuf = Buffer.from(expected, "hex");
     const sigValid = sigBuf.length > 0 && sigBuf.length === expBuf.length && timingSafeEqual(sigBuf, expBuf);
     if (!sigValid) {
-      console.error("Google OAuth callback: invalid state signature — possible CSRF");
+      log.error("invalid state signature — possible CSRF");
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_invalid_state`);
     }
 
@@ -43,11 +46,11 @@ export async function GET(req: Request) {
     // SEC-08: verify active session and ownership before saving tokens
     const profile = await getCurrentUserProfile();
     if (!profile) {
-      console.error("Google OAuth callback: no active session");
+      log.error("no active session");
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_unauthorized`);
     }
     if (profile.id !== userId || profile.clinic_id !== clinicId) {
-      console.error("Google OAuth callback: session user does not match state payload", {
+      log.error("session user does not match state payload", {
         sessionUserId: profile.id,
         stateUserId: userId,
         sessionClinicId: profile.clinic_id,
@@ -60,7 +63,7 @@ export async function GET(req: Request) {
     await saveGoogleIntegration(clinicId, tokens);
     return NextResponse.redirect(`${appUrl}/settings/integrations?success=google`);
   } catch (e) {
-    console.error("Google OAuth callback error", e);
+    log.error("Google OAuth callback error", e);
     return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_failed`);
   }
 }

@@ -6,6 +6,9 @@ import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import type { HealthAgentReport } from "../route";
 import { DEFAULT_FROM_EMAIL } from "@/lib/constants";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("health-agent-send");
 
 function buildEmailHtml(patientName: string, report: HealthAgentReport): string {
   const firstName = patientName.split(" ")[0];
@@ -164,7 +167,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
-    console.error("Send health report error:", err);
+    log.error("Send health agent send error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

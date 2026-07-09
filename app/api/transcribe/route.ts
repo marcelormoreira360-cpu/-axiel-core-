@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("transcribe");
 
 export const runtime = "nodejs";
 
@@ -93,7 +96,7 @@ export async function POST(req: NextRequest) {
     const data = await res.json();
     return NextResponse.json({ text: data.text ?? "" });
   } catch (err: unknown) {
-    console.error("Transcription error:", err);
+    log.error("Transcription error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro na transcrição" },
       { status: 500 }

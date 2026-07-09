@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveLocale } from "@/i18n/get-locale";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBusinessAnalytics, generateAiInsights } from "@/services/business-analytics-service";
 
@@ -15,11 +16,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "unauthorized" }, { status: 401 });
     }
 
+    // Painel INTERNO (gestor lê) → idioma da clínica (locale da UI).
+    const locale = await resolveLocale();
+
     // Get analytics data (fast — DB only, no GPT)
-    const data = await getBusinessAnalytics(clinic.id, months);
+    const data = await getBusinessAnalytics(clinic.id, months, locale);
 
     // Generate AI insights (slow — GPT call)
-    const insights = await generateAiInsights(data);
+    const insights = await generateAiInsights(data, locale);
 
     return NextResponse.json({ insights });
   } catch {

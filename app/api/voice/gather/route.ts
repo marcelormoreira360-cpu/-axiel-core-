@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("voice-gather");
 
 export const runtime = "nodejs";
 
@@ -93,7 +96,7 @@ async function generateVoiceReply(
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("Voice AI error:", res.status, JSON.stringify(data));
+    log.error("Voice AI error", { status: res.status, data: JSON.stringify(data) });
     return "";
   }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
@@ -123,7 +126,7 @@ export async function POST(req: NextRequest) {
     new URLSearchParams(rawBody).forEach((v, k) => { params[k] = v; });
 
     if (!validateTwilioSignature(signature, url, params)) {
-      console.warn("Voice gather: invalid Twilio signature");
+      log.warn("invalid Twilio signature");
       return new NextResponse("Forbidden", { status: 403 });
     }
 
@@ -189,7 +192,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/xml; charset=utf-8" },
     });
   } catch (err) {
-    console.error("Voice gather error:", err);
+    log.error("error", err);
     return new NextResponse(
       `<?xml version="1.0" encoding="UTF-8"?><Response><Say language="pt-BR">Desculpe, ocorreu um erro. Tente novamente.</Say></Response>`,
       { status: 200, headers: { "Content-Type": "text/xml" } }

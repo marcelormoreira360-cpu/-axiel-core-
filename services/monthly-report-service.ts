@@ -5,6 +5,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("monthly-report");
 
 export async function sendMonthlyReports(): Promise<{ sent: number; failed: number; skipped: number }> {
   const supabase = createSupabaseAdminClient();
@@ -146,7 +149,7 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     if (r.status === "fulfilled") {
       r.value === "sent" ? sent++ : skipped++;
     } else {
-      console.error("[monthly-report] clinic failed:", r.reason);
+      log.error("clinic failed", r.reason);
       failed++;
     }
   }

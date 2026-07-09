@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 
 export interface AutomacaoHistoryItem {
   id: string;
@@ -19,12 +20,7 @@ const TAG_TO_KEY: Record<string, string> = {
   "d+30": "d_plus_30",
 };
 
-const TAG_TO_TITLE: Record<string, string> = {
-  "d-1": "Lembrete D-1",
-  "nps": "NPS Pós-Sessão",
-  "d+3": "Acompanhamento D+3",
-  "d+30": "Fidelização D+30",
-};
+// Títulos saem do namespace `automations.defaults.*` no idioma da clínica
 
 export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
@@ -65,13 +61,19 @@ export async function GET(request: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  const t = await getServerT(await resolveClinicLocale(clinicId), "automations");
+  const tagToTitle = (tag: string) => {
+    const key = TAG_TO_KEY[tag];
+    return key ? t(`defaults.${key}.title`) : tag;
+  };
+
   const items: AutomacaoHistoryItem[] = (data ?? []).map((row) => {
     const tag = row.notes as string;
     const patient = (row.patients as unknown) as { full_name: string } | null;
     return {
       id: row.id as string,
       ruleKey: TAG_TO_KEY[tag] ?? tag,
-      ruleTitle: TAG_TO_TITLE[tag] ?? tag,
+      ruleTitle: tagToTitle(tag),
       patientName: patient?.full_name ?? "—",
       channel: "whatsapp",
       status: row.status === "completed" ? "sent" : row.status === "canceled" ? "skipped" : "failed",

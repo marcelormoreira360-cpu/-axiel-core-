@@ -1,4 +1,37 @@
 {
+  "defaults": {
+    "d_minus_1": {
+      "title": "D-1 Reminder",
+      "description": "Sent 1 day before the session to reduce no-shows.",
+      "timing": "24h before the session",
+      "template": "Hi, {nome}! 👋\n\nReminder: your session is *tomorrow* at {horario}. 📅\n\nSee you there!"
+    },
+    "nps": {
+      "title": "Post-Session NPS",
+      "description": "Asks for a rating 1 day after the session to measure satisfaction.",
+      "timing": "24h after the session",
+      "template": "Hi, {nome}! 🌿\n\nHow was your session yesterday? Your feedback helps us keep improving.\n\nOpen your portal through the link you received and leave your rating: it takes less than a minute! ⭐"
+    },
+    "d_plus_3": {
+      "title": "D+3 Follow-up",
+      "description": "Checks on the patient's well-being 3 days after the session.",
+      "timing": "3 days after the session",
+      "template": "Hi, {nome}! 😊\n\nIt has been a few days since your session. How are you feeling?\n\nIf you have questions or want to book your next visit, I am here. 🌿"
+    },
+    "d_plus_30": {
+      "title": "D+30 Loyalty",
+      "description": "Encourages a new booking 30 days after the last session.",
+      "timing": "30 days after the session",
+      "template": "Hi, {nome}! 🌟\n\nIt has been 30 days since your last session. Have you noticed progress? 💪\n\nHow about booking your next visit to keep up your momentum?"
+    }
+  },
+  "customTiming": {
+    "sameDay": "On the day of the session",
+    "daysBefore": "{count, plural, one {1 day before the session} other {# days before the session}}",
+    "daysAfter": "{count, plural, one {1 day after the session} other {# days after the session}}"
+  },
+  "customDescBefore": "Sent {count, plural, one {1 day} other {# days}} before the session.",
+  "customDescAfter": "Sent {count, plural, one {1 day} other {# days}} after the session.",
   "page": {
     "eyebrow": "Clinic",
     "title": "Automations",

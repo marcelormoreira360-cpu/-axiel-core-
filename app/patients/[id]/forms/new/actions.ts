@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { submitAssessmentResponse } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import type { TemplateWithStructure } from "@/lib/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("patient-forms");
 
 export async function submitFormAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -73,7 +76,7 @@ export async function submitFormAction(formData: FormData) {
     const { autoUpsertNeuroIdDraft } = await import("@/services/neuro-id-service");
     await autoUpsertNeuroIdDraft(patientId, profile.clinic_id);
   } catch (e) {
-    console.error("Bio3 auto-draft (form in-app) falhou:", e);
+    log.error("Bio3 auto-draft (form in-app) falhou", e);
   }
 
   redirect(`/patients/${patientId}/forms/${response.id}`);

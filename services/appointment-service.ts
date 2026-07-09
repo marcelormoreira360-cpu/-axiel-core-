@@ -1,6 +1,9 @@
 import { createHash, randomBytes } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("appointment-service");
 
 function hashConfirmToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
@@ -428,14 +431,14 @@ export async function updateAppointment(
       startIso: appt.starts_at,
       durationMinutes: appt.duration_minutes,
       attendeeEmail: patient?.email ?? null,
-    }).catch((err: unknown) => console.error("Google Calendar update failed:", err));
+    }).catch((err: unknown) => log.error("Google Calendar update failed", err));
   }
 
   // Cancel Google Calendar event if appointment is cancelled
   if (updates.status === "cancelled" && appt.google_event_id) {
     const { deleteGoogleCalendarEvent } = await import("@/services/google-calendar-service");
     deleteGoogleCalendarEvent(appt.clinic_id, appt.google_event_id).catch(
-      (err: unknown) => console.error("Google Calendar delete failed:", err)
+      (err: unknown) => log.error("Google Calendar delete failed", err)
     );
   }
 
@@ -443,7 +446,7 @@ export async function updateAppointment(
   if (updates.status === "cancelled" && appt.zoom_meeting_id) {
     const { deleteZoomMeeting } = await import("@/services/zoom-service");
     deleteZoomMeeting(appt.clinic_id, appt.zoom_meeting_id).catch(
-      (err: unknown) => console.error("Zoom meeting delete failed:", err)
+      (err: unknown) => log.error("Zoom meeting delete failed", err)
     );
   }
 
@@ -467,8 +470,8 @@ export async function updateAppointment(
         clinicSlug:        clinic.slug as string,
         cancelledStartsAt: appt.starts_at,
         sessionTypeName:   sessionType?.name ?? undefined,
-      }).catch((err: unknown) => console.error("Waitlist notification failed:", err));
-    }).catch((err: unknown) => console.error("Waitlist import failed:", err));
+      }).catch((err: unknown) => log.error("Waitlist notification failed", err));
+    }).catch((err: unknown) => log.error("Waitlist import failed", err));
   }
 
   // Update Zoom meeting time if appointment is rescheduled
@@ -477,7 +480,7 @@ export async function updateAppointment(
     updateZoomMeeting(appt.clinic_id, appt.zoom_meeting_id, {
       startIso:        updates.starts_at ?? appt.starts_at,
       durationMinutes: updates.duration_minutes ?? appt.duration_minutes,
-    }).catch((err: unknown) => console.error("Zoom meeting update failed:", err));
+    }).catch((err: unknown) => log.error("Zoom meeting update failed", err));
   }
 
   return appt;

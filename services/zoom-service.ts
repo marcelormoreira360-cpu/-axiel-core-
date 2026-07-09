@@ -1,3 +1,7 @@
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("zoom-service");
+
 const ZOOM_TOKEN_URL = "https://zoom.us/oauth/token";
 const ZOOM_API       = "https://api.zoom.us/v2";
 
@@ -44,7 +48,7 @@ async function getZoomAccessToken(cliCreds?: ZoomCreds | null): Promise<string |
     }
   );
 
-  if (!res.ok) { console.error("Zoom S2S token failed", await res.text()); return null; }
+  if (!res.ok) { log.error("Zoom S2S token failed", { response: await res.text() }); return null; }
   const data = await res.json();
   return data.access_token ?? null;
 }
@@ -124,7 +128,7 @@ export async function createZoomMeeting(clinicId: string, meeting: {
     }),
   });
 
-  if (!res.ok) { console.error("Zoom meeting creation failed", await res.text()); return null; }
+  if (!res.ok) { log.error("Zoom meeting creation failed", { response: await res.text() }); return null; }
   const created = await res.json();
   return {
     meeting_id: String(created.id),
@@ -207,7 +211,7 @@ export async function syncZoomRecordingsForMeeting(
   if (res.status === 404) return { synced: 0, error: null }; // no recordings yet
   if (!res.ok) {
     const msg = await res.text();
-    console.error("Zoom recordings fetch failed", msg);
+    log.error("Zoom recordings fetch failed", { response: msg });
     return { synced: 0, error: "Erro ao buscar gravações." };
   }
 
@@ -252,7 +256,7 @@ export async function syncZoomRecordingsForMeeting(
     .from("zoom_recordings")
     .upsert(rows, { onConflict: "recording_id" });
 
-  if (error) { console.error("zoom_recordings upsert failed", error); return { synced: 0, error: error.message }; }
+  if (error) { log.error("zoom_recordings upsert failed", error); return { synced: 0, error: error.message }; }
   return { synced: rows.length, error: null };
 }
 
@@ -294,7 +298,7 @@ export async function processZoomRecordingWebhook(payload: {
     .maybeSingle();
 
   if (!appt) {
-    console.warn("zoom webhook: no appointment found for meeting", meetingId);
+    log.warn("zoom webhook: no appointment found for meeting", { meetingId });
     return { ok: true, synced: 0 };
   }
 
@@ -317,7 +321,7 @@ export async function processZoomRecordingWebhook(payload: {
     .from("zoom_recordings")
     .upsert(rows, { onConflict: "recording_id" });
 
-  if (error) { console.error("zoom_recordings upsert failed", error); return { ok: false, synced: 0 }; }
+  if (error) { log.error("zoom_recordings upsert failed", error); return { ok: false, synced: 0 }; }
   return { ok: true, synced: rows.length };
 }
 

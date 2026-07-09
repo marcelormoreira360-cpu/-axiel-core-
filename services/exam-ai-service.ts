@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { languageInstruction } from "@/lib/ai-language";
 import { examLegendBlock } from "@/modules/neuro-id/exam-legends";
 import {
   buildMetricExtractionPrompt,
@@ -16,10 +17,14 @@ import {
  * verificável), em vez de interpretação livre do modelo.
  */
 
-const SYSTEM_PROMPT = `
+// A síntese entra no Relatório Funcional Integrado (Doc 1) enviado ao PACIENTE →
+// o idioma segue o locale do paciente (resolvido pelo call site via resolvePatientLocale).
+const buildExamSynthesisSystemPrompt = (locale?: string | null) => `
 Você é o analista de exames funcionais de um Integrative & Functional Wellness Center
-(metodologia Neuro ID). Recebe o PDF de um exame e produz uma SÍNTESE CONCISA em
-português (pt-BR) para entrar no Relatório Funcional Integrado.
+(metodologia Neuro ID). Recebe o PDF de um exame e produz uma SÍNTESE CONCISA
+para entrar no Relatório Funcional Integrado.
+
+IDIOMA: ${languageInstruction(locale)}
 
 Regras:
 - CONCISO acima de tudo: no máximo ~120 palavras no total. O relatório final não pode
@@ -121,6 +126,8 @@ export async function analyzeExamPdf(opts: {
   filename: string;
   examType: string;        // 'biorressonancia' | 'neurometria' | 'outro'
   examTitle?: string | null;
+  /** Locale do PACIENTE (resolvePatientLocale) — a síntese entra no relatório dele. */
+  locale?: string | null;
 }): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -132,8 +139,9 @@ export async function analyzeExamPdf(opts: {
       ? "exame de neurometria"
       : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
 
+  const base = buildExamSynthesisSystemPrompt(opts.locale);
   const legend = examLegendBlock(opts.examType);
-  const systemPrompt = legend ? `${SYSTEM_PROMPT}\n\n${legend}` : SYSTEM_PROMPT;
+  const systemPrompt = legend ? `${base}\n\n${legend}` : base;
 
   try {
     const response = await client.chat.completions.create({

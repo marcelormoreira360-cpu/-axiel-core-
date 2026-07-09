@@ -17,6 +17,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const map = await getLatestNeuroIdMap(id);
   if (!map) notFound();
 
+  // Defense-in-depth de tenant (mesmo padrão de app/api/documents/[id]/route.ts):
+  // a RLS já protege o select, mas checamos explicitamente que o mapa pertence
+  // à clínica atual. Divergência (ou ausência de clínica) responde como 404.
+  if (!clinic?.id || map.clinic_id !== clinic.id) notFound();
+
   const patient = await getPatientById(id, clinic?.id);
 
   // Marca da clínica (mesmo padrão do relatório 360).

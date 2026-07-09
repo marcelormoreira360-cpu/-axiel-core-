@@ -5,6 +5,9 @@ import { PatientWelcomeEmail } from "@/components/email/patient-welcome-email";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import type { Patient } from "@/lib/types";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("patient-welcome");
 
 export async function sendPatientWelcome(
   patient: Pick<Patient, "id" | "full_name" | "email" | "phone" | "clinic_id">,
@@ -36,7 +39,7 @@ export async function sendPatientWelcome(
         }),
       });
     } catch (e) {
-      console.error("[patient-welcome] email failed:", e);
+      log.error("email failed", e);
     }
   }
 
@@ -47,7 +50,7 @@ export async function sendPatientWelcome(
     try {
       await sendWhatsAppText(patient.phone, msg);
     } catch (e) {
-      console.error("[patient-welcome] whatsapp failed:", e);
+      log.error("whatsapp failed", e);
     }
   }
 }

@@ -8,6 +8,9 @@ import { getServerT, resolveClinicLocale, resolvePatientLocale } from "@/lib/ema
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("automations");
 
 // Timezone por clínica com cache de instância (o fuso raramente muda e o cron
 // processa muitos follow-ups da mesma clínica por execução).
@@ -112,7 +115,7 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
   if (rows.length === 0) return;
 
   const { error } = await supabase.from("follow_ups").insert(rows);
-  if (error) console.error("[automation] schedule failed:", error.message);
+  if (error) log.error("schedule failed", error);
 }
 
 // Converts automation tag to rule_key for automation_templates lookup
@@ -280,7 +283,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
       .eq("status", "pending")
       .select("id");
     if (!claimResult || claimResult.length === 0) {
-      console.warn("[automations] follow_up", fu.id, "already claimed by another instance — skipping");
+      log.warn("follow_up already claimed by another instance — skipping", { follow_up_id: fu.id });
       return "skipped";
     }
 
@@ -348,7 +351,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
     .from("rate_limit_buckets")
     .delete()
     .lt("window_start", new Date(Date.now() - 60 * 60 * 1000).toISOString())
-    .then(({ error }) => { if (error) console.warn("[automations] rate_limit cleanup error:", error.message); });
+    .then(({ error }) => { if (error) log.warn("rate_limit cleanup error", { error: error.message }); });
 
   return { processed: (followUps ?? []).length, sent, failed, skipped };
 }

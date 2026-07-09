@@ -5,6 +5,9 @@ import {
   upsertGrowthLead,
   type GrowthLeadPayload,
 } from "@/services/growth-integration-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("growth-lead");
 
 export const runtime = "nodejs";
 
@@ -67,7 +70,7 @@ export async function POST(req: NextRequest) {
       created,
     });
   } catch (err) {
-    console.error("Growth lead intake error:", err);
+    log.error("Growth lead intake error", err);
     return NextResponse.json({ ok: false, error: "intake_failed" }, { status: 500 });
   }
 }

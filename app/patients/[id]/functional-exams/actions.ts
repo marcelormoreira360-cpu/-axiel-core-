@@ -10,6 +10,8 @@ import {
   type FunctionalExamType,
 } from "@/services/functional-exams-service";
 import { analyzeExamPdf, extractExamMetrics } from "@/services/exam-ai-service";
+import { getPatientById } from "@/services/patient-service";
+import { resolvePatientLocale } from "@/lib/email-i18n";
 import { coerceExamMetricsDraft, type ExamInstrument } from "@/modules/neuro-id/exam-metrics";
 
 const TYPES: FunctionalExamType[] = ["neurometria", "biorressonancia", "outro"];
@@ -40,8 +42,11 @@ export async function addFunctionalExamAction(formData: FormData) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const pdfBase64 = buffer.toString("base64");
     filePath = await uploadFunctionalExamFile(buffer, file.name, file.type, patientId, profile.clinic_id);
+    // A síntese entra no Relatório Funcional do PACIENTE → idioma do paciente.
+    const patient = await getPatientById(patientId, profile.clinic_id);
+    const patientLocale = await resolvePatientLocale(patient?.locale, profile.clinic_id);
     [aiAnalysis, metricsDraft] = await Promise.all([
-      analyzeExamPdf({ pdfBase64, filename: file.name, examType, examTitle: title }),
+      analyzeExamPdf({ pdfBase64, filename: file.name, examType, examTitle: title, locale: patientLocale }),
       extractExamMetrics({ pdfBase64, filename: file.name, examType }),
     ]);
     // Sem resumo manual? usa a síntese da IA (que o terapeuta pode editar depois).

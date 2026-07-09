@@ -1,10 +1,15 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 -- Migration 025 — Supabase Storage buckets
 --
--- Creates the private storage buckets used by the application.
--- The admin client (service-role key) is used for all uploads/downloads,
--- so no per-user RLS storage policies are needed — the buckets just need
--- to exist and be private.
+-- Creates the storage buckets used by the application.
+--
+-- patient-docs: privado; uploads/downloads passam pelo admin client
+-- (service-role), então não há policy por usuário para ele.
+--
+-- clinic-assets: PÚBLICO para leitura e escrito direto pelo client
+-- autenticado, então PRECISA de policies de INSERT/UPDATE/DELETE por pasta
+-- clinic_id/* — ver migration 123_security_hardening.sql (originalmente
+-- 044_clinic_assets_storage.sql, hoje em migrations_archive).
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Patient documents uploaded via the /envio public intake page

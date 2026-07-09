@@ -1,5 +1,8 @@
 import { toAppError } from "@/lib/errors";
 import type { AuditEvent } from "@/modules/security/audit-events";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("audit-service");
 
 export type AuditLogRow = {
   id: string;
@@ -112,7 +115,7 @@ export async function writeAuditLog(input: {
     // Audit logging should never expose sensitive provider/database details to the user.
     // The operation continues, but the server logs a safe operational error for support.
     const safeError = toAppError(error, "Audit log could not be written.");
-    console.error("Audit log failed", {
+    log.error("Audit log failed", {
       kind: safeError.kind,
       message: safeError.safeMessage,
       action: input.action,

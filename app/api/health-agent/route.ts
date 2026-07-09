@@ -4,6 +4,9 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("health-agent");
 
 // ─── Supabase result types ────────────────────────────────────────────────────
 
@@ -403,7 +406,7 @@ Gere um JSON com EXATAMENTE esta estrutura:
     const report = JSON.parse(data.choices[0].message.content) as HealthAgentReport;
     return NextResponse.json({ report, patientName: ctx.name });
   } catch (err: unknown) {
-    console.error("Health agent error:", err);
+    log.error("Health agent error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

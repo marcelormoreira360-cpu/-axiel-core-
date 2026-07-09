@@ -14,6 +14,9 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { TrialExpiryEmail } from "@/components/email/trial-expiry-email";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("trial-expiry");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -171,7 +174,7 @@ export async function processTrialExpiryEmails(): Promise<{ sent: number; skippe
     if (r.status === "fulfilled") {
       r.value === "sent" ? sent++ : skipped++;
     } else {
-      console.error("[trial-expiry] clinic failed:", r.reason);
+      log.error("clinic failed", r.reason);
       failed++;
     }
   }

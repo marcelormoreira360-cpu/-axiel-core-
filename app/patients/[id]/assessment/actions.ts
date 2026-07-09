@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { resolveLocale } from "@/i18n/get-locale";
 import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
@@ -87,7 +88,8 @@ export async function suggestAtmIntegrationAction(
   if (!clinic?.id) return { error: "Não autorizado." };
   const patient = await getPatientById(patientId, clinic.id);
   if (!patient) return { error: "Paciente não encontrado nesta clínica." };
-  return await suggestAtmIntegration(patientId);
+  // Rascunho INTERNO (terapeuta lê): sai no idioma da clínica (locale da UI).
+  return await suggestAtmIntegration(patientId, await resolveLocale());
 }
 
 // Medicação (carga): IA lê a resposta do QRM e separa remédios x suplementos para o

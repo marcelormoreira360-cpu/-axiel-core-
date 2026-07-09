@@ -2,6 +2,9 @@ import { cache } from "react";
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
 import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
 import type { ClinicBillingContext } from "@/modules/billing/feature-access";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("billing-service");
 
 // React.cache deduplicates per clinicId within a single request.
 // getBillingContext was being called 5-10x per page (feature gates on multiple
@@ -16,7 +19,7 @@ export const getClinicSubscription = cache(async (clinicId: string) => {
     .maybeSingle();
 
   if (error) {
-    console.error("getClinicSubscription error", error);
+    log.error("getClinicSubscription error", error);
     return null;
   }
 

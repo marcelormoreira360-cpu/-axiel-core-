@@ -17,6 +17,9 @@ import { roleLabels } from "@/modules/auth/roles";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import type { ClinicProfile } from "@/lib/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("clinics-page");
 
 const PROFILES: {
   id: ClinicProfile;
@@ -32,9 +35,9 @@ const PROFILES: {
 export default async function ClinicsPage() {
   const t = await getTranslations("clinics");
   const [clinics, users, myClinic] = await Promise.all([
-    getClinicsForUser().catch((e) => { console.error("[/clinics] getClinicsForUser error:", e?.message ?? e); return []; }),
-    getUsersForCurrentScope().catch((e) => { console.error("[/clinics] getUsersForCurrentScope error:", e?.message ?? e); return []; }),
-    getCurrentClinic().catch((e) => { console.error("[/clinics] getCurrentClinic error:", e?.message ?? e); return null; }),
+    getClinicsForUser().catch((e) => { log.error("getClinicsForUser error", e); return []; }),
+    getUsersForCurrentScope().catch((e) => { log.error("getUsersForCurrentScope error", e); return []; }),
+    getCurrentClinic().catch((e) => { log.error("getCurrentClinic error", e); return null; }),
   ]);
 
   const billingCtx = myClinic ? await getBillingContext(myClinic.id) : null;

@@ -3,6 +3,9 @@ import { stripe, getAppUrl } from "@/lib/stripe";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("charge-session");
 
 export const runtime = "nodejs";
 
@@ -130,7 +133,7 @@ export async function POST(request: Request) {
   } catch (e) {
     // Surfacing the real Stripe reason (chave inválida, conta restrita, URL inválida, método/moeda…)
     const msg = e instanceof Error ? e.message : "Erro ao criar cobrança no Stripe.";
-    console.error("[charge-session] Stripe error:", msg);
+    log.error("Stripe error", e, { message: msg });
     return NextResponse.json({ error: `Stripe: ${msg}` }, { status: 502 });
   }
 }

@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { createHmac, randomBytes } from "crypto";
 import { buildGoogleAuthUrl } from "@/services/google-calendar-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("google-oauth");
 
 export const runtime = "nodejs";
 
@@ -12,7 +15,7 @@ export async function GET() {
 
   const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!secret) {
-    console.error("Google OAuth: CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
+    log.error("CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
     return NextResponse.json({ error: "Integração com Google não configurada. Contate o suporte." }, { status: 500 });
   }
 

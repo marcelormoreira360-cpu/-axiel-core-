@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { languageInstruction } from "@/lib/ai-language";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import {
   getFinanceKPIs,
@@ -54,6 +55,8 @@ export async function getLatestFinanceInsight(
 
 export async function generateFinanceInsight(
   clinicId: string,
+  // Material INTERNO (gestor lê) → idioma da CLÍNICA (locale da UI). Default pt-BR.
+  clinicLocale?: string | null,
 ): Promise<FinanceAIInsight> {
   const [kpis, monthly, repasse, __cur] = await Promise.all([
     getFinanceKPIs(clinicId),
@@ -61,7 +64,8 @@ export async function generateFinanceInsight(
     getRepasseHistory(clinicId),
     getClinicCurrency(clinicId),
   ]);
-  const formatBRL = (c: number) => formatMoney(c, __cur, "pt-BR");
+  const locale = clinicLocale ?? "pt-BR";
+  const formatBRL = (c: number) => formatMoney(c, __cur, locale);
 
   // Build context strings
   const delta =
@@ -111,7 +115,7 @@ ${repasseText}
 
 ## Instruções de resposta
 Responda SOMENTE com JSON válido, sem markdown nem explicações fora do JSON.
-Use linguagem direta, prática e em português brasileiro.
+Use linguagem direta e prática. ${languageInstruction(locale)}
 Seja específico com valores quando relevante.
 Máximo 3 itens por lista.
 

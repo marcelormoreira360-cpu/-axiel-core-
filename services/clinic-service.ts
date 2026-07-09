@@ -1,6 +1,9 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Clinic } from "@/lib/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("clinic-service");
 
 export const ACTIVE_CLINIC_COOKIE = "axiel_active_clinic_id";
 
@@ -142,7 +145,7 @@ export async function getClinicBySlug(slug: string): Promise<Pick<import("@/lib/
     .select("id, name, logo_url, primary_color, slug")
     .eq("slug", slug)
     .maybeSingle();
-  if (error) console.error("[getClinicBySlug] error for slug=%s: %s", slug, error.message);
+  if (error) log.error("getClinicBySlug error", error, { slug });
   return data ?? null;
 }
 // ── Clinic settings helpers ────────────────────────────────────────────────────

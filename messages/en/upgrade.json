@@ -4,6 +4,7 @@
   "title": "Your trial period has ended",
   "subtitle": "Choose a plan to keep using AXIEL Core and retain access to all your clinical data.",
   "mostPopular": "Most popular",
+  "perMonth": "/mo",
   "subscribe": "Subscribe to {plan}",
   "trustNote": "Secure payments via Stripe. Cancel anytime. No setup fee.",
   "manageSubscription": "Manage subscription",

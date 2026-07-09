@@ -6,6 +6,9 @@ import { upsertSessionRecord } from "@/services/session-recording-service";
 import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
 import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
 import type { AiInsight, ClinicalTestResult, BodyMapNote } from "@/lib/types";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("session-actions");
 
 export type SaveSessionState = { error?: string } | null;
 
@@ -114,7 +117,7 @@ export async function saveSessionRecord(
       body_map_notes:  bodyMapNotes.length ? bodyMapNotes : null,
     });
   } catch (err: unknown) {
-    console.error("[saveSessionRecord] upsert failed:", err);
+    log.error("[saveSessionRecord] upsert failed", err);
     return { error: "Erro ao salvar a sessão. Tente novamente." };
   }
 
@@ -225,7 +228,7 @@ Se não houver histórico suficiente, sugira um template padrão para o tipo de 
       error: null,
     };
   } catch (err: unknown) {
-    console.error("[suggestSoapAction] failed:", err);
+    log.error("[suggestSoapAction] failed", err);
     return { suggestion: null, error: "Erro ao gerar sugestão SOAP." };
   }
 }

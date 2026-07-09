@@ -15,6 +15,8 @@ export type AiInsightInputSnapshot = {
     id: string;
     clinic_id: string;
     full_name: string;
+    /** Idioma preferido do paciente (patients.locale); null = herda o da clínica. */
+    locale: string | null;
     status: string;
     notes: string | null;
     age: number | null;
@@ -120,6 +122,7 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       id: patient.id,
       clinic_id: patient.clinic_id,
       full_name: patient.full_name,
+      locale: patient.locale ?? null,
       status: patient.status,
       notes: normalizeInsightText(patient.notes),
       age: ageFromDob(patient.date_of_birth),

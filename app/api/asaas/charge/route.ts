@@ -4,6 +4,9 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { ensureAsaasCustomer, createAsaasCharge, type AsaasBillingType } from "@/services/asaas-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("asaas-charge");
 
 export const runtime = "nodejs";
 
@@ -117,12 +120,12 @@ export async function POST(request: Request) {
     if (insErr) {
       // CRÍTICO: sem registro local, o paciente pagaria uma cobrança "fantasma".
       // Cancela a cobrança no Asaas (best-effort) e retorna erro — fix auditoria 10/06/2026.
-      console.error("asaas/charge: falha ao gravar patient_payments pending", insErr);
+      log.error("falha ao gravar patient_payments pending", insErr);
       try {
         const { asaasFetch } = await import("@/lib/asaas");
         await asaasFetch(`/payments/${asaasPaymentId}`, { method: "DELETE" });
       } catch (cancelErr) {
-        console.error("asaas/charge: falha ao cancelar cobrança órfã", asaasPaymentId, cancelErr);
+        log.error("falha ao cancelar cobrança órfã", cancelErr, { asaasPaymentId });
       }
       return NextResponse.json(
         { error: "Erro ao registrar a cobrança. Nenhum link foi enviado — tente novamente." },

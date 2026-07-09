@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { createHmac } from "crypto";
 import { processZoomRecordingWebhook } from "@/services/zoom-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("zoom-webhook");
 
 export const runtime = "nodejs";
 
@@ -35,7 +38,7 @@ export async function POST(req: Request) {
   // ── 2. Validate webhook signature ──────────────────────────────────────────
   const secret = process.env.ZOOM_WEBHOOK_SECRET_TOKEN;
   if (!secret) {
-    console.error("zoom-webhook: ZOOM_WEBHOOK_SECRET_TOKEN not set — rejecting (fail closed)");
+    log.error("ZOOM_WEBHOOK_SECRET_TOKEN not set — rejecting (fail closed)");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const ts        = req.headers.get("x-zm-request-timestamp") ?? "";

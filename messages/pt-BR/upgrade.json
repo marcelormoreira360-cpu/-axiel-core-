@@ -4,6 +4,7 @@
   "title": "Seu período de avaliação encerrou",
   "subtitle": "Escolha um plano para continuar usando o AXIEL Core e manter acesso a todos os seus dados clínicos.",
   "mostPopular": "Mais popular",
+  "perMonth": "/mês",
   "subscribe": "Assinar {plan}",
   "trustNote": "Pagamentos seguros via Stripe. Cancele a qualquer momento. Sem taxa de setup.",
   "manageSubscription": "Gerenciar assinatura",

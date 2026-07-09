@@ -25,9 +25,12 @@ function foldLine(line: string): string {
 export async function generateIcalFeed(clinicId: string, clinicName: string): Promise<string> {
   const supabase = createSupabaseAdminClient();
 
+  // SEGURANÇA (PHI): as notas clínicas (`notes`) NUNCA entram no feed iCal.
+  // O feed sai por URL com segredo estático e pode ser assinado por apps de
+  // calendário de terceiros; só tipo de sessão + nome do paciente no SUMMARY.
   const { data: appointments } = await supabase
     .from("appointments")
-    .select("id, starts_at, duration_minutes, notes, ical_uid, zoom_join_url, patients(full_name), session_types(name)")
+    .select("id, starts_at, duration_minutes, ical_uid, zoom_join_url, patients(full_name), session_types(name)")
     .eq("clinic_id", clinicId)
     .order("starts_at", { ascending: false })
     .limit(500);
@@ -51,8 +54,7 @@ export async function generateIcalFeed(clinicId: string, clinicName: string): Pr
     const uid     = appt.ical_uid ?? appt.id;
 
     const summary     = `${sessionType?.name ?? "Consulta"} — ${patient?.full_name ?? "Paciente"}`;
-    const descParts   = [appt.notes, appt.zoom_join_url ? `Zoom: ${appt.zoom_join_url}` : null].filter(Boolean);
-    const description = descParts.join("\\n");
+    const description = appt.zoom_join_url ? `Zoom: ${appt.zoom_join_url}` : "";
 
     lines.push("BEGIN:VEVENT");
     lines.push(foldLine(`UID:${uid}@axiel.app`));

@@ -215,12 +215,22 @@ export function formatPlanPrice(plan: PlanConfig, currency: CurrencyCode = "BRL"
 
   if (amount === null) return "Sob consulta";
 
+  return formatPriceCents(amount, currency);
+}
+
+/**
+ * Formata um valor em centavos na moeda pedida (mesma formatação usada na
+ * página pública de pricing). Serve para preços vindos da tabela `plans` do
+ * banco, onde os centavos chegam soltos (price_cents / price_usd_cents /
+ * price_eur_cents) e não como PlanConfig.
+ */
+export function formatPriceCents(amountCents: number, currency: CurrencyCode): string {
   const locale = currency === "BRL" ? "pt-BR" : currency === "EUR" ? "de-DE" : "en-US";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     maximumFractionDigits: 0,
-  }).format(amount / 100);
+  }).format(amountCents / 100);
 }
 
 /** Back-compat for existing billing page */

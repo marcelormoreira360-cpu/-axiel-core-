@@ -12,6 +12,10 @@
 // Falha de banco NÃO bloqueia o bot (fail-open): melhor arriscar uma resposta
 // duplicada do que silenciar o atendimento por indisponibilidade da tabela.
 
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("meta-dedup");
+
 type DedupInsertResult = { data: unknown[] | null; error: { code?: string; message?: string } | null };
 
 // Superfície mínima do client Supabase usada pelo dedup — os webhooks passam o
@@ -44,12 +48,12 @@ export async function isDuplicateMetaMessage(
       .select("mid");
 
     if (error) {
-      console.error("[meta-dedup] insert failed (processando mesmo assim):", error.message ?? error.code);
+      log.error("insert failed (processando mesmo assim)", error);
       return false;
     }
     return (data?.length ?? 0) === 0;
   } catch (e) {
-    console.error("[meta-dedup] exception (processando mesmo assim):", e);
+    log.error("exception (processando mesmo assim)", e);
     return false;
   }
 }

@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
+import { resolveLocale } from "@/i18n/get-locale";
 import { createPaymentAdmin } from "@/services/finance-service";
 import { getSignedDocumentUrl } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -98,7 +99,8 @@ export async function generateFinanceInsightAction(): Promise<{
   if (!clinic) return { error: "Clínica não encontrada." };
 
   try {
-    const insight = await generateFinanceInsight(clinic.id);
+    // Análise INTERNA (gestor lê): idioma da clínica (locale da UI).
+    const insight = await generateFinanceInsight(clinic.id, await resolveLocale());
     return { insight };
   } catch (e: unknown) {
     let msg = "Erro ao gerar análise.";

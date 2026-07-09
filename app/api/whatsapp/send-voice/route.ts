@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { sendWhatsAppMedia, formatReportForTTS } from "@/services/whatsapp-service";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("whatsapp-send-voice");
 
 // Gera áudio TTS via OpenAI, salva no bucket PRIVADO patient-docs e envia ao
 // paciente via WhatsApp usando URL assinada com expiração (dados clínicos
@@ -98,7 +101,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
-    console.error("WhatsApp voice send error:", err);
+    log.error("WhatsApp voice send error", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Erro interno" },
       { status: 500 }

@@ -1,4 +1,12 @@
 {
+  "autoReply": {
+    "fallback": "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊",
+    "fallbackSms": "Olá! Recebi sua mensagem. Em breve entraremos em contato.",
+    "handover": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏",
+    "handoverSms": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui.",
+    "greeting": "Olá! Obrigada pela mensagem. 😊 Como posso ajudar você hoje?",
+    "audioFail": "Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊"
+  },
   "channel": {
     "whatsapp": "WhatsApp",
     "messenger": "Messenger",

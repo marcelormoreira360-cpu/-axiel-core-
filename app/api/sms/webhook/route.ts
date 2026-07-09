@@ -8,6 +8,8 @@ import {
   type WhatsAppBotConfig,
 } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
+import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
@@ -47,13 +49,11 @@ export const runtime = "nodejs";
 //   o link público de agendamento da clínica (paridade com o funil do WhatsApp).
 // • Resposta via TwiML (<Response><Message>), como o webhook de WhatsApp.
 
-// Fallback curto e sem emoji (regra do canal SMS)
-const SMS_FALLBACK_REPLY = "Olá! Recebi sua mensagem. Em breve entraremos em contato.";
+const log = createLogger("sms");
 
-// Resposta de opt-out (curta, sem emoji, bilíngue como nos canais Meta)
-const SMS_HANDOVER_REPLY =
-  "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. " +
-  "(Of course! I'll let the team know and a person will reach out to you here shortly.)";
+// Fallback e opt-out do canal SMS (curtos, sem emoji) saem do namespace
+// `whatsapp.autoReply.*` no idioma do paciente (patients.locale pelo telefone)
+// e, na falta, no idioma da clínica; sem clínica, pt-BR.
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -133,10 +133,15 @@ export async function POST(req: NextRequest) {
     // ── Opt-out / escalonamento humano ("falar com atendente") ─────────────
     // Responde uma vez, marca a conversa para um humano assumir e silencia.
     if (isOptOutRequest(incomingMessage)) {
+      const tReply = await getServerT(
+        await resolveChatLocaleByPhone(fromNumber, effectiveClinicId),
+        "whatsapp",
+      );
+      const handoverReply = tReply("autoReply.handoverSms");
       const updatedMessages: ChatMessage[] = [
         ...history,
         { role: "user", content: incomingMessage },
-        { role: "assistant", content: SMS_HANDOVER_REPLY },
+        { role: "assistant", content: handoverReply },
       ];
       await saveConversation(supabase, conversationKey, convId, updatedMessages, effectiveClinicId, "sms");
       await supabase
@@ -144,7 +149,7 @@ export async function POST(req: NextRequest) {
         .update({ bot_disabled: true, ai_paused: true })
         .eq("phone", conversationKey)
         .then(() => {}, () => {});
-      return new NextResponse(twimlMessage(SMS_HANDOVER_REPLY), {
+      return new NextResponse(twimlMessage(handoverReply), {
         status: 200,
         headers: { "Content-Type": "text/xml" },
       });
@@ -168,7 +173,14 @@ export async function POST(req: NextRequest) {
 
     // max_tokens menor que no WhatsApp: SMS pede respostas de até ~300 chars
     const reply = await generateReply(incomingMessage, history, systemPrompt, apiKey, { maxTokens: 220 });
-    const finalReply = reply || SMS_FALLBACK_REPLY;
+    let finalReply = reply;
+    if (!finalReply) {
+      const tReply = await getServerT(
+        await resolveChatLocaleByPhone(fromNumber, effectiveClinicId),
+        "whatsapp",
+      );
+      finalReply = tReply("autoReply.fallbackSms");
+    }
 
     // BUG-02: await the save so history is persisted before next message arrives
     const updatedMessages: ChatMessage[] = [
@@ -184,7 +196,7 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "text/xml" },
     });
   } catch (err) {
-    console.error("SMS webhook error:", err);
+    log.error("webhook error", err);
     return new NextResponse("", { status: 200 });
   }
 }

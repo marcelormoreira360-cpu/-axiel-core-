@@ -3,6 +3,9 @@ import { stripe } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { isManager } from "@/lib/team-utils";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("stripe-refund");
 
 export const runtime = "nodejs";
 
@@ -98,7 +101,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro ao processar reembolso.";
-    console.error("Stripe refund error:", message);
+    log.error("Stripe refund error", err);
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

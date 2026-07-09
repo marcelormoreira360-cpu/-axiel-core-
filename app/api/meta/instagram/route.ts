@@ -7,8 +7,12 @@ import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
+import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
+import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+
+const log = createLogger("instagram");
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -102,7 +106,7 @@ async function registerHumanReply(
       { onConflict: "phone" },
     );
   } catch (e) {
-    console.error(`[handoff] registerHumanReply failed for ig_${userId}:`, e);
+    log.error("registerHumanReply failed", e, { conversation: `ig_${userId.slice(-4)}` });
   }
 }
 
@@ -154,7 +158,7 @@ async function autoCreateLead(
       notes: `Lead criado automaticamente via Instagram DM.\nPrimeira mensagem: "${firstMessage.slice(0, 200)}"`,
     });
   } catch (e) {
-    console.error("[instagram] auto-create lead failed:", e);
+    log.error("auto-create lead failed", e);
   }
 }
 
@@ -188,7 +192,7 @@ async function sendInstagramReply(recipientId: string, text: string, igAccountId
 
   if (!res.ok) {
     const err = await res.json();
-    console.error("Instagram send error:", JSON.stringify(err));
+    log.error("send error", { detail: JSON.stringify(err) });
     throw new Error(`Instagram API error: ${res.status}`);
   }
 }
@@ -218,7 +222,7 @@ async function generateReply(
 
   const data = await res.json();
   if (!res.ok) {
-    console.error("OpenAI error (Instagram):", res.status, JSON.stringify(data));
+    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
     return "";
   }
   return data.choices?.[0]?.message?.content?.trim() ?? "";
@@ -357,9 +361,10 @@ export async function POST(req: NextRequest) {
         // can ask to talk to a person. We reply once, flag the conversation for a
         // human to take over (bot_disabled), and stop auto-replying in this thread.
         if (isOptOutRequest(messageText)) {
-          const handover = promptConfig.language === "en-US"
-            ? "Of course! I'll let the team know and a person will reach out to you here shortly. 🙏"
-            : "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏";
+          // Auto-reply fixo no idioma da clínica (id do IG não identifica
+          // paciente por telefone); sem clínica, pt-BR.
+          const tReply = await getServerT(await resolveClinicLocale(clinicId), "whatsapp");
+          const handover = tReply("autoReply.handover");
           await saveHistory(supabase, senderId, convId, [
             ...history,
             { role: "user", content: messageText },
@@ -391,7 +396,11 @@ export async function POST(req: NextRequest) {
         const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
-        const finalReply = reply || "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊";
+        let finalReply = reply;
+        if (!finalReply) {
+          const tReply = await getServerT(await resolveClinicLocale(clinicId), "whatsapp");
+          finalReply = tReply("autoReply.fallback");
+        }
 
         await saveHistory(supabase, senderId, convId, [
           ...history,
@@ -405,7 +414,7 @@ export async function POST(req: NextRequest) {
 
     return new NextResponse("", { status: 200 });
   } catch (err) {
-    console.error("Instagram webhook error:", err);
+    log.error("webhook error", err);
     return new NextResponse("", { status: 200 });
   }
 }

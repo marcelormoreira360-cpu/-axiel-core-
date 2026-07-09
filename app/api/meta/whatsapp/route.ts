@@ -5,6 +5,7 @@ import { IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByMetaPhoneId } from "@/servic
 import type { PricingLocation } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import type { Lang } from "@/lib/whatsapp-lang";
+import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
@@ -690,9 +691,16 @@ export async function POST(req: NextRequest) {
             nextStep = 8; // stays at 8
           }
 
-          const finalReply = reply || (lang === "en"
-            ? "Hello! I received your message. We'll be in touch soon. 😊"
-            : "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊");
+          // Fallback fixo no idioma do paciente (patients.locale pelo telefone)
+          // e, na falta, no idioma da clínica; sem clínica, pt-BR.
+          let finalReply = reply;
+          if (!finalReply) {
+            const tReply = await getServerT(
+              await resolveChatLocaleByPhone(fromPhone, effectiveClinicId),
+              "whatsapp",
+            );
+            finalReply = tReply("autoReply.fallback");
+          }
 
           const updatedHistory = [
             ...activeHistory,

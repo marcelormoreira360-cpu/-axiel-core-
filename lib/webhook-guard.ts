@@ -3,6 +3,9 @@ import twilio from "twilio";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("webhook-guard");
+// Escopo dedicado para o rate limiter distribuído: o fail-open precisa ficar
+// visível e filtrável no Sentry/logs separado dos webhooks.
+const rateLimitLog = createLogger("rate-limit");
 
 // ─── Twilio Webhook Signature Validation ─────────────────────────────────────
 // Validates that incoming requests genuinely originate from Twilio.
@@ -104,7 +107,10 @@ export async function checkRateLimitDb(
     });
 
     if (error) {
-      log.warn("DB error — failing open", { message: error.message, key });
+      rateLimitLog.warn("checkRateLimitDb fail-open: erro de banco, request liberado sem limite", {
+        message: error.message,
+        key,
+      });
       return true; // fail-open
     }
 
@@ -117,13 +123,16 @@ export async function checkRateLimitDb(
         .delete()
         .lt("window_start", cutoff)
         .then(({ error: cleanErr }) => {
-          if (cleanErr) log.warn("cleanup error", { message: cleanErr.message });
+          if (cleanErr) rateLimitLog.warn("cleanup error", { message: cleanErr.message });
         });
     }
 
     return data === true;
   } catch (e) {
-    log.warn("unexpected error — failing open", { error: e instanceof Error ? e.message : String(e) });
+    rateLimitLog.warn("checkRateLimitDb fail-open: erro inesperado, request liberado sem limite", {
+      error: e instanceof Error ? e.message : String(e),
+      key,
+    });
     return true; // fail-open
   }
 }

@@ -14,7 +14,9 @@ export type ServerT = EmailT;
 
 // Namespaces usados por e-mails e PDFs. `publicForm` entra para o e-mail de
 // resultado do MSQ reaproveitar a copy JÁ APROVADA da tela (publicForm.result.*).
-const SERVER_NS = ["emails", "pdf", "common", "publicForm"] as const;
+// `automations` e `whatsapp` entram para as rotas de API (regras padrão de
+// automação e auto-replies fixos dos canais de chat) saírem no idioma certo.
+const SERVER_NS = ["emails", "pdf", "common", "publicForm", "automations", "whatsapp"] as const;
 
 async function loadMessages(locale: Locale): Promise<Record<string, unknown>> {
   const entries = await Promise.all(
@@ -56,6 +58,41 @@ export async function resolvePatientLocale(
 ): Promise<Locale> {
   if (patientLocale === "pt-BR" || patientLocale === "en" || patientLocale === "pt-PT") {
     return patientLocale as Locale;
+  }
+  return resolveClinicLocale(clinicId);
+}
+
+/**
+ * Locale para AUTO-REPLIES fixos dos canais de chat (WhatsApp/SMS): tenta achar
+ * o paciente pelo telefone na clínica e usa o locale dele; sem paciente, cai no
+ * idioma da clínica; sem clínica, pt-BR (DEFAULT_LOCALE). Ids que não são
+ * telefone (PSID do Messenger/Instagram) simplesmente não casam e caem no
+ * idioma da clínica.
+ */
+export async function resolveChatLocaleByPhone(
+  phoneRaw: string | null | undefined,
+  clinicId: string | null | undefined,
+): Promise<Locale> {
+  try {
+    if (phoneRaw && clinicId) {
+      const { normalizePhoneDigits } = await import("@/lib/phone");
+      const digits = normalizePhoneDigits(phoneRaw);
+      if (digits) {
+        const candidates = [...new Set([digits, `+${digits}`, phoneRaw])];
+        const supabase = createSupabaseAdminClient();
+        const { data } = await supabase
+          .from("patients")
+          .select("locale")
+          .eq("clinic_id", clinicId)
+          .in("phone", candidates)
+          .is("deleted_at", null)
+          .limit(1)
+          .maybeSingle();
+        if (data) return resolvePatientLocale(data.locale as string | null, clinicId);
+      }
+    }
+  } catch {
+    // cai no idioma da clínica abaixo
   }
   return resolveClinicLocale(clinicId);
 }

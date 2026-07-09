@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { languageInstruction } from "@/lib/ai-language";
 
 export interface ServiceBreakdown {
   name: string;
@@ -55,7 +56,9 @@ const SOURCE_PT: Record<string, string> = {
 
 export async function getBusinessAnalytics(
   clinicId: string,
-  months = 3
+  months = 3,
+  // Painel INTERNO (gestor lê) → idioma da CLÍNICA (locale da UI). Default pt-BR.
+  locale: string = "pt-BR"
 ): Promise<BusinessAnalytics> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -170,14 +173,14 @@ export async function getBusinessAnalytics(
   const monthlyMap = new Map<string, MonthEntry>();
   for (let i = 0; i < months; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - months + 1 + i, 1);
-    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    const key = d.toLocaleDateString(locale, { month: "short", year: "2-digit" });
     monthlyMap.set(key, { sessions: 0, session_revenue: 0, new_patients: 0 });
   }
 
   // Sessions per month (using session type price as revenue proxy)
   for (const a of appointments) {
     const d = new Date(a.starts_at);
-    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    const key = d.toLocaleDateString(locale, { month: "short", year: "2-digit" });
     const entry = monthlyMap.get(key);
     if (entry) {
       entry.sessions += 1;
@@ -191,7 +194,7 @@ export async function getBusinessAnalytics(
   const paymentMonthlyMap = new Map<string, number>();
   for (const p of payments) {
     const d = new Date(p.paid_at);
-    const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+    const key = d.toLocaleDateString(locale, { month: "short", year: "2-digit" });
     paymentMonthlyMap.set(key, (paymentMonthlyMap.get(key) ?? 0) + (p.amount_cents ?? 0));
   }
 
@@ -199,7 +202,7 @@ export async function getBusinessAnalytics(
   for (const p of allPatients) {
     if (new Date(p.created_at) >= from) {
       const d = new Date(p.created_at);
-      const key = d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" });
+      const key = d.toLocaleDateString(locale, { month: "short", year: "2-digit" });
       const entry = monthlyMap.get(key);
       if (entry) entry.new_patients += 1;
     }
@@ -217,8 +220,8 @@ export async function getBusinessAnalytics(
 
   const analytics: BusinessAnalytics = {
     period: {
-      from: from.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
-      to: now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
+      from: from.toLocaleDateString(locale, { month: "long", year: "numeric" }),
+      to: now.toLocaleDateString(locale, { month: "long", year: "numeric" }),
     },
     months,
     revenue_cents,
@@ -241,7 +244,11 @@ export async function getBusinessAnalytics(
 
 // Exported so the dedicated /api/results/insights route can call it independently
 // without blocking the main page render.
-export async function generateAiInsights(data: Omit<BusinessAnalytics, "aiInsights">): Promise<AiInsight[]> {
+export async function generateAiInsights(
+  data: Omit<BusinessAnalytics, "aiInsights">,
+  // Insights INTERNOS (gestor lê) → idioma da CLÍNICA (locale da UI). Default pt-BR.
+  locale?: string | null,
+): Promise<AiInsight[]> {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return [];
 
@@ -272,6 +279,7 @@ Retorne APENAS um array JSON válido com exatamente 4 objetos, sem markdown, sem
 ]
 
 Regras:
+- ${languageInstruction(locale)} (title e body; os valores de "type" ficam exatamente como no formato)
 - type="highlight" para pontos positivos e forças
 - type="opportunity" para crescimento e melhoria
 - type="warning" para riscos e atenção
