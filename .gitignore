@@ -10,3 +10,13 @@ node_modules
 # Notas locais do Marcelo (não versionar)
 IA_Voz_Recepcionista_IFWC.md
 _GUIA_APP_REVIEW_META.md
+
+# Documentos de negócio e notas pessoais na raiz (ficam no disco, fora do git)
+/*.pdf
+/*.docx
+/TICKET_*.md
+/MSQ_*.md
+/MSQ_*.json
+/CLARA_*.md
+/_VIDEO_*.md
+/_BRIEF_*.md
