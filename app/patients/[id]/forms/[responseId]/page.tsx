@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
@@ -14,6 +15,8 @@ type Props = {
 };
 
 export default async function ViewResponsePage({ params }: Props) {
+  const t = await getTranslations("forms.response");
+  const locale = await getLocale();
   const { id: patientId, responseId } = await params;
   const [response, answers] = await Promise.all([
     getAssessmentResponse(responseId),
@@ -29,7 +32,7 @@ export default async function ViewResponsePage({ params }: Props) {
   const totalBand = bandForDysfunction(pct); // semáforo por severidade (maior % = pior)
   const sectionScores = response.section_scores ?? {};
 
-  const filledDate = new Date(response.filled_at).toLocaleDateString("pt-BR", {
+  const filledDate = new Date(response.filled_at).toLocaleDateString(locale, {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -48,7 +51,7 @@ export default async function ViewResponsePage({ params }: Props) {
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">
             {template.name}
           </h1>
-          <p className="text-[12px] text-[#A09E98] mt-[1px]">Preenchido em {filledDate}</p>
+          <p className="text-[12px] text-[#A09E98] mt-[1px]">{t("filledAt", { date: filledDate })}</p>
         </div>
       </div>
 
@@ -56,7 +59,7 @@ export default async function ViewResponsePage({ params }: Props) {
       <div className="bg-[#0F1A2E] rounded-[12px] px-[18px] py-[16px] mb-[18px]">
         <div className="flex items-center justify-between mb-[10px]">
           <p className="text-[10px] font-medium tracking-[.10em] uppercase text-white/40">
-            Pontuação total
+            {t("totalScore")}
           </p>
           <div className="flex items-baseline gap-[4px]">
             <span className="text-[32px] font-semibold text-white tracking-[-0.04em]">
@@ -75,7 +78,7 @@ export default async function ViewResponsePage({ params }: Props) {
 
       {/* Section summary */}
       <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] mb-[18px]">
-        <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">Pontuação por seção</p>
+        <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("sectionScore")}</p>
         <div className="space-y-[6px]">
           {template.assessment_sections.map((section) => {
             const ss = sectionScores[section.id];
@@ -152,7 +155,7 @@ export default async function ViewResponsePage({ params }: Props) {
 
       {response.notes && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] mt-[18px]">
-          <p className="text-[11px] font-medium text-[#6B6A66] mb-[4px]">Observações</p>
+          <p className="text-[11px] font-medium text-[#6B6A66] mb-[4px]">{t("notes")}</p>
           <p className="text-[12px] text-[#0F1A2E]">{response.notes}</p>
         </div>
       )}

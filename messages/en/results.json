@@ -12,7 +12,7 @@
     "perPatient": "{count}× per patient",
     "activePatients": "{count, plural, one {# active patient} other {# active patients}}",
     "newThisPeriod": "{count, plural, one {# new this period} other {# new this period}}",
-    "servicesTitle": "Services — volume and revenue",
+    "servicesTitle": "Services: volume and revenue",
     "noServices": "No service type associated with appointments yet.",
     "noServicesHint": "Set up session types with a price in Settings → Session Types.",
     "sessionsCount": "{count} sessions",

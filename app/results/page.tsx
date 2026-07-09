@@ -216,13 +216,13 @@ export default async function ResultsPage({
 
           {/* Métricas de retenção */}
           <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[12px] p-[15px]">
-            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px]">Retenção e engajamento</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px]">{t("retentionTitle")}</p>
             <div className="space-y-[10px]">
               {[
-                { label: "Taxa de retorno",         value: `${data.return_rate}%`,              note: "pacientes que voltaram" },
-                { label: "Sessões por paciente",    value: `${data.avg_sessions_per_patient}×`,  note: "média no período" },
-                { label: "Novos pacientes",         value: String(data.new_patients),            note: "no período" },
-                { label: "Conv. leads → pacientes", value: `${data.conversion_rate}%`,           note: "taxa de fechamento" },
+                { label: t("retReturn"),     value: `${data.return_rate}%`,              note: t("retReturnNote") },
+                { label: t("retPerPatient"), value: `${data.avg_sessions_per_patient}×`,  note: t("retPerPatientNote") },
+                { label: t("retNew"),        value: String(data.new_patients),            note: t("retNewNote") },
+                { label: t("retConv"),       value: `${data.conversion_rate}%`,           note: t("retConvNote") },
               ].map((m) => (
                 <div key={m.label} className="flex items-center justify-between">
                   <div>

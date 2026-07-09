@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
 import { parseDob } from "@/lib/dob";
 import { getPatientById } from "@/services/patient-service";
 import { getPatientPrescriptions } from "@/services/exams-service";
@@ -7,8 +8,8 @@ import { getCurrentUserProfile } from "@/services/user-service";
 
 type Props = { params: Promise<{ id: string }> };
 
-function formatDate(iso: string) {
-  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {
+function formatDate(iso: string, locale: string) {
+  return new Date(iso + "T12:00:00").toLocaleDateString(locale, {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
 }
@@ -19,6 +20,8 @@ function age(dob?: string | null) {
 }
 
 export default async function PrescriptionsPrintPage({ params }: Props) {
+  const t = await getTranslations("pdf.prescriptions");
+  const locale = await getLocale();
   const { id } = await params;
 
   const [patient, prescriptions, clinic, profile] = await Promise.all([
@@ -34,7 +37,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
   const medications = active.filter((p) => p.type === "medication");
   const supplements = active.filter((p) => p.type === "supplement");
 
-  const printedAt = new Date().toLocaleDateString("pt-BR", {
+  const printedAt = new Date().toLocaleDateString(locale, {
     day: "2-digit", month: "2-digit", year: "numeric",
   });
   const patientAge = age(patient.date_of_birth);
@@ -46,10 +49,10 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
   ].filter((s) => s && s.trim()).join(" · ");
 
   return (
-    <html lang="pt-BR">
+    <html lang={locale}>
       <head>
         <meta charSet="utf-8" />
-        <title>Receituário — {patient.full_name}</title>
+        <title>{t("pageTitle", { name: patient.full_name })}</title>
         <style>{`
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #111; background: white; }
@@ -116,7 +119,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
         <div className="page">
 
           {/* Back link */}
-          <a href={`/patients/${id}`} className="no-print">← Voltar ao perfil</a>
+          <a href={`/patients/${id}`} className="no-print">{t("back")}</a>
 
           {/* Clinic header — papel timbrado */}
           <div className="header">
@@ -126,8 +129,8 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
                 <img src={clinic.logo_url} alt={clinic?.name ?? ""} className="clinic-logo" />
               )}
               <div>
-                <div className="clinic-name">{clinic?.name ?? "Clínica"}</div>
-                <div className="clinic-sub">{clinic?.report_tagline?.trim() || "Medicina Integrativa"}</div>
+                <div className="clinic-name">{clinic?.name ?? t("clinicFallback")}</div>
+                <div className="clinic-sub">{clinic?.report_tagline?.trim() || t("taglineFallback")}</div>
                 {contactLine && <div className="clinic-contact">{contactLine}</div>}
               </div>
             </div>
@@ -138,7 +141,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
           <hr className="divider-thick" />
 
           {/* Document title */}
-          <div className="doc-title">Receituário</div>
+          <div className="doc-title">{t("docTitle")}</div>
 
           {/* Patient info */}
           <div className="patient-box">
@@ -146,13 +149,13 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
             <div className="patient-meta">
               {patient.date_of_birth && (
                 <div className="meta-item">
-                  <label>Data de nascimento</label>
-                  <span>{formatDate(patient.date_of_birth)}{patientAge ? ` · ${patientAge} anos` : ""}</span>
+                  <label>{t("dob")}</label>
+                  <span>{formatDate(patient.date_of_birth, locale)}{patientAge ? ` · ${t("yearsSuffix", { age: patientAge })}` : ""}</span>
                 </div>
               )}
               {patient.phone && (
                 <div className="meta-item">
-                  <label>Telefone</label>
+                  <label>{t("phone")}</label>
                   <span>{patient.phone}</span>
                 </div>
               )}
@@ -162,7 +165,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
           {/* Medications */}
           {medications.length > 0 && (
             <div className="section">
-              <div className="section-title">Medicamentos</div>
+              <div className="section-title">{t("medications")}</div>
               {medications.map((rx, i) => (
                 <div key={rx.id} className="rx-item">
                   <div className="rx-number">{i + 1}.</div>
@@ -172,7 +175,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
                       {[rx.dosage, rx.frequency].filter(Boolean).join(" — ")}
                       {rx.start_date && (
                         <span style={{ color: "#999", marginLeft: "6px" }}>
-                          desde {formatDate(rx.start_date)}
+                          {t("since", { date: formatDate(rx.start_date, locale) })}
                         </span>
                       )}
                     </div>
@@ -186,7 +189,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
           {/* Supplements */}
           {supplements.length > 0 && (
             <div className="section">
-              <div className="section-title">Suplementos e Fitoterápicos</div>
+              <div className="section-title">{t("supplements")}</div>
               {supplements.map((rx, i) => (
                 <div key={rx.id} className="rx-item">
                   <div className="rx-number">{i + 1}.</div>
@@ -196,7 +199,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
                       {[rx.dosage, rx.frequency].filter(Boolean).join(" — ")}
                       {rx.start_date && (
                         <span style={{ color: "#999", marginLeft: "6px" }}>
-                          desde {formatDate(rx.start_date)}
+                          {t("since", { date: formatDate(rx.start_date, locale) })}
                         </span>
                       )}
                     </div>
@@ -209,7 +212,7 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
 
           {/* Empty state */}
           {active.length === 0 && (
-            <p className="empty">Nenhum item prescrito ativo.</p>
+            <p className="empty">{t("empty")}</p>
           )}
 
           {/* Signature */}
@@ -217,15 +220,15 @@ export default async function PrescriptionsPrintPage({ params }: Props) {
             <div className="signature-block">
               <div className="signature-line" />
               {practitioner && <div className="signature-name">{practitioner}</div>}
-              <div className="signature-sub">{clinic?.name ?? "Profissional de Saúde"}</div>
+              <div className="signature-sub">{clinic?.name ?? t("professionalFallback")}</div>
               <div className="signature-sub" style={{ marginTop: "4px" }}>{printedAt}</div>
             </div>
           </div>
 
           {/* Footer */}
           <div className="footer">
-            <span>Gerado pelo AXIEL Core · {clinic?.name ?? ""}</span>
-            <span>Válido somente com assinatura do profissional</span>
+            <span>{t("generatedBy", { clinic: clinic?.name ?? "" })}</span>
+            <span>{t("validity")}</span>
           </div>
 
         </div>

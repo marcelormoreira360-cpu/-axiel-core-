@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ChevronLeft, MessageCircle } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
@@ -10,6 +11,7 @@ export default async function PatientMessagesPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslations("clinicChat");
   const { id: patientId } = await params;
 
   const patient = await getPatientById(patientId);
@@ -25,7 +27,7 @@ export default async function PatientMessagesPage({
             className="flex items-center gap-1 text-[12px] text-black/40 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
-            Voltar ao paciente
+            {t("backToPatient")}
           </BackLink>
         </div>
 
@@ -36,7 +38,7 @@ export default async function PatientMessagesPage({
           </div>
           <div>
             <h1 className="text-[15px] font-semibold text-[#0F1A2E]">{patient.full_name}</h1>
-            <p className="text-xs text-black/40">Portal do paciente · chat assíncrono</p>
+            <p className="text-xs text-black/40">{t("portalSubtitle")}</p>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { ArrowLeft, ExternalLink, Link2, ShieldCheck } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
@@ -28,6 +29,7 @@ export default async function PatientPortalLinkPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ token?: string }>;
 }) {
+  const t = await getTranslations("portal.link");
   const { id } = await params;
   const { token } = await searchParams;
   const clinic = await getCurrentClinic();
@@ -42,7 +44,7 @@ export default async function PatientPortalLinkPage({
   return (
     <Shell>
       <BackLink fallbackHref={`/patients/${patient.id}`} className="mb-6 inline-flex items-center gap-2 rounded-lg border border-axiel-line bg-white px-4 py-2 text-sm font-semibold text-black/60 shadow-sm transition hover:bg-axiel-blueSoft dark:hover:bg-[#0F6E56]/[.12]">
-        <ArrowLeft className="h-4 w-4" /> Voltar ao paciente
+        <ArrowLeft className="h-4 w-4" /> {t("back")}
       </BackLink>
 
       <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -50,25 +52,25 @@ export default async function PatientPortalLinkPage({
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-axiel-ink text-white">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight">Link do portal do paciente</h1>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="mt-3 text-sm leading-6 text-black/50">
-            Crie um link privado para {patient.full_name} acessar pelo celular. Não é necessário login. O link expira automaticamente em 7 dias.
+            {t("description", { name: patient.full_name })}
           </p>
 
           <div className="mt-6 grid gap-3">
             <form action={createAction}>
               <button className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-lg bg-axiel-blue px-6 text-base font-semibold text-white shadow-md transition hover:bg-axiel-blueDark">
-                <Link2 className="h-5 w-5" /> Criar link seguro
+                <Link2 className="h-5 w-5" /> {t("create")}
               </button>
             </form>
             <form action={regenerateAction}>
               <button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg border border-axiel-line bg-white px-6 text-sm font-semibold text-black/65 shadow-sm transition hover:border border-axiel-line bg-white">
-                Gerar novo link
+                {t("regenerate")}
               </button>
             </form>
           </div>
           <p className="mt-4 text-xs leading-5 text-black/40">
-            Gerar novo link desativa os links ativos anteriores e cria um novo link válido por 7 dias.
+            {t("regenerateHint")}
           </p>
         </Card>
 
@@ -76,7 +78,7 @@ export default async function PatientPortalLinkPage({
           {portalUrl ? <CopyPortalLinkCard url={portalUrl} /> : null}
 
           <Card className="p-6">
-            <p className="text-sm font-semibold text-black/40">Links recentes</p>
+            <p className="text-sm font-semibold text-black/40">{t("recent")}</p>
             <div className="mt-4 grid gap-3">
               {recentLinks.length ? (
                 recentLinks.map((link) => {
@@ -87,9 +89,9 @@ export default async function PatientPortalLinkPage({
                     <div key={link.id} className="rounded-[1.5rem] bg-axiel-soft dark:bg-white/[.04] p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-black/75 dark:text-white/75">Expira em {formatDate(link.expires_at)}</p>
+                          <p className="text-sm font-semibold text-black/75 dark:text-white/75">{t("expires", { date: formatDate(link.expires_at) })}</p>
                           <p className="mt-1 text-xs text-black/40">
-                            {link.revoked_at ? "Revogado" : link.last_viewed_at ? `Visualizado em ${formatDate(link.last_viewed_at)}` : "Ainda não visualizado"}
+                            {link.revoked_at ? t("revoked") : link.last_viewed_at ? t("viewedAt", { date: formatDate(link.last_viewed_at) }) : t("notViewed")}
                           </p>
                         </div>
                         <ExternalLink className="h-4 w-4 text-black/25" />
@@ -97,7 +99,7 @@ export default async function PatientPortalLinkPage({
                       {isActive ? (
                         <form action={revokeAction} className="mt-3">
                           <button className="rounded-lg bg-white px-4 py-2 text-xs font-semibold text-black/55 transition hover:bg-black/5 dark:hover:bg-white/5">
-                            Revogar link
+                            {t("revoke")}
                           </button>
                         </form>
                       ) : null}
@@ -105,7 +107,7 @@ export default async function PatientPortalLinkPage({
                   );
                 })
               ) : (
-                <p className="rounded-[1.5rem] bg-axiel-soft dark:bg-white/[.04] p-4 text-sm text-black/45">Nenhum link gerado ainda.</p>
+                <p className="rounded-[1.5rem] bg-axiel-soft dark:bg-white/[.04] p-4 text-sm text-black/45">{t("empty")}</p>
               )}
             </div>
           </Card>

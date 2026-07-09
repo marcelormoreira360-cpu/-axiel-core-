@@ -12,7 +12,7 @@
     "perPatient": "{count}× por paciente",
     "activePatients": "{count, plural, one {# paciente ativo} other {# pacientes ativos}}",
     "newThisPeriod": "{count, plural, one {# novo este período} other {# novos este período}}",
-    "servicesTitle": "Serviços — volume e receita",
+    "servicesTitle": "Serviços: volume e receita",
     "noServices": "Nenhum tipo de serviço associado aos agendamentos ainda.",
     "noServicesHint": "Configure tipos de sessão com preço em Configurações → Tipos de Sessão.",
     "sessionsCount": "{count} sessões",

@@ -1,45 +1,16 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { Building2, CalendarPlus, ClipboardList, UserPlus, UsersRound, CheckCircle2 } from "lucide-react";
 
 const steps = [
-  {
-    key: "clinicProfile" as const,
-    href: "/clinics",
-    title: "Perfil da clínica",
-    text: "Configure o nome, contato e tipo da sua clínica.",
-    icon: Building2,
-  },
-  {
-    key: "hasPatient" as const,
-    href: "/patients/new",
-    title: "Primeiro paciente",
-    text: "Crie um cadastro de paciente.",
-    icon: UserPlus,
-  },
-  {
-    key: "hasLead" as const,
-    href: "/leads/new",
-    title: "Primeiro lead",
-    text: "Inicie o pipeline de captação de pacientes.",
-    icon: UsersRound,
-  },
-  {
-    key: "hasSession" as const,
-    href: "/schedule/new",
-    title: "Primeira sessão",
-    text: "Agende uma sessão no calendário.",
-    icon: CalendarPlus,
-  },
-  {
-    key: "hasForms" as const,
-    href: "/forms",
-    title: "Formulários e questionários",
-    text: "Personalize os formulários enviados aos seus pacientes.",
-    icon: ClipboardList,
-  },
+  { key: "clinicProfile" as const, href: "/clinics", icon: Building2 },
+  { key: "hasPatient" as const, href: "/patients/new", icon: UserPlus },
+  { key: "hasLead" as const, href: "/leads/new", icon: UsersRound },
+  { key: "hasSession" as const, href: "/schedule/new", icon: CalendarPlus },
+  { key: "hasForms" as const, href: "/forms", icon: ClipboardList },
 ] as const;
 
 type StepKey = (typeof steps)[number]["key"];
@@ -64,6 +35,7 @@ async function getCompletionStatus(clinicId: string): Promise<Record<StepKey, bo
 }
 
 export default async function GetStartedPage() {
+  const t = await getTranslations("onboarding.getStarted");
   const clinic = await getCurrentClinic();
   const status = clinic
     ? await getCompletionStatus(clinic.id)
@@ -76,10 +48,10 @@ export default async function GetStartedPage() {
   return (
     <Shell>
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">Configuração</p>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">Começar em minutos</h1>
+        <p className="text-sm font-semibold uppercase tracking-[0.22em] text-black/35">{t("eyebrow")}</p>
+        <h1 className="mt-2 text-4xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="mt-3 max-w-2xl text-lg text-black/55">
-          Siga estes passos uma vez. Depois, a rotina fica em Home, Pacientes, Leads e Agenda.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -87,11 +59,11 @@ export default async function GetStartedPage() {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-black/60">
-            {completedCount} de {totalCount} passos concluídos
+            {t("progress", { completed: completedCount, total: totalCount })}
           </span>
           {allDone && (
             <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full">
-              Tudo pronto!
+              {t("allDone")}
             </span>
           )}
         </div>
@@ -134,9 +106,9 @@ export default async function GetStartedPage() {
                       done ? "line-through text-black/35" : "text-axiel-ink"
                     }`}
                   >
-                    {index + 1}. {step.title}
+                    {index + 1}. {t(`steps.${step.key}.title`)}
                   </p>
-                  <p className="mt-0.5 text-sm text-black/50">{step.text}</p>
+                  <p className="mt-0.5 text-sm text-black/50">{t(`steps.${step.key}.text`)}</p>
                 </div>
                 {!done && (
                   <span className="flex-shrink-0 text-xs font-medium text-axiel-ink/50">→</span>

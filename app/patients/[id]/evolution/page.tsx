@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { getPatientById } from "@/services/patient-service";
 import { getPatientEvolution } from "@/services/evolution-service";
@@ -15,6 +16,7 @@ function initials(name: string) {
 }
 
 export default async function PatientEvolutionPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations("patientProfile.evolution");
   const { id } = await params;
   // A-06: scope getPatientById to the caller's clinic
   const clinic = await getCurrentClinic();
@@ -44,7 +46,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
           {initials(patient.full_name)}
         </div>
         <div>
-          <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Evolução clínica</p>
+          <p className="text-[17px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</p>
           <p className="text-[12px] text-[#A09E98]">{patient.full_name}</p>
         </div>
       </div>
@@ -52,17 +54,17 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
       {!hasData ? (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[20px] py-[40px] text-center">
           <p className="text-[13px] text-[#A09E98]">
-            Nenhum dado de evolução ainda.
+            {t("emptyTitle")}
           </p>
           <p className="text-[12px] text-[#D3D1C7] dark:text-white/25 mt-[6px]">
-            Adicione exames laboratoriais ou aplique formulários de assessment para visualizar a evolução.
+            {t("emptyHint")}
           </p>
           <div className="flex justify-center gap-3 mt-5">
             <Link
               href={`/patients/${id}`}
               className="text-[12px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] hover:text-[#085041] dark:hover:text-[#9FE1CB] transition"
             >
-              Ir para o perfil
+              {t("goToProfile")}
             </Link>
           </div>
         </div>

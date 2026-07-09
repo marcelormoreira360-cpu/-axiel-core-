@@ -12,14 +12,16 @@ import {
 import { handoffStatus, type HandoffStatus } from "@/lib/whatsapp-handoff";
 import { conversationChannel, type ConversationChannel } from "@/lib/twilio-webhook-utils";
 
-function timeAgo(iso: string): string {
+type Translator = Awaited<ReturnType<typeof getTranslations>>;
+
+function timeAgo(iso: string, t: Translator): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "agora";
-  if (mins < 60) return `${mins}min atrás`;
+  if (mins < 1) return t("page.timeAgo.now");
+  if (mins < 60) return t("page.timeAgo.minutes", { count: mins });
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h atrás`;
-  return `${Math.floor(hrs / 24)}d atrás`;
+  if (hrs < 24) return t("page.timeAgo.hours", { count: hrs });
+  return t("page.timeAgo.days", { count: Math.floor(hrs / 24) });
 }
 
 function ConvRow({
@@ -27,11 +29,13 @@ function ConvRow({
   status,
   statusLabels,
   channelLabels,
+  t,
 }: {
   conv: WaConversation;
   status: HandoffStatus;
   statusLabels: Record<HandoffStatus, string>;
   channelLabels: Record<ConversationChannel, string>;
+  t: Translator;
 }) {
   const last = getLastMessage(conv);
   const msgCount = conv.messages.length;
@@ -77,21 +81,21 @@ function ConvRow({
           )}
           {conv.linked_patient_id && (
             <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#E1F5EE] text-[#0F6E56] px-[6px] py-[1px] rounded-full shrink-0">
-              Paciente
+              {t("page.patientBadge")}
             </span>
           )}
         </div>
         <p className="text-[11px] text-[#A09E98] truncate mt-[1px]">
           {last
             ? `${last.role === "user" ? "→" : "←"} ${last.content.replace(/\[MANUAL\]\s?/, "")}`
-            : "Sem mensagens"}
+            : t("page.noMessages")}
         </p>
       </div>
 
       {/* Meta */}
       <div className="text-right shrink-0">
-        <p className="text-[10px] text-[#A09E98]">{timeAgo(conv.updated_at)}</p>
-        <p className="text-[10px] text-[#D3D1C7] mt-[1px]">{msgCount} msg</p>
+        <p className="text-[10px] text-[#A09E98]">{timeAgo(conv.updated_at, t)}</p>
+        <p className="text-[10px] text-[#D3D1C7] mt-[1px]">{t("page.msgCount", { count: msgCount })}</p>
       </div>
 
       {/* Arrow */}
@@ -119,7 +123,7 @@ export default async function WhatsAppMonitorPage() {
       getWaStats(clinicId),
     ]);
   } catch (err) {
-    serviceError = err instanceof Error ? err.message : "Erro ao carregar conversas";
+    serviceError = err instanceof Error ? err.message : t("page.loadError");
   }
 
   const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}/api/whatsapp/webhook`;
@@ -152,13 +156,13 @@ export default async function WhatsAppMonitorPage() {
       <div className="flex items-start justify-between mb-[20px]">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98] mb-[2px]">
-            Atendimento
+            {t("page.eyebrow")}
           </p>
           <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">
-            WhatsApp Bot
+            {t("page.title")}
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            Monitor de conversas e assistente IA
+            {t("page.subtitle")}
           </p>
         </div>
         <Link
@@ -168,42 +172,42 @@ export default async function WhatsAppMonitorPage() {
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
-          Configurar bot
+          {t("page.configure")}
         </Link>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-[16px]">
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">BOT STATUS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("page.kpiBot")}</p>
           <div className="flex items-center gap-[6px]">
             <span className={`w-2 h-2 rounded-full shrink-0 ${stats.botActive ? "bg-[#0F6E56]" : "bg-[#D3D1C7]"}`} />
             <p className={`text-[18px] font-semibold leading-none ${stats.botActive ? "text-[#0F6E56]" : "text-[#A09E98]"}`}>
-              {stats.botActive ? "Ativo" : "Inativo"}
+              {stats.botActive ? t("page.botActive") : t("page.botInactive")}
             </p>
           </div>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">via Twilio + GPT-4o-mini</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("page.botVia")}</p>
         </div>
 
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">CONVERSAS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("page.kpiConversations")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{stats.total}</p>
           <p className="text-[10px] text-[#A09E98] mt-[4px]">
-            {stats.newToday > 0 ? `+${stats.newToday} hoje` : "sem novas hoje"}
+            {stats.newToday > 0 ? t("page.newToday", { count: stats.newToday }) : t("page.noneToday")}
           </p>
         </div>
 
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">MENSAGENS</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("page.kpiMessages")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{stats.messagesToday}</p>
-          <p className="text-[10px] text-[#A09E98] mt-[4px]">total no histórico</p>
+          <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("page.messagesSub")}</p>
         </div>
 
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[14px] py-[13px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">OPERADOR</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[6px]">{t("page.kpiOperator")}</p>
           <p className="text-[22px] font-semibold tracking-[-0.03em] leading-none text-[#0F1A2E]">{humanConvs.length}</p>
           <p className="text-[10px] text-[#A09E98] mt-[4px]">
-            {humanConvs.length === 0 ? "bot respondendo a todos" : "conversas em atendimento humano"}
+            {humanConvs.length === 0 ? t("page.operatorNone") : t("page.operatorSome")}
           </p>
         </div>
       </div>
@@ -214,15 +218,15 @@ export default async function WhatsAppMonitorPage() {
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
         </svg>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] font-semibold text-[#0F6E56] mb-[4px]">Configuração Twilio</p>
+          <p className="text-[11px] font-semibold text-[#0F6E56] mb-[4px]">{t("page.twilioConfigTitle")}</p>
           <p className="text-[11px] text-[#085041] mb-[6px]">
-            Configure o webhook abaixo no Twilio Console → WhatsApp Sandbox ou número comprado:
+            {t("page.twilioConfigDesc")}
           </p>
           <div className="flex items-center gap-2 flex-wrap">
             <div className="bg-white border border-[#0F6E56]/20 rounded-[6px] px-[10px] py-[5px]">
               <span className="text-[11px] font-mono text-[#0F6E56] select-all">{webhookUrl}</span>
             </div>
-            <span className="text-[10px] text-[#A09E98]">· Número: <span className="font-mono">{fromNumber}</span></span>
+            <span className="text-[10px] text-[#A09E98]">· {t("page.number")} <span className="font-mono">{fromNumber}</span></span>
           </div>
         </div>
       </div>
@@ -230,9 +234,11 @@ export default async function WhatsAppMonitorPage() {
       {/* Service error notice */}
       {serviceError && (
         <div className="bg-amber-50 border border-amber-200 rounded-[12px] px-[16px] py-[13px] mb-[16px]">
-          <p className="text-[12px] font-medium text-amber-700 mb-[2px]">⚠️ Serviço não configurado</p>
+          <p className="text-[12px] font-medium text-amber-700 mb-[2px]">{t("page.serviceErrorTitle")}</p>
           <p className="text-[11px] text-amber-600">
-            Verifique se as variáveis de ambiente <code className="font-mono bg-amber-100 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> estão configuradas no Vercel.
+            {t.rich("page.serviceErrorDesc", {
+              code: (chunks) => <code className="font-mono bg-amber-100 px-1 rounded">{chunks}</code>,
+            })}
           </p>
         </div>
       )}
@@ -242,7 +248,7 @@ export default async function WhatsAppMonitorPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.05]">
           <p className="text-[12px] font-medium text-[#0F1A2E]">
-            {convs.length} conversa{convs.length !== 1 ? "s" : ""}
+            {t("page.convCount", { count: convs.length })}
           </p>
           <div className="flex items-center gap-2 text-[11px] text-[#A09E98]">
             <span className="flex items-center gap-1">
@@ -265,15 +271,15 @@ export default async function WhatsAppMonitorPage() {
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
               </svg>
             </div>
-            <p className="text-[13px] text-[#A09E98]">Nenhuma conversa ainda.</p>
+            <p className="text-[13px] text-[#A09E98]">{t("page.emptyTitle")}</p>
             <p className="text-[11px] text-[#C5C3BC] mt-1">
-              Configure o webhook no Twilio e envie uma mensagem de teste.
+              {t("page.emptyHint")}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-black/[.04]">
             {convs.map((conv) => (
-              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} channelLabels={channelLabels} />
+              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} channelLabels={channelLabels} t={t} />
             ))}
           </div>
         )}

@@ -1,15 +1,17 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { BillingPlanCard } from "@/components/billing-plan-card";
 import { AXIEL_PLANS } from "@/modules/billing/plan-config";
 
-export default function OnboardingPlanPage() {
+export default async function OnboardingPlanPage() {
+  const t = await getTranslations("onboarding.plan");
   return (
     <main className="min-h-screen bg-axiel-background p-4 md:p-8 space-y-8">
       <section>
-        <p className="text-sm text-axiel-text-secondary">Onboarding</p>
-        <h1 className="text-3xl font-semibold text-axiel-text-primary">Escolha seu plano</h1>
+        <p className="text-sm text-axiel-text-secondary">{t("eyebrow")}</p>
+        <h1 className="text-3xl font-semibold text-axiel-text-primary">{t("title")}</h1>
         <p className="mt-2 text-axiel-text-secondary">
-          Comece simples. Você pode mudar de plano a qualquer momento.
+          {t("subtitle")}
         </p>
       </section>
 
@@ -21,15 +23,15 @@ export default function OnboardingPlanPage() {
 
       {/* Trial skip — permite continuar sem cartão agora */}
       <section className="text-center space-y-1 pb-4">
-        <p className="text-sm text-axiel-text-secondary">Não tem certeza ainda?</p>
+        <p className="text-sm text-axiel-text-secondary">{t("notSure")}</p>
         <Link
           href="/onboarding/ready"
           className="inline-flex items-center gap-1 text-sm font-medium text-axiel-text-primary hover:text-[#0F6E56] transition underline-offset-2 hover:underline"
         >
-          Continuar com 14 dias grátis →
+          {t("continueTrial")}
         </Link>
         <p className="text-xs text-axiel-text-secondary opacity-60">
-          Sem cartão necessário. Escolha um plano depois em Configurações → Faturamento.
+          {t("noCard")}
         </p>
       </section>
     </main>

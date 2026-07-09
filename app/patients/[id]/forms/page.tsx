@@ -1,17 +1,20 @@
 import Link from "next/link";
 import { ArrowLeft, ClipboardList, Plus } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
 
-function timeAgo(iso: string): string {
+type Translator = Awaited<ReturnType<typeof getTranslations>>;
+
+function timeAgo(iso: string, t: Translator): string {
   const diff = Date.now() - new Date(iso).getTime();
   const days = Math.floor(diff / 86400000);
-  if (days === 0) return "hoje";
-  if (days === 1) return "ontem";
-  if (days < 30) return `${days}d atrás`;
+  if (days === 0) return t("timeAgo.today");
+  if (days === 1) return t("timeAgo.yesterday");
+  if (days < 30) return t("timeAgo.days", { count: days });
   const months = Math.floor(days / 30);
-  return `${months} ${months === 1 ? "mês" : "meses"} atrás`;
+  return t("timeAgo.months", { count: months });
 }
 
 function ScoreBadge({ pct }: { pct: number }) {
@@ -24,6 +27,7 @@ function ScoreBadge({ pct }: { pct: number }) {
 }
 
 export default async function PatientFormsPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await getTranslations("forms.patientList");
   const { id } = await params;
   const responses = await getPatientAssessmentResponses(id);
 
@@ -39,9 +43,9 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
             <ArrowLeft className="h-3.5 w-3.5" />
           </BackLink>
           <div>
-            <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Formulários</h1>
+            <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
             <p className="text-[12px] text-[#A09E98] mt-[1px]">
-              {responses.length} {responses.length === 1 ? "resposta" : "respostas"} registradas
+              {t("count", { count: responses.length })}
             </p>
           </div>
         </div>
@@ -49,7 +53,7 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
           href={`/patients/${id}/forms/new`}
           className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[12px] py-[7px] rounded-[8px]"
         >
-          <Plus className="h-3.5 w-3.5" /> Novo formulário
+          <Plus className="h-3.5 w-3.5" /> {t("newForm")}
         </Link>
       </div>
 
@@ -59,14 +63,14 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
           <div className="w-12 h-12 rounded-full bg-[#F4F3EF] flex items-center justify-center mb-3">
             <ClipboardList className="h-5 w-5 text-[#A09E98]" />
           </div>
-          <p className="text-[13px] text-[#A09E98] mb-[4px]">Nenhum formulário preenchido ainda.</p>
-          <p className="text-[11px] text-[#D3D1C7] dark:text-white/25">Clique em “Novo formulário” para aplicar um questionário.</p>
+          <p className="text-[13px] text-[#A09E98] mb-[4px]">{t("emptyTitle")}</p>
+          <p className="text-[11px] text-[#D3D1C7] dark:text-white/25">{t("emptyHint")}</p>
         </div>
       ) : (
         <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
           <div className="divide-y divide-black/[.04] dark:divide-white/[.06]">
             {responses.map((r) => {
-              const templateName = (r as any).assessment_templates?.name ?? "Formulário";
+              const templateName = (r as any).assessment_templates?.name ?? t("fallbackName");
               const pct = r.score_percentage ?? 0;
               return (
                 <Link
@@ -83,12 +87,12 @@ export default async function PatientFormsPage({ params }: { params: Promise<{ i
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-medium text-[#0F1A2E] truncate">{templateName}</p>
                     <div className="flex items-center gap-[6px] mt-[2px]">
-                      <span className="text-[10px] text-[#A09E98]">{timeAgo(r.filled_at)}</span>
+                      <span className="text-[10px] text-[#A09E98]">{timeAgo(r.filled_at, t)}</span>
                       {r.total_score !== null && (
                         <>
                           <span className="text-[#D3D1C7] dark:text-white/25">·</span>
                           <span className="text-[10px] text-[#A09E98]">
-                            {r.total_score}/{r.max_possible_score} pts
+                            {t("points", { score: r.total_score, max: r.max_possible_score ?? 0 })}
                           </span>
                         </>
                       )}

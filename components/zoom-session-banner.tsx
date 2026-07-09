@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 
 interface Props {
   zoomJoinUrl: string;
@@ -9,16 +10,16 @@ interface Props {
   patientName: string;
 }
 
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("pt-BR", {
+function fmtTime(iso: string, locale: string) {
+  return new Date(iso).toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "America/Sao_Paulo",
   });
 }
 
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", {
+function fmtDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -27,6 +28,8 @@ function fmtDate(iso: string) {
 }
 
 export function ZoomSessionBanner({ zoomJoinUrl, zoomStartUrl, startsAt, patientName }: Props) {
+  const t = useTranslations("teleconsulta.zoomBanner");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
 
   async function copyJoinUrl() {
@@ -58,15 +61,15 @@ export function ZoomSessionBanner({ zoomJoinUrl, zoomStartUrl, startsAt, patient
             </svg>
           </div>
           <div>
-            <p className="text-[12px] font-semibold text-white">Sessão Online · Zoom</p>
+            <p className="text-[12px] font-semibold text-white">{t("title")}</p>
             <p className="text-[10px] text-white/50 capitalize">
-              {fmtDate(startsAt)} às {fmtTime(startsAt)} · {patientName}
+              {t("dateAt", { date: fmtDate(startsAt, locale), time: fmtTime(startsAt, locale), name: patientName })}
             </p>
           </div>
         </div>
         {isUpcoming && (
           <span className="text-[10px] font-medium bg-[#2D8CFF]/20 text-[#93C5FD] px-[8px] py-[3px] rounded-full">
-            Em breve
+            {t("soon")}
           </span>
         )}
       </div>
@@ -85,13 +88,13 @@ export function ZoomSessionBanner({ zoomJoinUrl, zoomStartUrl, startsAt, patient
               <polygon points="23 7 16 12 23 17 23 7"/>
               <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
             </svg>
-            Entrar como host
+            {t("joinAsHost")}
           </a>
         )}
 
         {/* Patient join link */}
         <div className="flex items-center gap-[6px] bg-white/[.07] rounded-[8px] px-[10px] py-[7px] flex-1 min-w-[180px]">
-          <span className="text-[10px] text-white/40 shrink-0">Link paciente:</span>
+          <span className="text-[10px] text-white/40 shrink-0">{t("patientLink")}</span>
           <span className="text-[11px] text-white/60 font-mono truncate flex-1">
             {zoomJoinUrl.replace(/^https?:\/\//, "").slice(0, 32)}…
           </span>
@@ -110,7 +113,7 @@ export function ZoomSessionBanner({ zoomJoinUrl, zoomStartUrl, startsAt, patient
                 <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
                   <path d="M2 7L5 10L11 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                Copiado
+                {t("copied")}
               </>
             ) : (
               <>
@@ -118,7 +121,7 @@ export function ZoomSessionBanner({ zoomJoinUrl, zoomStartUrl, startsAt, patient
                   <rect x="4" y="4" width="8" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
                   <path d="M1 9V2a1 1 0 011-1h7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
                 </svg>
-                Copiar
+                {t("copy")}
               </>
             )}
           </button>
