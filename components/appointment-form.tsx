@@ -16,7 +16,7 @@ export interface ClinicUserOption {
 type Props = {
   patients: Patient[];
   sessionTypes: SessionType[];
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<{ error?: string } | void>;
   clinicUsers?: ClinicUserOption[];
   defaultPatientId?: string;
 };
@@ -32,6 +32,7 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
   const [source, setSource] = useState<AppointmentSource>("direct");
   const [selectedPractitionerId, setSelectedPractitionerId] = useState<string>("");
   const [isNewPatient, setIsNewPatient] = useState(patients.length === 0);
+  const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const SOURCE_KEYS: AppointmentSource[] = [
@@ -68,8 +69,12 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
     if (selectedPractitionerId) {
       formData.set("practitioner_id", selectedPractitionerId);
     }
+    setError(null);
     startTransition(async () => {
-      await action(formData);
+      const result = await action(formData);
+      // Sucesso redireciona (a navegação é o feedback); erro volta como valor e
+      // é mostrado inline, sem perder o formulário.
+      if (result?.error) setError(result.error);
     });
   }
 
@@ -331,6 +336,10 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
+
+      {error && (
+        <p className="text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px]">{error}</p>
+      )}
 
       <button
         type="submit"

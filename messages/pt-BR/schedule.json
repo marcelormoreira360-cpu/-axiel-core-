@@ -59,7 +59,9 @@
     "notes": "Observações",
     "notesPlaceholder": "Nota interna sobre a sessão (opcional).",
     "saving": "Salvando…",
-    "confirm": "Confirmar sessão"
+    "confirm": "Confirmar sessão",
+    "errorRequired": "Preencha os campos obrigatórios.",
+    "errorGeneric": "Não foi possível agendar a sessão. Tente novamente."
   },
   "card": {
     "patientFallback": "Paciente",
@@ -147,7 +149,9 @@
     "emailSent": "E-mail enviado ✓",
     "emailError": "Erro ao enviar",
     "done": "Concluído",
-    "waMessage": "Olá! Reservei um horário para você. Confirme e complete seu cadastro aqui: {url}"
+    "waMessage": "Olá! Reservei um horário para você. Confirme e complete seu cadastro aqui: {url}",
+    "createdToast": "Sessão agendada",
+    "createError": "Não foi possível agendar a sessão. Tente novamente."
   },
   "reminder": {
     "back": "Agenda",

@@ -22,7 +22,7 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
   });
 
   try {
-    const { output, tokensUsed } = await generateAiInsightOutput(snapshot);
+    const { output, tokensUsed, modelUsed } = await generateAiInsightOutput(snapshot);
     await completeAiRequest({
       id: aiRequest.id,
       status: "completed",
@@ -31,6 +31,10 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
         label: output.label,
         patterns_count: output.patterns_and_correlations.length,
         review_points_count: output.practitioner_review_points.length,
+        // Modelo REAL usado (vs. `model` solicitado gravado no create): detecta
+        // troca silenciosa de snapshot pela OpenAI ou env divergente.
+        model_requested: model,
+        model_used: modelUsed ?? null,
       },
     });
 

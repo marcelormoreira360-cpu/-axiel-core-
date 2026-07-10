@@ -47,11 +47,15 @@ export default async function NewAppointmentPage({
     });
   }
 
-  async function createSessionAction(formData: FormData) {
+  async function createSessionAction(formData: FormData): Promise<{ error: string } | void> {
     "use server";
 
+    // Erros voltam como VALOR (não throw): o formulário mostra a mensagem inline e
+    // preserva o que foi digitado, em vez de cair na tela de erro global.
+    const tf = await getTranslations("schedule.form");
+
     const profile = await getCurrentUserProfile();
-    if (!profile?.clinic_id) throw new Error("User must be assigned to a clinic before creating sessions.");
+    if (!profile?.clinic_id) return { error: tf("errorGeneric") };
 
     const date = String(formData.get("date") ?? "");
     const time = String(formData.get("time") ?? "");
@@ -62,36 +66,40 @@ export default async function NewAppointmentPage({
     const practitionerId  = String(formData.get("practitioner_id") ?? "").trim() || null;
     const source = (String(formData.get("source") ?? "direct").trim() || "direct") as import("@/lib/types").AppointmentSource;
 
-    if (!date || !time) throw new Error("Data e horário são obrigatórios.");
+    if (!date || !time) return { error: tf("errorRequired") };
 
     // ── Resolve patient: existing or create new inline ────────────────────────
     const newPatientName = String(formData.get("new_patient_name") ?? "").trim();
     let patientId = String(formData.get("patient_id") ?? "").trim();
 
-    if (newPatientName) {
-      // Reusa paciente existente (dedup) ou cria; evita duplicar no reagendamento.
-      const newPatient = await findOrCreatePatientForBooking({
+    try {
+      if (newPatientName) {
+        // Reusa paciente existente (dedup) ou cria; evita duplicar no reagendamento.
+        const newPatient = await findOrCreatePatientForBooking({
+          clinic_id: profile.clinic_id,
+          full_name: newPatientName,
+          email:     String(formData.get("new_patient_email") ?? "").trim() || null,
+          phone:     String(formData.get("new_patient_phone") ?? "").trim() || null,
+        });
+        patientId = newPatient.id;
+      }
+
+      if (!patientId) return { error: tf("errorRequired") };
+
+      await createAppointment({
         clinic_id: profile.clinic_id,
-        full_name: newPatientName,
-        email:     String(formData.get("new_patient_email") ?? "").trim() || null,
-        phone:     String(formData.get("new_patient_phone") ?? "").trim() || null,
+        patient_id: patientId,
+        starts_at: wallClockToUTC(date, time, await getClinicTimezone(profile.clinic_id)).toISOString(),
+        duration_minutes: duration,
+        session_type_id: sessionTypeId,
+        source,
+        notes,
+        video_url: videoUrl,
+        practitioner_id: practitionerId,
       });
-      patientId = newPatient.id;
+    } catch {
+      return { error: tf("errorGeneric") };
     }
-
-    if (!patientId) throw new Error("Paciente é obrigatório.");
-
-    await createAppointment({
-      clinic_id: profile.clinic_id,
-      patient_id: patientId,
-      starts_at: wallClockToUTC(date, time, await getClinicTimezone(profile.clinic_id)).toISOString(),
-      duration_minutes: duration,
-      session_type_id: sessionTypeId,
-      source,
-      notes,
-      video_url: videoUrl,
-      practitioner_id: practitionerId,
-    });
 
     redirect("/schedule");
   }

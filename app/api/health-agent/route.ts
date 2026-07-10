@@ -383,7 +383,10 @@ Gere um JSON com EXATAMENTE esta estrutura:
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        // Tier barato por padrão (paridade com escriba/insights/exames), sobreponível
+        // por OPENAI_MODEL. Antes: "gpt-4o" cravado (~6x mais caro) neste que é o
+        // maior prompt do sistema. gpt-4.1-mini é forte para este JSON estruturado.
+        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -401,8 +404,12 @@ Gere um JSON com EXATAMENTE esta estrutura:
     }
 
     const data = (await res.json()) as {
+      model?: string;
       choices: Array<{ message: { content: string } }>;
     };
+    // Loga o modelo REAL que a OpenAI usou (não o solicitado): detecta troca
+    // silenciosa de snapshot / env divergente.
+    log.info("health-agent OpenAI response", { model_real: data.model ?? "unknown" });
     const report = JSON.parse(data.choices[0].message.content) as HealthAgentReport;
     return NextResponse.json({ report, patientName: ctx.name });
   } catch (err: unknown) {
