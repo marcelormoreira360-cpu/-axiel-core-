@@ -2,7 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Clinic } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
-import { coerceSessionConfig, DEFAULT_SESSION_CONFIG, type SessionConfig } from "@/modules/session/session-config";
+import { coerceSessionConfig, defaultSessionConfig, type SessionConfig } from "@/modules/session/session-config";
 
 const log = createLogger("clinic-service");
 
@@ -79,7 +79,7 @@ export async function updateClinic(id: string, fields: {
  * default do código (comportamento anterior). Sempre devolve uma config válida.
  */
 export async function getClinicSessionConfig(clinicId: string): Promise<SessionConfig> {
-  if (!clinicId) return DEFAULT_SESSION_CONFIG;
+  if (!clinicId) return defaultSessionConfig();
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -88,7 +88,7 @@ export async function getClinicSessionConfig(clinicId: string): Promise<SessionC
     .eq("id", clinicId)
     .maybeSingle();
   const raw = (data as { session_config?: unknown } | null)?.session_config;
-  return raw == null ? DEFAULT_SESSION_CONFIG : coerceSessionConfig(raw);
+  return raw == null ? defaultSessionConfig() : coerceSessionConfig(raw);
 }
 
 /** Salva a config de sessão da clínica. RLS garante owner/manager da clínica. */

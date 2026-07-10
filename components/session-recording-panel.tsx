@@ -543,7 +543,7 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
               <label className="text-[11px] font-medium text-[#6B6A66]">
                 {t("vitalsTitle")}
               </label>
-              <span className="text-[10px] text-[#D3D1C7]">{t("scale")}</span>
+              <span className="text-[10px] text-[#D3D1C7]">{t("scale", { max: sessionConfig.scaleMax })}</span>
             </div>
             <div className="space-y-[10px]">
               {sessionConfig.vitals.map((v) => {

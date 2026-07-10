@@ -30,6 +30,14 @@ export const DEFAULT_SESSION_CONFIG: SessionConfig = {
   ],
 };
 
+/** Cópia nova do default (evita compartilhar/mutar o singleton entre requisições). */
+export function defaultSessionConfig(): SessionConfig {
+  return {
+    scaleMax: DEFAULT_SESSION_CONFIG.scaleMax,
+    vitals: DEFAULT_SESSION_CONFIG.vitals.map((v) => ({ ...v })),
+  };
+}
+
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
 
 /** Gera um id estável a partir de um texto (sem acento, minúsculo, _). */
@@ -45,7 +53,7 @@ export function slugifyVital(s: string): string {
 
 /** Valida/normaliza a config vinda do banco ou de um form; nunca lança. */
 export function coerceSessionConfig(raw: unknown): SessionConfig {
-  if (!raw || typeof raw !== "object") return DEFAULT_SESSION_CONFIG;
+  if (!raw || typeof raw !== "object") return defaultSessionConfig();
   const obj = raw as Record<string, unknown>;
 
   const scaleRaw = Number(obj.scaleMax);
@@ -70,6 +78,6 @@ export function coerceSessionConfig(raw: unknown): SessionConfig {
     });
   }
 
-  if (vitals.length === 0) return { scaleMax, vitals: DEFAULT_SESSION_CONFIG.vitals };
+  if (vitals.length === 0) return { scaleMax, vitals: defaultSessionConfig().vitals };
   return { scaleMax, vitals: vitals.slice(0, 12) };
 }
