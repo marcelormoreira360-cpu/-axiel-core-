@@ -330,7 +330,9 @@ export async function getLatestBusinessInsight(
     .gte("generated_at", cutoff)
     .order("generated_at", { ascending: false })
     .limit(1)
-    .single();
+    // maybeSingle: cache-miss (sem linha) é o caso comum; .single() devolveria
+    // erro PGRST116/406 e poluiria o log a cada miss.
+    .maybeSingle();
 
   if (!data) return null;
   const content = data.content as AiInsight[];

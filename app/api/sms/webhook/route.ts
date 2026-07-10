@@ -18,7 +18,6 @@ import {
   twimlMessage,
   smsConversationKey,
   buildSmsChannelRule,
-  isIfwcOwnNumber,
 } from "@/lib/twilio-webhook-utils";
 import { buildBookingUrl } from "@/lib/whatsapp-bot-helpers";
 import {
@@ -120,12 +119,10 @@ export async function POST(req: NextRequest) {
       await getConversationState(supabase, conversationKey);
     const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
 
-    // SEC-01: número sem clínica atribuível e que NÃO é o número da IFWC não
-    // pode ser respondido com a identidade/preços da IFWC (vazamento cross-tenant).
-    if (!effectiveClinicId && !isIfwcOwnNumber(toNumber)) {
-      console.warn("[sms] número sem clínica configurada — ignorado (SEC-01)");
-      return new NextResponse("", { status: 200 });
-    }
+    // NB: a isolação multi-tenant do SMS vem da resolução por número
+    // (getWhatsAppBotConfigByNumber): uma 2ª clínica que cadastra o próprio número
+    // resolve para a config dela. Não há guarda por TWILIO_FROM_NUMBER aqui porque
+    // esse env é o número de WhatsApp, não o DID de SMS/voz da clínica.
 
     // Passagem de bastão: IA pausada OU humano respondeu há menos de 24h.
     // Salva a mensagem do paciente e não responde.

@@ -79,7 +79,7 @@ export function ResultsInsights({ months }: { months: number }) {
         <button
           type="button"
           onClick={handleRefresh}
-          disabled={refreshing || insights === null}
+          disabled={refreshing || (insights === null && !error)}
           title={t("refreshTitle")}
           className="flex items-center gap-[5px] text-[11px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[7px] px-[9px] py-[6px] hover:bg-[#F4F3EF] disabled:opacity-40 transition shrink-0"
         >

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { createLogger } from "@/lib/logger";
-import { isIfwcOwnNumber } from "@/lib/twilio-webhook-utils";
 
 const log = createLogger("voice-webhook");
 
@@ -71,23 +70,14 @@ export async function POST(req: NextRequest) {
 
     const toNumber = (params["To"] ?? "").replace("whatsapp:", "");
 
-    // Load clinic config; fall back to IFWC default
+    // Load clinic config; fall back to IFWC default. A isolação multi-tenant vem
+    // da resolução por número (getWhatsAppBotConfigByNumber): uma 2ª clínica que
+    // cadastra o próprio número de voz resolve para a config dela.
     let config = IFWC_DEFAULT_CONFIG;
-    let clinicResolved = false;
     try {
       const clinicConfig = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;
-      if (clinicConfig) { config = clinicConfig; clinicResolved = true; }
+      if (clinicConfig) config = clinicConfig;
     } catch { /* ignore, use default */ }
-
-    // SEC-01: número sem clínica configurada e que NÃO é o número da IFWC não
-    // pode ser atendido com a identidade/preços da IFWC (vazamento cross-tenant).
-    if (!clinicResolved && !isIfwcOwnNumber(toNumber)) {
-      log.warn("voice: número sem clínica configurada — chamada recusada (SEC-01)");
-      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response><Reject/></Response>`, {
-        status: 200,
-        headers: { "Content-Type": "text/xml; charset=utf-8" },
-      });
-    }
 
     const lang = config.language ?? "pt-BR";
     const voice = POLLY_VOICE[lang] ?? "Polly.Camila-Neural";
