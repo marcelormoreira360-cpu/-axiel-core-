@@ -392,7 +392,7 @@ Gere um JSON com EXATAMENTE esta estrutura:
       ],
       response_format: { type: "json_object" },
       temperature: 0.2,
-    });
+    }, { retries: 2 });
 
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as {

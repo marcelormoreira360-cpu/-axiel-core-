@@ -97,8 +97,10 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
-    // Mede uso de STT por minuto (best-effort, não bloqueia a resposta).
-    void recordSttUsage({ clinicId: profile?.clinic_id ?? null, channel: "session", seconds: Number(data.duration) || 0 });
+    // Mede uso de STT (best-effort). AWAIT de propósito: em serverless, trabalho
+    // não-aguardado após a resposta pode ser descartado, perdendo o dado de
+    // cobrança. O helper tem try/catch interno, então awaitar não quebra o fluxo.
+    await recordSttUsage({ clinicId: profile?.clinic_id ?? null, channel: "session", seconds: Number(data.duration) || 0 });
     return NextResponse.json({ text: data.text ?? "" });
   } catch (err: unknown) {
     log.error("Transcription error", err);

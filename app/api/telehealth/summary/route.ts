@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       ],
       response_format: { type: "json_object" },
       temperature: 0.2,
-    });
+    }, { retries: 2 });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

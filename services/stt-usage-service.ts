@@ -18,11 +18,11 @@ export async function recordSttUsage(input: {
   if (seconds <= 0) return;
   try {
     const supabase = createSupabaseAdminClient();
+    // Grava só os segundos exatos; minutos de cobrança = ceil(sum(seconds)/60).
     await supabase.from("stt_usage").insert({
       clinic_id: input.clinicId,
       channel: input.channel,
       seconds,
-      minutes: Math.ceil(seconds / 60),
     });
   } catch (err) {
     log.warn("failed to record STT usage", { channel: input.channel, error: String(err) });

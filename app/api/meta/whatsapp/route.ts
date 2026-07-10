@@ -255,7 +255,8 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
     const data = await whisperRes.json();
     // A clínica ainda não foi resolvida neste ponto do webhook (SEC-01 acontece
     // depois), então registra sem clinic_id — conta o total de STT do canal.
-    void recordSttUsage({ clinicId: null, channel: "meta_whatsapp", seconds: Number(data.duration) || 0 });
+    // AWAIT: em serverless, um insert não-aguardado pós-resposta pode ser perdido.
+    await recordSttUsage({ clinicId: null, channel: "meta_whatsapp", seconds: Number(data.duration) || 0 });
     return data.text?.trim() ?? "";
   } catch (err) {
     log.error("audio transcription failed", err, { media_id: mediaId });

@@ -6,12 +6,14 @@
 -- verbose_json). clinic_id pode ser NULL quando o canal ainda não resolveu a
 -- clínica no momento da transcrição (ex.: webhook Meta).
 
+-- Guarda os SEGUNDOS exatos por transcrição (fonte da verdade para cobrança). Os
+-- minutos NÃO são gravados por linha de propósito: cobrar deve somar `seconds` e
+-- arredondar o TOTAL (ceil), senão N áudios curtos viram N minutos inteiros.
 create table if not exists public.stt_usage (
   id          uuid        primary key default gen_random_uuid(),
   clinic_id   uuid        references public.clinics(id) on delete cascade,
   channel     text        not null,     -- 'session' | 'whatsapp' | 'meta_whatsapp' | 'zoom'
   seconds     numeric     not null,
-  minutes     integer     not null,
   created_at  timestamptz not null default now()
 );
 

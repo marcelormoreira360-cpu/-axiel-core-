@@ -49,7 +49,7 @@ import { CronGuard } from "../cron-guard";
 function makeSupabase({
   recentSuccess = null as { id: string; started_at: string } | null,
   insertId = "run-abc",
-  insertError = null as { message: string } | null,
+  insertError = null as { message: string; code?: string } | null,
 } = {}) {
   const supabase = {
     from: vi.fn().mockImplementation((table: string) => {
@@ -60,6 +60,7 @@ function makeSupabase({
           update:      vi.fn().mockReturnThis(),
           eq:          vi.fn().mockReturnThis(),
           gte:         vi.fn().mockReturnThis(),
+          lt:          vi.fn().mockReturnThis(),
           limit:       vi.fn().mockReturnThis(),
           maybeSingle: vi.fn().mockResolvedValue({ data: recentSuccess, error: null }),
           single:      vi.fn().mockResolvedValue({
@@ -121,6 +122,18 @@ describe("CronGuard", () => {
     // The update should have been called on cron_runs
     const fromCalls = supabase.from.mock.calls.map((args) => args[0] as string);
     expect(fromCalls).toContain("cron_runs");
+  });
+
+  it("skips when the 'running' insert hits the unique lock (23505) — concurrent run", async () => {
+    const supabase = makeSupabase({
+      recentSuccess: null,
+      insertError: { message: "duplicate key value violates unique constraint", code: "23505" },
+    });
+    vi.mocked(createSupabaseAdminClient).mockReturnValue(supabase as never);
+
+    const guard = await CronGuard.start("automations");
+
+    expect(guard.skipped).toBe(true);
   });
 
   it("fail() resolves without throwing even when DB is unavailable", async () => {

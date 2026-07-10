@@ -67,7 +67,8 @@ async function transcribeAudio(mediaUrl: string, apiKey: string, clinicId: strin
     }
 
     const data = await whisperRes.json();
-    void recordSttUsage({ clinicId, channel: "whatsapp", seconds: Number(data.duration) || 0 });
+    // AWAIT: em serverless, um insert não-aguardado pós-resposta pode ser perdido.
+    await recordSttUsage({ clinicId, channel: "whatsapp", seconds: Number(data.duration) || 0 });
     return data.text?.trim() ?? "";
   } catch (err) {
     log.error("audio transcription error", err);

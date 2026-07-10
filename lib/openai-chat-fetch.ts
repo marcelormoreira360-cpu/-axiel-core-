@@ -1,11 +1,16 @@
 // Chamada ao endpoint chat/completions da OpenAI com TIMEOUT e RETRY/backoff.
-// Usada pelos call sites baseados em `fetch` (bots e algumas rotas), que antes
-// não tinham retry — um 429/5xx transitório caía direto no fallback. Os call
-// sites baseados no SDK `openai` já têm retry embutido (maxRetries), então usam
-// o SDK diretamente.
+// Usada pelos call sites baseados em `fetch`. Os baseados no SDK `openai` já têm
+// retry embutido (maxRetries), então usam o SDK diretamente.
 //
-// Retorna o Response (o chamador continua tratando res.ok/parse). Só faz retry
-// em 429 e 5xx (transientes) e em erro de rede/timeout; nunca em 4xx de request.
+// IMPORTANTE: o retry é OPT-IN (default `retries: 0`). Os webhooks síncronos de
+// conversa (Twilio WhatsApp/SMS, voz, Meta) precisam responder à plataforma
+// dentro de ~15s; um retry passaria desse teto e a plataforma descartaria a
+// resposta (Twilio) ou reentregaria o evento (Meta, resposta dupla) — foi para
+// isso que o timeout de 15s (INT-04) existe. Por isso só as chamadas
+// app-iniciadas (health-agent, telehealth) passam `retries` > 0.
+//
+// Retorna o Response (o chamador trata res.ok/parse). Só faz retry em 429 e 5xx
+// (transientes) e em erro de rede/timeout; nunca em 4xx de request.
 
 const CHAT_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -20,7 +25,7 @@ export async function openaiChatCompletion(
   opts: { timeoutMs?: number; retries?: number } = {},
 ): Promise<Response> {
   const timeoutMs = opts.timeoutMs ?? 15_000;
-  const retries = opts.retries ?? 2;
+  const retries = opts.retries ?? 0;
   let lastErr: unknown;
 
   for (let attempt = 0; attempt <= retries; attempt++) {

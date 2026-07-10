@@ -82,40 +82,39 @@ export class CronGuard {
       }
     }
 
-    // ── 1b. Concurrency guard ───────────────────────────────────────────────
-    // Evita duas execuções simultâneas (ex.: a Vercel reinvoca o cron enquanto a
-    // primeira ainda roda): se houver um 'running' recente em voo, pula. Um
-    // 'running' mais velho que inflightWindowMs é ignorado (recupera de crash).
+    // ── 1b. Reclaim de runs 'running' órfãos ────────────────────────────────
+    // Um run que crashou sem chamar finish/fail deixa a linha em 'running' e
+    // travaria o índice único abaixo para sempre. Libera (marca 'error') os que
+    // passaram da janela in-flight, recuperando de crash.
     if (inflightWindowMs > 0) {
-      const cutoff = new Date(startedAt - inflightWindowMs).toISOString();
-      const { data: inflight } = await supabase
+      const staleCutoff = new Date(startedAt - inflightWindowMs).toISOString();
+      await supabase
         .from("cron_runs")
-        .select("id, started_at")
+        .update({ status: "error", error_message: "stale run auto-reclaimed" })
         .eq("job_name", jobName)
         .eq("status", "running")
-        .gte("started_at", cutoff)
-        .limit(1)
-        .maybeSingle();
-
-      if (inflight) {
-        log.warn("skipping — another run already in flight", {
-          job: jobName,
-          since: inflight.started_at,
-        });
-        return {
-          skipped: true,
-          finish: async () => {},
-          fail: async () => {},
-        };
-      }
+        .lt("started_at", staleCutoff);
     }
 
-    // ── 2. Insert 'running' row ─────────────────────────────────────────────
+    // ── 2. Insert 'running' row (guarda de concorrência ATÔMICA) ────────────
+    // O índice único parcial (migration 130) em (job_name) WHERE status='running'
+    // garante que só UM run esteja 'running' por job. Se outro já está em voo, o
+    // insert falha com violação de unicidade (23505) → este run pula. Isso fecha
+    // a corrida que um check-then-insert (TOCTOU) deixava aberta.
     const { data: row, error } = await supabase
       .from("cron_runs")
       .insert({ job_name: jobName, status: "running" })
       .select("id")
       .single();
+
+    if (error && (error.code === "23505" || /duplicate key|unique/i.test(error.message ?? ""))) {
+      log.warn("skipping — another run already in flight (lock)", { job: jobName });
+      return {
+        skipped: true,
+        finish: async () => {},
+        fail: async () => {},
+      };
+    }
 
     if (error || !row) {
       // Non-blocking: if we can't write the log, still let the job run
