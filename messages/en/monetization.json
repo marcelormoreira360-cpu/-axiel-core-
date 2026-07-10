@@ -1,0 +1,18 @@
+{
+  "eyebrow": "MONETIZATION",
+  "title": "Packages and memberships.",
+  "subtitle": "Define simple offers for each clinic. No payment processing is connected yet.",
+  "kpiPackages": "Session packages",
+  "kpiMemberships": "Memberships",
+  "kpiActivePlans": "Active patient plans",
+  "kpiOfferValue": "Active offer value",
+  "offersTitle": "Clinic offers",
+  "offersSubtitle": "Simple and flexible",
+  "plansTitle": "Patient plans",
+  "plansSubtitle": "Manual tracking",
+  "noClinic": "This user needs to be assigned to a clinic before creating offers.",
+  "addPatientFirst": "Add a patient first. Then return here to assign a package or membership.",
+  "createOfferFirst": "Create an active offer first. Then assign it to a patient.",
+  "structureOnly": "Structure only",
+  "structureNoteTail": "Later this can connect to Stripe, invoices, automated renewals, and patient portal payments."
+}
