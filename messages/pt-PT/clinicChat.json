@@ -1,0 +1,29 @@
+{
+  "sendError": "Erro ao enviar mensagem.",
+  "connError": "Erro de conexão.",
+  "empty": "Nenhuma mensagem ainda",
+  "emptyHint": "Inicie a conversa — o paciente verá no portal",
+  "placeholder": "Mensagem para {name}…",
+  "send": "Enviar",
+  "footer": "Enter para enviar · Shift+Enter para nova linha · atualiza a cada 30s",
+  "today": "Hoje",
+  "yesterday": "Ontem",
+  "inbox": {
+    "title": "Mensagens",
+    "subtitle": "Conversas com pacientes via portal",
+    "refresh": "Atualizar",
+    "searchPlaceholder": "Buscar paciente ou mensagem…",
+    "emptySearchTitle": "Nenhum resultado encontrado",
+    "emptySearchHint": "Tente buscar por outro nome ou palavra",
+    "emptyTitle": "Nenhuma mensagem ainda",
+    "emptyHint": "As conversas dos pacientes aparecerão aqui",
+    "you": "Você:",
+    "now": "agora",
+    "minutesShort": "{n}m",
+    "hoursShort": "{n}h",
+    "daysShort": "{n}d",
+    "autoRefresh": "Atualiza automaticamente a cada 30s"
+  },
+  "backToPatient": "Voltar ao paciente",
+  "portalSubtitle": "Portal do paciente · chat assíncrono"
+}

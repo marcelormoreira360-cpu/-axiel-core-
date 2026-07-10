@@ -1,0 +1,415 @@
+{
+  "financials": {
+    "eyebrow": "FINANCEIRO",
+    "title": "Financeiro do paciente",
+    "restricted": "Visível a gestores",
+    "empty": "Sem movimento financeiro ainda.",
+    "revenue": "Receita total",
+    "ltv": "Valor total (LTV)",
+    "avgTicket": "Ticket médio",
+    "payments": "Pagamentos",
+    "lastPayment": "Último pagamento",
+    "plans": "Planos aceitos",
+    "pending": "Pendente",
+    "refunded": "Estornado"
+  },
+  "intelligenceStrip": {
+    "engagement": "Engajamento",
+    "lastSession": "ÚLT. SESSÃO",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "{days}d atrás",
+    "days90": "90 DIAS",
+    "sessions": "{count, plural, one {# sessão} other {# sessões}}",
+    "attendance": "COMPAREC.",
+    "churnHigh": "⚠ Paciente inativo — considere um follow-up.",
+    "churnMedium": "Considere reagendar em breve.",
+    "journey": {
+      "label": "JORNADA",
+      "stage": {
+        "novo": "Novo paciente",
+        "avaliacao_agendada": "Avaliação agendada",
+        "avaliado": "Avaliação realizada",
+        "plano_sugerido": "Plano sugerido",
+        "em_tratamento": "Em tratamento",
+        "reavaliacao": "Reavaliação",
+        "manutencao": "Manutenção",
+        "inativo": "Inativo",
+        "reativacao": "Reativação"
+      },
+      "next": {
+        "novo": "Agendar avaliação inicial",
+        "avaliacao_agendada": "Confirmar e preparar a avaliação",
+        "avaliado": "Apresentar o plano de cuidado",
+        "plano_sugerido": "Confirmar aceite e iniciar o plano",
+        "em_tratamento": "Registrar evolução e confirmar a próxima sessão",
+        "reavaliacao": "Reavaliar progresso e reforçar a percepção de melhora",
+        "manutencao": "Oferecer plano de manutenção",
+        "inativo": "Enviar mensagem de reativação",
+        "reativacao": "Reativar com foco em cuidado contínuo"
+      }
+    }
+  },
+  "timeline": {
+    "types": {
+      "appointment": "Sessão",
+      "session_note": "Nota",
+      "insight": "Insight IA",
+      "form": "Formulário",
+      "exam": "Exame",
+      "prescription": "Prescrição"
+    },
+    "title": "Jornada do paciente",
+    "count": "{count, plural, one {# evento registrado} other {# eventos registrados}}",
+    "empty": "Nenhum evento registrado ainda.",
+    "more": "+ {count} eventos anteriores"
+  },
+  "sessionBadge": {
+    "label": "Sessão {session} · Pacote {pkg}",
+    "used": "{used} de {total} sessões usadas"
+  },
+  "waitlist": {
+    "added": "{name} adicionado à fila",
+    "onList": "Na fila de espera",
+    "remove": "Remover da fila",
+    "removeTitle": "Remover da fila de espera",
+    "adding": "Adicionando…",
+    "add": "Fila de espera"
+  },
+  "exams": {
+    "title": "Exames laboratoriais",
+    "newExam": "Novo exame",
+    "empty": "Nenhum exame registrado ainda.",
+    "labFallback": "Laboratório",
+    "markers": "{count, plural, one {# marcador} other {# marcadores}}",
+    "outOfRange": "{count} fora do padrão",
+    "ref": "ref:",
+    "status": {
+      "high": "Alto",
+      "low": "Baixo",
+      "normal": "Normal"
+    },
+    "form": {
+      "title": "Novo exame",
+      "examDate": "Data do exame",
+      "lab": "Laboratório",
+      "labPlaceholder": "Ex: Fleury, Sabin...",
+      "markers": "Marcadores",
+      "biomarker": "Biomarcador",
+      "value": "Valor",
+      "unit": "Unidade",
+      "refMin": "Ref. mín",
+      "refMax": "Ref. máx",
+      "biomarkerPlaceholder": "Ex: TSH",
+      "addMarker": "Adicionar marcador",
+      "notes": "Observações (opcional)",
+      "notesPlaceholder": "Contexto clínico relevante...",
+      "save": "Salvar exame",
+      "uploadHint": "Anexe uma foto ou PDF dos resultados e a IA preenche os marcadores para você revisar e validar.",
+      "extractAI": "Extrair com IA",
+      "extracting": "Lendo…",
+      "extractDone": "{count} marcadores preenchidos. Revise e ajuste antes de salvar.",
+      "extractNone": "Nenhum marcador encontrado. Tente uma foto mais nítida ou preencha manual.",
+      "extractPickFile": "Anexe uma foto ou PDF primeiro."
+    }
+  },
+  "prescriptions": {
+    "title": "Medicamentos e suplementos",
+    "activeCount": "{count, plural, one {# ativo} other {# ativos}}",
+    "print": "Imprimir",
+    "add": "Adicionar",
+    "empty": "Nenhum item prescrito ainda.",
+    "since": "desde {date}",
+    "medications": "Medicamentos",
+    "supplements": "Suplementos",
+    "ended": "Encerrados",
+    "endTitle": "Encerrar",
+    "removeTitle": "Remover",
+    "form": {
+      "title": "Novo item",
+      "supplement": "Suplemento",
+      "medication": "Medicamento",
+      "name": "Nome *",
+      "supplementPlaceholder": "Ex: Vitamina D3, Magnésio...",
+      "medicationPlaceholder": "Ex: Levotiroxina, Metformina...",
+      "dosage": "Dosagem",
+      "dosagePlaceholder": "Ex: 2000 UI, 500mg...",
+      "frequency": "Frequência",
+      "frequencyPlaceholder": "Ex: 1x ao dia, 2x...",
+      "start": "Início",
+      "notes": "Observações",
+      "notesPlaceholder": "Com alimentação...",
+      "save": "Salvar"
+    }
+  },
+  "documents": {
+    "title": "Documentos",
+    "none": "Nenhum documento enviado",
+    "count": "{count, plural, one {# arquivo} other {# arquivos}}",
+    "patientLink": "Link do paciente",
+    "emptyTitle": "Nenhum documento ainda.",
+    "emptyShareBefore": "Compartilhe o",
+    "emptyLinkText": "link do paciente",
+    "emptyShareAfter": "para receber arquivos.",
+    "source": {
+      "clinic": "Clínica",
+      "intake": "Paciente",
+      "portal": "Portal"
+    },
+    "download": "Baixar",
+    "delete": "Excluir",
+    "confirmDelete": "Excluir \"{name}\"?"
+  },
+  "voiceNote": {
+    "title": "Observações",
+    "record": "Gravar nota",
+    "stop": "Parar",
+    "transcribing": "Transcrevendo…",
+    "saved": "Salvo",
+    "reviewHint": "Revise e edite antes de salvar:",
+    "cancel": "Cancelar",
+    "save": "Salvar nota",
+    "saving": "Salvando…",
+    "micError": "Microfone não disponível. Verifique as permissões do navegador.",
+    "transcribeError": "Erro na transcrição.",
+    "transcribeFail": "Erro ao transcrever.",
+    "saveError": "Erro ao salvar.",
+    "empty": "Nenhuma observação registrada. Grave uma nota de voz para começar."
+  },
+  "packages": {
+    "title": "Pacotes de sessão",
+    "activeCount": "{count, plural, one {# ativo} other {# ativos}}",
+    "add": "Adicionar",
+    "empty": "Nenhum pacote ativo.",
+    "ended": "Encerrados",
+    "over": "{count, plural, one {# sessão além do pacote} other {# sessões além do pacote}}",
+    "complete": "Pacote completo",
+    "remaining": "{count, plural, one {# sessão restante} other {# sessões restantes}}",
+    "used": "{used} de {total} sessões utilizadas",
+    "auto": "auto",
+    "start": "Início: {date}",
+    "endTitle": "Encerrar pacote",
+    "removeTitle": "Remover",
+    "form": {
+      "title": "Novo pacote",
+      "name": "Nome do pacote *",
+      "namePlaceholder": "Ex: Pacote 10 sessões, Programa Detox...",
+      "total": "Total de sessões *",
+      "totalPlaceholder": "10",
+      "startDate": "Data de início *",
+      "notes": "Observações",
+      "notesPlaceholder": "Ex: Pago, validade 6 meses...",
+      "autoRenew": "Renovar automaticamente",
+      "save": "Salvar pacote"
+    }
+  },
+  "treatmentPlan": {
+    "title": "Plano de tratamento",
+    "activeSuffix": "· ativo",
+    "createPlan": "Criar plano",
+    "newPlan": "Novo plano",
+    "empty": "Nenhum plano de tratamento criado ainda.",
+    "previous": "Anteriores",
+    "status": {
+      "active": "Ativo",
+      "paused": "Pausado",
+      "completed": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "until": "até {date}",
+    "stepUntil": "Até {date}",
+    "stepsProgress": "{done}/{total} etapas",
+    "noSteps": "Nenhuma etapa ainda. Adicione abaixo.",
+    "addStep": "Adicionar etapa",
+    "markCompleted": "Marcar concluído",
+    "pause": "Pausar",
+    "reactivate": "Reativar",
+    "stepForm": {
+      "placeholder": "Descrição da etapa...",
+      "add": "Adicionar"
+    },
+    "createForm": {
+      "title": "Novo plano de tratamento",
+      "planTitle": "Título do plano *",
+      "planTitlePlaceholder": "Ex: Protocolo de ansiedade e sono, Equilíbrio hormonal...",
+      "goal": "Objetivo terapêutico",
+      "goalPlaceholder": "Descreva o resultado esperado ao final do tratamento...",
+      "targetEnd": "Previsão de conclusão",
+      "value": "Valor do plano",
+      "valuePlaceholder": "Ex: 1200 (opcional)",
+      "create": "Criar plano"
+    }
+  },
+  "healthAgent": {
+    "severity": {
+      "alta": "Alta",
+      "media": "Média",
+      "baixa": "Baixa"
+    },
+    "practitioner": {
+      "clinicalSummary": "Síntese clínica",
+      "priorityFindings": "Achados prioritários",
+      "interactions": "Interações detectadas",
+      "examAnalysis": "Análise de exames",
+      "protocolSuggestions": "Sugestões de protocolo",
+      "monitoring": "Pontos de monitoramento",
+      "nextSessionFocus": "Foco da próxima sessão"
+    },
+    "patient": {
+      "positivePoints": "Pontos positivos",
+      "attentionAreas": "Áreas de atenção",
+      "whatToDo": "O que fazer",
+      "nextSteps": "Próximos passos"
+    },
+    "intro": {
+      "title": "Agente de Saúde",
+      "subtitle": "Análise integrativa · Exames · Interações · Relatórios",
+      "description": "Analisa todos os dados do paciente — exames, medicamentos, suplementos, sessões e formulários — e gera um relatório técnico para você e um relatório simplificado para enviar ao paciente.",
+      "analyzing": "Analisando dados do paciente…",
+      "generate": "Gerar análise e relatórios"
+    },
+    "report": {
+      "title": "Relatório — {name}",
+      "email": "Email",
+      "emailSent": "Email enviado",
+      "emailTitle": "Enviar por email",
+      "whatsapp": "WhatsApp",
+      "whatsappTitle": "Enviar via WhatsApp (texto)",
+      "voice": "Voz",
+      "voiceTitle": "Enviar via WhatsApp (mensagem de voz)",
+      "sent": "Enviado",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "refresh": "Atualizar",
+      "clinicalView": "Relatório clínico",
+      "patientView": "Para o paciente"
+    },
+    "errors": {
+      "internal": "Erro interno",
+      "generate": "Erro ao gerar relatório",
+      "send": "Erro ao enviar",
+      "whatsapp": "Erro ao enviar WhatsApp",
+      "email": "Erro ao enviar email"
+    },
+    "copyLabels": {
+      "positive": "✅ Pontos positivos:",
+      "attention": "📌 Áreas de atenção:",
+      "nextSteps": "🎯 Próximos passos:"
+    }
+  },
+  "functionalExams": {
+    "title": "Exames funcionais",
+    "add": "Adicionar",
+    "cancel": "Cancelar",
+    "empty": "Nenhum exame funcional registrado.",
+    "typeLabel": "Tipo de exame",
+    "typeNeurometria": "Neurometria",
+    "typeBiorressonancia": "Biorressonância",
+    "typeOutro": "Outro",
+    "dateLabel": "Data do exame",
+    "titleLabel": "Nome do exame",
+    "titlePlaceholder": "Ex.: Análise de variabilidade cardíaca",
+    "summaryLabel": "Achados",
+    "summaryPlaceholder": "Descreva os principais achados e resultados do exame…",
+    "save": "Salvar exame",
+    "delete": "Excluir",
+    "fileLabel": "Anexar exame (PDF)",
+    "fileHint": "A IA lê o PDF e resume os principais achados (ex.: emoções mais alteradas) para o relatório.",
+    "metrics": {
+      "title": "Métricas Bio³ (do exame)",
+      "hint": "A IA extraiu estes valores do PDF. Revise, ajuste se preciso e confirme para entrarem na pirâmide.",
+      "pending": "Revisar",
+      "reviewed": "No mapa",
+      "confirm": "Confirmar para a pirâmide",
+      "update": "Atualizar métricas",
+      "reviewedOn": "Confirmado em {date}"
+    }
+  },
+  "supplements": {
+    "title": "Suplementos",
+    "newRecommendation": "Nova recomendação",
+    "disclaimer": "Uso profissional. Não substitui avaliação/medicação. Não trata nem cura. Verifique interações com a medicação atual.",
+    "outputTypeLabel": "Tipo de saída",
+    "rationalePlaceholder": "Resumo clínico (linguagem prudente)…",
+    "create": "Criar rascunho",
+    "empty": "Nenhuma recomendação ainda.",
+    "noItems": "Sem itens.",
+    "addItem": "Adicionar item",
+    "approve": "Aprovar (revisão humana)",
+    "inReportNote": "Aprovada — entra no relatório Neuro ID 360 (Doc 3).",
+    "fromCatalog": "Do catálogo",
+    "freeItem": "Item livre",
+    "itemName": "Nome do suplemento",
+    "dosage": "Dose",
+    "timing": "Horário",
+    "duration": "Duração",
+    "buyUrl": "Link de compra",
+    "itemRationale": "Por que este item",
+    "brFormulaTitle": "Fórmula manipulada · {clinic}",
+    "usLinksTitle": "Links de compra (EUA)",
+    "buy": "Comprar",
+    "status": {
+      "draft": "Rascunho",
+      "reviewed": "Revisado",
+      "approved": "Aprovado",
+      "sent": "Enviado"
+    },
+    "outputType": {
+      "br_formula": "Fórmula (BR)",
+      "us_link": "Links (US)"
+    }
+  },
+  "assessmentProgress": {
+    "title": "Questionários",
+    "emptySubtitle": "Nenhum questionário respondido ainda.",
+    "count": "{count, plural, one {# questionário} other {# questionários}}",
+    "fill": "Preencher",
+    "sent": "Enviado!",
+    "pts": "{delta} pts",
+    "totalPts": "· {n} pts",
+    "flaggedMax": "{count, plural, one {# item no máximo} other {# itens no máximo}}",
+    "progressMulti": "{baseline}% → {latest}% · {count} respostas",
+    "progressOne": "{latest}% · 1 resposta",
+    "progressNone": "sem respostas",
+    "resend": "Reavaliar"
+  },
+  "treatmentFollowup": {
+    "title": "Acompanhamento do tratamento",
+    "newSession": "Nova sessão",
+    "empty": "Nenhuma sessão ainda. Cada sessão registra notas, vitais e a evolução do paciente.",
+    "sessionFallback": "Sessão",
+    "noNote": "Sem nota: abrir para registrar.",
+    "status": {
+      "pending": "Aguardando",
+      "scheduled": "Agendada",
+      "confirmed": "Confirmada",
+      "completed": "Realizada",
+      "no_show": "Faltou",
+      "cancelled": "Cancelada"
+    }
+  },
+  "evolution": {
+    "statusHigh": "Alto",
+    "statusLow": "Baixo",
+    "statusNormal": "Normal",
+    "refRange": "Faixa de referência: {min}–{max} {unit}",
+    "scorePct": "Score %",
+    "tooltipScore": "{val}% ({total}/{max} pts)",
+    "legendModerate": "moderado ≥40%",
+    "legendHigh": "elevado ≥70%",
+    "vitals": {
+      "dor": "Dor",
+      "energia": "Energia",
+      "humor": "Humor",
+      "sono": "Sono"
+    },
+    "vitalsTitle": "Vitais por sessão",
+    "vitalsSubtitle": "Relatados pelo paciente · Escala 1–5",
+    "sessionsCount": "{count, plural, one {# sessão} other {# sessões}}",
+    "vitalsHint": "Clique nas legendas para mostrar/ocultar métricas. Dor: 1=sem dor, 5=intensa. Demais: 1=ruim, 5=ótimo.",
+    "tabVitals": "Vitais · {count}",
+    "tabBiomarkers": "Biomarcadores · {count}",
+    "tabAssessments": "Formulários · {count}",
+    "all": "Todos"
+  }
+}

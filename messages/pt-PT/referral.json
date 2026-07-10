@@ -1,0 +1,8 @@
+{
+  "title": "Indique e ganhe 1 mês grátis",
+  "description": "Compartilhe seu link com outra clínica: quando ela assinar um plano, vocês dois ganham 1 mês grátis.",
+  "copy": "Copiar link",
+  "copied": "Copiado!",
+  "statsSignedUp": "{count, plural, =0 {Nenhum cadastro} one {# cadastro} other {# cadastros}}",
+  "statsConverted": "{count, plural, =0 {nenhuma converteu} one {# converteu} other {# converteram}}"
+}

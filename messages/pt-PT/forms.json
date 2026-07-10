@@ -1,0 +1,171 @@
+{
+  "capture": {
+    "title": "Link de captação (novo paciente)",
+    "desc": "Gere um link para enviar a quem ainda não é paciente. A pessoa preenche os próprios dados e responde este questionário — e entra como lead. O mesmo link serve para várias pessoas.",
+    "generate": "Gerar link de captação",
+    "generating": "Gerando…",
+    "ready": "Link pronto. Compartilhe à vontade:",
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "regenerate": "Gerar outro link"
+  },
+  "fillPicker": {
+    "pickTitle": "Selecionar formulário",
+    "fillSubtitle": "Preencha todas as seções",
+    "pickSubtitle": "Escolha qual formulário aplicar",
+    "emptyHint": "Nenhum formulário criado ainda. <a>Criar formulário</a>"
+  },
+  "list": {
+    "title": "Formulários",
+    "count": "{count, plural, one {# modelo ativo} other {# modelos ativos}}",
+    "importQRM": "Importar Q.R.M.",
+    "importQSNA": "Importar Q-SNA",
+    "importQSNAEN": "Importar Q-SNA (EN)",
+    "newForm": "Novo formulário",
+    "empty": "Nenhum formulário criado ainda.",
+    "emptyHint": "Clique em \"Importar Q-SNA\" para adicionar o questionário do Sistema Nervoso Autônomo, ou crie um novo.",
+    "edit": "Editar",
+    "fill": "Preencher"
+  },
+  "detail": {
+    "meta": "{sections} seções · {questions} perguntas · pontuação máx. {max}",
+    "editForm": "Editar formulário",
+    "sectionMeta": "{count} perguntas · máx {pts} pts",
+    "qScale": "0–{max}",
+    "qYesNo": "Sim/Não",
+    "qText": "Texto",
+    "fillFor": "Preencher para paciente",
+    "sendLink": "Enviar link para paciente",
+    "instructions": "Instruções"
+  },
+  "new": {
+    "title": "Novo formulário",
+    "subtitle": "Crie seções e perguntas com pontuação"
+  },
+  "edit": {
+    "title": "Editar formulário"
+  },
+  "delete": {
+    "confirm": "Remover \"{name}\"?"
+  },
+  "share": {
+    "send": "Enviar",
+    "sendTitle": "Gerar link para paciente",
+    "generateLink": "Gerar link",
+    "selectPatient": "Selecione o paciente que vai receber o formulário:",
+    "searchPlaceholder": "Buscar paciente...",
+    "noPatients": "Nenhum paciente encontrado.",
+    "generating": "Gerando link…",
+    "linkGenerated": "Link gerado. Copie e envie para o paciente:",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "selectOther": "← Selecionar outro paciente",
+    "close": "Fechar"
+  },
+  "import": {
+    "button": "Importar modelos ({count})",
+    "library": "Biblioteca de questionários",
+    "importValidated": "Importar modelos validados",
+    "error": "Erro ao importar",
+    "imported": "Importado",
+    "import": "Importar",
+    "allImported": "✓ Todos os modelos disponíveis foram importados!",
+    "close": "Fechar"
+  },
+  "builder": {
+    "typeLabels": {
+      "scale": "Escala (0–4)",
+      "yes_no": "Sim / Não",
+      "text": "Texto livre",
+      "number": "Número"
+    },
+    "name": "Nome do formulário",
+    "nameRequired": "Nome do formulário *",
+    "namePlaceholder": "Ex: Questionário de Rastreamento Metabólico",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Breve descrição do formulário",
+    "descriptionPlaceholderShort": "Breve descrição",
+    "instructionsLabel": "Instruções (exibidas ao preencher)",
+    "instructionsLabelShort": "Instruções",
+    "sendOnFirst": "Enviar na primeira sessão",
+    "sendOnFirstHint": "O paciente recebe este formulário automaticamente (WhatsApp, e-mail e portal) quando marca a primeira sessão.",
+    "reassessLabel": "Reavaliar a cada (dias)",
+    "reassessHint": "0 = desligado. Ex.: 30 reenvia o questionário a cada 30 dias, montando a curva de progresso. Só para pacientes ativos.",
+    "defaultInstructions": "Avalie cada sintoma com base no período dos últimos 30 dias.",
+    "section": "Seção {n}",
+    "sectionPlaceholder": "Nome da seção (ex: CABEÇA)",
+    "questionPlaceholder": "Texto da pergunta",
+    "maxScore": "Pontuação máx:",
+    "maxScoreShort": "Máx:",
+    "addQuestion": "Adicionar pergunta",
+    "addSection": "Adicionar seção",
+    "addSectionNew": "Adicionar nova seção",
+    "summarySections": "{count, plural, one {# seção} other {# seções}}",
+    "summaryQuestions": "{count, plural, one {# pergunta} other {# perguntas}}",
+    "saving": "Salvando…",
+    "create": "Criar formulário",
+    "scoringTitle": "Grau de disfunção (faixas)",
+    "scoringHint": "Defina as faixas de pontuação que classificam o grau de disfunção. É por formulário — cada clínica usa as próprias.",
+    "scoringTotal": "Faixas do total",
+    "scoringSection": "Faixas por seção",
+    "scoringFlagItem": "Sinalizar itens que atingem a pontuação máxima",
+    "bandMin": "De",
+    "bandMax": "Até",
+    "bandLabelPlaceholder": "Rótulo (ex.: Disfunção leve)",
+    "bandMaxHint": "vazio = sem limite",
+    "addBand": "Adicionar faixa",
+    "placementLabel": "Onde este formulário aparece",
+    "placementHint": "Escolha em quais lugares este formulário fica disponível.",
+    "placementSlotHint": {
+      "intake": "Enviado automaticamente (WhatsApp, e-mail e portal) quando o paciente marca a primeira sessão.",
+      "session": "Sugerido para preencher a cada sessão (acompanhamento).",
+      "portal": "Disponível para o paciente preencher pelo portal."
+    },
+    "drag": "Arraste para reordenar"
+  },
+  "editor": {
+    "sectionsTitle": "Seções",
+    "existing": "existente",
+    "saveChanges": "Salvar alterações"
+  },
+  "fill": {
+    "scale0": "Nunca ou quase nunca",
+    "scale1": "Ocasionalmente, efeito leve",
+    "scale2": "Ocasionalmente, efeito severo",
+    "scale3": "Frequentemente, efeito leve",
+    "scale4": "Frequentemente, efeito severo",
+    "yes": "Sim",
+    "no": "Não",
+    "total": "Total geral",
+    "notes": "Observações",
+    "notesPlaceholder": "Observações adicionais sobre este preenchimento (opcional).",
+    "saving": "Salvando…",
+    "save": "Salvar resultados"
+  },
+  "slots": {
+    "intake": "Intake (1º agendamento)",
+    "session": "Por sessão",
+    "portal": "Portal do paciente"
+  },
+  "patientList": {
+    "title": "Formulários",
+    "count": "{count, plural, one {1 resposta registrada} other {# respostas registradas}}",
+    "newForm": "Novo formulário",
+    "emptyTitle": "Nenhum formulário preenchido ainda.",
+    "emptyHint": "Clique em “Novo formulário” para aplicar um questionário.",
+    "fallbackName": "Formulário",
+    "points": "{score}/{max} pts",
+    "timeAgo": {
+      "today": "hoje",
+      "yesterday": "ontem",
+      "days": "{count}d atrás",
+      "months": "{count, plural, one {1 mês atrás} other {# meses atrás}}"
+    }
+  },
+  "response": {
+    "filledAt": "Preenchido em {date}",
+    "totalScore": "Pontuação total",
+    "sectionScore": "Pontuação por seção",
+    "notes": "Observações"
+  }
+}
