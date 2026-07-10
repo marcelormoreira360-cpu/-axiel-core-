@@ -38,6 +38,7 @@ export async function saveWhatsAppBotConfig(formData: FormData): Promise<SaveBot
     twilio_number: (formData.get("twilio_number") as string)?.trim() || null,
     meta_phone_number_id: (formData.get("meta_phone_number_id") as string)?.trim() || null,
     meta_instagram_id: (formData.get("meta_instagram_id") as string)?.trim() || null,
+    meta_facebook_page_id: (formData.get("meta_facebook_page_id") as string)?.trim() || null,
     professional_name: professionalName,
     clinic_name: clinicName,
     specialty,

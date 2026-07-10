@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory, getWhatsAppBotConfigByClinicId } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
@@ -246,6 +246,13 @@ export async function POST(req: NextRequest) {
     for (const entry of body.entry ?? []) {
       const pageId: string = entry.id;
 
+      // SEC-01 (Facebook): resolve a clínica pela PÁGINA. Se a página estiver
+      // registrada por uma clínica, o bot usa a identidade/config dela (fim do
+      // vazamento cross-tenant). Páginas ainda não registradas mantêm a IFWC
+      // (compat single-tenant atual, até a clínica cadastrar a página nas settings).
+      const pageConfig = await getWhatsAppBotConfigByFacebookPageId(pageId).catch(() => null);
+      const pageClinicId = pageConfig?.clinic_id ?? null;
+
       for (const event of entry.messaging ?? []) {
         // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe
         // 200 rápido (o LLM demora), e cada reenvio do MESMO evento gerava uma
@@ -266,7 +273,7 @@ export async function POST(req: NextRequest) {
               supabase,
               `fb_${userPsid}`,
               event.message?.text?.trim() ?? "",
-              IFWC_CLINIC_ID,
+              pageClinicId ?? IFWC_CLINIC_ID,
             );
           }
           continue;
@@ -280,7 +287,7 @@ export async function POST(req: NextRequest) {
 
         const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
           await getHistory(supabase, senderPsid);
-        const effectiveClinicId = convClinicId ?? IFWC_CLINIC_ID;
+        const effectiveClinicId = pageClinicId ?? convClinicId ?? IFWC_CLINIC_ID;
 
         // Passagem de bastão: IA pausada ou humano respondeu há menos de 24h.
         // Salva a mensagem e não responde.
@@ -323,9 +330,13 @@ export async function POST(req: NextRequest) {
         const step = funnelStepFromHistory(history.length, updatedAt);
 
         // Config real da clínica (persona Clara nas custom_instructions, preços,
-        // idioma) — antes o Messenger rodava sempre com a config de fábrica.
+        // idioma). Prioriza a config da PÁGINA; senão a config da clínica resolvida;
+        // e só cai no IFWC_DEFAULT_CONFIG se a clínica for a própria IFWC (SEC-01).
         const promptConfig =
-          (await getWhatsAppBotConfigByClinicId(effectiveClinicId).catch(() => null)) ?? IFWC_DEFAULT_CONFIG;
+          pageConfig ??
+          (await getWhatsAppBotConfigByClinicId(effectiveClinicId).catch(() => null)) ??
+          (effectiveClinicId === IFWC_CLINIC_ID ? IFWC_DEFAULT_CONFIG : null);
+        if (!promptConfig) continue;
 
         // Idioma DETERMINÍSTICO por código (PT/EN base + passe de ES), como no
         // Meta WhatsApp: não confiar só no LLM. Mapeia p/ o campo `language` do
