@@ -6,6 +6,8 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("voice-gather");
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s da chamada OpenAI (fallback gracioso antes do teto).
+export const maxDuration = 20;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 

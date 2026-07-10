@@ -10,6 +10,8 @@ import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s das chamadas OpenAI (fallback gracioso antes do teto).
+export const maxDuration = 20;
 
 const log = createLogger("messenger");
 

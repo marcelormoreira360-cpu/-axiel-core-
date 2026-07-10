@@ -6,6 +6,10 @@ import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { createLogger } from "@/lib/logger";
 
+// App-iniciada (não é webhook de plataforma): margem para o AbortSignal/retry
+// das chamadas OpenAI disparar antes do teto da função.
+export const maxDuration = 60;
+
 const log = createLogger("health-agent");
 
 // ─── Supabase result types ────────────────────────────────────────────────────
