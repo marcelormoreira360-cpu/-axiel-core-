@@ -230,6 +230,9 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
     if (!audioRes.ok) return "";
 
     const audioBuffer = await audioRes.arrayBuffer();
+    // Teto de 25 MB (limite duro do Whisper): fecha o custo de STT sem limite em
+    // mídia grande/maliciosa (paridade com transcribe/route.ts).
+    if (audioBuffer.byteLength > 25 * 1024 * 1024) return "";
     const audioBlob = new Blob([audioBuffer], { type: "audio/ogg" });
 
     // 3. Transcribe via OpenAI Whisper

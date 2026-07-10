@@ -382,6 +382,7 @@ Gere um JSON com EXATAMENTE esta estrutura:
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         // Tier barato por padrão (paridade com escriba/insights/exames), sobreponível
         // por OPENAI_MODEL. Antes: "gpt-4o" cravado (~6x mais caro) neste que é o

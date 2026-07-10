@@ -117,26 +117,33 @@ async function generateReply(
     { role: "user" as const, content: incomingMessage },
   ];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      messages,
-      temperature: 0.65,
-      max_tokens: 500,
-    }),
-  });
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      signal: AbortSignal.timeout(15_000),
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        messages,
+        temperature: 0.65,
+        max_tokens: 500,
+      }),
+    });
 
-  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-  if (!res.ok) {
-    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+    const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+    if (!res.ok) {
+      log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("OpenAI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Send Message via Graph API ───────────────────────────────────────────────
