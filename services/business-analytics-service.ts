@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { languageInstruction } from "@/lib/ai-language";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { chatModel } from "@/lib/ai-models";
 
 export interface ServiceBreakdown {
   name: string;
@@ -288,7 +289,7 @@ Regras:
 - Foque em decisões que o gestor pode tomar amanhã`;
 
   const response = await client.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: chatModel(),
     messages: [{ role: "user", content: prompt }],
     max_tokens: 1024,
     temperature: 0.4,

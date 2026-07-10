@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { createLogger } from "@/lib/logger";
@@ -86,16 +88,11 @@ async function generateVoiceReply(
   ];
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-        messages,
-        temperature: 0.65,
-        max_tokens: 180, // keep voice responses short
-      }),
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
+      messages,
+      temperature: 0.65,
+      max_tokens: 180, // keep voice responses short
     });
 
     const data = await res.json();

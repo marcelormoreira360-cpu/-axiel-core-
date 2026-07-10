@@ -1,5 +1,6 @@
 import { toAppError } from "@/lib/errors";
 import type { AiInsight } from "@/lib/types";
+import { reportModel } from "@/lib/ai-models";
 import { writeAuditLog } from "@/services/audit-service";
 import { buildAiInsightInput } from "@/services/ai-insight/input-builder";
 import { buildAiFallbackOutput, generateAiInsightOutput } from "@/services/ai-insight/generation";
@@ -9,7 +10,7 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
   const snapshot = await buildAiInsightInput(patientId);
   if (!snapshot) throw new Error("Patient not found.");
 
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
   const aiRequest = await createAiRequest({
     clinic_id: snapshot.patient.clinic_id,
     patient_id: patientId,

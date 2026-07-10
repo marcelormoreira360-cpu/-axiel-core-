@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature, checkRateLimit } from "@/lib/webhook-guard";
 import { getServerT } from "@/lib/email-i18n";
@@ -121,19 +123,11 @@ async function generateReply(
   ];
 
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-        messages,
-        temperature: 0.65,
-        max_tokens: 500,
-      }),
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
+      messages,
+      temperature: 0.65,
+      max_tokens: 500,
     });
 
     const data = await res.json() as { choices?: { message?: { content?: string } }[] };

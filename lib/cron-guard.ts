@@ -49,10 +49,13 @@ export class CronGuard {
    */
   static async start(
     jobName: string,
-    { windowMs = 20 * 60_000 }: { windowMs?: number } = {}
+    { windowMs = 20 * 60_000, runningWindowMs }: { windowMs?: number; runningWindowMs?: number } = {}
   ): Promise<CronGuardHandle> {
     const supabase = createSupabaseAdminClient();
     const startedAt = Date.now();
+    // Janela in-flight para a guarda de concorrência (default = windowMs). Um
+    // 'running' mais antigo que isso é tratado como job morto (crash) e liberado.
+    const inflightWindowMs = runningWindowMs ?? windowMs;
 
     // ── 1. Idempotency check ────────────────────────────────────────────────
     if (windowMs > 0) {
@@ -70,6 +73,34 @@ export class CronGuard {
         log.info("skipping — recent success found", {
           job: jobName,
           last_run: recent.started_at,
+        });
+        return {
+          skipped: true,
+          finish: async () => {},
+          fail: async () => {},
+        };
+      }
+    }
+
+    // ── 1b. Concurrency guard ───────────────────────────────────────────────
+    // Evita duas execuções simultâneas (ex.: a Vercel reinvoca o cron enquanto a
+    // primeira ainda roda): se houver um 'running' recente em voo, pula. Um
+    // 'running' mais velho que inflightWindowMs é ignorado (recupera de crash).
+    if (inflightWindowMs > 0) {
+      const cutoff = new Date(startedAt - inflightWindowMs).toISOString();
+      const { data: inflight } = await supabase
+        .from("cron_runs")
+        .select("id, started_at")
+        .eq("job_name", jobName)
+        .eq("status", "running")
+        .gte("started_at", cutoff)
+        .limit(1)
+        .maybeSingle();
+
+      if (inflight) {
+        log.warn("skipping — another run already in flight", {
+          job: jobName,
+          since: inflight.started_at,
         });
         return {
           skipped: true,

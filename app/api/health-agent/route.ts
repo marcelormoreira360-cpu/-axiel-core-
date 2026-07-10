@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { reportModel } from "@/lib/ai-models";
 import { parseDob } from "@/lib/dob";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
@@ -380,25 +382,16 @@ Gere um JSON com EXATAMENTE esta estrutura:
   }
 }`;
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        // Tier barato por padrão (paridade com escriba/insights/exames), sobreponível
-        // por OPENAI_MODEL. Antes: "gpt-4o" cravado (~6x mais caro) neste que é o
-        // maior prompt do sistema. gpt-4.1-mini é forte para este JSON estruturado.
-        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-      }),
+    // Tier REPORT (clínico/estruturado): default gpt-4.1-mini, com timeout+retry.
+    // Antes: "gpt-4o" cravado (~6x mais caro) neste que é o maior prompt do sistema.
+    const res = await openaiChatCompletion(apiKey, {
+      model: reportModel(),
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
     });
 
     if (!res.ok) {
