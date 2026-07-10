@@ -68,6 +68,9 @@ export type Patient = {
   notes: string | null;
   chief_complaint: string | null;
   case_summary: string | null;
+  /** Consentimento de gravação/transcrição por IA (escriba). Null = escriba bloqueado. */
+  recording_consent_at?: string | null;
+  recording_consent_by?: string | null;
   /**
    * Seção "Avaliação" (espaços de escrita do terapeuta — entra no relatório).
    * Colunas legadas mantidas por compatibilidade; a fonte viva é `assessment_data`

@@ -4,13 +4,13 @@ import { useMemo, useRef, useState, useActionState, useTransition } from "react"
 import { useLocale, useTranslations } from "next-intl";
 import { Check, Mic, MicOff, Plus, Sparkles, Video, X } from "lucide-react";
 import type { Appointment, SessionRecord, ClinicalTestResult, BodyMapNote } from "@/lib/types";
-import { saveSessionRecord, suggestSoapAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
+import { saveSessionRecord, suggestSoapAction, draftNeuroIdFromTranscriptAction, transcribeZoomRecordingAction, confirmRecordingConsentAction, type SaveSessionState } from "@/app/schedule/[id]/session/actions";
 import { ANATOMY_MAP_KEYS, anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 import { BodyMapInput } from "@/components/body-map-input";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
 
-type RecordingState = "idle" | "recording" | "transcribing";
+type RecordingState = "idle" | "recording" | "transcribing" | "drafting";
 type NoteMode = "livre" | "soap";
 
 type ClinicalTestDraft = ClinicalTestResult & { tempId: string };
@@ -22,6 +22,8 @@ type Props = {
   saved?: boolean;
   /** Nomes de testes da última sessão (carry-forward) quando esta ainda não tem. */
   suggestedTests?: string[];
+  /** Consentimento de gravação do paciente já registrado? (ISO) null = não. */
+  recordingConsentAt?: string | null;
 };
 
 function uid() {
@@ -44,7 +46,7 @@ const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan
   { key: "plan",            short: "P" },
 ];
 
-export function SessionRecordingPanel({ appointment, record, saved, suggestedTests = [] }: Props) {
+export function SessionRecordingPanel({ appointment, record, saved, suggestedTests = [], recordingConsentAt }: Props) {
   const t = useTranslations("session.panel");
   const locale = useLocale();
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
@@ -73,9 +75,22 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   const [draft, setDraft] = useState("");
   const [observations, setObservations] = useState<string[]>(record?.key_observations ?? []);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
+  // Espelho de UI do ambientRef (não se pode ler ref durante o render).
+  const [ambientUi, setAmbientUi] = useState(false);
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [soapSuggesting, startSoapSuggestion] = useTransition();
   const [soapSuggestError, setSoapSuggestError] = useState<string | null>(null);
+  // Escriba Fase 2: transcrição da consulta guardada p/ alimentar o Neuro ID (ATM).
+  const [lastTranscript, setLastTranscript] = useState("");
+  const [neuroDrafting, startNeuroDraft] = useTransition();
+  const [neuroDraftMsg, setNeuroDraftMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Escriba Fase 3: importar a transcrição da gravação do Zoom (telesaúde).
+  const [zoomImporting, startZoomImport] = useTransition();
+  // Compliance: consentimento de gravação (gate do escriba).
+  const [consentGiven, setConsentGiven] = useState(!!recordingConsentAt);
+  const [consentChecked, setConsentChecked] = useState(false);
+  const [consenting, startConsent] = useTransition();
+  const [consentError, setConsentError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeSOAPField, setActiveSOAPField] = useState<"subjective" | "objective" | "assessment_note" | "plan">("subjective");
   const [vitals, setVitals] = useState<Record<VitalKey, number | null>>({
@@ -86,6 +101,8 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  // Escriba ambiente: marca se a gravação atual deve virar SOAP automaticamente.
+  const ambientRef = useRef(false);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -115,7 +132,7 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
         soap.subjective, soap.objective, soap.assessment_note, soap.plan, notes,
       ].filter(Boolean).join("\n").trim();
 
-      const result = await suggestSoapAction(appointment.patient_id, draftNotes);
+      const result = await suggestSoapAction(appointment.patient_id, draftNotes, locale);
       if (result.error || !result.suggestion) {
         setSoapSuggestError(result.error ?? t("suggestError"));
         return;
@@ -127,6 +144,60 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
         assessment_note: prev.assessment_note.trim() || result.suggestion!.assessment_note,
         plan:            prev.plan.trim()            || result.suggestion!.plan,
       }));
+    });
+  }
+
+  // Fase 2: manda a transcrição da consulta virar rascunho de ATM (Neuro ID),
+  // gravado no campo "Integração clínica (ATM)" da Avaliação para revisão humana.
+  function handleDraftNeuroId() {
+    if (!lastTranscript.trim()) return;
+    setNeuroDraftMsg(null);
+    startNeuroDraft(async () => {
+      const res = await draftNeuroIdFromTranscriptAction(appointment.patient_id, lastTranscript);
+      setNeuroDraftMsg(
+        res.ok
+          ? { ok: true, text: t("neuroIdSaved") }
+          : { ok: false, text: res.error ?? t("neuroIdError") },
+      );
+    });
+  }
+
+  // Fase 3: traz a transcrição da gravação do Zoom e organiza em SOAP (como o
+  // escriba presencial); depois o botão "Alimentar Neuro ID" fica disponível.
+  function handleZoomImport() {
+    setRecordingError(null);
+    setNeuroDraftMsg(null);
+    startZoomImport(async () => {
+      const res = await transcribeZoomRecordingAction(appointment.id);
+      if (res.error || !res.transcript) {
+        setRecordingError(res.error ?? t("zoomError"));
+        return;
+      }
+      setLastTranscript(res.transcript);
+      setMode("soap");
+      const soapRes = await suggestSoapAction(appointment.patient_id, res.transcript, locale);
+      if (!soapRes.error && soapRes.suggestion) {
+        setSoap((prev) => ({
+          subjective:      prev.subjective.trim()      || soapRes.suggestion!.subjective,
+          objective:       prev.objective.trim()       || soapRes.suggestion!.objective,
+          assessment_note: prev.assessment_note.trim() || soapRes.suggestion!.assessment_note,
+          plan:            prev.plan.trim()            || soapRes.suggestion!.plan,
+        }));
+      } else {
+        // Não perde a transcrição do Zoom se o SOAP falhar.
+        setNotes((prev) => (prev.trim() ? prev + "\n\n" : "") + res.transcript);
+      }
+    });
+  }
+
+  // Compliance: registra o consentimento do paciente antes de liberar a gravação.
+  function handleConfirmConsent() {
+    if (!consentChecked) return;
+    setConsentError(null);
+    startConsent(async () => {
+      const res = await confirmRecordingConsentAction(appointment.patient_id);
+      if (res.ok) setConsentGiven(true);
+      else setConsentError(res.error ?? t("consentError"));
     });
   }
 
@@ -169,8 +240,12 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
     return `${m}:${s}`;
   }
 
-  async function startRecording() {
+  async function startRecording(ambient = false) {
     setRecordingError(null);
+    setSoapSuggestError(null);
+    ambientRef.current = ambient;
+    setAmbientUi(ambient);
+    if (ambient) setMode("soap"); // o escriba organiza em SOAP
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -218,9 +293,13 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   }
 
   async function transcribe(blob: Blob) {
+    // Ref é síncrono; lê aqui e reseta para a próxima gravação.
+    const wasAmbient = ambientRef.current;
+    ambientRef.current = false;
     try {
       const fd = new FormData();
       fd.append("file", blob, "audio.webm");
+      fd.append("language", locale); // idioma da clínica (Whisper mapeia/auto-detecta)
 
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await res.json();
@@ -228,6 +307,31 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
       if (!res.ok) throw new Error(data.error ?? t("transcribeError"));
 
       const transcribed: string = data.text ?? "";
+      // Guarda a transcrição para a Fase 2 (alimentar o Neuro ID/ATM).
+      if (transcribed.trim()) {
+        setLastTranscript((prev) => (prev.trim() ? prev + "\n\n" : "") + transcribed);
+        setNeuroDraftMsg(null);
+      }
+
+      // Escriba ambiente: organiza a transcrição da consulta em SOAP num passo só.
+      if (wasAmbient) {
+        setRecordingState("drafting");
+        const result = await suggestSoapAction(appointment.patient_id, transcribed, locale);
+        if (result.error || !result.suggestion) {
+          // Falhou o SOAP: não perde a transcrição, joga na nota livre + avisa.
+          setSoapSuggestError(result.error ?? t("suggestError"));
+          setNotes((prev) => (prev.trim() ? prev + "\n\n" : "") + transcribed);
+        } else {
+          // Preenche só os campos vazios (não sobrescreve o que o terapeuta já escreveu).
+          setSoap((prev) => ({
+            subjective:      prev.subjective.trim()      || result.suggestion!.subjective,
+            objective:       prev.objective.trim()       || result.suggestion!.objective,
+            assessment_note: prev.assessment_note.trim() || result.suggestion!.assessment_note,
+            plan:            prev.plan.trim()            || result.suggestion!.plan,
+          }));
+        }
+        return;
+      }
 
       if (mode === "soap") {
         // Append to the active SOAP field
@@ -448,17 +552,80 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
             <input type="hidden" name="notes" value={notes} />
           )}
 
+          {/* Compliance: consentimento de gravação antes de liberar o escriba */}
+          {!consentGiven && (
+            <div className="mt-[10px] rounded-[8px] border border-[#F5A623]/40 bg-[#FFF8EC] px-[12px] py-[10px]">
+              <p className="text-[11px] text-[#8A6D3B] mb-[8px]">{t("consentIntro")}</p>
+              <label className="flex items-start gap-[7px] text-[12px] text-[#0F1A2E] cursor-pointer mb-[9px]">
+                <input
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-[2px] accent-[#0F6E56]"
+                />
+                <span>{t("consentCheckbox")}</span>
+              </label>
+              <div className="flex items-center gap-[8px] flex-wrap">
+                <button
+                  type="button"
+                  onClick={handleConfirmConsent}
+                  disabled={!consentChecked || consenting}
+                  className="flex items-center gap-[5px] text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 disabled:cursor-not-allowed px-[12px] py-[7px] rounded-[8px] transition"
+                >
+                  {consenting ? (
+                    <span className="inline-block h-3 w-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  ) : (
+                    <Check className="h-3.5 w-3.5" />
+                  )}
+                  {t("consentConfirm")}
+                </button>
+                {consentError && <span className="text-[10px] text-red-500">{consentError}</span>}
+              </div>
+            </div>
+          )}
+
+          {consentGiven && (
+          <>
           {/* Audio recorder bar */}
-          <div className="mt-[10px] flex items-center gap-[8px]">
+          <div className="mt-[10px] flex items-center gap-[8px] flex-wrap">
             {recordingState === "idle" && (
-              <button
-                type="button"
-                onClick={startRecording}
-                className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:border-[#0F6E56] hover:text-[#0F6E56] rounded-[8px] px-[12px] py-[7px] transition"
-              >
-                <Mic className="h-3.5 w-3.5" />
-                {t("record")}
-              </button>
+              <>
+                {/* Escriba ambiente: grava a consulta e organiza em SOAP */}
+                <button
+                  type="button"
+                  onClick={() => startRecording(true)}
+                  className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[12px] py-[7px] transition"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t("scribe")}
+                </button>
+                {/* Nota de voz simples: transcreve para o campo ativo */}
+                <button
+                  type="button"
+                  onClick={() => startRecording(false)}
+                  className="flex items-center gap-[6px] text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:border-[#0F6E56] hover:text-[#0F6E56] rounded-[8px] px-[12px] py-[7px] transition"
+                >
+                  <Mic className="h-3.5 w-3.5" />
+                  {t("record")}
+                </button>
+                {/* Telesaúde: trazer a transcrição da gravação do Zoom */}
+                {appointment.zoom_join_url && (
+                  <button
+                    type="button"
+                    onClick={handleZoomImport}
+                    disabled={zoomImporting}
+                    className="flex items-center gap-[6px] text-[12px] font-medium text-[#2A7BC1] border border-[#2A7BC1]/30 hover:bg-[#2A7BC1]/10 disabled:opacity-50 disabled:cursor-not-allowed rounded-[8px] px-[12px] py-[7px] transition"
+                  >
+                    {zoomImporting ? (
+                      <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-[#2A7BC1] border-t-transparent animate-spin" />
+                    ) : (
+                      <Video className="h-3.5 w-3.5" />
+                    )}
+                    {zoomImporting ? t("zoomImporting") : t("zoomImport")}
+                  </button>
+                )}
+                <span className="text-[10px] text-[#A09E98] self-center">{t("scribeHint")}</span>
+              </>
             )}
 
             {recordingState === "recording" && (
@@ -468,14 +635,16 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
                 className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-red-500 hover:bg-red-600 rounded-[8px] px-[12px] py-[7px] transition animate-pulse"
               >
                 <MicOff className="h-3.5 w-3.5" />
-                {t("stop", { time: formatElapsed(elapsedSeconds) })}
+                {ambientUi
+                  ? t("scribeStop", { time: formatElapsed(elapsedSeconds) })
+                  : t("stop", { time: formatElapsed(elapsedSeconds) })}
               </button>
             )}
 
-            {recordingState === "transcribing" && (
+            {(recordingState === "transcribing" || recordingState === "drafting") && (
               <div className="flex items-center gap-[6px] text-[12px] text-[#A09E98] border border-black/[.08] rounded-[8px] px-[12px] py-[7px]">
                 <span className="inline-block h-3 w-3 rounded-full border-2 border-[#0F6E56] border-t-transparent animate-spin" />
-                {t("transcribing")}
+                {recordingState === "drafting" ? t("drafting") : t("transcribing")}
               </div>
             )}
 
@@ -483,6 +652,36 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
               <p className="text-[11px] text-red-500 flex-1">{recordingError}</p>
             )}
           </div>
+
+          {/* Escriba Fase 2: transcrição → rascunho Neuro ID (ATM) na Avaliação */}
+          {lastTranscript.trim() && recordingState === "idle" && (
+            <div className="mt-[8px] flex items-center gap-[8px] flex-wrap">
+              <button
+                type="button"
+                onClick={handleDraftNeuroId}
+                disabled={neuroDrafting}
+                className="flex items-center gap-[5px] text-[11px] font-medium text-[#7B5EA7] border border-[#7B5EA7]/30 hover:bg-[#7B5EA7]/10 disabled:opacity-50 disabled:cursor-not-allowed px-[10px] py-[6px] rounded-[7px] transition"
+              >
+                {neuroDrafting ? (
+                  <span className="inline-block h-3 w-3 rounded-full border-2 border-[#7B5EA7] border-t-transparent animate-spin" />
+                ) : (
+                  <Sparkles className="h-3 w-3" />
+                )}
+                {neuroDrafting ? t("neuroIdDrafting") : t("neuroIdBtn")}
+              </button>
+              {neuroDraftMsg ? (
+                <span className={`text-[10px] ${neuroDraftMsg.ok ? "text-[#0F6E56]" : "text-red-500"}`}>
+                  {neuroDraftMsg.text}
+                </span>
+              ) : (
+                !neuroDrafting && <span className="text-[10px] text-[#A09E98]">{t("neuroIdHint")}</span>
+              )}
+            </div>
+          )}
+
+          <p className="mt-[8px] text-[10px] text-[#A09E98]">{t("retentionNote")}</p>
+          </>
+          )}
         </div>
 
         {/* Right column */}
