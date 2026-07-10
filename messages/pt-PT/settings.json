@@ -1,4 +1,23 @@
 {
+  "session": {
+    "title": "Registo de sessão",
+    "subtitle": "Personalize os vitais relatados pelo paciente e a escala usada no registo de sessão.",
+    "scaleTitle": "Escala",
+    "scaleHint": "Topo da escala (2–10). A base é sempre 1.",
+    "vitalsTitle": "Vitais",
+    "vitalsHint": "Os vitais que o paciente avalia em cada sessão. Deixe o rótulo vazio num vital predefinido para usar a tradução incorporada.",
+    "addVital": "+ Adicionar vital",
+    "removeVital": "Remover",
+    "labelPlaceholder": "Rótulo (ex: Dor)",
+    "lowPlaceholder": "Extremo baixo (ex: sem dor)",
+    "highPlaceholder": "Extremo alto (ex: dor máxima)",
+    "colorLabel": "Cor",
+    "save": "Guardar",
+    "saving": "A guardar…",
+    "saved": "Definições guardadas",
+    "error": "Não foi possível guardar. Tente novamente.",
+    "empty": "Sem vitais. Adicione pelo menos um ou é usado o conjunto predefinido."
+  },
   "common": {
     "back": "Configurações",
     "eyebrow": "Configurações"
@@ -110,6 +129,10 @@
       "sessionTypes": {
         "title": "Tipos de sessão",
         "text": "Modalidades, durações, preços e configuração de Zoom por tipo."
+      },
+      "sessionRecord": {
+        "title": "Registo de sessão",
+        "text": "Personalize os vitais relatados pelo paciente e a escala de avaliação."
       },
       "offers": {
         "title": "Ofertas e pacotes",
