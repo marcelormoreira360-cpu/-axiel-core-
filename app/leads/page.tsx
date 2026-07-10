@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Megaphone } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { EmptyState } from "@/components/empty-state";
@@ -7,6 +8,7 @@ import { getLeads } from "@/services/lead-service";
 import { getLeadPipelineSummary } from "@/modules/leads/lead-pipeline";
 
 export default async function LeadsPage() {
+  const t = await getTranslations("leads.page");
   const leads = await getLeads();
   const summary = getLeadPipelineSummary(leads);
 
@@ -15,36 +17,36 @@ export default async function LeadsPage() {
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">Leads</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
-            {leads.length > 0 ? `${leads.length} lead${leads.length !== 1 ? "s" : ""} no pipeline` : "Nenhum lead ainda"}
+            {leads.length > 0 ? t("countPipeline", { count: leads.length }) : t("none")}
           </p>
         </div>
         <Link
           href="/leads/new"
           className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12]"
         >
-          + Adicionar lead
+          {t("addLead")}
         </Link>
       </div>
 
       {leads.length === 0 ? (
         <EmptyState
           icon={<Megaphone className="h-7 w-7" />}
-          title="Nenhum lead ainda"
-          text="Conecte seus canais de marketing para começar a capturar leads."
+          title={t("none")}
+          text={t("emptyText")}
           href="/leads/new"
-          action="Criar primeiro lead"
+          action={t("emptyAction")}
         />
       ) : (
         <>
           {/* Summary stats */}
           <div className="grid grid-cols-4 gap-[10px] mb-[22px]">
             {[
-              { label: "Total", value: summary.total, accent: true },
-              { label: "New", value: summary.newLeads },
-              { label: "Scheduled", value: summary.scheduled },
-              { label: "Converted", value: summary.converted },
+              { label: t("statTotal"), value: summary.total, accent: true },
+              { label: t("statNew"), value: summary.newLeads },
+              { label: t("statScheduled"), value: summary.scheduled },
+              { label: t("statConverted"), value: summary.converted },
             ].map((stat) => (
               <div
                 key={stat.label}

@@ -42,5 +42,10 @@
     "npsPromoters": "Promoters (9-10)",
     "npsPassives": "Passives (7-8)",
     "npsDetractors": "Detractors (0-6)"
+  },
+  "page": {
+    "eyebrow": "Management",
+    "title": "Team",
+    "subtitle": "Productivity, revenue and NPS per practitioner."
   }
 }

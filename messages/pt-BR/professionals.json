@@ -42,5 +42,10 @@
     "npsPromoters": "Promotores (9-10)",
     "npsPassives": "Passivos (7-8)",
     "npsDetractors": "Detratores (0-6)"
+  },
+  "page": {
+    "eyebrow": "Gestão",
+    "title": "Equipe",
+    "subtitle": "Produtividade, receita e NPS por profissional."
   }
 }
