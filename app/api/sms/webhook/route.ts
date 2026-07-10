@@ -18,6 +18,7 @@ import {
   twimlMessage,
   smsConversationKey,
   buildSmsChannelRule,
+  isIfwcOwnNumber,
 } from "@/lib/twilio-webhook-utils";
 import { buildBookingUrl } from "@/lib/whatsapp-bot-helpers";
 import {
@@ -118,6 +119,13 @@ export async function POST(req: NextRequest) {
     const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
       await getConversationState(supabase, conversationKey);
     const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
+
+    // SEC-01: número sem clínica atribuível e que NÃO é o número da IFWC não
+    // pode ser respondido com a identidade/preços da IFWC (vazamento cross-tenant).
+    if (!effectiveClinicId && !isIfwcOwnNumber(toNumber)) {
+      console.warn("[sms] número sem clínica configurada — ignorado (SEC-01)");
+      return new NextResponse("", { status: 200 });
+    }
 
     // Passagem de bastão: IA pausada OU humano respondeu há menos de 24h.
     // Salva a mensagem do paciente e não responde.

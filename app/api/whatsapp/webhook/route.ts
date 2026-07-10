@@ -3,7 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
-import { parseTwilioParams, twimlMessage } from "@/lib/twilio-webhook-utils";
+import { parseTwilioParams, twimlMessage, isIfwcOwnNumber } from "@/lib/twilio-webhook-utils";
 import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 import {
@@ -114,6 +114,13 @@ export async function POST(req: NextRequest) {
       clinicIdFromConfig = (config as BotConfig)?.clinic_id ?? null;
       if (config) botConfig = config;
     } catch { /* keep IFWC default */ }
+
+    // SEC-01: número sem clínica configurada e que NÃO é o número da IFWC não
+    // pode ser respondido com a identidade/preços da IFWC (vazamento cross-tenant).
+    if (!clinicIdFromConfig && !isIfwcOwnNumber(toNumber)) {
+      console.warn("WhatsApp webhook: número sem clínica configurada — ignorado (SEC-01)");
+      return new NextResponse("", { status: 200 });
+    }
 
     // If audio, transcribe it
     if (isAudio && mediaUrl) {

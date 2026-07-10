@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { createLogger } from "@/lib/logger";
+import { isIfwcOwnNumber } from "@/lib/twilio-webhook-utils";
 
 const log = createLogger("voice-gather");
 
@@ -157,10 +158,21 @@ export async function POST(req: NextRequest) {
 
     // ── Load clinic config ──────────────────────────────────────────────────
     let config = IFWC_DEFAULT_CONFIG;
+    let clinicResolved = false;
     try {
       const clinicConfig = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;
-      if (clinicConfig) config = clinicConfig;
+      if (clinicConfig) { config = clinicConfig; clinicResolved = true; }
     } catch { /* fall back to default */ }
+
+    // SEC-01: número sem clínica configurada e que NÃO é o número da IFWC não
+    // pode falar com a identidade/preços da IFWC (vazamento cross-tenant): encerra.
+    if (!clinicResolved && !isIfwcOwnNumber(toNumber)) {
+      log.warn("voice-gather: número sem clínica configurada — chamada encerrada (SEC-01)");
+      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response><Hangup/></Response>`, {
+        status: 200,
+        headers: { "Content-Type": "text/xml; charset=utf-8" },
+      });
+    }
 
     const systemPrompt = buildSystemPrompt(config);
 

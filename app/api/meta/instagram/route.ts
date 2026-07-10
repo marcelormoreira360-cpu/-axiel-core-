@@ -289,10 +289,13 @@ export async function POST(req: NextRequest) {
       // Persona do prompt: a config da conta, senão a config da CLÍNICA (conta
       // extra, ex.: IG pessoal — antes caía na config de fábrica e perdia as
       // custom_instructions da Clara), senão a padrão IFWC.
+      // SEC-01: só cai no IFWC_DEFAULT_CONFIG se a clínica resolvida FOR a IFWC.
+      // Uma clínica sem config própria não pode falar com a identidade da IFWC.
       const promptConfig =
         dbConfig ??
         (await getWhatsAppBotConfigByClinicId(clinicId).catch(() => null)) ??
-        IFWC_DEFAULT_CONFIG;
+        (clinicId === IFWC_CLINIC_ID ? IFWC_DEFAULT_CONFIG : null);
+      if (!promptConfig) continue;
 
       for (const event of entry.messaging ?? []) {
         // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe
