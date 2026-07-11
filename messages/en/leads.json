@@ -98,5 +98,17 @@
     "button": "Convert to patient",
     "converting": "Converting...",
     "confirmDescription": "Are you sure you want to convert this lead into a patient?"
+  },
+  "page": {
+    "title": "Leads",
+    "countPipeline": "{count, plural, one {# lead in the pipeline} other {# leads in the pipeline}}",
+    "none": "No leads yet",
+    "addLead": "+ Add lead",
+    "emptyText": "Connect your marketing channels to start capturing leads.",
+    "emptyAction": "Create first lead",
+    "statTotal": "Total",
+    "statNew": "New",
+    "statScheduled": "Scheduled",
+    "statConverted": "Converted"
   }
 }

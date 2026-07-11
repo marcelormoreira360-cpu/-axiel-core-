@@ -1,0 +1,16 @@
+{
+  "title": "Products",
+  "countCatalog": "{count, plural, one {# product in the catalog} other {# products in the catalog}}",
+  "none": "No products yet",
+  "addProduct": "+ New product",
+  "emptyText": "Add supplements, kits and support items to the clinic catalog.",
+  "emptyAction": "Create first product",
+  "statTotal": "Total products",
+  "statActive": "Active",
+  "statAvgPrice": "Average price",
+  "active": "Active",
+  "inactive": "Inactive",
+  "inStock": "{count} in stock",
+  "activate": "Activate",
+  "deactivate": "Deactivate"
+}

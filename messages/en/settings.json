@@ -1,4 +1,23 @@
 {
+  "session": {
+    "title": "Session record",
+    "subtitle": "Customize the patient-reported vitals and the scale used in the session record.",
+    "scaleTitle": "Scale",
+    "scaleHint": "Top of the scale (2–10). The base is always 1.",
+    "vitalsTitle": "Vitals",
+    "vitalsHint": "The vitals the patient rates each session. Leave the label empty on a default vital to use the built-in translation.",
+    "addVital": "+ Add vital",
+    "removeVital": "Remove",
+    "labelPlaceholder": "Label (e.g. Pain)",
+    "lowPlaceholder": "Low end (e.g. no pain)",
+    "highPlaceholder": "High end (e.g. worst pain)",
+    "colorLabel": "Color",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Settings saved",
+    "error": "Could not save. Please try again.",
+    "empty": "No vitals. Add at least one or the default set is used."
+  },
   "common": {
     "back": "Settings",
     "eyebrow": "Settings"
@@ -110,6 +129,10 @@
       "sessionTypes": {
         "title": "Session types",
         "text": "Modalities, durations, prices and Zoom setup per type."
+      },
+      "sessionRecord": {
+        "title": "Session record",
+        "text": "Customize the patient-reported vitals and the rating scale."
       },
       "offers": {
         "title": "Offers & packages",
@@ -616,6 +639,8 @@
     "metaPhoneIdHint": "Numeric ID of the number in Meta for Developers → WhatsApp → API Setup. Required for the Meta API channel.",
     "metaInstagramId": "Instagram Account ID",
     "metaInstagramIdHint": "Instagram Business Account ID. Required for the bot to reply to this clinic's Instagram DMs.",
+    "metaFacebookPageId": "Facebook Page ID",
+    "metaFacebookPageIdHint": "Numeric ID of the clinic's Facebook Page. Required for the bot to reply to this clinic's Messenger, and to keep each clinic isolated.",
     "programTitle": "Program / What's included",
     "programDesc": "Describe what the patient receives. The bot presents this in Step 4.",
     "pricingTitle": "Investment by location",
@@ -638,6 +663,7 @@
     "errSave": "Error saving. Please try again.",
     "metaPhoneIdPlaceholder": "e.g. 1031933676681061",
     "metaInstagramIdPlaceholder": "e.g. 17841400000000000",
+    "metaFacebookPageIdPlaceholder": "e.g. 100000000000000",
     "verifyTokenSample": "your_verify_token"
   },
   "voice": {

@@ -1,0 +1,18 @@
+{
+  "eyebrow": "MONETIZAÇÃO",
+  "title": "Pacotes e subscrições.",
+  "subtitle": "Defina ofertas simples para cada clínica. Ainda não há processamento de pagamentos ligado.",
+  "kpiPackages": "Pacotes de sessão",
+  "kpiMemberships": "Subscrições",
+  "kpiActivePlans": "Planos de pacientes ativos",
+  "kpiOfferValue": "Valor das ofertas ativas",
+  "offersTitle": "Ofertas da clínica",
+  "offersSubtitle": "Simples e flexível",
+  "plansTitle": "Planos de pacientes",
+  "plansSubtitle": "Controlo manual",
+  "noClinic": "Este utilizador precisa de estar associado a uma clínica antes de criar ofertas.",
+  "addPatientFirst": "Adicione primeiro um paciente. Depois volte aqui para atribuir um pacote ou subscrição.",
+  "createOfferFirst": "Crie primeiro uma oferta ativa. Depois atribua-a a um paciente.",
+  "structureOnly": "Apenas estrutura",
+  "structureNoteTail": "Mais tarde, isto pode ligar-se ao Stripe, faturas, renovações automáticas e pagamentos no portal do paciente."
+}

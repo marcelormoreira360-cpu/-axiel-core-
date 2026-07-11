@@ -1,0 +1,51 @@
+{
+  "list": {
+    "empty": "Nenhum profissional cadastrado",
+    "inviteHint": "Convide membros da equipe em <a>Configurações → Equipe</a>",
+    "kpiProfessionals": "Profissionais",
+    "kpiSessions": "Sessões este mês",
+    "kpiRevenue": "Receita este mês",
+    "kpiNps": "NPS médio equipe",
+    "statSessions": "sessões",
+    "statRevenue": "receita",
+    "statNps": "NPS",
+    "statCompletion": "conclusão",
+    "clickHint": "Clique em um profissional para ver o relatório detalhado"
+  },
+  "report": {
+    "notFound": "Profissional não encontrado.",
+    "loadError": "Erro ao carregar relatório.",
+    "periodThisMonth": "Este mês",
+    "periodLastMonth": "Mês anterior",
+    "period3m": "3 meses",
+    "period6m": "6 meses",
+    "periodThisYear": "Este ano",
+    "kpiCompleted": "Sessões realizadas",
+    "kpiCompletedSub": "{count} total",
+    "kpiCompletionRate": "Taxa de conclusão",
+    "kpiCompletionSub": "{count} no-show",
+    "kpiRevenue": "Receita",
+    "kpiRevenueSub": "ticket médio {value}",
+    "kpiNps": "NPS médio",
+    "kpiNpsIndex": "índice {value}",
+    "kpiNpsRatings": "{count} avaliações",
+    "statusTitle": "Status das sessões",
+    "statusCompleted": "Realizadas",
+    "statusScheduled": "Agendadas",
+    "statusCancelled": "Canceladas",
+    "statusNoShow": "No-show",
+    "monthlyTrend": "Tendência mensal",
+    "sessionsCount": "{count} sessões",
+    "bySessionType": "Por tipo de sessão",
+    "noData": "Sem dados neste período.",
+    "npsTitle": "NPS — {count, plural, one {# avaliação} other {# avaliações}}",
+    "npsPromoters": "Promotores (9-10)",
+    "npsPassives": "Passivos (7-8)",
+    "npsDetractors": "Detratores (0-6)"
+  },
+  "page": {
+    "eyebrow": "Gestão",
+    "title": "Equipa",
+    "subtitle": "Produtividade, receita e NPS por profissional."
+  }
+}

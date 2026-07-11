@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "title": "AXIEL Core — A jornada do seu paciente no piloto automático",
+    "description": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente. 30 dias grátis, sem cartão."
+  },
+  "nav": {
+    "tour": "Tour",
+    "journey": "Como funciona",
+    "plans": "Planos",
+    "faq": "Perguntas frequentes",
+    "login": "Entrar",
+    "startFree": "Começar grátis"
+  },
+  "hero": {
+    "title": "A jornada do seu paciente no piloto automático.",
+    "subtitle": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente.",
+    "ctaPrimary": "Comece grátis por 30 dias",
+    "ctaSecondary": "Veja o tour de 90 segundos",
+    "microProof": "Sem cartão de crédito. Cancele quando quiser.",
+    "videoLabel": "Tour do AXIEL Core (2 min)",
+    "videoCaption": "Narrado em português. Ative o som."
+  },
+  "pain": {
+    "card1Title": "O paciente que some.",
+    "card1Text": "Ele faz a primeira sessão, promete voltar… e desaparece. Sem follow-up sistemático, a agenda do próximo mês depende da sorte.",
+    "card2Title": "Horas montando relatório.",
+    "card2Text": "Anotações num caderno, exames num PDF, plano no Word. Cada devolutiva ao paciente custa a sua noite.",
+    "card3Title": "Quatro ferramentas soltas.",
+    "card3Text": "Agenda num app, WhatsApp no celular, prontuário numa planilha, cobrança no outro. Nada conversa com nada."
+  },
+  "journey": {
+    "title": "O que acontece quando um paciente encontra a sua clínica",
+    "step1Title": "Ele agenda sozinho (ou a sua equipe agenda por ele).",
+    "step1Text": "Seu link público funciona 24h, no idioma do paciente, com confirmação automática no WhatsApp; e o terapeuta ou a recepção também marcam pela agenda interna, em segundos.",
+    "step2Title": "Os questionários chegam antes da consulta.",
+    "step2Text": "No primeiro agendamento, a sua bateria de avaliação vai sozinha por e-mail e WhatsApp. Ele responde no celular; você recebe tudo pronto e pontuado.",
+    "step3Title": "A sessão termina na mesma tela em que começou.",
+    "step3Text": "Nota de evolução, cobrança por link (cartão ou Pix) e o retorno já agendado — sem trocar de aba.",
+    "step4Title": "A devolutiva vai num clique.",
+    "step4Text": "O relatório do paciente, com o mapa visual da avaliação, chega no e-mail dele com um botão: \"Enviar ao paciente\".",
+    "step5Title": "O acompanhamento continua sem você lembrar.",
+    "step5Text": "Lembrete na véspera, pesquisa pós-sessão, mensagens de 3 e 30 dias — automáticos, no idioma de cada paciente."
+  },
+  "bio3": {
+    "title": "Seu paciente enxerga o próprio progresso.",
+    "body": "O Mapa Bio³ transforma as respostas dos questionários numa pirâmide visual de 3 eixos — Equilíbrio, Vitalidade e Sustentação. Em vez de números soltos, uma imagem que o paciente entende em segundos. Clareza gera confiança; confiança gera adesão ao plano que VOCÊ definiu.",
+    "note": "A leitura clínica completa do método Neuro ID é exclusiva para profissionais com formação — fale com a gente.",
+    "labelTop": "Equilíbrio",
+    "labelMid": "Vitalidade",
+    "labelBase": "Sustentação"
+  },
+  "ai": {
+    "title": "A IA faz o rascunho. Você dá a palavra final.",
+    "bullet1": "Rascunhos de relatório e insights do caso em minutos",
+    "bullet2": "Leitura de exames por foto ou PDF",
+    "bullet3": "Sugestões de próxima ação por paciente",
+    "bullet4": "Tudo passa pela SUA aprovação antes de chegar ao paciente — sempre."
+  },
+  "profiles": {
+    "title": "Feito para a sua área",
+    "body": "Escolha seu perfil — integrativa, fisioterapia, saúde mental, nutrição ou wellness — e a clínica nasce pronta: tipos de sessão, anamnese e questionários do seu contexto. Depois, edite tudo: perguntas, ordem, seções da ficha, marca, preços. O método é seu; o motor é nosso.",
+    "chip1": "Integrativa",
+    "chip2": "Fisioterapia",
+    "chip3": "Saúde mental",
+    "chip4": "Nutrição",
+    "chip5": "Wellness"
+  },
+  "trust": {
+    "title": "Seus dados, protegidos de verdade.",
+    "item1": "Isolamento por clínica em todas as tabelas",
+    "item2": "Documentos de pacientes em armazenamento privado com link expirável",
+    "item3": "Consentimentos com data, hora e IP (LGPD)",
+    "item4": "Portal do paciente com acesso revogável e trilha de auditoria",
+    "badge": "Privacy-first"
+  },
+  "plans": {
+    "title": "Planos",
+    "perMonth": "/mês",
+    "mostPopular": "Mais popular",
+    "trialBadge": "30 dias grátis",
+    "ctaStart": "Começar grátis",
+    "ctaContact": "Fale com a gente",
+    "starter": {
+      "name": "Starter",
+      "price": "R$ 147",
+      "f1": "Até 3 usuários",
+      "f2": "Até 150 pacientes",
+      "f3": "Agenda + prontuário + formulários"
+    },
+    "professional": {
+      "name": "Professional",
+      "price": "R$ 297",
+      "f1": "Até 10 usuários",
+      "f2": "Até 1.000 pacientes",
+      "f3": "IA para insights clínicos",
+      "f4": "Portal do paciente + automações"
+    },
+    "scale": {
+      "name": "Scale",
+      "price": "R$ 697",
+      "f1": "Usuários e pacientes ilimitados",
+      "f2": "Bot de WhatsApp",
+      "f3": "Relatórios avançados + permissões",
+      "f4": "Até 3 unidades"
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "f1": "White label",
+      "f2": "Multi-clínica"
+    }
+  },
+  "faq": {
+    "title": "Perguntas frequentes",
+    "q1": "Preciso de cartão para testar?",
+    "a1": "Não. 30 dias completos do plano Professional, sem cartão. No fim, você escolhe um plano ou seus dados ficam guardados esperando.",
+    "q2": "Consigo migrar meus pacientes?",
+    "a2": "Sim — importação assistida no onboarding e cadastro rápido em massa. Seus dados são seus: exporte tudo quando quiser.",
+    "q3": "Funciona para clínica com mais de um profissional?",
+    "a3": "Sim: papéis de acesso (gestor, profissional, recepção), agenda por profissional e repasses no financeiro.",
+    "q4": "Meus pacientes falam outro idioma?",
+    "a4": "Cada paciente tem o próprio idioma: confirmações, lembretes e relatórios saem em português ou inglês, automaticamente.",
+    "q5": "E se eu cancelar?",
+    "a5": "Sem fidelidade. Cancele no próprio painel; exporte seus dados antes, sem pedir permissão a ninguém."
+  },
+  "cta": {
+    "title": "Sua próxima semana pode ser diferente.",
+    "subtitle": "Crie sua clínica em 5 minutos. Em 30 dias você decide — com a agenda mais cheia e as noites mais livres.",
+    "button": "Começar agora, grátis"
+  },
+  "footer": {
+    "rights": "© 2026 AXIEL Core. Todos os direitos reservados.",
+    "login": "Entrar",
+    "contact": "Contato",
+    "privacy": "Privacidade",
+    "terms": "Termos de Uso"
+  }
+}

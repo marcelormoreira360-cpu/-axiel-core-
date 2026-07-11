@@ -1,0 +1,31 @@
+{
+  "eyebrow": "Administração",
+  "audit": {
+    "title": "Log de Auditoria",
+    "subtitle": "Rastreamento de todas as ações do sistema — visível apenas para administradores.",
+    "statActions": "Ações registradas",
+    "statComms": "Comunicações",
+    "statLast": "Última ação",
+    "tabAudit": "Ações do sistema",
+    "tabComm": "Comunicações",
+    "filterAction": "Filtrar ação…",
+    "filter": "Filtrar",
+    "clear": "Limpar",
+    "noComms": "Nenhuma comunicação registrada.",
+    "pagination": "Página {page} de {pages} · {count} registros",
+    "prev": "← Anterior",
+    "next": "Próxima →",
+    "commCols": { "time": "Hora", "channel": "Canal", "patient": "Paciente", "to": "Para", "type": "Tipo", "status": "Status", "provider": "Provedor" }
+  },
+  "table": {
+    "empty": "Nenhuma ação registrada com esses filtros.",
+    "system": "Sistema",
+    "fields": "{count, plural, one {# campo} other {# campos}}",
+    "cols": { "time": "Hora", "user": "Usuário", "action": "Ação", "entity": "Entidade", "entityId": "ID da entidade", "details": "Detalhes" }
+  },
+  "plans": {
+    "eyebrow": "Platform Admin",
+    "title": "Planos",
+    "subtitle": "Revise a estrutura de planos comerciais das clínicas AXIEL."
+  }
+}

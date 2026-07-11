@@ -9,6 +9,9 @@ import { ANATOMY_MAP_KEYS, anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 import { BodyMapInput } from "@/components/body-map-input";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { SessionInsightGenerator } from "@/components/session-insight-generator";
+import { DEFAULT_VITAL_KEYS, type SessionConfig } from "@/modules/session/session-config";
+
+const DEFAULT_VITAL_KEY_SET = new Set<string>(DEFAULT_VITAL_KEYS);
 
 type RecordingState = "idle" | "recording" | "transcribing" | "drafting";
 type NoteMode = "livre" | "soap";
@@ -24,20 +27,13 @@ type Props = {
   suggestedTests?: string[];
   /** Consentimento de gravação do paciente já registrado? (ISO) null = não. */
   recordingConsentAt?: string | null;
+  /** Config de vitais + escala da clínica (default = 4 vitais, escala 1–5). */
+  sessionConfig: SessionConfig;
 };
 
 function uid() {
   return Math.random().toString(36).slice(2);
 }
-
-type VitalKey = "dor" | "energia" | "humor" | "sono";
-
-const VITALS_CONFIG: { key: VitalKey; color: string }[] = [
-  { key: "dor",     color: "#E05252" },
-  { key: "energia", color: "#0F6E56" },
-  { key: "humor",   color: "#7B5EA7" },
-  { key: "sono",    color: "#2A7BC1" },
-];
 
 const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan"; short: string }[] = [
   { key: "subjective",      short: "S" },
@@ -46,7 +42,7 @@ const SOAP_FIELDS: { key: "subjective" | "objective" | "assessment_note" | "plan
   { key: "plan",            short: "P" },
 ];
 
-export function SessionRecordingPanel({ appointment, record, saved, suggestedTests = [], recordingConsentAt }: Props) {
+export function SessionRecordingPanel({ appointment, record, saved, suggestedTests = [], recordingConsentAt, sessionConfig }: Props) {
   const t = useTranslations("session.panel");
   const locale = useLocale();
   const initialMode: NoteMode = record?.soap_mode ? "soap" : "livre";
@@ -93,11 +89,11 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
   const [consentError, setConsentError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeSOAPField, setActiveSOAPField] = useState<"subjective" | "objective" | "assessment_note" | "plan">("subjective");
-  const [vitals, setVitals] = useState<Record<VitalKey, number | null>>({
-    dor:     (record?.vitals?.dor    ?? null) as number | null,
-    energia: (record?.vitals?.energia ?? null) as number | null,
-    humor:   (record?.vitals?.humor  ?? null) as number | null,
-    sono:    (record?.vitals?.sono   ?? null) as number | null,
+  const [vitals, setVitals] = useState<Record<string, number | null>>(() => {
+    const rec = (record?.vitals ?? {}) as Record<string, number | null>;
+    const init: Record<string, number | null> = {};
+    for (const v of sessionConfig.vitals) init[v.key] = (rec[v.key] ?? null) as number | null;
+    return init;
   });
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -373,8 +369,8 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
       <input type="hidden" name="body_map_notes" value={bodyMapsValue} />
       <input type="hidden" name="soap_mode" value={mode === "soap" ? "1" : "0"} />
       {/* Vitals hidden inputs */}
-      {VITALS_CONFIG.map(({ key }) => (
-        <input key={key} type="hidden" name={`vitals_${key}`} value={vitals[key] ?? ""} />
+      {sessionConfig.vitals.map((v) => (
+        <input key={v.key} type="hidden" name={`vitals_${v.key}`} value={vitals[v.key] ?? ""} />
       ))}
 
       {/* Header */}
@@ -746,35 +742,42 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
               <label className="text-[11px] font-medium text-[#6B6A66]">
                 {t("vitalsTitle")}
               </label>
-              <span className="text-[10px] text-[#D3D1C7]">{t("scale")}</span>
+              <span className="text-[10px] text-[#D3D1C7]">{t("scale", { max: sessionConfig.scaleMax })}</span>
             </div>
             <div className="space-y-[10px]">
-              {VITALS_CONFIG.map(({ key, color }) => (
-                <div key={key}>
+              {sessionConfig.vitals.map((v) => {
+                const isDefault = DEFAULT_VITAL_KEY_SET.has(v.key);
+                const label = v.label || (isDefault ? t(`vitals.${v.key}.label`) : v.key);
+                const low = v.low || (isDefault ? t(`vitals.${v.key}.low`) : "");
+                const high = v.high || (isDefault ? t(`vitals.${v.key}.high`) : "");
+                return (
+                <div key={v.key}>
                   <div className="flex items-center justify-between mb-[5px]">
-                    <span className="text-[11px] font-medium text-[#0F1A2E]">{t(`vitals.${key}.label`)}</span>
-                    <div className="flex items-center gap-[4px] text-[9px] text-[#A09E98]">
-                      <span>{t(`vitals.${key}.low`)}</span>
-                      <span className="mx-[2px]">·</span>
-                      <span>{t(`vitals.${key}.high`)}</span>
-                    </div>
+                    <span className="text-[11px] font-medium text-[#0F1A2E]">{label}</span>
+                    {(low || high) && (
+                      <div className="flex items-center gap-[4px] text-[9px] text-[#A09E98]">
+                        <span>{low}</span>
+                        <span className="mx-[2px]">·</span>
+                        <span>{high}</span>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-[5px]">
-                    {[1, 2, 3, 4, 5].map((val) => {
-                      const selected = vitals[key] === val;
+                    {Array.from({ length: sessionConfig.scaleMax }, (_, i) => i + 1).map((val) => {
+                      const selected = vitals[v.key] === val;
                       return (
                         <button
                           key={val}
                           type="button"
                           onClick={() => setVitals((prev) => ({
                             ...prev,
-                            [key]: prev[key] === val ? null : val,
+                            [v.key]: prev[v.key] === val ? null : val,
                           }))}
                           className="flex-1 h-[30px] rounded-[6px] text-[12px] font-semibold transition border"
                           style={{
-                            backgroundColor: selected ? color : "#F4F3EF",
+                            backgroundColor: selected ? v.color : "#F4F3EF",
                             color: selected ? "#fff" : "#6B6A66",
-                            borderColor: selected ? color : "transparent",
+                            borderColor: selected ? v.color : "transparent",
                           }}
                         >
                           {val}
@@ -783,7 +786,8 @@ export function SessionRecordingPanel({ appointment, record, saved, suggestedTes
                     })}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

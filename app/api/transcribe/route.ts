@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { createLogger } from "@/lib/logger";
+import { recordSttUsage } from "@/services/stt-usage-service";
 
 const log = createLogger("transcribe");
 
@@ -87,6 +88,8 @@ export async function POST(req: NextRequest) {
     if (["pt", "en", "es"].includes(langHint)) {
       whisperForm.append("language", langHint);
     }
+    // verbose_json traz a duração do áudio (segundos) para medir uso de STT.
+    whisperForm.append("response_format", "verbose_json");
 
     const res = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
@@ -100,6 +103,10 @@ export async function POST(req: NextRequest) {
     }
 
     const data = await res.json();
+    // Mede uso de STT (best-effort). AWAIT de propósito: em serverless, trabalho
+    // não-aguardado após a resposta pode ser descartado, perdendo o dado de
+    // cobrança. O helper tem try/catch interno, então awaitar não quebra o fluxo.
+    await recordSttUsage({ clinicId: profile?.clinic_id ?? null, channel: "session", seconds: Number(data.duration) || 0 });
     return NextResponse.json({ text: data.text ?? "" });
   } catch (err: unknown) {
     log.error("Transcription error", err);

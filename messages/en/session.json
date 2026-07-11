@@ -63,7 +63,7 @@
     "noObs": "No observations yet.",
     "obsCount": "{count}/12 observations",
     "vitalsTitle": "Vitals reported by the patient",
-    "scale": "Scale 1–5",
+    "scale": "Scale 1–{max}",
     "details": "Details",
     "prevNote": "Previous note",
     "duration": "Duration",

@@ -1,0 +1,17 @@
+{
+  "title": "Tendências",
+  "subtitle": "Visão agregada e anonimizada dos pacientes que autorizaram uso estatístico.",
+  "privacyBanner": "Estes dados são totalmente anonimizados: incluem apenas pacientes que consentiram, são agregados por cidade, estado e faixa etária, e grupos com menos de 5 pessoas são ocultados para impedir reidentificação. Nenhum dado individual é exibido.",
+  "emptyTitle": "Ainda não há dados suficientes.",
+  "emptyDesc": "As tendências aparecem quando há pelo menos 5 pacientes consentidos em um mesmo grupo (cidade + estado + faixa etária).",
+  "kpiConsented": "Pacientes consentidos",
+  "kpiCities": "Cidades",
+  "kpiGroups": "Grupos",
+  "byAge": "Por faixa etária",
+  "byRegion": "Por região",
+  "colCity": "Cidade",
+  "colState": "Estado",
+  "colAge": "Faixa etária",
+  "colCount": "Pacientes",
+  "ageUnknown": "Não informado"
+}

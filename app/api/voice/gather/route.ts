@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { validateTwilioSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber } from "@/services/whatsapp-bot-service";
 import { createLogger } from "@/lib/logger";
@@ -6,6 +8,8 @@ import { createLogger } from "@/lib/logger";
 const log = createLogger("voice-gather");
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s da chamada OpenAI (fallback gracioso antes do teto).
+export const maxDuration = 20;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -83,23 +87,25 @@ async function generateVoiceReply(
     { role: "user" as const, content: userMessage },
   ];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  try {
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
       messages,
       temperature: 0.65,
       max_tokens: 180, // keep voice responses short
-    }),
-  });
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    log.error("Voice AI error", { status: res.status, data: JSON.stringify(data) });
+    const data = await res.json();
+    if (!res.ok) {
+      log.error("Voice AI error", { status: res.status, data: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("Voice AI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Gather handler (called after each speech input) ─────────────────────────
@@ -156,6 +162,8 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Load clinic config ──────────────────────────────────────────────────
+    // Isolação multi-tenant vem da resolução por número (uma 2ª clínica que
+    // cadastra o próprio número de voz resolve para a config dela).
     let config = IFWC_DEFAULT_CONFIG;
     try {
       const clinicConfig = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;

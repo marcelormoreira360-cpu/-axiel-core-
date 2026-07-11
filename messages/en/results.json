@@ -40,6 +40,8 @@
     "unavailableBefore": "AI analysis unavailable — set",
     "unavailableAfter": "in Vercel to enable it.",
     "analyzing": "Analyzing data with AI…",
-    "none": "No insights generated for this period."
+    "none": "No insights generated for this period.",
+    "refresh": "Refresh",
+    "refreshTitle": "Regenerate the analysis now"
   }
 }

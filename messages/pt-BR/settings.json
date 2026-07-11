@@ -1,4 +1,23 @@
 {
+  "session": {
+    "title": "Registro de sessão",
+    "subtitle": "Personalize os vitais relatados pelo paciente e a escala usada no registro de sessão.",
+    "scaleTitle": "Escala",
+    "scaleHint": "Topo da escala (2–10). A base é sempre 1.",
+    "vitalsTitle": "Vitais",
+    "vitalsHint": "Os vitais que o paciente avalia a cada sessão. Deixe o rótulo vazio num vital padrão para usar a tradução embutida.",
+    "addVital": "+ Adicionar vital",
+    "removeVital": "Remover",
+    "labelPlaceholder": "Rótulo (ex: Dor)",
+    "lowPlaceholder": "Ponta baixa (ex: sem dor)",
+    "highPlaceholder": "Ponta alta (ex: dor máxima)",
+    "colorLabel": "Cor",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "saved": "Configuração salva",
+    "error": "Não foi possível salvar. Tente novamente.",
+    "empty": "Sem vitais. Adicione ao menos um ou o conjunto padrão é usado."
+  },
   "common": {
     "back": "Configurações",
     "eyebrow": "Configurações"
@@ -110,6 +129,10 @@
       "sessionTypes": {
         "title": "Tipos de sessão",
         "text": "Modalidades, durações, preços e configuração de Zoom por tipo."
+      },
+      "sessionRecord": {
+        "title": "Registro de sessão",
+        "text": "Personalize os vitais relatados pelo paciente e a escala de avaliação."
       },
       "offers": {
         "title": "Ofertas e pacotes",
@@ -616,6 +639,8 @@
     "metaPhoneIdHint": "ID numérico do número na Meta for Developers → WhatsApp → API Setup. Necessário para o canal Meta API.",
     "metaInstagramId": "Instagram Account ID",
     "metaInstagramIdHint": "ID da conta do Instagram (Instagram Business Account). Necessário para o bot responder DMs do Instagram desta clínica.",
+    "metaFacebookPageId": "ID da Página do Facebook",
+    "metaFacebookPageIdHint": "ID numérico da Página do Facebook da clínica. Necessário para o bot responder o Messenger desta clínica e para manter cada clínica isolada.",
     "programTitle": "Programa / O que está incluído",
     "programDesc": "Descreva o que o paciente recebe no atendimento. O bot apresenta isso na Etapa 4.",
     "pricingTitle": "Investimento por localidade",
@@ -638,6 +663,7 @@
     "errSave": "Erro ao salvar. Tente novamente.",
     "metaPhoneIdPlaceholder": "ex: 1031933676681061",
     "metaInstagramIdPlaceholder": "ex: 17841400000000000",
+    "metaFacebookPageIdPlaceholder": "ex: 100000000000000",
     "verifyTokenSample": "seu_token_verificacao"
   },
   "voice": {

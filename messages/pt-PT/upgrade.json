@@ -1,0 +1,31 @@
+{
+  "viewPlanDetails": "Ver detalhes do plano →",
+  "trialEndedBadge": "Período de avaliação encerrado",
+  "title": "Seu período de avaliação encerrou",
+  "subtitle": "Escolha um plano para continuar usando o AXIEL Core e manter acesso a todos os seus dados clínicos.",
+  "mostPopular": "Mais popular",
+  "perMonth": "/mês",
+  "subscribe": "Assinar {plan}",
+  "trustNote": "Pagamentos seguros via Stripe. Cancele a qualquer momento. Sem taxa de setup.",
+  "manageSubscription": "Gerenciar assinatura",
+  "plans": {
+    "starter": {
+      "feature1": "Até 3 usuários",
+      "feature2": "Até 150 pacientes",
+      "feature3": "Agenda e prontuário",
+      "feature4": "Formulários de intake"
+    },
+    "professional": {
+      "feature1": "Até 10 usuários",
+      "feature2": "Até 1.000 pacientes",
+      "feature3": "IA para insights clínicos",
+      "feature4": "Portal do paciente + automações"
+    },
+    "scale": {
+      "feature1": "Usuários e pacientes ilimitados",
+      "feature2": "WhatsApp + relatórios avançados",
+      "feature3": "Permissões avançadas",
+      "feature4": "Até 3 unidades"
+    }
+  }
+}

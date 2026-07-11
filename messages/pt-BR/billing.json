@@ -1,0 +1,18 @@
+{
+  "eyebrow": "Conta",
+  "title": "Plano & Faturamento",
+  "subtitle": "Gerencie seu plano AXIEL e assinatura Stripe",
+  "choosePlan": "Escolha seu plano",
+  "trialTitle": "14 dias grátis em qualquer plano",
+  "trialSubtitle": "Sem cartão necessário para iniciar o trial. Cancele a qualquer momento.",
+  "invoiceHistory": "Histórico de faturas",
+  "downloadPdf": "Baixar PDF",
+  "footer": "Pagamentos processados com segurança pelo Stripe. Upgrade, downgrade e cancelamento disponíveis a qualquer momento via portal Stripe.",
+  "status": {
+    "paid": "Pago",
+    "open": "Aberto",
+    "void": "Cancelado",
+    "draft": "Rascunho",
+    "uncollectible": "Não cobrado"
+  }
+}

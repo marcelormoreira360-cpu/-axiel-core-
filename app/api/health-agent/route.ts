@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { reportModel } from "@/lib/ai-models";
 import { parseDob } from "@/lib/dob";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { createLogger } from "@/lib/logger";
+
+// App-iniciada (não é webhook de plataforma): margem para o AbortSignal/retry
+// das chamadas OpenAI disparar antes do teto da função.
+export const maxDuration = 60;
 
 const log = createLogger("health-agent");
 
@@ -376,22 +382,17 @@ Gere um JSON com EXATAMENTE esta estrutura:
   }
 }`;
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-      }),
-    });
+    // Tier REPORT (clínico/estruturado): default gpt-4.1-mini, com timeout+retry.
+    // Antes: "gpt-4o" cravado (~6x mais caro) neste que é o maior prompt do sistema.
+    const res = await openaiChatCompletion(apiKey, {
+      model: reportModel(),
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    }, { retries: 2 });
 
     if (!res.ok) {
       const err = (await res.json().catch(() => ({}))) as {
@@ -401,8 +402,12 @@ Gere um JSON com EXATAMENTE esta estrutura:
     }
 
     const data = (await res.json()) as {
+      model?: string;
       choices: Array<{ message: { content: string } }>;
     };
+    // Loga o modelo REAL que a OpenAI usou (não o solicitado): detecta troca
+    // silenciosa de snapshot / env divergente.
+    log.info("health-agent OpenAI response", { model_real: data.model ?? "unknown" });
     const report = JSON.parse(data.choices[0].message.content) as HealthAgentReport;
     return NextResponse.json({ report, patientName: ctx.name });
   } catch (err: unknown) {

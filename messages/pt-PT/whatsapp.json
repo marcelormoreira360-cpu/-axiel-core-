@@ -1,0 +1,69 @@
+{
+  "autoReply": {
+    "fallback": "Olá! Recebi sua mensagem. Em breve entraremos em contato. 😊",
+    "fallbackSms": "Olá! Recebi sua mensagem. Em breve entraremos em contato.",
+    "handover": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏",
+    "handoverSms": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui.",
+    "greeting": "Olá! Obrigada pela mensagem. 😊 Como posso ajudar você hoje?",
+    "audioFail": "Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊"
+  },
+  "channel": {
+    "whatsapp": "WhatsApp",
+    "messenger": "Messenger",
+    "instagram": "Instagram",
+    "sms": "SMS"
+  },
+  "handoff": {
+    "status": {
+      "active": "IA ativa",
+      "paused": "IA pausada",
+      "withTeam": "Com a equipe (24h)"
+    },
+    "pause": "Pausar IA",
+    "resume": "Devolver para a Clara",
+    "pausedBy": "IA pausada por {name}",
+    "hint": {
+      "active": "A Clara responde automaticamente nesta conversa.",
+      "paused": "A IA fica em silêncio até você devolver a conversa.",
+      "withTeam": "Alguém da equipe respondeu há menos de 24h. A IA volta sozinha após 24h de silêncio, ou agora pela devolução."
+    },
+    "manualHint": "Ao enviar uma resposta manual, a Clara fica em silêncio nesta conversa por 24h.",
+    "legendHuman": "Com a equipe"
+  },
+  "page": {
+    "eyebrow": "Atendimento",
+    "title": "WhatsApp Bot",
+    "subtitle": "Monitor de conversas e assistente IA",
+    "configure": "Configurar bot",
+    "kpiBot": "Bot status",
+    "botActive": "Ativo",
+    "botInactive": "Inativo",
+    "botVia": "via Twilio + GPT-4o-mini",
+    "kpiConversations": "Conversas",
+    "newToday": "+{count} hoje",
+    "noneToday": "sem novas hoje",
+    "kpiMessages": "Mensagens",
+    "messagesSub": "total no histórico",
+    "kpiOperator": "Operador",
+    "operatorNone": "bot respondendo a todos",
+    "operatorSome": "conversas em atendimento humano",
+    "twilioConfigTitle": "Configuração Twilio",
+    "twilioConfigDesc": "Configure o webhook abaixo no Twilio Console → WhatsApp Sandbox ou número comprado:",
+    "number": "Número:",
+    "serviceErrorTitle": "⚠️ Serviço não configurado",
+    "serviceErrorDesc": "Verifique se as variáveis de ambiente <code>SUPABASE_SERVICE_ROLE_KEY</code> estão configuradas no Vercel.",
+    "loadError": "Erro ao carregar conversas",
+    "convCount": "{count, plural, one {1 conversa} other {# conversas}}",
+    "emptyTitle": "Nenhuma conversa ainda.",
+    "emptyHint": "Configure o webhook no Twilio e envie uma mensagem de teste.",
+    "patientBadge": "Paciente",
+    "noMessages": "Sem mensagens",
+    "msgCount": "{count} msg",
+    "timeAgo": {
+      "now": "agora",
+      "minutes": "{count}min atrás",
+      "hours": "{count}h atrás",
+      "days": "{count}d atrás"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "invalidTitle": "Convite inválido",
+  "invalidDesc": "Este link de convite é inválido, já foi usado ou expirou.",
+  "eyebrow": "Convite",
+  "invitedAs": "Você foi convidado como <b>{role}</b>",
+  "createAccept": "Criar conta e aceitar convite",
+  "haveAccount": "Já tenho conta — fazer login",
+  "accessNote": "Ao aceitar, você terá acesso à clínica {name} no AXIEL Core."
+}

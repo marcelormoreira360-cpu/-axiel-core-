@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
@@ -11,6 +13,8 @@ import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s das chamadas OpenAI (fallback gracioso antes do teto).
+export const maxDuration = 20;
 
 const log = createLogger("instagram");
 
@@ -205,11 +209,9 @@ async function generateReply(
   systemPrompt: string,
   apiKey: string
 ): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  try {
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
       messages: [
         { role: "system", content: systemPrompt },
         ...history.slice(-12),
@@ -217,15 +219,19 @@ async function generateReply(
       ],
       temperature: 0.7,
       max_tokens: 450,
-    }),
-  });
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+    const data = await res.json();
+    if (!res.ok) {
+      log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("OpenAI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Opt-out / human escalation detection ────────────────────────────────────
@@ -289,10 +295,13 @@ export async function POST(req: NextRequest) {
       // Persona do prompt: a config da conta, senão a config da CLÍNICA (conta
       // extra, ex.: IG pessoal — antes caía na config de fábrica e perdia as
       // custom_instructions da Clara), senão a padrão IFWC.
+      // SEC-01: só cai no IFWC_DEFAULT_CONFIG se a clínica resolvida FOR a IFWC.
+      // Uma clínica sem config própria não pode falar com a identidade da IFWC.
       const promptConfig =
         dbConfig ??
         (await getWhatsAppBotConfigByClinicId(clinicId).catch(() => null)) ??
-        IFWC_DEFAULT_CONFIG;
+        (clinicId === IFWC_CLINIC_ID ? IFWC_DEFAULT_CONFIG : null);
+      if (!promptConfig) continue;
 
       for (const event of entry.messaging ?? []) {
         // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe

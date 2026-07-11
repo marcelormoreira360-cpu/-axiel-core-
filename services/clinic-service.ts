@@ -2,6 +2,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import type { Clinic } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
+import { coerceSessionConfig, defaultSessionConfig, type SessionConfig } from "@/modules/session/session-config";
 
 const log = createLogger("clinic-service");
 
@@ -71,6 +72,34 @@ export async function updateClinic(id: string, fields: {
     .single();
   if (error) throw error;
   return data as Clinic;
+}
+
+/**
+ * Config do registro de sessão da clínica (vitais + escala). NULL no banco =
+ * default do código (comportamento anterior). Sempre devolve uma config válida.
+ */
+export async function getClinicSessionConfig(clinicId: string): Promise<SessionConfig> {
+  if (!clinicId) return defaultSessionConfig();
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("clinics")
+    .select("session_config")
+    .eq("id", clinicId)
+    .maybeSingle();
+  const raw = (data as { session_config?: unknown } | null)?.session_config;
+  return raw == null ? defaultSessionConfig() : coerceSessionConfig(raw);
+}
+
+/** Salva a config de sessão da clínica. RLS garante owner/manager da clínica. */
+export async function saveClinicSessionConfig(clinicId: string, config: SessionConfig): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase
+    .from("clinics")
+    .update({ session_config: coerceSessionConfig(config) })
+    .eq("id", clinicId);
+  if (error) throw error;
 }
 
 // React.cache deduplicates within a single request.

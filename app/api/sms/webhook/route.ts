@@ -119,6 +119,11 @@ export async function POST(req: NextRequest) {
       await getConversationState(supabase, conversationKey);
     const effectiveClinicId = convClinicId ?? clinicIdFromConfig;
 
+    // NB: a isolação multi-tenant do SMS vem da resolução por número
+    // (getWhatsAppBotConfigByNumber): uma 2ª clínica que cadastra o próprio número
+    // resolve para a config dela. Não há guarda por TWILIO_FROM_NUMBER aqui porque
+    // esse env é o número de WhatsApp, não o DID de SMS/voz da clínica.
+
     // Passagem de bastão: IA pausada OU humano respondeu há menos de 24h.
     // Salva a mensagem do paciente e não responde.
     if (shouldSilenceAi({ aiPaused, botDisabled, lastHumanMessageAt })) {

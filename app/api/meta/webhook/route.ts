@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature, checkRateLimit } from "@/lib/webhook-guard";
 import { getServerT } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s das chamadas OpenAI, para o fallback gracioso
+// disparar antes de a plataforma matar a função.
+export const maxDuration = 20;
 
 const log = createLogger("meta-webhook");
 
@@ -117,26 +122,25 @@ async function generateReply(
     { role: "user" as const, content: incomingMessage },
   ];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  try {
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
       messages,
       temperature: 0.65,
       max_tokens: 500,
-    }),
-  });
+    });
 
-  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-  if (!res.ok) {
-    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+    const data = await res.json() as { choices?: { message?: { content?: string } }[] };
+    if (!res.ok) {
+      log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("OpenAI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Send Message via Graph API ───────────────────────────────────────────────

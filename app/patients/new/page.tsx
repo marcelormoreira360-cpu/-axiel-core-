@@ -91,9 +91,9 @@ const WORLD_COUNTRY_CODES = [
 export default async function NewPatientPage({
   searchParams,
 }: {
-  searchParams: Promise<{ name?: string }>;
+  searchParams: Promise<{ name?: string; error?: string }>;
 }) {
-  const { name } = await searchParams;
+  const { name, error } = await searchParams;
   const t = await getTranslations("patients.new");
   const locale = await getLocale();
   const regionNames = new Intl.DisplayNames([locale], { type: "region" });
@@ -117,6 +117,11 @@ export default async function NewPatientPage({
         helper={t("helper")}
       />
       <Card className="max-w-2xl p-6">
+        {error && (
+          <p className="mb-5 text-sm text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-xl px-4 py-3">
+            {decodeURIComponent(error)}
+          </p>
+        )}
         <form action={createPatientAction} className="grid gap-7">
 
           {/* ── Nome ── */}

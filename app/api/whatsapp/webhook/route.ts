@@ -3,9 +3,10 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByNumber, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { validateTwilioSignature, checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
-import { parseTwilioParams, twimlMessage } from "@/lib/twilio-webhook-utils";
+import { parseTwilioParams, twimlMessage, isIfwcOwnNumber } from "@/lib/twilio-webhook-utils";
 import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
+import { recordSttUsage } from "@/services/stt-usage-service";
 import {
   getConversationState,
   saveConversation,
@@ -26,7 +27,7 @@ type BotConfig = { clinic_id?: string | null; [key: string]: unknown };
 
 // ─── Audio transcription via Whisper ─────────────────────────────────────────
 
-async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string> {
+async function transcribeAudio(mediaUrl: string, apiKey: string, clinicId: string | null): Promise<string> {
   try {
     // Fetch the audio file from Twilio (requires Basic Auth)
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
@@ -40,6 +41,9 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
     }
 
     const audioBuffer = await audioRes.arrayBuffer();
+    // Teto de 25 MB (limite duro do Whisper): fecha o custo de STT sem limite em
+    // mídia grande/maliciosa (paridade com transcribe/route.ts).
+    if (audioBuffer.byteLength > 25 * 1024 * 1024) return "";
     const audioBlob = new Blob([audioBuffer], { type: "audio/ogg" });
 
     // Send to Whisper
@@ -47,6 +51,8 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
     formData.append("file", audioBlob, "audio.ogg");
     formData.append("model", "whisper-1");
     // BOT-03: removed hardcoded "pt" — Whisper auto-detects language
+    // verbose_json traz a duração do áudio para medir uso de STT por minuto.
+    formData.append("response_format", "verbose_json");
 
     const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
@@ -61,6 +67,8 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
     }
 
     const data = await whisperRes.json();
+    // AWAIT: em serverless, um insert não-aguardado pós-resposta pode ser perdido.
+    await recordSttUsage({ clinicId, channel: "whatsapp", seconds: Number(data.duration) || 0 });
     return data.text?.trim() ?? "";
   } catch (err) {
     log.error("audio transcription error", err);
@@ -115,9 +123,16 @@ export async function POST(req: NextRequest) {
       if (config) botConfig = config;
     } catch { /* keep IFWC default */ }
 
+    // SEC-01: número sem clínica configurada e que NÃO é o número da IFWC não
+    // pode ser respondido com a identidade/preços da IFWC (vazamento cross-tenant).
+    if (!clinicIdFromConfig && !isIfwcOwnNumber(toNumber)) {
+      console.warn("WhatsApp webhook: número sem clínica configurada — ignorado (SEC-01)");
+      return new NextResponse("", { status: 200 });
+    }
+
     // If audio, transcribe it
     if (isAudio && mediaUrl) {
-      const transcribed = await transcribeAudio(mediaUrl, apiKey);
+      const transcribed = await transcribeAudio(mediaUrl, apiKey, clinicIdFromConfig);
       if (transcribed) {
         incomingMessage = transcribed;
       } else {

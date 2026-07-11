@@ -1,0 +1,100 @@
+{
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "create": "Criar",
+    "search": "Pesquisar",
+    "back": "Voltar",
+    "next": "Seguinte",
+    "confirm": "Confirmar",
+    "close": "Fechar",
+    "viewMore": "Ver mais",
+    "viewAll": "Ver tudo",
+    "confirmRemoveNamed": "Remover \"{name}\"? Esta ação não pode ser anulada."
+  },
+  "confirmDialog": {
+    "title": "Confirmar ação"
+  },
+  "terms": {
+    "insight": "Insight",
+    "insights": "Insights",
+    "insightsLower": "insights",
+    "session": "Sessão",
+    "nextSteps": "Próximos passos"
+  },
+  "roles": {
+    "admin": "Admin",
+    "platform_admin": "Admin da plataforma",
+    "platform_support": "Suporte",
+    "clinic_owner": "Proprietário",
+    "clinic_manager": "Gestor",
+    "practitioner": "Profissional de saúde",
+    "front_desk": "Receção",
+    "read_only_staff": "Visualizador",
+    "staff": "Equipa"
+  },
+  "status": {
+    "loading": "A carregar…",
+    "saving": "A guardar…",
+    "saved": "Guardado",
+    "error": "Ocorreu um erro",
+    "empty": "Sem resultados",
+    "active": "Ativo",
+    "inactive": "Inativo",
+    "high": "Alto",
+    "low": "Baixo"
+  },
+  "clinicProfile": {
+    "integrativa": "Integrativa",
+    "fisioterapia": "Fisioterapia",
+    "saude_mental": "Saúde Mental",
+    "nutricao": "Nutrição",
+    "wellness": "Wellness"
+  },
+  "language": {
+    "label": "Idioma",
+    "pt-BR": "Português (Brasil)",
+    "pt-PT": "Português (Portugal)",
+    "en": "English"
+  },
+  "appointmentStatus": {
+    "scheduled": "Agendado",
+    "confirmed": "Confirmado",
+    "completed": "Realizado",
+    "cancelled": "Cancelado",
+    "no_show": "Faltou",
+    "pending": "A aguardar confirmação"
+  },
+  "push": {
+    "title": "Ativar notificações",
+    "description": "Receba alertas quando os pacientes enviarem mensagens pelo portal.",
+    "enable": "Ativar",
+    "enabling": "A ativar…",
+    "notNow": "Agora não",
+    "close": "Fechar",
+    "settingsTitle": "Notificações push",
+    "denied": "Bloqueadas pelo navegador — desbloqueie nas definições do site.",
+    "active": "Ativas neste dispositivo",
+    "subtitle": "Receba alertas de mensagens de pacientes",
+    "unsupported": "As notificações push não são suportadas neste navegador.",
+    "disable": "Desativar"
+  },
+  "bodyMap": {
+    "hint": "Clique no mapa para marcar. Arraste um pino para reposicionar.",
+    "notesPlaceholder": "Observações gerais (opcional)",
+    "point": "Ponto",
+    "remove": "Remover",
+    "levelMild": "Leve",
+    "levelModerate": "Moderada",
+    "levelSevere": "Forte",
+    "pointNote": "Descrição do ponto"
+  },
+  "trialLock": {
+    "title": "O seu período de teste terminou",
+    "body": "Os 30 dias de teste do AXIEL Core terminaram. Escolha um plano para continuar a cuidar dos seus pacientes exatamente onde parou: os seus dados estão guardados e nada foi perdido.",
+    "cta": "Escolher o meu plano",
+    "helper": "Dúvidas? Fale connosco pelo suporte."
+  }
+}

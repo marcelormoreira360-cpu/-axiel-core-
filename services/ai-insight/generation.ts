@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import type { AiInsightOutput } from "@/lib/types";
+import { reportModel } from "@/lib/ai-models";
 import { resolvePatientLocale } from "@/lib/email-i18n";
 import { buildAiInsightSystemPrompt } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
@@ -22,13 +23,13 @@ export function buildAiFallbackOutput(reason: string): AiInsightOutput {
   };
 }
 
-export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Promise<{ output: AiInsightOutput; tokensUsed?: number | null }> {
+export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Promise<{ output: AiInsightOutput; tokensUsed?: number | null; modelUsed?: string | null }> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is missing. Add it to .env.local before generating insights.");
   }
 
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
 
   // Nível PACIENTE: o insight vira relatório enviado ao paciente após aprovação,
   // então o texto sai no idioma do paciente (patients.locale; fallback = clínica).
@@ -62,6 +63,8 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   return {
     output: coerceAiInsightOutput(parsed),
     tokensUsed: response.usage?.total_tokens ?? null,
+    // Modelo REAL retornado pela OpenAI (pode divergir do solicitado, ex.: snapshot).
+    modelUsed: response.model ?? null,
   };
 }
 
@@ -84,7 +87,7 @@ export async function suggestAtmIntegration(
   }
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+    const model = reportModel();
     const response = await client.chat.completions.create({
       model,
       temperature: 0.3,

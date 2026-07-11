@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { CreditCard, Layers3, Repeat, Users } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
@@ -22,6 +23,7 @@ import { MONETIZATION_NOTE } from "@/modules/monetization/offer-defaults";
 import type { MonetizationOfferType } from "@/lib/types";
 
 export default async function MonetizationPage() {
+  const t = await getTranslations("monetization");
   const [profile, patients, offers, activeOffers, patientOffers] = await Promise.all([
     getCurrentUserProfile(),
     getPatients(),
@@ -142,31 +144,31 @@ export default async function MonetizationPage() {
     <Shell>
       <header className="mb-8 flex flex-col gap-5 pt-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">MONETIZATION</p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">Packages and memberships.</h1>
-          <p className="mt-3 max-w-2xl text-black/55">Define simple offers for each clinic. No payment processing is connected yet.</p>
+          <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold">{t("eyebrow")}</p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">{t("title")}</h1>
+          <p className="mt-3 max-w-2xl text-black/55">{t("subtitle")}</p>
         </div>
       </header>
 
       <section className="mb-5 grid gap-3 md:grid-cols-4">
         <Card className="bg-axiel-ink p-6 text-white">
           <Layers3 className="h-5 w-5 text-white/45" />
-          <p className="mt-3 text-sm text-white/55">Session packages</p>
+          <p className="mt-3 text-sm text-white/55">{t("kpiPackages")}</p>
           <p className="mt-2 text-4xl font-semibold">{packages.length}</p>
         </Card>
         <Card className="p-6">
           <Repeat className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Memberships</p>
+          <p className="mt-3 text-sm text-black/45">{t("kpiMemberships")}</p>
           <p className="mt-2 text-4xl font-semibold">{memberships.length}</p>
         </Card>
         <Card className="p-6">
           <Users className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Active patient plans</p>
+          <p className="mt-3 text-sm text-black/45">{t("kpiActivePlans")}</p>
           <p className="mt-2 text-4xl font-semibold">{activePatientOffers.length}</p>
         </Card>
         <Card className="p-6">
           <CreditCard className="h-5 w-5 text-black/30" />
-          <p className="mt-3 text-sm text-black/45">Active offer value</p>
+          <p className="mt-3 text-sm text-black/45">{t("kpiOfferValue")}</p>
           <p className="mt-2 text-3xl font-semibold">{formatPrice(totalOfferValue)}</p>
         </Card>
       </section>
@@ -175,8 +177,8 @@ export default async function MonetizationPage() {
         <div className="space-y-8">
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">Clinic offers</h2>
-              <p className="text-sm text-black/40">Simple and flexible</p>
+              <h2 className="text-2xl font-semibold tracking-tight">{t("offersTitle")}</h2>
+              <p className="text-sm text-black/40">{t("offersSubtitle")}</p>
             </div>
             <OfferList
               offers={offers}
@@ -188,8 +190,8 @@ export default async function MonetizationPage() {
 
           <div>
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">Patient plans</h2>
-              <p className="text-sm text-black/40">Manual tracking</p>
+              <h2 className="text-2xl font-semibold tracking-tight">{t("plansTitle")}</h2>
+              <p className="text-sm text-black/40">{t("plansSubtitle")}</p>
             </div>
             <PatientOfferList patientOffers={patientOffers} />
           </div>
@@ -197,22 +199,22 @@ export default async function MonetizationPage() {
 
         <div className="space-y-5">
           {!profile?.clinic_id ? (
-            <Card>This user needs to be assigned to a clinic before creating offers.</Card>
+            <Card>{t("noClinic")}</Card>
           ) : (
             <MonetizationOfferForm action={createOfferAction} />
           )}
 
           {!profile?.clinic_id ? null : patients.length === 0 ? (
-            <Card>Add a patient first. Then return here to assign a package or membership.</Card>
+            <Card>{t("addPatientFirst")}</Card>
           ) : activeOffers.length === 0 ? (
-            <Card>Create an active offer first. Then assign it to a patient.</Card>
+            <Card>{t("createOfferFirst")}</Card>
           ) : (
             <PatientOfferForm patients={patients} offers={activeOffers} action={assignOfferAction} />
           )}
 
           <Card className="bg-white">
-            <p className="text-sm font-semibold text-black/70">Structure only</p>
-            <p className="mt-2 text-sm leading-6 text-black/50">{MONETIZATION_NOTE} Later this can connect to Stripe, invoices, automated renewals, and patient portal payments.</p>
+            <p className="text-sm font-semibold text-black/70">{t("structureOnly")}</p>
+            <p className="mt-2 text-sm leading-6 text-black/50">{MONETIZATION_NOTE} {t("structureNoteTail")}</p>
           </Card>
         </div>
       </section>

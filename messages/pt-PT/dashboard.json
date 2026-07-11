@@ -1,0 +1,69 @@
+{
+  "greeting": {
+    "morning": "Bom dia",
+    "afternoon": "Boa tarde",
+    "evening": "Boa noite",
+    "withName": "{greeting}, {name}",
+    "noName": "{greeting}"
+  },
+  "attention": "{count, plural, =0 {Tudo em ordem por hoje.} one {# item precisa da sua atenção.} other {# itens precisam da sua atenção.}}",
+  "setup": {
+    "patient": "Primeiro paciente",
+    "lead": "Primeiro lead",
+    "session": "Primeira sessão",
+    "intake": "Formulário de intake",
+    "branding": "Logo e cor da clínica"
+  },
+  "packageAlerts": {
+    "title": "Pacotes encerrando",
+    "exhausted": "Esgotado",
+    "remaining": "{count}×"
+  },
+  "biomarkerAlerts": {
+    "title": "Biomarcadores alterados"
+  },
+  "aiInsights": {
+    "title": "Insights de IA",
+    "pending": "{count, plural, one {# insight gerado pela IA aguarda validação.} other {# insights gerados pela IA aguardam validação.}}",
+    "reviewNow": "Rever agora →"
+  },
+  "quickActions": {
+    "title": "Ações rápidas",
+    "newPatient": "Novo paciente",
+    "scheduleSession": "Agendar sessão",
+    "leadsPipeline": "Pipeline de leads",
+    "reports": "Relatórios"
+  },
+  "week": {
+    "title": "Semana atual",
+    "scheduled": "Sessões agendadas",
+    "completed": "Realizadas",
+    "cancelled": "Canceladas",
+    "fullReports": "Ver relatórios completos →"
+  },
+  "kpis": {
+    "today": "Sessões hoje",
+    "todayCount": "{count, plural, =0 {nenhuma hoje} one {sessão agendada} other {sessões agendadas}}",
+    "month": "Sessões do mês",
+    "revenue": "Receita do mês",
+    "returnRate": "Taxa de retorno",
+    "returnBase": "{count, plural, =0 {sem sessões este mês} one {de # paciente este mês} other {de # pacientes este mês}}",
+    "updatedAt": "Atualizado às {time}"
+  },
+  "chart": {
+    "title": "Desempenho — últimos {count} meses",
+    "revenue": "Receita",
+    "sessions": "Sessões",
+    "sessionsWithCount": "Sessões ({count})",
+    "empty": "Sem dados ainda. Os gráficos aparecem após os primeiros agendamentos."
+  },
+  "agenda": {
+    "title": "Agenda de hoje",
+    "viewSchedule": "Ver agenda",
+    "empty": "Nenhuma sessão hoje.",
+    "createSession": "+ Criar sessão",
+    "newSession": "Nova sessão",
+    "patientFallback": "Paciente",
+    "minutes": "{count} min"
+  }
+}

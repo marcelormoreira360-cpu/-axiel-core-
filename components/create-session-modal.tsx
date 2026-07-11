@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import type { PatientLite } from "@/services/patient-service";
 import { useState, useTransition, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { X, Search, UserPlus, Settings2, Copy, Check, Link2, Mail } from "lucide-react";
 import type { Patient, SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
@@ -147,9 +148,15 @@ export function CreateSessionModal({
     }
 
     startTransition(async () => {
-      await action(formData);
-      onClose();
-      router.refresh();
+      try {
+        await action(formData);
+        toast.success(t("createdToast"));
+        onClose();
+        router.refresh();
+      } catch {
+        // Erro tratado: mensagem inline, mantém o modal aberto (não some em silêncio).
+        setError(t("createError"));
+      }
     });
   }
 
