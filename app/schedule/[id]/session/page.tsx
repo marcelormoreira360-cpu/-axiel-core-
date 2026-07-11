@@ -244,6 +244,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         record={record}
         saved={saved === "1"}
         suggestedTests={suggestedTests}
+        recordingConsentAt={patient?.recording_consent_at ?? null}
         sessionConfig={await getClinicSessionConfig(appointment.clinic_id)}
       />
 

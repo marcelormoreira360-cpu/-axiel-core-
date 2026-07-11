@@ -342,6 +342,109 @@ export async function getZoomRecordingsByAppointments(
   return (data ?? []) as ZoomRecording[];
 }
 
+// ── Escriba Fase 3: transcrição da gravação do Zoom ──────────────────────────
+
+/** Converte o VTT do Zoom em texto corrido (remove cabeçalho, timestamps e índices). */
+function parseVtt(vtt: string): string {
+  return vtt
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && l !== "WEBVTT" && !l.includes("-->") && !/^\d+$/.test(l))
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Transcreve a gravação do Zoom de uma consulta (telesaúde). Prefere o TRANSCRIPT
+ * do próprio Zoom (VTT, sem limite de tamanho); cai para o áudio M4A via Whisper
+ * (limite 25 MB, pois não há ffmpeg no runtime serverless). Escopo por clinic_id.
+ */
+export async function transcribeZoomRecording(
+  appointmentId: string,
+  clinicId: string,
+  locale?: string | null,
+): Promise<{ transcript: string; source: "zoom_transcript" | "whisper" } | { error: string }> {
+  const creds = clinicId ? await getClinicZoomCreds(clinicId) : null;
+  const token = await getZoomAccessToken(creds);
+  if (!token) return { error: "Zoom não configurado." };
+
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data: recs } = await supabase
+    .from("zoom_recordings")
+    .select("file_type, download_url, file_size")
+    .eq("appointment_id", appointmentId)
+    .eq("clinic_id", clinicId)
+    .eq("status", "completed");
+
+  const recordings = (recs ?? []) as {
+    file_type: string | null;
+    download_url: string | null;
+    file_size: number | null;
+  }[];
+  if (recordings.length === 0) return { error: "Nenhuma gravação do Zoom disponível ainda." };
+
+  // 1) Transcript do próprio Zoom (VTT) — caminho preferido, sem limite de tamanho.
+  const transcriptFile = recordings.find((r) => r.file_type === "TRANSCRIPT" && r.download_url);
+  if (transcriptFile?.download_url) {
+    try {
+      const res = await fetch(transcriptFile.download_url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const text = parseVtt(await res.text());
+        if (text.length > 20) return { transcript: text, source: "zoom_transcript" };
+      }
+    } catch (err) {
+      log.error("zoom transcript fetch failed", err);
+    }
+  }
+
+  // 2) Fallback: áudio M4A via Whisper (limite 25 MB — sem ffmpeg no serverless).
+  const audioFile = recordings.find((r) => r.file_type === "M4A" && r.download_url);
+  if (!audioFile?.download_url) {
+    return { error: "Gravação sem transcrição utilizável. Ative a transcrição de áudio no Zoom." };
+  }
+  const MAX = 25 * 1024 * 1024;
+  if ((audioFile.file_size ?? 0) > MAX) {
+    return { error: "Gravação longa demais. Ative a transcrição de áudio no Zoom para consultas longas." };
+  }
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return { error: "IA não configurada (OPENAI_API_KEY ausente)." };
+  try {
+    const audioRes = await fetch(audioFile.download_url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!audioRes.ok) return { error: "Não foi possível baixar a gravação do Zoom." };
+    const buf = Buffer.from(await audioRes.arrayBuffer());
+    if (buf.byteLength > MAX) return { error: "Gravação grande demais para transcrever (máx. 25 MB)." };
+
+    const form = new FormData();
+    form.append("file", new Blob([buf], { type: "audio/m4a" }), "zoom.m4a");
+    form.append("model", "whisper-1");
+    const langHint = String(locale ?? "").toLowerCase().slice(0, 2);
+    if (["pt", "en", "es"].includes(langHint)) form.append("language", langHint);
+
+    const wRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    if (!wRes.ok) {
+      log.error("zoom whisper failed", { response: await wRes.text() });
+      return { error: "Falha ao transcrever a gravação." };
+    }
+    const wData = await wRes.json();
+    const text = String(wData.text ?? "").trim();
+    if (!text) return { error: "Transcrição vazia." };
+    return { transcript: text, source: "whisper" };
+  } catch (err) {
+    log.error("zoom audio transcription failed", err);
+    return { error: "Falha ao transcrever a gravação." };
+  }
+}
+
 /**
  * Get recordings for a single appointment (for session page).
  */

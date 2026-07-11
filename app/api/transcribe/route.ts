@@ -81,7 +81,13 @@ export async function POST(req: NextRequest) {
     const ext = mimeType.includes("ogg") ? "ogg" : mimeType.includes("mp4") || mimeType.includes("m4a") ? "mp4" : mimeType.includes("wav") ? "wav" : mimeType.includes("mpeg") || mimeType.includes("mp3") ? "mp3" : "webm";
     whisperForm.append("file", file, `audio.${ext}`);
     whisperForm.append("model", "whisper-1");
-    whisperForm.append("language", "pt");
+    // Idioma dinâmico: o cliente envia o locale da clínica (pt-BR/en/es). Mapeia p/
+    // o código ISO-639-1 do Whisper; se desconhecido, OMITE e deixa o Whisper
+    // auto-detectar (clínica bilíngue, paciente em outro idioma).
+    const langHint = String(formData.get("language") ?? "").toLowerCase().slice(0, 2);
+    if (["pt", "en", "es"].includes(langHint)) {
+      whisperForm.append("language", langHint);
+    }
     // verbose_json traz a duração do áudio (segundos) para medir uso de STT.
     whisperForm.append("response_format", "verbose_json");
 

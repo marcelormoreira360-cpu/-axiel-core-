@@ -4,7 +4,7 @@ import { reportModel } from "@/lib/ai-models";
 import { resolvePatientLocale } from "@/lib/email-i18n";
 import { buildAiInsightSystemPrompt } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
-import { buildAtmSuggestionSystemPrompt } from "@/services/ai-insight/prompts";
+import { buildAtmSuggestionSystemPrompt, buildScribeAtmSystemPrompt } from "@/services/ai-insight/prompts";
 import { buildAiInsightInput, type AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
 
 export function buildAiFallbackOutput(reason: string): AiInsightOutput {
@@ -107,5 +107,51 @@ export async function suggestAtmIntegration(
     return { suggestion: text };
   } catch {
     return { error: "Não foi possível gerar a sugestão agora. Tente novamente." };
+  }
+}
+
+/**
+ * Escriba clínico (Fase 2): a partir da TRANSCRIÇÃO da consulta, gera um RASCUNHO
+ * de "Integração clínica (ATM)" classificado na espinha ATM + eixos Bio³. Reusa
+ * buildAiInsightInput e injeta a transcrição como fonte principal. Não grava: o
+ * chamador funde no campo com o marcador [Sugestão IA (revise)] e o terapeuta revisa.
+ * Nível INTERNO: `clinicLocale` = idioma da clínica/UI.
+ */
+export async function suggestScribeAtm(
+  patientId: string,
+  transcript: string,
+  clinicLocale?: string | null,
+): Promise<{ suggestion: string } | { error: string }> {
+  if (!process.env.OPENAI_API_KEY) {
+    return { error: "IA não configurada (OPENAI_API_KEY ausente)." };
+  }
+  const clean = (transcript ?? "").trim();
+  if (clean.length < 20) {
+    return { error: "Transcrição muito curta para gerar rascunho." };
+  }
+  const snapshot = await buildAiInsightInput(patientId);
+  try {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: buildScribeAtmSystemPrompt(clinicLocale) },
+        {
+          role: "user",
+          content: JSON.stringify({
+            task: "Organize a transcrição da consulta na espinha ATM e nos eixos Bio³. Rascunho, sem diagnóstico, linguagem prudente.",
+            consultation_transcript: clean.slice(0, 12000),
+            patient_context: snapshot ?? null,
+          }),
+        },
+      ],
+    });
+    const text = response.choices[0]?.message?.content?.trim();
+    if (!text) return { error: "A IA não retornou conteúdo. Tente novamente." };
+    return { suggestion: text };
+  } catch {
+    return { error: "Não foi possível gerar o rascunho agora. Tente novamente." };
   }
 }

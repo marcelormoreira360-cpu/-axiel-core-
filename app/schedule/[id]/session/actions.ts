@@ -2,12 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { chatModel } from "@/lib/ai-models";
+import { reportModel } from "@/lib/ai-models";
 import { upsertSessionRecord } from "@/services/session-recording-service";
-import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
-import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
+import { generateAndSaveAiInsight, suggestScribeAtm } from "@/services/ai-insight-service";
+import { syncZoomRecordingsForMeeting, transcribeZoomRecording } from "@/services/zoom-service";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { getPatientById, updatePatient } from "@/services/patient-service";
+import { resolveLocale } from "@/i18n/get-locale";
 import type { AiInsight, ClinicalTestResult, BodyMapNote } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
+import { languageInstruction } from "@/lib/ai-language";
 
 const log = createLogger("session-actions");
 
@@ -158,16 +162,19 @@ export type SoapSuggestion = {
 };
 
 /**
- * Suggests SOAP field content based on the patient's recent session history
- * and any draft notes already typed. Runs BEFORE the session is saved.
+ * Escriba clínico: organiza a transcrição/notas da consulta atual (e o histórico
+ * recente) numa nota SOAP. RASCUNHO para o terapeuta revisar. Roda ANTES de salvar.
+ * `locale` = idioma da clínica/UI (a nota é material interno da equipe, não do paciente).
  */
 export async function suggestSoapAction(
   patientId: string,
   draftNotes: string,
+  locale?: string,
 ): Promise<{ suggestion: SoapSuggestion | null; error: string | null }> {
   try {
     const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
     const supabase = createSupabaseAdminClient();
+    const dateLocale = locale ?? "pt-BR";
 
     // Fetch last 5 session records for this patient
     const { data: records } = await supabase
@@ -184,27 +191,37 @@ export async function suggestSoapAction(
       if (r.assessment_note) parts.push(`A: ${r.assessment_note}`);
       if (r.plan)            parts.push(`P: ${r.plan}`);
       if (r.notes && !parts.length) parts.push(r.notes);
-      return `Sessão anterior ${i + 1} (${new Date(r.created_at).toLocaleDateString("pt-BR")}):\n${parts.join("\n")}`;
+      return `Sessão anterior ${i + 1} (${new Date(r.created_at).toLocaleDateString(dateLocale)}):\n${parts.join("\n")}`;
     }).join("\n\n");
 
-    const systemPrompt = `Você é um assistente clínico para profissionais de saúde integrativa.
-Sua tarefa é sugerir o preenchimento de uma nota SOAP para a sessão atual com base no histórico do paciente.
+    // Guarda-corpos clínicos (Salvo/Aval): rascunho, sem diagnóstico fechado/cura,
+    // linguagem prudente, sem inventar dados, encaminha em red flags, sem travessão.
+    const systemPrompt = `Você é um assistente clínico (escriba) para profissionais de saúde integrativa.
+Sua tarefa é ORGANIZAR o que foi dito/registrado na consulta atual (transcrição/notas) e o histórico recente numa nota SOAP.
+${languageInstruction(locale)}
+Regras (guarda-corpos clínicos, inegociáveis):
+- É um RASCUNHO para o terapeuta revisar e editar. NÃO feche diagnóstico nem prometa cura.
+- Use linguagem prudente: "sugere", "pode estar associado", "compatível com", "merece investigação" — nunca afirmações absolutas.
+- Baseie-se APENAS no que foi dito/registrado e no histórico. NÃO invente sintomas, exames, medidas ou dados.
+- Em sinais de alerta (dor torácica, falta de ar severa, ideação suicida, alteração neurológica aguda), registre a recomendação de encaminhamento adequado.
+- Não julgue a evidência científica do método (não escreva "evidência limitada", "exploratório", etc.).
+- Não use travessão (—); use vírgula, dois-pontos ou parênteses.
 Responda APENAS com um objeto JSON válido no formato:
 {"subjective":"...","objective":"...","assessment_note":"...","plan":"..."}
-Seja conciso e clínico. Use português brasileiro. Não invente dados — baseie-se no histórico.
-Se não houver histórico suficiente, sugira um template padrão para o tipo de sessão.`;
+Se faltar informação para um campo, deixe-o vazio (""). Seja conciso e clínico.`;
 
     const userPrompt = history
-      ? `Histórico recente do paciente:\n${history}\n\n${draftNotes ? `Notas em rascunho do profissional:\n${draftNotes}\n\n` : ""}Sugira o preenchimento SOAP para a sessão atual.`
-      : `${draftNotes ? `Notas em rascunho:\n${draftNotes}\n\n` : ""}Não há histórico anterior. Sugira um template SOAP inicial para uma sessão integrativa.`;
+      ? `Histórico recente do paciente:\n${history}\n\n${draftNotes ? `Transcrição/notas da consulta ATUAL:\n${draftNotes}\n\n` : ""}Organize a nota SOAP da sessão atual.`
+      : `${draftNotes ? `Transcrição/notas da consulta ATUAL:\n${draftNotes}\n\n` : ""}Não há histórico anterior. Organize a nota SOAP a partir do que foi registrado (ou um template inicial se vazio).`;
 
     const OpenAI = (await import("openai")).default;
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const completion = await openai.chat.completions.create({
-      model: chatModel(),
+      // SOAP clínico a partir da transcrição (escriba): tier REPORT (4.1-mini).
+      model: reportModel(),
       temperature: 0.3,
-      max_tokens: 600,
+      max_tokens: 700,
       response_format: { type: "json_object" },
       messages: [
         { role: "system",  content: systemPrompt },
@@ -227,5 +244,97 @@ Se não houver histórico suficiente, sugira um template padrão para o tipo de 
   } catch (err: unknown) {
     log.error("[suggestSoapAction] failed", err);
     return { suggestion: null, error: "Erro ao gerar sugestão SOAP." };
+  }
+}
+
+// ── Escriba Fase 2: transcrição → rascunho Neuro ID (ATM) ─────────────────────
+
+// Mesmo marcador do painel de Avaliação (patient-assessment-panel.tsx): o texto
+// ANTES do marcador é humano e é preservado; do marcador em diante é o rascunho.
+const ATM_AI_MARKER = "[Sugestão IA (revise)]";
+
+/**
+ * Escriba (Fase 2): a partir da TRANSCRIÇÃO da consulta, gera um rascunho de
+ * "Integração clínica (ATM)" (espinha ATM + eixos Bio³) e grava no campo
+ * `integracao_atm` da Avaliação com o marcador [Sugestão IA (revise)] — preserva o
+ * texto do terapeuta. O terapeuta revisa depois na ficha (painel Avaliação).
+ * Escopo de clínica garantido por getCurrentClinic + getPatientById(clinic.id).
+ */
+export async function draftNeuroIdFromTranscriptAction(
+  patientId: string,
+  transcript: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { error: "Paciente não encontrado nesta clínica." };
+
+  // Rascunho INTERNO (terapeuta lê): idioma da clínica (locale da UI).
+  const res = await suggestScribeAtm(patientId, transcript, await resolveLocale());
+  if ("error" in res) return { error: res.error };
+
+  // Funde no integracao_atm preservando o texto humano antes do marcador.
+  const current = (patient.assessment_data ?? {}) as Record<string, string | number | null>;
+  const prevAtm = String(current.integracao_atm ?? "");
+  const idx = prevAtm.indexOf(ATM_AI_MARKER);
+  const base = (idx >= 0 ? prevAtm.slice(0, idx) : prevAtm).trim();
+  const block = `${ATM_AI_MARKER}\n${res.suggestion.trim()}`;
+  const merged = base ? `${base}\n\n${block}` : block;
+
+  try {
+    await updatePatient(patientId, {
+      assessment_data: { ...current, integracao_atm: merged },
+    });
+    revalidatePath(`/patients/${patientId}`);
+    return { ok: true };
+  } catch (err: unknown) {
+    log.error("[draftNeuroIdFromTranscriptAction] save failed", err);
+    return { error: "Não foi possível salvar o rascunho de ATM." };
+  }
+}
+
+// ── Escriba Fase 3: trazer a transcrição da gravação do Zoom (telesaúde) ──────
+
+/**
+ * Transcreve a gravação do Zoom da consulta (prefere o transcript do Zoom; cai
+ * para o áudio via Whisper). Devolve o texto para o painel encadear SOAP + ATM,
+ * como no escriba presencial. Escopo por clínica.
+ */
+export async function transcribeZoomRecordingAction(
+  appointmentId: string,
+): Promise<{ transcript?: string; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const res = await transcribeZoomRecording(appointmentId, clinic.id, await resolveLocale());
+  if ("error" in res) return { error: res.error };
+  return { transcript: res.transcript };
+}
+
+// ── Compliance: consentimento de gravação/escriba (PHI) ──────────────────────
+
+/**
+ * Registra o consentimento do paciente para gravação/transcrição por IA da
+ * consulta (trilha de auditoria: quando + por quem). Gate do escriba: só depois
+ * disso a gravação (presencial/Zoom) é liberada. O ÁUDIO não é armazenado.
+ */
+export async function confirmRecordingConsentAction(
+  patientId: string,
+): Promise<{ ok?: boolean; error?: string }> {
+  const clinic = await getCurrentClinic();
+  if (!clinic?.id) return { error: "Não autorizado." };
+  const patient = await getPatientById(patientId, clinic.id);
+  if (!patient) return { error: "Paciente não encontrado nesta clínica." };
+  try {
+    const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    await updatePatient(patientId, {
+      recording_consent_at: new Date().toISOString(),
+      recording_consent_by: user?.id ?? null,
+    });
+    return { ok: true };
+  } catch (err: unknown) {
+    log.error("[confirmRecordingConsentAction] failed", err);
+    return { error: "Não foi possível registrar o consentimento." };
   }
 }

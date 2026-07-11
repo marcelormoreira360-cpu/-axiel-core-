@@ -111,6 +111,23 @@
       "sna": "Sistema nervoso autônomo"
     },
     "bodyMapHint": "Clique no mapa para marcar os pontos.",
-    "bodyMapClear": "Remover marca"
+    "bodyMapClear": "Remover marca",
+    "scribe": "Gravar consulta (escriba)",
+    "scribeStop": "Parar e gerar SOAP · {time}",
+    "scribeHint": "grava a consulta e organiza em SOAP",
+    "drafting": "A gerar SOAP…",
+    "neuroIdBtn": "Alimentar Neuro ID (ATM)",
+    "neuroIdDrafting": "A gerar rascunho…",
+    "neuroIdHint": "cria um rascunho de ATM na Avaliação a partir da consulta",
+    "neuroIdSaved": "Rascunho de ATM guardado na Avaliação. Reveja na ficha do paciente.",
+    "neuroIdError": "Não foi possível gerar o rascunho.",
+    "zoomImport": "Trazer da gravação do Zoom",
+    "zoomImporting": "A procurar gravação…",
+    "zoomError": "Não foi possível trazer a gravação do Zoom.",
+    "consentIntro": "Antes de gravar: confirme que o paciente foi informado e consentiu com a gravação e transcrição desta consulta por IA.",
+    "consentCheckbox": "O paciente consentiu com a gravação e transcrição por IA desta consulta.",
+    "consentConfirm": "Registar consentimento",
+    "consentError": "Não foi possível registar o consentimento.",
+    "retentionNote": "O áudio não é armazenado: é transcrito e eliminado. Apenas o rascunho (SOAP/ATM) fica no processo clínico para a sua revisão."
   }
 }
