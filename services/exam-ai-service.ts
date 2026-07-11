@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { languageInstruction } from "@/lib/ai-language";
+import { reportModel } from "@/lib/ai-models";
 import { examLegendBlock } from "@/modules/neuro-id/exam-legends";
 import {
   buildMetricExtractionPrompt,
@@ -77,7 +78,7 @@ export async function extractLabMarkers(opts: {
 }): Promise<LabMarkerDraft[]> {
   if (!process.env.OPENAI_API_KEY) return [];
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
 
   const isPdf = opts.mimeType === "application/pdf";
   const filePart = isPdf
@@ -131,7 +132,7 @@ export async function analyzeExamPdf(opts: {
 }): Promise<string | null> {
   if (!process.env.OPENAI_API_KEY) return null;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
 
   const label = opts.examType === "biorressonancia"
     ? "exame de biorressonância emocional"
@@ -190,7 +191,7 @@ export async function extractExamMetrics(opts: {
   if (!process.env.OPENAI_API_KEY) return {};
   const instrument = opts.examType as ExamInstrument;
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
 
   const legend = examLegendBlock(instrument);
   const systemPrompt = `${buildMetricExtractionPrompt(instrument)}${legend ? `\n\n${legend}` : ""}`;

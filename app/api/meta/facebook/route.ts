@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
 import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
@@ -183,20 +185,15 @@ async function generateReply(
   apiKey: string
 ): Promise<string> {
   try {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...history.slice(-12),
-          { role: "user", content: message },
-        ],
-        temperature: 0.7,
-        max_tokens: 450,
-      }),
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...history.slice(-12),
+        { role: "user", content: message },
+      ],
+      temperature: 0.7,
+      max_tokens: 450,
     });
 
     const data = await res.json();

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { chatModel } from "@/lib/ai-models";
 import { upsertSessionRecord } from "@/services/session-recording-service";
 import { generateAndSaveAiInsight } from "@/services/ai-insight-service";
 import { syncZoomRecordingsForMeeting } from "@/services/zoom-service";
@@ -201,7 +202,7 @@ Se não houver histórico suficiente, sugira um template padrão para o tipo de 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: chatModel(),
       temperature: 0.3,
       max_tokens: 600,
       response_format: { type: "json_object" },

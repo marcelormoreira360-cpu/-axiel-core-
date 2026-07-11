@@ -9,6 +9,7 @@
  */
 import OpenAI from "openai";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { reportModel } from "@/lib/ai-models";
 import { medicationLoadValue, MEDICACAO_CARGA_CODE } from "@/lib/medication-load";
 
 /** Chaves reservadas em patients.assessment_data (prefixo __ não colide com field_keys). */
@@ -86,7 +87,7 @@ export async function extractMedicationLoad(text: string): Promise<MedicationExt
     return { medications: [], supplements: [], medication_count: 0 };
   }
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
+  const model = reportModel();
   const response = await client.chat.completions.create({
     model,
     temperature: 0,

@@ -7,6 +7,8 @@
 // `sms_+1...` no SMS (prefixo evita colisão do mesmo número nos dois canais).
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
 import { canUseFeature } from "@/modules/billing/feature-access";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -121,24 +123,25 @@ export async function generateReply(
     { role: "user" as const, content: incomingMessage },
   ];
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(15_000), // INT-04: prevent webhook timeout on slow OpenAI responses
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  try {
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
       messages,
       temperature: 0.7,
       max_tokens: opts?.maxTokens ?? 450,
-    }),
-  });
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    console.error("OpenAI error:", res.status, JSON.stringify(data));
+    const data = await res.json();
+    if (!res.ok) {
+      console.error("OpenAI error:", res.status, JSON.stringify(data));
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    console.error("OpenAI request failed or timed out:", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Gate de plano (whatsapp_automation) ─────────────────────────────────────

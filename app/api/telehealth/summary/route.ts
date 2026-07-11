@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { reportModel } from "@/lib/ai-models";
 import { resolveLocale } from "@/i18n/get-locale";
 import { languageInstruction } from "@/lib/ai-language";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
@@ -29,30 +31,22 @@ export async function POST(req: NextRequest) {
     // Resumo INTERNO (vai ao prontuário, equipe lê) → idioma da clínica (locale da UI).
     const clinicLocale = await resolveLocale();
 
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      signal: AbortSignal.timeout(15_000),
-      body: JSON.stringify({
-        model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
-        messages: [
-          {
-            role: "system",
-            content:
-              `Você é um assistente clínico especializado. Analise o relato de uma teleconsulta e extraia as informações de forma estruturada e clara. Seja objetivo e clínico. ${languageInstruction(clinicLocale)} Mantenha os NOMES das chaves JSON exatamente como pedidos.`,
-          },
-          {
-            role: "user",
-            content: `Relato da teleconsulta com paciente ${patientName}:\n\n${transcript}\n\nGere um JSON com os seguintes campos:\n- resumo: string (2-4 frases resumindo o que foi tratado na consulta)\n- decisoes: string[] (lista do que foi decidido, prescrito ou recomendado)\n- pendencias: string[] (o que ficou pendente, exames solicitados, retornos, acompanhamentos)\n- proxima_sessao: string (sugestão de foco para a próxima sessão)\n- notas_clinicas: string (observações clínicas relevantes sobre o estado do paciente)`,
-          },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.2,
-      }),
-    });
+    const res = await openaiChatCompletion(apiKey, {
+      model: reportModel(),
+      messages: [
+        {
+          role: "system",
+          content:
+            `Você é um assistente clínico especializado. Analise o relato de uma teleconsulta e extraia as informações de forma estruturada e clara. Seja objetivo e clínico. ${languageInstruction(clinicLocale)} Mantenha os NOMES das chaves JSON exatamente como pedidos.`,
+        },
+        {
+          role: "user",
+          content: `Relato da teleconsulta com paciente ${patientName}:\n\n${transcript}\n\nGere um JSON com os seguintes campos:\n- resumo: string (2-4 frases resumindo o que foi tratado na consulta)\n- decisoes: string[] (lista do que foi decidido, prescrito ou recomendado)\n- pendencias: string[] (o que ficou pendente, exames solicitados, retornos, acompanhamentos)\n- proxima_sessao: string (sugestão de foco para a próxima sessão)\n- notas_clinicas: string (observações clínicas relevantes sobre o estado do paciente)`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+    }, { retries: 2 });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

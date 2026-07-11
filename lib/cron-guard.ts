@@ -49,10 +49,13 @@ export class CronGuard {
    */
   static async start(
     jobName: string,
-    { windowMs = 20 * 60_000 }: { windowMs?: number } = {}
+    { windowMs = 20 * 60_000, runningWindowMs }: { windowMs?: number; runningWindowMs?: number } = {}
   ): Promise<CronGuardHandle> {
     const supabase = createSupabaseAdminClient();
     const startedAt = Date.now();
+    // Janela in-flight para a guarda de concorrência (default = windowMs). Um
+    // 'running' mais antigo que isso é tratado como job morto (crash) e liberado.
+    const inflightWindowMs = runningWindowMs ?? windowMs;
 
     // ── 1. Idempotency check ────────────────────────────────────────────────
     if (windowMs > 0) {
@@ -79,12 +82,39 @@ export class CronGuard {
       }
     }
 
-    // ── 2. Insert 'running' row ─────────────────────────────────────────────
+    // ── 1b. Reclaim de runs 'running' órfãos ────────────────────────────────
+    // Um run que crashou sem chamar finish/fail deixa a linha em 'running' e
+    // travaria o índice único abaixo para sempre. Libera (marca 'error') os que
+    // passaram da janela in-flight, recuperando de crash.
+    if (inflightWindowMs > 0) {
+      const staleCutoff = new Date(startedAt - inflightWindowMs).toISOString();
+      await supabase
+        .from("cron_runs")
+        .update({ status: "error", error_message: "stale run auto-reclaimed" })
+        .eq("job_name", jobName)
+        .eq("status", "running")
+        .lt("started_at", staleCutoff);
+    }
+
+    // ── 2. Insert 'running' row (guarda de concorrência ATÔMICA) ────────────
+    // O índice único parcial (migration 130) em (job_name) WHERE status='running'
+    // garante que só UM run esteja 'running' por job. Se outro já está em voo, o
+    // insert falha com violação de unicidade (23505) → este run pula. Isso fecha
+    // a corrida que um check-then-insert (TOCTOU) deixava aberta.
     const { data: row, error } = await supabase
       .from("cron_runs")
       .insert({ job_name: jobName, status: "running" })
       .select("id")
       .single();
+
+    if (error && (error.code === "23505" || /duplicate key|unique/i.test(error.message ?? ""))) {
+      log.warn("skipping — another run already in flight (lock)", { job: jobName });
+      return {
+        skipped: true,
+        finish: async () => {},
+        fail: async () => {},
+      };
+    }
 
     if (error || !row) {
       // Non-blocking: if we can't write the log, still let the job run

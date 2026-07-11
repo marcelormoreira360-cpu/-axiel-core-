@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
+import { chatModel } from "@/lib/ai-models";
+import { recordSttUsage } from "@/services/stt-usage-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
 import { IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByMetaPhoneId } from "@/services/whatsapp-bot-service";
@@ -239,6 +242,8 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
     const formData = new FormData();
     formData.append("file", audioBlob, "audio.ogg");
     formData.append("model", "whisper-1");
+    // verbose_json traz a duração do áudio para medir uso de STT por minuto.
+    formData.append("response_format", "verbose_json");
 
     const whisperRes = await fetch("https://api.openai.com/v1/audio/transcriptions", {
       method: "POST",
@@ -248,6 +253,10 @@ async function transcribeMetaAudio(mediaId: string, apiKey: string): Promise<str
 
     if (!whisperRes.ok) return "";
     const data = await whisperRes.json();
+    // A clínica ainda não foi resolvida neste ponto do webhook (SEC-01 acontece
+    // depois), então registra sem clinic_id — conta o total de STT do canal.
+    // AWAIT: em serverless, um insert não-aguardado pós-resposta pode ser perdido.
+    await recordSttUsage({ clinicId: null, channel: "meta_whatsapp", seconds: Number(data.duration) || 0 });
     return data.text?.trim() ?? "";
   } catch (err) {
     log.error("audio transcription failed", err, { media_id: mediaId });
@@ -268,12 +277,9 @@ async function generateOpenAIReply(
   historyContext: ChatMessage[],
   apiKey: string
 ): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(15_000), // INT-04: prevent webhook timeout on slow OpenAI
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  try {
+    const res = await openaiChatCompletion(apiKey, {
+      model: chatModel(),
       messages: [
         { role: "system", content: systemPrompt },
         ...historyContext.slice(-2),
@@ -281,15 +287,19 @@ async function generateOpenAIReply(
       ],
       temperature: 0.7,
       max_tokens: 450,
-    }),
-  });
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    log.error("OpenAI API error", { status: res.status, body: JSON.stringify(data) });
+    const data = await res.json();
+    if (!res.ok) {
+      log.error("OpenAI API error", { status: res.status, body: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("OpenAI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Step 2 — qualification questions (OpenAI) ────────────────────────────────

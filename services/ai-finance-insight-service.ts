@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { languageInstruction } from "@/lib/ai-language";
+import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import {
   getFinanceKPIs,
@@ -131,7 +132,7 @@ Formato exato:
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+    model: chatModel(),
     messages: [{ role: "user", content: prompt }],
     temperature: 0.3,
     response_format: { type: "json_object" },
