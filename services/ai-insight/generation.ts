@@ -22,7 +22,7 @@ export function buildAiFallbackOutput(reason: string): AiInsightOutput {
   };
 }
 
-export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Promise<{ output: AiInsightOutput; tokensUsed?: number | null }> {
+export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Promise<{ output: AiInsightOutput; tokensUsed?: number | null; modelUsed?: string | null }> {
   if (!process.env.OPENAI_API_KEY) {
     throw new Error("OPENAI_API_KEY is missing. Add it to .env.local before generating insights.");
   }
@@ -62,6 +62,8 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   return {
     output: coerceAiInsightOutput(parsed),
     tokensUsed: response.usage?.total_tokens ?? null,
+    // Modelo REAL retornado pela OpenAI (pode divergir do solicitado, ex.: snapshot).
+    modelUsed: response.model ?? null,
   };
 }
 

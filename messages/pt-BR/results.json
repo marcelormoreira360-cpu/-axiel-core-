@@ -40,6 +40,8 @@
     "unavailableBefore": "Análise de IA indisponível — configure",
     "unavailableAfter": "no Vercel para ativar.",
     "analyzing": "Analisando dados com IA…",
-    "none": "Nenhum insight gerado para este período."
+    "none": "Nenhum insight gerado para este período.",
+    "refresh": "Atualizar",
+    "refreshTitle": "Regenerar a análise agora"
   }
 }

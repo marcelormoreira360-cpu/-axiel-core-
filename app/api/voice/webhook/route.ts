@@ -70,7 +70,9 @@ export async function POST(req: NextRequest) {
 
     const toNumber = (params["To"] ?? "").replace("whatsapp:", "");
 
-    // Load clinic config; fall back to IFWC default
+    // Load clinic config; fall back to IFWC default. A isolação multi-tenant vem
+    // da resolução por número (getWhatsAppBotConfigByNumber): uma 2ª clínica que
+    // cadastra o próprio número de voz resolve para a config dela.
     let config = IFWC_DEFAULT_CONFIG;
     try {
       const clinicConfig = toNumber ? await getWhatsAppBotConfigByNumber(toNumber) : null;

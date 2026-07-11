@@ -18,6 +18,7 @@ export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
   twilio_number: string | null;
   meta_phone_number_id: string | null;
   meta_instagram_id: string | null;
+  meta_facebook_page_id: string | null;
   clinic_slug: string | null;
 };
 
@@ -107,6 +108,25 @@ export async function getWhatsAppBotConfigByClinicId(clinicId: string): Promise<
   return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
 }
 
+// SEC-01 (Facebook): lookup pela PÁGINA do Facebook (entry.id do webhook). Usado
+// pelo webhook do Messenger para resolver a clínica. Sem match, o webhook decide
+// o fallback (hoje mantém a IFWC para páginas não registradas, compat single-tenant).
+// Usa admin client porque webhooks rodam sem sessão de usuário.
+export async function getWhatsAppBotConfigByFacebookPageId(metaFacebookPageId: string): Promise<WhatsAppBotConfig | null> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("whatsapp_bot_configs")
+    .select("*")
+    .eq("meta_facebook_page_id", metaFacebookPageId)
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!data) return null;
+  const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
+  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+}
+
 export async function upsertWhatsAppBotConfig(
   clinicId: string,
   input: Partial<Omit<WhatsAppBotConfig, "id" | "clinic_id">>
@@ -133,10 +153,20 @@ export async function upsertWhatsAppBotConfig(
   });
   if (rpcError) throw rpcError;
 
+  // meta_facebook_page_id não faz parte da assinatura fixa da função RPC: grava à
+  // parte, só quando o campo veio no input (não sobrescreve quando ausente).
+  if ("meta_facebook_page_id" in input) {
+    const { error: fbError } = await supabase
+      .from("whatsapp_bot_configs")
+      .update({ meta_facebook_page_id: input.meta_facebook_page_id ?? null })
+      .eq("id", rpcId as string);
+    if (fbError) throw fbError;
+  }
+
   // Fetch the full updated row (includes meta_phone_number_id + clinic slug from DB)
   const { data, error } = await supabase
     .from("whatsapp_bot_configs")
-    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, meta_instagram_id, created_at, updated_at")
+    .select("id, clinic_id, professional_name, clinic_name, specialty, methodology, locations, language, custom_instructions, is_active, twilio_number, meta_phone_number_id, meta_instagram_id, meta_facebook_page_id, created_at, updated_at")
     .eq("id", rpcId as string)
     .single();
   if (error) throw error;

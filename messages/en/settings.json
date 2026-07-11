@@ -616,6 +616,8 @@
     "metaPhoneIdHint": "Numeric ID of the number in Meta for Developers → WhatsApp → API Setup. Required for the Meta API channel.",
     "metaInstagramId": "Instagram Account ID",
     "metaInstagramIdHint": "Instagram Business Account ID. Required for the bot to reply to this clinic's Instagram DMs.",
+    "metaFacebookPageId": "Facebook Page ID",
+    "metaFacebookPageIdHint": "Numeric ID of the clinic's Facebook Page. Required for the bot to reply to this clinic's Messenger, and to keep each clinic isolated.",
     "programTitle": "Program / What's included",
     "programDesc": "Describe what the patient receives. The bot presents this in Step 4.",
     "pricingTitle": "Investment by location",
@@ -638,6 +640,7 @@
     "errSave": "Error saving. Please try again.",
     "metaPhoneIdPlaceholder": "e.g. 1031933676681061",
     "metaInstagramIdPlaceholder": "e.g. 17841400000000000",
+    "metaFacebookPageIdPlaceholder": "e.g. 100000000000000",
     "verifyTokenSample": "your_verify_token"
   },
   "voice": {

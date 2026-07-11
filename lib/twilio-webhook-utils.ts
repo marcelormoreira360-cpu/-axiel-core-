@@ -51,6 +51,30 @@ export function smsConversationKey(phone: string): string {
 // caracteres, sem emoji, e a oferecer o link público de agendamento quando o
 // lead quiser marcar (paridade com o passo 7 do funil do WhatsApp).
 
+// ─── SEC-01 (multi-tenant): a quem pertence este número Twilio ───────────────
+// Os canais Twilio (WhatsApp/SMS/Voz) resolvem a config da clínica pelo número
+// de DESTINO (getWhatsAppBotConfigByNumber). Quando nenhuma clínica tem esse
+// número configurado, NÃO se pode responder com a identidade/preços da IFWC
+// (vazamento cross-tenant): a config de fábrica IFWC só vale para o próprio
+// número da IFWC (env TWILIO_FROM_NUMBER).
+
+/** Remove o prefixo "whatsapp:" e espaços de um número, para comparação. */
+export function normalizePhone(n: string | null | undefined): string {
+  return (n ?? "").replace("whatsapp:", "").trim();
+}
+
+/**
+ * true quando o número de destino é o número próprio da IFWC (env
+ * TWILIO_FROM_NUMBER). Só nesse caso é seguro cair no IFWC_DEFAULT_CONFIG.
+ * Se o env não estiver definido, retorna true para preservar o comportamento
+ * atual e nunca quebrar o ambiente por falta de config.
+ */
+export function isIfwcOwnNumber(toNumber: string | null | undefined): boolean {
+  const own = normalizePhone(process.env.TWILIO_FROM_NUMBER);
+  if (!own) return true;
+  return normalizePhone(toNumber) === own;
+}
+
 export function buildSmsChannelRule(bookingUrl: string): string {
   return (
     `\n\n━━━ CANAL: SMS (OBRIGATÓRIO) ━━━\n` +

@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { languageInstruction } from "@/lib/ai-language";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export interface ServiceBreakdown {
   name: string;
@@ -295,5 +296,67 @@ Regras:
 
   const text = response.choices[0]?.message?.content ?? "";
   const cleaned = text.trim().replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
-  return JSON.parse(cleaned) as AiInsight[];
+  // Parse defensivo: saída malformada do modelo devolve [] em vez de derrubar
+  // toda a feature (e evita cachear lixo).
+  try {
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? (parsed as AiInsight[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+// ── Cache (6 horas) ───────────────────────────────────────────────
+// Espelha finance_insights: os insights de negócio (página Results) eram
+// regerados por LLM a cada abertura e a cada troca de período. Aqui a chave
+// inclui `months` e `locale` porque o insight varia por período e idioma.
+
+const BUSINESS_INSIGHTS_TTL_MS = 6 * 60 * 60 * 1000;
+
+export async function getLatestBusinessInsight(
+  clinicId: string,
+  months: number,
+  locale: string,
+): Promise<AiInsight[] | null> {
+  const supabase = createSupabaseAdminClient();
+  const cutoff = new Date(Date.now() - BUSINESS_INSIGHTS_TTL_MS).toISOString();
+
+  const { data } = await supabase
+    .from("business_insights")
+    .select("content")
+    .eq("clinic_id", clinicId)
+    .eq("months", months)
+    .eq("locale", locale)
+    .gte("generated_at", cutoff)
+    .order("generated_at", { ascending: false })
+    .limit(1)
+    // maybeSingle: cache-miss (sem linha) é o caso comum; .single() devolveria
+    // erro PGRST116/406 e poluiria o log a cada miss.
+    .maybeSingle();
+
+  if (!data) return null;
+  const content = data.content as AiInsight[];
+  return Array.isArray(content) && content.length > 0 ? content : null;
+}
+
+export async function saveBusinessInsight(
+  clinicId: string,
+  months: number,
+  locale: string,
+  insights: AiInsight[],
+): Promise<void> {
+  // Resiliente: se a tabela ainda não existir (migration 125 não aplicada) ou a
+  // gravação falhar, o insight já foi gerado e retornado; só não cacheia.
+  try {
+    const supabase = createSupabaseAdminClient();
+    await supabase.from("business_insights").insert({
+      clinic_id: clinicId,
+      months,
+      locale,
+      content: insights,
+      generated_at: new Date().toISOString(),
+    });
+  } catch {
+    /* cache best-effort */
+  }
 }

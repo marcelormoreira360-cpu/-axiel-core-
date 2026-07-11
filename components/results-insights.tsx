@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { RefreshCw } from "lucide-react";
 
 // Local type — mirrors AiInsight in business-analytics-service.ts
 interface AiInsight {
@@ -35,29 +36,56 @@ export function ResultsInsights({ months }: { months: number }) {
   const t = useTranslations("results.insights");
   const [insights, setInsights] = useState<AiInsight[] | null>(null);
   const [error, setError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  // Só o botão "atualizar" força regenerar (refresh=1); trocar de período serve cache.
+  const forceRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    const force = forceRef.current;
+    forceRef.current = false;
 
-    fetch(`/api/results/insights?months=${months}`)
+    fetch(`/api/results/insights?months=${months}${force ? "&refresh=1" : ""}`)
       .then((r) => r.ok ? r.json() : Promise.reject())
       .then((data: { insights: AiInsight[] }) => {
-        if (!cancelled) setInsights(data.insights ?? []);
+        if (!cancelled) { setInsights(data.insights ?? []); setError(false); }
       })
       .catch(() => {
         if (!cancelled) setError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setRefreshing(false);
       });
 
     return () => { cancelled = true; };
-  }, [months]);
+  }, [months, reloadKey]);
+
+  function handleRefresh() {
+    setRefreshing(true);
+    forceRef.current = true;
+    setReloadKey((k) => k + 1);
+  }
 
   return (
     <div className="space-y-[12px]">
-      <div>
-        <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
-        <p className="text-[11px] text-[#A09E98] mt-[2px]">
-          {t("subtitle")}
-        </p>
+      <div className="flex items-start justify-between gap-[10px]">
+        <div>
+          <p className="text-[12px] font-medium text-[#0F1A2E]">{t("title")}</p>
+          <p className="text-[11px] text-[#A09E98] mt-[2px]">
+            {t("subtitle")}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing || (insights === null && !error)}
+          title={t("refreshTitle")}
+          className="flex items-center gap-[5px] text-[11px] font-medium text-[#6B6A66] border border-black/[.10] rounded-[7px] px-[9px] py-[6px] hover:bg-[#F4F3EF] disabled:opacity-40 transition shrink-0"
+        >
+          <RefreshCw className={`h-3 w-3 ${refreshing ? "animate-spin" : ""}`} />
+          {t("refresh")}
+        </button>
       </div>
 
       {error ? (

@@ -219,6 +219,12 @@ export function WhatsAppBotForm({ initialConfig }: { initialConfig?: WhatsAppBot
               className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
             <p className="mt-1 text-xs text-black/40">{t("metaInstagramIdHint")}</p>
           </div>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-sm font-medium">{t("metaFacebookPageId")}</label>
+            <input name="meta_facebook_page_id" defaultValue={cfg?.meta_facebook_page_id ?? ""} placeholder={t("metaFacebookPageIdPlaceholder")}
+              className="w-full rounded-lg border border-black/15 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-axiel-ink/20" />
+            <p className="mt-1 text-xs text-black/40">{t("metaFacebookPageIdHint")}</p>
+          </div>
         </div>
       </Card>
 
