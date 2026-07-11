@@ -7,9 +7,12 @@ import { Languages } from "lucide-react";
 import { setLocale } from "@/app/actions/locale-actions";
 import { LOCALES } from "@/i18n/locales";
 
+// Rótulo curto por locale no seletor: BR (pt-BR) / PT (pt-PT) / EN.
+const LOCALE_LABEL: Record<string, string> = { "pt-BR": "BR", "pt-PT": "PT", en: "EN" };
+
 /**
- * Alterna o idioma da interface (PT-BR / EN). Grava cookie + preferência no banco
- * via Server Action e atualiza a árvore sem reload completo.
+ * Alterna o idioma da interface (PT-BR / PT-PT / EN). Grava cookie + preferência
+ * no banco via Server Action e atualiza a árvore sem reload completo.
  */
 export function LanguageSwitcher() {
   const locale = useLocale();
@@ -48,7 +51,7 @@ export function LanguageSwitcher() {
                 : "text-[#6B6A66] dark:text-[#9E9C97] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2]",
             ].join(" ")}
           >
-            {code === "pt-BR" ? "PT" : "EN"}
+            {LOCALE_LABEL[code] ?? code}
           </button>
         );
       })}

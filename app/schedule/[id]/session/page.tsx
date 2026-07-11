@@ -11,7 +11,7 @@ import { ZoomRecordingsPanel } from "@/components/zoom-recordings-panel";
 import { ZoomSessionBanner } from "@/components/zoom-session-banner";
 import { getAppointmentById } from "@/services/appointment-service";
 import { getPatientById } from "@/services/patient-service";
-import { getClinicalTestCatalog } from "@/services/clinic-service";
+import { getClinicalTestCatalog, getClinicSessionConfig } from "@/services/clinic-service";
 import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/services/session-recording-service";
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
@@ -244,6 +244,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         record={record}
         saved={saved === "1"}
         suggestedTests={suggestedTests}
+        sessionConfig={await getClinicSessionConfig(appointment.clinic_id)}
       />
 
       {/* Zoom cloud recordings */}

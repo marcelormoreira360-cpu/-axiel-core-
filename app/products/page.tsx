@@ -6,7 +6,7 @@ import { getProducts } from "@/services/product-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicCurrency } from "@/services/finance-service";
 import { formatMoney } from "@/lib/finance-utils";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { toggleProductActiveAction } from "./actions";
 
 
@@ -16,6 +16,7 @@ function avgPriceCents(products: { price_cents: number }[]) {
 }
 
 export default async function ProductsPage() {
+  const t = await getTranslations("products");
   const clinic = await getCurrentClinic();
   const __cur = await getClinicCurrency(clinic?.id ?? "");
   const __loc = await getLocale();
@@ -28,37 +29,37 @@ export default async function ProductsPage() {
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[22px]">
         <div>
-          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">Produtos</h1>
+          <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</h1>
           <p className="text-[12px] text-[#A09E98] mt-[2px]">
             {products.length > 0
-              ? `${products.length} produto${products.length !== 1 ? "s" : ""} no catálogo`
-              : "Nenhum produto ainda"}
+              ? t("countCatalog", { count: products.length })
+              : t("none")}
           </p>
         </div>
         <Link
           href="/products/new"
           className="flex items-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-lg border border-black/[.12] dark:border-white/[.12]"
         >
-          + Novo produto
+          {t("addProduct")}
         </Link>
       </div>
 
       {products.length === 0 ? (
         <EmptyState
           icon={<Package className="h-7 w-7" />}
-          title="Nenhum produto ainda"
-          text="Adicione suplementos, kits e itens de suporte ao catálogo da clínica."
+          title={t("none")}
+          text={t("emptyText")}
           href="/products/new"
-          action="Criar primeiro produto"
+          action={t("emptyAction")}
         />
       ) : (
         <>
           {/* Stat cards */}
           <div className="grid grid-cols-3 gap-[10px] mb-[22px]">
             {[
-              { label: "Total de produtos", value: products.length, accent: true },
-              { label: "Ativos", value: activeProducts.length, accent: false },
-              { label: "Valor médio", value: formatMoney(avg, __cur, __loc), accent: false },
+              { label: t("statTotal"), value: products.length, accent: true },
+              { label: t("statActive"), value: activeProducts.length, accent: false },
+              { label: t("statAvgPrice"), value: formatMoney(avg, __cur, __loc), accent: false },
             ].map((stat) => (
               <div
                 key={stat.label}
@@ -109,7 +110,7 @@ export default async function ProductsPage() {
                         : "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]"
                     }`}
                   >
-                    {product.is_active ? "Ativo" : "Inativo"}
+                    {product.is_active ? t("active") : t("inactive")}
                   </span>
                 </div>
 
@@ -136,7 +137,7 @@ export default async function ProductsPage() {
                       }`}
                     />
                     <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
-                      {product.inventory_quantity} em estoque
+                      {t("inStock", { count: product.inventory_quantity })}
                     </span>
                   </div>
                 </div>
@@ -158,7 +159,7 @@ export default async function ProductsPage() {
                     type="submit"
                     className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[10px] py-[5px] rounded-lg w-full mt-[2px]"
                   >
-                    {product.is_active ? "Desativar" : "Ativar"}
+                    {product.is_active ? t("deactivate") : t("activate")}
                   </button>
                 </form>
               </div>

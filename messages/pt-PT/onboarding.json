@@ -1,0 +1,188 @@
+{
+  "banner": {
+    "title": "Configuração inicial",
+    "progress": "{done}/{total} concluídos",
+    "dismiss": "Dispensar",
+    "next": "Seguinte:",
+    "doNow": "Fazer agora",
+    "viewAll": "Ver tudo"
+  },
+  "guide": {
+    "titleDone": "Configuração completa! 🎉",
+    "titleTodo": "Configure a sua clínica",
+    "subtitleDone": "Está pronto para atender pacientes.",
+    "subtitleRequiredDone": "Passos principais concluídos — resta o opcional.",
+    "subtitleProgress": "{done} de {total} passos concluídos",
+    "collapse": "Recolher",
+    "expand": "Expandir",
+    "close": "Fechar guia",
+    "optional": "opcional",
+    "closeButton": "Fechar guia",
+    "dismissButton": "Dispensar por agora"
+  },
+  "steps": {
+    "session_types": {
+      "label": "Passo 1",
+      "title": "Criar tipos de sessão",
+      "hint": "Defina os seus serviços com duração e preço.",
+      "action": "Configurar"
+    },
+    "patients": {
+      "label": "Passo 2",
+      "title": "Adicionar primeiro paciente",
+      "hint": "Registe um paciente para começar a agendar.",
+      "action": "Adicionar"
+    },
+    "appointments": {
+      "label": "Passo 3",
+      "title": "Agendar primeira sessão",
+      "hint": "Marque uma consulta na agenda.",
+      "action": "Agendar"
+    },
+    "forms": {
+      "label": "Passo 4",
+      "title": "Criar formulário de anamnese",
+      "hint": "Envie um formulário de triagem aos seus pacientes.",
+      "action": "Criar"
+    },
+    "booking": {
+      "label": "Passo 5",
+      "title": "Definir horários de atendimento",
+      "hint": "Configure a sua disponibilidade semanal para marcações online.",
+      "action": "Configurar"
+    },
+    "team": {
+      "label": "Passo 6",
+      "title": "Convidar profissional",
+      "hint": "Adicione um colega de equipa à clínica.",
+      "action": "Convidar"
+    }
+  },
+  "flow": {
+    "stepLabels": {
+      "profile": "Perfil",
+      "name": "Nome",
+      "hours": "Horários",
+      "team": "Equipa"
+    },
+    "progress": "Passo {current} de {total}",
+    "profiles": {
+      "integrativa": {
+        "label": "Integrativa / Funcional",
+        "examples": "Medicina funcional · Acupuntura · Medicina integrativa · Longevidade"
+      },
+      "fisioterapia": {
+        "label": "Fisioterapia / Reabilitação",
+        "examples": "Fisioterapia · Quiroprática · Osteopatia · Massoterapia"
+      },
+      "saude_mental": {
+        "label": "Saúde Mental",
+        "examples": "Psicologia · Terapia · Burnout · Stress · Coaching terapêutico"
+      },
+      "nutricao": {
+        "label": "Nutrição",
+        "examples": "Nutrição clínica · Nutrição desportiva · Comportamento alimentar"
+      },
+      "wellness": {
+        "label": "Wellness / Bem-estar",
+        "examples": "Wellness center · Estética avançada · Spa clínico · Biohacking"
+      }
+    },
+    "hours": {
+      "weekdays": {
+        "label": "Dias úteis",
+        "summary": "Seg–Sex, 9h–17h"
+      },
+      "extended": {
+        "label": "Alargado",
+        "summary": "Seg–Sex, 8h–18h"
+      },
+      "flexible": {
+        "label": "Flexível",
+        "summary": "Seg–Sáb, horário simples"
+      }
+    },
+    "stepProfile": {
+      "eyebrow": "Primeiro passo",
+      "title": "Qual é o perfil da sua clínica?",
+      "subtitle": "O AXIEL vai configurar automaticamente os tipos de sessão, formulários e terminologia por si."
+    },
+    "stepName": {
+      "eyebrow": "Perfil: {label}",
+      "title": "Como se chama a sua clínica?",
+      "subtitle": "Este é o nome que vai aparecer para a sua equipa dentro do AXIEL.",
+      "namePlaceholder": "Ex: {label} Centro Clínico",
+      "nameTooShort": "Nome demasiado curto: mínimo 2 caracteres.",
+      "logoLabel": "Logótipo da clínica",
+      "logoOptional": "(opcional)",
+      "logoPreviewAlt": "Pré-visualização do logótipo",
+      "logoChange": "Mudar logótipo",
+      "logoUpload": "Carregar logótipo",
+      "logoHint": "PNG, JPG · máx 2 MB"
+    },
+    "stepHours": {
+      "eyebrow": "Configuração de agenda",
+      "title": "Qual é o horário de funcionamento?",
+      "subtitle": "Pode ajustar ao detalhe mais tarde nas Definições."
+    },
+    "stepTeam": {
+      "eyebrow": "Último passo (opcional)",
+      "title": "Convidar um colega de equipa",
+      "subtitle": "Ignore este passo se preferir adicionar a equipa mais tarde.",
+      "emailPlaceholder": "colega@suaclinica.pt",
+      "selfInviteWarning": "Este é o seu próprio e-mail. O convite deve ser enviado a um colega diferente. Já é o proprietário da clínica."
+    },
+    "summary": {
+      "title": "O AXIEL vai criar automaticamente",
+      "sessionTypes": "Tipos de sessão para {label}",
+      "anamnesisForm": "Formulário de anamnese personalizado",
+      "demoData": "Paciente e lead de demonstração",
+      "schedule": "Agenda com os horários selecionados"
+    },
+    "terms": "Li e aceito os <terms>Termos de Utilização</terms> e a <privacy>Política de Privacidade</privacy> do AXIEL Core, incluindo o tratamento de dados de saúde nos termos do RGPD (Regulamento (UE) 2016/679).",
+    "successCreated": "Clínica criada! A redirecionar…",
+    "back": "Voltar",
+    "continue": "Continuar",
+    "fillNameToContinue": "Preencha o nome da clínica para continuar",
+    "createClinic": "Criar a minha clínica",
+    "redirecting": "A redirecionar…",
+    "creating": "A criar clínica…"
+  },
+  "getStarted": {
+    "eyebrow": "Configuração",
+    "title": "Começar em minutos",
+    "subtitle": "Siga estes passos uma vez. Depois, a rotina fica em Início, Pacientes, Leads e Agenda.",
+    "progress": "{completed} de {total} passos concluídos",
+    "allDone": "Tudo pronto!",
+    "steps": {
+      "clinicProfile": {
+        "title": "Perfil da clínica",
+        "text": "Configure o nome, contacto e tipo da sua clínica."
+      },
+      "hasPatient": {
+        "title": "Primeiro paciente",
+        "text": "Crie um registo de paciente."
+      },
+      "hasLead": {
+        "title": "Primeiro lead",
+        "text": "Inicie o pipeline de captação de pacientes."
+      },
+      "hasSession": {
+        "title": "Primeira sessão",
+        "text": "Agende uma sessão no calendário."
+      },
+      "hasForms": {
+        "title": "Formulários e questionários",
+        "text": "Personalize os formulários enviados aos seus pacientes."
+      }
+    }
+  },
+  "plan": {
+    "eyebrow": "Onboarding",
+    "title": "Escolha o seu plano",
+    "subtitle": "Comece simples. Pode mudar de plano a qualquer momento.",
+    "notSure": "Ainda não tem a certeza?",
+    "continueTrial": "Continuar com 14 dias grátis →",
+    "noCard": "Sem cartão necessário. Escolha um plano mais tarde em Definições → Faturação."
+  }
+}

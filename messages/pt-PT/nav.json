@@ -1,0 +1,90 @@
+{
+  "sections": {
+    "main": "Principal",
+    "clinic": "Clínica",
+    "more": "Mais"
+  },
+  "main": {
+    "dashboard": "Dashboard",
+    "patients": "Pacientes",
+    "leads": "Leads",
+    "schedule": "Agenda",
+    "inbox": "Mensagens",
+    "financeiro": "Financeiro",
+    "actions": "AI Insights",
+    "forms": "Formulários",
+    "links": "Ligações"
+  },
+  "clinic": {
+    "monetization": "Planos e pacotes",
+    "assinaturas": "Subscrições",
+    "results": "Resultados",
+    "analytics": "Analytics",
+    "trends": "Tendências",
+    "profissionais": "Equipa",
+    "relatorios": "Relatórios",
+    "settings": "Definições"
+  },
+  "more": {
+    "automacoes": "Automações",
+    "whatsapp": "WhatsApp Bot",
+    "follow-ups": "Follow-ups",
+    "communications": "Mensagens",
+    "products": "Produtos",
+    "hotmart": "Hotmart",
+    "billing": "Faturação"
+  },
+  "support": "Suporte",
+  "mobile": {
+    "home": "Início"
+  },
+  "search": {
+    "open": "Abrir pesquisa global",
+    "trigger": "Pesquisar…",
+    "placeholder": "Pesquisar pacientes, sessões, leads…",
+    "close": "Fechar",
+    "typeToSearch": "Escreva para pesquisar pacientes, sessões ou leads.",
+    "keepTyping": "Continue a escrever…",
+    "noResults": "Sem resultados para <q>“{query}”</q>",
+    "patients": "Pacientes",
+    "appointments": "Sessões",
+    "leads": "Leads",
+    "statusActive": "Ativo",
+    "statusInactive": "Inativo",
+    "statusArchived": "Arquivado",
+    "stages": {
+      "new_lead": "Novo",
+      "contacted": "Contactado",
+      "scheduled": "Agendado",
+      "converted_to_patient": "Convertido"
+    },
+    "durationMin": "{n} min",
+    "hintNavigate": "navegar",
+    "hintOpen": "abrir",
+    "hintClose": "fechar"
+  },
+  "notifications": {
+    "aria": "Notificações",
+    "title": "Notificações",
+    "attention": "{count, plural, one {# item requer atenção} other {# itens requerem atenção}}",
+    "allClear": "Está tudo em ordem por aqui ✓",
+    "insights": "{count, plural, one {# insight a aguardar revisão} other {# insights a aguardar revisão}}",
+    "lgpd": "{count, plural, one {# pedido RGPD pendente} other {# pedidos RGPD pendentes}}",
+    "followups": "{count, plural, one {# follow-up em atraso} other {# follow-ups em atraso}}",
+    "leads": "{count, plural, one {# novo lead por rever} other {# novos leads por rever}}",
+    "forms": "{count, plural, one {# formulário a aguardar resposta} other {# formulários a aguardar resposta}}"
+  },
+  "errorPage": {
+    "brand": "AXIEL Core",
+    "title": "Algo correu mal",
+    "text": "O sistema protegeu os seus dados e parou a ação em segurança. Tente novamente. Se o problema persistir, contacte o suporte.",
+    "reference": "Referência: {digest}",
+    "retry": "Tentar novamente"
+  },
+  "notFoundPage": {
+    "brand": "AXIEL Core",
+    "title": "Página não encontrada",
+    "text": "Esta página não existe ou não tem acesso a este registo.",
+    "cta": "Ir para o dashboard"
+  }
+}

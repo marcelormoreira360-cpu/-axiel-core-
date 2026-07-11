@@ -1,0 +1,18 @@
+{
+  "eyebrow": "Account",
+  "title": "Plan & Billing",
+  "subtitle": "Manage your AXIEL plan and Stripe subscription",
+  "choosePlan": "Choose your plan",
+  "trialTitle": "14 days free on any plan",
+  "trialSubtitle": "No card required to start the trial. Cancel anytime.",
+  "invoiceHistory": "Invoice history",
+  "downloadPdf": "Download PDF",
+  "footer": "Payments securely processed by Stripe. Upgrade, downgrade and cancellation available anytime via the Stripe portal.",
+  "status": {
+    "paid": "Paid",
+    "open": "Open",
+    "void": "Cancelled",
+    "draft": "Draft",
+    "uncollectible": "Uncollectible"
+  }
+}

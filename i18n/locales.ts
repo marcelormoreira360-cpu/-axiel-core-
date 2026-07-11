@@ -1,7 +1,7 @@
 // Locales suportados pelo app. Adicionar um novo idioma = incluir aqui +
 // criar a pasta messages/<locale>/ espelhando os namespaces existentes.
 
-export const LOCALES = ["pt-BR", "en"] as const;
+export const LOCALES = ["pt-BR", "en", "pt-PT"] as const;
 export type Locale = (typeof LOCALES)[number];
 
 export const DEFAULT_LOCALE: Locale = "pt-BR";

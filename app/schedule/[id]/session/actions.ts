@@ -27,20 +27,16 @@ export async function saveSessionRecord(
   const assessmentNote = String(formData.get("assessment_note") ?? "").trim() || null;
   const plan          = String(formData.get("plan") ?? "").trim() || null;
 
-  // Vitals — integer 1–5 or null
-  function parseVital(key: string): number | null {
-    const raw = formData.get(key);
-    if (raw === null || raw === "") return null;
+  // Vitais — chaves dinâmicas (config por clínica): lê todo vitals_<key>, inteiro
+  // 1–10 (a escala é definida por clínica; 10 é o teto possível).
+  const vitals: Record<string, number> = {};
+  for (const [k, raw] of formData.entries()) {
+    if (!k.startsWith("vitals_")) continue;
+    if (raw === null || raw === "") continue;
     const n = parseInt(String(raw), 10);
-    return Number.isFinite(n) && n >= 1 && n <= 5 ? n : null;
+    if (Number.isFinite(n) && n >= 1 && n <= 10) vitals[k.slice("vitals_".length)] = n;
   }
-  const vitals = {
-    dor:    parseVital("vitals_dor"),
-    energia: parseVital("vitals_energia"),
-    humor:  parseVital("vitals_humor"),
-    sono:   parseVital("vitals_sono"),
-  };
-  const hasVitals = Object.values(vitals).some((v) => v !== null);
+  const hasVitals = Object.keys(vitals).length > 0;
 
   let keyObservations: string[] = [];
   try {

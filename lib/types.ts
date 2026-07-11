@@ -218,12 +218,10 @@ export type IntakeFormWithQuestions = IntakeForm & {
   intake_questions: IntakeQuestion[];
 };
 
-export type SessionVitals = {
-  dor?: number | null;      // 1–5 (1=sem dor, 5=dor máxima)
-  energia?: number | null;  // 1–5 (1=exausto, 5=cheio de energia)
-  humor?: number | null;    // 1–5 (1=muito ruim, 5=excelente)
-  sono?: number | null;     // 1–5 (1=péssimo, 5=ótimo)
-};
+// Vitais relatados pelo paciente. Chaves DINÂMICAS (config por clínica via
+// clinics.session_config); as padrão são dor/energia/humor/sono. A escala é
+// definida por clínica (default 1–5, até 1–10). Ver modules/session/session-config.ts.
+export type SessionVitals = Record<string, number | null | undefined>;
 
 // Teste clínico presencial registrado na sessão (Feature 3).
 export type ClinicalTestResult = {

@@ -55,7 +55,8 @@
   },
   "language": {
     "label": "Language",
-    "pt-BR": "Português",
+    "pt-BR": "Português (Brasil)",
+    "pt-PT": "Português (Portugal)",
     "en": "English"
   },
   "appointmentStatus": {

@@ -22,6 +22,9 @@ export async function resolveLocale(): Promise<Locale> {
 export function localeFromAcceptLanguage(header: string | null | undefined): Locale {
   if (!header) return DEFAULT_LOCALE;
   const primary = header.split(",")[0]?.trim().toLowerCase() ?? "";
+  // pt-PT (Portugal) é distinto de pt-BR: só cai em pt-PT quando o header pede
+  // explicitamente Portugal; qualquer outro "pt*" continua indo para pt-BR.
+  if (primary === "pt-pt" || primary.startsWith("pt-pt")) return "pt-PT";
   if (primary.startsWith("pt")) return "pt-BR";
   if (primary.startsWith("en")) return "en";
   return DEFAULT_LOCALE;

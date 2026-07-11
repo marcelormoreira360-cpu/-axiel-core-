@@ -1,0 +1,163 @@
+{
+  "back": "Pacientes",
+  "patientSince": "Paciente desde {since}",
+  "age": " · {age, plural, one {# ano} other {# anos}}",
+  "profileTag": "Integrativo",
+  "actions": {
+    "exportPdf": "Exportar resumo PDF",
+    "edit": "Editar paciente",
+    "intake": "Intake",
+    "chart": "Prontuário",
+    "session": "Registrar sessão",
+    "schedule": "Agendar sessão",
+    "startTelehealth": "Iniciar teleconsulta",
+    "telehealth": "Teleconsulta"
+  },
+  "stats": {
+    "sessions": "SESSÕES",
+    "lastSession": "Última: {date}",
+    "noSessions": "Nenhuma sessão ainda",
+    "yearly": "Anual",
+    "monthly": "Mensal",
+    "intake": "ANAMNESE",
+    "forms": "forms.",
+    "aiInsights": "INSIGHTS IA",
+    "evolutions": "EVOLUÇÕES",
+    "reviews": "REVISÕES",
+    "pending": "pend."
+  },
+  "quickActions": {
+    "intakeForms": "Formulários de anamnese",
+    "fillForm": "Preencher formulário",
+    "healthAgent": "Agente de Saúde IA",
+    "evolution": "Evolução clínica",
+    "portal": "Portal do paciente",
+    "portalMessages": "Mensagens do portal"
+  },
+  "history": {
+    "title": "Histórico de sessões",
+    "viewAll": "ver todas",
+    "empty": "Nenhuma sessão ainda.",
+    "scheduleFirst": "Agendar primeira sessão",
+    "minutes": "{count} min"
+  },
+  "insight": {
+    "latest": "Último insight",
+    "final": "Final",
+    "inReview": "Em revisão",
+    "aiDisclaimer": "Gerado por IA · não é conselho médico",
+    "none": "Nenhum insight ainda",
+    "noneHelp": "Complete a anamnese e ao menos uma sessão para gerar o primeiro insight de IA.",
+    "generateFirst": "Gerar primeiro Insight",
+    "all": "Todos os insights",
+    "viewAll": "ver todos"
+  },
+  "nextStep": {
+    "pending": "{count, plural, one {# insight aguardando revisão} other {# insights aguardando revisão}}",
+    "title": "Próximo passo",
+    "review": "Revisar",
+    "viewInsight": "Ver insight"
+  },
+  "assessments": {
+    "title": "Formulários aplicados",
+    "count": "{count, plural, one {# resultado} other {# resultados}}",
+    "fill": "Preencher",
+    "empty": "Nenhum formulário preenchido ainda."
+  },
+  "accordion": {
+    "questionnaires": "Questionários — Q-SNA · QRM",
+    "planSupplements": "Plano de tratamento e Suplementação"
+  },
+  "caseSummary": {
+    "title": "Resumo do caso",
+    "chiefLabel": "Queixa principal",
+    "chiefPlaceholder": "Ex.: Fadiga e dores articulares há 6 meses",
+    "summaryLabel": "Resumo / andamento do tratamento",
+    "summaryPlaceholder": "Histórico, hipóteses e evolução ao longo das sessões…",
+    "edit": "Editar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "saved": "Salvo",
+    "empty": "Sem resumo ainda. Clique em editar para registrar a queixa principal e o caso.",
+    "errorSave": "Não foi possível salvar. Tente novamente."
+  },
+  "referral": {
+    "referredBy": "Indicado por {name}",
+    "brought": "{count, plural, one {Indicou # paciente} other {Indicou # pacientes}}"
+  },
+  "demographics": {
+    "title": "Dados do paciente",
+    "subtitle": "Fonte única — alimenta o Bio³, os relatórios e o PDF.",
+    "edit": "Editar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "cancel": "Cancelar",
+    "empty": "Sem dados ainda. Clique em editar para preencher nome, nascimento, sexo, peso, altura e cidade.",
+    "nameLabel": "Nome completo",
+    "dobLabel": "Data de nascimento",
+    "sexLabel": "Sexo",
+    "sexMale": "Masculino",
+    "sexFemale": "Feminino",
+    "sexOther": "Outro",
+    "sexUnset": "Não informar",
+    "weightLabel": "Peso (kg)",
+    "heightLabel": "Altura (cm)",
+    "cityLabel": "Cidade",
+    "ageSuffix": "anos",
+    "notInformed": "não informado",
+    "errorName": "O nome é obrigatório.",
+    "errorSave": "Não foi possível salvar. Tente novamente."
+  },
+  "prontuario": {
+    "eyebrow": "Prontuário",
+    "print": "Imprimir",
+    "dob": "Data de nascimento",
+    "phone": "Telefone",
+    "sessionsRecorded": "Sessões registradas",
+    "lastSession": "Última sessão",
+    "generalNotes": "Observações gerais",
+    "emptyTitle": "Nenhum registro de sessão ainda",
+    "emptyHelper": "As anotações feitas durante as sessões aparecerão aqui.",
+    "edit": "Editar",
+    "additionalNotes": "Notas adicionais",
+    "keyObservations": "Observações-chave",
+    "recordings": "Gravações",
+    "emptySession": "Sessão sem anotações.",
+    "video": "Vídeo",
+    "audio": "Áudio",
+    "file": "Arquivo",
+    "soap": {
+      "subjective": "Subjetivo",
+      "objective": "Objetivo",
+      "assessment": "Avaliação",
+      "plan": "Plano"
+    },
+    "printPage": {
+      "docTitle": "Prontuário — {name}",
+      "back": "Voltar ao prontuário",
+      "clinicFallback": "Clínica",
+      "electronicRecord": "Prontuário Eletrônico",
+      "printedAt": "Impresso em {date}",
+      "totalSessions": "Total de sessões: {count}",
+      "email": "E-mail",
+      "notesLabel": "Observações:",
+      "sessionHistory": "Histórico de sessões",
+      "empty": "Nenhum registro de sessão.",
+      "generatedBy": "Documento gerado pelo AXIEL Core",
+      "sessionCount": "{count, plural, one {# sessão} other {# sessões}}",
+      "soap": {
+        "subjective": "S — Subjetivo",
+        "objective": "O — Objetivo",
+        "assessment": "A — Avaliação",
+        "plan": "P — Plano"
+      }
+    }
+  },
+  "evolution": {
+    "title": "Evolução clínica",
+    "emptyTitle": "Nenhum dado de evolução ainda.",
+    "emptyHint": "Adicione exames laboratoriais ou aplique formulários de assessment para visualizar a evolução.",
+    "goToProfile": "Ir para o perfil"
+  }
+}
