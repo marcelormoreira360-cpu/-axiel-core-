@@ -1,6 +1,6 @@
 import PDFDocument from "pdfkit";
 import { parseDob } from "@/lib/dob";
-import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentClinic, getClinicSessionConfig } from "@/services/clinic-service";
 import { getPatientById } from "@/services/patient-service";
 import { getAppointmentsByPatient } from "@/services/appointment-service";
 import { getPatientExams, getPatientPrescriptions } from "@/services/exams-service";
@@ -70,6 +70,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const locale = await resolveClinicLocale(clinic.id);
   const t = await getServerT(locale, "pdf");
+
+  // Config de vitais/escala da clínica (para o bloco de vitais respeitar os
+  // vitais e a escala configurados, incluindo customizados).
+  const sessionConfig = await getClinicSessionConfig(clinic.id);
+  // Rótulos i18n dos vitais PADRÃO (dor/energia/humor/sono); customizados usam o
+  // próprio label da config.
+  const DEFAULT_VITAL_LABEL: Record<string, string> = {
+    dor:     t("record.vitalPain"),
+    energia: t("record.vitalEnergy"),
+    humor:   t("record.vitalMood"),
+    sono:    t("record.vitalSleep"),
+  };
 
   const [patient, appointments, prescriptions, insights, assessmentResponses, exams, sessionRecords] =
     await Promise.all([
@@ -294,8 +306,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       if (rec.vitals) {
         const v = rec.vitals as Record<string, number | undefined>;
         const vParts: string[] = [];
-        const VL: Record<string, string> = { pain: t("record.vitalPain"), energy: t("record.vitalEnergy"), mood: t("record.vitalMood"), sleep: t("record.vitalSleep") };
-        Object.entries(VL).forEach(([k, l]) => { if (v[k] != null) vParts.push(`${l}: ${v[k]}/5`); });
+        // Itera os vitais da config da clínica (chaves reais dos dados: dor/energia/
+        // humor/sono ou customizados) e usa a escala configurada em vez de "/5".
+        for (const cv of sessionConfig.vitals) {
+          const val = v[cv.key];
+          if (val == null) continue;
+          const label = cv.label || DEFAULT_VITAL_LABEL[cv.key] || cv.key;
+          vParts.push(`${label}: ${val}/${sessionConfig.scaleMax}`);
+        }
         if (vParts.length > 0) {
           doc.fillColor("#9ca3af").font("Helvetica").fontSize(7.5)
             .text(t("record.vitals", { value: vParts.join("  ·  ") }), 60, doc.y);
