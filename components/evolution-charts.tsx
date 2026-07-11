@@ -6,7 +6,8 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, ReferenceLine, ReferenceArea, Legend,
 } from "recharts";
-import type { BiomarkerSeries, AssessmentSeries, VitalPoint } from "@/services/evolution-service";
+import type { BiomarkerSeries, AssessmentSeries, VitalPoint, VitalDef } from "@/services/evolution-service";
+import { DEFAULT_VITAL_KEYS } from "@/modules/session/session-config";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -213,27 +214,22 @@ function AssessmentChart({ series }: { series: AssessmentSeries }) {
 
 // ── Vitals chart ──────────────────────────────────────────────────────────────
 
-const VITAL_LINES = [
-  { key: "dor",     color: "#E05252" },
-  { key: "energia", color: "#0F6E56" },
-  { key: "humor",   color: "#7B5EA7" },
-  { key: "sono",    color: "#2A7BC1" },
-] as const;
+const DEFAULT_VITAL_KEY_SET = new Set<string>(DEFAULT_VITAL_KEYS);
 
-function VitalsChart({ points }: { points: VitalPoint[] }) {
+function VitalsChart({ points, vitalDefs, scaleMax }: { points: VitalPoint[]; vitalDefs: VitalDef[]; scaleMax: number }) {
   const t = useTranslations("patientPanels.evolution");
   const locale = useLocale();
-  const [visible, setVisible] = useState<Set<string>>(new Set(["dor", "energia", "humor", "sono"]));
+  const [visible, setVisible] = useState<Set<string>>(() => new Set(vitalDefs.map((d) => d.key)));
 
-  const vitalLines = VITAL_LINES.map((l) => ({ ...l, label: t(`vitals.${l.key}`) }));
-
-  const data = points.map((p) => ({
-    date: fmtDate(p.date, locale),
-    dor: p.dor,
-    energia: p.energia,
-    humor: p.humor,
-    sono: p.sono,
+  // Rótulo: label custom da clínica, senão o i18n do vital padrão (dor/energia/
+  // humor/sono), senão a própria chave.
+  const vitalLines = vitalDefs.map((d) => ({
+    key: d.key,
+    color: d.color,
+    label: d.label || (DEFAULT_VITAL_KEY_SET.has(d.key) ? t(`vitals.${d.key}`) : d.key),
   }));
+
+  const data = points.map((p) => ({ date: fmtDate(p.date, locale), ...p.values }));
 
   function toggleLine(key: string) {
     setVisible((prev) => {
@@ -282,8 +278,8 @@ function VitalsChart({ points }: { points: VitalPoint[] }) {
             tick={{ fontSize: 10, fill: "#A09E98" }}
             axisLine={false}
             tickLine={false}
-            domain={[0, 6]}
-            ticks={[1, 2, 3, 4, 5]}
+            domain={[0, scaleMax + 1]}
+            ticks={Array.from({ length: scaleMax }, (_, i) => i + 1)}
           />
           <Tooltip
             contentStyle={{
@@ -294,11 +290,11 @@ function VitalsChart({ points }: { points: VitalPoint[] }) {
               color: "#0F1A2E",
             }}
             formatter={(val, name) => [
-              val != null ? `${val}/5` : "—",
+              val != null ? `${val}/${scaleMax}` : "—",
               vitalLines.find((l) => l.key === (name as string))?.label ?? (name as string),
             ]}
           />
-          {VITAL_LINES.map(({ key, color }) =>
+          {vitalLines.map(({ key, color }) =>
             visible.has(key) ? (
               <Line
                 key={key}
@@ -330,10 +326,14 @@ export function EvolutionCharts({
   biomarkers,
   assessments,
   vitals = [],
+  vitalDefs = [],
+  vitalsScaleMax = 5,
 }: {
   biomarkers: BiomarkerSeries[];
   assessments: AssessmentSeries[];
   vitals?: VitalPoint[];
+  vitalDefs?: VitalDef[];
+  vitalsScaleMax?: number;
 }) {
   const t = useTranslations("patientPanels.evolution");
   const defaultTab: Tab = vitals.length > 0 ? "vitals" : biomarkers.length > 0 ? "biomarkers" : "assessments";
@@ -433,7 +433,7 @@ export function EvolutionCharts({
       )}
 
       {/* Vitals chart */}
-      {tab === "vitals" && <VitalsChart points={vitals} />}
+      {tab === "vitals" && <VitalsChart points={vitals} vitalDefs={vitalDefs} scaleMax={vitalsScaleMax} />}
 
       {/* Charts grid */}
       {tab === "biomarkers" && (

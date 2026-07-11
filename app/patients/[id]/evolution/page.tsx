@@ -69,7 +69,7 @@ export default async function PatientEvolutionPage({ params }: { params: Promise
           </div>
         </div>
       ) : (
-        <EvolutionCharts biomarkers={evolution.biomarkers} assessments={evolution.assessments} vitals={evolution.vitals} />
+        <EvolutionCharts biomarkers={evolution.biomarkers} assessments={evolution.assessments} vitals={evolution.vitals} vitalDefs={evolution.vitalDefs} vitalsScaleMax={evolution.vitalsScaleMax} />
       )}
     </Shell>
   );
