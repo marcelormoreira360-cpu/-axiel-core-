@@ -28,22 +28,38 @@ export type AssessmentSeries = {
 
 export type VitalPoint = {
   date: string;  // ISO date string of the session starts_at
-  dor: number | null;
-  energia: number | null;
-  humor: number | null;
-  sono: number | null;
+  // Valores por chave de vital (dinâmicos, config por clínica): dor/energia/humor/
+  // sono ou customizados.
+  values: Record<string, number | null>;
+};
+
+// Definição de um vital para o gráfico (chave, rótulo custom, cor). O rótulo dos
+// vitais PADRÃO vem vazio e é resolvido por i18n no componente.
+export type VitalDef = {
+  key: string;
+  label: string;
+  color: string;
 };
 
 export type EvolutionData = {
   biomarkers: BiomarkerSeries[];
   assessments: AssessmentSeries[];
   vitals: VitalPoint[];
+  vitalDefs: VitalDef[];
+  vitalsScaleMax: number;
 };
 
 export async function getPatientEvolution(patientId: string): Promise<EvolutionData> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const { getCurrentClinic, getClinicSessionConfig } = await import("@/services/clinic-service");
+  const { defaultSessionConfig } = await import("@/modules/session/session-config");
 
   const supabase = await createSupabaseServerClient();
+
+  // Config de vitais/escala da clínica: o gráfico mostra os vitais configurados
+  // (inclusive customizados) na escala certa, em vez dos 4 fixos + escala 1–5.
+  const clinic = await getCurrentClinic();
+  const sessionConfig = clinic ? await getClinicSessionConfig(clinic.id) : defaultSessionConfig();
 
   const [{ data: exams }, { data: assessments }, { data: sessionRecords }] = await Promise.all([
     supabase
@@ -139,12 +155,27 @@ export async function getPatientEvolution(patientId: string): Promise<EvolutionD
       Boolean(r.vitals && r.starts_at)
     )
     .map((r) => ({
-      date:    r.starts_at,
-      dor:     r.vitals?.dor    != null ? Number(r.vitals.dor)    : null,
-      energia: r.vitals?.energia != null ? Number(r.vitals.energia) : null,
-      humor:   r.vitals?.humor   != null ? Number(r.vitals.humor)  : null,
-      sono:    r.vitals?.sono    != null ? Number(r.vitals.sono)   : null,
+      date: r.starts_at,
+      // Um valor por vital configurado (chaves reais dos dados).
+      values: Object.fromEntries(
+        sessionConfig.vitals.map((cv) => [
+          cv.key,
+          r.vitals?.[cv.key] != null ? Number(r.vitals[cv.key]) : null,
+        ]),
+      ) as Record<string, number | null>,
     }));
 
-  return { biomarkers, assessments: assessmentSeries, vitals };
+  const vitalDefs: VitalDef[] = sessionConfig.vitals.map((cv) => ({
+    key: cv.key,
+    label: cv.label,
+    color: cv.color,
+  }));
+
+  return {
+    biomarkers,
+    assessments: assessmentSeries,
+    vitals,
+    vitalDefs,
+    vitalsScaleMax: sessionConfig.scaleMax,
+  };
 }
