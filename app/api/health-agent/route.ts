@@ -6,6 +6,10 @@ import { canUseFeature } from "@/modules/billing/feature-access";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { createLogger } from "@/lib/logger";
 
+// App-iniciada (não é webhook de plataforma): margem para o AbortSignal/retry
+// das chamadas OpenAI disparar antes do teto da função.
+export const maxDuration = 60;
+
 const log = createLogger("health-agent");
 
 // ─── Supabase result types ────────────────────────────────────────────────────
@@ -382,6 +386,7 @@ Gere um JSON com EXATAMENTE esta estrutura:
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         // Tier barato por padrão (paridade com escriba/insights/exames), sobreponível
         // por OPENAI_MODEL. Antes: "gpt-4o" cravado (~6x mais caro) neste que é o

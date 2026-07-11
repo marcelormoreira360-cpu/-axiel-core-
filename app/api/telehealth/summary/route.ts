@@ -3,6 +3,10 @@ import { resolveLocale } from "@/i18n/get-locale";
 import { languageInstruction } from "@/lib/ai-language";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
+// App-iniciada (não é webhook de plataforma): margem para o AbortSignal/retry
+// das chamadas OpenAI disparar antes do teto da função.
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   // ── Auth guard ──────────────────────────────────────────────────────────────
   const supabase = await createSupabaseServerClient();
@@ -31,6 +35,7 @@ export async function POST(req: NextRequest) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
+      signal: AbortSignal.timeout(15_000),
       body: JSON.stringify({
         model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
         messages: [

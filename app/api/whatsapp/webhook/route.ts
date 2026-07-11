@@ -40,6 +40,9 @@ async function transcribeAudio(mediaUrl: string, apiKey: string): Promise<string
     }
 
     const audioBuffer = await audioRes.arrayBuffer();
+    // Teto de 25 MB (limite duro do Whisper): fecha o custo de STT sem limite em
+    // mídia grande/maliciosa (paridade com transcribe/route.ts).
+    if (audioBuffer.byteLength > 25 * 1024 * 1024) return "";
     const audioBlob = new Blob([audioBuffer], { type: "audio/ogg" });
 
     // Send to Whisper

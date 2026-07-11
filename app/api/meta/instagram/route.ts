@@ -11,6 +11,8 @@ import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 
 export const runtime = "nodejs";
+// > que o AbortSignal de 15s das chamadas OpenAI (fallback gracioso antes do teto).
+export const maxDuration = 20;
 
 const log = createLogger("instagram");
 
@@ -205,27 +207,34 @@ async function generateReply(
   systemPrompt: string,
   apiKey: string
 ): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...history.slice(-12),
-        { role: "user", content: message },
-      ],
-      temperature: 0.7,
-      max_tokens: 450,
-    }),
-  });
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(15_000),
+      body: JSON.stringify({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history.slice(-12),
+          { role: "user", content: message },
+        ],
+        temperature: 0.7,
+        max_tokens: 450,
+      }),
+    });
 
-  const data = await res.json();
-  if (!res.ok) {
-    log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+    const data = await res.json();
+    if (!res.ok) {
+      log.error("OpenAI error", { status: res.status, detail: JSON.stringify(data) });
+      return "";
+    }
+    return data.choices?.[0]?.message?.content?.trim() ?? "";
+  } catch (err) {
+    // Timeout (AbortSignal) ou falha de rede → resposta vazia (o chamador usa fallback).
+    log.error("OpenAI request failed or timed out", err);
     return "";
   }
-  return data.choices?.[0]?.message?.content?.trim() ?? "";
 }
 
 // ─── Opt-out / human escalation detection ────────────────────────────────────
