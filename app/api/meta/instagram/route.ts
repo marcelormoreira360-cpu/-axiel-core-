@@ -3,7 +3,7 @@ import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
 import { chatModel } from "@/lib/ai-models";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
@@ -370,9 +370,10 @@ export async function POST(req: NextRequest) {
         // can ask to talk to a person. We reply once, flag the conversation for a
         // human to take over (bot_disabled), and stop auto-replying in this thread.
         if (isOptOutRequest(messageText)) {
-          // Auto-reply fixo no idioma da clínica (id do IG não identifica
-          // paciente por telefone); sem clínica, pt-BR.
-          const tReply = await getServerT(await resolveClinicLocale(clinicId), "whatsapp");
+          // Responde no idioma do LEAD (detectado da mensagem), não no da clínica.
+          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+          const replyLocale = metaLangToLocale(optOutLang, await resolveClinicLocale(clinicId));
+          const tReply = await getServerT(replyLocale, "whatsapp");
           const handover = tReply("autoReply.handover");
           await saveHistory(supabase, senderId, convId, [
             ...history,
@@ -407,7 +408,7 @@ export async function POST(req: NextRequest) {
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         let finalReply = reply;
         if (!finalReply) {
-          const tReply = await getServerT(await resolveClinicLocale(clinicId), "whatsapp");
+          const tReply = await getServerT(metaLangToLocale(metaLang, await resolveClinicLocale(clinicId)), "whatsapp");
           finalReply = tReply("autoReply.fallback");
         }
 
