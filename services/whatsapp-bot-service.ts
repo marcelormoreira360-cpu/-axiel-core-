@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PricingLocation, WhatsAppBotConfigFields } from "@/lib/whatsapp-bot-defaults";
 
 export type { PricingLocation, PricingPlan } from "@/lib/whatsapp-bot-defaults";
-export { IFWC_DEFAULT_CONFIG, buildSystemPrompt, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory } from "@/lib/whatsapp-bot-defaults";
+export { IFWC_DEFAULT_CONFIG, buildSystemPrompt, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory } from "@/lib/whatsapp-bot-defaults";
 
 // Busca o slug da clínica numa consulta separada — evita o join embutido
 // `clinics(slug)` do PostgREST, que exige uma FK que não existe porque

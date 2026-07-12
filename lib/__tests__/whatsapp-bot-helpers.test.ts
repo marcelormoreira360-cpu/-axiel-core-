@@ -10,6 +10,7 @@ import {
 } from "../whatsapp-bot-helpers";
 import type { ChatMessage } from "../whatsapp-bot-helpers";
 import type { PricingLocation } from "../whatsapp-bot-defaults";
+import { metaLangToLocale } from "../whatsapp-bot-defaults";
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -329,5 +330,22 @@ describe("buildBookingUrl", () => {
   it("sem slug, cai no slug padrão ifwc", () => {
     expect(buildBookingUrl(null)).toMatch(/\/book\/ifwc$/);
     expect(buildBookingUrl(undefined)).toMatch(/\/book\/ifwc$/);
+  });
+});
+
+describe("metaLangToLocale (idioma do lead nos auto-replies fixos)", () => {
+  it("lead em inglês recebe locale en (não o da clínica)", () => {
+    expect(metaLangToLocale("en", "pt-BR")).toBe("en");
+    expect(metaLangToLocale("en", "pt-PT")).toBe("en");
+  });
+
+  it("lead em português respeita a variante da clínica", () => {
+    expect(metaLangToLocale("pt", "pt-BR")).toBe("pt-BR");
+    expect(metaLangToLocale("pt", "pt-PT")).toBe("pt-PT");
+    expect(metaLangToLocale("pt", "en")).toBe("pt-BR");
+  });
+
+  it("espanhol cai no inglês (sem template ES próprio)", () => {
+    expect(metaLangToLocale("es", "pt-BR")).toBe("en");
   });
 });

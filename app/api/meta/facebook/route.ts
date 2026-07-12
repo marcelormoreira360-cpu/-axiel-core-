@@ -3,7 +3,7 @@ import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
 import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
@@ -308,9 +308,11 @@ export async function POST(req: NextRequest) {
         // Opt-out / escalonamento humano: responde uma vez, marca a conversa
         // para um humano assumir (bot_disabled) e para de auto-responder.
         if (isOptOutRequest(messageText)) {
-          // Auto-reply fixo no idioma da clínica (PSID não identifica paciente
-          // por telefone); sem clínica, pt-BR.
-          const tReply = await getServerT(await resolveClinicLocale(effectiveClinicId), "whatsapp");
+          // Responde no idioma do LEAD (detectado da mensagem), não no da clínica:
+          // quem escreve em inglês recebe o opt-out em inglês.
+          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+          const replyLocale = metaLangToLocale(optOutLang, await resolveClinicLocale(effectiveClinicId));
+          const tReply = await getServerT(replyLocale, "whatsapp");
           const handover = tReply("autoReply.handover");
           await saveHistory(supabase, senderPsid, convId, [
             ...history,
@@ -354,7 +356,7 @@ export async function POST(req: NextRequest) {
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         let finalReply = reply;
         if (!finalReply) {
-          const tReply = await getServerT(await resolveClinicLocale(effectiveClinicId), "whatsapp");
+          const tReply = await getServerT(metaLangToLocale(metaLang, await resolveClinicLocale(effectiveClinicId)), "whatsapp");
           finalReply = tReply("autoReply.fallback");
         }
 

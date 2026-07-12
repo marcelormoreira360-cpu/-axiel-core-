@@ -233,6 +233,16 @@ export function metaLangToConfigLanguage(lang: MetaLang, configLanguage: string)
   return configLanguage === "pt-PT" ? "pt-PT" : "pt-BR";
 }
 
+// Mapeia o idioma detectado do lead (Meta) para um locale do app, para os
+// auto-replies FIXOS (opt-out, fallback) saírem no idioma de quem escreveu, não
+// no da clínica. ES não tem template próprio -> cai no inglês (fallback não-PT).
+// PT respeita a variante da clínica (pt-BR default, pt-PT se for o caso).
+export function metaLangToLocale(lang: MetaLang, clinicLocale: string): string {
+  if (lang === "en") return "en";
+  if (lang === "es") return "en";
+  return clinicLocale === "pt-PT" ? "pt-PT" : "pt-BR";
+}
+
 // ─── C1/C2/C4 — Regra de comportamento (anexada em código nos canais Meta) ────
 // Autoritativa: vale nos dois canais independentemente do custom_instructions do
 // banco. Reforça preço por cidade, escuta da queixa e uso moderado do nome.
