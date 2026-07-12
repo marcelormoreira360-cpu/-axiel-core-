@@ -29,6 +29,26 @@ const IFWC_CLINIC_ID =
 // um HUMANO respondendo pela caixa de entrada do Messenger/Business Suite.
 const META_APP_ID = process.env.META_APP_ID ?? "1468755454577652";
 
+// Páginas de Facebook conhecidas que atendem por uma clínica mas não têm linha
+// própria em whatsapp_bot_configs (clinic_id é único, então não cabe uma 2ª
+// config para a mesma clínica). Mapeia pageId -> clinic_id. Configurável por env
+// "META_FB_EXTRA_PAGES" no formato "<pageId>:<clinicId>,<pageId>:<clinicId>".
+// Mantém a regra SEC-01: só páginas conhecidas (config no banco OU neste mapa)
+// são atendidas.
+function extraFbPages(): Record<string, string> {
+  const raw = process.env.META_FB_EXTRA_PAGES;
+  if (raw) {
+    const map: Record<string, string> = {};
+    for (const pair of raw.split(",")) {
+      const [page, clinic] = pair.split(":").map((p) => p.trim());
+      if (page && clinic) map[page] = clinic;
+    }
+    return map;
+  }
+  // Default: página da clínica IFWC (@jifwcenter) + página pessoal do Marcelo -> IFWC.
+  return { "176925208829451": IFWC_CLINIC_ID, "549973015492301": IFWC_CLINIC_ID };
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getHistory(
@@ -252,12 +272,14 @@ export async function POST(req: NextRequest) {
     for (const entry of body.entry ?? []) {
       const pageId: string = entry.id;
 
-      // SEC-01 (Facebook): resolve a clínica pela PÁGINA. Se a página estiver
-      // registrada por uma clínica, o bot usa a identidade/config dela (fim do
-      // vazamento cross-tenant). Páginas ainda não registradas mantêm a IFWC
-      // (compat single-tenant atual, até a clínica cadastrar a página nas settings).
+      // SEC-01 (Facebook): resolve a clínica pela PÁGINA. Página registrada por
+      // uma clínica (config no banco) OU presente no mapa extraFbPages usa a
+      // identidade dela. Página DESCONHECIDA não é mais atendida como IFWC: é
+      // ignorada, para não vazar identidade cross-tenant quando outra clínica
+      // conectar uma página ao app.
       const pageConfig = await getWhatsAppBotConfigByFacebookPageId(pageId).catch(() => null);
-      const pageClinicId = pageConfig?.clinic_id ?? null;
+      const pageClinicId = pageConfig?.clinic_id ?? extraFbPages()[pageId] ?? null;
+      if (!pageClinicId) continue;
 
       for (const event of entry.messaging ?? []) {
         // Dedup (PRIMEIRA checagem): a Meta reenvia o webhook quando não recebe
@@ -279,7 +301,7 @@ export async function POST(req: NextRequest) {
               supabase,
               `fb_${userPsid}`,
               event.message?.text?.trim() ?? "",
-              pageClinicId ?? IFWC_CLINIC_ID,
+              pageClinicId,
             );
           }
           continue;
@@ -293,7 +315,7 @@ export async function POST(req: NextRequest) {
 
         const { id: convId, messages: history, botDisabled, aiPaused, lastHumanMessageAt, clinicId: convClinicId, updatedAt } =
           await getHistory(supabase, senderPsid);
-        const effectiveClinicId = pageClinicId ?? convClinicId ?? IFWC_CLINIC_ID;
+        const effectiveClinicId = pageClinicId ?? convClinicId;
 
         // Passagem de bastão: IA pausada ou humano respondeu há menos de 24h.
         // Salva a mensagem e não responde.
