@@ -1,7 +1,19 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 09/07/2026 (39)
+> Atualizado em: 15/07/2026 (40)
+
+## 🟡 Fase 1 de rollout — 5 frentes (15/07/2026) — TUDO MERGEADO NO MAIN, DEPLOY GATED
+
+> PRs **#95 #96 #98 #99 #100** mergeados no `main`. Migrations **131, 132, 133 NÃO aplicadas em prod ainda** (deploy gated). Gates locais: `tsc` 0, lint 0 nos arquivos tocados. (#97 foi fechado pelo GitHub ao deletar a branch base do #96 no merge; recriado como #100.)
+
+1. **interest_area (#95, migration 131):** o AXIEL Growth (migration 0023) trocou o campo livre `pain` por `interest_area` fechado (`energy|sleep|stress|performance|general`) e passou a enviá-lo no hand-off (blindagem de PHI, parecer Lex 14/07). `growth-integration-service` agora aceita `interest_area`, sanitiza contra a whitelist (fora da lista vira null), e persiste na coluna `leads.interest_area` + `warming_context` + notes. Aplicar a 131 em prod casada com a 0023 do Growth.
+2. **Opt-in por canal (#96, migration 132):** novo `services/channel-consent-service.ts` reaproveita a tabela append-only `patient_consents` (045) com `consent_type = channel_<canal>` (email/sms/whatsapp/instagram/messenger). `recordChannelConsent` grava opt-in/opt-out com ip/user_agent/source (prova TCPA/HIPAA); `getChannelConsent`/`getPatientChannelConsents`/`getChannelConsentsForPatients` leem o estado atual (linha mais recente por canal). Migration 132 é só `comment`, sem mudança de schema (consent_type é TEXT livre, sem CHECK novo p/ não rejeitar valores legados).
+3. **Dunning por canal (#100):** `dunning-service` deixou de mandar só WhatsApp cego. Agora consulta o opt-in em lote e respeita opt-out (`canSendTransactional`: envia em canal sem opt-out explícito, não exige opt-in p/ não silenciar aviso de serviço); preferência WhatsApp → e-mail com fallback quando o WhatsApp falha; loga cada tentativa em `communication_logs` com channel/provider corretos; e-mail escapa dados do paciente antes do HTML. Roda dentro do cron `automations`.
+4. **Convite de equipe (#98):** o fluxo já existia completo (team-service + /settings/equipe + /join/[token] + signup/login carregam invite + /api/auth/accept-invite + i18n + fixes IDOR/expiry). A verificação do disparo real de e-mail achou que a falha era ENGOLIDA em silêncio; agora `inviteTeamMember` loga a falha (Vercel). GOTCHA de env: `RESEND_API_KEY` do .env.local está INVÁLIDA (401), `RESEND_FROM_EMAIL` é o sandbox `onboarding@resend.dev` (só entrega no dono da conta) e `NEXT_PUBLIC_APP_URL` é localhost.
+5. **Worker de mídia IG (#99, migration 133):** habilita a Clara a enviar IMAGEM no DM do Instagram, assíncrono. Fila `outbound_media_jobs` (RLS por clínica) + `services/outbound-media-service` (enqueue + processOutboundMediaJobs: claim atômico pending→sending, retry até max_attempts, reclaim de 'sending' órfão) + `lib/instagram-api` (envio extraído do webhook, `sendInstagramText` reusado + novo `sendInstagramImage`) + `lib/openai-image` (geração via gpt-image-1 quando não há imagem: política do Marcelo "usa a fornecida, senão a IA gera") + cron `/api/cron/media-worker` (vercel.json `*/2 * * * *`). DM, NÃO post no feed (post = trilha do Growth/Brio). Usa o bucket privado `patient-docs` + URL assinada (a Meta busca a URL).
+
+🔴 **DEPLOY GATED (aguardando OK + envs do Marcelo):** aplicar migrations 131/132/133 na prod; ativar cron do worker; envs: `RESEND_API_KEY` válida + `RESEND_FROM_EMAIL` domínio verificado + `NEXT_PUBLIC_APP_URL` real + `CRON_SECRET` + `OPENAI_API_KEY` + `META_INSTAGRAM_TOKEN(_<conta>)`. **Follow-ups de código:** wiring da captura de opt-in (form/portal + handler STOP TCPA, distinto do handover "falar com atendente"); wiring do gatilho de imagem da Clara (chamar `enqueueOutboundMedia`); decisão de compliance de parar de aceitar `pain` no endpoint do Growth (Selo/Lex).
 
 ## 🟢 Auditoria 3 — lotes 6 e 7 (segurança + venda EN) (09/07/2026) — NO AR
 
