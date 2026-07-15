@@ -41,6 +41,12 @@ function stateFromGranted(granted: boolean | null | undefined): ChannelConsentSt
   return "unknown";
 }
 
+function emptyConsentMap(): Record<MessagingChannel, ChannelConsentState> {
+  return Object.fromEntries(
+    MESSAGING_CHANNELS.map((c) => [c, "unknown" as ChannelConsentState])
+  ) as Record<MessagingChannel, ChannelConsentState>;
+}
+
 export type RecordChannelConsentInput = {
   clinicId: string;
   patientId: string;
@@ -110,9 +116,7 @@ export async function getPatientChannelConsents(
     .like("consent_type", `${CONSENT_TYPE_PREFIX}%`)
     .order("created_at", { ascending: false });
 
-  const result = Object.fromEntries(
-    MESSAGING_CHANNELS.map((c) => [c, "unknown" as ChannelConsentState])
-  ) as Record<MessagingChannel, ChannelConsentState>;
+  const result = emptyConsentMap();
 
   // Linhas vem em created_at DESC: a primeira vista de cada consent_type e a atual.
   const seen = new Set<string>();
@@ -125,4 +129,52 @@ export async function getPatientChannelConsents(
     }
   }
   return result;
+}
+
+/**
+ * Versao em lote de getPatientChannelConsents: uma unica consulta para varios
+ * pacientes (usado pelo dunning, que processa um lote de inadimplentes).
+ * Pacientes sem nenhum registro voltam com todos os canais "unknown".
+ */
+export async function getChannelConsentsForPatients(
+  patientIds: string[],
+  client?: SupabaseClient
+): Promise<Map<string, Record<MessagingChannel, ChannelConsentState>>> {
+  const result = new Map<string, Record<MessagingChannel, ChannelConsentState>>();
+  for (const id of patientIds) result.set(id, emptyConsentMap());
+  if (patientIds.length === 0) return result;
+
+  const supabase = client ?? createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("patient_consents")
+    .select("patient_id, consent_type, granted, created_at")
+    .in("patient_id", patientIds)
+    .like("consent_type", `${CONSENT_TYPE_PREFIX}%`)
+    .order("created_at", { ascending: false });
+
+  // Dedup por (patient_id, consent_type); linhas em DESC, a 1a vista e a atual.
+  const seen = new Set<string>();
+  for (const row of (data ?? []) as Array<{ patient_id: string; consent_type: string; granted: boolean }>) {
+    const key = `${row.patient_id}|${row.consent_type}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const channel = row.consent_type.slice(CONSENT_TYPE_PREFIX.length);
+    if (isMessagingChannel(channel)) {
+      const rec = result.get(row.patient_id);
+      if (rec) rec[channel] = stateFromGranted(row.granted);
+    }
+  }
+  return result;
+}
+
+/**
+ * Politica de mensagem TRANSACIONAL (ex.: aviso de falha de pagamento/dunning,
+ * lembrete de consulta): pode enviar em qualquer canal que o paciente NAO tenha
+ * feito opt-out explicito. Nao exige opt-in previo, porque bloquear "unknown"
+ * silenciaria comunicacao de servico legitima enquanto a captura de opt-in por
+ * canal ainda esta sendo distribuida. Para mensagem de MARKETING, use um
+ * criterio estrito (state === "opted_in").
+ */
+export function canSendTransactional(state: ChannelConsentState): boolean {
+  return state !== "opted_out";
 }
