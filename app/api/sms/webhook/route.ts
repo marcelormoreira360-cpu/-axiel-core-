@@ -13,6 +13,8 @@ import { createLogger } from "@/lib/logger";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
+import { isSmsStopKeyword } from "@/lib/sms-stop-keywords";
+import { recordChannelConsent } from "@/services/channel-consent-service";
 import {
   parseTwilioParams,
   twimlMessage,
@@ -123,6 +125,55 @@ export async function POST(req: NextRequest) {
     // (getWhatsAppBotConfigByNumber): uma 2ª clínica que cadastra o próprio número
     // resolve para a config dela. Não há guarda por TWILIO_FROM_NUMBER aqui porque
     // esse env é o número de WhatsApp, não o DID de SMS/voz da clínica.
+
+    // ── Opt-out TCPA por palavra-chave (STOP/PARAR/SAIR...) ────────────────
+    // Checado ANTES do silêncio de atendimento humano: o opt-out precisa ser
+    // honrado sempre. Distinto do "falar com atendente": aqui o paciente pede
+    // para NÃO receber mais SMS. Registra o opt-out do canal em patient_consents
+    // (se for paciente conhecido, para o dunning/Clara respeitarem) e confirma.
+    if (isSmsStopKeyword(incomingMessage)) {
+      const locale = await resolveChatLocaleByPhone(fromNumber, effectiveClinicId);
+      const confirm = locale.startsWith("pt")
+        ? "Pronto, você não receberá mais mensagens SMS desta clínica."
+        : "You have been unsubscribed and will no longer receive SMS from this clinic.";
+
+      if (effectiveClinicId) {
+        const { data: pat } = await supabase
+          .from("patients")
+          .select("id")
+          .eq("clinic_id", effectiveClinicId)
+          .eq("phone", fromNumber)
+          .maybeSingle();
+        if (pat?.id) {
+          await recordChannelConsent(
+            {
+              clinicId: effectiveClinicId,
+              patientId: pat.id as string,
+              channel: "sms",
+              granted: false,
+              source: "sms_keyword",
+            },
+            supabase,
+          ).catch((e) => log.error("record sms opt-out failed", e));
+        }
+      }
+
+      const updatedMessages: ChatMessage[] = [
+        ...history,
+        { role: "user", content: incomingMessage },
+        { role: "assistant", content: confirm },
+      ];
+      await saveConversation(supabase, conversationKey, convId, updatedMessages, effectiveClinicId, "sms");
+      await supabase
+        .from("whatsapp_conversations")
+        .update({ bot_disabled: true, ai_paused: true })
+        .eq("phone", conversationKey)
+        .then(() => {}, () => {});
+      return new NextResponse(twimlMessage(confirm), {
+        status: 200,
+        headers: { "Content-Type": "text/xml" },
+      });
+    }
 
     // Passagem de bastão: IA pausada OU humano respondeu há menos de 24h.
     // Salva a mensagem do paciente e não responde.

@@ -17,6 +17,8 @@
   "state": "Estado",
   "consentData": "Autorizo o tratamento dos meus dados pessoais e de saúde pela clínica para fins de atendimento, conforme a Política de Privacidade.",
   "consentAnalytics": "Autorizo o uso dos meus dados de forma anonimizada e agregada para estudos e estatísticas, sem que eu seja identificado.",
+  "consentWhatsapp": "Aceito receber mensagens da clínica por WhatsApp (lembretes e atendimento). Opcional.",
+  "consentSms": "Aceito receber mensagens de texto (SMS) da clínica. Opcional. Podem incidir tarifas de mensagem e dados. Responda PARAR para sair.",
   "submit": "Concluir cadastro",
   "submitting": "Enviando…",
   "privacyNote": "Seus dados são protegidos conforme a LGPD. O uso para estatísticas é opcional, anonimizado e pode ser revogado a qualquer momento.",

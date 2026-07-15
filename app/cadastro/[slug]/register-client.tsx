@@ -161,6 +161,14 @@ export function RegisterClient({
               <input type="checkbox" name="consent_analytics" className="mt-[2px] h-[15px] w-[15px] accent-[#0F6E56]" />
               <span className="text-[12px] text-[#6B6A66] leading-relaxed">{t("consentAnalytics")}</span>
             </label>
+            <label className="flex items-start gap-[9px] cursor-pointer">
+              <input type="checkbox" name="consent_whatsapp" className="mt-[2px] h-[15px] w-[15px] accent-[#0F6E56]" />
+              <span className="text-[12px] text-[#6B6A66] leading-relaxed">{t("consentWhatsapp")}</span>
+            </label>
+            <label className="flex items-start gap-[9px] cursor-pointer">
+              <input type="checkbox" name="consent_sms" className="mt-[2px] h-[15px] w-[15px] accent-[#0F6E56]" />
+              <span className="text-[12px] text-[#6B6A66] leading-relaxed">{t("consentSms")}</span>
+            </label>
           </section>
 
           {error && (

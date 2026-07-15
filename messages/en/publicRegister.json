@@ -17,6 +17,8 @@
   "state": "State",
   "consentData": "I authorize the clinic to process my personal and health data for care purposes, in accordance with the Privacy Policy.",
   "consentAnalytics": "I authorize the use of my data in anonymized and aggregated form for studies and statistics, without being identified.",
+  "consentWhatsapp": "I agree to receive messages from the clinic via WhatsApp (reminders and support). Optional.",
+  "consentSms": "I agree to receive text messages (SMS) from the clinic. Optional. Message and data rates may apply. Reply STOP to opt out.",
   "submit": "Complete registration",
   "submitting": "Submitting…",
   "privacyNote": "Your data is protected under data protection law. Use for statistics is optional, anonymized and can be revoked at any time.",
