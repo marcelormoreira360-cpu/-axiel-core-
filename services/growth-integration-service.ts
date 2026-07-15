@@ -19,7 +19,9 @@ export type GrowthLeadPayload = {
   stage?: string;          // captured|cold|warm|hot|scheduled|patient
   interest?: string;
   interest_area?: string;  // fechado e não clínico: energy|sleep|stress|performance|general
-  pain?: string;           // legado — Growth não envia mais (blindagem de PHI, Lex 2026-07-14)
+  // `pain` (queixa clínica em texto livre) foi REMOVIDO: o Growth parou de enviar
+  // (migration 0023, parecer Lex 2026-07-14) e o Core deixa de aceitá-lo aqui,
+  // fechando o vazamento de PHI também na borda do hand-off (defense-in-depth).
   source_platform?: string;
   consent?: { granted?: boolean; text?: string; at?: string };
 };
@@ -165,7 +167,6 @@ export async function upsertGrowthLead(
     growth_stage: payload.stage ?? null,
     interest: payload.interest ?? null,
     interest_area: interestArea,
-    pain: payload.pain ?? null,
     source_platform: payload.source_platform ?? null,
     score_at_handoff: score,
     consent: payload.consent ?? null,
@@ -175,7 +176,6 @@ export async function upsertGrowthLead(
     "Lead recebido do AXIEL Growth.",
     interestArea ? `Área de interesse: ${INTEREST_AREA_LABELS_PT[interestArea]}` : null,
     payload.interest ? `Interesse: ${payload.interest}` : null,
-    payload.pain ? `Queixa/dor: ${payload.pain}` : null,
     payload.source_platform ? `Plataforma: ${payload.source_platform}` : null,
     `Score no handoff: ${score}`,
   ].filter(Boolean);
@@ -190,7 +190,6 @@ export async function upsertGrowthLead(
     stage,
     score,
     interest_area: interestArea,
-    main_complaint: payload.pain ?? null,
     notes,
     warming_context,
     updated_at: new Date().toISOString(),
