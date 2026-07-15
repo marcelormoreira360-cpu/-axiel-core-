@@ -18,10 +18,30 @@ export type GrowthLeadPayload = {
   score?: number;
   stage?: string;          // captured|cold|warm|hot|scheduled|patient
   interest?: string;
-  pain?: string;
+  interest_area?: string;  // fechado e não clínico: energy|sleep|stress|performance|general
+  pain?: string;           // legado — Growth não envia mais (blindagem de PHI, Lex 2026-07-14)
   source_platform?: string;
   consent?: { granted?: boolean; text?: string; at?: string };
 };
+
+// Área de interesse fechada aceita do Growth (espelha o CHECK da migration 131).
+// Qualquer valor fora da lista é descartado (vira null) — nunca persistimos texto
+// livre não clínico arbitrário vindo do payload.
+const INTEREST_AREAS = ["energy", "sleep", "stress", "performance", "general"] as const;
+type InterestArea = (typeof INTEREST_AREAS)[number];
+
+const INTEREST_AREA_LABELS_PT: Record<InterestArea, string> = {
+  energy: "Energia",
+  sleep: "Sono",
+  stress: "Estresse",
+  performance: "Performance",
+  general: "Geral",
+};
+
+function sanitizeInterestArea(value?: string): InterestArea | null {
+  const v = (value ?? "").trim().toLowerCase();
+  return (INTEREST_AREAS as readonly string[]).includes(v) ? (v as InterestArea) : null;
+}
 
 export type IntegrationKeyRow = {
   id: string;
@@ -139,10 +159,12 @@ export async function upsertGrowthLead(
   const email = (payload.email ?? "").trim() || null;
   const stage = mapStage(payload.stage);
   const score = Math.max(0, Math.min(100, Math.round(payload.score ?? 0)));
+  const interestArea = sanitizeInterestArea(payload.interest_area);
 
   const warming_context = {
     growth_stage: payload.stage ?? null,
     interest: payload.interest ?? null,
+    interest_area: interestArea,
     pain: payload.pain ?? null,
     source_platform: payload.source_platform ?? null,
     score_at_handoff: score,
@@ -151,6 +173,7 @@ export async function upsertGrowthLead(
 
   const notesParts = [
     "Lead recebido do AXIEL Growth.",
+    interestArea ? `Área de interesse: ${INTEREST_AREA_LABELS_PT[interestArea]}` : null,
     payload.interest ? `Interesse: ${payload.interest}` : null,
     payload.pain ? `Queixa/dor: ${payload.pain}` : null,
     payload.source_platform ? `Plataforma: ${payload.source_platform}` : null,
@@ -166,6 +189,7 @@ export async function upsertGrowthLead(
     source: "axiel_growth" as const,
     stage,
     score,
+    interest_area: interestArea,
     main_complaint: payload.pain ?? null,
     notes,
     warming_context,
