@@ -12,12 +12,23 @@ import { isOptOutRequest } from "@/lib/whatsapp-optout";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 import { sendInstagramText } from "@/lib/instagram-api";
+import { parseImageMarker } from "@/lib/image-marker";
+import { enqueueOutboundMedia } from "@/services/outbound-media-service";
 
 export const runtime = "nodejs";
 // > que o AbortSignal de 15s das chamadas OpenAI (fallback gracioso antes do teto).
 export const maxDuration = 20;
 
 const log = createLogger("instagram");
+
+// Envio de imagem no DM (item 6 Fase 1). DORMENTE por padrão: só ativa com
+// META_IG_IMAGE_ENABLED=true. Requer o cron do worker de mídia rodando em
+// frequência alta (plano Pro) para a imagem não chegar com atraso do cron.
+const IG_IMAGE_ENABLED = process.env.META_IG_IMAGE_ENABLED === "true";
+
+// Regra injetada no prompt só quando habilitado: a Clara pode pedir UMA imagem.
+const IG_IMAGE_RULE =
+  "\n\nIMAGEM (opcional): quando fizer sentido mostrar um visual de apoio (ex.: um cartão de boas-vindas), inclua no FINAL da resposta, no máximo uma vez, o marcador [[IMG: descrição objetiva da imagem]]. Use com parcimônia. NUNCA para conteúdo clínico, diagnóstico, resultado de exame ou promessa de cura. O marcador é removido antes de enviar ao paciente.";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -374,7 +385,9 @@ export async function POST(req: NextRequest) {
         // langNote E os templates saiam no idioma certo.
         const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
         const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
-        const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
+        const systemPrompt =
+          buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE +
+          (IG_IMAGE_ENABLED ? IG_IMAGE_RULE : "");
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         let finalReply = reply;
@@ -383,13 +396,30 @@ export async function POST(req: NextRequest) {
           finalReply = tReply("autoReply.fallback");
         }
 
+        // Marcador de imagem: quando habilitado, separa o texto do prompt de
+        // imagem. Sem o flag, envia o texto como está (nunca vaza o marcador).
+        const parsed = IG_IMAGE_ENABLED ? parseImageMarker(finalReply) : { text: finalReply, prompt: null };
+        const textOut = parsed.text.trim();
+        const willSendImage = IG_IMAGE_ENABLED && !!parsed.prompt;
+        const replyText = textOut || (willSendImage ? "" : finalReply);
+
         await saveHistory(supabase, senderId, convId, [
           ...history,
           { role: "user", content: messageText },
-          { role: "assistant", content: finalReply },
+          { role: "assistant", content: replyText || "[imagem]" },
         ], clinicId);
 
-        await sendInstagramText(senderId, finalReply, igAccountId);
+        if (replyText) await sendInstagramText(senderId, replyText, igAccountId);
+        if (willSendImage) {
+          await enqueueOutboundMedia({
+            clinicId,
+            channel: "instagram",
+            recipientId: senderId,
+            igAccountId,
+            conversationKey: `ig_${senderId}`,
+            generatePrompt: parsed.prompt,
+          }).catch((e) => log.error("enqueue image failed", e));
+        }
       }
     }
 
