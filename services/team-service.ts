@@ -167,8 +167,15 @@ export async function inviteTeamMember(
         </div>
       `,
     });
-  } catch {
-    // Email failure is non-fatal — invite is already in the DB
+  } catch (e) {
+    // Email failure is non-fatal (invite is already in the DB), mas nao pode
+    // ser silencioso: sem log, um remetente sandbox/dominio nao verificado ou
+    // key invalida faz o convidado nunca receber o e-mail sem nenhum sinal.
+    console.error("[invite] envio do e-mail de convite falhou", {
+      clinicId,
+      email,
+      error: e instanceof Error ? e.message : String(e),
+    });
   }
 }
 
