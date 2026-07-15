@@ -11,6 +11,7 @@ import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 import { isOptOutRequest } from "@/lib/whatsapp-optout";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
+import { sendInstagramText } from "@/lib/instagram-api";
 
 export const runtime = "nodejs";
 // > que o AbortSignal de 15s das chamadas OpenAI (fallback gracioso antes do teto).
@@ -168,38 +169,8 @@ async function autoCreateLead(
 
 // ─── Send reply via Instagram Graph API ──────────────────────────────────────
 
-// Token de envio por conta de Instagram: cada conta tem o seu (cada uma gera o
-// próprio token no painel). Env por conta: META_INSTAGRAM_TOKEN_<igAccountId>.
-// Cai para META_INSTAGRAM_TOKEN (conta principal @jifwcenter) se não houver específico.
-function getInstagramToken(igAccountId: string): string {
-  const token = process.env[`META_INSTAGRAM_TOKEN_${igAccountId}`] || process.env.META_INSTAGRAM_TOKEN;
-  if (!token) throw new Error("META_INSTAGRAM_TOKEN not set");
-  return token;
-}
-
-async function sendInstagramReply(recipientId: string, text: string, igAccountId: string): Promise<void> {
-  const token = getInstagramToken(igAccountId);
-
-  // Instagram com login próprio (instagram_business_*) envia por graph.instagram.com,
-  // não por graph.facebook.com (token do IG dá "Cannot parse access token" no host do FB).
-  const res = await fetch("https://graph.instagram.com/v21.0/me/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      recipient: { id: recipientId },
-      message: { text },
-    }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json();
-    log.error("send error", { detail: JSON.stringify(err) });
-    throw new Error(`Instagram API error: ${res.status}`);
-  }
-}
+// Envio de texto/imagem extraido para lib/instagram-api (reusado pelo worker de
+// midia). Token por conta: META_INSTAGRAM_TOKEN_<igAccountId>, com fallback global.
 
 // ─── AI reply ────────────────────────────────────────────────────────────────
 
@@ -385,7 +356,7 @@ export async function POST(req: NextRequest) {
             .update({ bot_disabled: true, ai_paused: true })
             .eq("phone", `ig_${senderId}`)
             .then(() => {}, () => {});
-          await sendInstagramReply(senderId, handover, igAccountId);
+          await sendInstagramText(senderId, handover, igAccountId);
           continue;
         }
 
@@ -418,7 +389,7 @@ export async function POST(req: NextRequest) {
           { role: "assistant", content: finalReply },
         ], clinicId);
 
-        await sendInstagramReply(senderId, finalReply, igAccountId);
+        await sendInstagramText(senderId, finalReply, igAccountId);
       }
     }
 
