@@ -51,6 +51,8 @@ export async function submitSelfRegistrationAction(
   // Consentimentos
   const consentData = formData.get("consent_data") === "on";
   const consentAnalytics = formData.get("consent_analytics") === "on";
+  const consentWhatsapp = formData.get("consent_whatsapp") === "on";
+  const consentSms = formData.get("consent_sms") === "on";
 
   // ── Validação ──
   if (!fullName) return { error: "Informe seu nome completo." };
@@ -62,6 +64,10 @@ export async function submitSelfRegistrationAction(
   }
 
   const phone = phoneRaw ? phoneRaw.replace(/\D/g, "") || phoneRaw : null;
+  // Opt-in de SMS (TCPA) exige um telefone.
+  if (consentSms && !phone) {
+    return { error: "Informe um telefone para receber mensagens SMS." };
+  }
   const supabase = createSupabaseAdminClient();
 
   // ── Find-or-create (dedup por e-mail e, se houver, telefone) ──
@@ -151,8 +157,25 @@ export async function submitSelfRegistrationAction(
       source: "onboarding",
     },
   ];
+  // Opt-in por canal (ver services/channel-consent-service): grava só o que foi
+  // marcado, como prova de opt-in (TCPA/HIPAA). consent_type = channel_<canal>.
+  const channelConsentRows = [
+    consentWhatsapp ? "channel_whatsapp" : null,
+    consentSms ? "channel_sms" : null,
+  ]
+    .filter((t): t is string => t !== null)
+    .map((consent_type) => ({
+      clinic_id: clinicId,
+      patient_id: patientId,
+      consent_type,
+      granted: true,
+      ip_address: ip,
+      user_agent: ua,
+      source: "onboarding",
+    }));
+
   // Best-effort: cadastro não deve falhar se o log de consentimento falhar
-  await supabase.from("patient_consents").insert(consentRows);
+  await supabase.from("patient_consents").insert([...consentRows, ...channelConsentRows]);
 
   return { success: true };
 }
