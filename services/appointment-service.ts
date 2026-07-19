@@ -2,6 +2,12 @@ import { createHash, randomBytes } from "crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
+import { generateSlots, dayOfWeekFromDate } from "@/lib/booking-utils";
+import { getClinicTimezone } from "@/services/clinic-service";
+import { normalizePhoneDigits } from "@/lib/phone";
+import { scheduleAutomations } from "@/services/automation-service";
+import { detectLanguage } from "@/lib/whatsapp-lang";
+import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
 const log = createLogger("appointment-service");
 
@@ -561,5 +567,523 @@ async function sendConfirmationSideEffect(appt: Appointment) {
     clinicName: clinic?.name ?? "nossa clínica",
     startsAt: appt.starts_at,
     durationMinutes: appt.duration_minutes,
+  });
+}
+
+// ── Booking público (contexto sem sessão: site e voz) ──────────────────────────
+// Estas duas funções concentram a lógica de disponibilidade e criação de
+// agendamento que antes vivia inline nas rotas /api/book. Usam admin client
+// (sem auth.getUser) para servir tanto o site quanto o canal de voz (Vapi).
+
+type GetAvailableSlotsResult =
+  | { ok: true; slots: { time: string; iso: string }[]; timezone: string }
+  | { ok: false; error: string; code: string };
+
+/**
+ * Disponibilidade pública de horários para um dia/tipo de sessão. Espelho 1:1
+ * do GET /api/book/[slug]/slots: resolve clínica ativa, lê timezone canônico do
+ * clinic_settings (fallback Brasília), calcula os limites UTC do dia local pelo
+ * método probe+offset, gera os slots e filtra os que já passaram. Devolve também
+ * o timezone usado para quem precisar formatar a saída (ex.: voz).
+ */
+export async function getAvailableSlots(opts: {
+  slug: string;
+  date: string;
+  sessionTypeId: string;
+  practitionerId?: string | null;
+}): Promise<GetAvailableSlotsResult> {
+  const { slug, date, sessionTypeId } = opts;
+  const practitionerId = opts.practitionerId ?? null;
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select("id")
+    .eq("slug", slug)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!clinic) return { ok: false, error: "Clínica não encontrada.", code: "CLINIC_NOT_FOUND" };
+
+  // Fetch timezone from clinic_settings (fall back to Brasília if not set)
+  const { data: clinicSettings } = await supabase
+    .from("clinic_settings")
+    .select("timezone, settings")
+    .eq("clinic_id", clinic.id)
+    .maybeSingle();
+
+  // Coluna `timezone` é a canônica (é o que /settings/regional grava);
+  // o JSONB settings.timezone é legado e fica como fallback.
+  const timezone: string =
+    (clinicSettings?.timezone as string | null)
+    ?? ((clinicSettings?.settings as Record<string, unknown> | null)?.timezone as string | undefined)
+    ?? "America/Sao_Paulo";
+
+  // Compute UTC boundaries for the requested wall-clock date in the clinic's TZ.
+  // This ensures we capture all appointments that fall within that local day,
+  // even when the clinic TZ is behind UTC (e.g. UTC-3 local midnight = UTC 03:00).
+  const [year, month, day] = date.split("-").map(Number);
+  // 00:00 and 23:59:59 wall-clock → UTC
+  const probe00 = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+  const probe23 = new Date(Date.UTC(year, month - 1, day, 23, 59, 59));
+  const getOffset = (probe: Date) => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: timezone,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+      hour12: false,
+    }).formatToParts(probe);
+    const g = (t: string) => Number(parts.find((p) => p.type === t)!.value);
+    return probe.getTime() - Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"), g("second"));
+  };
+  const dayStartUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + getOffset(probe00)).toISOString();
+  const dayEndUTC   = new Date(Date.UTC(year, month - 1, day, 23, 59, 59) + getOffset(probe23)).toISOString();
+
+  let bookedQuery = supabase
+    .from("appointments")
+    .select("starts_at")
+    .eq("clinic_id", clinic.id)
+    .not("status", "in", '("cancelled","no_show")')  // A-04: exclude cancelled slots
+    .gte("starts_at", dayStartUTC)
+    .lte("starts_at", dayEndUTC);
+
+  if (practitionerId) {
+    bookedQuery = bookedQuery.eq("practitioner_id", practitionerId);
+  }
+
+  const [{ data: sessionType }, { data: wh }, { data: booked }] = await Promise.all([
+    supabase.from("session_types").select("duration_minutes").eq("id", sessionTypeId).eq("clinic_id", clinic.id).maybeSingle(),
+    supabase.from("working_hours").select("opens_at, closes_at, is_open").eq("clinic_id", clinic.id).eq("day_of_week", dayOfWeekFromDate(date)).maybeSingle(),
+    bookedQuery,
+  ]);
+
+  if (!sessionType) return { ok: false, error: "Tipo de sessão não encontrado.", code: "SESSION_TYPE_NOT_FOUND" };
+
+  // Default hours if not configured
+  const opensAt  = wh?.opens_at  ?? "09:00";
+  const closesAt = wh?.closes_at ?? "17:00";
+  const isOpen   = wh?.is_open   ?? (dayOfWeekFromDate(date) !== 0 && dayOfWeekFromDate(date) !== 6);
+
+  // Dia fechado: sem horários (não é erro)
+  if (!isOpen) return { ok: true, slots: [], timezone };
+
+  const slots = generateSlots(
+    date,
+    opensAt,
+    closesAt,
+    sessionType.duration_minutes,
+    (booked ?? []).map((a) => a.starts_at),
+    timezone,
+  );
+
+  // Filter out past slots — slot.iso is now a proper UTC ISO so comparison with
+  // `new Date()` (also UTC) correctly reflects the clinic's local wall-clock time.
+  const now = new Date();
+  const futureSlots = slots.filter((s) => new Date(s.iso) > now);
+
+  return { ok: true, slots: futureSlots, timezone };
+}
+
+type CreatePublicBookingResult =
+  | { ok: true; appointment_id: string; is_online: boolean; zoom_join_url: string | null }
+  | { ok: false; error: string; code: string; status: number };
+
+/**
+ * Criação pública de agendamento. Espelho 1:1 do miolo do POST /api/book/[slug]:
+ * resolve clínica, timezone, tipo de sessão, checa conflito de horário, faz
+ * find/create do paciente (SEC-05/BUG-01), insere o agendamento e dispara TODOS
+ * os side-effects fire-and-forget (questionários, Zoom, confirmação WhatsApp,
+ * automações, push e e-mail Zoom) exatamente como antes.
+ *
+ * `source` default "website" (site) — o canal de voz passa "direct".
+ * `locale` vem por parâmetro (o site passa o do cookie AXIEL_LOCALE).
+ */
+export async function createPublicBooking(input: {
+  slug: string;
+  session_type_id: string;
+  starts_at: string;
+  full_name: string;
+  phone: string;
+  email?: string | null;
+  notes?: string | null;
+  practitioner_id?: string | null;
+  locale?: string | null;
+  source?: AppointmentSource;
+}): Promise<CreatePublicBookingResult> {
+  const {
+    slug,
+    session_type_id,
+    starts_at,
+    full_name,
+    phone,
+  } = input;
+  const email = input.email ?? null;
+  const notes = input.notes ?? null;
+  const practitioner_id = input.practitioner_id ?? null;
+  const bookingLocale = input.locale ?? null;
+  const source: AppointmentSource = input.source ?? "website";
+  const isEn = bookingLocale === "en";
+
+  const supabase = createSupabaseAdminClient();
+
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select("id, name")
+    .eq("slug", slug)
+    .eq("status", "active")
+    .maybeSingle();
+
+  if (!clinic) return { ok: false, error: "Clínica não encontrada.", code: "CLINIC_NOT_FOUND", status: 404 };
+
+  // Horários exibidos ao paciente sempre no fuso da clínica (o servidor roda em UTC)
+  const clinicTz = await getClinicTimezone(clinic.id);
+
+  // Fetch is_online alongside other session type fields
+  const { data: sessionType } = await supabase
+    .from("session_types")
+    .select("id, name, duration_minutes, is_online")
+    .eq("id", session_type_id)
+    .eq("clinic_id", clinic.id)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (!sessionType) return { ok: false, error: "Tipo de sessão não encontrado.", code: "SESSION_TYPE_NOT_FOUND", status: 404 };
+
+  // Slot pode ter sido tomado entre o carregamento da página e o submit
+  if (await hasAppointmentConflict({
+    clinic_id: clinic.id,
+    starts_at,
+    duration_minutes: sessionType.duration_minutes,
+    practitioner_id: practitioner_id || null,
+  })) {
+    return { ok: false, error: "Este horário acabou de ser reservado. Escolha outro.", code: "SLOT_TAKEN", status: 409 };
+  }
+
+  // Find or create patient
+  const normalizedPhone = normalizePhoneDigits(phone) ?? phone.replace(/\D/g, "");
+  let patientId: string;
+
+  // BUG-01: separate .eq() calls to avoid PostgREST filter injection
+  // SEC-05: fetch existing email so we only update if the field was empty
+  const { data: existing } = await supabase
+    .from("patients")
+    .select("id, email, locale")
+    .eq("clinic_id", clinic.id)
+    .eq("phone", normalizedPhone)
+    .maybeSingle();
+
+  let existingByEmail: { id: string; email: string | null; locale: string | null } | null = null;
+  if (!existing && email) {
+    const { data } = await supabase
+      .from("patients")
+      .select("id, email, locale")
+      .eq("clinic_id", clinic.id)
+      .eq("email", email)
+      .maybeSingle();
+    existingByEmail = data ?? null;
+  }
+
+  const existingPatient = existing ?? existingByEmail;
+
+  if (existingPatient) {
+    patientId = existingPatient.id;
+    // SEC-05: only enrich record if fields were previously empty
+    const updates: Record<string, string> = {};
+    if (email && !existingPatient.email) updates.email = email;
+    if (bookingLocale && !existingPatient.locale) updates.locale = bookingLocale;
+    if (Object.keys(updates).length > 0) {
+      await supabase.from("patients").update(updates).eq("id", patientId);
+    }
+  } else {
+    const { data: newPatient, error: patientError } = await supabase
+      .from("patients")
+      .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active", locale: bookingLocale })
+      .select("id")
+      .single();
+    if (patientError) return { ok: false, error: "Erro ao registrar paciente.", code: "PATIENT_ERROR", status: 500 };
+    patientId = newPatient.id;
+  }
+
+  // Create appointment
+  const { data: appointment, error: apptError } = await supabase
+    .from("appointments")
+    .insert({
+      clinic_id: clinic.id,
+      patient_id: patientId,
+      session_type_id,
+      starts_at,
+      duration_minutes: sessionType.duration_minutes,
+      source,
+      notes: notes || null,
+      practitioner_id: practitioner_id || null,
+    })
+    .select("id, clinic_id, patient_id, starts_at")
+    .single();
+
+  if (apptError) return { ok: false, error: "Erro ao criar agendamento.", code: "APPT_ERROR", status: 500 };
+
+  // Questionários automáticos na 1ª sessão (fire-and-forget; usa admin client)
+  import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
+    sendOnboardingAssessments({ id: appointment.id, clinic_id: appointment.clinic_id, patient_id: appointment.patient_id }).catch(() => {})
+  );
+
+  // ── Zoom meeting (non-blocking) ─────────────────────────────────────────────
+  // If the session type is online, create a Zoom meeting and store the URLs.
+  // The join_url is returned to the patient so the booking page can display it.
+  let zoomJoinUrl: string | null = null;
+
+  if (sessionType.is_online) {
+    try {
+      const { createZoomMeeting } = await import("@/services/zoom-service");
+      const firstName = full_name.split(" ")[0];
+      const meeting = await createZoomMeeting(clinic.id, {
+        topic:           `${sessionType.name} — ${full_name}`,
+        startIso:        starts_at,
+        durationMinutes: sessionType.duration_minutes,
+        autoRecord:      true,
+      });
+
+      if (meeting) {
+        zoomJoinUrl = meeting.join_url;
+        await supabase.from("appointments").update({
+          zoom_meeting_id: meeting.meeting_id,
+          zoom_join_url:   meeting.join_url,
+          zoom_start_url:  meeting.start_url,
+        }).eq("id", appointment.id);
+
+        log.info("Zoom meeting created for booking", {
+          appointment_id: appointment.id,
+          clinic_id: clinic.id,
+          meeting_id: meeting.meeting_id,
+        });
+
+        // Send email with Zoom link if patient provided an email
+        if (email) {
+          sendZoomConfirmationEmail({
+            to: email,
+            firstName,
+            clinicName: clinic.name as string,
+            sessionName: sessionType.name,
+            startsAt: starts_at,
+            timeZone: clinicTz,
+            joinUrl: meeting.join_url,
+            locale: bookingLocale,
+          }).catch((e) => log.error("Zoom email failed", e as Error, { appointment_id: appointment.id }));
+        }
+      }
+    } catch (e) {
+      // Non-blocking — appointment was already created; Zoom failure is logged but not fatal
+      log.error("Zoom meeting creation failed for booking", e as Error, {
+        appointment_id: appointment.id,
+        clinic_id: clinic.id,
+      });
+    }
+  }
+
+  // ── WhatsApp confirmation via Meta template ─────────────────────────────────
+  try {
+    const metaToken = process.env.META_WHATSAPP_TOKEN;
+    const phoneNumberId = process.env.META_PHONE_NUMBER_ID;
+    if (metaToken && phoneNumberId) {
+      const metaPhone = normalizedPhone.replace(/^\+/, "");
+
+      const { data: conv } = await supabase
+        .from("whatsapp_conversations")
+        .select("messages")
+        .eq("phone", metaPhone)
+        .maybeSingle();
+      const history = (conv?.messages as Array<{ role: string; content: string }> | null) ?? [];
+      const lang = detectLanguage(history, "");
+
+      const date = new Date(starts_at);
+      const firstName = full_name.split(" ")[0];
+
+      let templateName: string;
+      let langCode: string;
+      let dateTimeStr: string;
+
+      if (lang === "en") {
+        templateName = "booking_confirmation_en";
+        langCode = "en_US";
+        const dateStr = date.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", timeZone: clinicTz });
+        const timeStr = date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: clinicTz });
+        dateTimeStr = `${dateStr} at ${timeStr}`;
+      } else {
+        templateName = "confirmacao_agendamento";
+        langCode = "pt_BR";
+        const dateStr = date.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: clinicTz });
+        const timeStr = date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: clinicTz });
+        dateTimeStr = `${dateStr} às ${timeStr}`;
+      }
+
+      const res = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${metaToken}` },
+        signal: AbortSignal.timeout(15_000),
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: metaPhone,
+          type: "template",
+          template: {
+            name: templateName,
+            language: { code: langCode },
+            components: [{
+              type: "body",
+              parameters: [
+                { type: "text", text: firstName },
+                { type: "text", text: dateTimeStr },
+                { type: "text", text: sessionType.name },
+              ],
+            }],
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        log.warn("WhatsApp template failed", { error: JSON.stringify(err), phone: normalizedPhone.slice(-4) });
+      }
+
+      // If online session and we have a Zoom link, send it as a follow-up text message.
+      // This works because the patient just initiated contact via the booking page
+      // and the 24h window is open (or we're in a session flow).
+      if (zoomJoinUrl) {
+        const linkMsg = lang === "en"
+          ? `🖥️ Your session will be online. Join here:\n${zoomJoinUrl}`
+          : `🖥️ Sua sessão será online. Entre pela reunião:\n${zoomJoinUrl}`;
+
+        await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${metaToken}` },
+          signal: AbortSignal.timeout(10_000),
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            to: metaPhone,
+            type: "text",
+            text: { body: linkMsg },
+          }),
+        }).catch((e) => log.warn("Zoom WhatsApp link send failed", { error: String(e) }));
+      }
+    }
+  } catch (e) {
+    log.error("WhatsApp confirmation exception", e as Error, { appointment_id: appointment.id });
+  }
+
+  // Schedule automations (non-blocking)
+  scheduleAutomations(appointment).catch(() => {});
+
+  // Push notification to clinic staff — new online booking (non-blocking)
+  const apptDate = new Date(starts_at).toLocaleString("pt-BR", {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: clinicTz,
+  });
+  // Data no idioma do paciente para o push dele (staff continua pt)
+  const patientApptDate = new Date(starts_at).toLocaleString(isEn ? "en-US" : "pt-BR", {
+    weekday: "short", day: "numeric", month: "short",
+    hour: "2-digit", minute: "2-digit",
+    timeZone: clinicTz,
+  });
+  import("@/services/push-service").then(({ sendPushToClinic, sendPushToPatient }) =>
+    Promise.allSettled([
+      sendPushToClinic(clinic.id, {
+        title: "Novo agendamento",
+        body:  `${full_name} · ${sessionType.name} · ${apptDate}`,
+        url:   "/schedule",
+        tag:   `booking-${appointment.id}`,
+      }),
+      // Notify the patient on their device
+      sendPushToPatient(patientId, {
+        title: isEn ? "Session confirmed ✓" : "Sessão confirmada ✓",
+        body:  `${sessionType.name} · ${patientApptDate}`,
+        tag:   `booking-confirm-${appointment.id}`,
+      }),
+    ])
+  ).catch(() => {});
+
+  return {
+    ok: true,
+    appointment_id: appointment.id,
+    is_online: sessionType.is_online ?? false,
+    zoom_join_url: zoomJoinUrl,
+  };
+}
+
+// ── Zoom confirmation email ───────────────────────────────────────────────────
+// Usado só por createPublicBooking (movido de app/api/book/[slug]/route.ts).
+
+async function sendZoomConfirmationEmail(opts: {
+  to: string;
+  firstName: string;
+  clinicName: string;
+  sessionName: string;
+  startsAt: string;
+  joinUrl: string;
+  timeZone: string;
+  locale?: string | null;
+}) {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const isEn = opts.locale === "en";
+  const dateLocale = isEn ? "en-US" : "pt-BR";
+  const date = new Date(opts.startsAt);
+  const dateStr = date.toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: opts.timeZone });
+  const timeStr = date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: opts.timeZone });
+
+  const s = isEn
+    ? {
+        subject: `Your online session link — ${opts.clinicName}`,
+        heading: "Online session confirmed 🖥️",
+        intro: `Hi, ${opts.firstName}! Your <strong>${opts.sessionName}</strong> session
+          with <strong>${opts.clinicName}</strong> has been confirmed.`,
+        dateLabel: "DATE AND TIME",
+        dateTime: `${dateStr} at ${timeStr}`,
+        button: "Join Zoom meeting",
+        directAccess: "Or open the link directly:",
+        sentBy: `Sent by ${opts.clinicName} via AXIEL Core`,
+      }
+    : {
+        subject: `Link da sua sessão online — ${opts.clinicName}`,
+        heading: "Sessão online confirmada 🖥️",
+        intro: `Olá, ${opts.firstName}! Sua sessão de <strong>${opts.sessionName}</strong>
+          com <strong>${opts.clinicName}</strong> foi confirmada.`,
+        dateLabel: "DATA E HORA",
+        dateTime: `${dateStr} às ${timeStr}`,
+        button: "Entrar na reunião Zoom",
+        directAccess: "Ou acesse diretamente:",
+        sentBy: `Enviado por ${opts.clinicName} via AXIEL Core`,
+      };
+
+  await resend.emails.send({
+    from: DEFAULT_FROM_EMAIL,
+    to: opts.to,
+    subject: s.subject,
+    html: `
+      <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:32px 24px;color:#0F1A2E">
+        <h2 style="font-size:20px;font-weight:700;margin:0 0 8px">${s.heading}</h2>
+        <p style="margin:0 0 16px;color:#6B6A66;font-size:14px">
+          ${s.intro}
+        </p>
+        <div style="background:#F4F3EF;border-radius:10px;padding:16px 20px;margin-bottom:24px">
+          <p style="margin:0 0 4px;font-size:13px;color:#A09E98;font-weight:600;text-transform:uppercase;letter-spacing:.05em">${s.dateLabel}</p>
+          <p style="margin:0;font-size:16px;font-weight:600">${s.dateTime}</p>
+        </div>
+        <a href="${opts.joinUrl}"
+           style="display:inline-block;background:#0F6E56;color:#fff;font-weight:600;font-size:15px;
+                  padding:12px 28px;border-radius:8px;text-decoration:none;margin-bottom:20px">
+          ${s.button}
+        </a>
+        <p style="font-size:12px;color:#A09E98;margin:0">
+          ${s.directAccess}<br>
+          <a href="${opts.joinUrl}" style="color:#0F6E56;word-break:break-all">${opts.joinUrl}</a>
+        </p>
+        <hr style="border:none;border-top:1px solid #E8E6E2;margin:24px 0">
+        <p style="font-size:11px;color:#A09E98;margin:0">
+          ${s.sentBy} · <a href="${APP_URL}" style="color:#A09E98">${APP_URL}</a>
+        </p>
+      </div>
+    `,
   });
 }
