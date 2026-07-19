@@ -40,6 +40,8 @@ const publicPrefixes = [
   "/api/auth",         // accept-invite (called right after signup, no session yet)
   "/api/whatsapp",
   "/api/meta",
+  "/api/voice",        // Twilio voice webhook (valida assinatura; sem sessão)
+  "/api/sms",          // Twilio SMS webhook (valida assinatura; sem sessão)
   "/api/integrations/growth",          // AXIEL Growth webhook (Bearer key auth, no session)
   "/api/book",                         // public booking slots API
   "/api/forms/submit",                 // questionário público (autenticado pelo token do convite)
