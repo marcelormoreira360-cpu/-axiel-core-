@@ -11,10 +11,10 @@
 export const CONTACT_CLINIC_NAME = "Integrative & Functional Wellness Center";
 
 /** Telefone em dígitos (para link tel:). A copy exibe o número formatado. */
-export const CONTACT_PHONE_DIGITS = "4079235710";
+export const CONTACT_PHONE_DIGITS = "6892803705";
 
 /** Número formatado exibido ao respondente. */
-export const CONTACT_PHONE_DISPLAY = "(407) 923-5710";
+export const CONTACT_PHONE_DISPLAY = "(689) 280-3705";
 
 /** Site público de contato. */
 export const CONTACT_SITE_URL = "https://jifwc.com";
