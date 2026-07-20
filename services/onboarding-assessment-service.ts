@@ -73,6 +73,14 @@ export async function sendAssessmentsToPatient(input: {
       : (links.length > 1 ? `Por favor responda estes ${links.length} questionários:` : "Por favor responda este questionário:");
     const greeting = isEn ? "Hi!" : "Olá!";
     const body = `${greeting} ${intro}\n\n` + links.map((l) => `• ${l.name}: ${l.url}`).join("\n");
+    // SMS (Twilio): canal mais confiável no celular, não depende da janela de 24h do WhatsApp.
+    // Requer o telefone em E.164 (com código do país); mesmo tratamento do envio WhatsApp.
+    try {
+      const { getTwilioClient, getTwilioFromNumber } = await import("@/lib/twilio");
+      const smsTo = phone.startsWith("+") ? phone : `+${phone}`;
+      await getTwilioClient().messages.create({ from: getTwilioFromNumber(), to: smsTo, body });
+    } catch { /* canal opcional */ }
+    // WhatsApp (best-effort): só entrega dentro da janela de 24h aberta pelo paciente.
     try {
       const { sendWhatsAppText } = await import("@/services/whatsapp-service");
       await sendWhatsAppText(phone, body);
