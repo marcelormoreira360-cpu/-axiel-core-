@@ -56,6 +56,12 @@ describe("detectLanguage", () => {
     expect(detectLanguage([], "What is the price for the consultation?")).toBe("en");
   });
 
+  it("returns 'en' when punctuation is glued to keywords (regression: 'Hello, I'd like...')", () => {
+    // Caso real (lead Aaron Taylor no Messenger): sem normalizar a vírgula, "hello,"
+    // não casava " hello " e a conversa caía no default PT.
+    expect(detectLanguage([], "Hello, I'd like more information...")).toBe("en");
+  });
+
   // ── Defaults to PT ────────────────────────────────────────────────────────
 
   it("defaults to 'pt' for empty message", () => {

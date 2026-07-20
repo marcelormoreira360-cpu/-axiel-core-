@@ -206,21 +206,35 @@ const ES_MARKERS = [
   " me gustaría", " tratamiento", " cita", " agendar", " salud", "¿", "¡",
 ];
 
+// Conta marcadores claros de espanhol num texto (com bordas de espaço).
+function countEsMarkers(text: string): number {
+  const lower = ` ${(text || "").toLowerCase()} `;
+  return ES_MARKERS.reduce((n, w) => (lower.includes(w) ? n + 1 : n), 0);
+}
+
 // Detecta o idioma da conversa Meta (PT/EN/ES) combinando o detector base
 // (PT/EN) com um passe leve de espanhol. `detectPtEn` recebe a mesma assinatura
-// de detectLanguage(history, text) — injetado pelo handler para não criar
+// de detectLanguage(history, text), injetado pelo handler para não criar
 // dependência de servidor neste arquivo client-safe.
 export function detectMetaLanguage(
   detectPtEn: "pt" | "en",
   history: Array<{ role: string; content: string }>,
   currentMessage: string,
+  // Detector PT/EN injetado (mesma assinatura de detectLanguage) para reavaliar a
+  // MENSAGEM ATUAL isolada. Opcional por retrocompat; sem ele, só a 1ª msg conta.
+  detectPtEnFor?: (text: string) => "pt" | "en",
 ): MetaLang {
   const firstUserMsg = history.find((m) => m.role === "user")?.content ?? currentMessage;
-  const lower = ` ${(firstUserMsg || currentMessage).toLowerCase()} `;
-  const esHits = ES_MARKERS.reduce((n, w) => (lower.includes(w) ? n + 1 : n), 0);
-  // 2+ marcadores de ES = espanhol com segurança (evita falso positivo em PT,
-  // que compartilha " para "/" años" raramente). Senão respeita o PT/EN base.
-  if (esHits >= 2) return "es";
+  // 2+ marcadores de ES = espanhol com segurança (evita falso positivo em PT, que
+  // raramente compartilha " para "/" años"). Basta a 1ª OU a mensagem atual trazer.
+  if (countEsMarkers(firstUserMsg) >= 2 || countEsMarkers(currentMessage) >= 2) return "es";
+  // PT/EN: parte do sinal da 1ª mensagem. Se ficou "pt" (que é também o DEFAULT
+  // quando não há sinal) mas a mensagem ATUAL é claramente inglês, acompanha o
+  // inglês. detectLanguage nunca devolve "en" por default, logo "en" na atual é
+  // sinal real. Corrige o lead que abre ambíguo ("Hello,") e some no português.
+  if (detectPtEn === "pt" && detectPtEnFor && detectPtEnFor(currentMessage) === "en") {
+    return "en";
+  }
   return detectPtEn;
 }
 

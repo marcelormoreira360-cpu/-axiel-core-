@@ -353,7 +353,7 @@ export async function POST(req: NextRequest) {
         // human to take over (bot_disabled), and stop auto-replying in this thread.
         if (isOptOutRequest(messageText)) {
           // Responde no idioma do LEAD (detectado da mensagem), não no da clínica.
-          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
           const replyLocale = metaLangToLocale(optOutLang, await resolveClinicLocale(clinicId));
           const tReply = await getServerT(replyLocale, "whatsapp");
           const handover = tReply("autoReply.handover");
@@ -383,7 +383,7 @@ export async function POST(req: NextRequest) {
         // Idioma DETERMINÍSTICO por código (PT/EN base + passe de ES), como no
         // Meta WhatsApp: mapeia p/ o campo `language` do config para que o
         // langNote E os templates saiam no idioma certo.
-        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText);
+        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
         const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
         const systemPrompt =
           buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE +

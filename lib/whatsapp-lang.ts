@@ -17,7 +17,12 @@ interface ChatMessage {
  */
 export function detectLanguage(messages: ChatMessage[], currentMessage: string): Lang {
   const firstUserMsg = messages.find((m) => m.role === "user")?.content ?? currentMessage;
-  const lower = ` ${firstUserMsg.toLowerCase()} `;
+  // Normaliza pontuação de FRONTEIRA (vírgula, ponto, etc.) para espaço, para que
+  // "Hello," e "information..." casem os padrões com espaço (" hello "). PRESERVA o
+  // apóstrofo, senão as contrações "i'm"/"i've" (peso 2) deixariam de casar.
+  const lower = ` ${firstUserMsg.toLowerCase()} `
+    .replace(/[.,!?;:"()\[\]]/g, " ")
+    .replace(/\s+/g, " ");
 
   // Words weighted by length/uniqueness — short ambiguous words (" i ", " do ")
   // get weight 1; longer/unambiguous words get weight 2.
