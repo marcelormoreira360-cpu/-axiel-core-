@@ -3,7 +3,7 @@ import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
 import { chatModel } from "@/lib/ai-models";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { validateMetaSignature } from "@/lib/webhook-guard";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, DAYANE_REFERRAL_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory, getWhatsAppBotConfigByClinicId, getWhatsAppBotConfigByFacebookPageId } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
@@ -373,7 +373,8 @@ export async function POST(req: NextRequest) {
         // config para que o langNote E os templates saiam no idioma certo.
         const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
         const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
-        const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE;
+        const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE +
+          (effectiveClinicId === IFWC_CLINIC_ID ? DAYANE_REFERRAL_RULE : "");
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
         let finalReply = reply;

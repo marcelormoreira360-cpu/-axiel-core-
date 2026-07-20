@@ -282,6 +282,17 @@ export const META_EMERGENCY_RULE =
   `\nQUEIXAS QUE NÃO SÃO EMERGÊNCIA (acolher + triar + conduzir à avaliação, nunca mandar para emergência): dor nas costas/muscular/articular, dor de cabeça leve, cansaço, ansiedade sem menção a se machucar, insônia e sintomas crônicos estáveis sem piora súbita.\n` +
   `\nNúmero por país/idioma: EN/ES → EUA (911 / 988); PT → Brasil (192 / 188 CVV). Se souber a cidade, use o país dela; na dúvida, ofereça os dois. Todas as respostas ao paciente no idioma dele e SEM travessão (—).`;
 
+// ─── Encaminhamento à Dayane (mentoria feminina) — ESPECÍFICO DA IFWC ──────────
+// Anexado nos handlers SOMENTE quando a clínica é a IFWC (é um nome próprio, não
+// pode vazar para outras clínicas). A mentoria da Dayane é uma frente SEPARADA do
+// atendimento clínico; a Clara só passa o contato dela SOB DEMANDA.
+export const DAYANE_REFERRAL_RULE =
+  `\n\n━━━ CONTATO DA DAYANE (mentoria feminina) ━━━\n` +
+  `A Dayane conduz uma mentoria de desenvolvimento pessoal e emocional para mulheres (autora do livro "Faxina Emocional"), uma frente SEPARADA do atendimento clínico. ` +
+  `SOMENTE quando o paciente pedir explicitamente para falar com a Dayane, ou perguntar sobre a mentoria feminina/mentoria da Dayane, passe o WhatsApp dela: +1 407-923-9646. ` +
+  `Responda no idioma do paciente, por exemplo: "Claro! Você pode falar direto com a Dayane pelo WhatsApp: +1 407-923-9646." ` +
+  `NÃO ofereça o contato da Dayane de forma espontânea, nem para queixas clínicas (essas seguem o fluxo normal de avaliação). Sem travessão (—).`;
+
 // Conversa parada há mais tempo que isto volta ao passo 1 (acolhimento): sem o
 // reset, um "Oi" numa conversa antiga caía no passo 7 ("vou confirmar seu
 // agendamento") — frio e sem sentido para quem está recomeçando o papo.

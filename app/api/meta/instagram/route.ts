@@ -3,7 +3,7 @@ import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
 import { chatModel } from "@/lib/ai-models";
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
+import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, getWhatsAppBotConfigByInstagramId, getWhatsAppBotConfigByClinicId, META_LANG_RULE, META_BEHAVIOR_RULE, META_EMERGENCY_RULE, DAYANE_REFERRAL_RULE, detectMetaLanguage, metaLangToConfigLanguage, metaLangToLocale, funnelStepFromHistory } from "@/services/whatsapp-bot-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
@@ -387,6 +387,7 @@ export async function POST(req: NextRequest) {
         const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
         const systemPrompt =
           buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE +
+          (clinicId === IFWC_CLINIC_ID ? DAYANE_REFERRAL_RULE : "") +
           (IG_IMAGE_ENABLED ? IG_IMAGE_RULE : "");
 
         const reply = await generateReply(messageText, history, systemPrompt, apiKey);
