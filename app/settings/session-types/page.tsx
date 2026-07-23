@@ -5,27 +5,50 @@ import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { getSessionTypesForClinic, createSessionType, updateSessionType, deleteSessionType } from "@/services/session-type-service";
+import {
+  getSessionTypesForClinic,
+  createSessionType,
+  updateSessionType,
+  deleteSessionType,
+  getSessionTypeTranslations,
+  setSessionTypeTranslation,
+} from "@/services/session-type-service";
 import { SessionTypeList } from "@/components/session-type-list";
+
+// Locales traduzíveis além do idioma-base (session_types.name = padrão da clínica).
+const EXTRA_LOCALES: { locale: string; field: string }[] = [
+  { locale: "en", field: "name_en" },
+  { locale: "pt-PT", field: "name_ptPT" },
+];
 
 export default async function SessionTypesPage() {
   const t = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) redirect("/dashboard");
 
-  const sessionTypes = await getSessionTypesForClinic(profile.clinic_id);
+  const [sessionTypes, translations] = await Promise.all([
+    getSessionTypesForClinic(profile.clinic_id),
+    getSessionTypeTranslations(profile.clinic_id),
+  ]);
+
+  async function saveTranslations(sessionTypeId: string, clinicId: string, formData: FormData) {
+    for (const { locale, field } of EXTRA_LOCALES) {
+      await setSessionTypeTranslation(sessionTypeId, clinicId, locale, String(formData.get(field) ?? ""));
+    }
+  }
 
   async function createAction(formData: FormData) {
     "use server";
     const p = await getCurrentUserProfile();
     if (!p?.clinic_id) return;
-    await createSessionType({
+    const created = await createSessionType({
       clinic_id:        p.clinic_id,
       name:             String(formData.get("name") ?? "").trim(),
       duration_minutes: Number(formData.get("duration_minutes") ?? 60),
       price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
       is_online:        formData.get("is_online") === "true",
     });
+    await saveTranslations(created.id, p.clinic_id, formData);
     revalidatePath("/settings/session-types");
   }
 
@@ -49,11 +72,14 @@ export default async function SessionTypesPage() {
 
   async function editAction(id: string, formData: FormData) {
     "use server";
+    const p = await getCurrentUserProfile();
+    if (!p?.clinic_id) return;
     await updateSessionType(id, {
       name:             String(formData.get("name") ?? "").trim(),
       duration_minutes: Number(formData.get("duration_minutes") ?? 60),
       price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
     });
+    await saveTranslations(id, p.clinic_id, formData);
     revalidatePath("/settings/session-types");
   }
 
@@ -78,6 +104,7 @@ export default async function SessionTypesPage() {
 
       <SessionTypeList
         sessionTypes={sessionTypes}
+        translations={translations}
         createAction={createAction}
         toggleOnlineAction={toggleOnlineAction}
         toggleRecordingAction={toggleRecordingAction}

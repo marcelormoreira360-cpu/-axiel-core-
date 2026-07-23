@@ -56,3 +56,67 @@ export async function deleteSessionType(id: string): Promise<void> {
   const { error } = await supabase.from("session_types").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── Traduções do nome do serviço (session_type_translations) ─────────────────
+// O nome base (session_types.name) é o idioma padrão da clínica e o fallback.
+// A clínica cadastra as versões en / pt-PT; o paciente vê o nome no idioma dele.
+
+/** Nome localizado com fallback: tradução do locale pedido -> nome base. */
+export function pickSessionTypeName(
+  base: string,
+  translations: Record<string, string> | undefined,
+  locale: string,
+): string {
+  return translations?.[locale]?.trim() || base;
+}
+
+/** Traduções de TODOS os serviços da clínica: { session_type_id: { locale: name } }. */
+export async function getSessionTypeTranslations(
+  clinicId: string,
+): Promise<Record<string, Record<string, string>>> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("session_type_translations")
+    .select("session_type_id, locale, name")
+    .eq("clinic_id", clinicId);
+  if (error) throw error;
+
+  const map: Record<string, Record<string, string>> = {};
+  for (const row of data ?? []) {
+    (map[row.session_type_id] ??= {})[row.locale] = row.name;
+  }
+  return map;
+}
+
+/** Upsert (ou remoção, se vazio) da tradução de um serviço num idioma. */
+export async function setSessionTypeTranslation(
+  sessionTypeId: string,
+  clinicId: string,
+  locale: string,
+  name: string,
+): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  const supabase = await createSupabaseServerClient();
+  const trimmed = name.trim();
+
+  if (!trimmed) {
+    const { error } = await supabase
+      .from("session_type_translations")
+      .delete()
+      .eq("session_type_id", sessionTypeId)
+      .eq("locale", locale);
+    if (error) throw error;
+    return;
+  }
+
+  const { error } = await supabase
+    .from("session_type_translations")
+    .upsert(
+      { session_type_id: sessionTypeId, clinic_id: clinicId, locale, name: trimmed },
+      { onConflict: "session_type_id,locale" },
+    );
+  if (error) throw error;
+}

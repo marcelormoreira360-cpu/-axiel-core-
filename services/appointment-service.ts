@@ -213,6 +213,7 @@ export type ConfirmAppointmentInfo = {
   clinic: { name: string; logo_url: string | null; primary_color: string | null } | null;
   patient: { id: string; full_name: string; email: string | null; phone: string | null; locale: string | null } | null;
   session_type_name: string | null;
+  session_type_name_i18n: Record<string, string>;
 };
 
 /** Resolve um agendamento pelo token do link de confirmação (admin client, rota pública). */
@@ -221,7 +222,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("appointments")
-    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone, locale), clinics(name, logo_url, primary_color), session_types(name)")
+    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone, locale), clinics(name, logo_url, primary_color), session_types(name, session_type_translations(locale, name))")
     .eq("confirm_token_hash", hashConfirmToken(token))
     .maybeSingle();
   if (!data) return null;
@@ -229,6 +230,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
   const clinic = Array.isArray(data.clinics) ? data.clinics[0] : data.clinics;
   const patient = Array.isArray(data.patients) ? data.patients[0] : data.patients;
   const st = Array.isArray(data.session_types) ? data.session_types[0] : data.session_types;
+  const sttRows = (st?.session_type_translations ?? []) as { locale: string; name: string }[];
   const expired = data.confirm_expires_at ? new Date(data.confirm_expires_at as string).getTime() < Date.now() : false;
 
   return {
@@ -241,6 +243,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
     clinic: clinic ? { name: clinic.name, logo_url: clinic.logo_url ?? null, primary_color: clinic.primary_color ?? null } : null,
     patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null, locale: patient.locale ?? null } : null,
     session_type_name: st?.name ?? null,
+    session_type_name_i18n: Object.fromEntries(sttRows.map((r) => [r.locale, r.name])),
   };
 }
 

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getAppointmentByConfirmToken } from "@/services/appointment-service";
+import { pickSessionTypeName } from "@/services/session-type-service";
 import { resolveLocale } from "@/i18n/get-locale";
 import { isLocale, type Locale } from "@/i18n/locales";
 import enConfirm from "@/messages/en/confirmBooking.json";
@@ -58,7 +59,7 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
         primaryColor={info?.clinic?.primary_color ?? "#0B1F3A"}
         startsAt={info?.starts_at ?? null}
         durationMinutes={info?.duration_minutes ?? null}
-        sessionTypeName={info?.session_type_name ?? null}
+        sessionTypeName={info?.session_type_name ? pickSessionTypeName(info.session_type_name, info.session_type_name_i18n, locale) : null}
         patientName={info?.patient?.full_name ?? ""}
         patientEmail={info?.patient?.email ?? ""}
         patientPhone={info?.patient?.phone ?? ""}
