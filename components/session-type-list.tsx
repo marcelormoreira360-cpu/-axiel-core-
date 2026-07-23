@@ -8,6 +8,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Props {
   sessionTypes: SessionType[];
+  translations: Record<string, Record<string, string>>;
   createAction: (fd: FormData) => Promise<void>;
   toggleOnlineAction: (id: string, isOnline: boolean) => Promise<void>;
   toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<void>;
@@ -34,7 +35,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
-export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction, toggleRecordingAction, toggleActiveAction, editAction, deleteAction }: Props) {
+export function SessionTypeList({ sessionTypes, translations, createAction, toggleOnlineAction, toggleRecordingAction, toggleActiveAction, editAction, deleteAction }: Props) {
   const money = useFormatMoney();
   const t = useTranslations("settings.sessionTypes");
   const [showForm, setShowForm] = useState(false);
@@ -151,6 +152,26 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                   min={0}
                   step={0.01}
                   defaultValue={0}
+                  className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
+                />
+              </div>
+            </div>
+
+            {/* Nomes traduzidos (opcional) — o nome acima é o idioma padrão da clínica */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("nameEn")}</label>
+                <input
+                  name="name_en"
+                  placeholder={t("nameEnPlaceholder")}
+                  className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("namePtPT")}</label>
+                <input
+                  name="name_ptPT"
+                  placeholder={t("namePtPTPlaceholder")}
                   className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
                 />
               </div>
@@ -340,6 +361,27 @@ export function SessionTypeList({ sessionTypes, createAction, toggleOnlineAction
                           min={0}
                           step={0.01}
                           defaultValue={(st.price_cents / 100).toFixed(2)}
+                          className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
+                        />
+                      </div>
+                    </div>
+                    {/* Nomes traduzidos (opcional) — o nome acima é o idioma padrão da clínica */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      <div>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("nameEn")}</label>
+                        <input
+                          name="name_en"
+                          defaultValue={translations[st.id]?.en ?? ""}
+                          placeholder={t("nameEnPlaceholder")}
+                          className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("namePtPT")}</label>
+                        <input
+                          name="name_ptPT"
+                          defaultValue={translations[st.id]?.["pt-PT"] ?? ""}
+                          placeholder={t("namePtPTPlaceholder")}
                           className="w-full text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#1C2333] border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[7px] outline-none focus:border-[#0F6E56] transition"
                         />
                       </div>

@@ -4,13 +4,22 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { createPublicBooking } from "@/services/appointment-service";
+import { localeFromAcceptLanguage } from "@/i18n/get-locale";
+import { isLocale } from "@/i18n/locales";
 
 export const runtime = "nodejs";
 
 // GET /api/book/[slug] — public clinic info + session types
-export async function GET(_req: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const supabase = createSupabaseAdminClient();
+
+  // Idioma de exibição = cookie do site público -> Accept-Language -> default.
+  // Os nomes dos serviços saem no idioma do paciente (fallback = nome base).
+  const cookieLocale = req.cookies.get("AXIEL_LOCALE")?.value;
+  const displayLocale = isLocale(cookieLocale)
+    ? cookieLocale
+    : localeFromAcceptLanguage(req.headers.get("accept-language"));
 
   const { data: clinic } = await supabase
     .from("clinics")
@@ -21,13 +30,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
 
   if (!clinic) return NextResponse.json({ error: "Clínica não encontrada." }, { status: 404 });
 
-  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }, { data: clinicSettings }, { data: subscription }] = await Promise.all([
+  const [{ data: sessionTypes }, { data: workingHours }, { data: practitionersRaw }, { data: clinicSettings }, { data: subscription }, { data: sttRows }] = await Promise.all([
     supabase.from("session_types").select("id, name, duration_minutes, price_cents, is_online").eq("clinic_id", clinic.id).eq("is_active", true).order("name"),
     supabase.from("working_hours").select("day_of_week, opens_at, closes_at, is_open").eq("clinic_id", clinic.id),
     supabase.from("clinic_users").select("user_id, display_name, specialty, bio, users(full_name)").eq("clinic_id", clinic.id).eq("status", "active").eq("is_bookable", true),
     supabase.from("clinic_settings").select("settings").eq("clinic_id", clinic.id).maybeSingle(),
     supabase.from("subscriptions").select("plans(code, slug)").eq("clinic_id", clinic.id).maybeSingle(),
+    supabase.from("session_type_translations").select("session_type_id, name").eq("clinic_id", clinic.id).eq("locale", displayLocale),
   ]);
+
+  // Nome do serviço no idioma do paciente (fallback = nome base em session_types.name).
+  const nameByType = new Map((sttRows ?? []).map((r) => [r.session_type_id, r.name]));
+  const localizedSessionTypes = (sessionTypes ?? []).map((s) => ({ ...s, name: nameByType.get(s.id) ?? s.name }));
 
   // L-05: include the clinic's configured currency in the public response
   const currency = (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string ?? "BRL";
@@ -47,7 +61,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ slug: s
     };
   });
 
-  return NextResponse.json({ clinic: { ...clinic, currency, show_powered_by: showPoweredBy }, sessionTypes: sessionTypes ?? [], workingHours: workingHours ?? [], practitioners });
+  return NextResponse.json({ clinic: { ...clinic, currency, show_powered_by: showPoweredBy }, sessionTypes: localizedSessionTypes, workingHours: workingHours ?? [], practitioners });
 }
 
 // POST /api/book/[slug] — create appointment (public)
