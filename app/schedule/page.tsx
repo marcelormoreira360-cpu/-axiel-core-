@@ -164,6 +164,7 @@ export default async function SchedulePage() {
     const profile = await getCurrentUserProfile();
     if (!profile?.clinic_id) return { error: t("noClinicShort") };
 
+    try {
     const startsAt = String(formData.get("starts_at") ?? "");
     const duration = Number(formData.get("duration_minutes") ?? 60);
     const sessionTypeId = String(formData.get("session_type_id") ?? "") || null;
@@ -206,6 +207,11 @@ export default async function SchedulePage() {
 
     revalidatePath("/schedule");
     return { url, phone, email, patientName };
+    } catch (e) {
+      // Não deixar o erro estourar na tela de boundary: devolve a mensagem para o modal.
+      console.error("[createConfirmationLinkAction]", e);
+      return { error: e instanceof Error ? e.message : t("linkError") };
+    }
   }
 
   // Envia o link de confirmação por e-mail ao paciente.
