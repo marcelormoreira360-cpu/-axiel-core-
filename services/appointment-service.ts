@@ -211,7 +211,7 @@ export type ConfirmAppointmentInfo = {
   status: string | null;
   expired: boolean;
   clinic: { name: string; logo_url: string | null; primary_color: string | null } | null;
-  patient: { id: string; full_name: string; email: string | null; phone: string | null } | null;
+  patient: { id: string; full_name: string; email: string | null; phone: string | null; locale: string | null } | null;
   session_type_name: string | null;
 };
 
@@ -221,7 +221,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("appointments")
-    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone), clinics(name, logo_url, primary_color), session_types(name)")
+    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone, locale), clinics(name, logo_url, primary_color), session_types(name)")
     .eq("confirm_token_hash", hashConfirmToken(token))
     .maybeSingle();
   if (!data) return null;
@@ -239,7 +239,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
     status: data.status,
     expired,
     clinic: clinic ? { name: clinic.name, logo_url: clinic.logo_url ?? null, primary_color: clinic.primary_color ?? null } : null,
-    patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null } : null,
+    patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null, locale: patient.locale ?? null } : null,
     session_type_name: st?.name ?? null,
   };
 }
