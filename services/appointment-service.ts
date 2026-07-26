@@ -266,17 +266,65 @@ export async function confirmAppointmentByToken(
 
   const supabase = createSupabaseAdminClient();
 
+  // Paciente resolvido: começa no cadastro ligado ao agendamento (stub do
+  // booking), mas pode ser trocado pelo cadastro já existente se o e-mail
+  // informado pertencer a um paciente que está voltando (ver abaixo).
+  let resolvedPatientId = info.patient?.id;
+
   if (info.patient?.id) {
     const cleaned = Object.fromEntries(Object.entries(patientFields).filter(([, v]) => v !== undefined));
-    // Erro do update NÃO pode ser silencioso: se os dados do paciente (nome,
-    // contato, demografia) não gravarem, a confirmação não deve seguir como se
-    // tivesse gravado.
-    const { error: pErr } = await supabase
-      .from("patients")
-      .update({ ...cleaned, status: "active", updated_at: new Date().toISOString() })
-      .eq("id", info.patient.id)
-      .eq("clinic_id", info.clinic_id);
-    if (pErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
+    const email = (patientFields.email ?? "").trim();
+
+    // A constraint patients_clinic_email_unique é (clinic_id, lower(email)).
+    // Se o e-mail informado já pertence a OUTRO cadastro da clínica (paciente
+    // que já existe / está voltando), não dá para gravá-lo no cadastro-stub
+    // deste agendamento — o insert/update bateria na unique e a confirmação
+    // falhava com "Não foi possível salvar seus dados". Nesse caso, reaproveita
+    // o cadastro existente: atualiza os dados nele, reaponta o agendamento e
+    // arquiva o stub recém-criado.
+    let mergedIntoExisting = false;
+    if (email) {
+      // ilike ≈ igualdade case-insensitive; a comparação exata em JS descarta
+      // eventual over-match do `_`/`%` do ilike.
+      const { data: candidates } = await supabase
+        .from("patients")
+        .select("id, email")
+        .eq("clinic_id", info.clinic_id)
+        .neq("id", info.patient.id)
+        .ilike("email", email);
+      const existing = (candidates ?? []).find(
+        (c) => (c.email ?? "").toLowerCase() === email.toLowerCase(),
+      );
+      if (existing?.id) {
+        const { error: uErr } = await supabase
+          .from("patients")
+          .update({ ...cleaned, status: "active", deleted_at: null, updated_at: new Date().toISOString() })
+          .eq("id", existing.id)
+          .eq("clinic_id", info.clinic_id);
+        if (uErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
+        // Reaponta o agendamento para o cadastro existente e arquiva o stub.
+        await supabase.from("appointments").update({ patient_id: existing.id }).eq("id", info.id);
+        await supabase
+          .from("patients")
+          .update({ deleted_at: new Date().toISOString() })
+          .eq("id", info.patient.id)
+          .eq("clinic_id", info.clinic_id);
+        resolvedPatientId = existing.id;
+        mergedIntoExisting = true;
+      }
+    }
+
+    if (!mergedIntoExisting) {
+      // Erro do update NÃO pode ser silencioso: se os dados do paciente (nome,
+      // contato, demografia) não gravarem, a confirmação não deve seguir como se
+      // tivesse gravado.
+      const { error: pErr } = await supabase
+        .from("patients")
+        .update({ ...cleaned, status: "active", updated_at: new Date().toISOString() })
+        .eq("id", info.patient.id)
+        .eq("clinic_id", info.clinic_id);
+      if (pErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
+    }
   }
 
   const { data: updated, error } = await supabase
@@ -291,7 +339,7 @@ export async function confirmAppointmentByToken(
   if (!updated || updated.length === 0) {
     return { ok: false, error: "Este agendamento já foi confirmado ou não está mais disponível." };
   }
-  return { ok: true, clinicId: info.clinic_id, patientId: info.patient?.id, appointmentId: info.id, startsAt: info.starts_at };
+  return { ok: true, clinicId: info.clinic_id, patientId: resolvedPatientId, appointmentId: info.id, startsAt: info.starts_at };
 }
 
 /**
