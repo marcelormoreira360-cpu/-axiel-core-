@@ -14,12 +14,11 @@ import { env } from "@/lib/env";
 
 /**
  * The "from" address used for all transactional emails sent via Resend.
- * O fallback aponta para um domínio REAL (oxielcore.com) — o antigo
- * axielcore.com nunca foi verificado e nada saía. Se RESEND_FROM_EMAIL não
- * estiver setada (ou for removida do painel), este é o remetente usado, e o
- * domínio precisa estar verificado no Resend para entregar a pacientes reais.
+ * O fallback aponta para jifwc.com — domínio VERIFICADO no Resend (DKIM+SPF).
+ * O antigo axielcore.com nunca foi verificado e nada saía. Se RESEND_FROM_EMAIL
+ * não estiver setada (ou for removida do painel), este é o remetente usado.
  */
-export const DEFAULT_FROM_EMAIL: string = env.RESEND_FROM_EMAIL ?? "OXIEL Core <no-reply@oxielcore.com>";
+export const DEFAULT_FROM_EMAIL: string = env.RESEND_FROM_EMAIL ?? "IFWC <no-reply@jifwc.com>";
 
 /** Root URL of the application (e.g. https://axiel-core-6ikl.vercel.app). No trailing slash. */
 export const APP_URL: string = env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
