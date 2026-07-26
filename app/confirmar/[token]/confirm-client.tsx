@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, CalendarClock, Loader2, AlertCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import type { TemplateWithStructure } from "@/lib/types";
 import { confirmAppointmentAction } from "./actions";
 
 export function ConfirmClient({
@@ -18,6 +19,7 @@ export function ConfirmClient({
   patientName,
   patientEmail,
   patientPhone,
+  intakeForms = [],
 }: {
   token: string;
   invalid: boolean;
@@ -30,6 +32,8 @@ export function ConfirmClient({
   patientName: string;
   patientEmail: string;
   patientPhone: string;
+  /** Questionários de intake para responder ANTES dos dados (obrigatórios). */
+  intakeForms?: TemplateWithStructure[];
 }) {
   const t = useTranslations("confirmBooking");
   const locale = useLocale();
@@ -38,6 +42,61 @@ export function ConfirmClient({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [questionnaires, setQuestionnaires] = useState<{ name: string; token: string }[]>([]);
+  // Wizard questionário-primeiro: phase 0..N-1 = cada questionário; N = dados.
+  const [phase, setPhase] = useState(0);
+  // Respostas por template: { [templateId]: { [questionId]: number|string } }.
+  const [formAnswers, setFormAnswers] = useState<Record<string, Record<string, number | string>>>({});
+
+  function setAns(tplId: string, qId: string, v: number | string) {
+    setFormAnswers((prev) => ({ ...prev, [tplId]: { ...(prev[tplId] ?? {}), [qId]: v } }));
+  }
+
+  // Faltam obrigatórias no questionário atual? (scale/yes_no/number sempre; texto só se is_required)
+  function missingInForm(tpl: TemplateWithStructure): number {
+    const a = formAnswers[tpl.id] ?? {};
+    let missing = 0;
+    for (const s of tpl.assessment_sections) {
+      for (const q of s.assessment_questions) {
+        const v = a[q.id];
+        const isText = q.question_type === "text";
+        const answered = isText ? typeof v === "string" && v.trim().length > 0 : typeof v === "number";
+        if ((!isText || q.is_required) && !answered) missing++;
+      }
+    }
+    return missing;
+  }
+
+  // Monta o payload de respostas (todas as fases) para enviar junto da confirmação.
+  function buildResponsesPayload() {
+    return intakeForms.map((tpl) => {
+      const a = formAnswers[tpl.id] ?? {};
+      const answers: { question_id: string; section_id: string | null; value_number: number | null; value_text: string | null }[] = [];
+      const section_scores: Record<string, { title: string; score: number; max: number }> = {};
+      let total = 0;
+      let max = 0;
+      for (const s of tpl.assessment_sections) {
+        let ss = 0;
+        let sm = 0;
+        for (const q of s.assessment_questions) {
+          const v = a[q.id];
+          const isText = q.question_type === "text";
+          answers.push({
+            question_id: q.id,
+            section_id: s.id,
+            value_number: !isText && typeof v === "number" ? v : null,
+            value_text: isText && typeof v === "string" ? v : null,
+          });
+          if (!isText) {
+            if (typeof v === "number") { ss += v; total += v; }
+            sm += q.max_score;
+            max += q.max_score;
+          }
+        }
+        section_scores[s.id] = { title: s.title, score: ss, max: sm };
+      }
+      return { template_id: tpl.id, answers, section_scores, total_score: total, max_possible_score: max, notes: null };
+    });
+  }
 
   const dateStr = startsAt
     ? new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -55,6 +114,7 @@ export function ConfirmClient({
     setError(null);
     const fd = new FormData(e.currentTarget);
     fd.set("token", token);
+    if (intakeForms.length > 0) fd.set("responses", JSON.stringify(buildResponsesPayload()));
     startTransition(async () => {
       const res = await confirmAppointmentAction(fd);
       if (res.error) setError(res.error);
@@ -111,6 +171,110 @@ export function ConfirmClient({
               </div>
             );
           })()}
+        </div>
+      </main>
+    );
+  }
+
+  // ── Fase de QUESTIONÁRIO (antes dos dados) ──────────────────────────────────
+  if (!done && intakeForms.length > 0 && phase < intakeForms.length) {
+    const tpl = intakeForms[phase];
+    const a = formAnswers[tpl.id] ?? {};
+    const missing = missingInForm(tpl);
+    const scaleLabels = ((tpl as unknown as { scale_labels?: string[] }).scale_labels) ?? null;
+    function advance() {
+      if (missing > 0) { setError(t("answerAllShort")); return; }
+      setError(null);
+      setPhase((p) => p + 1);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+    return (
+      <main className="min-h-screen bg-[#F4F3EF] px-[16px] py-[36px]">
+        <div className="w-full max-w-[560px] mx-auto">
+          <div className="flex justify-end mb-[10px]"><LanguageSwitcher /></div>
+          <div className="text-center mb-[16px]">
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={clinicName ?? ""} className="h-[40px] mx-auto mb-[10px] object-contain" />
+            ) : null}
+            <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#A09E98]">
+              {t("stepOf", { current: phase + 1, total: intakeForms.length })}
+            </p>
+            <h1 className="text-[19px] font-medium tracking-[-0.02em] text-[#0F1A2E] mt-[2px]">{tpl.name}</h1>
+            {tpl.instructions ? <p className="text-[12px] text-[#6B6A66] mt-[4px] whitespace-pre-line">{tpl.instructions}</p> : null}
+          </div>
+
+          <div className="space-y-[12px]">
+            {tpl.assessment_sections.map((section) => (
+              <div key={section.id} className="bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
+                <div className="px-[16px] py-[9px] bg-[#0F1A2E]">
+                  <p className="text-[11px] font-medium tracking-[.08em] uppercase text-white/80">{section.title}</p>
+                </div>
+                <div className="divide-y divide-black/[.05]">
+                  {section.assessment_questions.map((q) => {
+                    const v = a[q.id];
+                    return (
+                      <div key={q.id} className="px-[16px] py-[13px]">
+                        <p className="text-[13px] text-[#0F1A2E] mb-[9px] leading-snug">{q.text}</p>
+                        {q.question_type === "scale" && (
+                          <div className="flex items-center gap-[4px] flex-wrap">
+                            {Array.from({ length: q.max_score - q.min_score + 1 }, (_, i) => i + q.min_score).map((n) => (
+                              <button key={n} type="button" onClick={() => setAns(tpl.id, q.id, n)}
+                                className={["w-10 h-10 rounded-[8px] text-[13px] font-semibold border transition shrink-0",
+                                  v === n ? "text-white border-transparent" : "border-black/[.12] text-[#6B6A66] bg-white hover:border-[#0F6E56]"].join(" ")}
+                                style={v === n ? { background: primaryColor } : undefined}>{n}</button>
+                            ))}
+                          </div>
+                        )}
+                        {q.question_type === "yes_no" && (
+                          <div className="flex gap-[6px]">
+                            {[{ l: t("no"), val: 0 }, { l: t("yes"), val: 1 }].map((o) => (
+                              <button key={o.val} type="button" onClick={() => setAns(tpl.id, q.id, o.val)}
+                                className={["px-[14px] py-[8px] rounded-[8px] text-[12px] font-medium border transition",
+                                  v === o.val ? "text-white border-transparent" : "border-black/[.12] text-[#6B6A66] bg-white hover:border-[#0F6E56]"].join(" ")}
+                                style={v === o.val ? { background: primaryColor } : undefined}>{o.l}</button>
+                            ))}
+                          </div>
+                        )}
+                        {q.question_type === "number" && (
+                          <input type="number" min={q.min_score} max={q.max_score}
+                            value={typeof v === "number" ? String(v) : ""}
+                            onChange={(e) => setAns(tpl.id, q.id, e.target.value ? Number(e.target.value) : "")}
+                            className="w-24 px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-center outline-none focus:border-[#0F6E56]" />
+                        )}
+                        {q.question_type === "text" && (
+                          <textarea rows={2} value={typeof v === "string" ? v : ""}
+                            onChange={(e) => setAns(tpl.id, q.id, e.target.value)}
+                            className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#0F6E56] resize-none" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+            {scaleLabels ? (
+              <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
+                {scaleLabels.map((label: string, i: number) => (
+                  <p key={i} className="text-[11px] text-[#6B6A66]"><span className="font-semibold text-[#0F1A2E]">{i}</span> — {label}</p>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {error && <p className="mt-[12px] text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px]">{error}</p>}
+
+          <button type="button" onClick={advance} disabled={missing > 0}
+            className="mt-[14px] w-full text-[13px] font-medium text-white rounded-[9px] px-[14px] py-[11px] disabled:opacity-40 transition"
+            style={{ background: primaryColor }}>
+            {t("next")}
+          </button>
+          {phase > 0 && (
+            <button type="button" onClick={() => { setPhase((p) => p - 1); setError(null); }}
+              className="mt-[8px] w-full text-[12px] text-[#6B6A66] hover:text-[#0F1A2E] transition">
+              {t("back")}
+            </button>
+          )}
         </div>
       </main>
     );

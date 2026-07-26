@@ -1,7 +1,139 @@
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import type { TemplateWithStructure } from "@/lib/types";
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
+
+/**
+ * Questionários de intake (send_on_first_appointment) COM estrutura (seções +
+ * perguntas), no idioma do paciente. Usado na tela de confirmação quando os
+ * questionários vêm ANTES dos dados. Só devolve para a PRIMEIRA sessão (paciente
+ * sem outros agendamentos) — paciente que volta não refaz o intake.
+ */
+export async function getOnboardingTemplatesForPatient(input: {
+  clinicId: string;
+  patientId: string;
+}): Promise<TemplateWithStructure[]> {
+  const supabase = createSupabaseAdminClient();
+
+  // Primeira sessão? (só o agendamento atual existe para o paciente)
+  const { count } = await supabase
+    .from("appointments")
+    .select("id", { count: "exact", head: true })
+    .eq("patient_id", input.patientId)
+    .eq("clinic_id", input.clinicId)
+    .is("deleted_at", null);
+  if ((count ?? 0) > 1) return [];
+
+  // Já respondeu algum questionário? Então não é intake novo.
+  const { count: respCount } = await supabase
+    .from("assessment_responses")
+    .select("id", { count: "exact", head: true })
+    .eq("patient_id", input.patientId)
+    .eq("clinic_id", input.clinicId);
+  if ((respCount ?? 0) > 0) return [];
+
+  const { data: templates } = await supabase
+    .from("assessment_templates")
+    .select("*, assessment_sections(*, assessment_questions(*))")
+    .eq("clinic_id", input.clinicId)
+    .eq("is_active", true)
+    .eq("send_on_first_appointment", true);
+  if (!templates?.length) return [];
+
+  const { data: p } = await supabase
+    .from("patients")
+    .select("locale")
+    .eq("id", input.patientId)
+    .maybeSingle();
+  const wantEn = String(p?.locale ?? "").toLowerCase().startsWith("en");
+  const matches = (templates as unknown as TemplateWithStructure[]).filter((t) =>
+    wantEn
+      ? String((t as { locale?: string }).locale ?? "").toLowerCase().startsWith("en")
+      : !String((t as { locale?: string }).locale ?? "").toLowerCase().startsWith("en"),
+  );
+  const chosen = (matches.length > 0 ? matches : (templates as unknown as TemplateWithStructure[]));
+  for (const t of chosen) {
+    t.assessment_sections.sort((a, b) => a.order_index - b.order_index);
+    for (const s of t.assessment_sections) s.assessment_questions.sort((a, b) => a.order_index - b.order_index);
+  }
+  return chosen;
+}
+
+/** Uma resposta de questionário enviada junto com a confirmação (questionário-primeiro). */
+export type InlineAssessmentResponse = {
+  template_id: string;
+  answers: { question_id: string; section_id: string | null; value_number: number | null; value_text: string | null }[];
+  section_scores: Record<string, { title: string; score: number; max: number }> | null;
+  total_score: number;
+  max_possible_score: number;
+  notes: string | null;
+};
+
+/**
+ * Salva respostas de intake respondidas NA tela de confirmação (antes dos dados).
+ * Grava assessment_responses + assessment_answers, marca convites abertos como
+ * respondidos e atualiza o rascunho do Mapa Bio³. Best-effort item a item: uma
+ * falha não derruba a confirmação.
+ */
+export async function saveInlineAssessmentResponses(input: {
+  clinicId: string;
+  patientId: string;
+  responses: InlineAssessmentResponse[];
+}): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  for (const r of input.responses) {
+    try {
+      const maxScore = r.max_possible_score ?? 0;
+      const scorePct = maxScore > 0 ? Math.round((r.total_score / maxScore) * 10000) / 100 : 0;
+      const { data: response, error: rErr } = await supabase
+        .from("assessment_responses")
+        .insert({
+          template_id: r.template_id,
+          patient_id: input.patientId,
+          clinic_id: input.clinicId,
+          total_score: r.total_score,
+          max_possible_score: maxScore,
+          score_percentage: scorePct,
+          section_scores: r.section_scores,
+          notes: r.notes,
+        })
+        .select("id")
+        .single();
+      if (rErr || !response) continue;
+
+      if (r.answers.length > 0) {
+        await supabase.from("assessment_answers").insert(
+          r.answers.map((a) => ({
+            response_id: response.id,
+            question_id: a.question_id,
+            section_id: a.section_id ?? null,
+            value_number: a.value_number ?? null,
+            value_text: a.value_text ?? null,
+          })),
+        );
+      }
+
+      // Marca convite aberto desse template como respondido (não fica pendente).
+      await supabase
+        .from("assessment_invitations")
+        .update({ completed_at: new Date().toISOString(), response_id: response.id })
+        .eq("patient_id", input.patientId)
+        .eq("template_id", r.template_id)
+        .is("completed_at", null);
+    } catch {
+      /* não bloqueia a confirmação */
+    }
+  }
+
+  // Atualiza o rascunho do Mapa Bio³ com os novos dados (silencioso).
+  try {
+    const { autoUpsertNeuroIdDraft } = await import("@/services/neuro-id-service");
+    await autoUpsertNeuroIdDraft(input.patientId, input.clinicId, supabase);
+  } catch {
+    /* silencioso */
+  }
+}
 
 // Cria convites (idempotente) para os templates dados e envia o link ao paciente
 // por WhatsApp e e-mail. Usado tanto no onboarding (1ª sessão) quanto na reavaliação.

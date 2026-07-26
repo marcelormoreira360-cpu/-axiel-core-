@@ -28,5 +28,11 @@
   "doneDesc": "All set. Your appointment is confirmed:",
   "questionnairesTitle": "Answer your questionnaires",
   "questionnairesHint": "Before your session, please answer the questionnaires below. It takes a few minutes.",
-  "openQuestionnaire": "Answer"
+  "openQuestionnaire": "Answer",
+  "next": "Continue",
+  "back": "← Back",
+  "stepOf": "Questionnaire {current} of {total}",
+  "answerAllShort": "Please answer all questions to continue.",
+  "yes": "Yes",
+  "no": "No"
 }

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getAppointmentByConfirmToken } from "@/services/appointment-service";
+import type { TemplateWithStructure } from "@/lib/types";
 import { pickSessionTypeName } from "@/services/session-type-service";
 import { resolveLocale } from "@/i18n/get-locale";
 import { isLocale, type Locale } from "@/i18n/locales";
@@ -49,6 +50,14 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
   const locale = await localeForToken(token);
   const invalid = !info || info.status !== "pending" || info.expired;
 
+  // Questionário-PRIMEIRO: busca os questionários de intake (com perguntas) para
+  // mostrar ANTES dos dados. Vazio p/ paciente que volta → vai direto aos dados.
+  let questionnaires: TemplateWithStructure[] = [];
+  if (!invalid && info?.patient?.id) {
+    const { getOnboardingTemplatesForPatient } = await import("@/services/onboarding-assessment-service");
+    questionnaires = await getOnboardingTemplatesForPatient({ clinicId: info.clinic_id, patientId: info.patient.id });
+  }
+
   return (
     <NextIntlClientProvider locale={locale} messages={{ confirmBooking: CONFIRM_MESSAGES[locale] }}>
       <ConfirmClient
@@ -63,6 +72,7 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
         patientName={info?.patient?.full_name ?? ""}
         patientEmail={info?.patient?.email ?? ""}
         patientPhone={info?.patient?.phone ?? ""}
+        intakeForms={questionnaires}
       />
     </NextIntlClientProvider>
   );

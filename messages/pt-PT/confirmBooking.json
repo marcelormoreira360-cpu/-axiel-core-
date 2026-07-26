@@ -28,5 +28,11 @@
   "doneDesc": "Tudo certo. Seu agendamento está confirmado:",
   "questionnairesTitle": "Responda seus questionários",
   "questionnairesHint": "Antes da sua sessão, responda os questionários abaixo. Leva poucos minutos.",
-  "openQuestionnaire": "Responder"
+  "openQuestionnaire": "Responder",
+  "next": "Continuar",
+  "back": "← Voltar",
+  "stepOf": "Questionário {current} de {total}",
+  "answerAllShort": "Responda a todas as perguntas para continuar.",
+  "yes": "Sim",
+  "no": "Não"
 }

@@ -37,6 +37,19 @@ export async function confirmAppointmentAction(
   const consentData = formData.get("consent_data") === "on";
   const consentAnalytics = formData.get("consent_analytics") === "on";
 
+  // Questionários respondidos NA tela (fluxo questionário-primeiro). JSON no
+  // campo `responses`. Se vier, salvamos as respostas e NÃO enviamos o intake
+  // por link/e-mail (já foi respondido aqui).
+  type InlineResp = import("@/services/onboarding-assessment-service").InlineAssessmentResponse;
+  let inlineResponses: InlineResp[] = [];
+  const responsesRaw = formData.get("responses");
+  if (typeof responsesRaw === "string" && responsesRaw.trim()) {
+    try {
+      const parsed = JSON.parse(responsesRaw);
+      if (Array.isArray(parsed)) inlineResponses = parsed as InlineResp[];
+    } catch { /* ignora payload malformado */ }
+  }
+
   if (!fullName) return { error: "Informe seu nome completo." };
   if (email && !EMAIL_RE.test(email)) return { error: "E-mail inválido." };
   if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return { error: "Data de nascimento inválida." };
@@ -87,10 +100,22 @@ export async function confirmAppointmentAction(
     ).catch(() => {});
   }
 
-  // Questionários de entrada: cria os convites, tenta WhatsApp/e-mail E devolve os
-  // tokens para exibir/encadear nesta tela (não depende da entrega externa funcionar).
-  // baseUrl derivado do host da requisição → links sempre no domínio do Core
-  // (evita cair no NEXT_PUBLIC_APP_URL apontando para outro app).
+  // Questionário-PRIMEIRO: se o paciente respondeu os questionários NESTA tela,
+  // salvamos as respostas e NÃO enviamos o intake por link/e-mail.
+  if (inlineResponses.length > 0) {
+    try {
+      const { saveInlineAssessmentResponses } = await import("@/services/onboarding-assessment-service");
+      await saveInlineAssessmentResponses({
+        clinicId: result.clinicId,
+        patientId: result.patientId,
+        responses: inlineResponses,
+      });
+    } catch { /* não bloqueia a confirmação */ }
+    return { success: true, questionnaires: [] };
+  }
+
+  // Fallback (sem respostas inline — ex.: paciente que volta): mantém o envio dos
+  // questionários de entrada por link/e-mail e devolve os tokens para a tela.
   let questionnaires: { name: string; token: string }[] = [];
   if (result.appointmentId) {
     try {
