@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, CalendarClock, Loader2, AlertCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -50,6 +50,13 @@ export function ConfirmClient({
   function setAns(tplId: string, qId: string, v: number | string) {
     setFormAnswers((prev) => ({ ...prev, [tplId]: { ...(prev[tplId] ?? {}), [qId]: v } }));
   }
+
+  // Ao trocar de questionário (ou ir para os dados), abre no TOPO. O efeito roda
+  // depois do render, então o novo conteúdo já existe (scrollTo dentro do clique
+  // corria antes de renderizar e o paciente caía no fim da página anterior).
+  useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+  }, [phase]);
 
   // Faltam obrigatórias no questionário atual? (scale/yes_no/number sempre; texto só se is_required)
   function missingInForm(tpl: TemplateWithStructure): number {
@@ -123,18 +130,10 @@ export function ConfirmClient({
   }
 
   // ── Estados terminais ──
-  if (invalid) {
-    return (
-      <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
-        <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[36px] text-center">
-          <AlertCircle className="h-9 w-9 mx-auto mb-[12px] text-[#B42318]" />
-          <h1 className="text-[17px] font-medium text-[#0F1A2E] mb-[6px]">{t("invalidTitle")}</h1>
-          <p className="text-[13px] text-[#6B6A66] leading-relaxed">{t("invalidDesc")}</p>
-        </div>
-      </main>
-    );
-  }
-
+  // IMPORTANTE: `done` (sucesso do cliente) vem ANTES de `invalid`. Ao confirmar,
+  // o server action re-renderiza a página e o agendamento já não está "pending",
+  // então `invalid` viraria true e mostraria "Link indisponível" por cima do
+  // sucesso. Checando `done` primeiro, o paciente vê a confirmação, não o erro.
   if (done) {
     return (
       <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
@@ -176,6 +175,18 @@ export function ConfirmClient({
     );
   }
 
+  if (invalid) {
+    return (
+      <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
+        <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[36px] text-center">
+          <AlertCircle className="h-9 w-9 mx-auto mb-[12px] text-[#B42318]" />
+          <h1 className="text-[17px] font-medium text-[#0F1A2E] mb-[6px]">{t("invalidTitle")}</h1>
+          <p className="text-[13px] text-[#6B6A66] leading-relaxed">{t("invalidDesc")}</p>
+        </div>
+      </main>
+    );
+  }
+
   // ── Fase de QUESTIONÁRIO (antes dos dados) ──────────────────────────────────
   if (!done && intakeForms.length > 0 && phase < intakeForms.length) {
     const tpl = intakeForms[phase];
@@ -185,8 +196,7 @@ export function ConfirmClient({
     function advance() {
       if (missing > 0) { setError(t("answerAllShort")); return; }
       setError(null);
-      setPhase((p) => p + 1);
-      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      setPhase((p) => p + 1); // o scroll-to-top é feito pelo useEffect([phase])
     }
     return (
       <main className="min-h-screen bg-[#F4F3EF] px-[16px] py-[36px]">
