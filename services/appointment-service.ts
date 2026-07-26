@@ -77,6 +77,16 @@ export async function hasAppointmentConflict(opts: {
   exclude_appointment_id?: string | null;
 }): Promise<boolean> {
   const supabase = createSupabaseAdminClient();
+
+  // Clínicas que atendem em paralelo (2 pacientes ou 2 procedimentos no mesmo
+  // horário) podem habilitar sobreposição — nesse caso não existe "conflito".
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select("allow_double_booking")
+    .eq("id", opts.clinic_id)
+    .maybeSingle();
+  if (clinic?.allow_double_booking) return false;
+
   const start = new Date(opts.starts_at);
   const end = new Date(start.getTime() + opts.duration_minutes * 60_000);
   // Janela retroativa de 8h cobre qualquer sessão longa que ainda possa sobrepor

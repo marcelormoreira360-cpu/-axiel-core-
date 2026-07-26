@@ -38,7 +38,16 @@ export async function sendAssessmentsToPatient(input: {
   const links: { name: string; url: string; token: string }[] = [];
 
   for (const tpl of templates) {
-    // Idempotência: já existe convite aberto (não respondido, não expirado)?
+    const token = crypto.randomBytes(32).toString("hex");
+    const token_hash = crypto.createHash("sha256").update(token).digest("hex");
+    // 30 dias de validade (explícito, não depende só do default do banco).
+    const expires_at = new Date(Date.now() + 30 * 86_400_000).toISOString();
+
+    // Já existe convite aberto (não respondido, não expirado)? Antes o código
+    // PULAVA (continue), o que deixava a tela de confirmação sem os links do
+    // paciente e o botão "Abrir questionário" não aparecia. Agora reaproveita o
+    // convite girando o token — sempre há um link fresco e utilizável para
+    // exibir/abrir, sem duplicar o questionário.
     const { data: open } = await supabase
       .from("assessment_invitations")
       .select("id")
@@ -47,20 +56,23 @@ export async function sendAssessmentsToPatient(input: {
       .is("completed_at", null)
       .gt("expires_at", new Date().toISOString())
       .maybeSingle();
-    if (open) continue;
 
-    const token = crypto.randomBytes(32).toString("hex");
-    const token_hash = crypto.createHash("sha256").update(token).digest("hex");
-    // 30 dias de validade (explícito, não depende só do default do banco).
-    const expires_at = new Date(Date.now() + 30 * 86_400_000).toISOString();
-    const { error } = await supabase.from("assessment_invitations").insert({
-      token_hash,
-      template_id: tpl.id,
-      patient_id: input.patientId,
-      clinic_id: input.clinicId,
-      expires_at,
-    });
-    if (error) continue;
+    if (open) {
+      const { error } = await supabase
+        .from("assessment_invitations")
+        .update({ token_hash, expires_at })
+        .eq("id", open.id);
+      if (error) continue;
+    } else {
+      const { error } = await supabase.from("assessment_invitations").insert({
+        token_hash,
+        template_id: tpl.id,
+        patient_id: input.patientId,
+        clinic_id: input.clinicId,
+        expires_at,
+      });
+      if (error) continue;
+    }
     links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}`, token });
   }
 
