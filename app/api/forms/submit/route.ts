@@ -27,16 +27,16 @@ const answerSchema = z.object({
 });
 
 // Cadastro do futuro paciente (só em link público de captação).
-// Fluxo FINAL: os 4 campos (nome, sobrenome, e-mail, telefone) são coletados no
-// INÍCIO e são OBRIGATÓRIOS. O front compõe full_name = `${first} ${last}`; aqui
-// exigimos full_name + email + phone não-vazios (validação de servidor).
+// Fluxo FINAL: os dados são coletados DEPOIS do questionário. Obrigatórios:
+// nome, data de nascimento e e-mail. Telefone e o resto são opcionais.
 const contactSchema = z.object({
-  full_name: z.string().trim().max(120).nullable().optional(),
-  email:     z.string().trim().max(200).nullable().optional(),
-  phone:     z.string().trim().max(40).nullable().optional(),
-  consent:   z.boolean(),
+  full_name:     z.string().trim().max(120).nullable().optional(),
+  email:         z.string().trim().max(200).nullable().optional(),
+  phone:         z.string().trim().max(40).nullable().optional(),
+  date_of_birth: z.string().trim().max(10).nullable().optional(),
+  consent:       z.boolean(),
   // honeypot anti-bot: campo invisível que deve chegar vazio
-  website:   z.string().max(0).optional(),
+  website:       z.string().max(0).optional(),
 });
 
 const submitSchema = z.object({
@@ -92,19 +92,23 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Consentimento obrigatório" }, { status: 400 });
       }
 
-      // Fluxo FINAL: nome (nome+sobrenome compostos no front), e-mail e telefone
-      // são TODOS obrigatórios. Validação de servidor (o front já bloqueia vazio).
+      // Fluxo FINAL: dados coletados DEPOIS do questionário. Obrigatórios: nome,
+      // data de nascimento e e-mail. Telefone é opcional. Validação de servidor.
       const fullName = contact.full_name?.trim() || "";
       const email = contact.email?.trim().toLowerCase() || null;
       const phone = contact.phone ? (contact.phone.replace(/\D/g, "") || contact.phone.trim()) : null;
-      if (!fullName || !email || !phone) {
+      const dob = contact.date_of_birth?.trim() || null;
+      if (!fullName || !email || !dob) {
         return NextResponse.json(
-          { error: "Nome, e-mail e telefone são obrigatórios" },
+          { error: "Nome, data de nascimento e e-mail são obrigatórios" },
           { status: 400 },
         );
       }
       if (!EMAIL_RE.test(email)) {
         return NextResponse.json({ error: "E-mail inválido" }, { status: 400 });
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
+        return NextResponse.json({ error: "Data de nascimento inválida" }, { status: 400 });
       }
 
       // Link reutilizável → rate limit por IP (não por token).
@@ -216,6 +220,7 @@ export async function POST(req: NextRequest) {
           .update({
             full_name: fullName,
             phone: phone ?? undefined,
+            date_of_birth: dob,
             notes: noteSummary,
             updated_at: new Date().toISOString(),
           })
@@ -228,6 +233,7 @@ export async function POST(req: NextRequest) {
             full_name: fullName,
             email,
             phone,
+            date_of_birth: dob,
             source: "public_form",
             stage: "new_lead",
             main_complaint: null,
@@ -249,6 +255,7 @@ export async function POST(req: NextRequest) {
         full_name: fullName,
         email,
         phone,
+        date_of_birth: dob,
         consent_ip: ip === "unknown" ? null : ip,
         consent_user_agent: ua,
         answers,

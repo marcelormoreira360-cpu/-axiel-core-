@@ -73,7 +73,7 @@
     "sendMore": "Enviar mais arquivos"
   },
   "capture": {
-    "publicIntro": "Preencha seus dados e responda o questionário. Leva poucos minutos.",
+    "publicIntro": "Responda ao questionário abaixo. No final, basta deixar os seus dados para receber o seu resultado. Demora poucos minutos.",
     "step1": "Passo 1 de 2 · Seus dados",
     "step2": "Passo 2 de 2 · Questionário",
     "fullName": "Nome completo",
@@ -100,7 +100,13 @@
     "disclosure": "Autoavaliação de bem-estar, não é um diagnóstico médico. Este questionário (MSQ) é uma ferramenta educativa de bem-estar do Integrative Functional Wellness Center (IFWC / Moreira & Angeli LLC). Ele não diagnostica nenhuma condição e não é atendimento médico nem substitui a orientação do seu médico. Se você tem uma preocupação de saúde, procure um profissional licenciado.",
     "consentRequiredEn": "Entendo que esta é uma ferramenta educativa de bem-estar e não atendimento médico. Concordo que minhas respostas sejam coletadas pelo IFWC e usadas conforme descrito na",
     "consentPrivacyLink": "Política de Privacidade",
-    "contactOptIn": "Gostaria que o IFWC me enviasse por e-mail/ligasse com meus resultados ou para agendar uma avaliação de bem-estar. Autorizo o contato pelo e-mail/telefone que informei."
+    "contactOptIn": "Gostaria que o IFWC me enviasse por e-mail/ligasse com meus resultados ou para agendar uma avaliação de bem-estar. Autorizo o contato pelo e-mail/telefone que informei.",
+    "almostDone": "Quase lá",
+    "contactIntro": "Para receber o seu resultado e os próximos passos, deixe os seus dados abaixo.",
+    "dob": "Data de nascimento",
+    "dobRequired": "Indique a sua data de nascimento.",
+    "phoneOptional": "Telefone / WhatsApp (opcional)",
+    "backToQuestions": "← Voltar ao questionário"
   },
   "result": {
     "heading": "Seu retrato de hoje",

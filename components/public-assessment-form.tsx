@@ -68,14 +68,18 @@ function ScaleInput({
 }
 
 export type PublicContact = {
-  /** Fluxo FINAL: nome (nome+sobrenome), e-mail e telefone são obrigatórios. */
+  /** Fluxo FINAL: nome, data de nascimento e e-mail obrigatórios; telefone opcional. */
   full_name: string;
   email: string;
   phone: string;
+  date_of_birth?: string;
   consent: boolean;
   /** honeypot anti-bot */
   website?: string;
 };
+
+const PUBLIC_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PUBLIC_PRIVACY_URL = "/privacy";
 
 export function PublicAssessmentForm({
   template,
@@ -83,6 +87,7 @@ export function PublicAssessmentForm({
   chain = [],
   contact,
   publicMode = false,
+  captureContactAtEnd = false,
 }: {
   template: TemplateWithStructure;
   token: string;
@@ -92,8 +97,21 @@ export function PublicAssessmentForm({
   contact?: PublicContact | null;
   /** Modo captação: esconde o placar clínico na tela final. */
   publicMode?: boolean;
+  /** Captação com dados NO FIM: responde o questionário e só depois preenche
+   *  nome/nascimento/e-mail (obrigatórios) + telefone (opcional) + consentimento. */
+  captureContactAtEnd?: boolean;
 }) {
   const t = useTranslations("publicForm");
+  // Passo de contato ao fim (só quando captureContactAtEnd): coleta os dados
+  // DEPOIS das perguntas.
+  const [contactStep, setContactStep] = useState(false);
+  const [cFirstName, setCFirstName] = useState("");
+  const [cLastName, setCLastName] = useState("");
+  const [cDob, setCDob] = useState("");
+  const [cEmail, setCEmail] = useState("");
+  const [cPhone, setCPhone] = useState("");
+  const [cConsent, setCConsent] = useState(false);
+  const [cWebsite, setCWebsite] = useState(""); // honeypot
   // Idioma ativo (cookie AXIEL_LOCALE, via LanguageSwitcher) — enviado ao backend
   // para o e-mail de resultado sair no mesmo idioma da tela.
   const locale = useLocale();
@@ -151,12 +169,44 @@ export function PublicAssessmentForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    // Bloqueia envio/avanço só se faltar responder alguma pergunta obrigatória
-    // (perguntas com pontuação, ou de texto marcadas como obrigatórias).
-    if (missingRequired > 0) {
+
+    // Captação com dados no fim: 1º passo é responder as perguntas. Ao concluir,
+    // avança para o passo de contato (não envia ainda).
+    if (captureContactAtEnd && !contactStep) {
+      if (missingRequired > 0) {
+        setError(t("answerAll", { count: missingRequired }));
+        return;
+      }
+      setError(null);
+      setContactStep(true);
+      if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    // Monta o contato: no modo captação-ao-fim vem dos campos preenchidos agora
+    // (nome+nascimento+e-mail obrigatórios; telefone opcional). Senão, usa o
+    // contato recebido por prop (fluxo antigo) ou null (link de paciente).
+    let effectiveContact: PublicContact | null = contact ?? null;
+    if (captureContactAtEnd) {
+      if (cWebsite) return; // honeypot: bot → ignora em silêncio
+      if (!cFirstName.trim() || !cLastName.trim()) { setError(t("capture.nameRequired")); return; }
+      if (!cDob || !/^\d{4}-\d{2}-\d{2}$/.test(cDob)) { setError(t("capture.dobRequired")); return; }
+      if (!cEmail.trim() || !PUBLIC_EMAIL_RE.test(cEmail.trim())) { setError(t("capture.emailInvalid")); return; }
+      if (!cConsent) { setError(t("capture.consentRequired")); return; }
+      effectiveContact = {
+        full_name: `${cFirstName.trim()} ${cLastName.trim()}`.trim(),
+        email: cEmail.trim(),
+        phone: cPhone.trim(),
+        date_of_birth: cDob,
+        consent: true,
+        website: cWebsite,
+      };
+    } else if (missingRequired > 0) {
+      // Bloqueia envio só se faltar responder alguma pergunta obrigatória.
       setError(t("answerAll", { count: missingRequired }));
       return;
     }
+
     setSubmitting(true);
     setError(null);
 
@@ -197,7 +247,7 @@ export function PublicAssessmentForm({
           total_score: totalScore,
           max_possible_score: maxPossible,
           notes: notes.trim() || null,
-          contact: contact ?? null,
+          contact: effectiveContact,
           locale,
         }),
       });
@@ -412,6 +462,74 @@ export function PublicAssessmentForm({
     );
   }
 
+  // ── Passo de contato AO FIM (captação): dados depois do questionário ──────────
+  if (captureContactAtEnd && contactStep) {
+    const fieldCls =
+      "w-full px-[12px] py-[10px] rounded-[8px] border border-black/[.12] dark:border-white/[.12] dark:bg-[#1C2333] text-[14px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] transition";
+    const lblCls = "text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px] block";
+    return (
+      <form onSubmit={submit} className="space-y-[16px]">
+        <div>
+          <p className="text-[11px] font-medium tracking-[.08em] uppercase text-[#0F6E56] dark:text-[#9FE1CB] mb-[6px]">
+            {t("capture.almostDone")}
+          </p>
+          <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">{t("capture.contactIntro")}</p>
+        </div>
+
+        <div className="bg-white dark:bg-[#161B26] border border-black/[.07] dark:border-white/[.08] rounded-[12px] px-[16px] py-[16px] space-y-[14px]">
+          <div>
+            <label className={lblCls}>{t("capture.firstName")}</label>
+            <input type="text" value={cFirstName} onChange={(e) => setCFirstName(e.target.value)} required autoComplete="given-name" className={fieldCls} />
+          </div>
+          <div>
+            <label className={lblCls}>{t("capture.lastName")}</label>
+            <input type="text" value={cLastName} onChange={(e) => setCLastName(e.target.value)} required autoComplete="family-name" className={fieldCls} />
+          </div>
+          <div>
+            <label className={lblCls}>{t("capture.dob")}</label>
+            <input type="date" value={cDob} onChange={(e) => setCDob(e.target.value)} required autoComplete="bday" className={fieldCls} />
+          </div>
+          <div>
+            <label className={lblCls}>{t("capture.email")}</label>
+            <input type="email" value={cEmail} onChange={(e) => setCEmail(e.target.value)} required autoComplete="email" inputMode="email" className={fieldCls} />
+          </div>
+          <div>
+            <label className={lblCls}>{t("capture.phoneOptional")}</label>
+            <input type="tel" value={cPhone} onChange={(e) => setCPhone(e.target.value)} autoComplete="tel" inputMode="tel" className={fieldCls} />
+          </div>
+
+          {/* Honeypot */}
+          <div aria-hidden className="absolute left-[-9999px] top-[-9999px] h-0 w-0 overflow-hidden">
+            <label>Website<input type="text" tabIndex={-1} autoComplete="off" value={cWebsite} onChange={(e) => setCWebsite(e.target.value)} /></label>
+          </div>
+
+          <label className="flex items-start gap-[8px] cursor-pointer pt-[2px]">
+            <input type="checkbox" checked={cConsent} onChange={(e) => setCConsent(e.target.checked)} className="mt-[2px] h-[16px] w-[16px] shrink-0 accent-[#0F6E56]" />
+            <span className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">
+              {t("capture.consentRequiredEn")}{" "}
+              <a href={PUBLIC_PRIVACY_URL} target="_blank" rel="noopener noreferrer" className="text-[#0F6E56] underline hover:text-[#085041] dark:text-[#9FE1CB]">
+                {t("capture.consentPrivacyLink")}
+              </a>.
+            </span>
+          </label>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 rounded-[8px] px-[12px] py-[10px]">
+            <p className="text-[12px] text-red-600 dark:text-red-400">{error}</p>
+          </div>
+        )}
+
+        <button type="submit" disabled={submitting} className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition">
+          {submitting ? t("submitting") : t("submit")}
+        </button>
+        <button type="button" onClick={() => { setContactStep(false); setError(null); }} className="w-full text-[12px] text-[#6B6A66] dark:text-[#9E9C97] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
+          {t("capture.backToQuestions")}
+        </button>
+      </form>
+    );
+  }
+
   const scaleLabels = (template as any).scale_labels ?? DEFAULT_SCALE_LABELS;
 
   const fillPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
@@ -561,7 +679,7 @@ export function PublicAssessmentForm({
         disabled={submitting || advancing || missingRequired > 0}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
-        {submitting || advancing ? t("submitting") : chain.length > 0 ? t("next") : t("submit")}
+        {submitting || advancing ? t("submitting") : (captureContactAtEnd || chain.length > 0) ? t("next") : t("submit")}
       </button>
     </form>
   );

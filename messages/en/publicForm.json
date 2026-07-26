@@ -73,7 +73,7 @@
     "sendMore": "Send more files"
   },
   "capture": {
-    "publicIntro": "Fill in your details and answer the questionnaire. It only takes a few minutes.",
+    "publicIntro": "Answer the questionnaire below. At the end, just leave your details to receive your result. It only takes a few minutes.",
     "step1": "Step 1 of 2 · Your details",
     "step2": "Step 2 of 2 · Questionnaire",
     "fullName": "Full name",
@@ -100,7 +100,13 @@
     "disclosure": "Wellness self-check, not a medical diagnosis. This questionnaire (MSQ) is an educational wellness tool from Integrative Functional Wellness Center (IFWC / Moreira & Angeli LLC). It does not diagnose any condition and is not medical care or a substitute for advice from your doctor. If you have a medical concern, contact a licensed provider.",
     "consentRequiredEn": "I understand this is an educational wellness tool and not medical care. I agree that my answers are collected by IFWC and used as described in the",
     "consentPrivacyLink": "Privacy Policy",
-    "contactOptIn": "I'd like IFWC to email/call me with my results or to schedule a wellness assessment. I consent to being contacted at the email/phone I provide."
+    "contactOptIn": "I'd like IFWC to email/call me with my results or to schedule a wellness assessment. I consent to being contacted at the email/phone I provide.",
+    "almostDone": "Almost done",
+    "contactIntro": "To receive your result and next steps, please share your details below.",
+    "dob": "Date of birth",
+    "dobRequired": "Please enter your date of birth.",
+    "phoneOptional": "Phone / WhatsApp (optional)",
+    "backToQuestions": "← Back to the questionnaire"
   },
   "result": {
     "heading": "Your snapshot",
