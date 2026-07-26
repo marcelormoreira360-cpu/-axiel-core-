@@ -60,7 +60,8 @@
     "cityPlaceholder": "São Paulo",
     "state": "State",
     "statePlaceholder": "SP",
-    "save": "Save contact"
+    "save": "Save contact",
+    "saved": "Contact saved"
   },
   "branding": {
     "logoAlt": "Logo",

@@ -176,7 +176,7 @@ function cleanPhoneForWhatsApp(value?: string | null) {
   return digits.length >= 10 ? digits : null;
 }
 
-export const PATIENT_PORTAL_LINK_EXPIRATION_DAYS = 7;
+export const PATIENT_PORTAL_LINK_EXPIRATION_DAYS = 30;
 export const PATIENT_PORTAL_WHATSAPP_MESSAGE = "Olá, tenho uma dúvida sobre minha sessão.";
 
 

@@ -11,6 +11,7 @@ import { Card } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
 import { LimitedList } from "@/components/limited-list";
 import { ClinicEditForm } from "@/components/clinic-edit-form";
+import { ClinicContactForm } from "@/components/clinic-contact-form";
 import { getClinicsForUser, updateClinic, getCurrentClinic } from "@/services/clinic-service";
 import { getUsersForCurrentScope } from "@/services/user-service";
 import { roleLabels } from "@/modules/auth/roles";
@@ -57,10 +58,10 @@ export default async function ClinicsPage() {
     revalidatePath("/settings");
   }
 
-  async function updateClinicContactAction(formData: FormData) {
+  async function updateClinicContactAction(_prev: { ok: boolean } | null, formData: FormData) {
     "use server";
     const id = String(formData.get("id") ?? "");
-    if (!id) return;
+    if (!id) return { ok: false };
     await updateClinic(id, {
       phone:         String(formData.get("phone")         ?? "").trim() || null,
       contact_email: String(formData.get("contact_email") ?? "").trim() || null,
@@ -72,6 +73,8 @@ export default async function ClinicsPage() {
       description:   String(formData.get("description")   ?? "").trim() || null,
     });
     revalidatePath("/clinics");
+    revalidatePath("/settings");
+    return { ok: true };
   }
 
   async function updateClinicProfileAction(formData: FormData) {
@@ -181,7 +184,7 @@ export default async function ClinicsPage() {
               <p className="text-[12px] text-[#A09E98] mb-[14px]">
                 {t("contact.subtitle")}
               </p>
-              <form action={updateClinicContactAction} className="space-y-[12px]">
+              <ClinicContactForm action={updateClinicContactAction} className="space-y-[12px]">
                 <input type="hidden" name="id" value={myClinic.id} />
 
                 {/* Descrição */}
@@ -299,7 +302,7 @@ export default async function ClinicsPage() {
                     {t("contact.save")}
                   </button>
                 </div>
-              </form>
+              </ClinicContactForm>
             </Card>
           </div>
 
