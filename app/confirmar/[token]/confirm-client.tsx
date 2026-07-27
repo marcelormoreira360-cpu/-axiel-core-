@@ -44,6 +44,9 @@ export function ConfirmClient({
   const [questionnaires, setQuestionnaires] = useState<{ name: string; token: string }[]>([]);
   // Wizard questionário-primeiro: phase 0..N-1 = cada questionário; N = dados.
   const [phase, setPhase] = useState(0);
+  // Após tentar avançar com pendências, destaca em vermelho as obrigatórias que
+  // faltam (botão continua ativo — o paciente recebe uma mensagem clara).
+  const [attempted, setAttempted] = useState(false);
   // Respostas por template: { [templateId]: { [questionId]: number|string } }.
   const [formAnswers, setFormAnswers] = useState<Record<string, Record<string, number | string>>>({});
 
@@ -56,18 +59,20 @@ export function ConfirmClient({
   // corria antes de renderizar e o paciente caía no fim da página anterior).
   useEffect(() => {
     if (typeof window !== "undefined") window.scrollTo(0, 0);
+    setAttempted(false); // cada questionário começa sem destaque de erro
   }, [phase]);
 
-  // Faltam obrigatórias no questionário atual? (scale/yes_no/number sempre; texto só se is_required)
-  function missingInForm(tpl: TemplateWithStructure): number {
+  // IDs das obrigatórias em falta no questionário atual (scale/yes_no/number
+  // sempre; texto só se is_required). O tamanho do Set = quantas faltam.
+  function missingIdsInForm(tpl: TemplateWithStructure): Set<string> {
     const a = formAnswers[tpl.id] ?? {};
-    let missing = 0;
+    const missing = new Set<string>();
     for (const s of tpl.assessment_sections) {
       for (const q of s.assessment_questions) {
         const v = a[q.id];
         const isText = q.question_type === "text";
         const answered = isText ? typeof v === "string" && v.trim().length > 0 : typeof v === "number";
-        if ((!isText || q.is_required) && !answered) missing++;
+        if ((!isText || q.is_required) && !answered) missing.add(q.id);
       }
     }
     return missing;
@@ -191,10 +196,21 @@ export function ConfirmClient({
   if (!done && intakeForms.length > 0 && phase < intakeForms.length) {
     const tpl = intakeForms[phase];
     const a = formAnswers[tpl.id] ?? {};
-    const missing = missingInForm(tpl);
+    const missingSet = missingIdsInForm(tpl);
+    const missing = missingSet.size;
     const scaleLabels = ((tpl as unknown as { scale_labels?: string[] }).scale_labels) ?? null;
     function advance() {
-      if (missing > 0) { setError(t("answerAllShort")); return; }
+      if (missing > 0) {
+        setAttempted(true);
+        setError(t("answerAllHighlight"));
+        if (typeof window !== "undefined") {
+          requestAnimationFrame(() => {
+            const el = document.querySelector('[data-missing="true"]');
+            if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+        }
+        return;
+      }
       setError(null);
       setPhase((p) => p + 1); // o scroll-to-top é feito pelo useEffect([phase])
     }
@@ -223,9 +239,17 @@ export function ConfirmClient({
                 <div className="divide-y divide-black/[.05]">
                   {section.assessment_questions.map((q) => {
                     const v = a[q.id];
+                    const isMissing = attempted && missingSet.has(q.id);
                     return (
-                      <div key={q.id} className="px-[16px] py-[13px]">
-                        <p className="text-[13px] text-[#0F1A2E] mb-[9px] leading-snug">{q.text}</p>
+                      <div
+                        key={q.id}
+                        data-missing={isMissing ? "true" : undefined}
+                        className={["px-[16px] py-[13px] transition-colors", isMissing ? "bg-[#FEF3F2] ring-1 ring-inset ring-[#FDA29B]" : ""].join(" ")}
+                      >
+                        <p className="text-[13px] text-[#0F1A2E] mb-[9px] leading-snug">
+                          {q.text}
+                          {isMissing && <span className="ml-[6px] text-[11px] font-medium text-[#B42318]">• {t("requiredMark")}</span>}
+                        </p>
                         {q.question_type === "scale" && (
                           <div className="flex items-center gap-[4px] flex-wrap">
                             {Array.from({ length: q.max_score - q.min_score + 1 }, (_, i) => i + q.min_score).map((n) => (
@@ -274,8 +298,8 @@ export function ConfirmClient({
 
           {error && <p className="mt-[12px] text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px]">{error}</p>}
 
-          <button type="button" onClick={advance} disabled={missing > 0}
-            className="mt-[14px] w-full text-[13px] font-medium text-white rounded-[9px] px-[14px] py-[11px] disabled:opacity-40 transition"
+          <button type="button" onClick={advance}
+            className="mt-[14px] w-full text-[13px] font-medium text-white rounded-[9px] px-[14px] py-[11px] transition"
             style={{ background: primaryColor }}>
             {t("next")}
           </button>

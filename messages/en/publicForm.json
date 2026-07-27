@@ -4,6 +4,7 @@
   "expiredTitle": "This link has expired",
   "expiredDesc": "The time to respond has passed. Ask your therapist for a new link.",
   "completedTitle": "You've already answered",
+  "completedTitleNamed": "You've already answered: {name}",
   "completedDesc": "Thank you! This questionnaire has already been completed and is on file. No need to fill it out again.",
   "eyebrow": "Questionnaire",
   "greeting": "Hi, {name}",
@@ -136,5 +137,6 @@
     "clinicBlockTitle": "Get in touch",
     "clinicPhoneLabel": "Phone:",
     "clinicSiteLabel": "Website:"
-  }
+  },
+  "requiredMark": "required"
 }

@@ -121,6 +121,10 @@ export function PublicAssessmentForm({
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Depois de uma tentativa de avançar com pendências, destaca em vermelho as
+  // perguntas obrigatórias que faltam (o botão continua ativo — o paciente
+  // recebe uma mensagem e vê o que falta, em vez de um botão "apagado").
+  const [attempted, setAttempted] = useState(false);
   // Modo público (funil value-first): resultado devolvido pelo backend.
   const [result, setResult] = useState<PublicResult | null>(null);
 
@@ -128,12 +132,13 @@ export function PublicAssessmentForm({
     setAnswers((prev) => ({ ...prev, [qid]: value }));
   }
 
-  const { sectionScores, totalScore, maxPossible, percentage, answeredCount, totalQuestions, missingRequired } = useMemo(() => {
+  const { sectionScores, totalScore, maxPossible, percentage, answeredCount, totalQuestions, missingRequired, missingIds } = useMemo(() => {
     let total = 0;
     let maxP = 0;
     let answered = 0;
     let totalQ = 0;
     let missingReq = 0;
+    const missing = new Set<string>();
     const sScores: Record<string, { score: number; max: number }> = {};
     for (const section of template.assessment_sections) {
       let sScore = 0;
@@ -152,7 +157,7 @@ export function PublicAssessmentForm({
         // Perguntas com pontuação (scale/yes_no/número) são sempre obrigatórias
         // para um score válido; texto livre é opcional, a menos que marcado.
         const isRequired = !isText || q.is_required;
-        if (isRequired && !isAnswered) missingReq++;
+        if (isRequired && !isAnswered) { missingReq++; missing.add(q.id); }
       }
       sScores[section.id] = { score: sScore, max: sMax };
     }
@@ -164,8 +169,19 @@ export function PublicAssessmentForm({
       answeredCount: answered,
       totalQuestions: totalQ,
       missingRequired: missingReq,
+      missingIds: missing,
     };
   }, [answers, template]);
+
+  // Rola até a primeira pergunta obrigatória em falta e liga o destaque vermelho.
+  function flagMissingAndScroll() {
+    setAttempted(true);
+    if (typeof window === "undefined") return;
+    requestAnimationFrame(() => {
+      const el = document.querySelector('[data-missing="true"]');
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -175,6 +191,7 @@ export function PublicAssessmentForm({
     if (captureContactAtEnd && !contactStep) {
       if (missingRequired > 0) {
         setError(t("answerAll", { count: missingRequired }));
+        flagMissingAndScroll();
         return;
       }
       setError(null);
@@ -204,6 +221,7 @@ export function PublicAssessmentForm({
     } else if (missingRequired > 0) {
       // Bloqueia envio só se faltar responder alguma pergunta obrigatória.
       setError(t("answerAll", { count: missingRequired }));
+      flagMissingAndScroll();
       return;
     }
 
@@ -579,9 +597,21 @@ export function PublicAssessmentForm({
               </div>
             </div>
             <div className="divide-y divide-black/[.05] dark:divide-white/[.06]">
-              {section.assessment_questions.map((q) => (
-                <div key={q.id} className="px-[16px] py-[14px]">
-                  <p className="text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px] leading-snug">{q.text}</p>
+              {section.assessment_questions.map((q) => {
+                const isMissing = attempted && missingIds.has(q.id);
+                return (
+                <div
+                  key={q.id}
+                  data-missing={isMissing ? "true" : undefined}
+                  className={[
+                    "px-[16px] py-[14px] transition-colors",
+                    isMissing ? "bg-[#FEF3F2] dark:bg-red-500/10 ring-1 ring-inset ring-[#FDA29B] dark:ring-red-500/40" : "",
+                  ].join(" ")}
+                >
+                  <p className="text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] mb-[10px] leading-snug">
+                    {q.text}
+                    {isMissing && <span className="ml-[6px] text-[11px] font-medium text-[#B42318] dark:text-red-400">• {t("requiredMark")}</span>}
+                  </p>
                   {q.question_type === "scale" && (
                     <ScaleInput
                       question={q}
@@ -627,7 +657,8 @@ export function PublicAssessmentForm({
                     />
                   )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -676,7 +707,7 @@ export function PublicAssessmentForm({
 
       <button
         type="submit"
-        disabled={submitting || advancing || missingRequired > 0}
+        disabled={submitting || advancing}
         className="w-full text-[14px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[10px] py-[13px] transition"
       >
         {submitting || advancing ? t("submitting") : (captureContactAtEnd || chain.length > 0) ? t("next") : t("submit")}

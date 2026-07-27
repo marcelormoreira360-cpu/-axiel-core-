@@ -31,7 +31,11 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
     const t = await getTranslations("publicForm");
     const view =
       data.status === "completed"
-        ? { icon: "✅", title: t("completedTitle"), desc: t("completedDesc") }
+        ? {
+            icon: "✅",
+            title: data.templateName ? t("completedTitleNamed", { name: data.templateName }) : t("completedTitle"),
+            desc: t("completedDesc"),
+          }
         : data.status === "expired"
           ? { icon: "⏰", title: t("expiredTitle"), desc: t("expiredDesc") }
           : { icon: "🔗", title: t("invalidTitle"), desc: t("invalidDesc") };

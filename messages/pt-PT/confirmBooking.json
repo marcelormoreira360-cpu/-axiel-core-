@@ -34,5 +34,7 @@
   "stepOf": "Questionário {current} de {total}",
   "answerAllShort": "Responda a todas as perguntas para continuar.",
   "yes": "Sim",
-  "no": "Não"
+  "no": "Não",
+  "requiredMark": "obrigatória",
+  "answerAllHighlight": "Faltam respostas. Complete os itens destacados a vermelho para continuar."
 }

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { getClinicTimezone } from "@/services/clinic-service";
 import type { TemplateWithStructure } from "@/lib/types";
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -210,13 +211,49 @@ export async function sendAssessmentsToPatient(input: {
 
   if (links.length === 0) return { sent: 0, links: [] };
 
+  // Reafirma o horário do PRÓXIMO agendamento do paciente (quando houver) e
+  // prepara a nota "se já respondeu, desconsidere" — ambos entram tanto na
+  // mensagem (WhatsApp/SMS) quanto no e-mail. Horário sempre no fuso da clínica.
+  let apptLine = ""; // texto puro para WhatsApp/SMS
+  let apptLineHtml = ""; // <p> para o e-mail
+  try {
+    const { data: nextAppt } = await supabase
+      .from("appointments")
+      .select("starts_at")
+      .eq("patient_id", input.patientId)
+      .eq("clinic_id", input.clinicId)
+      .is("deleted_at", null)
+      .gte("starts_at", new Date().toISOString())
+      .order("starts_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (nextAppt?.starts_at) {
+      const tz = await getClinicTimezone(input.clinicId);
+      const fmt = isEn ? "en-US" : "pt-BR";
+      const d = new Date(nextAppt.starts_at as string);
+      const dateStr = d.toLocaleDateString(fmt, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
+      const timeStr = d.toLocaleTimeString(fmt, { hour: "2-digit", minute: "2-digit", timeZone: tz });
+      const at = isEn ? " at " : " às ";
+      apptLine = isEn ? `Your appointment: ${dateStr}${at}${timeStr}.` : `Seu horário: ${dateStr}${at}${timeStr}.`;
+      apptLineHtml = `<p style="margin:0 0 10px"><strong>${isEn ? "Your appointment" : "Seu horário"}:</strong> ${dateStr}${at}${timeStr}.</p>`;
+    }
+  } catch { /* horário é opcional na mensagem */ }
+
+  const disregard = isEn
+    ? "If you have already answered these, you can disregard this message."
+    : "Se você já respondeu, pode desconsiderar esta mensagem.";
+
   const phone = patient.phone as string | null;
   if (phone) {
     const intro = isEn
       ? (links.length > 1 ? `Please fill out these ${links.length} questionnaires:` : "Please fill out this questionnaire:")
       : (links.length > 1 ? `Por favor responda estes ${links.length} questionários:` : "Por favor responda este questionário:");
     const greeting = isEn ? "Hi!" : "Olá!";
-    const body = `${greeting} ${intro}\n\n` + links.map((l) => `• ${l.name}: ${l.url}`).join("\n");
+    const body =
+      `${greeting} ${intro}\n\n` +
+      (apptLine ? `${apptLine}\n\n` : "") +
+      links.map((l) => `• ${l.name}: ${l.url}`).join("\n") +
+      `\n\n${disregard}`;
     // SMS (Twilio): canal mais confiável no celular, não depende da janela de 24h do WhatsApp.
     // Requer o telefone em E.164 (com código do país); mesmo tratamento do envio WhatsApp.
     try {
@@ -234,9 +271,10 @@ export async function sendAssessmentsToPatient(input: {
   const email = patient.email as string | null;
   if (email) {
     const items = links.map((l) => `<li style="margin:6px 0"><a href="${l.url}">${l.name}</a></li>`).join("");
+    const disregardHtml = `<p style="margin:14px 0 0;color:#6B6A66;font-size:13px">${disregard}</p>`;
     const html = isEn
-      ? `<p>Hi,</p><p>Please fill out the ${links.length > 1 ? "questionnaires" : "questionnaire"} below. It takes only a few minutes and helps a lot with your care:</p><ul>${items}</ul><p>Thank you!</p>`
-      : `<p>Olá,</p><p>Por favor responda ${links.length > 1 ? "os questionários" : "o questionário"} abaixo. Leva poucos minutos e ajuda muito no seu acompanhamento:</p><ul>${items}</ul><p>Obrigado!</p>`;
+      ? `<p>Hi,</p>${apptLineHtml}<p>Please fill out the ${links.length > 1 ? "questionnaires" : "questionnaire"} below. It takes only a few minutes and helps a lot with your care:</p><ul>${items}</ul>${disregardHtml}<p>Thank you!</p>`
+      : `<p>Olá,</p>${apptLineHtml}<p>Por favor responda ${links.length > 1 ? "os questionários" : "o questionário"} abaixo. Leva poucos minutos e ajuda muito no seu acompanhamento:</p><ul>${items}</ul>${disregardHtml}<p>Obrigado!</p>`;
     try {
       const { sendSimpleEmail } = await import("@/services/email-service");
       await sendSimpleEmail({ to: email, subject: isEn ? "Your questionnaires" : "Seus questionários", html });

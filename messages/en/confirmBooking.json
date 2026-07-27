@@ -34,5 +34,7 @@
   "stepOf": "Questionnaire {current} of {total}",
   "answerAllShort": "Please answer all questions to continue.",
   "yes": "Yes",
-  "no": "No"
+  "no": "No",
+  "requiredMark": "required",
+  "answerAllHighlight": "Some answers are missing. Complete the items highlighted in red to continue."
 }

@@ -92,7 +92,7 @@ export async function createPublicCaptureInvitation(input: {
 // "inválido", para a rota /f mostrar a mensagem certa ao paciente.
 export type InvitationLookup =
   | { status: "ok"; invitation: AssessmentInvitation; template: TemplateWithStructure; patientName: string | null; isPublic: boolean }
-  | { status: "completed" }
+  | { status: "completed"; templateName: string | null }
   | { status: "expired" }
   | { status: "invalid" };
 
@@ -109,7 +109,16 @@ export async function getInvitationByToken(token: string): Promise<InvitationLoo
   if (!inv) return { status: "invalid" };
   const isPublic = inv.kind === "public";
   // Link público reutilizável nunca "queima"; convite de paciente é de uso único.
-  if (!isPublic && inv.completed_at) return { status: "completed" }; // já respondido
+  if (!isPublic && inv.completed_at) {
+    // Nomeia o questionário já respondido para a tela do /f exibir "Você já
+    // respondeu: <nome>", deixando claro qual foi (o paciente recebe vários).
+    const { data: tpl } = await supabase
+      .from("assessment_templates")
+      .select("name")
+      .eq("id", inv.template_id)
+      .maybeSingle();
+    return { status: "completed", templateName: (tpl?.name as string) ?? null }; // já respondido
+  }
   if (new Date(inv.expires_at) < new Date()) return { status: "expired" }; // expirado
 
   // Get template structure

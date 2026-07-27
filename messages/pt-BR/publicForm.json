@@ -4,6 +4,7 @@
   "expiredTitle": "Este link expirou",
   "expiredDesc": "O prazo para responder passou. Peça ao seu terapeuta um novo link.",
   "completedTitle": "Você já respondeu",
+  "completedTitleNamed": "Você já respondeu: {name}",
   "completedDesc": "Obrigado! Este questionário já foi respondido e está na sua ficha. Não é preciso responder de novo.",
   "eyebrow": "Questionário",
   "greeting": "Olá, {name}",
@@ -136,5 +137,6 @@
     "clinicBlockTitle": "Fale com a gente",
     "clinicPhoneLabel": "Telefone:",
     "clinicSiteLabel": "Site:"
-  }
+  },
+  "requiredMark": "obrigatória"
 }
