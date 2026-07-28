@@ -146,6 +146,10 @@
         "title": "WhatsApp Bot",
         "text": "Configure the AI assistant: name, program, prices and language."
       },
+      "channels": {
+        "title": "Connected channels",
+        "text": "See the Facebook, Instagram and WhatsApp channels connected to your clinic and their status."
+      },
       "voice": {
         "title": "AI calls",
         "text": "AI answers calls in Portuguese and English with a neural voice. Same persona as the WhatsApp Bot."
@@ -668,7 +672,32 @@
     "metaPhoneIdPlaceholder": "e.g. 1031933676681061",
     "metaInstagramIdPlaceholder": "e.g. 17841400000000000",
     "metaFacebookPageIdPlaceholder": "e.g. 100000000000000",
-    "verifyTokenSample": "your_verify_token"
+    "verifyTokenSample": "your_verify_token",
+    "viewChannels": "View connected channels"
+  },
+  "channels": {
+    "back": "Settings",
+    "eyebrow": "Settings",
+    "title": "Connected channels",
+    "subtitle": "Meta channels connected to your clinic and their connection health.",
+    "facebookTitle": "Facebook Page",
+    "instagramTitle": "Instagram",
+    "whatsappTitle": "WhatsApp",
+    "labelName": "Name",
+    "labelPageId": "Page ID",
+    "labelAccount": "Account",
+    "labelAccountId": "Instagram account ID",
+    "labelNumber": "Number",
+    "labelPhoneNumberId": "Phone Number ID",
+    "labelStatus": "Status",
+    "labelWebhook": "Webhook",
+    "statusConnected": "Connected",
+    "statusConfigured": "Configured (verifying…)",
+    "statusNotConnected": "Not connected",
+    "webhookSubscribed": "Subscribed: messages",
+    "webhookNotSubscribed": "Not subscribed",
+    "empty": "No channels connected yet. Connect a Facebook Page or Instagram account to your clinic to see it here.",
+    "readOnlyNote": "This screen is read-only. It shows the channels linked to your clinic; it does not store or expose any access tokens."
   },
   "voice": {
     "back": "Settings",

@@ -1,4 +1,5 @@
-import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Link2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
@@ -29,6 +30,12 @@ export default async function WhatsAppSettingsPage() {
         <p className="text-[12px] text-[#A09E98] mt-[2px]">
           {t("subtitle")}
         </p>
+        <Link
+          href="/settings/channels"
+          className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#0F1A2E]/70 hover:text-[#0F1A2E] transition"
+        >
+          <Link2 className="h-3.5 w-3.5" /> {t("viewChannels")}
+        </Link>
       </div>
       <WhatsAppBotForm initialConfig={config} />
     </Shell>
