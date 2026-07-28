@@ -32,8 +32,8 @@
   },
   "page": {
     "eyebrow": "Atendimento",
-    "title": "WhatsApp Bot",
-    "subtitle": "Monitor de conversas e assistente IA",
+    "title": "Conversas",
+    "subtitle": "Monitor de mensagens e assistente IA",
     "configure": "Configurar bot",
     "kpiBot": "Bot status",
     "botActive": "Ativo",

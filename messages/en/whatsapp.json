@@ -32,8 +32,8 @@
   },
   "page": {
     "eyebrow": "Front desk",
-    "title": "WhatsApp Bot",
-    "subtitle": "Conversation monitor and AI assistant",
+    "title": "Conversations",
+    "subtitle": "Message monitor and AI assistant",
     "configure": "Configure bot",
     "kpiBot": "Bot status",
     "botActive": "Active",
