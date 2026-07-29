@@ -23,6 +23,9 @@ import type { ScoreBand } from "@/lib/types";
 
 type SafetyFlags = { showA: boolean; showB: boolean; showC: boolean };
 
+/** Faixa por eixo (PHQ-9 humor, GAD-7 ansiedade) — espelha a tela de resultado. */
+type SectionResult = { title: string; score: number; max: number; band: ScoreBand | null };
+
 function esc(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -47,6 +50,11 @@ export async function sendMsqResultEmail(input: {
   maxScore: number;
   scorePercentage: number;
   band: ScoreBand | null;
+  /** Faixa POR SEÇÃO. Quando presente (≥1), o e-mail mostra 2 scores (Humor/Ansiedade)
+   *  em vez do somado único — espelha a tela. Vazio/ausente → fallback score único. */
+  sectionResults?: SectionResult[];
+  /** Ideação (item 9 PHQ-9): inclui recursos de crise e suprime rótulo tranquilizador. */
+  crisis?: boolean;
   safetyFlags: SafetyFlags | null;
   locale: string | null | undefined;
 }): Promise<void> {
@@ -81,6 +89,84 @@ export async function sendMsqResultEmail(input: {
           </td></tr>
         </table>
       </td></tr>`
+      : "";
+
+  // ── Modo DOIS SCORES (PHQ-9 humor + GAD-7 ansiedade), espelhando a tela ──────
+  const sectionResults = input.sectionResults ?? [];
+  const twoScoreMode = sectionResults.length > 0;
+
+  function barHtml(pctVal: number, color: string): string {
+    const w = Math.max(0, Math.min(100, pctVal));
+    return `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:999px;height:6px;">
+            <tr><td style="padding:0;">
+              <table width="${w}%" cellpadding="0" cellspacing="0" style="min-width:2px;"><tr>
+                <td style="background:${color};height:6px;border-radius:999px;font-size:0;line-height:0;">&nbsp;</td>
+              </tr></table>
+            </td></tr>
+          </table>`;
+  }
+
+  function axisLabel(title: string): string {
+    if (/phq/i.test(title)) return t("result.axisMood");
+    if (/gad/i.test(title)) return t("result.axisAnxiety");
+    return title;
+  }
+
+  function sectionHtml(sec: SectionResult): string {
+    const sb = sec.band;
+    const isMood = /phq/i.test(sec.title);
+    // Mesma regra da tela: sob crise, não mostrar rótulo tranquilizador da faixa
+    // baixa do eixo Humor (o e-mail nunca diz "tudo tranquilo" a quem marcou ideação).
+    const suppress = input.crisis === true && isMood && (sb?.min ?? 0) === 0;
+    const color = suppress ? "#6B6A66" : sb?.color || "#0F6E56";
+    const pctVal = sec.max > 0 ? Math.round((sec.score / sec.max) * 100) : 0;
+    const line = suppress
+      ? t("result.scoreLineSectionNoBand", { axis: axisLabel(sec.title), score: sec.score, max: sec.max })
+      : t("result.scoreLineSection", { axis: axisLabel(sec.title), score: sec.score, max: sec.max, band: sb?.label ?? "" });
+    const card = suppress
+      ? `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border:1px solid rgba(0,0,0,0.06);border-radius:12px;margin-top:12px;">
+            <tr><td style="padding:14px 16px;">
+              <p style="margin:0;font-size:13px;color:#4A4A46;line-height:1.6;">${esc(t("result.seeSupportAbove"))}</p>
+            </td></tr>
+          </table>`
+      : sb?.description
+        ? `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:${color}14;border:1px solid ${color}33;border-radius:12px;margin-top:12px;">
+            <tr><td style="padding:14px 16px;">
+              <p style="margin:0 0 6px;font-size:14px;font-weight:600;color:${color};">${esc(sb.label)}</p>
+              <p style="margin:0;font-size:13px;color:#4A4A46;line-height:1.6;">${esc(sb.description)}</p>
+            </td></tr>
+          </table>`
+        : "";
+    return `
+          <p style="margin:0 0 10px;font-size:14px;font-weight:600;color:#0F1A2E;">${esc(line)}</p>
+          ${barHtml(pctVal, color)}
+          ${card}`;
+  }
+
+  const scoreBlockHtml = twoScoreMode
+    ? sectionResults
+        .map((s, i) => (i > 0 ? `<div style="height:18px;line-height:18px;font-size:0;">&nbsp;</div>` : "") + sectionHtml(s))
+        .join("")
+    : `
+          <p style="margin:0 0 10px;font-size:14px;font-weight:600;color:#0F1A2E;">${scoreLine}</p>
+          ${barHtml(pct, bandColor)}
+          <table width="100%" cellpadding="0" cellspacing="0">
+            ${bandBlock}
+          </table>`;
+
+  // Recursos de crise (ideação item 9 PHQ-9) no topo — mesma copy aprovada da tela.
+  const crisisBlockHtml =
+    input.crisis === true
+      ? `
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF3F2;border:2px solid #FDA29B;border-radius:12px;margin:0 0 18px;">
+            <tr><td style="padding:16px 18px;">
+              <p style="margin:0 0 6px;font-size:15px;font-weight:600;color:#B42318;">${esc(t("result.crisisTitle"))}</p>
+              <p style="margin:0;font-size:13px;color:#7A271A;line-height:1.6;">${esc(t("result.crisisBody"))}</p>
+            </td></tr>
+          </table>`
       : "";
 
   function note(text: string, bg: string, border: string, color: string) {
@@ -121,19 +207,11 @@ export async function sendMsqResultEmail(input: {
           <p style="margin:0 0 4px;font-size:14px;color:#4A4A46;">${esc(t("resultEmail.greeting", { name: firstName }))}</p>
           <p style="margin:0 0 18px;font-size:14px;color:#4A4A46;line-height:1.6;">${esc(t("resultEmail.intro"))}</p>
 
-          <!-- Score -->
-          <p style="margin:0 0 10px;font-size:14px;font-weight:600;color:#0F1A2E;">${scoreLine}</p>
-          <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F3EF;border-radius:999px;height:6px;">
-            <tr><td style="padding:0;">
-              <table width="${pct}%" cellpadding="0" cellspacing="0" style="min-width:2px;"><tr>
-                <td style="background:${bandColor};height:6px;border-radius:999px;font-size:0;line-height:0;">&nbsp;</td>
-              </tr></table>
-            </td></tr>
-          </table>
+          <!-- Crise (ideação item 9 PHQ-9): recursos de apoio no topo -->
+          ${crisisBlockHtml}
 
-          <table width="100%" cellpadding="0" cellspacing="0">
-            ${bandBlock}
-          </table>
+          <!-- Score(s): 2 eixos (Humor/Ansiedade) ou score único no fallback -->
+          ${scoreBlockHtml}
 
           <!-- What this means -->
           <p style="margin:20px 0 4px;font-size:14px;font-weight:600;color:#0F1A2E;">${esc(t("result.whatThisMeansTitle"))}</p>

@@ -303,11 +303,17 @@ export async function POST(req: NextRequest) {
           maxScore,
           scorePercentage: score_percentage,
           band: band ?? null,
+          sectionResults,
+          crisis,
           safetyFlags,
           locale,
         });
       } catch (e) {
-        log.error("MSQ result email (form submit) falhou", e);
+        // Best-effort por design: e-mail inválido do usuário NÃO é bug nosso.
+        // warn (não error) para não poluir o Sentry com falha tolerada.
+        log.warn("MSQ result email (form submit) falhou", {
+          err: e instanceof Error ? e.message : String(e),
+        });
       }
 
       // Não marca o convite como "completo" (é reutilizável) e não gera Bio³
