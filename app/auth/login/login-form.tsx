@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -18,6 +19,7 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
   const supabase = createSupabaseBrowserClient();
   const [email, setEmail] = useState(prefillEmail ?? "");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -77,15 +79,26 @@ export function LoginForm({ inviteToken, prefillEmail, redirectTo }: LoginFormPr
         autoComplete="email"
         readOnly={!!prefillEmail}
       />
-      <input
-        className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 outline-none focus:ring-2 focus:ring-axiel-gold/30"
-        placeholder={t("password")}
-        type="password"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
-        required
-        autoComplete="current-password"
-      />
+      <div className="relative">
+        <input
+          className="w-full rounded-2xl border border-axiel-line bg-white px-4 py-3 pr-12 outline-none focus:ring-2 focus:ring-axiel-gold/30"
+          placeholder={t("password")}
+          type={showPassword ? "text" : "password"}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          autoComplete="current-password"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((v) => !v)}
+          className="absolute inset-y-0 right-0 flex items-center px-4 text-black/40 hover:text-black/70"
+          aria-label={showPassword ? t("hidePassword") : t("showPassword")}
+          tabIndex={-1}
+        >
+          {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      </div>
       <Button className="w-full" type="submit" disabled={loading}>
         {loading ? t("submitting") : t("submit")}
       </Button>
