@@ -196,6 +196,28 @@ export async function getClinicSettings(clinicId: string): Promise<{
   };
 }
 
+// Moeda da ASSINATURA SaaS da clínica (clínica → Oxiel), coluna
+// clinics.billing_currency (migration 138). Defensivo de propósito: se a coluna
+// ainda não existir (migration não aplicada) ou vier vazia, retorna "BRL" — o
+// comportamento atual. Admin client para funcionar também fora de contexto RLS
+// (o checkout já validou a clínica do usuário antes de chamar).
+export async function getClinicBillingCurrency(clinicId: string): Promise<"BRL" | "USD"> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("clinics")
+      .select("billing_currency")
+      .eq("id", clinicId)
+      .maybeSingle();
+    if (error) return "BRL";
+    const raw = String((data as { billing_currency?: string } | null)?.billing_currency ?? "").toUpperCase();
+    return raw === "USD" ? "USD" : "BRL";
+  } catch {
+    return "BRL";
+  }
+}
+
 // Timezone canônico da clínica: coluna clinic_settings.timezone (é o que
 // /settings/regional grava). Admin client para funcionar em rotas públicas,
 // webhooks e crons; o JSONB settings.timezone é legado e fica como fallback.

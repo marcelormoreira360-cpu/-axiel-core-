@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { stripe, getStripePriceId } from "@/lib/stripe";
+import { stripe, resolveStripePrice } from "@/lib/stripe";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentClinic, getClinicBillingCurrency } from "@/services/clinic-service";
 import { getCurrentUserForBilling } from "@/services/billing-service";
 import { createLogger } from "@/lib/logger";
 import { APP_URL } from "@/lib/constants";
@@ -50,13 +50,30 @@ export async function POST(request: Request) {
     return NextResponse.redirect(`${APP_URL}/billing?info=${suffix}`, 303);
   }
 
+  // Moeda da assinatura resolvida POR CLÍNICA: BRL usa STRIPE_PRICE_<PLANO>(_BRL),
+  // USD usa STRIPE_PRICE_<PLANO>_USD. Se a clínica é USD mas a env USD ainda não
+  // foi setada, resolveStripePrice cai de volta em BRL (fallback seguro) e avisa.
+  const billingCurrency = await getClinicBillingCurrency(clinic.id);
+
   let priceId: string;
+  let chargedCurrency: string;
   try {
-    priceId = getStripePriceId(plan.code);
+    const resolved = resolveStripePrice(plan.code, billingCurrency);
+    priceId = resolved.priceId;
+    chargedCurrency = resolved.currency;
+    if (resolved.fellBackToBRL) {
+      log.warn("billing currency fallback — clínica pediu USD mas STRIPE_PRICE_<PLAN>_USD não está setado; cobrando em BRL", {
+        plan_code: plan.code,
+        clinic_id: clinic.id,
+        requested_currency: resolved.requestedCurrency,
+        charged_currency: resolved.currency,
+      });
+    }
   } catch (e) {
     log.error("missing Stripe price ID — STRIPE_PRICE_<PLAN> env var not set", e as Error, {
       plan_code: plan.code,
       clinic_id: clinic.id,
+      requested_currency: billingCurrency,
     });
     return NextResponse.json(
       { error: `Plano "${plan.code}" não está configurado para pagamento. Entre em contato com o suporte.` },
@@ -112,6 +129,7 @@ export async function POST(request: Request) {
       clinic_id: clinic.id,
       plan_code: plan.code,
       user_id: user.id,
+      billing_currency: chargedCurrency,
     },
   });
 

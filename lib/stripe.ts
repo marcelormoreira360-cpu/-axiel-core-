@@ -13,21 +13,85 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? "sk_test_missi
   apiVersion: "2026-06-24.dahlia",
 });
 
-export const stripePriceByPlanCode = {
-  starter:      process.env.STRIPE_PRICE_STARTER,
-  professional: process.env.STRIPE_PRICE_PROFESSIONAL,
-  scale:        process.env.STRIPE_PRICE_SCALE,
-  enterprise:   process.env.STRIPE_PRICE_ENTERPRISE,
+// ── Preços por plano E por moeda ──────────────────────────────────────────────
+// Cada Price ID do Stripe é de UMA moeda só. Para vender o Core em BRL (clínica
+// no Brasil) e USD (clínica nos EUA) a partir da MESMA base de código, mantemos
+// um mapa [moeda][plano]. A moeda é decidida por clínica no checkout
+// (clinics.billing_currency), não fixada no código.
+//
+// Back-compat: em BRL usamos primeiro STRIPE_PRICE_<PLANO>_BRL e, se não existir,
+// caímos no nome ANTIGO STRIPE_PRICE_<PLANO> — assim o deploy atual continua
+// funcionando SEM trocar nenhuma env. Em USD usamos STRIPE_PRICE_<PLANO>_USD.
+
+// BRL: env nova (_BRL) tem prioridade; env antiga (sem sufixo) é o fallback.
+const stripePriceBRL = {
+  starter:      process.env.STRIPE_PRICE_STARTER_BRL      ?? process.env.STRIPE_PRICE_STARTER,
+  professional: process.env.STRIPE_PRICE_PROFESSIONAL_BRL ?? process.env.STRIPE_PRICE_PROFESSIONAL,
+  scale:        process.env.STRIPE_PRICE_SCALE_BRL        ?? process.env.STRIPE_PRICE_SCALE,
+  enterprise:   process.env.STRIPE_PRICE_ENTERPRISE_BRL   ?? process.env.STRIPE_PRICE_ENTERPRISE,
 } as const;
 
-export type StripePlanCode = keyof typeof stripePriceByPlanCode;
+// USD: só as envs novas. Enquanto não forem setadas, o resolver cai de volta em
+// BRL (fallback seguro) — ou seja, o código já está pronto, mas nada muda em
+// produção até o Marcelo criar os Price IDs em USD e setar as envs na Vercel.
+const stripePriceUSD = {
+  starter:      process.env.STRIPE_PRICE_STARTER_USD,
+  professional: process.env.STRIPE_PRICE_PROFESSIONAL_USD,
+  scale:        process.env.STRIPE_PRICE_SCALE_USD,
+  enterprise:   process.env.STRIPE_PRICE_ENTERPRISE_USD,
+} as const;
 
-export function getStripePriceId(planCode: string) {
-  const priceId = stripePriceByPlanCode[planCode as StripePlanCode];
-  if (!priceId) {
+// Mantido para back-compat com qualquer import existente (= mapa BRL).
+export const stripePriceByPlanCode = stripePriceBRL;
+
+export type StripePlanCode = keyof typeof stripePriceBRL;
+export type BillingCurrency = "BRL" | "USD";
+
+// Normaliza a moeda vinda do banco (ou de env) para o que o billing suporta.
+// Qualquer valor diferente de "USD" cai em "BRL" — o padrão seguro atual.
+export function normalizeBillingCurrency(input?: string | null): BillingCurrency {
+  return String(input ?? "").toUpperCase() === "USD" ? "USD" : "BRL";
+}
+
+export type ResolvedStripePrice = {
+  priceId: string;
+  /** Moeda EFETIVAMENTE cobrada (pode diferir da pedida se houve fallback). */
+  currency: BillingCurrency;
+  /** Moeda que foi pedida (a da clínica). */
+  requestedCurrency: BillingCurrency;
+  /** true quando pediram USD mas não havia Price em USD e caímos em BRL. */
+  fellBackToBRL: boolean;
+};
+
+// Resolve o Price ID pelo plano + moeda da clínica, com fallback seguro:
+// se pedirem USD e a env em USD não existir, volta para o Price em BRL
+// (nunca quebra o checkout) e sinaliza fellBackToBRL para o chamador logar.
+export function resolveStripePrice(planCode: string, currency: string = "BRL"): ResolvedStripePrice {
+  const plan = planCode as StripePlanCode;
+  const requestedCurrency = normalizeBillingCurrency(currency);
+  const brl = stripePriceBRL[plan];
+  const usd = stripePriceUSD[plan];
+
+  if (requestedCurrency === "USD") {
+    if (usd) {
+      return { priceId: usd, currency: "USD", requestedCurrency, fellBackToBRL: false };
+    }
+    if (brl) {
+      // Pediram USD mas ainda não há Price em USD configurado → segue em BRL.
+      return { priceId: brl, currency: "BRL", requestedCurrency, fellBackToBRL: true };
+    }
+    throw new Error(`Missing Stripe price ID for plan: ${planCode} (USD e BRL ausentes)`);
+  }
+
+  if (!brl) {
     throw new Error(`Missing Stripe price ID for plan: ${planCode}`);
   }
-  return priceId;
+  return { priceId: brl, currency: "BRL", requestedCurrency, fellBackToBRL: false };
+}
+
+// Back-compat: assinatura antiga (só planCode) continua funcionando em BRL.
+export function getStripePriceId(planCode: string, currency: string = "BRL") {
+  return resolveStripePrice(planCode, currency).priceId;
 }
 
 export function getAppUrl() {
