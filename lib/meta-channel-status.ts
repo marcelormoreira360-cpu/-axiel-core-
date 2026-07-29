@@ -23,6 +23,12 @@ const log = createLogger("meta-channel-status");
 const FB_GRAPH = "https://graph.facebook.com/v20.0";
 const IG_GRAPH = "https://graph.instagram.com/v21.0";
 
+// Teto por chamada à Graph API. Baixo de propósito: esta leitura roda no
+// caminho de render (force-dynamic) e não pode segurar a resposta RSC. Se a
+// Meta demora mais que isso, devolvemos status honesto ("configured") em vez
+// de estourar o maxDuration da função e abortar a página com TimeoutError.
+const GRAPH_TIMEOUT_MS = 4000;
+
 // App Meta (AXIEL Core) — mesmo default usado no webhook do Messenger.
 const META_APP_ID = process.env.META_APP_ID ?? "1468755454577652";
 
@@ -63,10 +69,23 @@ async function fetchFacebookPageStatus(pageId: string): Promise<FacebookPageStat
   }
 
   try {
-    const nameRes = await fetch(
-      `${FB_GRAPH}/${encodeURIComponent(pageId)}?fields=name&access_token=${encodeURIComponent(token)}`,
-      { signal: AbortSignal.timeout(8000) },
-    );
+    // As duas leituras (nome + assinatura do webhook) são independentes: rodam
+    // em paralelo para que o pior caso do Facebook fique em ~1× GRAPH_TIMEOUT_MS,
+    // não 2× sequencial (que estourava o limite da função serverless).
+    const [nameRes, subRes] = await Promise.all([
+      fetch(
+        `${FB_GRAPH}/${encodeURIComponent(pageId)}?fields=name&access_token=${encodeURIComponent(token)}`,
+        { signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS) },
+      ),
+      fetch(
+        `${FB_GRAPH}/${encodeURIComponent(pageId)}/subscribed_apps?access_token=${encodeURIComponent(token)}`,
+        { signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS) },
+      ).catch((e) => {
+        log.error("facebook subscribed_apps failed", e, { pageId });
+        return null;
+      }),
+    ]);
+
     if (!nameRes.ok) {
       return { pageId, name: null, state: "disconnected", subscribedMessages: false };
     }
@@ -74,21 +93,13 @@ async function fetchFacebookPageStatus(pageId: string): Promise<FacebookPageStat
 
     // Estado real da assinatura do webhook: nosso app_id inscrito com o field "messages".
     let subscribedMessages = false;
-    try {
-      const subRes = await fetch(
-        `${FB_GRAPH}/${encodeURIComponent(pageId)}/subscribed_apps?access_token=${encodeURIComponent(token)}`,
-        { signal: AbortSignal.timeout(8000) },
+    if (subRes?.ok) {
+      const subData = (await subRes.json()) as {
+        data?: Array<{ id?: string; subscribed_fields?: string[] }>;
+      };
+      subscribedMessages = (subData.data ?? []).some(
+        (app) => String(app.id) === META_APP_ID && (app.subscribed_fields ?? []).includes("messages"),
       );
-      if (subRes.ok) {
-        const subData = (await subRes.json()) as {
-          data?: Array<{ id?: string; subscribed_fields?: string[] }>;
-        };
-        subscribedMessages = (subData.data ?? []).some(
-          (app) => String(app.id) === META_APP_ID && (app.subscribed_fields ?? []).includes("messages"),
-        );
-      }
-    } catch (e) {
-      log.error("facebook subscribed_apps failed", e, { pageId });
     }
 
     return {
@@ -114,7 +125,7 @@ async function fetchInstagramStatus(igAccountId: string): Promise<InstagramStatu
   try {
     const res = await fetch(
       `${IG_GRAPH}/${encodeURIComponent(igAccountId)}?fields=username,name&access_token=${encodeURIComponent(token)}`,
-      { signal: AbortSignal.timeout(8000) },
+      { signal: AbortSignal.timeout(GRAPH_TIMEOUT_MS) },
     );
     if (!res.ok) {
       return { igAccountId, username: null, name: null, state: "disconnected", subscribedMessages: false };
@@ -136,13 +147,13 @@ async function fetchInstagramStatus(igAccountId: string): Promise<InstagramStatu
   }
 }
 
-// ── API pública (cache leve de 60s por id) ────────────────────────────────────
+// ── API pública (cache leve de 300s por id) ───────────────────────────────────
 
 export function getFacebookPageStatus(pageId: string): Promise<FacebookPageStatus> {
   return unstable_cache(
     () => fetchFacebookPageStatus(pageId),
     ["meta-channel-status", "facebook", pageId],
-    { revalidate: 60 },
+    { revalidate: 300 },
   )();
 }
 
@@ -150,6 +161,6 @@ export function getInstagramStatus(igAccountId: string): Promise<InstagramStatus
   return unstable_cache(
     () => fetchInstagramStatus(igAccountId),
     ["meta-channel-status", "instagram", igAccountId],
-    { revalidate: 60 },
+    { revalidate: 300 },
   )();
 }
