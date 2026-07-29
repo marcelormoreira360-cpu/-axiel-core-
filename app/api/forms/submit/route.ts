@@ -4,7 +4,7 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { createLogger } from "@/lib/logger";
-import { gradeTotalByMode, isTopBand, normalizeScoringConfig } from "@/lib/assessment-grading";
+import { gradeTotalByMode, gradeValue, isTopBand, normalizeScoringConfig } from "@/lib/assessment-grading";
 import { computeMsqSafetyFlags, type MsqAnswerWithContext } from "@/lib/msq-safety-notes";
 
 const log = createLogger("forms-submit");
@@ -142,6 +142,30 @@ export async function POST(req: NextRequest) {
       // percentage_of_max (MSQ da feira, bands em %) ou absolute (legado). null se o
       // template não tiver scoring_config → o front mostra só o score, sem faixa.
       const band = gradeTotalByMode(totalScore, maxScore, scoringConfig);
+
+      // Faixa POR SEÇÃO (ex.: PHQ-9 humor e GAD-7 ansiedade separados). Só é
+      // preenchido quando o template define `section_bands`. Cada eixo é
+      // classificado pelo seu PRÓPRIO score (absoluto), então uma depressão grave
+      // não fica mascarada por uma ansiedade baixa (e vice-versa). O front usa
+      // isto para mostrar duas linhas, cada uma com sua faixa.
+      const sectionResults: Array<{
+        title: string;
+        score: number;
+        max: number;
+        band: typeof band;
+      }> = [];
+      if (scoringConfig.section_bands.length > 0 && section_scores && typeof section_scores === "object") {
+        for (const s of Object.values(section_scores as Record<string, unknown>)) {
+          const sec = s as { title?: string; score?: number; max?: number };
+          const sScore = sec?.score ?? 0;
+          sectionResults.push({
+            title: sec?.title ?? "",
+            score: sScore,
+            max: sec?.max ?? 0,
+            band: gradeValue(sScore, scoringConfig.section_bands),
+          });
+        }
+      }
 
       // ── Notas de segurança condicionais (MSQ da feira) ──────────────────────
       // O backend calcula os flags {showA, showB, showC} a partir das respostas.
@@ -296,6 +320,7 @@ export async function POST(req: NextRequest) {
         max_possible_score: maxScore,
         score_percentage,
         band: band ?? null,
+        section_results: sectionResults,
         safety_flags: safetyFlags,
         crisis,
       });

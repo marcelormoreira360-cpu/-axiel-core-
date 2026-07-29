@@ -110,10 +110,15 @@
     "backToQuestions": "← Voltar ao questionário"
   },
   "result": {
-    "heading": "Seu retrato de hoje",
-    "scoreLine": "Sua pontuação: {score} de {max} ({percent}% — {band})",
+    "heading": "Seu retrato",
+    "scoreLine": "Sua pontuação: {score} de {max} ({percent}%, {band})",
+    "axisMood": "Humor (PHQ-9)",
+    "axisAnxiety": "Ansiedade (GAD-7)",
+    "scoreLineSection": "{axis}: {score} de {max} ({band})",
+    "scoreLineSectionNoBand": "{axis}: {score} de {max}",
+    "seeSupportAbove": "Veja os recursos de apoio no topo desta página.",
     "whatThisMeansTitle": "O que isso significa",
-    "whatThisMeansBody": "Este é um retrato de como o seu corpo está sinalizando hoje, não um diagnóstico. Esses sinais costumam mudar com sono, estresse, nutrição e recuperação, então um resultado de hoje não é uma imagem fixa da sua saúde. É apenas um ponto de partida para uma conversa.",
+    "whatThisMeansBody": "Isto reflete como você tem se sentido nas últimas semanas, não é um diagnóstico. Sentimentos como esses costumam variar com sono, estresse e o que está acontecendo na sua vida, então este resultado não é uma imagem fixa da sua saúde emocional. É apenas um ponto de partida para uma conversa.",
     "ctaTitle": "Quer entender o quadro completo?",
     "ctaBody": "Uma avaliação integrativa observa esses sinais com mais profundidade, junto com seu histórico e seus objetivos. Se quiser conversar sobre isso, estamos aqui, sem pressão.",
     "ctaCallLabel": "Ligue ou envie mensagem:",
@@ -132,7 +137,7 @@
   "resultEmail": {
     "subject": "Seu resultado · IFWC",
     "greeting": "Olá, {name},",
-    "intro": "Aqui está o seu retrato de hoje. Guarde este e-mail, ele resume o que você respondeu.",
+    "intro": "Aqui está o seu retrato. Guarde este e-mail, ele resume o que você respondeu.",
     "scheduleLine": "Quer entender melhor? Vai ser um prazer te receber. Para agendar sua avaliação integrativa, ligue ou envie mensagem para (689) 280-3705, ou acesse jifwc.com.",
     "clinicBlockTitle": "Fale com a gente",
     "clinicPhoneLabel": "Telefone:",

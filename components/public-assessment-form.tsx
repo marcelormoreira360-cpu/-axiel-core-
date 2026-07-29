@@ -10,16 +10,34 @@ import { CONTACT_PHONE_DIGITS, CONTACT_SITE_URL } from "@/lib/contact";
 /** Flags de nota de segurança condicional (MSQ da feira), calculados no backend. */
 type SafetyFlags = { showA: boolean; showB: boolean; showC: boolean };
 
+/** Faixa por eixo (PHQ-9 humor, GAD-7 ansiedade) — cada seção com seu próprio score. */
+type SectionResult = {
+  title: string;
+  score: number;
+  max: number;
+  band: ScoreBand | null;
+};
+
 /** Resultado devolvido pelo backend no modo público (funil value-first). */
 type PublicResult = {
   total_score: number;
   max_possible_score: number;
   score_percentage: number;
   band: ScoreBand | null;
+  /** Faixa POR SEÇÃO. Quando presente (≥1), o resultado mostra uma linha por eixo
+   *  em vez do score único somado (evita mascarar depressão grave sob ansiedade baixa). */
+  section_results?: SectionResult[];
   safety_flags: SafetyFlags | null;
   /** Ideação (PHQ-9) marcada: mostra recursos de crise no topo do resultado. */
   crisis?: boolean;
 };
+
+/** Rótulo amigável do eixo pela detecção do instrumento no título da seção. */
+function axisLabel(title: string, t: (k: string) => string): string {
+  if (/phq/i.test(title)) return t("result.axisMood");
+  if (/gad/i.test(title)) return t("result.axisAnxiety");
+  return title;
+}
 
 const DEFAULT_SCALE_LABELS = [
   "Nunca ou quase nunca",
@@ -281,6 +299,7 @@ export function PublicAssessmentForm({
             max_possible_score?: number;
             score_percentage?: number;
             band?: ScoreBand | null;
+            section_results?: SectionResult[];
             safety_flags?: SafetyFlags | null;
             crisis?: boolean;
           }),
@@ -305,6 +324,7 @@ export function PublicAssessmentForm({
           max_possible_score: body.max_possible_score ?? maxPossible,
           score_percentage: body.score_percentage ?? percentage,
           band: body.band ?? null,
+          section_results: body.section_results ?? [],
           safety_flags: body.safety_flags ?? null,
           crisis: body.crisis ?? false,
         });
@@ -332,6 +352,11 @@ export function PublicAssessmentForm({
       const band = r.band;
       const bandColor = band?.color || "#0F6E56";
       const flags = r.safety_flags;
+      // Modo DOIS SCORES: se o backend devolveu faixa por seção (PHQ-9 humor +
+      // GAD-7 ansiedade), mostramos uma linha por eixo. Caso contrário (MSQ da
+      // feira, score único), cai no modo de score somado tradicional abaixo.
+      const sections = r.section_results ?? [];
+      const twoScoreMode = sections.length > 0;
       return (
         <div className="space-y-[16px]">
           {/* CRISE (PHQ-9 ideação): recursos de apoio no TOPO, antes de tudo. */}
@@ -347,40 +372,109 @@ export function PublicAssessmentForm({
               {t("result.heading")}
             </h2>
 
-            {/* "Your score: {score} of {max} ({percent}% — {band})" */}
-            <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] text-center mb-[16px]">
-              {t("result.scoreLine", {
-                score: r.total_score,
-                max: r.max_possible_score,
-                percent: r.score_percentage,
-                band: band?.label ?? "—",
-              })}
-            </p>
-
-            <div className="h-[6px] rounded-full bg-[#F4F3EF] dark:bg-white/[.08] overflow-hidden max-w-[320px] mx-auto">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{ width: `${r.score_percentage}%`, backgroundColor: bandColor }}
-              />
-            </div>
-
-            {/* Descrição da faixa (band description do scoring_config). */}
-            {band?.description && (
-              <div
-                className="mt-[20px] rounded-[12px] px-[16px] py-[14px]"
-                style={{ backgroundColor: `${bandColor}14`, border: `1px solid ${bandColor}33` }}
-              >
-                <div className="flex items-center gap-[8px] mb-[6px]">
-                  <span
-                    className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
-                    style={{ backgroundColor: bandColor }}
-                  />
-                  <p className="text-[14px] font-semibold" style={{ color: bandColor }}>
-                    {band.label}
-                  </p>
-                </div>
-                <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">{band.description}</p>
+            {twoScoreMode ? (
+              /* DOIS SCORES: uma linha + barra + descrição por eixo (PHQ-9, GAD-7). */
+              <div className="space-y-[18px]">
+                {sections.map((sec, i) => {
+                  const sb = sec.band;
+                  const isMoodAxis = /phq/i.test(sec.title);
+                  // SEGURANÇA (Salvo): sob crise (ideação item 9 do PHQ-9), NÃO exibir
+                  // o rótulo/descrição tranquilizador da faixa baixa no eixo Humor —
+                  // "tudo tranquilo" sob o banner de crise é contraditório. Mostra o
+                  // score numérico sem faixa + nota neutra apontando para os recursos
+                  // de apoio no topo. Os demais eixos/faixas seguem normais.
+                  const suppressReassuring = r.crisis === true && isMoodAxis && (sb?.min ?? 0) === 0;
+                  const sColor = suppressReassuring ? "#6B6A66" : sb?.color || "#0F6E56";
+                  const sPercent = sec.max > 0 ? Math.round((sec.score / sec.max) * 100) : 0;
+                  return (
+                    <div key={i}>
+                      <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] text-center mb-[10px]">
+                        {suppressReassuring
+                          ? t("result.scoreLineSectionNoBand", {
+                              axis: axisLabel(sec.title, t),
+                              score: sec.score,
+                              max: sec.max,
+                            })
+                          : t("result.scoreLineSection", {
+                              axis: axisLabel(sec.title, t),
+                              score: sec.score,
+                              max: sec.max,
+                              band: sb?.label ?? "",
+                            })}
+                      </p>
+                      <div className="h-[6px] rounded-full bg-[#F4F3EF] dark:bg-white/[.08] overflow-hidden max-w-[320px] mx-auto">
+                        <div
+                          className="h-full rounded-full transition-all"
+                          style={{ width: `${sPercent}%`, backgroundColor: sColor }}
+                        />
+                      </div>
+                      {suppressReassuring ? (
+                        <div className="mt-[12px] rounded-[12px] px-[16px] py-[14px] bg-[#F4F3EF] dark:bg-white/[.06] border border-black/[.06] dark:border-white/[.08]">
+                          <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">
+                            {t("result.seeSupportAbove")}
+                          </p>
+                        </div>
+                      ) : (
+                        sb?.description && (
+                          <div
+                            className="mt-[12px] rounded-[12px] px-[16px] py-[14px]"
+                            style={{ backgroundColor: `${sColor}14`, border: `1px solid ${sColor}33` }}
+                          >
+                            <div className="flex items-center gap-[8px] mb-[6px]">
+                              <span
+                                className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
+                                style={{ backgroundColor: sColor }}
+                              />
+                              <p className="text-[14px] font-semibold" style={{ color: sColor }}>
+                                {sb.label}
+                              </p>
+                            </div>
+                            <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">{sb.description}</p>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  );
+                })}
               </div>
+            ) : (
+              <>
+                {/* Score ÚNICO somado (MSQ da feira): "{score} of {max} ({percent}% — {band})". */}
+                <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] text-center mb-[16px]">
+                  {t("result.scoreLine", {
+                    score: r.total_score,
+                    max: r.max_possible_score,
+                    percent: r.score_percentage,
+                    band: band?.label ?? "",
+                  })}
+                </p>
+
+                <div className="h-[6px] rounded-full bg-[#F4F3EF] dark:bg-white/[.08] overflow-hidden max-w-[320px] mx-auto">
+                  <div
+                    className="h-full rounded-full transition-all"
+                    style={{ width: `${r.score_percentage}%`, backgroundColor: bandColor }}
+                  />
+                </div>
+
+                {/* Descrição da faixa (band description do scoring_config). */}
+                {band?.description && (
+                  <div
+                    className="mt-[20px] rounded-[12px] px-[16px] py-[14px]"
+                    style={{ backgroundColor: `${bandColor}14`, border: `1px solid ${bandColor}33` }}
+                  >
+                    <div className="flex items-center gap-[8px] mb-[6px]">
+                      <span
+                        className="inline-block w-[10px] h-[10px] rounded-full shrink-0"
+                        style={{ backgroundColor: bandColor }}
+                      />
+                      <p className="text-[14px] font-semibold" style={{ color: bandColor }}>
+                        {band.label}
+                      </p>
+                    </div>
+                    <p className="text-[13px] text-[#4A4A46] dark:text-[#C9C7C2] leading-relaxed">{band.description}</p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* "What this means" */}
