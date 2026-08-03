@@ -19,7 +19,8 @@
     "emailReserved": "{clinicName} has reserved a time for you.",
     "emailReservedWithDate": "{clinicName} has reserved a time for you: {dateLabel}.",
     "emailConfirmCta": "Confirm the time and complete your registration at this link:",
-    "emailSendError": "Failed to send the email."
+    "emailSendError": "Failed to send the email.",
+    "statusUpdateError": "Couldn't update the status. Please try again."
   },
   "new": {
     "title": "Schedule session",

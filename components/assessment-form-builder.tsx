@@ -35,6 +35,7 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
   const [sections, setSections] = useState<SectionDraft[]>([
     { id: uid(), title: "", questions: [] },
   ]);
+  const [error, setError] = useState<string | null>(null);
 
   // suppress unused warning — clinicId is passed to the server action via formData
   void clinicId;
@@ -110,8 +111,10 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
       })),
     }));
     formData.set("sections", JSON.stringify(sectionsPayload));
+    setError(null);
     startTransition(async () => {
-      await createFormAction(formData);
+      const res = await createFormAction(formData);
+      if (res?.error) { setError(res.error); return; }
     });
   }
 
@@ -284,6 +287,12 @@ export function AssessmentFormBuilder({ clinicId }: { clinicId: string }) {
       >
         <Plus className="h-3.5 w-3.5" /> {t("addSection")}
       </button>
+
+      {error && (
+        <p role="alert" className="text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[12px] px-[14px] py-[10px]">
+          {error}
+        </p>
+      )}
 
       {/* Summary + save */}
       <div className="flex items-center justify-between bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">

@@ -37,6 +37,7 @@
     "sessionNotes": "Session notes",
     "saving": "Saving…",
     "saved": "Saved ✓",
+    "notSaved": "Not saved — retry",
     "notesPlaceholder": "Observe and take notes during the consultation…",
     "recordVoice": "Record voice",
     "stop": "Stop",

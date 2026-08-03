@@ -49,17 +49,23 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
 
   const practitionerName = profile?.full_name ?? t("practitionerDefault");
 
-  async function saveNotesAction(apptId: string, notes: string, observations: string[]) {
+  async function saveNotesAction(apptId: string, notes: string, observations: string[]): Promise<{ error?: string }> {
     "use server";
-    const currentProfile = await getCurrentUserProfile();
-    if (!currentProfile?.clinic_id) return;
-    await upsertSessionRecord({
-      clinic_id: currentProfile.clinic_id,
-      appointment_id: apptId,
-      patient_id: appointment!.patient_id,
-      notes,
-      key_observations: observations,
-    });
+    const te = await getTranslations("teleconsulta.notes");
+    try {
+      const currentProfile = await getCurrentUserProfile();
+      if (!currentProfile?.clinic_id) return { error: te("notSaved") };
+      await upsertSessionRecord({
+        clinic_id: currentProfile.clinic_id,
+        appointment_id: apptId,
+        patient_id: appointment!.patient_id,
+        notes,
+        key_observations: observations,
+      });
+      return {};
+    } catch {
+      return { error: te("notSaved") };
+    }
   }
 
   const patientAge = age(patient.date_of_birth);

@@ -69,7 +69,9 @@
       "cancel": "Cancel",
       "updating": "Updating…",
       "pause": "Pause",
-      "reactivate": "Reactivate"
+      "reactivate": "Reactivate",
+      "errorGeneric": "Couldn't save. Please try again.",
+      "errorNameRequired": "Enter a name for the offer."
     },
     "patientOffers": {
       "emptyTitle": "No patient plans assigned",
@@ -258,7 +260,8 @@
     "reviewedAt": "Reviewed on {date}",
     "review": "Review",
     "complete": "Complete",
-    "reject": "Reject"
+    "reject": "Reject",
+    "updateError": "Couldn't update the request. Please try again."
   },
   "security": {
     "title": "Security",
@@ -421,7 +424,10 @@
     "descriptionEdit": "Description",
     "saveChanges": "Save changes",
     "confirmDelete": "Remove the offer \"{name}\"? This action cannot be undone.",
-    "infoTip": "Active offers are visible in the <b>Patient Portal</b> and can be sold directly. Disable an offer to hide it without deleting its sales history."
+    "infoTip": "Active offers are visible in the <b>Patient Portal</b> and can be sold directly. Disable an offer to hide it without deleting its sales history.",
+    "errorGeneric": "Couldn't save. Please try again.",
+    "errorNoClinic": "No active clinic found.",
+    "errorNameRequired": "Enter a name for the offer."
   },
   "integrations": {
     "eyebrow": "Settings",

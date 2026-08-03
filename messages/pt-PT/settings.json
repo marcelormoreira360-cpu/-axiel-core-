@@ -69,7 +69,9 @@
       "cancel": "Cancelar",
       "updating": "Atualizando…",
       "pause": "Pausar",
-      "reactivate": "Reativar"
+      "reactivate": "Reativar",
+      "errorGeneric": "Não foi possível guardar. Tente novamente.",
+      "errorNameRequired": "Introduza um nome para a oferta."
     },
     "patientOffers": {
       "emptyTitle": "Nenhum plano de paciente atribuído",
@@ -258,7 +260,8 @@
     "reviewedAt": "Revisado em {date}",
     "review": "Analisar",
     "complete": "Concluir",
-    "reject": "Rejeitar"
+    "reject": "Rejeitar",
+    "updateError": "Não foi possível atualizar o pedido. Tente novamente."
   },
   "security": {
     "title": "Segurança",
@@ -421,7 +424,10 @@
     "descriptionEdit": "Descrição",
     "saveChanges": "Salvar alterações",
     "confirmDelete": "Remover a oferta \"{name}\"? Esta ação não pode ser desfeita.",
-    "infoTip": "Ofertas ativas ficam visíveis no <b>Portal do Paciente</b> e podem ser vendidas diretamente. Desative uma oferta para ocultá-la sem excluir o histórico de vendas."
+    "infoTip": "Ofertas ativas ficam visíveis no <b>Portal do Paciente</b> e podem ser vendidas diretamente. Desative uma oferta para ocultá-la sem excluir o histórico de vendas.",
+    "errorGeneric": "Não foi possível guardar. Tente novamente.",
+    "errorNoClinic": "Nenhuma clínica ativa encontrada.",
+    "errorNameRequired": "Introduza um nome para a oferta."
   },
   "integrations": {
     "eyebrow": "Configurações",

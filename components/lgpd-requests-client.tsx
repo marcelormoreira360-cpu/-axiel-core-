@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 type PatientRef = { full_name: string; email: string | null; phone: string | null };
@@ -35,11 +36,16 @@ export function LgpdRequestsClient({ requests: initial, clinicId }: { requests: 
 
   async function updateStatus(id: string, status: string) {
     const supabase = createSupabaseBrowserClient();
-    await supabase
+    const reviewedAt = new Date().toISOString();
+    const { error } = await supabase
       .from("data_deletion_requests")
-      .update({ status, reviewed_at: new Date().toISOString() })
+      .update({ status, reviewed_at: reviewedAt })
       .eq("id", id);
-    setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status, reviewed_at: new Date().toISOString() } : r));
+    if (error) {
+      toast.error(t("updateError"));
+      return;
+    }
+    setRequests((prev) => prev.map((r) => r.id === id ? { ...r, status, reviewed_at: reviewedAt } : r));
   }
 
   if (requests.length === 0) {

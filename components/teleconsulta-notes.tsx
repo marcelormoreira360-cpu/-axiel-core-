@@ -12,7 +12,7 @@ interface TeleconsultaNotesProps {
   clinicId: string;
   initialNotes: string;
   initialObservations: string[];
-  saveAction: (appointmentId: string, notes: string, observations: string[]) => Promise<void>;
+  saveAction: (appointmentId: string, notes: string, observations: string[]) => Promise<{ error?: string }>;
 }
 
 export function TeleconsultaNotes({
@@ -27,7 +27,8 @@ export function TeleconsultaNotes({
   const [notes, setNotes] = useState(initialNotes);
   const [observations, setObservations] = useState<string[]>(initialObservations);
   const [newObs, setNewObs] = useState("");
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const lastPayloadRef = useRef<{ notes: string; obs: string[] } | null>(null);
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [recordingError, setRecordingError] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -41,14 +42,21 @@ export function TeleconsultaNotes({
 
   function triggerSave(nextNotes: string, nextObs: string[]) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    lastPayloadRef.current = { notes: nextNotes, obs: nextObs };
     setSaveStatus("saving");
     debounceRef.current = setTimeout(() => {
       startTransition(async () => {
-        await saveAction(appointmentId, nextNotes, nextObs);
+        const res = await saveAction(appointmentId, nextNotes, nextObs);
+        if (res?.error) { setSaveStatus("error"); return; }
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 2000);
       });
     }, 1200);
+  }
+
+  function retrySave() {
+    const payload = lastPayloadRef.current ?? { notes, obs: observations };
+    triggerSave(payload.notes, payload.obs);
   }
 
   function handleNotesChange(val: string) {
@@ -151,12 +159,22 @@ export function TeleconsultaNotes({
           <p className="text-[11px] font-semibold uppercase tracking-[.08em] text-[#A09E98] dark:text-[#6B6A66]">
             {t("sessionNotes")}
           </p>
-          <span className={`text-[10px] transition ${
-            saveStatus === "saving" ? "text-[#A09E98]" :
-            saveStatus === "saved"  ? "text-[#0F6E56]" : "text-transparent"
-          }`}>
-            {saveStatus === "saving" ? t("saving") : t("saved")}
-          </span>
+          {saveStatus === "error" ? (
+            <button
+              type="button"
+              onClick={retrySave}
+              className="text-[10px] font-medium text-red-400 hover:text-red-300 underline transition"
+            >
+              {t("notSaved")}
+            </button>
+          ) : (
+            <span className={`text-[10px] transition ${
+              saveStatus === "saving" ? "text-[#A09E98]" :
+              saveStatus === "saved"  ? "text-[#0F6E56]" : "text-transparent"
+            }`}>
+              {saveStatus === "saving" ? t("saving") : t("saved")}
+            </span>
+          )}
         </div>
         <textarea
           ref={textareaRef}

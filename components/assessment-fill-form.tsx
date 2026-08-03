@@ -49,12 +49,13 @@ export function AssessmentFillForm({
 }: {
   template: TemplateWithStructure;
   patientId: string;
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<{ error?: string }>;
 }) {
   const t = useTranslations("forms.fill");
   const [isPending, startTransition] = useTransition();
   const [answers, setAnswers] = useState<Record<string, number | string | null>>({});
   const [notes, setNotes] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   function setAnswer(qid: string, value: number | string | null) {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -93,8 +94,10 @@ export function AssessmentFillForm({
         formData.set(`q_${qid}`, String(val));
       }
     }
+    setError(null);
     startTransition(async () => {
-      await action(formData);
+      const res = await action(formData);
+      if (res?.error) { setError(res.error); return; }
     });
   }
 
@@ -247,6 +250,12 @@ export function AssessmentFillForm({
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
       </div>
+
+      {error && (
+        <p role="alert" className="text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[10px] px-[12px] py-[9px]">
+          {error}
+        </p>
+      )}
 
       <button
         type="submit"

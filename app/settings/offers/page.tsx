@@ -25,73 +25,97 @@ export default async function OffersPage() {
 
   // ── Server actions ──────────────────────────────────────────────────────────
 
-  async function createAction(formData: FormData) {
+  async function createAction(formData: FormData): Promise<{ error?: string }> {
     "use server";
-    const p = await getCurrentUserProfile();
-    if (!p?.clinic_id) return;
+    const te = await getTranslations("settings.offers");
+    try {
+      const p = await getCurrentUserProfile();
+      if (!p?.clinic_id) return { error: te("errorNoClinic") };
 
-    const name = String(formData.get("name") ?? "").trim();
-    const offer_type = String(formData.get("offer_type") ?? "session_package") as MonetizationOfferType;
-    const price_cents = Math.round(Number(formData.get("price_brl") ?? 0) * 100);
-    const number_of_sessions = Number(formData.get("number_of_sessions") ?? 1);
-    const description = String(formData.get("description") ?? "").trim() || null;
-    const billing_interval_raw = String(formData.get("billing_interval") ?? "");
-    const billing_interval =
-      offer_type === "membership" && (billing_interval_raw === "monthly" || billing_interval_raw === "yearly")
-        ? billing_interval_raw
-        : null;
+      const name = String(formData.get("name") ?? "").trim();
+      const offer_type = String(formData.get("offer_type") ?? "session_package") as MonetizationOfferType;
+      const price_cents = Math.round(Number(formData.get("price_brl") ?? 0) * 100);
+      const number_of_sessions = Number(formData.get("number_of_sessions") ?? 1);
+      const description = String(formData.get("description") ?? "").trim() || null;
+      const billing_interval_raw = String(formData.get("billing_interval") ?? "");
+      const billing_interval =
+        offer_type === "membership" && (billing_interval_raw === "monthly" || billing_interval_raw === "yearly")
+          ? billing_interval_raw
+          : null;
 
-    if (!name) return;
+      if (!name) return { error: te("errorNameRequired") };
 
-    await createMonetizationOffer({
-      clinic_id: p.clinic_id,
-      name,
-      offer_type,
-      price_cents,
-      currency: await getClinicCurrency(p.clinic_id),
-      number_of_sessions,
-      description,
-      billing_interval,
-    });
+      await createMonetizationOffer({
+        clinic_id: p.clinic_id,
+        name,
+        offer_type,
+        price_cents,
+        currency: await getClinicCurrency(p.clinic_id),
+        number_of_sessions,
+        description,
+        billing_interval,
+      });
 
-    revalidatePath("/settings/offers");
+      revalidatePath("/settings/offers");
+      return {};
+    } catch {
+      return { error: te("errorGeneric") };
+    }
   }
 
-  async function editAction(id: string, formData: FormData) {
+  async function editAction(id: string, formData: FormData): Promise<{ error?: string }> {
     "use server";
-    const name = String(formData.get("name") ?? "").trim();
-    const price_cents = Math.round(Number(formData.get("price_brl") ?? 0) * 100);
-    const number_of_sessions = Number(formData.get("number_of_sessions") ?? 1);
-    const description = String(formData.get("description") ?? "").trim() || null;
-    const billing_interval_raw = String(formData.get("billing_interval") ?? "");
-    const billing_interval =
-      billing_interval_raw === "monthly" || billing_interval_raw === "yearly"
-        ? billing_interval_raw
-        : null;
+    const te = await getTranslations("settings.offers");
+    try {
+      const name = String(formData.get("name") ?? "").trim();
+      const price_cents = Math.round(Number(formData.get("price_brl") ?? 0) * 100);
+      const number_of_sessions = Number(formData.get("number_of_sessions") ?? 1);
+      const description = String(formData.get("description") ?? "").trim() || null;
+      const billing_interval_raw = String(formData.get("billing_interval") ?? "");
+      const billing_interval =
+        billing_interval_raw === "monthly" || billing_interval_raw === "yearly"
+          ? billing_interval_raw
+          : null;
 
-    if (!name) return;
+      if (!name) return { error: te("errorNameRequired") };
 
-    await updateMonetizationOffer(id, {
-      name,
-      price_cents,
-      number_of_sessions,
-      description,
-      ...(billing_interval ? { billing_interval } : {}),
-    });
+      await updateMonetizationOffer(id, {
+        name,
+        price_cents,
+        number_of_sessions,
+        description,
+        ...(billing_interval ? { billing_interval } : {}),
+      });
 
-    revalidatePath("/settings/offers");
+      revalidatePath("/settings/offers");
+      return {};
+    } catch {
+      return { error: te("errorGeneric") };
+    }
   }
 
-  async function toggleActiveAction(id: string, isActive: boolean) {
+  async function toggleActiveAction(id: string, isActive: boolean): Promise<{ error?: string }> {
     "use server";
-    await updateMonetizationOfferStatus(id, isActive);
-    revalidatePath("/settings/offers");
+    const te = await getTranslations("settings.offers");
+    try {
+      await updateMonetizationOfferStatus(id, isActive);
+      revalidatePath("/settings/offers");
+      return {};
+    } catch {
+      return { error: te("errorGeneric") };
+    }
   }
 
-  async function deleteAction(id: string) {
+  async function deleteAction(id: string): Promise<{ error?: string }> {
     "use server";
-    await deleteMonetizationOffer(id);
-    revalidatePath("/settings/offers");
+    const te = await getTranslations("settings.offers");
+    try {
+      await deleteMonetizationOffer(id);
+      revalidatePath("/settings/offers");
+      return {};
+    } catch {
+      return { error: te("errorGeneric") };
+    }
   }
 
   return (

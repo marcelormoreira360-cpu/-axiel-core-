@@ -104,6 +104,9 @@
     "summaryQuestions": "{count, plural, one {# pergunta} other {# perguntas}}",
     "saving": "Salvando…",
     "create": "Criar formulário",
+    "errorNoClinic": "Nenhuma clínica ativa encontrada.",
+    "errorNameRequired": "Introduza um nome para o formulário.",
+    "errorGeneric": "Não foi possível guardar. Tente novamente.",
     "scoringTitle": "Grau de disfunção (faixas)",
     "scoringHint": "Defina as faixas de pontuação que classificam o grau de disfunção. É por formulário — cada clínica usa as próprias.",
     "scoringTotal": "Faixas do total",
@@ -140,7 +143,9 @@
     "notes": "Observações",
     "notesPlaceholder": "Observações adicionais sobre este preenchimento (opcional).",
     "saving": "Salvando…",
-    "save": "Salvar resultados"
+    "save": "Salvar resultados",
+    "errorNoClinic": "Nenhuma clínica ativa encontrada.",
+    "errorGeneric": "Não foi possível guardar. Tente novamente."
   },
   "slots": {
     "intake": "Intake (1º agendamento)",

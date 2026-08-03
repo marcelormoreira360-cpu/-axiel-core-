@@ -6,7 +6,9 @@
     "subtitle": "Name, booking URL, and practice profile."
   },
   "errors": {
-    "requiredFields": "Required fields missing."
+    "requiredFields": "Required fields missing.",
+    "slugTaken": "That address (slug) is already in use.",
+    "generic": "Couldn't save. Please try again."
   },
   "sections": {
     "nameUrl": "Name and URL",
