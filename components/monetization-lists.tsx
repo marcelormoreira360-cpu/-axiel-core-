@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { BadgeDollarSign, PackagePlus, Pencil, Trash2, X, Check } from "lucide-react";
 import type { MonetizationOffer, PatientOffer } from "@/lib/types";
 import { Card } from "@/components/card";
@@ -17,9 +18,9 @@ export function OfferList({
   deleteAction,
 }: {
   offers: MonetizationOffer[];
-  toggleAction: (formData: FormData) => Promise<void>;
-  editAction?: (formData: FormData) => Promise<void>;
-  deleteAction?: (formData: FormData) => Promise<void>;
+  toggleAction: (formData: FormData) => Promise<{ error?: string }>;
+  editAction?: (formData: FormData) => Promise<{ error?: string }>;
+  deleteAction?: (formData: FormData) => Promise<{ error?: string }>;
 }) {
   const t = useTranslations("settings.monetization.offerList");
   const tActions = useTranslations("common.actions");
@@ -27,6 +28,7 @@ export function OfferList({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [deleteTarget, setDeleteTarget] = useState<MonetizationOffer | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   function handleToggle(offer: MonetizationOffer) {
     const fd = new FormData();
@@ -34,8 +36,9 @@ export function OfferList({
     fd.set("is_active", String(!offer.is_active));
     setPendingId(offer.id + "-toggle");
     startTransition(async () => {
-      await toggleAction(fd);
+      const res = await toggleAction(fd);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
@@ -49,8 +52,9 @@ export function OfferList({
     const fd = new FormData();
     fd.set("id", deleteTarget.id);
     setPendingId(deleteTarget.id + "-delete");
-    await deleteAction(fd);
+    const res = await deleteAction(fd);
     setPendingId(null);
+    if (res?.error) toast.error(res.error);
   }
 
   function handleEdit(e: React.FormEvent<HTMLFormElement>, offerId: string) {
@@ -59,9 +63,11 @@ export function OfferList({
     const fd = new FormData(e.currentTarget);
     fd.set("id", offerId);
     setPendingId(offerId + "-edit");
+    setEditError(null);
     startTransition(async () => {
-      await editAction(fd);
+      const res = await editAction!(fd);
       setPendingId(null);
+      if (res?.error) { setEditError(res.error); return; }
       setEditingId(null);
     });
   }
@@ -104,7 +110,7 @@ export function OfferList({
               {editAction && (
                 <button
                   type="button"
-                  onClick={() => setEditingId(editingId === offer.id ? null : offer.id)}
+                  onClick={() => { setEditError(null); setEditingId(editingId === offer.id ? null : offer.id); }}
                   disabled={pendingId === offer.id + "-edit"}
                   className={`flex h-7 w-7 items-center justify-center rounded-lg transition disabled:opacity-40
                     ${editingId === offer.id
@@ -206,6 +212,11 @@ export function OfferList({
                   className="w-full resize-none rounded-lg border border-black/[.10] dark:border-white/[.10] bg-white dark:bg-[#111827] px-3 py-2 text-sm text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-axiel-ink transition"
                 />
               </div>
+              {editError && editingId === offer.id && (
+                <p role="alert" className="text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-lg px-3 py-2">
+                  {editError}
+                </p>
+              )}
               <div className="flex gap-2">
                 <button
                   type="submit"
@@ -217,7 +228,7 @@ export function OfferList({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditingId(null)}
+                  onClick={() => { setEditingId(null); setEditError(null); }}
                   className="rounded-lg border border-black/[.10] dark:border-white/[.10] px-4 py-2 text-xs font-semibold text-black/50 dark:text-white/50 transition hover:text-black/80 dark:hover:text-white/80"
                 >
                   {t("cancel")}

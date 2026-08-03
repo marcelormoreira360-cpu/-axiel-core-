@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import type { MonetizationOffer } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -40,10 +41,10 @@ const OFFER_TYPE_COLORS: Record<string, string> = {
 
 interface Props {
   offers: MonetizationOffer[];
-  createAction: (fd: FormData) => Promise<void>;
-  editAction: (id: string, fd: FormData) => Promise<void>;
-  toggleActiveAction: (id: string, isActive: boolean) => Promise<void>;
-  deleteAction: (id: string) => Promise<void>;
+  createAction: (fd: FormData) => Promise<{ error?: string }>;
+  editAction: (id: string, fd: FormData) => Promise<{ error?: string }>;
+  toggleActiveAction: (id: string, isActive: boolean) => Promise<{ error?: string }>;
+  deleteAction: (id: string) => Promise<{ error?: string }>;
 }
 
 export function OfferList({ offers, createAction, editAction, toggleActiveAction, deleteAction }: Props) {
@@ -55,13 +56,18 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
   const [isPending, startTransition] = useTransition();
   const [formType, setFormType] = useState<string>("session_package");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    setCreateError(null);
     startTransition(async () => {
-      await createAction(fd);
-      (e.target as HTMLFormElement).reset();
+      const res = await createAction(fd);
+      if (res?.error) { setCreateError(res.error); return; }
+      form.reset();
       setFormType("session_package");
       setShowForm(false);
     });
@@ -71,9 +77,11 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     setPendingId(id + "-edit");
+    setEditError(null);
     startTransition(async () => {
-      await editAction(id, fd);
+      const res = await editAction(id, fd);
       setPendingId(null);
+      if (res?.error) { setEditError(res.error); return; }
       setEditingId(null);
     });
   }
@@ -81,8 +89,9 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
   function handleToggleActive(id: string, current: boolean) {
     setPendingId(id + "-active");
     startTransition(async () => {
-      await toggleActiveAction(id, !current);
+      const res = await toggleActiveAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
@@ -93,8 +102,9 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
   async function confirmDelete() {
     if (!deleteTarget) return;
     setPendingId(deleteTarget.id + "-delete");
-    await deleteAction(deleteTarget.id);
+    const res = await deleteAction(deleteTarget.id);
     setPendingId(null);
+    if (res?.error) toast.error(res.error);
   }
 
   // Group by type for display
@@ -211,6 +221,12 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
               </div>
             </div>
 
+            {createError && (
+              <p role="alert" className="mb-3 text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[8px] px-[10px] py-[7px]">
+                {createError}
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={isPending}
@@ -277,7 +293,7 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
 
                           {/* Edit */}
                           <button
-                            onClick={() => setEditingId(editingId === offer.id ? null : offer.id)}
+                            onClick={() => { setEditError(null); setEditingId(editingId === offer.id ? null : offer.id); }}
                             disabled={pendingId === offer.id + "-edit"}
                             className={`w-7 h-7 flex items-center justify-center rounded-[6px] transition disabled:opacity-40
                               ${editingId === offer.id
@@ -369,6 +385,11 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
                               />
                             </div>
                           </div>
+                          {editError && editingId === offer.id && (
+                            <p role="alert" className="mb-3 text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[8px] px-[10px] py-[7px]">
+                              {editError}
+                            </p>
+                          )}
                           <div className="flex items-center gap-2">
                             <button
                               type="submit"
@@ -379,7 +400,7 @@ export function OfferList({ offers, createAction, editAction, toggleActiveAction
                             </button>
                             <button
                               type="button"
-                              onClick={() => setEditingId(null)}
+                              onClick={() => { setEditingId(null); setEditError(null); }}
                               className="text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] transition px-[14px] py-[7px] rounded-[8px] border border-black/[.08]"
                             >
                               {t("cancel")}

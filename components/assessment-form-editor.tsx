@@ -69,6 +69,7 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
   const [sections, setSections] = useState<SectionDraft[]>(() => fromTemplate(template));
   const [deletedSectionIds, setDeletedSectionIds] = useState<string[]>([]);
   const [deletedQuestionIds, setDeletedQuestionIds] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const initialConfig = normalizeScoringConfig(template.scoring_config);
   const [totalBands, setTotalBands] = useState<BandDraft[]>(() => bandsFromConfig(initialConfig.total_bands));
@@ -289,8 +290,10 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
         flag_item_max: flagItemMax,
       })
     );
+    setError(null);
     startTransition(async () => {
-      await updateFormAction(formData);
+      const res = await updateFormAction(formData);
+      if (res?.error) { setError(res.error); return; }
     });
   }
 
@@ -520,6 +523,12 @@ export function AssessmentFormEditor({ template }: { template: TemplateWithStruc
       >
         <Plus className="h-3.5 w-3.5" /> {t("addSectionNew")}
       </button>
+
+      {error && (
+        <p role="alert" className="text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[12px] px-[14px] py-[10px]">
+          {error}
+        </p>
+      )}
 
       <div className="flex items-center justify-end bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[12px]">
         <button

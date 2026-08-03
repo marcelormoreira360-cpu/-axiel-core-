@@ -249,10 +249,16 @@ export default async function SchedulePage() {
     }
   }
 
-  async function updateStatusAction(id: string, status: string) {
+  async function updateStatusAction(id: string, status: string): Promise<{ error?: string }> {
     "use server";
-    await updateAppointment(id, { status });
-    revalidatePath("/schedule");
+    const te = await getTranslations("schedule.actions");
+    try {
+      await updateAppointment(id, { status });
+      revalidatePath("/schedule");
+      return {};
+    } catch {
+      return { error: te("statusUpdateError") };
+    }
   }
 
   async function deleteSessionAction(id: string) {

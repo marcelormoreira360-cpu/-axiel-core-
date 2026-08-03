@@ -50,7 +50,7 @@ export function ScheduleContainer({
   createSessionAction: (formData: FormData) => Promise<void>;
   createConfirmationLinkAction?: ConfirmLinkAction;
   emailConfirmationLinkAction?: EmailLinkAction;
-  updateStatusAction?: (id: string, status: string) => Promise<void>;
+  updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
   deleteSessionAction?: (id: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;

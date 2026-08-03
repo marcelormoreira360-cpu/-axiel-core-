@@ -19,7 +19,8 @@
     "emailReserved": "A {clinicName} reservou um horário para você.",
     "emailReservedWithDate": "A {clinicName} reservou um horário para você: {dateLabel}.",
     "emailConfirmCta": "Confirme o horário e complete seu cadastro neste link:",
-    "emailSendError": "Erro ao enviar e-mail."
+    "emailSendError": "Erro ao enviar e-mail.",
+    "statusUpdateError": "Não foi possível atualizar o estado. Tente novamente."
   },
   "new": {
     "title": "Agendar sessão",

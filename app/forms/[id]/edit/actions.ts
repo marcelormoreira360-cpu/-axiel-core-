@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { normalizeScoringConfig } from "@/lib/assessment-grading";
@@ -22,9 +23,11 @@ type SectionPayload = {
   questions: QuestionPayload[];
 };
 
-export async function updateFormAction(formData: FormData) {
+export async function updateFormAction(formData: FormData): Promise<{ error?: string }> {
+  const te = await getTranslations("forms.builder");
+  try {
   const profile = await getCurrentUserProfile();
-  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+  if (!profile?.clinic_id) return { error: te("errorNoClinic") };
 
   const templateId = String(formData.get("template_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -43,7 +46,7 @@ export async function updateFormAction(formData: FormData) {
   const reassessDaysRaw = parseInt(String(formData.get("reassessment_interval_days") ?? "0"), 10);
   const reassessDays = isNaN(reassessDaysRaw) || reassessDaysRaw < 0 ? 0 : reassessDaysRaw;
 
-  if (!name || !templateId) throw new Error("Dados obrigatórios ausentes");
+  if (!name || !templateId) return { error: te("errorNameRequired") };
 
   const sections: SectionPayload[] = JSON.parse(String(formData.get("sections") ?? "[]"));
   const deletedSectionIds: string[] = JSON.parse(String(formData.get("deleted_section_ids") ?? "[]"));
@@ -153,4 +156,9 @@ export async function updateFormAction(formData: FormData) {
   }
 
   redirect(`/forms/${templateId}`);
+  return {};
+  } catch (e) {
+    if (typeof e === "object" && e !== null && "digest" in e && String((e as { digest?: unknown }).digest).startsWith("NEXT_REDIRECT")) throw e;
+    return { error: te("errorGeneric") };
+  }
 }

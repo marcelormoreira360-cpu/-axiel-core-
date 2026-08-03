@@ -44,18 +44,24 @@ export default async function ClinicsPage() {
   const billingCtx = myClinic ? await getBillingContext(myClinic.id) : null;
   const canMultiClinic = billingCtx ? canUseFeature(billingCtx, "multi_clinic") : false;
 
-  async function updateClinicAction(formData: FormData) {
+  async function updateClinicAction(formData: FormData): Promise<{ error?: string }> {
     "use server";
-    const id = String(formData.get("id") ?? "");
-    const name = String(formData.get("name") ?? "").trim();
-    const slug = String(formData.get("slug") ?? "").trim();
-    if (!id || !name || !slug) {
-      const tAction = await getTranslations("clinics");
-      throw new Error(tAction("errors.requiredFields"));
+    const tAction = await getTranslations("clinics");
+    try {
+      const id = String(formData.get("id") ?? "");
+      const name = String(formData.get("name") ?? "").trim();
+      const slug = String(formData.get("slug") ?? "").trim();
+      if (!id || !name || !slug) return { error: tAction("errors.requiredFields") };
+      await updateClinic(id, { name, slug });
+      revalidatePath("/clinics");
+      revalidatePath("/settings");
+      return {};
+    } catch (e) {
+      if (typeof e === "object" && e !== null && "code" in e && (e as { code?: unknown }).code === "23505") {
+        return { error: tAction("errors.slugTaken") };
+      }
+      return { error: tAction("errors.generic") };
     }
-    await updateClinic(id, { name, slug });
-    revalidatePath("/clinics");
-    revalidatePath("/settings");
   }
 
   async function updateClinicContactAction(_prev: { ok: boolean } | null, formData: FormData) {

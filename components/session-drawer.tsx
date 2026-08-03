@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { X, User, FileText, CalendarDays, Video } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
@@ -33,7 +34,7 @@ export function SessionDrawer({
 }: {
   session: ScheduleSession | null;
   onClose: () => void;
-  updateStatusAction?: (id: string, status: string) => Promise<void>;
+  updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
 }) {
   const t = useTranslations("schedule.drawer");
   const tStatus = useTranslations("common.appointmentStatus");
@@ -51,9 +52,16 @@ export function SessionDrawer({
 
   function handleStatusChange(newStatus: string) {
     if (!updateStatusAction) return;
+    // Guarda o status real (do servidor) para reverter o otimismo em caso de erro.
+    const previousStatus = optimisticStatus;
     setOptimisticStatus(newStatus);
     startTransition(async () => {
-      await updateStatusAction(session!.id, newStatus);
+      const res = await updateStatusAction!(session!.id, newStatus);
+      if (res?.error) {
+        setOptimisticStatus(previousStatus);
+        toast.error(res.error);
+        return;
+      }
       router.refresh();
     });
   }

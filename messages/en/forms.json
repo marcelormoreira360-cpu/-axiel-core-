@@ -104,6 +104,9 @@
     "summaryQuestions": "{count, plural, one {# question} other {# questions}}",
     "saving": "Saving…",
     "create": "Create form",
+    "errorNoClinic": "No active clinic found.",
+    "errorNameRequired": "Enter a name for the form.",
+    "errorGeneric": "Couldn't save. Please try again.",
     "scoringTitle": "Dysfunction grade (bands)",
     "scoringHint": "Define the score ranges that classify the dysfunction grade. It's per form — each clinic sets their own.",
     "scoringTotal": "Total bands",
@@ -140,7 +143,9 @@
     "notes": "Notes",
     "notesPlaceholder": "Additional notes about this submission (optional).",
     "saving": "Saving…",
-    "save": "Save results"
+    "save": "Save results",
+    "errorNoClinic": "No active clinic found.",
+    "errorGeneric": "Couldn't save. Please try again."
   },
   "slots": {
     "intake": "Intake (1st booking)",

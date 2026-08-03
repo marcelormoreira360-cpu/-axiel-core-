@@ -6,7 +6,7 @@ interface ClinicEditFormProps {
   id: string;
   name: string;
   slug: string;
-  updateAction: (formData: FormData) => Promise<void>;
+  updateAction: (formData: FormData) => Promise<{ error?: string }>;
 }
 
 export function ClinicEditForm({ id, name, slug, updateAction }: ClinicEditFormProps) {
@@ -17,6 +17,7 @@ export function ClinicEditForm({ id, name, slug, updateAction }: ClinicEditFormP
   const [slugValue, setSlugValue] = useState(slug);
   const [nameValue, setNameValue] = useState(name);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleSlugInput(val: string) {
     // auto-format: lowercase, replace spaces/special chars with hyphens
@@ -26,14 +27,17 @@ export function ClinicEditForm({ id, name, slug, updateAction }: ClinicEditFormP
   function handleCancel() {
     setSlugValue(savedSlug);
     setNameValue(savedName);
+    setError(null);
     setEditing(false);
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    setError(null);
     startTransition(async () => {
-      await updateAction(fd);
+      const res = await updateAction(fd);
+      if (res?.error) { setError(res.error); return; }
       setSavedSlug(slugValue);
       setSavedName(nameValue);
       setEditing(false);
@@ -56,7 +60,7 @@ export function ClinicEditForm({ id, name, slug, updateAction }: ClinicEditFormP
             <span className="text-[11px] text-[#0F6E56] font-medium">Salvo ✓</span>
           )}
           <button
-            onClick={() => setEditing(true)}
+            onClick={() => { setError(null); setEditing(true); }}
             className="text-[12px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 px-[12px] py-[6px] rounded-[8px] hover:bg-[#0F6E56]/[.07] transition"
           >
             Editar
@@ -104,6 +108,12 @@ export function ClinicEditForm({ id, name, slug, updateAction }: ClinicEditFormP
           Use apenas letras minúsculas, números e hífens. Ex: <span className="font-mono">clinica-axiel</span>
         </p>
       </div>
+
+      {error && (
+        <p role="alert" className="text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[8px] px-[10px] py-[7px]">
+          {error}
+        </p>
+      )}
 
       <div className="flex gap-[8px] pt-[2px]">
         <button
