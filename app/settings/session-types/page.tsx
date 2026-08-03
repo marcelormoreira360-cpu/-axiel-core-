@@ -21,6 +21,18 @@ const EXTRA_LOCALES: { locale: string; field: string }[] = [
   { locale: "pt-PT", field: "name_ptPT" },
 ];
 
+// IMPORTANTE (RSC): tudo que as server actions abaixo usam precisa vir de
+// imports/consts de MÓDULO — nunca de uma closure definida DENTRO do componente
+// nem do `t` de fora. Capturar uma função local numa "use server" quebra a
+// serialização ("Functions cannot be passed directly to Client Components")
+// e o POST falha com "Algo correu mal". Por isso `saveTranslations` e o `t`
+// das actions ficam locais/módulo, não capturados.
+async function saveTranslations(sessionTypeId: string, clinicId: string, formData: FormData) {
+  for (const { locale, field } of EXTRA_LOCALES) {
+    await setSessionTypeTranslation(sessionTypeId, clinicId, locale, String(formData.get(field) ?? ""));
+  }
+}
+
 // Converte um erro do banco numa mensagem que o gestor entende.
 // O caso mais comum é a constraint UNIQUE(clinic_id, name) → nome duplicado.
 function describeSessionTypeError(
@@ -33,6 +45,98 @@ function describeSessionTypeError(
   return err?.message || t("sessionTypes.errorGeneric");
 }
 
+async function createAction(formData: FormData): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  const p = await getCurrentUserProfile();
+  if (!p?.clinic_id) return { error: t("sessionTypes.errorNoClinic") };
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: t("sessionTypes.errorNameRequired") };
+  try {
+    const created = await createSessionType({
+      clinic_id:        p.clinic_id,
+      name,
+      duration_minutes: Number(formData.get("duration_minutes") ?? 60),
+      price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
+      is_online:        formData.get("is_online") === "true",
+    });
+    await saveTranslations(created.id, p.clinic_id, formData);
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, name, t) };
+  }
+}
+
+async function toggleOnlineAction(id: string, isOnline: boolean): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  try {
+    await updateSessionType(id, { is_online: isOnline });
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, "", t) };
+  }
+}
+
+async function toggleRecordingAction(id: string, isRecorded: boolean): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  try {
+    await updateSessionType(id, { is_recorded: isRecorded });
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, "", t) };
+  }
+}
+
+async function toggleActiveAction(id: string, isActive: boolean): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  try {
+    await updateSessionType(id, { is_active: isActive });
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, "", t) };
+  }
+}
+
+async function editAction(id: string, formData: FormData): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  const p = await getCurrentUserProfile();
+  if (!p?.clinic_id) return { error: t("sessionTypes.errorNoClinic") };
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) return { error: t("sessionTypes.errorNameRequired") };
+  try {
+    await updateSessionType(id, {
+      name,
+      duration_minutes: Number(formData.get("duration_minutes") ?? 60),
+      price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
+    });
+    await saveTranslations(id, p.clinic_id, formData);
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, name, t) };
+  }
+}
+
+async function deleteAction(id: string): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  try {
+    await deleteSessionType(id);
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, "", t) };
+  }
+}
+
 export default async function SessionTypesPage() {
   const t = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
@@ -42,98 +146,6 @@ export default async function SessionTypesPage() {
     getSessionTypesForClinic(profile.clinic_id),
     getSessionTypeTranslations(profile.clinic_id),
   ]);
-
-  async function saveTranslations(sessionTypeId: string, clinicId: string, formData: FormData) {
-    for (const { locale, field } of EXTRA_LOCALES) {
-      await setSessionTypeTranslation(sessionTypeId, clinicId, locale, String(formData.get(field) ?? ""));
-    }
-  }
-
-  async function createAction(formData: FormData): Promise<{ error?: string }> {
-    "use server";
-    const p = await getCurrentUserProfile();
-    if (!p?.clinic_id) return { error: t("sessionTypes.errorNoClinic") };
-    const name = String(formData.get("name") ?? "").trim();
-    if (!name) return { error: t("sessionTypes.errorNameRequired") };
-    try {
-      const created = await createSessionType({
-        clinic_id:        p.clinic_id,
-        name,
-        duration_minutes: Number(formData.get("duration_minutes") ?? 60),
-        price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
-        is_online:        formData.get("is_online") === "true",
-      });
-      await saveTranslations(created.id, p.clinic_id, formData);
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, name, t) };
-    }
-  }
-
-  async function toggleOnlineAction(id: string, isOnline: boolean): Promise<{ error?: string }> {
-    "use server";
-    try {
-      await updateSessionType(id, { is_online: isOnline });
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, "", t) };
-    }
-  }
-
-  async function toggleRecordingAction(id: string, isRecorded: boolean): Promise<{ error?: string }> {
-    "use server";
-    try {
-      await updateSessionType(id, { is_recorded: isRecorded });
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, "", t) };
-    }
-  }
-
-  async function toggleActiveAction(id: string, isActive: boolean): Promise<{ error?: string }> {
-    "use server";
-    try {
-      await updateSessionType(id, { is_active: isActive });
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, "", t) };
-    }
-  }
-
-  async function editAction(id: string, formData: FormData): Promise<{ error?: string }> {
-    "use server";
-    const p = await getCurrentUserProfile();
-    if (!p?.clinic_id) return { error: t("sessionTypes.errorNoClinic") };
-    const name = String(formData.get("name") ?? "").trim();
-    if (!name) return { error: t("sessionTypes.errorNameRequired") };
-    try {
-      await updateSessionType(id, {
-        name,
-        duration_minutes: Number(formData.get("duration_minutes") ?? 60),
-        price_cents:      Math.round(Number(formData.get("price_brl") ?? 0) * 100),
-      });
-      await saveTranslations(id, p.clinic_id, formData);
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, name, t) };
-    }
-  }
-
-  async function deleteAction(id: string): Promise<{ error?: string }> {
-    "use server";
-    try {
-      await deleteSessionType(id);
-      revalidatePath("/settings/session-types");
-      return {};
-    } catch (e) {
-      return { error: describeSessionTypeError(e, "", t) };
-    }
-  }
 
   return (
     <Shell>
