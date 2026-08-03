@@ -303,7 +303,14 @@ export function DayView({
               <button
                 key={`add-${slot.label}`}
                 type="button"
-                onClick={() => !activeId && setSelectedSlot(slot)}
+                onClick={() => {
+                  if (activeId) return;
+                  // Sem a data do dia navegado, o modal cai no fallback "hoje"
+                  // e a sessão era gravada na data errada (bug agenda dia futuro).
+                  const slotDate = new Date(navDate);
+                  slotDate.setHours(slot.hour, slot.minute ?? 0, 0, 0);
+                  setSelectedSlot({ ...slot, date: slotDate });
+                }}
                 style={{
                   position: "absolute",
                   left: 0,
