@@ -381,7 +381,11 @@
     "remove": "Remove",
     "saveChanges": "Save changes",
     "confirmDelete": "Remove \"{name}\"? This action cannot be undone.",
-    "explainer": "Types with <b>Online enabled</b> create a Zoom meeting automatically when booked — as long as Zoom is connected in <a>Settings → Integrations</a>. In-person types do not generate a Zoom link."
+    "explainer": "Types with <b>Online enabled</b> create a Zoom meeting automatically when booked — as long as Zoom is connected in <a>Settings → Integrations</a>. In-person types do not generate a Zoom link.",
+    "errorDuplicate": "A session type named \"{name}\" already exists. Choose another name.",
+    "errorNameRequired": "Enter a name for the session type.",
+    "errorNoClinic": "We couldn't identify your clinic. Reload the page and try again.",
+    "errorGeneric": "Couldn't save the session type. Please try again."
   },
   "offers": {
     "title": "Offers & packages",

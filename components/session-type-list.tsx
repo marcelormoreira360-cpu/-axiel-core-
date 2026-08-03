@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
@@ -9,12 +10,12 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 interface Props {
   sessionTypes: SessionType[];
   translations: Record<string, Record<string, string>>;
-  createAction: (fd: FormData) => Promise<void>;
-  toggleOnlineAction: (id: string, isOnline: boolean) => Promise<void>;
-  toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<void>;
-  toggleActiveAction: (id: string, isActive: boolean) => Promise<void>;
-  editAction: (id: string, fd: FormData) => Promise<void>;
-  deleteAction: (id: string) => Promise<void>;
+  createAction: (fd: FormData) => Promise<{ error?: string }>;
+  toggleOnlineAction: (id: string, isOnline: boolean) => Promise<{ error?: string }>;
+  toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<{ error?: string }>;
+  toggleActiveAction: (id: string, isActive: boolean) => Promise<{ error?: string }>;
+  editAction: (id: string, fd: FormData) => Promise<{ error?: string }>;
+  deleteAction: (id: string) => Promise<{ error?: string }>;
 }
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -43,28 +44,33 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   function handleToggleOnline(id: string, current: boolean) {
     setPendingId(id + "-online");
     startTransition(async () => {
-      await toggleOnlineAction(id, !current);
+      const res = await toggleOnlineAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
   function handleToggleRecording(id: string, current: boolean) {
     setPendingId(id + "-recording");
     startTransition(async () => {
-      await toggleRecordingAction(id, !current);
+      const res = await toggleRecordingAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
   function handleToggleActive(id: string, current: boolean) {
     setPendingId(id + "-active");
     startTransition(async () => {
-      await toggleActiveAction(id, !current);
+      const res = await toggleActiveAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
@@ -75,16 +81,23 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
   async function confirmDelete() {
     if (!deleteTarget) return;
     setPendingId(deleteTarget.id + "-delete");
-    await deleteAction(deleteTarget.id);
+    const res = await deleteAction(deleteTarget.id);
     setPendingId(null);
+    if (res?.error) toast.error(res.error);
   }
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    setCreateError(null);
     startTransition(async () => {
-      await createAction(fd);
-      (e.target as HTMLFormElement).reset();
+      const res = await createAction(fd);
+      if (res?.error) {
+        setCreateError(res.error);
+        return;
+      }
+      form.reset();
       setShowForm(false);
     });
   }
@@ -93,9 +106,14 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     setPendingId(id + "-edit");
+    setEditError(null);
     startTransition(async () => {
-      await editAction(id, fd);
+      const res = await editAction(id, fd);
       setPendingId(null);
+      if (res?.error) {
+        setEditError(res.error);
+        return;
+      }
       setEditingId(null);
     });
   }
@@ -112,7 +130,7 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
             </p>
           </div>
           <button
-            onClick={() => setShowForm((v) => !v)}
+            onClick={() => { setCreateError(null); setShowForm((v) => !v); }}
             className="flex items-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[7px] rounded-[8px]"
           >
             {showForm ? t("cancel") : t("newType")}
@@ -195,6 +213,12 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                 </span>
               </label>
             </div>
+
+            {createError && (
+              <p className="mb-3 text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[8px] px-[10px] py-[7px]">
+                {createError}
+              </p>
+            )}
 
             <button
               type="submit"
@@ -299,7 +323,7 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                     </div>
                     {/* Edit button */}
                     <button
-                      onClick={() => setEditingId(editingId === st.id ? null : st.id)}
+                      onClick={() => { setEditError(null); setEditingId(editingId === st.id ? null : st.id); }}
                       disabled={pendingId === st.id + "-edit"}
                       className={`w-7 h-7 flex items-center justify-center rounded-[6px] transition disabled:opacity-40
                         ${editingId === st.id
@@ -386,6 +410,11 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                         />
                       </div>
                     </div>
+                    {editError && (
+                      <p className="mb-3 text-[12px] text-[#DC2626] bg-[#DC2626]/[.07] border border-[#DC2626]/20 rounded-[8px] px-[10px] py-[7px]">
+                        {editError}
+                      </p>
+                    )}
                     <div className="flex items-center gap-2">
                       <button
                         type="submit"
@@ -396,7 +425,7 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                       </button>
                       <button
                         type="button"
-                        onClick={() => setEditingId(null)}
+                        onClick={() => { setEditError(null); setEditingId(null); }}
                         className="text-[12px] font-medium text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition px-[14px] py-[7px] rounded-[8px] border border-black/[.08] dark:border-white/[.08]"
                       >
                         {t("cancel")}
