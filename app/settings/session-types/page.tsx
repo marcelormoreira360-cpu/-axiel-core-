@@ -71,22 +71,37 @@ export default async function SessionTypesPage() {
     }
   }
 
-  async function toggleOnlineAction(id: string, isOnline: boolean) {
+  async function toggleOnlineAction(id: string, isOnline: boolean): Promise<{ error?: string }> {
     "use server";
-    await updateSessionType(id, { is_online: isOnline });
-    revalidatePath("/settings/session-types");
+    try {
+      await updateSessionType(id, { is_online: isOnline });
+      revalidatePath("/settings/session-types");
+      return {};
+    } catch (e) {
+      return { error: describeSessionTypeError(e, "", t) };
+    }
   }
 
-  async function toggleRecordingAction(id: string, isRecorded: boolean) {
+  async function toggleRecordingAction(id: string, isRecorded: boolean): Promise<{ error?: string }> {
     "use server";
-    await updateSessionType(id, { is_recorded: isRecorded });
-    revalidatePath("/settings/session-types");
+    try {
+      await updateSessionType(id, { is_recorded: isRecorded });
+      revalidatePath("/settings/session-types");
+      return {};
+    } catch (e) {
+      return { error: describeSessionTypeError(e, "", t) };
+    }
   }
 
-  async function toggleActiveAction(id: string, isActive: boolean) {
+  async function toggleActiveAction(id: string, isActive: boolean): Promise<{ error?: string }> {
     "use server";
-    await updateSessionType(id, { is_active: isActive });
-    revalidatePath("/settings/session-types");
+    try {
+      await updateSessionType(id, { is_active: isActive });
+      revalidatePath("/settings/session-types");
+      return {};
+    } catch (e) {
+      return { error: describeSessionTypeError(e, "", t) };
+    }
   }
 
   async function editAction(id: string, formData: FormData): Promise<{ error?: string }> {
@@ -109,10 +124,15 @@ export default async function SessionTypesPage() {
     }
   }
 
-  async function deleteAction(id: string) {
+  async function deleteAction(id: string): Promise<{ error?: string }> {
     "use server";
-    await deleteSessionType(id);
-    revalidatePath("/settings/session-types");
+    try {
+      await deleteSessionType(id);
+      revalidatePath("/settings/session-types");
+      return {};
+    } catch (e) {
+      return { error: describeSessionTypeError(e, "", t) };
+    }
   }
 
   return (

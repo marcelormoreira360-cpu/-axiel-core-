@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
 import { useFormatMoney } from "@/components/currency-provider";
@@ -10,11 +11,11 @@ interface Props {
   sessionTypes: SessionType[];
   translations: Record<string, Record<string, string>>;
   createAction: (fd: FormData) => Promise<{ error?: string }>;
-  toggleOnlineAction: (id: string, isOnline: boolean) => Promise<void>;
-  toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<void>;
-  toggleActiveAction: (id: string, isActive: boolean) => Promise<void>;
+  toggleOnlineAction: (id: string, isOnline: boolean) => Promise<{ error?: string }>;
+  toggleRecordingAction: (id: string, isRecorded: boolean) => Promise<{ error?: string }>;
+  toggleActiveAction: (id: string, isActive: boolean) => Promise<{ error?: string }>;
   editAction: (id: string, fd: FormData) => Promise<{ error?: string }>;
-  deleteAction: (id: string) => Promise<void>;
+  deleteAction: (id: string) => Promise<{ error?: string }>;
 }
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
@@ -49,24 +50,27 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
   function handleToggleOnline(id: string, current: boolean) {
     setPendingId(id + "-online");
     startTransition(async () => {
-      await toggleOnlineAction(id, !current);
+      const res = await toggleOnlineAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
   function handleToggleRecording(id: string, current: boolean) {
     setPendingId(id + "-recording");
     startTransition(async () => {
-      await toggleRecordingAction(id, !current);
+      const res = await toggleRecordingAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
   function handleToggleActive(id: string, current: boolean) {
     setPendingId(id + "-active");
     startTransition(async () => {
-      await toggleActiveAction(id, !current);
+      const res = await toggleActiveAction(id, !current);
       setPendingId(null);
+      if (res?.error) toast.error(res.error);
     });
   }
 
@@ -77,8 +81,9 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
   async function confirmDelete() {
     if (!deleteTarget) return;
     setPendingId(deleteTarget.id + "-delete");
-    await deleteAction(deleteTarget.id);
+    const res = await deleteAction(deleteTarget.id);
     setPendingId(null);
+    if (res?.error) toast.error(res.error);
   }
 
   function handleCreate(e: React.FormEvent<HTMLFormElement>) {
