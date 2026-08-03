@@ -381,7 +381,11 @@
     "remove": "Remover",
     "saveChanges": "Salvar alterações",
     "confirmDelete": "Remover \"{name}\"? Esta ação não pode ser desfeita.",
-    "explainer": "Tipos com <b>Online ativado</b> criam uma reunião Zoom automaticamente ao ser agendados — desde que o Zoom esteja conectado em <a>Settings → Integrações</a>. Tipos presenciais não geram link Zoom."
+    "explainer": "Tipos com <b>Online ativado</b> criam uma reunião Zoom automaticamente ao ser agendados — desde que o Zoom esteja conectado em <a>Settings → Integrações</a>. Tipos presenciais não geram link Zoom.",
+    "errorDuplicate": "Já existe um tipo de sessão chamado \"{name}\". Escolha outro nome.",
+    "errorNameRequired": "Informe um nome para o tipo de sessão.",
+    "errorNoClinic": "Não foi possível identificar sua clínica. Recarregue a página e tente de novo.",
+    "errorGeneric": "Não foi possível salvar o tipo de sessão. Tente novamente."
   },
   "offers": {
     "title": "Ofertas e pacotes",
