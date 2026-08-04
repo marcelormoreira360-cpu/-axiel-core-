@@ -4,7 +4,10 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import type { SessionType } from "@/lib/types";
-import { useFormatMoney } from "@/components/currency-provider";
+import { useFormatMoney, useClinicCurrency } from "@/components/currency-provider";
+
+// Símbolo por moeda para o rótulo do campo de preço (a clínica pode estar em US$/€).
+const CURRENCY_SYMBOLS: Record<string, string> = { BRL: "R$", USD: "US$", EUR: "€", GBP: "£" };
 import { ConfirmDialog } from "@/components/confirm-dialog";
 
 interface Props {
@@ -38,6 +41,8 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 
 export function SessionTypeList({ sessionTypes, translations, createAction, toggleOnlineAction, toggleRecordingAction, toggleActiveAction, editAction, deleteAction }: Props) {
   const money = useFormatMoney();
+  const currency = useClinicCurrency();
+  const currencyLabel = CURRENCY_SYMBOLS[currency] ?? currency;
   const t = useTranslations("settings.sessionTypes");
   const [showForm, setShowForm] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -163,7 +168,7 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")}</label>
+                <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")} ({currencyLabel})</label>
                 <input
                   name="price_brl"
                   type="number"
@@ -378,7 +383,7 @@ export function SessionTypeList({ sessionTypes, translations, createAction, togg
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")}</label>
+                        <label className="block text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] mb-[4px]">{t("price")} ({currencyLabel})</label>
                         <input
                           name="price_brl"
                           type="number"

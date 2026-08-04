@@ -363,7 +363,7 @@
     "namePtPT": "Nome em português (Portugal)",
     "namePtPTPlaceholder": "Ex: Consulta inicial",
     "duration": "Duração (min)",
-    "price": "Preço (R$)",
+    "price": "Preço",
     "onlineHint": "Sessão online — cria reunião Zoom automaticamente",
     "saving": "Salvando…",
     "create": "Criar tipo de sessão",

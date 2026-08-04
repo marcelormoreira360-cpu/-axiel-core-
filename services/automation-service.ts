@@ -114,6 +114,15 @@ export async function scheduleAutomations(appointment: AppointmentRef): Promise<
 
   if (rows.length === 0) return;
 
+  // Idempotência: cancela os follow_ups pendentes anteriores deste agendamento
+  // antes de recriar. Evita duplicatas quando scheduleAutomations roda mais de
+  // uma vez para o mesmo appointment (reagendamento, agendamento + confirmação).
+  await supabase
+    .from("follow_ups")
+    .update({ status: "canceled" })
+    .eq("appointment_id", appointment.id)
+    .eq("status", "pending");
+
   const { error } = await supabase.from("follow_ups").insert(rows);
   if (error) log.error("schedule failed", error);
 }
