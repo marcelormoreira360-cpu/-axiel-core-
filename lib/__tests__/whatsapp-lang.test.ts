@@ -62,6 +62,14 @@ describe("detectLanguage", () => {
     expect(detectLanguage([], "Hello, I'd like more information...")).toBe("en");
   });
 
+  it("returns 'en' for short idiomatic English that has no keyword from the old list (regression: real Messenger leads)", () => {
+    // Casos REAIS do banco (fb_*): antes pontuavam 0×0 e caíam no default PT,
+    // então o lead em inglês recebia o funil em português.
+    expect(detectLanguage([], "Just scrolling")).toBe("en");
+    expect(detectLanguage([], "Stop .")).toBe("en");
+    expect(detectLanguage([], "Don't text me unsolicited, fir starters")).toBe("en");
+  });
+
   // ── Defaults to PT ────────────────────────────────────────────────────────
 
   it("defaults to 'pt' for empty message", () => {

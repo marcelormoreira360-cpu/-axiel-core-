@@ -7,7 +7,7 @@ import { buildSystemPrompt, IFWC_DEFAULT_CONFIG, META_LANG_RULE, META_BEHAVIOR_R
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
-import { isOptOutRequest } from "@/lib/whatsapp-optout";
+import { isOptOutRequest, isUnsubscribeRequest } from "@/lib/whatsapp-optout";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 
@@ -324,6 +324,28 @@ export async function POST(req: NextRequest) {
             ...history,
             { role: "user", content: messageText },
           ], effectiveClinicId);
+          continue;
+        }
+
+        // Descadastro ("stop", "don't text me", "unsubscribe"): confirma o
+        // descadastro no idioma do LEAD, cala o bot e não puxa o funil de venda.
+        // Precede o opt-out humano porque "stop" é pedido de PARAR, não de falar.
+        if (isUnsubscribeRequest(messageText)) {
+          const unsubLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
+          const unsubLocale = metaLangToLocale(unsubLang, await resolveClinicLocale(effectiveClinicId));
+          const tUnsub = await getServerT(unsubLocale, "whatsapp");
+          const goodbye = tUnsub("autoReply.unsubscribed");
+          await saveHistory(supabase, senderPsid, convId, [
+            ...history,
+            { role: "user", content: messageText },
+            { role: "assistant", content: goodbye },
+          ], effectiveClinicId);
+          await supabase
+            .from("whatsapp_conversations")
+            .update({ bot_disabled: true, ai_paused: true })
+            .eq("phone", `fb_${senderPsid}`)
+            .then(() => {}, () => {});
+          await sendFacebookReply(senderPsid, goodbye, pageId);
           continue;
         }
 

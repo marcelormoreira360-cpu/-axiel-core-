@@ -4,6 +4,8 @@
     "fallbackSms": "Olá! Recebi sua mensagem. Em breve entraremos em contato.",
     "handover": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui. 🙏",
     "handoverSms": "Claro! Vou avisar a equipe e em breve uma pessoa entra em contato com você por aqui.",
+    "unsubscribed": "Sem problema, não voltarei a enviar mensagens. Se um dia precisar, é só escrever por aqui. Cuide-se! 🙏",
+    "unsubscribedSms": "Sem problema, não voltarei a enviar mensagens. Se um dia precisar, é só escrever por aqui. Cuide-se!",
     "greeting": "Olá! Obrigada pela mensagem. 😊 Como posso ajudar você hoje?",
     "audioFail": "Desculpe, não consegui processar o áudio. Pode digitar sua mensagem? 😊"
   },

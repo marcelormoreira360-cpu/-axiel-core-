@@ -8,7 +8,7 @@ import { detectLanguage } from "@/lib/whatsapp-lang";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
-import { isOptOutRequest } from "@/lib/whatsapp-optout";
+import { isOptOutRequest, isUnsubscribeRequest } from "@/lib/whatsapp-optout";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 import { sendInstagramText } from "@/lib/instagram-api";
@@ -351,6 +351,28 @@ export async function POST(req: NextRequest) {
         // Opt-out / human escalation (Meta App Review requirement): the patient
         // can ask to talk to a person. We reply once, flag the conversation for a
         // human to take over (bot_disabled), and stop auto-replying in this thread.
+        // Descadastro ("stop", "don't text me", "unsubscribe"): confirma no
+        // idioma do LEAD, cala o bot e não puxa o funil de venda. Precede o
+        // opt-out humano porque "stop" é pedido de PARAR, não de falar.
+        if (isUnsubscribeRequest(messageText)) {
+          const unsubLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
+          const unsubLocale = metaLangToLocale(unsubLang, await resolveClinicLocale(clinicId));
+          const tUnsub = await getServerT(unsubLocale, "whatsapp");
+          const goodbye = tUnsub("autoReply.unsubscribed");
+          await saveHistory(supabase, senderId, convId, [
+            ...history,
+            { role: "user", content: messageText },
+            { role: "assistant", content: goodbye },
+          ], clinicId);
+          await supabase
+            .from("whatsapp_conversations")
+            .update({ bot_disabled: true, ai_paused: true })
+            .eq("phone", `ig_${senderId}`)
+            .then(() => {}, () => {});
+          await sendInstagramText(senderId, goodbye, igAccountId);
+          continue;
+        }
+
         if (isOptOutRequest(messageText)) {
           // Responde no idioma do LEAD (detectado da mensagem), não no da clínica.
           const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));

@@ -4,6 +4,8 @@
     "fallbackSms": "Hello! I received your message. We'll be in touch soon.",
     "handover": "Of course! I'll let the team know and a person will reach out to you here shortly. 🙏",
     "handoverSms": "Of course! I'll let the team know and a person will reach out to you here shortly.",
+    "unsubscribed": "No problem, I won't send any more messages. If you ever need us, just message here. Take care! 🙏",
+    "unsubscribedSms": "No problem, I won't send any more messages. If you ever need us, just message here. Take care!",
     "greeting": "Hello! Thanks for your message. 😊 How can I help you today?",
     "audioFail": "Sorry, I couldn't process the audio. Could you type your message instead? 😊"
   },
