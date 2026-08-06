@@ -27,7 +27,7 @@
   "importingFindings": "Searching…",
   "findingsImported": "Findings added to Anamnesis. Review and validate before saving.",
   "findingsNone": "No items above the threshold found in the questionnaires.",
-  "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA for you to review and validate.",
+  "findingsHint": "Pulls the highest-scoring items (3+) from QRM and Q-SNA, plus a condensed patient intake, for you to review and validate.",
   "atmSuggest": "Suggest with AI",
   "atmSuggesting": "Analyzing…",
   "atmSuggested": "Suggestion added. Review and edit before saving.",
@@ -58,5 +58,6 @@
   "medCount": "Medication count",
   "medScoreNote": "0 none · 1-2 green · 3-4 yellow · 5+ red. Review and confirm; supplements don't score.",
   "medConfirm": "Confirm and score",
+  "medReextract": "Re-extract",
   "medSaved": "Medication saved and Bio³ Map updated."
 }

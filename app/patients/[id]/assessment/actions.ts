@@ -6,6 +6,9 @@ import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 import { extractQuestionnaireFindings, autoUpsertNeuroIdDraft } from "@/services/neuro-id-service";
+import { getPatientIntakeResponses } from "@/services/intake-service";
+import { formatIntakeFindings } from "@/modules/neuro-id/findings";
+import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 import { suggestAtmIntegration } from "@/services/ai-insight-service";
 import { suggestMedicationLoad, saveMedicationLoad, type MedicationSuggestion } from "@/services/medication-load-service";
 
@@ -72,7 +75,23 @@ export async function importQuestionnaireFindingsAction(
   const patient = await getPatientById(patientId, clinic.id);
   if (!patient) return { ...empty, error: "Paciente não encontrado nesta clínica." };
   try {
-    return await extractQuestionnaireFindings(patientId, clinic.id, 3);
+    // Achados dos questionários (QRM/Q-SNA/estilo/família) + relato condensado do
+    // intake do paciente, anexado à Anamnese num bloco próprio (deduplicável ao
+    // reimportar pelo cabeçalho "Relato do paciente"). Tenant via RLS + guard acima.
+    const findings = await extractQuestionnaireFindings(patientId, clinic.id, 3);
+    const intakeResponses = await getPatientIntakeResponses(patientId).catch(() => []);
+    const intakeBlock = formatIntakeFindings(
+      intakeResponses.map((r) => ({
+        label: r.intake_questions?.label ?? "",
+        answer: formatIntakeAnswerSummary(r.answer),
+      })),
+    );
+    const anamnese = [findings.anamnese, intakeBlock].filter(Boolean).join("\n\n");
+    return {
+      anamnese,
+      antecedents: findings.antecedents,
+      hasData: anamnese.length > 0 || findings.antecedents.length > 0,
+    };
   } catch {
     return { ...empty, error: "Não foi possível buscar os achados agora." };
   }

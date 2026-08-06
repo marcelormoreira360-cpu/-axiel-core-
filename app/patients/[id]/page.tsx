@@ -22,6 +22,7 @@ import { PatientSupplementsPanel } from "@/components/patient-supplements-panel"
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
 import { getLatestNeuroIdMap, getNeuroIdAttentionPoints, getAssessmentRawValues } from "@/services/neuro-id-service";
+import { getEvolutionDigest } from "@/services/evolution-service";
 import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
 import { PatientPackagePanel } from "@/components/patient-package-panel";
@@ -41,7 +42,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
-import { PatientCaseSummaryCard } from "@/components/patient-case-summary-card";
+import { PatientDirectionPanel } from "@/components/patient-direction-panel";
+import { readMedicationLoad } from "@/services/medication-load-service";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
 import { getClinicAssessmentFields } from "@/services/clinic-assessment-service";
 import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-followup-panel";
@@ -127,6 +129,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     waitlistEntryRaw,
     profile,
     sectionLayout,
+    evolutionDigest,
   ] = await Promise.all([
     getPatientAssessmentProgress(id),
     clinic?.id ? getClinicAssessmentFields(clinic.id, { activeOnly: true }).catch(() => []) : Promise.resolve([]),
@@ -141,6 +144,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
     clinic?.id
       ? getPatientSectionLayout(clinic.id)
       : Promise.resolve(PATIENT_SECTION_ORDER.map((key) => ({ key, visible: true }))),
+    getEvolutionDigest(id, { clinicId: clinic?.id }).catch(() => null),
   ]);
 
   // 3ª leva: só o que depende do resultado acima (mapa Bio³ e permissão)
@@ -211,6 +215,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // Registro das seções: cada uma é um nó (ou null quando não há dado). A página
   // renderiza na ordem configurada, pulando as ocultas. O espaçamento vem do
   // container (gap), por isso os nós não carregam margem vertical própria.
+  // Carga de medicação já confirmada (uma leitura, reusada nos dois painéis).
+  const medLoad = readMedicationLoad(patient.assessment_data as Record<string, unknown> | null);
+
   const sections: Record<string, ReactNode> = {
     avaliacao: (
       <PatientAssessmentPanel
@@ -218,13 +225,20 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         fields={assessmentFields}
         values={patient.assessment_data}
         canConfigure={canSeeFinance}
+        initialMedLoad={medLoad ? { medications: medLoad.medications, supplements: medLoad.supplements, count: medLoad.count } : null}
       />
     ),
     resumo: (
-      <PatientCaseSummaryCard
+      <PatientDirectionPanel
         patientId={patient.id}
         chiefComplaint={patient.chief_complaint}
         caseSummary={patient.case_summary}
+        objetivoRaw={(patient.assessment_data as Record<string, unknown> | null)?.objetivo as string | null ?? null}
+        neuro={neuroIdMap}
+        packages={packages}
+        medication={medLoad}
+        evolutionSummary={evolutionDigest?.text ?? null}
+        variant="compact"
       />
     ),
     acompanhamento: (

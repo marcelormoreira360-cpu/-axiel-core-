@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill } from "lucide-react";
+import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill, Pencil } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, suggestMedicationLoadAction, confirmMedicationLoadAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
 import { stripPreviousFindings } from "@/modules/neuro-id/findings";
 import { AiButtonSpinner } from "@/components/ai-button-spinner";
@@ -13,6 +13,8 @@ import type { ClinicAssessmentField } from "@/lib/types";
 // Marca o bloco de rascunho da IA no campo ATM, para deduplicar ao re-sugerir.
 const ATM_AI_MARKER = "[Sugestão IA (revise)]";
 
+type MedLoad = { medications: string[]; supplements: string[]; count: number };
+
 type Props = {
   patientId: string;
   /** Campos configurados da clínica (ativos, na ordem). */
@@ -21,6 +23,8 @@ type Props = {
   values: Record<string, string | number | null> | null;
   /** Gestor pode editar a estrutura dos campos. */
   canConfigure?: boolean;
+  /** Carga de medicação já CONFIRMADA (do assessment_data), para os chips persistirem. */
+  initialMedLoad?: MedLoad | null;
 };
 
 const inputCls =
@@ -46,10 +50,21 @@ function groupRuns(fields: ClinicAssessmentField[]): { group: AssessmentGroup; f
   return runs;
 }
 
-export function PatientAssessmentPanel({ patientId, fields, values, canConfigure }: Props) {
+export function PatientAssessmentPanel({ patientId, fields, values, canConfigure, initialMedLoad }: Props) {
   const t = useTranslations("patientAssessment");
+
+  // Recolhe quando já há conteúdo salvo (mostra resumo compacto); abre o formulário
+  // direto quando vazio/novo. Não conta as chaves reservadas (__medicacao_*).
+  const nonEmpty = (v: string | number | null | undefined) => v !== null && v !== undefined && String(v).trim() !== "";
+  const hasContent = fields.some((f) => nonEmpty(values?.[f.field_key]));
+  const [expanded, setExpanded] = useState(!hasContent);
+
   const [state, formAction, isPending] = useActionState<AssessmentState, FormData>(
-    async (prev, fd) => saveAssessmentAction(patientId, prev, fd),
+    async (prev, fd) => {
+      const res = await saveAssessmentAction(patientId, prev, fd);
+      if (res?.ok) setExpanded(false); // após salvar, volta ao resumo compacto
+      return res;
+    },
     null,
   );
 
@@ -77,7 +92,9 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   // Medicação (carga): extração por IA + revisão do terapeuta antes de pontuar.
   const [medLoading, setMedLoading] = useState(false);
   const [medMsg, setMedMsg] = useState<string | null>(null);
-  const [medData, setMedData] = useState<{ medications: string[]; supplements: string[]; count: number } | null>(null);
+  // Semeia com a carga já confirmada: os chips persistem após reload (não some para
+  // só o botão "Extrair"). Re-extrair segue disponível.
+  const [medData, setMedData] = useState<MedLoad | null>(initialMedLoad ?? null);
 
   // Anexa um bloco de achados deduplicando (remove um bloco anterior pelos cabeçalhos).
   function mergeFindings(prev: string, block: string): string {
@@ -189,8 +206,10 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     setMedMsg(null);
     const res = await suggestMedicationLoadAction(patientId);
     setMedLoading(false);
-    if ("error" in res) { setMedMsg(res.error); setMedData(null); return; }
+    // Em erro, preserva os chips já mostrados (não zera a carga salva).
+    if ("error" in res) { setMedMsg(res.error); return; }
     setMedData({ medications: res.medications, supplements: res.supplements, count: res.medication_count });
+    setMedMsg(null);
   }
 
   async function handleConfirmMed() {
@@ -203,7 +222,7 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     });
     setMedLoading(false);
     if (res.error) { setMedMsg(res.error); return; }
-    setMedData(null);
+    // Mantém os chips visíveis após confirmar (persistência), só sinaliza salvo.
     setMedMsg(t("medSaved"));
   }
 
@@ -251,9 +270,11 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
                 className="inline-flex items-center justify-center sm:justify-start gap-1 w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-50 rounded-[8px] px-[12px] py-[6px] transition">
                 {medLoading ? <AiButtonSpinner /> : <Check className="h-3 w-3" />} {medLoading ? t("saving") : t("medConfirm")}
               </button>
-              <button type="button" onClick={() => { setMedData(null); setMedMsg(null); }}
-                className="inline-flex items-center min-h-[44px] sm:min-h-0 text-[11px] text-[#6B6A66] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">{t("cancel")}</button>
-              {medMsg && <span className="text-[10px] text-red-500">{medMsg}</span>}
+              <button type="button" disabled={medLoading} onClick={handleSuggestMed}
+                className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] disabled:opacity-50 transition">
+                <Sparkles className="h-3 w-3" /> {t("medReextract")}
+              </button>
+              {medMsg && <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{medMsg}</span>}
             </div>
           </div>
         )}
@@ -305,8 +326,44 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
 
       {fields.length === 0 ? (
         <p className="text-[12px] text-[#A09E98]">{t("noFields")}</p>
+      ) : !expanded ? (
+        // Já preenchido: resumo compacto recolhido (rótulos + valores curtos) + "Editar".
+        <div className="space-y-[10px]">
+          <div className="space-y-[8px]">
+            {fields.filter((f) => nonEmpty(values?.[f.field_key])).map((f) => {
+              const raw = String(values?.[f.field_key] ?? "").trim();
+              const val = raw.length > 160 ? `${raw.slice(0, 160).trimEnd()}…` : raw;
+              return (
+                <div key={f.id}>
+                  <p className="text-[10px] uppercase tracking-[.04em] text-[#A09E98]">{f.label}</p>
+                  <p className="text-[12px] text-[#3A4A42] dark:text-[#9E9C97] leading-relaxed whitespace-pre-wrap">{val}</p>
+                </div>
+              );
+            })}
+            {medData && (medData.medications.length > 0 || medData.supplements.length > 0) && (
+              <div>
+                <p className="text-[10px] uppercase tracking-[.04em] text-[#A09E98] mb-[3px]">{t("medTitle")}</p>
+                <div className="flex flex-wrap gap-1">
+                  {medData.medications.map((x, i) => (
+                    <span key={`m${i}`} className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]">{x}</span>
+                  ))}
+                  {medData.supplements.map((x, i) => (
+                    <span key={`s${i}`} className="text-[10px] px-[7px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{x}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
+          >
+            <Pencil className="h-3 w-3" /> {t("edit")}
+          </button>
+        </div>
       ) : (
-        // Sempre editável: formulário pré-preenchido com o que já foi salvo.
+        // Formulário completo pré-preenchido com o que já foi salvo.
         <form action={formAction} className="space-y-[14px]">
           <p className="text-[10px] text-[#A09E98] leading-snug">{t("atmIntro")}</p>
           {medBlock()}
