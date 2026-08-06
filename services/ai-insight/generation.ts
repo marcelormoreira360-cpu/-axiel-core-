@@ -4,8 +4,9 @@ import { reportModel } from "@/lib/ai-models";
 import { resolvePatientLocale } from "@/lib/email-i18n";
 import { buildAiInsightSystemPrompt } from "@/modules/ai-insights/guardrails";
 import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
-import { buildAtmSuggestionSystemPrompt, buildScribeAtmSystemPrompt } from "@/services/ai-insight/prompts";
+import { buildAtmSuggestionSystemPrompt, buildScribeAtmSystemPrompt, buildCaseSummarySystemPrompt } from "@/services/ai-insight/prompts";
 import { buildAiInsightInput, type AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
+import { buildCaseSummaryFallback, stripDash, type CaseSummaryDraft } from "@/services/ai-insight/case-summary";
 
 export function buildAiFallbackOutput(reason: string): AiInsightOutput {
   return {
@@ -107,6 +108,52 @@ export async function suggestAtmIntegration(
     return { suggestion: text };
   } catch {
     return { error: "Não foi possível gerar a sugestão agora. Tente novamente." };
+  }
+}
+
+// ── Rascunho do Painel de Direção (queixa + resumo do caso) ───────────────────
+
+/**
+ * Gera um RASCUNHO de direção do caso (queixa principal + resumo) a partir do
+ * snapshot. Molde do suggestAtmIntegration. NÃO grava: o terapeuta revisa e salva.
+ * SEMPRE resolve para { chief, summary } (fallback determinístico sem LLM ou em
+ * erro) para o botão nunca quebrar. Nível INTERNO: `clinicLocale` = idioma da UI.
+ */
+export async function suggestCaseSummary(
+  snapshot: AiInsightInputSnapshot,
+  clinicLocale?: string | null,
+): Promise<CaseSummaryDraft> {
+  const fallback = () => buildCaseSummaryFallback(snapshot, clinicLocale);
+  if (!process.env.OPENAI_API_KEY) return fallback();
+  try {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const model = reportModel();
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.3,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: buildCaseSummarySystemPrompt(clinicLocale) },
+        {
+          role: "user",
+          content: JSON.stringify({
+            task: "Rascunho de direção do caso: chief (1 linha) + summary (parágrafo curto). Sem diagnóstico, linguagem prudente.",
+            input_data: snapshot,
+          }),
+        },
+      ],
+    });
+    const raw = response.choices[0]?.message?.content?.trim();
+    if (!raw) return fallback();
+    let parsed: { chief?: unknown; summary?: unknown } = {};
+    try { parsed = JSON.parse(raw); } catch { return fallback(); }
+    const chief = typeof parsed.chief === "string" ? stripDash(parsed.chief) : "";
+    const summary = typeof parsed.summary === "string" ? stripDash(parsed.summary) : "";
+    // Se a IA vier vazia, cai no determinístico (nunca devolve rascunho inútil).
+    if (!chief && !summary) return fallback();
+    return { chief, summary };
+  } catch {
+    return fallback();
   }
 }
 

@@ -16,6 +16,11 @@ import { getSessionRecordByAppointment, getSessionRecordsByPatient } from "@/ser
 import { getZoomRecordingsByAppointment } from "@/services/zoom-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientAssessmentResponses } from "@/services/assessment-service";
+import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
+import { composeEvolutionDigestLocalized } from "@/services/evolution-service";
+import { getPatientPackages } from "@/services/package-service";
+import { readMedicationLoad } from "@/services/medication-load-service";
+import { PatientDirectionPanel } from "@/components/patient-direction-panel";
 import { gradeTotal } from "@/lib/assessment-grading";
 import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 
@@ -33,14 +38,17 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const t = await getTranslations("session.page");
   const locale = await getLocale();
 
-  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog, isPaid] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog, neuroIdMap, packages, isPaid] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
     getPatientIntakeResponses(appointment.patient_id),
     getPatientAssessmentResponses(appointment.patient_id),
     getSessionRecordsByPatient(appointment.patient_id),
-    getPatientById(appointment.patient_id),
+    // Escopo de tenant: a leitura do paciente segue a clínica do agendamento.
+    getPatientById(appointment.patient_id, appointment.clinic_id),
     getClinicalTestCatalog(appointment.clinic_id),
+    getLatestNeuroIdMap(appointment.patient_id).catch(() => null),
+    getPatientPackages(appointment.patient_id),
     // Checagem barata: a sessão já tem pagamento confirmado? (mesma guarda do endpoint de cobrança)
     (async () => {
       const supabase = await createSupabaseServerClient();
@@ -59,6 +67,11 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
     .map((ct) => ct.name)
     .filter(Boolean);
   const suggestedTests = [...new Set([...testCatalog, ...carryForwardTests])];
+
+  // Resumo evolutivo (Melhoria 2): derivado das sessões e formulários já
+  // carregados (prevRecords + assessmentResponses), sem query nova. RLS já
+  // escopou ambos ao paciente/clínica do agendamento.
+  const evolutionDigest = await composeEvolutionDigestLocalized(prevRecords, assessmentResponses);
 
   const patientName =
     (Array.isArray(appointment.patients)
@@ -119,21 +132,20 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
         />
       )}
 
-      {/* Queixa principal + resumo do caso — fixos em toda sessão (Feature 2) */}
-      {(patient?.chief_complaint || patient?.case_summary) && (
-        <div className="mb-5 bg-[#E1F5EE] dark:bg-[#0F6E56]/[.10] border border-[#0F6E56]/20 rounded-[12px] p-[15px]">
-          {patient?.chief_complaint && (
-            <div className="mb-[8px]">
-              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("chiefComplaint")}</p>
-              <p className="text-[14px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">{patient.chief_complaint}</p>
-            </div>
-          )}
-          {patient?.case_summary && (
-            <div>
-              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#0F6E56] mb-[2px]">{t("caseSummary")}</p>
-              <p className="text-[12px] text-[#3A4A42] dark:text-[#9E9C97] leading-relaxed whitespace-pre-wrap">{patient.case_summary}</p>
-            </div>
-          )}
+      {/* Painel de Direção estruturado (Melhoria 3) — fixo no topo de toda sessão */}
+      {patient && (
+        <div className="mb-5">
+          <PatientDirectionPanel
+            patientId={patient.id}
+            chiefComplaint={patient.chief_complaint}
+            caseSummary={patient.case_summary}
+            objetivoRaw={(patient.assessment_data as Record<string, unknown> | null)?.objetivo as string | null ?? null}
+            neuro={neuroIdMap}
+            packages={packages}
+            medication={readMedicationLoad(patient.assessment_data as Record<string, unknown> | null)}
+            evolutionSummary={evolutionDigest?.text ?? null}
+            variant="full"
+          />
         </div>
       )}
 

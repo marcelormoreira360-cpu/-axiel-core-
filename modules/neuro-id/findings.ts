@@ -43,14 +43,17 @@ function bandLabel(g: FindingGroup): string | null {
   return null;
 }
 
+/** Cabeçalho do bloco condensado do intake do paciente (relato livre). */
+export const INTAKE_FINDINGS_HEAD = "Relato do paciente (intake)";
+
 /**
  * Cabeçalhos que iniciam um bloco de achados — âncora para deduplicar ao reimportar.
  * Cobre os formatos atual ("QRM=42,"), o anterior ("QRM:") e o legado
  * ("QRM (Rastreamento Metabólico)"), para limpar corretamente texto já salvo.
  * Mantenha em sincronia com os instrumentos roteados em neuro-id-service
- * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar).
+ * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar) + o bloco do intake.
  */
-const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar)(?:[:=]| \()/;
+const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar|Relato do paciente)(?:[:=]| \()/;
 
 /** Frase de introdução legada, removida ao reimportar caso tenha ficado salva. */
 const LEGACY_INTRO_RE = /^\s*ACHADOS DOS QUESTION[ÁA]RIOS[^\n]*\n?/i;
@@ -107,4 +110,28 @@ export function formatFindingsSummary(groups: FindingGroup[], _threshold?: numbe
   }
 
   return blocks.join("\n\n");
+}
+
+/**
+ * Bloco condensado do relato do paciente (intake): "label: resposta" por item,
+ * com o cabeçalho INTAKE_FINDINGS_HEAD (deduplicável pelo FINDINGS_BLOCK_RE ao
+ * reimportar). Trunca respostas longas e limita a quantidade de itens para não
+ * despejar a narrativa inteira. Sem travessão. Devolve "" quando não há item útil.
+ */
+export function formatIntakeFindings(
+  items: { label: string; answer: string }[],
+  opts: { maxItems?: number; maxAnswerChars?: number } = {},
+): string {
+  const maxItems = opts.maxItems ?? 12;
+  const maxAnswerChars = opts.maxAnswerChars ?? 120;
+  const lines = items
+    .map((it) => ({ label: (it.label ?? "").trim(), answer: (it.answer ?? "").replace(/\s+/g, " ").trim() }))
+    .filter((it) => it.label && it.answer)
+    .slice(0, maxItems)
+    .map((it) => {
+      const a = it.answer.length > maxAnswerChars ? `${it.answer.slice(0, maxAnswerChars).trimEnd()}…` : it.answer;
+      return `- ${it.label}: ${a}`;
+    });
+  if (lines.length === 0) return "";
+  return [INTAKE_FINDINGS_HEAD, ...lines].join("\n");
 }

@@ -5,7 +5,9 @@
 export { buildAiInsightInput } from "@/services/ai-insight/input-builder";
 export type { AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
 
-export { generateAiInsightOutput, suggestAtmIntegration, suggestScribeAtm } from "@/services/ai-insight/generation";
+export { generateAiInsightOutput, suggestAtmIntegration, suggestScribeAtm, suggestCaseSummary } from "@/services/ai-insight/generation";
+export { buildCaseSummaryFallback } from "@/services/ai-insight/case-summary";
+export type { CaseSummaryDraft } from "@/services/ai-insight/case-summary";
 
 export {
   createAiRequest,

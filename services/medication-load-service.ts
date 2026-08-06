@@ -23,6 +23,48 @@ export type MedicationExtraction = {
   medication_count: number;
 };
 
+/** Carga de medicação CONFIRMADA para exibição (Painel de Direção). */
+export type MedicationLoadDisplay = {
+  count: number;
+  medications: string[];
+  supplements: string[];
+  /** Sinal prudente de atenção (associação, não diagnóstico): muitos fármacos em uso. */
+  polypharmacy: boolean;
+};
+
+// Limiar de polifarmácia (uso interno, sinal de atenção da linha do Salvo).
+const POLYPHARMACY_THRESHOLD = 5;
+
+function splitList(raw: unknown): string[] {
+  if (typeof raw !== "string") return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Lê a carga de medicação já CONFIRMADA de patients.assessment_data (sem query
+ * nova: a página já carrega o paciente). Devolve null quando nunca foi confirmada
+ * (nenhuma contagem gravada). Puro, sem IA, sem efeito colateral.
+ */
+export function readMedicationLoad(
+  assessmentData: Record<string, unknown> | null | undefined,
+): MedicationLoadDisplay | null {
+  const raw = assessmentData?.[MED_COUNT_KEY];
+  if (raw === undefined || raw === null) return null;
+  const count = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(count)) return null;
+  const medications = splitList(assessmentData?.[MED_MEDS_KEY]);
+  const supplements = splitList(assessmentData?.[MED_SUPPS_KEY]);
+  return {
+    count: Math.max(0, Math.floor(count)),
+    medications,
+    supplements,
+    polypharmacy: Math.max(0, Math.floor(count)) >= POLYPHARMACY_THRESHOLD,
+  };
+}
+
 export type MedicationSuggestion =
   | ({ sourceText: string } & MedicationExtraction)
   | { error: string };
