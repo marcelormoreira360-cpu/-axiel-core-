@@ -46,6 +46,9 @@ function bandLabel(g: FindingGroup): string | null {
 /** Cabeçalho do bloco condensado do intake do paciente (relato livre). */
 export const INTAKE_FINDINGS_HEAD = "Relato do paciente (intake)";
 
+/** Cabeçalho do bloco de sínteses dos exames funcionais (resumo gerado pela IA). */
+export const EXAM_FINDINGS_HEAD = "Sínteses de exames (IA)";
+
 /**
  * Cabeçalhos que iniciam um bloco de achados — âncora para deduplicar ao reimportar.
  * Cobre os formatos atual ("QRM=42,"), o anterior ("QRM:") e o legado
@@ -53,7 +56,7 @@ export const INTAKE_FINDINGS_HEAD = "Relato do paciente (intake)";
  * Mantenha em sincronia com os instrumentos roteados em neuro-id-service
  * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar) + o bloco do intake.
  */
-const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar|Relato do paciente)(?:[:=]| \()/;
+const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar|Relato do paciente|Sínteses de exames)(?:[:=]| \()/;
 
 /** Frase de introdução legada, removida ao reimportar caso tenha ficado salva. */
 const LEGACY_INTRO_RE = /^\s*ACHADOS DOS QUESTION[ÁA]RIOS[^\n]*\n?/i;
@@ -134,4 +137,32 @@ export function formatIntakeFindings(
     });
   if (lines.length === 0) return "";
   return [INTAKE_FINDINGS_HEAD, ...lines].join("\n");
+}
+
+/**
+ * Bloco condensado das sínteses de exames funcionais (título, data e síntese da
+ * IA), anexado à Anamnese com o cabeçalho EXAM_FINDINGS_HEAD (deduplicável pelo
+ * FINDINGS_BLOCK_RE ao reimportar). Só entram itens com síntese.
+ */
+export function formatExamFindings(
+  items: { title: string; date: string; summary: string }[],
+  opts: { maxItems?: number; maxSummaryChars?: number } = {},
+): string {
+  const maxItems = opts.maxItems ?? 6;
+  const maxSummaryChars = opts.maxSummaryChars ?? 220;
+  const lines = items
+    .map((it) => ({
+      title: (it.title ?? "").trim(),
+      date: (it.date ?? "").trim(),
+      summary: (it.summary ?? "").replace(/\s+/g, " ").trim(),
+    }))
+    .filter((it) => it.summary)
+    .slice(0, maxItems)
+    .map((it) => {
+      const s = it.summary.length > maxSummaryChars ? `${it.summary.slice(0, maxSummaryChars).trimEnd()}…` : it.summary;
+      const head = [it.title, it.date].filter(Boolean).join(", ");
+      return head ? `- ${head}: ${s}` : `- ${s}`;
+    });
+  if (lines.length === 0) return "";
+  return [EXAM_FINDINGS_HEAD, ...lines].join("\n");
 }

@@ -19,6 +19,7 @@ import { getPatientAssessmentResponses } from "@/services/assessment-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { composeEvolutionDigestLocalized } from "@/services/evolution-service";
 import { getPatientPackages } from "@/services/package-service";
+import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { readMedicationLoad } from "@/services/medication-load-service";
 import { PatientDirectionPanel } from "@/components/patient-direction-panel";
 import { gradeTotal } from "@/lib/assessment-grading";
@@ -38,7 +39,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
   const t = await getTranslations("session.page");
   const locale = await getLocale();
 
-  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog, neuroIdMap, packages, isPaid] = await Promise.all([
+  const [record, recordings, intakeResponses, assessmentResponses, prevRecords, patient, testCatalog, neuroIdMap, packages, functionalExams, isPaid] = await Promise.all([
     getSessionRecordByAppointment(id),
     getZoomRecordingsByAppointment(id),
     getPatientIntakeResponses(appointment.patient_id),
@@ -49,6 +50,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
     getClinicalTestCatalog(appointment.clinic_id),
     getLatestNeuroIdMap(appointment.patient_id).catch(() => null),
     getPatientPackages(appointment.patient_id),
+    getPatientFunctionalExams(appointment.patient_id).catch(() => []),
     // Checagem barata: a sessão já tem pagamento confirmado? (mesma guarda do endpoint de cobrança)
     (async () => {
       const supabase = await createSupabaseServerClient();
@@ -144,6 +146,7 @@ export default async function SessionRecordingPage({ params, searchParams }: Pro
             packages={packages}
             medication={readMedicationLoad(patient.assessment_data as Record<string, unknown> | null)}
             evolutionSummary={evolutionDigest?.text ?? null}
+            exams={functionalExams}
             variant="full"
           />
         </div>

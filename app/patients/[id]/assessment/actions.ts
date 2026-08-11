@@ -7,7 +7,8 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 import { extractQuestionnaireFindings, autoUpsertNeuroIdDraft } from "@/services/neuro-id-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
-import { formatIntakeFindings } from "@/modules/neuro-id/findings";
+import { getPatientFunctionalExams } from "@/services/functional-exams-service";
+import { formatIntakeFindings, formatExamFindings } from "@/modules/neuro-id/findings";
 import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 import { suggestAtmIntegration } from "@/services/ai-insight-service";
 import { suggestMedicationLoad, saveMedicationLoad, type MedicationSuggestion } from "@/services/medication-load-service";
@@ -86,7 +87,17 @@ export async function importQuestionnaireFindingsAction(
         answer: formatIntakeAnswerSummary(r.answer),
       })),
     );
-    const anamnese = [findings.anamnese, intakeBlock].filter(Boolean).join("\n\n");
+    // Sínteses dos exames funcionais (resumo da IA), anexadas à Anamnese num bloco
+    // próprio, junto com o relato do intake. Deduplicável pelo cabeçalho ao reimportar.
+    const exams = await getPatientFunctionalExams(patientId).catch(() => []);
+    const examBlock = formatExamFindings(
+      exams.map((e) => ({
+        title: e.title || e.exam_type,
+        date: e.exam_date,
+        summary: e.summary ?? e.ai_analysis ?? "",
+      })),
+    );
+    const anamnese = [findings.anamnese, intakeBlock, examBlock].filter(Boolean).join("\n\n");
     return {
       anamnese,
       antecedents: findings.antecedents,

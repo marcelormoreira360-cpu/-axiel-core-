@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, stripPreviousFindings, type FindingGroup } from "../findings";
+import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, stripPreviousFindings, formatExamFindings, EXAM_FINDINGS_HEAD, type FindingGroup } from "../findings";
 
 describe("findings", () => {
   it("faixas do QRM", () => {
@@ -51,6 +51,29 @@ describe("findings", () => {
   it("ignora grupos sem itens e retorna vazio quando não há achados", () => {
     expect(formatFindingsSummary([{ instrument: "QRM", kind: "qrm", total: 10, max: 268, items: [] }], 3)).toBe("");
     expect(formatFindingsSummary([], 3)).toBe("");
+  });
+
+  it("formatExamFindings monta o bloco com título, data e síntese", () => {
+    const out = formatExamFindings([
+      { title: "Neurometria", date: "2026-08-11", summary: "Predomínio simpático, baixa VFC" },
+      { title: "", date: "2026-08-11", summary: "Alterações digestivas" },
+      { title: "Sem síntese", date: "2026-08-11", summary: "" },
+    ]);
+    expect(out).toContain(EXAM_FINDINGS_HEAD);
+    expect(out).toContain("- Neurometria, 2026-08-11: Predomínio simpático");
+    expect(out).toContain("Alterações digestivas");
+    // Exame sem síntese não vira linha.
+    expect(out).not.toContain("Sem síntese");
+  });
+
+  it("formatExamFindings devolve vazio quando não há síntese", () => {
+    expect(formatExamFindings([{ title: "X", date: "2026-08-11", summary: "" }])).toBe("");
+    expect(formatExamFindings([])).toBe("");
+  });
+
+  it("stripPreviousFindings deduplica também o bloco de sínteses de exames", () => {
+    const prev = `Nota do terapeuta.\n\n${formatExamFindings([{ title: "Neurometria", date: "2026-08-11", summary: "Achado X" }])}`;
+    expect(stripPreviousFindings(prev)).toBe("Nota do terapeuta.");
   });
 
   it("stripPreviousFindings remove o bloco anterior preservando o texto humano", () => {
