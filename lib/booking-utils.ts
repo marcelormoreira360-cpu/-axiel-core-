@@ -47,13 +47,23 @@ function utcToLocalMinutes(iso: string, tz: string): number {
   return h * 60 + m;
 }
 
+/** Passo dos horários oferecidos no agendamento público/voz, em minutos. */
+export const BOOKING_SLOT_STEP_MINUTES = 15;
+
+/** Agendamento existente, para checagem de conflito por sobreposição. */
+export interface BookedInterval {
+  starts_at: string;        // UTC ISO
+  duration_minutes: number; // duração em minutos
+}
+
 export function generateSlots(
   dateStr: string,          // "YYYY-MM-DD"
   opensAt: string,          // "09:00"  — wall-clock in clinic timezone
   closesAt: string,         // "17:00"  — wall-clock in clinic timezone
   durationMinutes: number,
-  bookedStartsAt: string[], // UTC ISO strings of existing appointments
+  booked: BookedInterval[], // agendamentos existentes (início + duração)
   timezone = "UTC",         // IANA timezone (e.g. "America/Sao_Paulo")
+  stepMinutes = BOOKING_SLOT_STEP_MINUTES,
 ): TimeSlot[] {
   const [openH, openM] = opensAt.split(":").map(Number);
   const [closeH, closeM] = closesAt.split(":").map(Number);
@@ -61,14 +71,25 @@ export function generateSlots(
   const openTotal  = openH  * 60 + openM;
   const closeTotal = closeH * 60 + closeM;
 
-  // Extract booked minutes in the clinic's wall-clock time (not UTC)
-  const bookedMinutes = new Set(
-    bookedStartsAt.map((iso) => utcToLocalMinutes(iso, timezone)),
-  );
+  // Intervalos ocupados em minutos wall-clock da clínica: [start, end)
+  const busy = booked.map((b) => {
+    const start = utcToLocalMinutes(b.starts_at, timezone);
+    return { start, end: start + (b.duration_minutes ?? 60) };
+  });
 
   const slots: TimeSlot[] = [];
-  for (let min = openTotal; min + durationMinutes <= closeTotal; min += durationMinutes) {
-    if (bookedMinutes.has(min)) continue;
+  // Passo fixo (ex.: 15 min), independente da duração da sessão, para permitir
+  // inícios flexíveis (ex.: uma sessão de 135 min podendo começar às 09:15).
+  for (let min = openTotal; min + durationMinutes <= closeTotal; min += stepMinutes) {
+    const slotStart = min;
+    const slotEnd   = min + durationMinutes;
+
+    // Rejeita o horário se a sessão candidata [slotStart, slotEnd) sobrepõe
+    // QUALQUER agendamento existente. Overlap: início < fimDoOutro && fim > inícioDoOutro.
+    // (A checagem por sobreposição, e não apenas pelo minuto de início, é o que
+    // evita double-booking quando o passo é menor que a duração das sessões.)
+    const overlaps = busy.some((b) => slotStart < b.end && slotEnd > b.start);
+    if (overlaps) continue;
 
     const h = String(Math.floor(min / 60)).padStart(2, "0");
     const m = String(min % 60).padStart(2, "0");

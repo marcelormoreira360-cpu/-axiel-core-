@@ -703,7 +703,7 @@ export async function getAvailableSlots(opts: {
 
   let bookedQuery = supabase
     .from("appointments")
-    .select("starts_at")
+    .select("starts_at, duration_minutes")
     .eq("clinic_id", clinic.id)
     .not("status", "in", '("cancelled","no_show")')  // A-04: exclude cancelled slots
     .gte("starts_at", dayStartUTC)
@@ -734,7 +734,10 @@ export async function getAvailableSlots(opts: {
     opensAt,
     closesAt,
     sessionType.duration_minutes,
-    (booked ?? []).map((a) => a.starts_at),
+    (booked ?? []).map((a) => ({
+      starts_at: a.starts_at as string,
+      duration_minutes: (a.duration_minutes as number | null) ?? 60,
+    })),
     timezone,
   );
 
