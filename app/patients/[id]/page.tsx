@@ -238,6 +238,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         packages={packages}
         medication={medLoad}
         evolutionSummary={evolutionDigest?.text ?? null}
+        exams={functionalExams}
         variant="compact"
       />
     ),

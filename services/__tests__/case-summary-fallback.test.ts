@@ -8,6 +8,7 @@ function snap(partial: {
   anamnese?: string | null;
   neuro?: AiInsightInputSnapshot["neuro_id"];
   prescriptions?: AiInsightInputSnapshot["prescriptions"];
+  exams?: AiInsightInputSnapshot["functional_exams"];
 }): AiInsightInputSnapshot {
   return {
     patient: {
@@ -17,7 +18,7 @@ function snap(partial: {
       pain_location: null, treatment_note: null, assessment_extra: partial.extra ?? [],
     },
     intake: [], session_notes: [], patient_history: [], assessments: [],
-    lab_exams: [], functional_exams: [], prescriptions: partial.prescriptions ?? [],
+    lab_exams: [], functional_exams: partial.exams ?? [], prescriptions: partial.prescriptions ?? [],
     neuro_id: partial.neuro ?? null,
   };
 }
@@ -81,6 +82,30 @@ describe("buildCaseSummaryFallback", () => {
     expect(out.summary).toContain("Neuro ID map suggests");
     expect(out.summary).toContain("Medications in use");
     expect(out.summary).toContain("Bioemocional");
+  });
+
+  it("agrega as sínteses dos exames funcionais (pt e en)", () => {
+    const exams = [
+      { type: "neurometria", title: "Neurometria", date: "2026-08-11", summary: "Predomínio simpático, baixa VFC" },
+      { type: "biorressonancia", title: null, date: "2026-08-11", summary: "Alterações digestivas" },
+    ];
+    const pt = buildCaseSummaryFallback(snap({ exams }), "pt-BR");
+    expect(pt.summary).toContain("Sínteses de exames");
+    expect(pt.summary).toContain("Neurometria");
+    expect(pt.summary).toContain("Predomínio simpático");
+    // Exame sem título usa o tipo como rótulo.
+    expect(pt.summary).toContain("biorressonancia");
+
+    const en = buildCaseSummaryFallback(snap({ exams }), "en");
+    expect(en.summary).toContain("Exam summaries");
+  });
+
+  it("exame sem síntese não entra no resumo", () => {
+    const out = buildCaseSummaryFallback(
+      snap({ exams: [{ type: "outro", title: "Exame X", date: "2026-08-11", summary: null }] }),
+      "pt-BR",
+    );
+    expect(out.summary).toBe("");
   });
 
   it("devolve strings vazias sem quebrar quando não há sinal", () => {
