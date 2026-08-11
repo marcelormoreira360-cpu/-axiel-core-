@@ -274,23 +274,28 @@ export function WeekView({
             position: "relative",
           }}
         >
-          {HOUR_LABELS.map((h) => (
-            <div
-              key={h}
-              className="text-[#0F1A2E] dark:text-[#E8E6E2]"
-              style={{
-                position: "absolute",
-                top: (h - START_HOUR) * HOUR_HEIGHT + 4,
-                right: 8,
-                fontSize: 11,
-                fontWeight: 600,
-                lineHeight: 1,
-                userSelect: "none",
-              }}
-            >
-              {String(h).padStart(2, "0")}:00
-            </div>
-          ))}
+          {Array.from({ length: TOTAL_HOURS * 4 }, (_, q) => {
+            const hour   = START_HOUR + Math.floor(q / 4);
+            const minute = (q % 4) * 15;
+            const isHour = minute === 0;
+            return (
+              <div
+                key={`t-${q}`}
+                className={isHour ? "text-[#0F1A2E] dark:text-[#E8E6E2]" : "text-[#A09E98] dark:text-white/40"}
+                style={{
+                  position: "absolute",
+                  top: q * (HOUR_HEIGHT / 4) + 2,
+                  right: 8,
+                  fontSize: isHour ? 11 : 9,
+                  fontWeight: isHour ? 600 : 500,
+                  lineHeight: 1,
+                  userSelect: "none",
+                }}
+              >
+                {String(hour).padStart(2, "0")}:{String(minute).padStart(2, "0")}
+              </div>
+            );
+          })}
         </div>
 
         {/* ── Colunas dos dias ── */}
@@ -307,15 +312,16 @@ export function WeekView({
                   height: GRID_HEIGHT,
                 }}
               >
-                {/* Células clicáveis e droppable de 30 em 30 min */}
+                {/* Células clicáveis e droppable de 15 em 15 min */}
                 {HOUR_LABELS.slice(0, TOTAL_HOURS).flatMap((h) =>
-                  [0, 30].map((m) => (
+                  [0, 15, 30, 45].map((m) => (
                     <DroppableHourCell
                       key={`cell-${h}-${m}`}
                       id={`${date.toISOString()}__${h}__${m}`}
                       date={date}
                       hour={h}
                       minute={m}
+                      slotMinutes={15}
                       onClick={() => !activeId && handleCellClick(date, h, m)}
                     />
                   )),
@@ -363,21 +369,24 @@ export function WeekView({
                     }}
                   />
                 ))}
-                {/* Linha tracejada leve na meia hora */}
-                {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => (
-                  <div
-                    key={`hh-${h}`}
-                    className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      right: 0,
-                      top: i * HOUR_HEIGHT + HOUR_HEIGHT / 2,
-                      pointerEvents: "none",
-                      zIndex: 2,
-                    }}
-                  />
-                ))}
+                {/* Linhas tracejadas nos quartos de hora (a de 30 mais visível) */}
+                {HOUR_LABELS.slice(0, TOTAL_HOURS).flatMap((h, i) =>
+                  [15, 30, 45].map((mm) => (
+                    <div
+                      key={`q-${h}-${mm}`}
+                      className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        top: i * HOUR_HEIGHT + (mm / 60) * HOUR_HEIGHT,
+                        opacity: mm === 30 ? 1 : 0.45,
+                        pointerEvents: "none",
+                        zIndex: 2,
+                      }}
+                    />
+                  )),
+                )}
 
                 {/* Agendamentos — draggable + resizable */}
                 {appts.map((appt) => (

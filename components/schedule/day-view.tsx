@@ -187,23 +187,28 @@ export function DayView({
             position: "relative",
           }}
         >
-          {HOUR_LABELS.map((h) => (
-            <div
-              key={h}
-              className="text-[#0F1A2E] dark:text-[#E8E6E2]"
-              style={{
-                position: "absolute",
-                top: (h - START_HOUR) * HOUR_HEIGHT + 4,
-                right: 8,
-                fontSize: 11,
-                fontWeight: 600,
-                lineHeight: 1,
-                userSelect: "none",
-              }}
-            >
-              {String(h).padStart(2, "0")}:00
-            </div>
-          ))}
+          {Array.from({ length: TOTAL_HOURS * 4 }, (_, q) => {
+            const hour   = START_HOUR + Math.floor(q / 4);
+            const minute = (q % 4) * 15;
+            const isHour = minute === 0;
+            return (
+              <div
+                key={`t-${q}`}
+                className={isHour ? "text-[#0F1A2E] dark:text-[#E8E6E2]" : "text-[#A09E98] dark:text-white/40"}
+                style={{
+                  position: "absolute",
+                  top: q * (HOUR_HEIGHT / 4) + 2,
+                  right: 8,
+                  fontSize: isHour ? 11 : 9,
+                  fontWeight: isHour ? 600 : 500,
+                  lineHeight: 1,
+                  userSelect: "none",
+                }}
+              >
+                {String(hour).padStart(2, "0")}:{String(minute).padStart(2, "0")}
+              </div>
+            );
+          })}
         </div>
 
         {/* Coluna de sessões */}
@@ -235,15 +240,16 @@ export function DayView({
             </div>
           )}
 
-          {/* Droppable cells de 30 em 30 min */}
+          {/* Droppable cells de 15 em 15 min */}
           {HOUR_LABELS.slice(0, TOTAL_HOURS).flatMap((h) =>
-            [0, 30].map((m) => (
+            [0, 15, 30, 45].map((m) => (
               <DroppableHourCell
                 key={`day-cell-${h}-${m}`}
                 id={`day__${h}__${m}`}
                 date={navDate}
                 hour={h}
                 minute={m}
+                slotMinutes={15}
                 onClick={() => {
                   if (!activeId) {
                     const slotDate = new Date(navDate);
@@ -261,14 +267,15 @@ export function DayView({
             )),
           )}
 
-          {/* Background slot rows (visual only) */}
-          {slots.map((slot, i) => {
-            const isLast = i === slots.length - 1;
+          {/* Background hour rows (visual only) — linhas de hora com marcações de 15 min */}
+          {HOUR_LABELS.slice(0, TOTAL_HOURS).map((h, i) => {
+            const isBiz  = h >= 8 && h <= 18;
+            const isLast = i === TOTAL_HOURS - 1;
             return (
               <div
-                key={slot.label}
+                key={`bg-${h}`}
                 className={[
-                  slot.isBusinessHour ? "bg-white dark:bg-[#111827]" : "bg-[#FAFAF8] dark:bg-white/[.02]",
+                  isBiz ? "bg-white dark:bg-[#111827]" : "bg-[#FAFAF8] dark:bg-white/[.02]",
                   isLast ? "" : "border-b border-black/[.05] dark:border-white/[.05]",
                 ].join(" ")}
                 style={{
@@ -281,23 +288,27 @@ export function DayView({
                   zIndex: 0,
                 }}
               >
-                {/* Linha 30min */}
-                <div
-                  className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    right: 0,
-                    top: HOUR_HEIGHT / 2,
-                  }}
-                />
+                {/* Sub-linhas de 15/30/45 (a de 30 mais visível) */}
+                {[15, 30, 45].map((mm) => (
+                  <div
+                    key={mm}
+                    className="border-t border-dashed border-black/[.05] dark:border-white/[.06]"
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      right: 0,
+                      top: (mm / 60) * HOUR_HEIGHT,
+                      opacity: mm === 30 ? 1 : 0.45,
+                    }}
+                  />
+                ))}
               </div>
             );
           })}
 
           {/* Empty slot buttons (shown only when no session in that slot) */}
           {slots.map((slot) => {
-            const items = sessionsBySlot[getSlotKey(slot.hour)] ?? [];
+            const items = sessionsBySlot[getSlotKey(slot.hour, slot.minute)] ?? [];
             if (items.length > 0) return null;
             return (
               <button
@@ -311,12 +322,13 @@ export function DayView({
                   slotDate.setHours(slot.hour, slot.minute ?? 0, 0, 0);
                   setSelectedSlot({ ...slot, date: slotDate });
                 }}
+                title={slot.label}
                 style={{
                   position: "absolute",
                   left: 0,
                   right: 0,
-                  top: (slot.hour - START_HOUR) * HOUR_HEIGHT,
-                  height: HOUR_HEIGHT,
+                  top: (slot.hour - START_HOUR) * HOUR_HEIGHT + (slot.minute / 60) * HOUR_HEIGHT,
+                  height: HOUR_HEIGHT / 4,
                   zIndex: 2,
                   background: "transparent",
                   border: "none",
@@ -330,7 +342,7 @@ export function DayView({
                 }}
                 className="hover:border hover:border-dashed hover:border-[#0F6E56]/25 hover:text-[#0F6E56] hover:bg-[#F0FAF6] dark:hover:bg-[#0F6E56]/[.10] transition"
               >
-                {slot.isBusinessHour ? "+ Agendar" : ""}
+                {slot.isBusinessHour ? `+ ${slot.label}` : ""}
               </button>
             );
           })}
