@@ -13,6 +13,7 @@ export function DroppableHourCell({
   minute,
   onClick,
   children,
+  slotMinutes = 30,
 }: {
   id: string;
   date: Date;
@@ -20,6 +21,8 @@ export function DroppableHourCell({
   minute: number;
   onClick: () => void;
   children?: React.ReactNode;
+  /** Altura da célula em minutos (30 na week view, 15 na day view). */
+  slotMinutes?: number;
 }) {
   const t = useTranslations("schedule.calendar");
   const { setNodeRef, isOver } = useDroppable({ id, data: { date, hour, minute } });
@@ -32,7 +35,7 @@ export function DroppableHourCell({
         left: 0,
         right: 0,
         top: (hour - START_HOUR) * HOUR_HEIGHT + (minute / 60) * HOUR_HEIGHT,
-        height: HOUR_HEIGHT / 2,
+        height: (slotMinutes / 60) * HOUR_HEIGHT,
         background: isOver ? "rgba(15,110,86,0.06)" : "transparent",
         border: isOver ? "1px dashed rgba(15,110,86,0.35)" : "1px solid transparent",
         borderRadius: 4,
