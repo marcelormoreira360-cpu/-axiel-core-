@@ -406,8 +406,9 @@ export function PatientDirectionPanel({
                 </div>
               ) : null}
 
-              {/* Sínteses de exames (a IA já resumiu ao carregar o PDF), read-only */}
-              {examsWithSummary.length > 0 && (
+              {/* Sínteses de exames (a IA já resumiu ao carregar o PDF), read-only.
+                  Só na sessão (variante full); na ficha ficam na Anamnese, sem duplicar. */}
+              {isFull && examsWithSummary.length > 0 && (
                 <div>
                   <p className="flex items-center gap-[5px] text-[10px] uppercase tracking-[.05em] text-[#A09E98] mb-[4px]">
                     <FileText className="h-3 w-3" /> {t("examsLabel")}
@@ -440,8 +441,8 @@ export function PatientDirectionPanel({
               ) : null}
 
               {/* Vazio total: nada preenchido ainda (na compacta, ignora eixos/pacote/meds) */}
-              {!chief && !manualSummary && !evolutionDigest && examsWithSummary.length === 0
-                && (!isFull || (goals.length === 0 && !neuro && !hasActivePackage && !activeMeds)) && (
+              {!chief && !manualSummary && !evolutionDigest
+                && (!isFull || (examsWithSummary.length === 0 && goals.length === 0 && !neuro && !hasActivePackage && !activeMeds)) && (
                 <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
               )}
             </div>
