@@ -19,7 +19,7 @@ import { useActionState, useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import {
   Compass, Pencil, Check, X, AlertCircle, ChevronDown, ChevronRight,
-  Target, Activity, Package, Pill, AlertTriangle, ClipboardList, Sparkles,
+  Target, Activity, Package, Pill, AlertTriangle, ClipboardList, Sparkles, FileText,
 } from "lucide-react";
 import { saveCaseSummaryAction, draftCaseSummaryAction, type CaseSummaryState } from "@/app/patients/[id]/case-summary/actions";
 import { SessionPackageBadge } from "@/components/session-package-badge";
@@ -51,6 +51,8 @@ type Props = {
    * patients.case_summary; quando o digest existir, basta trocar a origem.
    */
   evolutionSummary: string | null;
+  /** Sínteses dos exames funcionais (título/tipo · data · síntese da IA), read-only. */
+  exams?: { id: string; title: string | null; exam_type: string; exam_date: string; summary: string | null }[];
   defaultOpen?: boolean;
   /**
    * "full" (sessão): tudo. "compact" (ficha): só queixa + resumo do caso +
@@ -92,6 +94,12 @@ function round(n: number | null): number | null {
   return n === null || !Number.isFinite(n) ? null : Math.round(n);
 }
 
+// Formata a data do exame de forma robusta (date-only não sofre shift de fuso).
+function formatExamDate(d: string): string {
+  const dt = new Date(d.length <= 10 ? `${d}T12:00:00` : d);
+  return Number.isNaN(dt.getTime()) ? d : dt.toLocaleDateString();
+}
+
 export function PatientDirectionPanel({
   patientId,
   chiefComplaint,
@@ -101,6 +109,7 @@ export function PatientDirectionPanel({
   packages,
   medication,
   evolutionSummary,
+  exams = [],
   defaultOpen = true,
   variant = "full",
 }: Props) {
@@ -164,6 +173,8 @@ export function PatientDirectionPanel({
   // e o resumo evolutivo (automático, rolante, read-only). Não se sobrepõem.
   const manualSummary = summary;
   const evolutionDigest = evolutionSummary;
+  // Sínteses de exames com conteúdo (a IA já resumiu ao carregar o PDF), read-only.
+  const examsWithSummary = exams.filter((e) => e.summary && e.summary.trim());
 
   return (
     <div className="bg-white border border-[#0F6E56]/20 rounded-[12px] overflow-hidden">
@@ -395,6 +406,26 @@ export function PatientDirectionPanel({
                 </div>
               ) : null}
 
+              {/* Sínteses de exames (a IA já resumiu ao carregar o PDF), read-only */}
+              {examsWithSummary.length > 0 && (
+                <div>
+                  <p className="flex items-center gap-[5px] text-[10px] uppercase tracking-[.05em] text-[#A09E98] mb-[4px]">
+                    <FileText className="h-3 w-3" /> {t("examsLabel")}
+                  </p>
+                  <div className="space-y-[9px]">
+                    {examsWithSummary.slice(0, 4).map((e) => (
+                      <div key={e.id}>
+                        <p className="text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]">
+                          {e.title || e.exam_type}
+                          <span className="text-[10px] font-normal text-[#A09E98] ml-[6px]">{formatExamDate(e.exam_date)}</span>
+                        </p>
+                        <p className="text-[12px] text-[#3A4A42] dark:text-[#9E9C97] leading-relaxed whitespace-pre-wrap">{e.summary}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Resumo evolutivo (automático, rolante, read-only, Melhoria 2) */}
               {evolutionDigest ? (
                 <div className="rounded-[8px] bg-[#F8F7F4] dark:bg-white/[.04] p-[10px]">
@@ -409,7 +440,7 @@ export function PatientDirectionPanel({
               ) : null}
 
               {/* Vazio total: nada preenchido ainda (na compacta, ignora eixos/pacote/meds) */}
-              {!chief && !manualSummary && !evolutionDigest
+              {!chief && !manualSummary && !evolutionDigest && examsWithSummary.length === 0
                 && (!isFull || (goals.length === 0 && !neuro && !hasActivePackage && !activeMeds)) && (
                 <p className="text-[12px] text-[#A09E98]">{t("empty")}</p>
               )}

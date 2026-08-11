@@ -24,7 +24,8 @@ function hasAssessmentSignal(s: AiInsightInputSnapshot): boolean {
     p.pain_level != null ||
     s.neuro_id != null ||
     s.intake.length > 0 ||
-    s.assessments.length > 0
+    s.assessments.length > 0 ||
+    s.functional_exams.some((f) => f.summary)
   );
 }
 

@@ -68,5 +68,13 @@ export function buildCaseSummaryFallback(snapshot: AiInsightInputSnapshot, local
       : `Medications in use: ${meds.join(", ")}, check interactions.`);
   }
 
+  const exams = snapshot.functional_exams.filter((e) => e.summary?.trim());
+  if (exams.length > 0) {
+    const list = exams.slice(0, 4)
+      .map((e) => `${e.title || e.type}: ${stripDash(e.summary as string)}`)
+      .join(" ");
+    parts.push(pt ? `Sínteses de exames: ${list}` : `Exam summaries: ${list}`);
+  }
+
   return { chief, summary: stripDash(parts.join(" ")) };
 }

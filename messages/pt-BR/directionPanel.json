@@ -27,6 +27,7 @@
   "draftNoAssessment": "Preencha a avaliação primeiro para gerar o rascunho.",
   "draftError": "Não foi possível gerar agora. Tente novamente.",
   "caseLabel": "Resumo do caso",
+  "examsLabel": "Sínteses de exames",
   "evolutionLabel": "Resumo evolutivo",
   "evolutionAuto": "automático",
   "periodSep": " a ",

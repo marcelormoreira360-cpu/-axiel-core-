@@ -27,6 +27,7 @@
   "draftNoAssessment": "Fill in the assessment first to draft.",
   "draftError": "Could not draft now. Try again.",
   "caseLabel": "Case summary",
+  "examsLabel": "Exam summaries",
   "evolutionLabel": "Progress summary",
   "evolutionAuto": "automatic",
   "periodSep": " to ",
