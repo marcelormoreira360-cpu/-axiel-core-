@@ -118,7 +118,7 @@ export function PatientsClient({
     // When a search/filter is active, use the original (created_at desc) order
     const hasFilter = q || statusFilter !== "all" || practitionerFilter !== "all" || stageFilter !== "all";
     const source = hasFilter ? patients : sortedPatients;
-    return source.filter((p) => {
+    const result = source.filter((p) => {
       if (statusFilter !== "all" && p.status !== statusFilter) return false;
       if (stageFilter !== "all" && journeyByPatientId[p.id]?.stage !== stageFilter) return false;
       if (practitionerFilter !== "all") {
@@ -132,6 +132,24 @@ export function PatientsClient({
         (p.email ?? "").toLowerCase().includes(q) ||
         (p.phone ?? "").toLowerCase().includes(q)
       );
+    });
+
+    if (!q) return result;
+
+    // Ao buscar por texto, ordena por relevância do NOME e depois alfabético:
+    //  0 = alguma palavra do nome começa com o termo (Fernanda, Ferreira…)
+    //  1 = o nome contém o termo em outro ponto
+    //  2 = só bateu no e-mail/telefone (vai para o fim)
+    const rankOf = (p: (typeof result)[number]) => {
+      const name = p.full_name.toLowerCase();
+      if (name.split(/\s+/).some((w) => w.startsWith(q))) return 0;
+      if (name.includes(q)) return 1;
+      return 2;
+    };
+    return [...result].sort((a, b) => {
+      const r = rankOf(a) - rankOf(b);
+      if (r !== 0) return r;
+      return a.full_name.localeCompare(b.full_name, undefined, { sensitivity: "base" });
     });
   }, [patients, sortedPatients, query, statusFilter, practitionerFilter, stageFilter, journeyByPatientId]);
 

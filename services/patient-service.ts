@@ -49,11 +49,14 @@ export async function getPatientsLite(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+  const searching = Boolean(search && search.trim());
   let query = supabase
     .from("patients")
     .select("id, clinic_id, full_name, email, phone, status, created_at, appointments(practitioner_id)")
     .is("deleted_at", null)
-    .order("created_at", { ascending: false })
+    // Ao buscar, ordena por nome (alfabético) para agrupar os resultados;
+    // sem busca, mantém os pacientes mais recentes no topo.
+    .order(searching ? "full_name" : "created_at", { ascending: searching })
     .range(offset, offset + limit - 1);
 
   if (clinicId) query = query.eq("clinic_id", clinicId);
