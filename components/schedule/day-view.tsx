@@ -379,7 +379,7 @@ export function DayView({
               {formatTime(activeSession.starts_at, locale)}
             </p>
             <p style={{ fontSize: 11, fontWeight: 500, color: "#C3EBDB", margin: "2px 0 0" }}>
-              {(activeSession.patients?.full_name ?? "Paciente").split(" ")[0]}
+              {activeSession.patients?.full_name ?? "Paciente"}
             </p>
           </div>
         ) : null}

@@ -75,7 +75,7 @@ export function MonthView({
                   className="text-[9px] font-medium text-[#0F6E56] bg-[#E1F5EE] rounded-[3px] px-[4px] py-[1px] mb-[2px] truncate w-full"
                 >
                   {formatTime(appt.starts_at, locale)}{" "}
-                  {appt.patients?.full_name?.split(" ")[0]}
+                  {appt.patients?.full_name}
                 </span>
               ))}
               {dayAppts.length > 3 && (
