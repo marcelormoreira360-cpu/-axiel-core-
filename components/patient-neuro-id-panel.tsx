@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Download, ShieldAlert, Send, Check } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
+import { RAW_MAX_BY_CODE, rawToNormalized, normalizedToRaw } from "@/modules/neuro-id/questionnaire-scale";
 import {
   bandForDysfunction, bandForItem, severityColor, priorityPillars, sharesSummingTo100,
   type Band, type BandIcon as BandIconKey, type BandItemType,
@@ -424,6 +425,7 @@ export function PatientNeuroIdPanel({
                           {it.partial && <span className="text-[#C77D17] dark:text-[#E8B04B]"> · {t("optional")}</span>}
                           {autoCodes.has(it.code) && <span className="text-[#0F6E56] dark:text-[#9FE1CB]"> · {t("autoTag")}</span>}
                           {origins[it.code] && <span className="text-[#A09E98]"> · {t("normalizedFrom", { ratio: origins[it.code] })}</span>}
+                          {RAW_MAX_BY_CODE[it.code] !== undefined && !origins[it.code] && <span className="text-[#A09E98]"> · 0–{RAW_MAX_BY_CODE[it.code]}</span>}
                           {pendingCodes.has(it.code) && raw === "" && <span className="text-[#C77D17] dark:text-[#E8B04B]"> · {t("pendingTag")}</span>}
                         </span>
                         {band && <BandPill band={band} label={bandLabel(band, it.band_type)} />}
@@ -443,6 +445,15 @@ export function PatientNeuroIdPanel({
                         // (extraídos dos questionários, podem ter decimais).
                         <>
                           <ScaleButtons value={raw} onSelect={(val) => setVals((v) => ({ ...v, [it.code]: val }))} />
+                          <input type="hidden" name={`item__${it.code}`} value={raw} />
+                        </>
+                      ) : RAW_MAX_BY_CODE[it.code] !== undefined ? (
+                        // Item de questionário: o terapeuta digita a nota CRUA (0..teto);
+                        // o campo visível edita em cru, o oculto envia já em 0–10.
+                        <>
+                          <input type="number" min={0} max={RAW_MAX_BY_CODE[it.code]} step={1} inputMode="numeric" className={inputCls}
+                            value={normalizedToRaw(it.code, raw)}
+                            onChange={(e) => setVals((v) => ({ ...v, [it.code]: rawToNormalized(it.code, e.target.value) }))} />
                           <input type="hidden" name={`item__${it.code}`} value={raw} />
                         </>
                       ) : (
