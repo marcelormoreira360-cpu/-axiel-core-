@@ -36,7 +36,7 @@ export function DraggableDayCard({
   const displayDuration = resizeDuration ?? session.duration_minutes ?? 60;
   const { top, height } = apptStyle(session.starts_at, displayDuration);
   const name      = session.patients?.full_name ?? "Paciente";
-  const firstName = name.split(" ")[0];
+  const sessionTypeName = session.session_types?.name ?? null;
   const isResizing = resizeDuration !== null;
 
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
@@ -118,11 +118,11 @@ export function DraggableDayCard({
         {formatTime(session.starts_at, locale)}
       </p>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
-        {firstName}
+        {name}
       </p>
       {height >= 48 && (
-        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0 }}>
-          {displayDuration} min
+        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {sessionTypeName ?? `${displayDuration} min`}
         </p>
       )}
 

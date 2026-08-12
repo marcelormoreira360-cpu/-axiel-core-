@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { Bell, BrainCircuit, Shield, CalendarClock, UserRoundSearch, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
@@ -31,14 +32,24 @@ const ITEMS: Array<{
 
 const EMPTY: NotificationCounts = { insights: 0, lgpd: 0, followups: 0, leads: 0, forms: 0 };
 
+// Largura fixa do painel — usada para posicionar o dropdown dentro da viewport.
+const MENU_WIDTH = 260;
+const GAP = 8;
+
 export function NotificationBell() {
   const t = useTranslations("nav.notifications");
   const [counts, setCounts] = useState<NotificationCounts>(EMPTY);
   const [open, setOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  // Posição calculada do painel (fixed, relativa à viewport) + direção de abertura.
+  const [pos, setPos] = useState<{ top: number; left: number; openUp: boolean } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const total = counts.insights + counts.lgpd + counts.followups + counts.leads + counts.forms;
   const badgeLabel = total >= 10 ? "9+" : String(total);
+
+  useEffect(() => setMounted(true), []);
 
   const fetchCounts = useCallback(async () => {
     try {
@@ -95,21 +106,66 @@ export function NotificationBell() {
     };
   }, [fetchCounts]);
 
+  // Calcula a posição do painel ancorada no botão, mantendo-o dentro da viewport.
+  // Abre para cima quando não há espaço abaixo (ex.: sino no rodapé da sidebar) e
+  // alinha à esquerda do botão quando alinhar à direita jogaria o painel para fora
+  // (ex.: sidebar estreita à esquerda da tela).
+  const updatePosition = useCallback(() => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const r = btn.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const spaceBelow = vh - r.bottom;
+    const openUp = spaceBelow < 300 && r.top > spaceBelow;
+
+    let left = r.right - MENU_WIDTH; // alinhado à direita do botão (padrão topbar)
+    if (left < GAP) left = r.left;   // sem espaço à esquerda → alinha à esquerda do botão
+    left = Math.max(GAP, Math.min(left, vw - MENU_WIDTH - GAP));
+
+    setPos({ top: openUp ? r.top : r.bottom, left, openUp });
+  }, []);
+
+  function toggle() {
+    setOpen((v) => {
+      const next = !v;
+      if (next) updatePosition();
+      return next;
+    });
+  }
+
+  // Reposiciona enquanto aberto (scroll/resize) para nunca ficar fora da tela.
+  useEffect(() => {
+    if (!open) return;
+    updatePosition();
+    const onWin = () => updatePosition();
+    window.addEventListener("resize", onWin);
+    window.addEventListener("scroll", onWin, true);
+    return () => {
+      window.removeEventListener("resize", onWin);
+      window.removeEventListener("scroll", onWin, true);
+    };
+  }, [open, updatePosition]);
+
+  // Fecha ao clicar fora (considerando o botão e o painel, que fica em portal).
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
+      const target = e.target as Node;
+      if (btnRef.current?.contains(target)) return;
+      if (menuRef.current?.contains(target)) return;
+      setOpen(false);
     }
     if (open) document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggle}
         className="relative flex items-center justify-center w-7 h-7 rounded-full hover:bg-black/[.06] dark:hover:bg-white/[.08] transition-colors"
         aria-label={t("aria")}
       >
@@ -121,8 +177,19 @@ export function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-[#0B0F17] border border-black/[.07] dark:border-white/[.08] rounded-[12px] shadow-lg overflow-hidden min-w-[240px]">
+      {open && mounted && pos && createPortal(
+        <div
+          ref={menuRef}
+          style={{
+            position: "fixed",
+            top: pos.top,
+            left: pos.left,
+            width: MENU_WIDTH,
+            transform: pos.openUp ? `translateY(calc(-100% - ${GAP}px))` : `translateY(${GAP}px)`,
+            zIndex: 100,
+          }}
+          className="bg-white dark:bg-[#0B0F17] border border-black/[.07] dark:border-white/[.08] rounded-[12px] shadow-lg overflow-hidden"
+        >
           <div className="px-[14px] py-[10px] border-b border-black/[.05] dark:border-white/[.06]">
             <p className="text-[11px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("title")}</p>
             {total > 0 && (
@@ -151,8 +218,9 @@ export function NotificationBell() {
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }

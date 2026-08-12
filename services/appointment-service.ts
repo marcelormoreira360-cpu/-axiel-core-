@@ -43,7 +43,7 @@ export async function getAppointments(
   const supabase = await createSupabaseServerClient();
   let query = supabase
     .from("appointments")
-    .select("*, patients(id, full_name, email, phone, status)")
+    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes, price_cents)")
     .is("deleted_at", null)
     .order("starts_at", { ascending: true });
 

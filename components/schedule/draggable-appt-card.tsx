@@ -36,7 +36,7 @@ export function DraggableApptCard({
   const displayDuration = resizeDuration ?? appt.duration_minutes ?? 60;
   const { top, height } = apptStyle(appt.starts_at, displayDuration);
   const name      = appt.patients?.full_name ?? "Paciente";
-  const firstName = name.split(" ")[0];
+  const sessionTypeName = appt.session_types?.name ?? null;
   const isResizing = resizeDuration !== null;
   const isPending = appt.status === "pending";
   const accent = isPending ? "#8A5A06" : "#0F6E56";
@@ -120,11 +120,11 @@ export function DraggableApptCard({
         {formatTime(appt.starts_at, locale)}
       </p>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
-        {firstName}
+        {name}
       </p>
       {height >= 48 && (
-        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0 }}>
-          {displayDuration} min
+        <p style={{ fontSize: 9, color: "#6B6A66", lineHeight: 1.2, margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {sessionTypeName ?? `${displayDuration} min`}
         </p>
       )}
 
