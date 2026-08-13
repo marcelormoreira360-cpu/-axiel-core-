@@ -42,6 +42,7 @@ export function ScheduleContainer({
   rescheduleAction,
   resizeDurationAction,
   practitioners,
+  cancellationWindowHours,
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
@@ -55,6 +56,7 @@ export function ScheduleContainer({
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
+  cancellationWindowHours?: number;
 }) {
   const t = useTranslations("schedule.calendar");
   const locale = useLocale();
@@ -253,6 +255,7 @@ export function ScheduleContainer({
         session={selectedSession}
         onClose={() => setSelectedSession(null)}
         updateStatusAction={updateStatusAction}
+        cancellationWindowHours={cancellationWindowHours}
       />
     </div>
   );

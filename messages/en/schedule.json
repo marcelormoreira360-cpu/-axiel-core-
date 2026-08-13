@@ -78,9 +78,33 @@
     "close": "Close",
     "patientFallback": "Patient",
     "meta": "Session {count} · {time} · {minutes} min",
+    "statusSection": "Appointment status",
     "actionConfirm": "Confirm",
-    "actionComplete": "Mark completed",
+    "actionCheckIn": "Check in",
+    "actionComplete": "Complete",
+    "actionNoShow": "No-show",
     "actionCancel": "Cancel",
+    "toast": {
+      "confirm": "Appointment confirmed.",
+      "check_in": "Check-in recorded.",
+      "complete": "Session completed.",
+      "no_show": "No-show recorded.",
+      "cancel": "Appointment cancelled."
+    },
+    "confirm": {
+      "dismiss": "Back",
+      "no_show": {
+        "title": "Mark as no-show?",
+        "body": "Confirm that {patient} did not attend? This records the no-show and may create a pending fee.",
+        "confirm": "Mark no-show"
+      },
+      "cancel": {
+        "title": "Cancel appointment?",
+        "body": "Cancel {patient}'s appointment? The time slot will be freed.",
+        "confirm": "Cancel appointment",
+        "windowNote": "Per the clinic window, this cancellation will be classified as: {classification}."
+      }
+    },
     "noteTitle": "Session note",
     "prevSessions": "Previous sessions",
     "minutes": "{count} min",

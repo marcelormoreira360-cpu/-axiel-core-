@@ -1,24 +1,22 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createLogger } from "@/lib/logger";
+import {
+  CANCEL_TARGETS,
+  DEFAULT_CANCELLATION_WINDOW_HOURS,
+  isTransitionAllowed,
+  classifyCancellationByWindow,
+  type AppointmentStatus,
+  type ActorType,
+} from "@/modules/schedule/status-actions";
 
 const log = createLogger("appointment-status-service");
 
 // ── Máquina de estados ─────────────────────────────────────────────────────────
-// Ver TICKET_Status_Agendamento_SelfService.md §3. 'cancelled' é legado (não é
-// alvo de fluxo novo; fluxos novos usam cancelled_notice | late_cancel).
-
-export type AppointmentStatus =
-  | "pending"
-  | "scheduled"
-  | "confirmed"
-  | "checked_in"
-  | "completed"
-  | "no_show"
-  | "cancelled_notice"
-  | "late_cancel"
-  | "cancelled";
-
-export type ActorType = "staff" | "patient" | "system";
+// A lógica PURA (máquina de transições, ações rápidas da equipe, janela de
+// cancelamento) vive em @/modules/schedule/status-actions para ser importável pelo
+// cliente sem arrastar o admin client. Reexportamos tudo aqui para não quebrar os
+// imports existentes (o serviço segue sendo o ponto de entrada do lado servidor).
+export * from "@/modules/schedule/status-actions";
 
 export type AppointmentActor = {
   type: ActorType;
@@ -27,75 +25,19 @@ export type AppointmentActor = {
   reason?: string | null;
 };
 
-const CANCEL_TARGETS: AppointmentStatus[] = ["cancelled_notice", "late_cancel"];
+/** Lê clinics.cancellation_window_hours (fallback 24h). Usado pelo servidor e para
+ * plumbar o valor até a UI (para pré-visualizar a classificação no diálogo). */
+export async function getCancellationWindowHours(clinicId: string): Promise<number> {
+  const supabase = createSupabaseAdminClient();
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select("cancellation_window_hours")
+    .eq("id", clinicId)
+    .maybeSingle();
 
-/** Status que consomem sessão do pacote (espelha o trigger da migration 141). */
-export const SESSION_CONSUMING_STATUSES: AppointmentStatus[] = ["confirmed", "checked_in", "completed"];
-
-/** Estados terminais: não aceitam mais transição no fluxo normal. */
-export const TERMINAL_STATUSES: AppointmentStatus[] = ["cancelled_notice", "late_cancel", "cancelled"];
-
-// Mapa: de qual status, para quais status, e quais atores podem fazer.
-// [staff]=equipe autenticada · [patient]=paciente via link · [system]=job/regra.
-type TransitionRule = { to: AppointmentStatus; actors: ActorType[] };
-
-const TRANSITIONS: Record<string, TransitionRule[]> = {
-  pending: [
-    { to: "confirmed", actors: ["patient", "staff"] },
-    { to: "cancelled_notice", actors: ["patient", "staff"] },
-    { to: "late_cancel", actors: ["patient", "staff"] },
-    { to: "scheduled", actors: ["system"] }, // expira token → volta a "agendado"
-    { to: "no_show", actors: ["staff", "system"] },
-  ],
-  scheduled: [
-    { to: "confirmed", actors: ["staff", "patient"] },
-    { to: "checked_in", actors: ["staff"] },
-    { to: "cancelled_notice", actors: ["staff", "patient"] },
-    { to: "late_cancel", actors: ["staff", "patient"] },
-    { to: "no_show", actors: ["staff", "system"] },
-  ],
-  confirmed: [
-    { to: "checked_in", actors: ["staff"] },
-    { to: "cancelled_notice", actors: ["staff", "patient"] },
-    { to: "late_cancel", actors: ["staff", "patient"] },
-    { to: "no_show", actors: ["staff", "system"] },
-  ],
-  checked_in: [
-    { to: "completed", actors: ["staff"] },
-    { to: "confirmed", actors: ["staff"] }, // desfazer check-in (correção)
-  ],
-  completed: [
-    { to: "confirmed", actors: ["staff"] }, // correção rara (afeta receita) — gatear no UI a dono/gestor
-  ],
-  no_show: [
-    { to: "scheduled", actors: ["staff"] },
-    { to: "confirmed", actors: ["staff"] },
-  ],
-  // terminais: cancelled_notice, late_cancel, cancelled → sem saída
-};
-
-export function isTransitionAllowed(from: string | null, to: AppointmentStatus, actor: ActorType): boolean {
-  const rules = TRANSITIONS[from ?? "scheduled"];
-  if (!rules) return false;
-  return rules.some((r) => r.to === to && r.actors.includes(actor));
-}
-
-// ── Classificação da janela de cancelamento ────────────────────────────────────
-
-export const DEFAULT_CANCELLATION_WINDOW_HOURS = 24;
-
-/**
- * Regra PURA (testável) da janela: com aviso se `agora < starts_at - janela`,
- * senão tardio. A classificação é da REGRA, não de quem cancela.
- */
-export function classifyCancellationByWindow(
-  startsAt: string,
-  windowHours: number,
-  now: Date = new Date(),
-): "cancelled_notice" | "late_cancel" {
-  const start = new Date(startsAt).getTime();
-  const deadline = start - windowHours * 60 * 60_000; // starts_at - janela
-  return now.getTime() < deadline ? "cancelled_notice" : "late_cancel";
+  return typeof clinic?.cancellation_window_hours === "number"
+    ? clinic.cancellation_window_hours
+    : DEFAULT_CANCELLATION_WINDOW_HOURS;
 }
 
 /**
@@ -107,18 +49,7 @@ export async function resolveCancellationStatus(
   startsAt: string,
   now: Date = new Date(),
 ): Promise<"cancelled_notice" | "late_cancel"> {
-  const supabase = createSupabaseAdminClient();
-  const { data: clinic } = await supabase
-    .from("clinics")
-    .select("cancellation_window_hours")
-    .eq("id", clinicId)
-    .maybeSingle();
-
-  const windowHours =
-    typeof clinic?.cancellation_window_hours === "number"
-      ? clinic.cancellation_window_hours
-      : DEFAULT_CANCELLATION_WINDOW_HOURS;
-
+  const windowHours = await getCancellationWindowHours(clinicId);
   return classifyCancellationByWindow(startsAt, windowHours, now);
 }
 

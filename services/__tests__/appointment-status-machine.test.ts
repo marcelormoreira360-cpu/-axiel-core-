@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   isTransitionAllowed,
   classifyCancellationByWindow,
+  getStaffQuickActions,
+  staffActionToRequested,
+  SENSITIVE_STAFF_ACTIONS,
   SESSION_CONSUMING_STATUSES,
   TERMINAL_STATUSES,
 } from "@/services/appointment-status-service";
@@ -76,6 +79,61 @@ describe("classificação da janela de cancelamento", () => {
   it("exatamente no limite conta como tardio (>= prazo)", () => {
     const now = new Date("2026-08-19T14:00:00.000Z"); // exatamente 24h antes
     expect(classifyCancellationByWindow(starts, 24, now)).toBe("late_cancel");
+  });
+});
+
+describe("ações rápidas da equipe no drawer (getStaffQuickActions)", () => {
+  it("pending: confirmar, faltar e cancelar (sem check-in nem concluir)", () => {
+    expect(getStaffQuickActions("pending")).toEqual(["confirm", "no_show", "cancel"]);
+  });
+
+  it("scheduled: caminho completo (confirmar, check-in, concluir, faltar, cancelar)", () => {
+    expect(getStaffQuickActions("scheduled")).toEqual([
+      "confirm",
+      "check_in",
+      "complete",
+      "no_show",
+      "cancel",
+    ]);
+  });
+
+  it("null cai no default 'scheduled'", () => {
+    expect(getStaffQuickActions(null)).toEqual(getStaffQuickActions("scheduled"));
+  });
+
+  it("confirmed: check-in, concluir, faltar, cancelar (sem 'confirmar' de novo)", () => {
+    expect(getStaffQuickActions("confirmed")).toEqual(["check_in", "complete", "no_show", "cancel"]);
+  });
+
+  it("checked_in: só concluir (não expõe correções que afetam receita)", () => {
+    expect(getStaffQuickActions("checked_in")).toEqual(["complete"]);
+  });
+
+  it("completed: nenhuma ação rápida (reabrir é gateado a dono/gestor)", () => {
+    expect(getStaffQuickActions("completed")).toEqual([]);
+  });
+
+  it("no_show: só reverter para confirmado", () => {
+    expect(getStaffQuickActions("no_show")).toEqual(["confirm"]);
+  });
+
+  it("estados terminais não oferecem ação rápida", () => {
+    for (const from of TERMINAL_STATUSES) {
+      expect(getStaffQuickActions(from)).toEqual([]);
+    }
+  });
+
+  it("apenas faltar e cancelar são ações sensíveis (exigem confirmação)", () => {
+    expect(SENSITIVE_STAFF_ACTIONS).toEqual(["no_show", "cancel"]);
+  });
+
+  it("traduz cada ação rápida para o 'requested' que o wrapper da equipe espera", () => {
+    expect(staffActionToRequested("confirm")).toBe("confirmed");
+    expect(staffActionToRequested("check_in")).toBe("checked_in");
+    expect(staffActionToRequested("complete")).toBe("completed");
+    expect(staffActionToRequested("no_show")).toBe("no_show");
+    // 'cancel' vira 'cancelled'; a janela decide notice × late no servidor.
+    expect(staffActionToRequested("cancel")).toBe("cancelled");
   });
 });
 

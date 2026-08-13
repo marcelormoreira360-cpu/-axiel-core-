@@ -78,9 +78,33 @@
     "close": "Fechar",
     "patientFallback": "Paciente",
     "meta": "Sessão {count} · {time} · {minutes} min",
+    "statusSection": "Estado da marcação",
     "actionConfirm": "Confirmar",
-    "actionComplete": "Marcar realizada",
+    "actionCheckIn": "Check-in",
+    "actionComplete": "Concluir",
+    "actionNoShow": "Faltou",
     "actionCancel": "Cancelar",
+    "toast": {
+      "confirm": "Marcação confirmada.",
+      "check_in": "Check-in registado.",
+      "complete": "Sessão concluída.",
+      "no_show": "Falta registada.",
+      "cancel": "Marcação cancelada."
+    },
+    "confirm": {
+      "dismiss": "Voltar",
+      "no_show": {
+        "title": "Marcar falta?",
+        "body": "Confirmar que {patient} não compareceu? Isto regista a falta e pode gerar pendência de taxa.",
+        "confirm": "Marcar falta"
+      },
+      "cancel": {
+        "title": "Cancelar marcação?",
+        "body": "Cancelar a marcação de {patient}? O horário será libertado.",
+        "confirm": "Cancelar marcação",
+        "windowNote": "Pela janela da clínica, este cancelamento será classificado como: {classification}."
+      }
+    },
     "noteTitle": "Nota da sessão",
     "prevSessions": "Sessões anteriores",
     "minutes": "{count} min",
