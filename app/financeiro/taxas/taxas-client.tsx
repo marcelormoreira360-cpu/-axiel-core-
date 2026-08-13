@@ -78,6 +78,18 @@ function PendingRow({ row, locale }: { row: FeeDecisionRow; locale: string }) {
             {row.suggested_reason === "percent_fallback" && (
               <span className="text-[10px] text-[#A09E98]">{t("reasonFallback")}</span>
             )}
+            {/* Indicador de consentimento (Lex 2.3): sinaliza se há aceite da política
+                em arquivo para este agendamento. Ausente = agendamento interno sem
+                clique do paciente -> cobrança aqui seria frágil. Só informativo. */}
+            {row.consent_present ? (
+              <span className="text-[10px] px-[8px] py-[2px] rounded-full bg-emerald-50 text-emerald-600">
+                {t("consentOnFile")}
+              </span>
+            ) : (
+              <span className="text-[10px] px-[8px] py-[2px] rounded-full bg-[#F4F3EF] text-[#A09E98]">
+                {t("consentMissing")}
+              </span>
+            )}
           </div>
         </div>
         <div className="text-right shrink-0">

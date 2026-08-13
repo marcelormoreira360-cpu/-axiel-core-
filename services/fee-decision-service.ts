@@ -36,6 +36,34 @@ const FEE_CONFIG_COLUMNS =
   "late_cancel_fee_mode, late_cancel_fee_percent, late_cancel_fee_min_cents, late_cancel_fee_max_cents, " +
   "first_miss_courtesy";
 
+/**
+ * A clínica cobra por falta OU cancelamento tardio? (algum modo != 'none'.)
+ * Usado pelo gate de consentimento (Lex 2.1): só se a clínica cobra é que o aceite
+ * da política é EXIGIDO antes de agendar. Clínica em modo 'none'/'none' não precisa
+ * do aceite para agendar (não há taxa a defender).
+ */
+export function clinicChargesForMisses(
+  config: Pick<ClinicFeeConfig, "no_show_fee_mode" | "late_cancel_fee_mode">,
+): boolean {
+  return config.no_show_fee_mode !== "none" || config.late_cancel_fee_mode !== "none";
+}
+
+/** Lê só os dois modos de taxa da clínica (leitura barata para o gate de booking). */
+export async function getClinicFeeModes(
+  clinicId: string,
+): Promise<{ no_show_fee_mode: FeeMode; late_cancel_fee_mode: FeeMode }> {
+  const supabase = createSupabaseAdminClient();
+  const { data } = await supabase
+    .from("clinics")
+    .select("no_show_fee_mode, late_cancel_fee_mode")
+    .eq("id", clinicId)
+    .maybeSingle();
+  return {
+    no_show_fee_mode: (data?.no_show_fee_mode as FeeMode | undefined) ?? "percent",
+    late_cancel_fee_mode: (data?.late_cancel_fee_mode as FeeMode | undefined) ?? "percent",
+  };
+}
+
 // ── Cálculo do valor sugerido (PURO, testável; não toca no banco) ──────────────
 // Lê a config da clínica + o preço da sessão; nunca há valor de taxa constante no
 // código. O valor final é sempre confirmado por humano ao decidir "Cobrar".
@@ -206,6 +234,13 @@ export type FeeDecisionRow = {
   decided_at: string | null;
   notes: string | null;
   created_at: string;
+  /**
+   * Há aceite da política de no-show EM ARQUIVO para este agendamento? (Lex 2.3.)
+   * false num agendamento 100% interno (recepção marcou, paciente não clicou) —
+   * sinaliza que uma cobrança aqui seria frágil por falta de consentimento prévio.
+   * Só um INDICADOR; não bloqueia nem decide. A cobrança real segue travada.
+   */
+  consent_present: boolean;
 };
 
 export async function getFeeDecisions(
@@ -270,6 +305,13 @@ export async function getFeeDecisions(
     }),
   );
 
+  // Indicador de consentimento (Lex 2.3): quais agendamentos têm aceite em arquivo.
+  // Batch numa consulta; agendamento interno sem clique do paciente vem ausente.
+  const { getNoShowConsentAppointments } = await import("@/services/no-show-consent-service");
+  const consentAppointments = await getNoShowConsentAppointments(
+    Array.from(new Set(rows.map((r) => r.appointment_id))),
+  ).catch(() => new Set<string>());
+
   return rows.map((row) => {
     const patient = Array.isArray(row.patients) ? row.patients[0] : row.patients;
     const appt = Array.isArray(row.appointments) ? row.appointments[0] : row.appointments;
@@ -308,6 +350,7 @@ export async function getFeeDecisions(
       decided_at: row.decided_at,
       notes: row.notes,
       created_at: row.created_at,
+      consent_present: consentAppointments.has(row.appointment_id),
     };
   });
 }

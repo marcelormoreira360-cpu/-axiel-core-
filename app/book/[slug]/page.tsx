@@ -5,11 +5,12 @@ import { useParams } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import { PoweredByAxiel } from "@/components/powered-by-axiel";
+import { getNoShowPolicyText, NO_SHOW_POLICY_VERSION } from "@/modules/no-show-policy/policy-text";
 
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
 interface Slot          { time: string; iso: string; }
-interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; show_powered_by?: boolean; }
+interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; show_powered_by?: boolean; requires_policy_consent?: boolean; cancellation_window_hours?: number; no_show_fee_percent?: number | null; late_cancel_fee_percent?: number | null; no_show_chargeable?: boolean; late_cancel_chargeable?: boolean; }
 interface Practitioner  { id: string; display_name: string; specialty: string | null; bio: string | null; }
 
 type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
@@ -63,6 +64,12 @@ export default function BookingPage() {
   const [isPending, startTransition]      = useTransition();
   const [appointmentDate, setAppointmentDate] = useState("");
 
+  // Gate de consentimento da política de no-show (Lex). Aceite afirmativo (opt-in):
+  // só aparece quando a clínica cobra falta, e o botão Confirmar fica desabilitado
+  // até a caixa ser marcada. RASCUNHO v1.0 (pendente de aprovação de Marcelo + advogado).
+  const [policyAccepted, setPolicyAccepted] = useState(false);
+  const [showPolicy, setShowPolicy]         = useState(false);
+
   const accent = clinic?.primary_color ?? "#0F6E56";
 
   // Load clinic info
@@ -115,8 +122,12 @@ export default function BookingPage() {
     return !openDays.has(dow) || dateStr < toDateStr(new Date());
   }
 
+  const needsPolicyConsent = clinic?.requires_policy_consent === true;
+
   function handleSubmit() {
     if (!selectedType || !selectedSlot || !fullName || !phone) return;
+    // Guard de consentimento no cliente (o servidor reforça de novo).
+    if (needsPolicyConsent && !policyAccepted) return;
     setError("");
     startTransition(async () => {
       const res = await fetch(`/api/book/${slug}`, {
@@ -130,6 +141,8 @@ export default function BookingPage() {
           phone,
           notes,
           practitioner_id: selectedPractitioner?.id ?? null,
+          policy_accepted: needsPolicyConsent ? policyAccepted : undefined,
+          policy_version: needsPolicyConsent ? NO_SHOW_POLICY_VERSION : undefined,
         }),
       });
       const data = await res.json();
@@ -451,11 +464,86 @@ export default function BookingPage() {
               </div>
             </div>
 
+            {/* Aceite da política de agendamento e cancelamento (Lex 2.1). Só quando
+                a clínica cobra falta. Documento COMPLETO v3.0 aprovado por Marcelo.
+                No fluxo eletrônico não há campos de assinatura (Nome/Data): esses
+                dados vão para o audit record automaticamente. Botão Confirmar
+                desabilitado até marcar a caixa. */}
+            {needsPolicyConsent && (() => {
+              const policy = getNoShowPolicyText(locale, {
+                windowHours: clinic?.cancellation_window_hours ?? 24,
+                latePct: clinic?.late_cancel_fee_percent ?? 0,
+                noShowPct: clinic?.no_show_fee_percent ?? 0,
+                lateChargeable: clinic?.late_cancel_chargeable ?? true,
+                noShowChargeable: clinic?.no_show_chargeable ?? true,
+              });
+              return (
+                <div className="mt-5 rounded-[10px] border border-black/[.08] bg-[#FBFAF7] px-4 py-3">
+                  <p className="text-[12px] font-semibold text-[#0F1A2E] mb-1">{policy.title}</p>
+                  <p className="text-[11px] leading-relaxed text-[#6B6A66]">{policy.intro}</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowPolicy((v) => !v)}
+                    className="mt-2 text-[11px] font-medium hover:underline"
+                    style={{ color: accent }}
+                  >
+                    {showPolicy ? t("policyHide") : t("policyReadFull")}
+                  </button>
+                  {showPolicy && (
+                    <div className="mt-2 max-h-[320px] overflow-y-auto rounded-[8px] bg-white border border-black/[.06] px-3 py-2.5 space-y-3">
+                      {policy.sections.map((section, si) => (
+                        <div key={si}>
+                          <p className="text-[11px] font-semibold text-[#0F1A2E] mb-1">{section.heading}</p>
+                          <div className="space-y-1.5">
+                            {section.blocks.map((block, bi) => {
+                              if (block.kind === "label") {
+                                return <p key={bi} className="text-[11px] font-medium text-[#4A4844]">{block.text}</p>;
+                              }
+                              if (block.kind === "text") {
+                                return <p key={bi} className="text-[11px] leading-relaxed text-[#6B6A66]">{block.text}</p>;
+                              }
+                              return (
+                                <ul key={bi} className="list-disc pl-4 space-y-1">
+                                  {block.items.map((item, ii) => (
+                                    <li key={ii} className="text-[11px] leading-relaxed text-[#6B6A66]">
+                                      {item.text}
+                                      {item.sub && item.sub.length > 0 && (
+                                        <ul className="list-[circle] pl-4 mt-1 space-y-1">
+                                          {item.sub.map((sub, xi) => (
+                                            <li key={xi} className="text-[11px] leading-relaxed text-[#6B6A66]">{sub.text}</li>
+                                          ))}
+                                        </ul>
+                                      )}
+                                    </li>
+                                  ))}
+                                </ul>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={policyAccepted}
+                      onChange={(e) => setPolicyAccepted(e.target.checked)}
+                      className="mt-[2px] h-4 w-4 shrink-0 accent-[#0F6E56]"
+                      style={{ accentColor: accent }}
+                    />
+                    <span className="text-[12px] leading-snug text-[#4A4844]">{policy.checkboxLabel}</span>
+                  </label>
+                  <p className="mt-1.5 pl-[26px] text-[10px] leading-snug text-[#A09E98]">{policy.checkboxNote}</p>
+                </div>
+              );
+            })()}
+
             {error && <p className="mt-3 text-[12px] text-red-500">{error}</p>}
 
             <button
               onClick={handleSubmit}
-              disabled={!fullName || !phone || isPending}
+              disabled={!fullName || !phone || isPending || (needsPolicyConsent && !policyAccepted)}
               className="mt-5 w-full disabled:opacity-40 text-white text-[13px] font-medium rounded-[10px] py-3 transition"
               style={{ background: accent }}
             >

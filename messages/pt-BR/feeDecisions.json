@@ -26,6 +26,8 @@
   "emptyPending": "Nenhuma taxa a decidir. Tudo em dia.",
   "emptyDecided": "Nada por aqui ainda.",
   "unknownPatient": "Paciente",
+  "consentOnFile": "consentimento em arquivo",
+  "consentMissing": "sem consentimento em arquivo",
   "configHint": "Os valores sugeridos vêm da política de taxa desta clínica.",
   "configLink": "Ajustar política",
   "retentionBadge": "Acompanhar retenção",
