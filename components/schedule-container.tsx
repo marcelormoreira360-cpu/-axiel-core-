@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useTransition } from "react";
 import type { PatientLite } from "@/services/patient-service";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type ScheduleSession } from "@/components/session-card";
+import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import { SessionDrawer } from "@/components/session-drawer";
 import type { SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
@@ -38,6 +39,7 @@ export function ScheduleContainer({
   createConfirmationLinkAction,
   emailConfirmationLinkAction,
   updateStatusAction,
+  enrichSessionAction,
   deleteSessionAction,
   rescheduleAction,
   resizeDurationAction,
@@ -52,6 +54,8 @@ export function ScheduleContainer({
   createConfirmationLinkAction?: ConfirmLinkAction;
   emailConfirmationLinkAction?: EmailLinkAction;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
+  /** Enriquece um agendamento leve (visão Semana) para o ScheduleSession do drawer. */
+  enrichSessionAction?: (appointmentId: string) => Promise<ScheduleSession | null>;
   deleteSessionAction?: (id: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
@@ -64,7 +68,40 @@ export function ScheduleContainer({
   const [navDate, setNavDate]                 = useState(new Date());
   const [selectedSlot, setSelectedSlot]       = useState<TimeSlot | null>(null);
   const [selectedSession, setSelectedSession] = useState<ScheduleSession | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [, startEnrich] = useTransition();
   const [filterPractitionerId, setFilterPractitionerId] = useState<string>("all");
+
+  // Abre o drawer a partir de um agendamento leve (visão Semana): mostra na hora o
+  // que já temos (nome, status, ações) e enriquece sob demanda (sessões anteriores,
+  // snapshot, insight). Se o enriquecimento falhar, o drawer degrada com o mínimo.
+  function openAppointment(appt: Appointment) {
+    const minimal: ScheduleSession = {
+      ...appt,
+      latestInsightStatus: "review",
+      previousSessions: [],
+      snapshot: buildPatientSnapshot({ appointment: appt, previousSessions: [], latestInsightText: null }),
+    };
+    setSelectedSession(minimal);
+    if (!enrichSessionAction) return;
+    setDrawerLoading(true);
+    startEnrich(async () => {
+      try {
+        const enriched = await enrichSessionAction(appt.id);
+        // Só aplica se o drawer ainda mostra o MESMO agendamento (evita corrida).
+        if (enriched) {
+          setSelectedSession((cur) => (cur && cur.id === enriched.id ? enriched : cur));
+        }
+      } finally {
+        setDrawerLoading(false);
+      }
+    });
+  }
+
+  function closeDrawer() {
+    setSelectedSession(null);
+    setDrawerLoading(false);
+  }
 
   function navigatePrev() {
     if (view === "dia") setNavDate((d) => addDays(d, -1));
@@ -239,6 +276,7 @@ export function ScheduleContainer({
           onDelete={deleteSessionAction}
           onReschedule={rescheduleAction}
           onResizeDuration={resizeDurationAction}
+          onOpenAppointment={openAppointment}
         />
       )}
       {view === "mes" && (
@@ -253,9 +291,10 @@ export function ScheduleContainer({
 
       <SessionDrawer
         session={selectedSession}
-        onClose={() => setSelectedSession(null)}
+        onClose={closeDrawer}
         updateStatusAction={updateStatusAction}
         cancellationWindowHours={cancellationWindowHours}
+        enriching={drawerLoading}
       />
     </div>
   );

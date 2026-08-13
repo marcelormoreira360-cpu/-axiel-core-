@@ -6,7 +6,7 @@ import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/components/patient-snapshot";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatients, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatients, getAppointmentById, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
@@ -247,6 +247,41 @@ export default async function SchedulePage() {
     }
   }
 
+  // Enriquece um agendamento (clicado na visão Semana) para o formato ScheduleSession
+  // que o drawer espera: sessões anteriores + snapshot + status do último insight.
+  // Escopado à clínica do usuário (defesa em profundidade além da RLS).
+  async function enrichScheduleSessionAction(appointmentId: string): Promise<ScheduleSession | null> {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) return null;
+
+    const appointment = await getAppointmentById(appointmentId);
+    if (!appointment || appointment.clinic_id !== profile.clinic_id) return null;
+
+    const [byPatient, insightsByPatient] = await Promise.all([
+      getAppointmentsByPatients([appointment.patient_id]),
+      getLatestAiInsightsByPatients([appointment.patient_id]),
+    ]);
+
+    const patientAppointments = byPatient.get(appointment.patient_id) ?? [];
+    const latestInsight = insightsByPatient.get(appointment.patient_id) ?? null;
+    const insightOutput =
+      latestInsight?.review_status === "final"
+        ? latestInsight.final_output ?? latestInsight.output
+        : latestInsight?.output;
+
+    return {
+      ...appointment,
+      latestInsightStatus: latestInsight?.review_status === "final" ? "final" : "review",
+      previousSessions: patientAppointments.filter((a) => a.id !== appointment.id),
+      snapshot: buildPatientSnapshot({
+        appointment,
+        previousSessions: patientAppointments,
+        latestInsightText: insightOutput?.structured_summary?.overview ?? null,
+      }),
+    };
+  }
+
   async function updateStatusAction(id: string, status: string): Promise<{ error?: string }> {
     "use server";
     const te = await getTranslations("schedule.actions");
@@ -356,6 +391,7 @@ export default async function SchedulePage() {
             createConfirmationLinkAction={createConfirmationLinkAction}
             emailConfirmationLinkAction={emailConfirmationLinkAction}
             updateStatusAction={updateStatusAction}
+            enrichSessionAction={enrichScheduleSessionAction}
             deleteSessionAction={deleteSessionAction}
             rescheduleAction={rescheduleAction}
             resizeDurationAction={resizeDurationAction}

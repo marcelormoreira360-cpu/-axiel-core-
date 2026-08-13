@@ -78,6 +78,8 @@
     "close": "Fechar",
     "patientFallback": "Paciente",
     "meta": "Sessão {count} · {time} · {minutes} min",
+    "metaNoCount": "{time} · {minutes} min",
+    "loadingHistory": "Carregando histórico do paciente…",
     "statusSection": "Status do agendamento",
     "actionConfirm": "Confirmar",
     "actionCheckIn": "Check-in",

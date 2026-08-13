@@ -78,6 +78,8 @@
     "close": "Close",
     "patientFallback": "Patient",
     "meta": "Session {count} · {time} · {minutes} min",
+    "metaNoCount": "{time} · {minutes} min",
+    "loadingHistory": "Loading patient history…",
     "statusSection": "Appointment status",
     "actionConfirm": "Confirm",
     "actionCheckIn": "Check in",

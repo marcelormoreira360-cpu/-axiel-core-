@@ -49,12 +49,15 @@ export function SessionDrawer({
   onClose,
   updateStatusAction,
   cancellationWindowHours = DEFAULT_CANCELLATION_WINDOW_HOURS,
+  enriching = false,
 }: {
   session: ScheduleSession | null;
   onClose: () => void;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
   /** Janela (horas) da clínica p/ classificar cancelamento (com aviso × tardio). */
   cancellationWindowHours?: number;
+  /** true enquanto o ScheduleSession é enriquecido sob demanda (abertura na Semana). */
+  enriching?: boolean;
 }) {
   const t = useTranslations("schedule.drawer");
   const tStatus = useTranslations("common.appointmentStatus");
@@ -147,7 +150,9 @@ export function SessionDrawer({
                 </span>
               </div>
               <p className="text-[12px] text-[#A09E98] mt-[1px]">
-                {t("meta", { count: sessionCount, time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}
+                {enriching
+                  ? t("metaNoCount", { time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })
+                  : t("meta", { count: sessionCount, time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}
               </p>
             </div>
           </div>
@@ -163,8 +168,23 @@ export function SessionDrawer({
             </div>
           )}
 
+          {/* Enquanto enriquece (abertura na visão Semana): loading das seções ricas.
+              Não mostramos histórico/insight ainda para não exibir dado incompleto. */}
+          {enriching && (
+            <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[12px] py-[10px]">
+              <div className="flex items-center gap-[8px]">
+                <span className="w-3.5 h-3.5 rounded-full border-2 border-[#0F6E56]/30 border-t-[#0F6E56] animate-spin" />
+                <p className="text-[11px] text-[#A09E98]">{t("loadingHistory")}</p>
+              </div>
+              <div className="mt-[10px] space-y-[6px]">
+                <div className="h-[10px] rounded bg-[#F4F3EF] dark:bg-white/[.06] animate-pulse w-3/4" />
+                <div className="h-[10px] rounded bg-[#F4F3EF] dark:bg-white/[.06] animate-pulse w-1/2" />
+              </div>
+            </div>
+          )}
+
           {/* Previous sessions */}
-          {session.previousSessions.length > 0 && (
+          {!enriching && session.previousSessions.length > 0 && (
             <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[10px] font-medium text-[#A09E98] mb-[8px]">{t("prevSessions")}</p>
               <div className="space-y-[6px]">
@@ -183,14 +203,14 @@ export function SessionDrawer({
             </div>
           )}
 
-          {session.previousSessions.length === 0 && (
+          {!enriching && session.previousSessions.length === 0 && (
             <div className="bg-white dark:bg-[#111827] border border-black/[.07] dark:border-white/[.07] rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[11px] text-[#D3D1C7]">{t("firstSession")}</p>
             </div>
           )}
 
           {/* AI insight */}
-          {session.snapshot?.latest_insight_summary && session.snapshot.latest_insight_status !== "Not ready" && (
+          {!enriching && session.snapshot?.latest_insight_summary && session.snapshot.latest_insight_status !== "Not ready" && (
             <div className="bg-[#F0FAF6] dark:bg-[#0F6E56]/[.12] border border-[#0F6E56]/15 rounded-[10px] px-[12px] py-[10px]">
               <p className="text-[10px] font-medium text-[#0F6E56] mb-[4px]">{t("latestInsight")}</p>
               <p className="text-[11px] text-[#085041] dark:text-[#9FE1CB] leading-relaxed line-clamp-4">

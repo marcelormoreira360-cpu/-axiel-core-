@@ -51,6 +51,7 @@ export function WeekView({
   onDelete,
   onReschedule,
   onResizeDuration,
+  onOpenAppointment,
 }: {
   appointments: Appointment[];
   navDate: Date;
@@ -63,6 +64,8 @@ export function WeekView({
   onDelete?: (id: string) => Promise<void>;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
+  /** Clique limpo no bloco abre o drawer da sessão (em vez de navegar ao perfil). */
+  onOpenAppointment?: (appt: Appointment) => void;
 }) {
   const locale   = useLocale();
   const today    = new Date();
@@ -396,6 +399,7 @@ export function WeekView({
                     isActive={activeId === appt.id}
                     onResize={handleResize}
                     onDelete={onDelete ? handleDelete : undefined}
+                    onOpen={onOpenAppointment}
                   />
                 ))}
               </div>
