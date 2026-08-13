@@ -13,6 +13,7 @@ import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@
 import { getPatientsLite, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getCancellationWindowHours } from "@/services/appointment-status-service";
 import { isPractitioner, getTeamMembers } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
 import { formatTime } from "@/modules/schedule/date-utils";
@@ -22,7 +23,7 @@ export default async function SchedulePage() {
   const clinicId = profile?.clinic_id ?? undefined;
   const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
 
-  const [appointments, patients, openReviews, sessionTypes, clinic, teamMembers] = await Promise.all([
+  const [appointments, patients, openReviews, sessionTypes, clinic, teamMembers, cancellationWindowHours] = await Promise.all([
     getAppointments(clinicId, practitionerId),
     getPatientsLite(clinicId, practitionerId),
     getPendingAiInsightReviewCount(clinicId),
@@ -30,6 +31,9 @@ export default async function SchedulePage() {
     getCurrentClinic(),
     // Only fetch team for non-practitioners (owners/admins who need the filter)
     !practitionerId && clinicId ? getTeamMembers(clinicId) : Promise.resolve([]),
+    // Janela de cancelamento da clínica: usada no drawer para pré-visualizar a
+    // classificação (com aviso × tardio). O servidor segue sendo a fonte de verdade.
+    clinicId ? getCancellationWindowHours(clinicId) : Promise.resolve(24),
   ]);
 
   // Practitioners available for the filter dropdown (owners/admins only)
@@ -356,6 +360,7 @@ export default async function SchedulePage() {
             rescheduleAction={rescheduleAction}
             resizeDurationAction={resizeDurationAction}
             practitioners={practitionerOptions}
+            cancellationWindowHours={cancellationWindowHours}
           />
         </>
       )}

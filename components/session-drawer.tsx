@@ -5,15 +5,29 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { X, User, FileText, CalendarDays, Video } from "lucide-react";
+import { X, User, FileText, CalendarDays, Video, Check, LogIn, CheckCheck, UserX, Ban } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
+import {
+  getStaffQuickActions,
+  staffActionToRequested,
+  SENSITIVE_STAFF_ACTIONS,
+  classifyCancellationByWindow,
+  DEFAULT_CANCELLATION_WINDOW_HOURS,
+  type StaffQuickAction,
+} from "@/modules/schedule/status-actions";
 
-const STATUS_OPTS = [
-  { value: "confirmed",  labelKey: "actionConfirm",  cls: "border-[#2D8CFF]/30 text-[#2563EB] hover:bg-[#EFF6FF]" },
-  { value: "completed",  labelKey: "actionComplete", cls: "border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE]" },
-  { value: "cancelled",  labelKey: "actionCancel",   cls: "border-red-200 text-red-500 hover:bg-red-50" },
-] as const;
+// Aparência de cada ação rápida da equipe (rótulo vem do i18n via actionKey).
+const ACTION_META: Record<
+  StaffQuickAction,
+  { actionKey: string; Icon: typeof Check; cls: string }
+> = {
+  confirm:  { actionKey: "actionConfirm",  Icon: Check,     cls: "border-[#2D8CFF]/30 text-[#2563EB] hover:bg-[#EFF6FF]" },
+  check_in: { actionKey: "actionCheckIn",  Icon: LogIn,     cls: "border-[#2A7BC1]/30 text-[#2A7BC1] hover:bg-[#EAF3FB]" },
+  complete: { actionKey: "actionComplete", Icon: CheckCheck, cls: "border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE]" },
+  no_show:  { actionKey: "actionNoShow",   Icon: UserX,     cls: "border-amber-200 text-amber-600 hover:bg-amber-50" },
+  cancel:   { actionKey: "actionCancel",   Icon: Ban,       cls: "border-red-200 text-red-500 hover:bg-red-50" },
+};
 
 const STATUS_BADGE_CLS: Record<string, string> = {
   scheduled: "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]",
@@ -34,10 +48,13 @@ export function SessionDrawer({
   session,
   onClose,
   updateStatusAction,
+  cancellationWindowHours = DEFAULT_CANCELLATION_WINDOW_HOURS,
 }: {
   session: ScheduleSession | null;
   onClose: () => void;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
+  /** Janela (horas) da clínica p/ classificar cancelamento (com aviso × tardio). */
+  cancellationWindowHours?: number;
 }) {
   const t = useTranslations("schedule.drawer");
   const tStatus = useTranslations("common.appointmentStatus");
@@ -45,6 +62,8 @@ export function SessionDrawer({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
+  // Ação sensível aguardando confirmação (no_show | cancel), ou null.
+  const [pendingAction, setPendingAction] = useState<StaffQuickAction | null>(null);
 
   if (!session) return null;
 
@@ -52,21 +71,41 @@ export function SessionDrawer({
   const sessionCount = session.previousSessions.length + 1;
   const currentStatus = optimisticStatus ?? session.status ?? "scheduled";
   const badgeCls = STATUS_BADGE_CLS[currentStatus] ?? STATUS_BADGE_CLS.scheduled;
+  const availableActions = getStaffQuickActions(currentStatus);
 
-  function handleStatusChange(newStatus: string) {
-    if (!updateStatusAction) return;
+  // Prévia de como a REGRA classificará o cancelamento pela janela da clínica.
+  // O servidor é a fonte de verdade; isto é só orientação para a equipe.
+  const cancelKind =
+    session.starts_at &&
+    classifyCancellationByWindow(session.starts_at, cancellationWindowHours);
+
+  function applyAction(action: StaffQuickAction) {
+    if (!updateStatusAction || !session) return;
+    const newStatus = staffActionToRequested(action);
     // Guarda o status real (do servidor) para reverter o otimismo em caso de erro.
     const previousStatus = optimisticStatus;
-    setOptimisticStatus(newStatus);
+    // Otimismo: para 'cancel' usa a classificação da janela; para os demais, o alvo direto.
+    const optimistic = action === "cancel" ? cancelKind || newStatus : newStatus;
+    setOptimisticStatus(optimistic);
     startTransition(async () => {
-      const res = await updateStatusAction!(session!.id, newStatus);
+      const res = await updateStatusAction!(session.id, newStatus);
       if (res?.error) {
         setOptimisticStatus(previousStatus);
         toast.error(res.error);
         return;
       }
+      toast.success(t(`toast.${action}`));
       router.refresh();
     });
+  }
+
+  function onActionClick(action: StaffQuickAction) {
+    // Ações sensíveis (marcar falta, cancelar) passam por um diálogo de confirmação.
+    if (SENSITIVE_STAFF_ACTIONS.includes(action)) {
+      setPendingAction(action);
+      return;
+    }
+    applyAction(action);
   }
 
   return (
@@ -164,20 +203,36 @@ export function SessionDrawer({
         {/* Actions */}
         <div className="px-[20px] pb-[20px] pt-[4px] space-y-[8px] border-t border-black/[.07] dark:border-white/[.07]">
 
-          {/* Status change buttons */}
-          {updateStatusAction && currentStatus !== "completed" && (
-            <div className="flex gap-[6px] flex-wrap">
-              {STATUS_OPTS.filter((o) => o.value !== currentStatus).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => handleStatusChange(opt.value)}
-                  disabled={isPending}
-                  className={`flex-1 min-w-[80px] text-[11px] font-medium border rounded-[7px] px-[8px] py-[7px] transition disabled:opacity-50 ${opt.cls}`}
-                >
-                  {isPending ? "…" : t(opt.labelKey)}
-                </button>
-              ))}
+          {/* Menu de ações de status (reflete as transições válidas do status atual) */}
+          {updateStatusAction && availableActions.length > 0 && (
+            <div>
+              <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98] mb-[6px]">
+                {t("statusSection")}
+              </p>
+              <div className="flex gap-[6px] flex-wrap">
+                {availableActions.map((action) => {
+                  const meta = ACTION_META[action];
+                  const Icon = meta.Icon;
+                  return (
+                    <button
+                      key={action}
+                      type="button"
+                      onClick={() => onActionClick(action)}
+                      disabled={isPending}
+                      className={`flex items-center justify-center gap-[5px] flex-1 min-w-[92px] text-[11px] font-medium border rounded-[7px] px-[8px] py-[7px] transition disabled:opacity-50 ${meta.cls}`}
+                    >
+                      {isPending ? (
+                        "…"
+                      ) : (
+                        <>
+                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          {t(meta.actionKey)}
+                        </>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
           {currentStatus === "completed" && (
@@ -238,6 +293,59 @@ export function SessionDrawer({
           </Link>
         </div>
       </aside>
+
+      {/* Diálogo de confirmação para ações sensíveis (marcar falta / cancelar) */}
+      {pendingAction && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("confirm.dismiss")}
+            onClick={() => setPendingAction(null)}
+            className="absolute inset-0 bg-[#0F1A2E]/40"
+          />
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="relative w-full max-w-[320px] bg-white dark:bg-[#111827] border border-black/[.10] dark:border-white/[.10] rounded-[12px] shadow-xl p-[18px]"
+          >
+            <p className="text-[14px] font-semibold text-[#0F1A2E] dark:text-[#E8E6E2] mb-[6px]">
+              {t(`confirm.${pendingAction}.title`)}
+            </p>
+            <p className="text-[12px] text-[#6B6A66] dark:text-[#9E9C97] leading-relaxed">
+              {t(`confirm.${pendingAction}.body`, { patient: patientName })}
+            </p>
+            {pendingAction === "cancel" && cancelKind && (
+              <p className="mt-[8px] text-[11px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] bg-[#F4F3EF] dark:bg-white/[.06] rounded-[8px] px-[10px] py-[8px]">
+                {t("confirm.cancel.windowNote", { classification: tStatus(cancelKind) })}
+              </p>
+            )}
+            <div className="mt-[14px] flex gap-[8px] justify-end">
+              <button
+                type="button"
+                onClick={() => setPendingAction(null)}
+                disabled={isPending}
+                className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition px-[14px] py-[7px] rounded-[8px] disabled:opacity-50"
+              >
+                {t("confirm.dismiss")}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = pendingAction;
+                  setPendingAction(null);
+                  applyAction(action);
+                }}
+                disabled={isPending}
+                className={`text-[12px] font-medium text-white transition px-[14px] py-[7px] rounded-[8px] disabled:opacity-50 ${
+                  pendingAction === "no_show" ? "bg-amber-600 hover:bg-amber-700" : "bg-red-500 hover:bg-red-600"
+                }`}
+              >
+                {t(`confirm.${pendingAction}.confirm`)}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
