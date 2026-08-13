@@ -36,5 +36,18 @@
   "yes": "Yes",
   "no": "No",
   "requiredMark": "required",
-  "answerAllHighlight": "Some answers are missing. Complete the items highlighted in red to continue."
+  "answerAllHighlight": "Some answers are missing. Complete the items highlighted in red to continue.",
+  "needCancel": "I need to cancel",
+  "cancelConfirmTitle": "Cancel this appointment?",
+  "cancelReasonLabel": "Reason (optional)",
+  "cancelConfirmBtn": "Confirm cancellation",
+  "cancelKeep": "Keep my time",
+  "cancelling": "Cancelling…",
+  "cancelledTitle": "Appointment cancelled",
+  "cancelledDesc": "All set, your appointment was cancelled. If you need to, contact the clinic to reschedule.",
+  "cancelledLateNote": "Because the cancellation was close to the appointment time, the clinic may have a policy about it. The team will reach out if needed.",
+  "manageTitle": "Attendance confirmed",
+  "manageDesc": "Your time is reserved. See you then!",
+  "closedTitle": "Appointment closed",
+  "closedDesc": "This appointment is already closed. Please contact the clinic if you need help."
 }

@@ -247,9 +247,20 @@ export default async function SchedulePage() {
     "use server";
     const te = await getTranslations("schedule.actions");
     try {
-      await updateAppointment(id, { status });
+      // Toda mudança de status da equipe passa pelo motor de transição: valida a
+      // máquina de estados, classifica o cancelamento pela janela da clínica e
+      // grava o evento de auditoria (appointment_status_events).
+      const profile = await getCurrentUserProfile();
+      if (!profile?.id) return { error: te("statusUpdateError") };
+      const { changeAppointmentStatusForStaff } = await import("@/services/appointment-status-service");
+      const res = await changeAppointmentStatusForStaff({
+        appointmentId: id,
+        requested: status,
+        userId: profile.id,
+        clinicId: profile.clinic_id ?? null,
+      });
       revalidatePath("/schedule");
-      return {};
+      return res.ok ? {} : { error: res.error ?? te("statusUpdateError") };
     } catch {
       return { error: te("statusUpdateError") };
     }

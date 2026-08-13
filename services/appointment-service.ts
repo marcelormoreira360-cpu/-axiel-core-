@@ -98,7 +98,7 @@ export async function hasAppointmentConflict(opts: {
     .eq("clinic_id", opts.clinic_id)
     .gte("starts_at", windowStart)
     .lt("starts_at", end.toISOString())
-    .not("status", "in", '("cancelled","no_show")');
+    .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")');
   if (error) throw error;
 
   return (data ?? []).some((a) => {
@@ -337,9 +337,13 @@ export async function confirmAppointmentByToken(
     }
   }
 
+  // NÃO limpamos o token/expiração ao confirmar: o mesmo link vira o "link de
+  // gestão" do paciente e continua válido (até a expiração) para o self-service
+  // de cancelamento. A idempotência da confirmação segue garantida pelo
+  // `.eq("status","pending")` abaixo (um 2º submit não roda os side-effects).
   const { data: updated, error } = await supabase
     .from("appointments")
-    .update({ status: "confirmed", confirmed_at: new Date().toISOString(), confirm_token_hash: null, confirm_expires_at: null })
+    .update({ status: "confirmed", confirmed_at: new Date().toISOString() })
     .eq("id", info.id)
     .eq("status", "pending")
     .select("id");
@@ -349,7 +353,71 @@ export async function confirmAppointmentByToken(
   if (!updated || updated.length === 0) {
     return { ok: false, error: "Este agendamento já foi confirmado ou não está mais disponível." };
   }
+
+  // Log de auditoria da confirmação (ator = paciente). Best-effort.
+  await supabase.from("appointment_status_events").insert({
+    clinic_id: info.clinic_id,
+    appointment_id: info.id,
+    from_status: "pending",
+    to_status: "confirmed",
+    changed_by_user: null,
+    actor_type: "patient",
+    reason: null,
+  }).then(({ error: e }) => { if (e) log.error("Falha ao logar confirmação (status event)", e); });
+
   return { ok: true, clinicId: info.clinic_id, patientId: resolvedPatientId, appointmentId: info.id, startsAt: info.starts_at };
+}
+
+/**
+ * Cancelamento self-service pelo paciente (via link/token). Segurança:
+ *  - valida o hash do token e a expiração (getAppointmentByConfirmToken);
+ *  - bloqueia estados terminais e agendamentos já passados (no servidor);
+ *  - classifica pela janela da clínica (cancelled_notice | late_cancel);
+ *  - roda pelo motor central (changeAppointmentStatus) com actor_type='patient',
+ *    que grava o evento de auditoria e os hooks da Fase 2.
+ * Idempotente: cancelar de novo um horário já cancelado devolve o mesmo estado.
+ */
+export async function cancelAppointmentByToken(
+  token: string,
+  reason?: string | null,
+): Promise<{ ok: boolean; error?: string; status?: "cancelled_notice" | "late_cancel"; clinicId?: string; patientId?: string; startsAt?: string }> {
+  const info = await getAppointmentByConfirmToken(token);
+  if (!info) return { ok: false, error: "Link inválido ou expirado." };
+  if (info.expired) return { ok: false, error: "Este link expirou. Fale com a clínica." };
+
+  const status = info.status ?? "scheduled";
+  const TERMINAL = ["completed", "no_show", "cancelled", "cancelled_notice", "late_cancel", "checked_in"];
+  if (TERMINAL.includes(status)) {
+    return { ok: false, error: "Este horário já foi encerrado. Fale com a clínica." };
+  }
+  // Consulta já passada: paciente não cancela pelo link (o correto é a clínica
+  // registrar como falta, se for o caso).
+  if (new Date(info.starts_at).getTime() < Date.now()) {
+    return { ok: false, error: "Este horário já passou. Fale com a clínica." };
+  }
+
+  const { cancelAppointment } = await import("@/services/appointment-status-service");
+  const result = await cancelAppointment({
+    appointmentId: info.id,
+    clinicId: info.clinic_id,
+    startsAt: info.starts_at,
+    actor: { type: "patient", reason: reason ?? null },
+  });
+
+  if (!result.ok) {
+    // CONFLICT/idempotência: se já está cancelado, tratamos como sucesso suave.
+    if (result.code === "CONFLICT") {
+      return { ok: false, error: "Este horário já foi encerrado. Fale com a clínica." };
+    }
+    return { ok: false, error: result.error };
+  }
+  return {
+    ok: true,
+    status: result.status as "cancelled_notice" | "late_cancel",
+    clinicId: info.clinic_id,
+    patientId: info.patient?.id,
+    startsAt: info.starts_at,
+  };
 }
 
 /**
@@ -705,7 +773,7 @@ export async function getAvailableSlots(opts: {
     .from("appointments")
     .select("starts_at, duration_minutes")
     .eq("clinic_id", clinic.id)
-    .not("status", "in", '("cancelled","no_show")')  // A-04: exclude cancelled slots
+    .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')  // A-04: exclude cancelled slots (inclui cancelamento com aviso/tardio)
     .gte("starts_at", dayStartUTC)
     .lte("starts_at", dayEndUTC);
 

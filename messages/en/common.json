@@ -65,7 +65,10 @@
     "completed": "Completed",
     "cancelled": "Cancelled",
     "no_show": "No-show",
-    "pending": "Awaiting confirmation"
+    "pending": "Awaiting confirmation",
+    "checked_in": "Checked in",
+    "cancelled_notice": "Cancelled with notice",
+    "late_cancel": "Late cancellation"
   },
   "push": {
     "title": "Enable notifications",

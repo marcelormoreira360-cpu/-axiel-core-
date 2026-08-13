@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CheckCircle2, CalendarClock, Loader2, AlertCircle } from "lucide-react";
+import { CheckCircle2, CalendarClock, Loader2, AlertCircle, XCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { TemplateWithStructure } from "@/lib/types";
-import { confirmAppointmentAction } from "./actions";
+import { confirmAppointmentAction, cancelAppointmentAction } from "./actions";
 
 export function ConfirmClient({
   token,
-  invalid,
+  mode,
   clinicName,
   logoUrl,
   primaryColor,
@@ -22,7 +22,7 @@ export function ConfirmClient({
   intakeForms = [],
 }: {
   token: string;
-  invalid: boolean;
+  mode: "invalid" | "confirm" | "manage" | "closed";
   clinicName: string | null;
   logoUrl: string | null;
   primaryColor: string;
@@ -41,6 +41,13 @@ export function ConfirmClient({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Estado do cancelamento self-service.
+  const [showCancel, setShowCancel] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelled, setCancelled] = useState(false);
+  const [cancelStatus, setCancelStatus] = useState<"cancelled_notice" | "late_cancel" | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [isCancelling, startCancel] = useTransition();
   const [questionnaires, setQuestionnaires] = useState<{ name: string; token: string }[]>([]);
   // Wizard questionário-primeiro: phase 0..N-1 = cada questionário; N = dados.
   const [phase, setPhase] = useState(0);
@@ -134,6 +141,58 @@ export function ConfirmClient({
     });
   }
 
+  function handleCancel() {
+    setCancelError(null);
+    const fd = new FormData();
+    fd.set("token", token);
+    if (cancelReason.trim()) fd.set("reason", cancelReason.trim());
+    startCancel(async () => {
+      const res = await cancelAppointmentAction(fd);
+      if (res.error) setCancelError(res.error);
+      else if (res.success) { setCancelStatus(res.status ?? null); setCancelled(true); }
+    });
+  }
+
+  // Painel de cancelamento (reutilizado nos modos "confirm" e "manage").
+  const cancelPanel = (
+    <div className="mt-4">
+      {!showCancel ? (
+        <button
+          type="button"
+          onClick={() => { setShowCancel(true); setCancelError(null); }}
+          className="w-full text-[12px] text-[#6B6A66] hover:text-[#B42318] transition"
+        >
+          {t("needCancel")}
+        </button>
+      ) : (
+        <div className="rounded-[10px] border border-[#FECDCA] bg-[#FEF3F2] px-[14px] py-[13px]">
+          <p className="text-[13px] font-medium text-[#0F1A2E] mb-[8px]">{t("cancelConfirmTitle")}</p>
+          <label className="block text-[11px] text-[#6B6A66] mb-[4px]" htmlFor="cancel_reason">{t("cancelReasonLabel")}</label>
+          <textarea
+            id="cancel_reason" rows={2} value={cancelReason} maxLength={300}
+            onChange={(e) => setCancelReason(e.target.value)}
+            className="w-full mb-[10px] px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] outline-none focus:border-[#B42318] resize-none bg-white"
+          />
+          {cancelError && <p className="text-[12px] text-[#B42318] mb-[8px]">{cancelError}</p>}
+          <div className="flex gap-[8px]">
+            <button
+              type="button" onClick={handleCancel} disabled={isCancelling}
+              className="flex-1 flex items-center justify-center gap-[6px] text-[12px] font-medium text-white rounded-[8px] px-[12px] py-[9px] bg-[#B42318] disabled:opacity-60 transition"
+            >
+              {isCancelling ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />{t("cancelling")}</> : t("cancelConfirmBtn")}
+            </button>
+            <button
+              type="button" onClick={() => { setShowCancel(false); setCancelReason(""); setCancelError(null); }}
+              className="flex-1 text-[12px] text-[#6B6A66] rounded-[8px] px-[12px] py-[9px] border border-black/[.12] bg-white hover:border-black/[.25] transition"
+            >
+              {t("cancelKeep")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   // ── Estados terminais ──
   // IMPORTANTE: `done` (sucesso do cliente) vem ANTES de `invalid`. Ao confirmar,
   // o server action re-renderiza a página e o agendamento já não está "pending",
@@ -180,13 +239,64 @@ export function ConfirmClient({
     );
   }
 
-  if (invalid) {
+  // Cancelamento concluído (tela calorosa; não expõe o rótulo "tardio").
+  if (cancelled) {
+    return (
+      <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
+        <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[40px] text-center">
+          <XCircle className="h-10 w-10 mx-auto mb-[14px] text-[#6B6A66]" />
+          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[6px]">{t("cancelledTitle")}</h1>
+          <p className="text-[13px] text-[#6B6A66] leading-relaxed">{t("cancelledDesc")}</p>
+          {cancelStatus === "late_cancel" && (
+            <p className="mt-3 text-[12px] text-[#6B6A66] leading-relaxed bg-[#F4F3EF] rounded-[8px] px-[12px] py-[10px]">{t("cancelledLateNote")}</p>
+          )}
+        </div>
+      </main>
+    );
+  }
+
+  if (mode === "invalid") {
     return (
       <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
         <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[36px] text-center">
           <AlertCircle className="h-9 w-9 mx-auto mb-[12px] text-[#B42318]" />
           <h1 className="text-[17px] font-medium text-[#0F1A2E] mb-[6px]">{t("invalidTitle")}</h1>
           <p className="text-[13px] text-[#6B6A66] leading-relaxed">{t("invalidDesc")}</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Estado encerrado (terminal ou horário já passado).
+  if (mode === "closed") {
+    return (
+      <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
+        <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[36px] text-center">
+          <CalendarClock className="h-9 w-9 mx-auto mb-[12px] text-[#A09E98]" />
+          <h1 className="text-[17px] font-medium text-[#0F1A2E] mb-[6px]">{t("closedTitle")}</h1>
+          <p className="text-[13px] text-[#6B6A66] leading-relaxed">{t("closedDesc")}</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Horário já confirmado/agendado no futuro: mostra o horário e permite cancelar.
+  if (mode === "manage") {
+    return (
+      <main className="min-h-screen bg-[#F4F3EF] flex items-center justify-center px-[16px] py-[40px]">
+        <div className="w-full max-w-[440px] bg-white border border-black/[.07] rounded-[14px] px-[24px] py-[36px] text-center">
+          <CheckCircle2 className="h-10 w-10 mx-auto mb-[14px]" style={{ color: primaryColor }} />
+          <h1 className="text-[18px] font-medium text-[#0F1A2E] mb-[6px]">{t("manageTitle")}</h1>
+          <p className="text-[13px] text-[#6B6A66] leading-relaxed mb-3">{t("manageDesc")}</p>
+          <div className="bg-[#F4F3EF] rounded-[10px] px-[16px] py-[12px] mb-1 text-left">
+            <p className="text-[11px] font-medium tracking-[.06em] uppercase text-[#A09E98]">{t("proposedLabel")}</p>
+            <p className="text-[14px] font-medium text-[#0F1A2E] capitalize">{dateStr}</p>
+            <p className="text-[13px] text-[#6B6A66]">
+              {timeStr}{durationMinutes ? ` · ${t("minutes", { count: durationMinutes })}` : ""}
+              {sessionTypeName ? ` · ${sessionTypeName}` : ""}
+            </p>
+          </div>
+          {cancelPanel}
         </div>
       </main>
     );
@@ -441,6 +551,9 @@ export function ConfirmClient({
 
           <p className="text-[10px] text-[#A09E98] text-center leading-relaxed">{t("privacyNote")}</p>
         </form>
+
+        {/* Não vai conseguir vir? Cancela pelo mesmo link. */}
+        {cancelPanel}
       </div>
     </main>
   );

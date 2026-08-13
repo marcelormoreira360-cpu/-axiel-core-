@@ -9,11 +9,13 @@ import type { Appointment, SessionRecord } from "@/lib/types";
  * observações — tudo para acompanhar e registrar a evolução do paciente a cada sessão).
  */
 
-const STATUS_KEYS = new Set(["pending", "scheduled", "confirmed", "completed", "no_show", "cancelled"]);
+const STATUS_KEYS = new Set(["pending", "scheduled", "confirmed", "checked_in", "completed", "no_show", "cancelled", "cancelled_notice", "late_cancel"]);
+const CANCELLED_STATUSES = ["cancelled", "cancelled_notice", "late_cancel"];
 
 const STATUS_CLS: Record<string, string> = {
   completed: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
   confirmed: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#085041] dark:text-[#9FE1CB]",
+  checked_in: "bg-[#EAF3FB] text-[#2A7BC1]",
   scheduled: "bg-[#F4F3EF] text-[#6B6A66]",
   pending: "bg-[#FAEEDA] dark:bg-[#C77D17]/[.15] text-[#633806] dark:text-[#E8B04B]",
   no_show: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
@@ -48,7 +50,7 @@ export async function PatientTreatmentFollowupPanel({
   const locale = await getLocale();
   const recordByAppt = new Map(sessions.map((s) => [s.appointment_id, s]));
   const list = appointments
-    .filter((a) => a.status !== "cancelled")
+    .filter((a) => !CANCELLED_STATUSES.includes(a.status ?? ""))
     .slice()
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
     .slice(0, 6);

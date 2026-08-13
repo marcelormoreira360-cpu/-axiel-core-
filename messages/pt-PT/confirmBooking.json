@@ -36,5 +36,18 @@
   "yes": "Sim",
   "no": "Não",
   "requiredMark": "obrigatória",
-  "answerAllHighlight": "Faltam respostas. Complete os itens destacados a vermelho para continuar."
+  "answerAllHighlight": "Faltam respostas. Complete os itens destacados a vermelho para continuar.",
+  "needCancel": "Preciso de cancelar",
+  "cancelConfirmTitle": "Deseja cancelar este horário?",
+  "cancelReasonLabel": "Motivo (opcional)",
+  "cancelConfirmBtn": "Confirmar cancelamento",
+  "cancelKeep": "Manter o meu horário",
+  "cancelling": "A cancelar…",
+  "cancelledTitle": "Horário cancelado",
+  "cancelledDesc": "Tudo certo, o seu horário foi cancelado. Se precisar, fale com a clínica para remarcar.",
+  "cancelledLateNote": "Como o cancelamento foi perto do horário, pode haver uma política da clínica sobre isso. A equipa entra em contacto se for o caso.",
+  "manageTitle": "Presença confirmada",
+  "manageDesc": "O seu horário está reservado. Até lá!",
+  "closedTitle": "Horário encerrado",
+  "closedDesc": "Este horário já foi encerrado. Fale com a clínica se precisar de ajuda."
 }

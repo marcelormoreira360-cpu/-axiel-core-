@@ -168,7 +168,12 @@
     "scheduled": "Agendada",
     "completed": "Realizada",
     "cancelled": "Cancelada",
-    "no_show": "Não compareceu"
+    "no_show": "Não compareceu",
+    "confirmed": "Confirmada",
+    "pending": "A aguardar",
+    "checked_in": "Em atendimento",
+    "cancelled_notice": "Cancelada com aviso",
+    "late_cancel": "Cancelamento tardio"
   },
   "leadStage": {
     "new_lead": "Novo lead",

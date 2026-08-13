@@ -168,7 +168,12 @@
     "scheduled": "Scheduled",
     "completed": "Completed",
     "cancelled": "Cancelled",
-    "no_show": "No-show"
+    "no_show": "No-show",
+    "confirmed": "Confirmed",
+    "pending": "Pending",
+    "checked_in": "Checked in",
+    "cancelled_notice": "Cancelled with notice",
+    "late_cancel": "Late cancellation"
   },
   "leadStage": {
     "new_lead": "New lead",

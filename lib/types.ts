@@ -167,7 +167,12 @@ export type Appointment = {
   duration_minutes: number;
   notes: string | null;
   video_url: string | null;
-  status: "pending" | "scheduled" | "confirmed" | "completed" | "cancelled" | "no_show" | null;
+  status: "pending" | "scheduled" | "confirmed" | "checked_in" | "completed" | "cancelled" | "cancelled_notice" | "late_cancel" | "no_show" | null;
+  checked_in_at?: string | null;
+  completed_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_by_role?: string | null;
+  confirmed_at?: string | null;
   zoom_meeting_id: string | null;
   zoom_join_url: string | null;
   zoom_start_url: string | null;

@@ -166,8 +166,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const lastSession = appointments[0] ?? null;
   // Fix #7: next upcoming session (soonest future) for teleconsulta link
   const nowIso = new Date().toISOString();
+  const INACTIVE = ["cancelled", "cancelled_notice", "late_cancel", "no_show"];
   const futureAppts = appointments.filter(
-    (a) => a.starts_at >= nowIso && a.status !== "cancelled" && a.status !== "no_show",
+    (a) => a.starts_at >= nowIso && !INACTIVE.includes(a.status ?? ""),
   );
   // appointments is sorted DESC, so last element is the soonest upcoming
   const nextSession = futureAppts[futureAppts.length - 1] ?? null;
@@ -175,7 +176,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // que no dia é a de hoje) e, se não houver, a mais recente já realizada — é nela
   // que o terapeuta abre o SOAP a cada atendimento do tratamento.
   const mostRecentPast = [...appointments]
-    .filter((a) => a.starts_at < nowIso && a.status !== "cancelled" && a.status !== "no_show")
+    .filter((a) => a.starts_at < nowIso && !INACTIVE.includes(a.status ?? ""))
     .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0] ?? null;
   const soapTargetSession = nextSession ?? mostRecentPast ?? lastSession;
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
