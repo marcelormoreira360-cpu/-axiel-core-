@@ -8,12 +8,12 @@
  * antiga), para não invalidar a prova de aceites passados.
  *
  * ┌─────────────────────────────────────────────────────────────────────────────┐
- * │ ⚠️ RASCUNHO — v1.0 pendente de aprovação.                                     │
- * │ Este texto é RASCUNHO. NÃO é cláusula contratual oficial e NÃO habilita       │
- * │ cobrança real. Antes de operar cobrança:                                      │
- * │   1. Marcelo aprova o texto v1.0.                                             │
- * │   2. Advogado humano licenciado (FL/FTC) valida a redação e a defensabilidade.│
- * │ Enquanto isso, o gate só CAPTURA e REGISTRA o aceite (não debita ninguém).    │
+ * │ v1.0 — texto APROVADO POR MARCELO em 2026-08-13 (versao enxuta: sem detalhe   │
+ * │ de percentual e sem a frase de cortesia na 1a falta).                         │
+ * │ AINDA NAO habilita cobranca real. Antes de operar cobranca falta:             │
+ * │   2. Advogado humano licenciado (FL/FTC) validar a redacao e a defensabilidade.│
+ * │ Status segue 'draft' ate o advogado assinar. Enquanto isso, o gate so CAPTURA  │
+ * │ e REGISTRA o aceite (nao debita ninguem).                                     │
  * └─────────────────────────────────────────────────────────────────────────────┘
  *
  * O texto usa o placeholder da janela de aviso: substituído pela janela real da
@@ -46,8 +46,8 @@ const V1_0: Record<PolicyLang, PolicyStrings> = {
     title: "Política de agendamento e cancelamento.",
     body:
       "Seu horário fica reservado só para você. Se precisar remarcar ou cancelar, pedimos aviso com pelo menos {hours} horas de antecedência. " +
-      "Faltas sem aviso ou cancelamentos feitos com menos de {hours} horas podem incluir uma taxa, definida pela clínica (em geral um percentual do valor do serviço, com limite mínimo e máximo). " +
-      "Na primeira vez, quando aplicável, é apenas um lembrete, sem cobrança. Cancelamentos dentro do prazo não têm nenhum custo. " +
+      "Faltas sem aviso, ou cancelamentos feitos com menos de {hours} horas, podem incluir uma taxa, definida pela clínica. " +
+      "Cancelamentos dentro do prazo não têm nenhum custo. " +
       "Se surgir um imprevisto, fale com a gente, estamos aqui para ajudar.",
     accept: "Li e concordo com a política de agendamento e cancelamento.",
   },
@@ -55,8 +55,8 @@ const V1_0: Record<PolicyLang, PolicyStrings> = {
     title: "Scheduling and cancellation policy.",
     body:
       "Your appointment time is reserved just for you. If you need to reschedule or cancel, we ask for at least {hours} hours' notice. " +
-      "Missed appointments with no notice, or cancellations made with less than {hours} hours' notice, may include a fee set by the clinic (usually a percentage of the service price, with a minimum and a maximum). " +
-      "The first time, when it applies, is just a friendly reminder with no charge. Cancellations made within the window are always free. " +
+      "Missed appointments with no notice, or cancellations made with less than {hours} hours' notice, may include a fee set by the clinic. " +
+      "Cancellations made within the window are always free. " +
       "If something comes up, reach out, we're happy to help.",
     accept: "I have read and agree to the scheduling and cancellation policy.",
   },
@@ -64,8 +64,8 @@ const V1_0: Record<PolicyLang, PolicyStrings> = {
     title: "Política de marcação e cancelamento.",
     body:
       "O seu horário fica reservado apenas para si. Caso precise de remarcar ou cancelar, pedimos aviso com, no mínimo, {hours} horas de antecedência. " +
-      "Faltas sem aviso, ou cancelamentos feitos com menos de {hours} horas, podem incluir uma taxa, definida pela clínica (habitualmente uma percentagem do valor do serviço, com um limite mínimo e máximo). " +
-      "Da primeira vez, quando aplicável, é apenas um lembrete, sem qualquer cobrança. Cancelamentos dentro do prazo não têm qualquer custo. " +
+      "Faltas sem aviso, ou cancelamentos feitos com menos de {hours} horas, podem incluir uma taxa, definida pela clínica. " +
+      "Cancelamentos dentro do prazo não têm qualquer custo. " +
       "Se surgir algum imprevisto, fale connosco, estamos aqui para ajudar.",
     accept: "Li e concordo com a política de marcação e cancelamento.",
   },
@@ -73,8 +73,8 @@ const V1_0: Record<PolicyLang, PolicyStrings> = {
     title: "Política de citas y cancelación.",
     body:
       "Su cita queda reservada solo para usted. Si necesita reprogramar o cancelar, le pedimos aviso con al menos {hours} horas de antelación. " +
-      "Las ausencias sin aviso, o las cancelaciones hechas con menos de {hours} horas, pueden incluir un cargo definido por la clínica (por lo general un porcentaje del precio del servicio, con un mínimo y un máximo). " +
-      "La primera vez, cuando corresponda, es solo un recordatorio, sin cobro. Las cancelaciones dentro del plazo no tienen ningún costo. " +
+      "Las ausencias sin aviso, o las cancelaciones hechas con menos de {hours} horas, pueden incluir un cargo definido por la clínica. " +
+      "Las cancelaciones dentro del plazo no tienen ningún costo. " +
       "Si surge algún imprevisto, contáctenos, estamos aquí para ayudar.",
     accept: "He leído y acepto la política de citas y cancelación.",
   },
