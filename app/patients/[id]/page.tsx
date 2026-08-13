@@ -88,6 +88,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   if (!patient) notFound();
 
   const t = await getTranslations("patientProfile");
+  const tRet = await getTranslations("feeDecisions");
   const tStatus = await getTranslations("patients.list.status");
   const tc = await getTranslations("common.terms");
   const locale = await getLocale();
@@ -607,6 +608,11 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
           <div className="flex gap-[6px] mt-[6px]">
             <span className={`text-[10px] px-[9px] py-[2px] rounded-full ${statusClasses(patient.status)}`}>{tStatus(statusKey(patient.status))}</span>
             <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-[#F4F3EF] text-[#6B6A66]">{t("profileTag")}</span>
+            {(patient as { retention_risk_flagged_at?: string | null }).retention_risk_flagged_at && (
+              <span className="text-[10px] px-[9px] py-[2px] rounded-full bg-amber-50 text-amber-600" title={tRet("retentionBadge")}>
+                {tRet("retentionBadge")}
+              </span>
+            )}
           </div>
           {demoParts.length > 0 && (
             <p className="text-[11px] text-[#A09E98] mt-[6px] truncate">{demoParts.join("  ·  ")}</p>

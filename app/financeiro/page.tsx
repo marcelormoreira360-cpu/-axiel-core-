@@ -19,6 +19,7 @@ import { requireFinanceAccess } from "@/lib/require-finance-access";
 import { PendingPayments } from "./pending-payments";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
+import { countPendingFeeDecisions } from "@/services/fee-decision-service";
 import { getClinicCurrency } from "@/services/finance-service";
 import { formatMoney } from "@/lib/finance-utils";
 
@@ -42,7 +43,7 @@ export default async function FinanceiroPage() {
   const asaasPix = isAsaasConfigured();
   const methodLabel = (m: string) => (KNOWN_METHODS.includes(m) ? tm(m) : m);
 
-  const [kpis, payments, unpaid, monthly, patients, cachedInsight, pending] = await Promise.all([
+  const [kpis, payments, unpaid, monthly, patients, cachedInsight, pending, feeDecisionsCount] = await Promise.all([
     getFinanceKPIs(clinic.id),
     getPaymentsWithPatients(clinic.id, { limit: 30 }),
     getUnpaidSessions(clinic.id),
@@ -50,6 +51,7 @@ export default async function FinanceiroPage() {
     getPatientsLite(),
     getLatestFinanceInsight(clinic.id),
     getPendingPayments(clinic.id),
+    countPendingFeeDecisions(clinic.id),
   ]);
 
   // Pendentes têm seção própria; não aparecem na lista de "recentes"
@@ -77,6 +79,17 @@ export default async function FinanceiroPage() {
             className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
           >
             {t("nfse")}
+          </Link>
+          <Link
+            href="/financeiro/taxas"
+            className="relative text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
+          >
+            {t("fees")}
+            {feeDecisionsCount > 0 && (
+              <span className="ml-1.5 text-[10px] font-semibold bg-amber-50 text-amber-600 rounded-full px-1.5 py-0.5">
+                {feeDecisionsCount}
+              </span>
+            )}
           </Link>
           <Link
             href="/financeiro/repasse"
