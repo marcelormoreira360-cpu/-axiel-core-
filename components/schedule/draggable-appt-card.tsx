@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import Link from "next/link";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import type { Appointment } from "@/lib/types";
@@ -16,11 +15,13 @@ export function DraggableApptCard({
   isActive,
   onResize,
   onDelete,
+  onOpen,
 }: {
   appt: Appointment;
   isActive: boolean;
   onResize?: (id: string, newDuration: number) => void;
   onDelete?: (id: string) => Promise<void>;
+  onOpen?: (appt: Appointment) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations("schedule.calendar");
@@ -68,12 +69,24 @@ export function DraggableApptCard({
     }
   }
 
+  // Clique limpo (sem arraste/resize) abre o drawer da sessão. O dnd-kit só ativa o
+  // arraste depois de 8px de movimento (activationConstraint), então um clique parado
+  // não vira drag; ainda assim guardamos por isDragging/isActive/isResizing.
+  function handleOpen() {
+    if (isDragging || isActive || isResizing) return;
+    onOpen?.(appt);
+  }
+
   return (
-    <Link
+    <div
       ref={setNodeRef}
-      href={`/patients/${appt.patient_id}`}
-      onClick={(e) => {
-        if (isDragging || isActive || isResizing) e.preventDefault();
+      aria-label={`${name}, ${formatTime(appt.starts_at, locale)}`}
+      onClick={handleOpen}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleOpen();
+        }
       }}
       style={{
         position: "absolute",
@@ -89,7 +102,7 @@ export function DraggableApptCard({
         overflow: "hidden",
         display: "block",
         textDecoration: "none",
-        cursor: isDragging ? "grabbing" : "grab",
+        cursor: isDragging ? "grabbing" : "pointer",
         opacity: isDragging ? 0.35 : 1,
         transform: CSS.Translate.toString(transform),
         touchAction: "none",
@@ -157,6 +170,6 @@ export function DraggableApptCard({
           transition: "background 0.15s",
         }} />
       </div>
-    </Link>
+    </div>
   );
 }
