@@ -23,7 +23,8 @@ export async function GET(request: Request) {
   try {
     const { processReassessments } = await import("@/services/onboarding-assessment-service");
     const { processTrialExpiryEmails } = await import("@/services/trial-expiry-service");
-    const [automations, packageAlerts, dunning, reassessments, trialExpiry] = await Promise.all([
+    const { drainAllPendingLifecycleEvents } = await import("@/services/fee-decision-service");
+    const [automations, packageAlerts, dunning, reassessments, trialExpiry, feeDecisions] = await Promise.all([
       processAutomations(),
       checkLowPackageNotifications(),
       processDunning(),
@@ -33,9 +34,15 @@ export async function GET(request: Request) {
         log.error("trialExpiry failed", error);
         return { sent: 0, skipped: 0, failed: 0, error: String(error) };
       }),
+      // Rede de segurança da Fase 2: materializa taxas a decidir + flag de retenção
+      // que ficaram para trás (o caminho principal é o drain-on-read da fila).
+      drainAllPendingLifecycleEvents().catch((error) => {
+        log.error("feeDecisions drain failed", error);
+        return { clinics: 0, feeMaterialized: 0, retentionFlagged: 0, error: String(error) };
+      }),
     ]);
 
-    const result = { automations, packageAlerts, dunning, reassessments, trialExpiry };
+    const result = { automations, packageAlerts, dunning, reassessments, trialExpiry, feeDecisions };
     await guard.finish(result as Record<string, unknown>);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
