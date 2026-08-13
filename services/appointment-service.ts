@@ -842,6 +842,20 @@ export async function createPublicBooking(input: {
   practitioner_id?: string | null;
   locale?: string | null;
   source?: AppointmentSource;
+  /**
+   * Gate de consentimento da política de no-show (Lex). O paciente marcou a caixa
+   * de aceite? Só relevante quando a clínica cobra falta/cancelamento tardio.
+   */
+  policy_accepted?: boolean;
+  /**
+   * Exigir o aceite no servidor (não confiar só no front). O booking WEB liga isto;
+   * o canal de VOZ (Vapi) NÃO liga (Lex 2.2: voz opera em cortesia+aviso até
+   * validação jurídica), então não bloqueia agendamento por voz.
+   */
+  enforce_policy_consent?: boolean;
+  /** Prova técnica do aceite (web): IP e user-agent. */
+  consent_ip?: string | null;
+  consent_user_agent?: string | null;
 }): Promise<CreatePublicBookingResult> {
   const {
     slug,
@@ -881,6 +895,31 @@ export async function createPublicBooking(input: {
     .maybeSingle();
 
   if (!sessionType) return { ok: false, error: "Tipo de sessão não encontrado.", code: "SESSION_TYPE_NOT_FOUND", status: 404 };
+
+  // ── Gate de consentimento da política de no-show (Lex 2.1) ──────────────────
+  // Se a clínica cobra falta/cancelamento tardio, o aceite da política é EXIGIDO
+  // antes de criar o agendamento (guard de servidor: aceite só no front é burlável).
+  // Clínica que não cobra (ambos os modos 'none') não precisa do aceite para marcar.
+  // Nada aqui debita o paciente: só condiciona o agendamento à existência do aceite.
+  const { getClinicFeeModes, clinicChargesForMisses } = await import("@/services/fee-decision-service");
+  const { shouldBlockBookingForPolicyConsent } = await import("@/services/no-show-consent-service");
+  const feeModes = await getClinicFeeModes(clinic.id).catch(() => null);
+  const clinicCharges = feeModes ? clinicChargesForMisses(feeModes) : false;
+
+  if (shouldBlockBookingForPolicyConsent({
+    enforce: input.enforce_policy_consent === true,
+    clinicCharges,
+    accepted: input.policy_accepted === true,
+  })) {
+    return {
+      ok: false,
+      error: isEn
+        ? "Please read and accept the scheduling and cancellation policy to continue."
+        : "Para continuar, leia e aceite a política de agendamento e cancelamento.",
+      code: "POLICY_NOT_ACCEPTED",
+      status: 400,
+    };
+  }
 
   // Slot pode ter sido tomado entre o carregamento da página e o submit
   if (await hasAppointmentConflict({
@@ -954,6 +993,35 @@ export async function createPublicBooking(input: {
     .single();
 
   if (apptError) return { ok: false, error: "Erro ao criar agendamento.", code: "APPT_ERROR", status: 500 };
+
+  // ── Registro do aceite da política (Lex 3) ──────────────────────────────────
+  // Grava a PROVA do aceite na mesma sequência lógica em que o paciente+appointment
+  // foram criados: consent_type='no_show_policy', policy_version, appointment_id,
+  // canal e (web) ip/user_agent. Best-effort: se falhar, o agendamento persiste e a
+  // fila de decisão mostrará "consentimento: ausente" (não perdemos o appointment por
+  // causa de um log de consentimento). Nunca leva dado clínico.
+  if (input.policy_accepted === true) {
+    try {
+      const { recordNoShowPolicyConsent } = await import("@/services/no-show-consent-service");
+      await recordNoShowPolicyConsent(
+        {
+          clinicId: clinic.id,
+          patientId,
+          appointmentId: appointment.id,
+          granted: true,
+          source: source === "website" ? "website" : "manual",
+          ip: input.consent_ip ?? null,
+          userAgent: input.consent_user_agent ?? null,
+        },
+        supabase,
+      );
+    } catch (e) {
+      log.error("Falha ao registrar aceite da política de no-show", e as Error, {
+        appointment_id: appointment.id,
+        clinic_id: clinic.id,
+      });
+    }
+  }
 
   // Questionários automáticos na 1ª sessão (fire-and-forget; usa admin client)
   import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>

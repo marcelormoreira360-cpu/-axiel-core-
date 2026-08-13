@@ -26,6 +26,8 @@
   "emptyPending": "No fees to review. All caught up.",
   "emptyDecided": "Nothing here yet.",
   "unknownPatient": "Patient",
+  "consentOnFile": "consent on file",
+  "consentMissing": "no consent on file",
   "configHint": "Suggested amounts come from this clinic's fee policy.",
   "configLink": "Adjust policy",
   "retentionBadge": "Retention follow-up",

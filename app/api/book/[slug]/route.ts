@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, name, slug, logo_url, primary_color")
+    .select("id, name, slug, logo_url, primary_color, no_show_fee_mode, late_cancel_fee_mode, cancellation_window_hours")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -61,7 +61,29 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     };
   });
 
-  return NextResponse.json({ clinic: { ...clinic, currency, show_powered_by: showPoweredBy }, sessionTypes: localizedSessionTypes, workingHours: workingHours ?? [], practitioners });
+  // Gate de consentimento (Lex 2.1): a caixa de aceite da política só é exigida
+  // quando a clínica cobra falta/cancelamento tardio (algum modo != 'none').
+  const requiresPolicyConsent =
+    (clinic.no_show_fee_mode ?? "percent") !== "none" ||
+    (clinic.late_cancel_fee_mode ?? "percent") !== "none";
+  const cancellationWindowHours =
+    typeof clinic.cancellation_window_hours === "number" ? clinic.cancellation_window_hours : 24;
+
+  // Não expor a config bruta de taxa da clínica no payload público.
+  const { no_show_fee_mode: _nsm, late_cancel_fee_mode: _lcm, cancellation_window_hours: _cwh, ...clinicPublic } = clinic;
+
+  return NextResponse.json({
+    clinic: {
+      ...clinicPublic,
+      currency,
+      show_powered_by: showPoweredBy,
+      requires_policy_consent: requiresPolicyConsent,
+      cancellation_window_hours: cancellationWindowHours,
+    },
+    sessionTypes: localizedSessionTypes,
+    workingHours: workingHours ?? [],
+    practitioners,
+  });
 }
 
 // POST /api/book/[slug] — create appointment (public)
@@ -74,7 +96,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   const { slug } = await params;
   const body = await req.json();
-  const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id } = body;
+  const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id, policy_accepted } = body;
 
   if (!session_type_id || !starts_at || !full_name || !phone) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes." }, { status: 400 });
@@ -115,6 +137,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     rawLocale === "pt-BR" || rawLocale === "en" || rawLocale === "pt-PT" ? rawLocale : null;
 
   // Criação + side-effects vivem no service (compartilhado com o canal de voz).
+  // Gate de consentimento (Lex): este é o canal WEB, então EXIGE o aceite no
+  // servidor quando a clínica cobra falta. Guarda ip/user-agent como prova.
+  const consentIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const consentUserAgent = req.headers.get("user-agent") ?? null;
   const result = await createPublicBooking({
     slug,
     session_type_id,
@@ -126,6 +152,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     practitioner_id,
     locale: bookingLocale,
     source: "website",
+    policy_accepted: policy_accepted === true,
+    enforce_policy_consent: true,
+    consent_ip: consentIp,
+    consent_user_agent: consentUserAgent,
   });
 
   if (!result.ok) {
