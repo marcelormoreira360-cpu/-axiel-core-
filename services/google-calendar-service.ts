@@ -341,8 +341,9 @@ export async function syncGoogleCalendarToAxiel(clinicId: string): Promise<{
           if (!appointment) continue; // Event not linked to an AXIEL appointment
 
           if (event.status === "cancelled") {
-            // Cancel the appointment if not already cancelled
-            if (appointment.status !== "cancelled" && appointment.status !== "no_show") {
+            // Cancel the appointment if not already cancelled (inclui os status
+            // novos cancelled_notice/late_cancel para não sobrescrever a classificação)
+            if (!["cancelled", "cancelled_notice", "late_cancel", "no_show"].includes(appointment.status ?? "")) {
               await supabase
                 .from("appointments")
                 .update({ status: "cancelled", notes: "Cancelado via Google Calendar" })

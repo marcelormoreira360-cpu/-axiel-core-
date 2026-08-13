@@ -20,7 +20,10 @@ const STATUS_BADGE_CLS: Record<string, string> = {
   confirmed: "bg-[#EFF6FF] text-[#2563EB]",
   completed: "bg-[#E1F5EE] text-[#0F6E56]",
   cancelled: "bg-red-50 text-red-500",
+  cancelled_notice: "bg-red-50 text-red-500",
+  late_cancel: "bg-red-100 text-red-600",
   no_show:   "bg-amber-50 text-amber-600",
+  checked_in: "bg-[#EAF3FB] text-[#2A7BC1]",
 };
 
 function initials(name: string) {

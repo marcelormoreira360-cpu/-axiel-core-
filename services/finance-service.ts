@@ -164,7 +164,7 @@ export async function getUnpaidSessions(clinicId: string): Promise<UnpaidSession
     .select("id, patient_id, starts_at, status, patients(full_name), session_types(name, price_cents)")
     .eq("clinic_id", clinicId)
     .lt("starts_at", new Date().toISOString())
-    .not("status", "in", '("cancelled","no_show")')
+    .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
     .order("starts_at", { ascending: false })
     .limit(100);
 

@@ -71,7 +71,7 @@ export function derivePatientJourneyStage(input: {
 
   const completedSessions = appointments.filter((a) => a.status === "completed").length;
   const hasFutureAppt = appointments.some(
-    (a) => a.starts_at >= nowIso && a.status !== "cancelled" && a.status !== "no_show",
+    (a) => a.starts_at >= nowIso && !["cancelled", "cancelled_notice", "late_cancel", "no_show"].includes(a.status ?? ""),
   );
   const activePlan = treatmentPlans.some((p) => p.status === "active");
   const completedPlan = treatmentPlans.some((p) => p.status === "completed");

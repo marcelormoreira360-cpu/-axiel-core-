@@ -65,7 +65,10 @@
     "completed": "Realizado",
     "cancelled": "Cancelado",
     "no_show": "Faltou",
-    "pending": "A aguardar confirmação"
+    "pending": "A aguardar confirmação",
+    "checked_in": "Em atendimento",
+    "cancelled_notice": "Cancelado com aviso",
+    "late_cancel": "Cancelamento tardio"
   },
   "push": {
     "title": "Ativar notificações",

@@ -43,7 +43,8 @@ export async function GET(req: Request) {
   const locale = await resolveClinicLocale(clinic.id);
   const t = await getServerT(locale, "pdf");
   const statusLoc = (s: string) =>
-    (["scheduled", "completed", "cancelled", "no_show"] as string[]).includes(s) ? t(`sessionStatus.${s}`) : s;
+    (["scheduled", "confirmed", "pending", "checked_in", "completed", "cancelled", "cancelled_notice", "late_cancel", "no_show"] as string[]).includes(s)
+      ? t(`sessionStatus.${s}`) : s;
 
   if (format === "pdf") {
     const { buildTablePdf, pdfResponse } = await import("@/lib/pdf-report");

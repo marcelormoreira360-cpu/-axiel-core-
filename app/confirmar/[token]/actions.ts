@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
-import { confirmAppointmentByToken } from "@/services/appointment-service";
+import { confirmAppointmentByToken, cancelAppointmentByToken } from "@/services/appointment-service";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -134,4 +134,28 @@ export async function confirmAppointmentAction(
   }
 
   return { success: true, questionnaires };
+}
+
+/**
+ * Cancelamento self-service pelo paciente. Rate limit próprio (mais apertado que
+ * o de confirmação, pois é ação destrutiva). Retorna o status resultante para a
+ * UI escolher a mensagem (com aviso vs tardio) sem expor rótulo frio ao paciente.
+ */
+export async function cancelAppointmentAction(
+  formData: FormData,
+): Promise<{ error?: string; success?: boolean; status?: "cancelled_notice" | "late_cancel" }> {
+  const token = clean(formData.get("token"), 128);
+  if (!token) return { error: "Link inválido." };
+
+  if (!(await checkRateLimitDb(`cancel-appt:${token.slice(0, 16)}`, 6, 60 * 60_000))) {
+    return { error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
+
+  const reason = clean(formData.get("reason"), 300) || null;
+
+  const result = await cancelAppointmentByToken(token, reason);
+  if (!result.ok) return { error: result.error ?? "Não foi possível cancelar." };
+
+  revalidatePath("/schedule");
+  return { success: true, status: result.status };
 }

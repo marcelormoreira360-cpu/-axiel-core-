@@ -44,16 +44,28 @@ export async function generateMetadata({ params }: { params: Promise<{ token: st
   return { title: t("metaTitle"), robots: { index: false, follow: false } };
 }
 
+const TERMINAL_STATUSES = ["completed", "no_show", "cancelled", "cancelled_notice", "late_cancel", "checked_in"];
+
 export default async function ConfirmPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const info = await getInfo(token);
   const locale = await localeForToken(token);
-  const invalid = !info || info.status !== "pending" || info.expired;
 
-  // Questionário-PRIMEIRO: busca os questionários de intake (com perguntas) para
-  // mostrar ANTES dos dados. Vazio p/ paciente que volta → vai direto aos dados.
+  // Modo da tela:
+  //  invalid → link morto/expirado.  confirm → pendente (form + opção cancelar).
+  //  manage  → já confirmado/agendado no futuro (mostra confirmado + cancelar).
+  //  closed  → estado terminal ou horário já passado (mensagem calorosa).
+  const status = info?.status ?? null;
+  const isPast = info ? new Date(info.starts_at).getTime() < Date.now() : false;
+  let mode: "invalid" | "confirm" | "manage" | "closed";
+  if (!info || info.expired) mode = "invalid";
+  else if (status === "pending" && !isPast) mode = "confirm";
+  else if ((status === "confirmed" || status === "scheduled") && !isPast) mode = "manage";
+  else mode = TERMINAL_STATUSES.includes(status ?? "") || isPast ? "closed" : "invalid";
+
+  // Questionário-PRIMEIRO: só no modo de confirmação (pendente).
   let questionnaires: TemplateWithStructure[] = [];
-  if (!invalid && info?.patient?.id) {
+  if (mode === "confirm" && info?.patient?.id) {
     const { getOnboardingTemplatesForPatient } = await import("@/services/onboarding-assessment-service");
     questionnaires = await getOnboardingTemplatesForPatient({ clinicId: info.clinic_id, patientId: info.patient.id });
   }
@@ -62,7 +74,7 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
     <NextIntlClientProvider locale={locale} messages={{ confirmBooking: CONFIRM_MESSAGES[locale] }}>
       <ConfirmClient
         token={token}
-        invalid={invalid}
+        mode={mode}
         clinicName={info?.clinic?.name ?? null}
         logoUrl={info?.clinic?.logo_url ?? null}
         primaryColor={info?.clinic?.primary_color ?? "#0B1F3A"}
