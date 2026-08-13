@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, name, slug, logo_url, primary_color, no_show_fee_mode, late_cancel_fee_mode, cancellation_window_hours")
+    .select("id, name, slug, logo_url, primary_color, no_show_fee_mode, no_show_fee_percent, late_cancel_fee_mode, late_cancel_fee_percent, cancellation_window_hours")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -63,14 +63,29 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   // Gate de consentimento (Lex 2.1): a caixa de aceite da política só é exigida
   // quando a clínica cobra falta/cancelamento tardio (algum modo != 'none').
-  const requiresPolicyConsent =
-    (clinic.no_show_fee_mode ?? "percent") !== "none" ||
-    (clinic.late_cancel_fee_mode ?? "percent") !== "none";
+  const noShowChargeable = (clinic.no_show_fee_mode ?? "percent") !== "none";
+  const lateChargeable = (clinic.late_cancel_fee_mode ?? "percent") !== "none";
+  const requiresPolicyConsent = noShowChargeable || lateChargeable;
   const cancellationWindowHours =
     typeof clinic.cancellation_window_hours === "number" ? clinic.cancellation_window_hours : 24;
 
-  // Não expor a config bruta de taxa da clínica no payload público.
-  const { no_show_fee_mode: _nsm, late_cancel_fee_mode: _lcm, cancellation_window_hours: _cwh, ...clinicPublic } = clinic;
+  // Percentuais são divulgados AO PACIENTE dentro do próprio texto da política, então
+  // podem ir ao payload público (o texto nunca pode divergir do sistema — risco Lex).
+  // Piso/teto e modos brutos NÃO são expostos.
+  const noShowFeePercent =
+    typeof clinic.no_show_fee_percent === "number" ? clinic.no_show_fee_percent : null;
+  const lateCancelFeePercent =
+    typeof clinic.late_cancel_fee_percent === "number" ? clinic.late_cancel_fee_percent : null;
+
+  // Não expor a config bruta de taxa (modos/janela) no payload público.
+  const {
+    no_show_fee_mode: _nsm,
+    no_show_fee_percent: _nsp,
+    late_cancel_fee_mode: _lcm,
+    late_cancel_fee_percent: _lcp,
+    cancellation_window_hours: _cwh,
+    ...clinicPublic
+  } = clinic;
 
   return NextResponse.json({
     clinic: {
@@ -79,6 +94,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       show_powered_by: showPoweredBy,
       requires_policy_consent: requiresPolicyConsent,
       cancellation_window_hours: cancellationWindowHours,
+      no_show_fee_percent: noShowFeePercent,
+      late_cancel_fee_percent: lateCancelFeePercent,
+      no_show_chargeable: noShowChargeable,
+      late_cancel_chargeable: lateChargeable,
     },
     sessionTypes: localizedSessionTypes,
     workingHours: workingHours ?? [],
