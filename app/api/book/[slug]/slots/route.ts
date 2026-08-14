@@ -22,5 +22,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     return NextResponse.json({ error: result.error }, { status: 404 });
   }
 
-  return NextResponse.json({ slots: result.slots });
+  return NextResponse.json({ slots: result.slots, timezone: result.timezone });
 }

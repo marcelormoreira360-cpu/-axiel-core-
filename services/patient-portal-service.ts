@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { resolvePatientTimezone } from "@/lib/timezone";
 
 export type PatientPortalIntakeItem = {
   label: string;
@@ -129,9 +130,14 @@ export type PatientPortalData = {
     slug: string;
     logo_url: string | null;
     primary_color: string | null;
+    /** Fuso IANA da clínica (clinic_settings.timezone). Toda data/hora de agendamento
+     *  exibida ao paciente usa este fuso, não o do navegador. */
+    timezone: string;
     /** PLG: false quando a clínica tem white_label (Enterprise) — oculta o rodapé "Powered by AXIEL" */
     show_powered_by?: boolean;
   };
+  /** Fuso IANA do paciente (salvo/inferido) — para exibir horários no fuso dele. */
+  patientTimezone: string;
   latestInsight: PatientPortalInsight | null;
   sessions: PatientPortalSessionItem[];
   upcomingAppointments: PatientPortalSessionItem[];
@@ -377,7 +383,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   const now = new Date().toISOString();
   const [{ data: patient }, { data: clinic }, { data: latestInsight }, { data: appointments }, { data: upcoming }, { data: sessionRecords }, { data: settings }, { data: activePackage }, { data: offersData }, { data: intakeData }, { data: docsData }, { data: sessionTypesData }, { data: paymentsData }, { data: feedbackData }, { count: unreadCount }, { data: activeSubscriptionData }, { data: clinicSubscription }] = await Promise.all([
-    supabase.from("patients").select("id, full_name, status, email, phone, date_of_birth, address_line, city, state, zip_code, country").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
+    supabase.from("patients").select("id, full_name, status, email, phone, date_of_birth, address_line, city, state, zip_code, country, timezone").eq("id", link.patient_id).eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase.from("clinics").select("id, name, slug, logo_url, primary_color").eq("id", link.clinic_id).maybeSingle(),
     supabase
       .from("ai_insights")
@@ -412,7 +418,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .eq("clinic_id", link.clinic_id)
       .order("updated_at", { ascending: false })
       .limit(5),
-    supabase.from("clinic_settings").select("settings").eq("clinic_id", link.clinic_id).maybeSingle(),
+    supabase.from("clinic_settings").select("timezone, settings").eq("clinic_id", link.clinic_id).maybeSingle(),
     supabase
       .from("patient_packages")
       .select("name, sessions_total, sessions_used")
@@ -611,6 +617,19 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   const insight = latestInsight ? asInsightSummary(latestInsight as AiInsight) : null;
   const settingsObject = (settings?.settings ?? {}) as Record<string, unknown>;
+  // Fuso canônico: coluna clinic_settings.timezone; JSONB settings.timezone é legado (fallback).
+  const clinicTimezone =
+    (settings?.timezone as string | null)
+    ?? (typeof settingsObject.timezone === "string" ? settingsObject.timezone : undefined)
+    ?? "America/Sao_Paulo";
+  // Fuso do paciente (salvo → inferido de telefone/país → fallback clínica).
+  const patientRow = patient as { timezone?: string | null; phone?: string | null; country?: string | null } | null;
+  const patientTimezone = resolvePatientTimezone({
+    stored: patientRow?.timezone,
+    country: patientRow?.country,
+    phone: patientRow?.phone,
+    fallback: clinicTimezone,
+  });
   const whatsappNumber = typeof settingsObject.whatsapp_number === "string" ? settingsObject.whatsapp_number : null;
 
   const availableOffers: PatientPortalOffer[] = (offersData ?? []).map((o) => ({
@@ -724,7 +743,8 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
   return {
     link: link as PatientPortalLink,
     patient: patient as PatientPortalData["patient"],
-    clinic: { ...(clinic as PatientPortalData["clinic"]), show_powered_by: showPoweredBy },
+    clinic: { ...(clinic as PatientPortalData["clinic"]), show_powered_by: showPoweredBy, timezone: clinicTimezone },
+    patientTimezone,
     latestInsight: insight,
     sessions,
     upcomingAppointments: upcomingMapped,

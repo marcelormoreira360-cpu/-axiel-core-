@@ -4,6 +4,7 @@
   "subtitle": "Agendamento com {clinic}",
   "proposedLabel": "Horário reservado para você",
   "minutes": "{count} min",
+  "clinicTimeLabel": "na clínica",
   "sectionPersonal": "Seus dados",
   "sectionAddress": "Endereço",
   "sectionConsent": "Consentimentos",

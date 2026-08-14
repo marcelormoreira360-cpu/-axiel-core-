@@ -172,6 +172,8 @@
     "confirm": "Confirmar agendamento",
     "doneTitle": "Agendamento confirmado!",
     "at": "às",
+    "tzHint": "Horários no seu fuso ({you}); a clínica está em {clinic}.",
+    "clinicTimeLabel": "na clínica",
     "whatsappConfirm": "Uma confirmação foi enviada pelo WhatsApp.",
     "errBook": "Erro ao agendar. Tente novamente.",
     "errConn": "Erro de conexão. Tente novamente."

@@ -11,14 +11,18 @@ import { getSessionRecordByAppointment } from "@/services/session-recording-serv
 import { upsertSessionRecord } from "@/services/session-recording-service";
 import { getLatestAiInsight } from "@/services/ai-insight-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { getClinicTimezone } from "@/services/clinic-service";
+import { resolvePatientTimezone, formatDualTime } from "@/lib/timezone";
 
-function formatTime(iso: string, locale: string) {
-  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+// `timezone` = fuso IANA da clínica. Sem ele, o toLocale* usa o fuso do runtime/navegador
+// (ex.: Brasil UTC-3 vs clínica America/New_York UTC-4) e o horário sai 1h deslocado.
+function formatTime(iso: string, locale: string, timezone: string) {
+  return new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: timezone });
 }
-function formatDate(iso: string, locale: string) {
+function formatDate(iso: string, locale: string, timezone: string) {
   // DATE puro ("YYYY-MM-DD") ancora no meio-dia (evita off-by-one de fuso)
   if (/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) iso = `${iso}T12:00:00`;
-  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short", year: "numeric", timeZone: timezone });
 }
 function age(dob?: string | null) {
   if (!dob) return null;
@@ -38,12 +42,25 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
 
   if (!appointment) notFound();
 
+  // Fuso da clínica: data/hora da sessão sempre exibida nele, não no do navegador.
+  const timezone = await getClinicTimezone(appointment.clinic_id);
+
   const [patient, previousAppointments, latestInsight] = await Promise.all([
     getPatientById(appointment.patient_id),
     getAppointmentsByPatient(appointment.patient_id),
     getLatestAiInsight(appointment.patient_id),
   ]);
   if (!patient) notFound();
+
+  // Fuso do paciente (salvo/inferido) — para o terapeuta ver também o horário
+  // de onde o paciente está e não se confundir na hora da sessão.
+  const patientTimezone = resolvePatientTimezone({
+    stored: patient.timezone,
+    country: patient.country,
+    phone: patient.phone,
+    fallback: timezone,
+  });
+  const apptDual = formatDualTime({ iso: appointment.starts_at, patientTz: patientTimezone, clinicTz: timezone, locale });
 
   const pastSessions = previousAppointments.filter((a) => a.id !== appointmentId);
 
@@ -95,7 +112,11 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
               {patientAge && <span className="text-white/40 font-normal ml-1">· {t("ageSuffix", { age: patientAge })}</span>}
             </p>
             <p className="text-[11px] text-white/40">
-              {formatDate(appointment.starts_at, locale)} · {formatTime(appointment.starts_at, locale)}
+              {apptDual.clinic.dateShort} · {apptDual.clinic.time}
+              {!apptDual.sameZone && <> ({t("clinicTimeShort")}, {apptDual.clinic.label})</>}
+              {!apptDual.sameZone && (
+                <span className="text-[#0F6E56]"> · {apptDual.patient.time} ({t("patientTimeShort")}, {apptDual.patient.label})</span>
+              )}
               {appointment.duration_minutes ? ` · ${appointment.duration_minutes} ${t("minUnit")}` : ""}
             </p>
           </div>
@@ -176,7 +197,7 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
                     </p>
                   )}
                   <p className="text-[9px] text-[#0F6E56]/60 mt-2">
-                    {latestInsight.review_status === "final" ? t("reviewed") : t("draft")} · {formatDate(latestInsight.created_at, locale)}
+                    {latestInsight.review_status === "final" ? t("reviewed") : t("draft")} · {formatDate(latestInsight.created_at, locale, timezone)}
                   </p>
                 </div>
               </div>
@@ -195,12 +216,12 @@ export default async function TeleconsultaPage({ params }: { params: Promise<{ a
                         {pastSessions.length - i}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-medium text-white/70">{formatDate(s.starts_at, locale)}</p>
+                        <p className="text-[11px] font-medium text-white/70">{formatDate(s.starts_at, locale, timezone)}</p>
                         {s.notes && (
                           <p className="text-[10px] text-white/35 truncate mt-[1px]">{s.notes}</p>
                         )}
                       </div>
-                      <span className="text-[10px] text-white/30 shrink-0">{formatTime(s.starts_at, locale)}</span>
+                      <span className="text-[10px] text-white/30 shrink-0">{formatTime(s.starts_at, locale, timezone)}</span>
                     </div>
                   ))}
                 </div>

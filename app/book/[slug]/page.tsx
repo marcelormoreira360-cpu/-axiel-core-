@@ -6,6 +6,7 @@ import { useTranslations, useLocale } from "next-intl";
 import Image from "next/image";
 import { PoweredByAxiel } from "@/components/powered-by-axiel";
 import { getNoShowPolicyText, NO_SHOW_POLICY_VERSION } from "@/modules/no-show-policy/policy-text";
+import { formatDualTime, timezoneLabel } from "@/lib/timezone";
 
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
@@ -55,6 +56,17 @@ export default function BookingPage() {
   const [slots, setSlots]                 = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots]   = useState(false);
   const [selectedSlot, setSelectedSlot]   = useState<Slot | null>(null);
+
+  // Fusos para exibir os horários: o da clínica vem da API de slots; o do paciente
+  // é o do navegador (definido após montar, p/ evitar mismatch de hidratação SSR).
+  const [clinicTz, setClinicTz]           = useState<string>("America/Sao_Paulo");
+  const [patientTz, setPatientTz]         = useState<string | null>(null);
+  useEffect(() => { setPatientTz(Intl.DateTimeFormat().resolvedOptions().timeZone); }, []);
+  const viewerTz = patientTz ?? clinicTz;
+  const crossTz = viewerTz !== clinicTz;
+  // Hora de um slot no fuso do paciente (ex.: "10:00").
+  const slotLabel = (iso: string) =>
+    new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: viewerTz });
 
   const [fullName, setFullName]           = useState("");
   const [email, setEmail]                 = useState("");
@@ -112,7 +124,7 @@ export default function BookingPage() {
     const practId = selectedPractitioner ? `&practitioner_id=${selectedPractitioner.id}` : "";
     fetch(`/api/book/${slug}/slots?date=${selectedDate}&session_type_id=${selectedType.id}${practId}`)
       .then((r) => r.json())
-      .then((d) => { setSlots(d.slots ?? []); })
+      .then((d) => { setSlots(d.slots ?? []); if (d.timezone) setClinicTz(d.timezone); })
       .catch(() => setSlots([]))
       .finally(() => setLoadingSlots(false));
   }, [selectedDate, selectedType, selectedPractitioner, slug]);
@@ -141,17 +153,23 @@ export default function BookingPage() {
           phone,
           notes,
           practitioner_id: selectedPractitioner?.id ?? null,
+          // Fuso do navegador do paciente → salvo em patients.timezone p/ exibir o
+          // horário no fuso dele também em e-mail/WhatsApp.
+          patient_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           policy_accepted: needsPolicyConsent ? policyAccepted : undefined,
           policy_version: needsPolicyConsent ? NO_SHOW_POLICY_VERSION : undefined,
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.ok) { setError(data.error ?? t("errBook")); return; }
-      const d = new Date(selectedSlot.iso);
+      // Exibição dupla: horário no fuso do paciente (viewerTz) e no da clínica.
+      // Quando coincidem, mostra um só. Baseado sempre no instante UTC (selectedSlot.iso).
+      const dual = formatDualTime({ iso: selectedSlot.iso, patientTz: viewerTz, clinicTz, locale });
       setAppointmentDate(
-        d.toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long" }) +
-        ` ${t("at")} ` +
-        d.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+        dual.sameZone
+          ? `${dual.patient.dateLong} ${t("at")} ${dual.patient.time}`
+          : `${dual.patient.dateLong} ${t("at")} ${dual.patient.time} (${dual.patient.label}) · ` +
+            `${dual.clinic.time} ${t("clinicTimeLabel")} (${dual.clinic.label})`,
       );
       setStep("done");
     });
@@ -353,6 +371,15 @@ export default function BookingPage() {
                 </button>
               </div>
             ) : (
+              <>
+              {crossTz && (
+                <p className="mb-3 text-[11px] text-[#A09E98] leading-relaxed">
+                  {t("tzHint", {
+                    you: timezoneLabel(viewerTz, locale),
+                    clinic: timezoneLabel(clinicTz, locale),
+                  })}
+                </p>
+              )}
               <div className="grid grid-cols-3 gap-2">
                 {slots.map((s) => (
                   <button
@@ -377,10 +404,11 @@ export default function BookingPage() {
                       }
                     }}
                   >
-                    {s.time}
+                    {slotLabel(s.iso)}
                   </button>
                 ))}
               </div>
+              </>
             )}
             {selectedSlot && (
               <button
@@ -388,7 +416,7 @@ export default function BookingPage() {
                 className="mt-5 w-full text-white text-[13px] font-medium rounded-[10px] py-3 transition"
                 style={{ background: accent }}
               >
-                {t("continueWith", { time: selectedSlot.time })}
+                {t("continueWith", { time: slotLabel(selectedSlot.iso) })}
               </button>
             )}
           </div>
@@ -409,7 +437,7 @@ export default function BookingPage() {
                   <p className="text-[11px]" style={{ color: accent, opacity: 0.8 }}>{selectedPractitioner.display_name}</p>
                 )}
                 <p className="text-[11px]" style={{ color: accent, opacity: 0.7 }}>
-                  {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short" })} · {selectedSlot.time}
+                  {new Date(`${selectedDate}T12:00:00`).toLocaleDateString(locale, { day: "numeric", month: "short" })} · {slotLabel(selectedSlot.iso)}
                 </p>
               </div>
               {selectedType.price_cents > 0 && (

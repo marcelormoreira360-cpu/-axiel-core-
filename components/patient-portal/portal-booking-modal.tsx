@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { X, ChevronLeft, ChevronRight, Clock, Check } from "lucide-react";
 import type { PatientPortalSessionType } from "@/services/patient-portal-service";
+import { formatDualTime, timezoneLabel } from "@/lib/timezone";
 
 type Slot = { time: string; iso: string };
 
@@ -45,6 +46,14 @@ export function PortalBookingModal({
   const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null);
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Fusos: clínica vem da API de slots; paciente é o do navegador (após montar).
+  const [clinicTz, setClinicTz] = useState<string>("America/Sao_Paulo");
+  const [patientTz, setPatientTz] = useState<string | null>(null);
+  useEffect(() => { setPatientTz(Intl.DateTimeFormat().resolvedOptions().timeZone); }, []);
+  const viewerTz = patientTz ?? clinicTz;
+  const crossTz = viewerTz !== clinicTz;
+  const slotLabel = (iso: string) =>
+    new Date(iso).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: viewerTz });
 
   // Generate the next 14 days (starting tomorrow)
   const days: Date[] = [];
@@ -71,7 +80,7 @@ export function PortalBookingModal({
     fetch(`/api/book/${clinicSlug}/slots?date=${dateStr}&session_type_id=${selectedType.id}`)
       .then((r) => r.json())
       .then((data) => {
-        if (!cancelled) setSlots(data.slots ?? []);
+        if (!cancelled) { setSlots(data.slots ?? []); if (data.timezone) setClinicTz(data.timezone); }
       })
       .catch(() => {
         if (!cancelled) setSlots([]);
@@ -96,6 +105,7 @@ export function PortalBookingModal({
           token: rawToken,
           session_type_id: selectedType.id,
           starts_at: selectedSlot.iso,
+          patient_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       });
       const data = await res.json();
@@ -245,25 +255,32 @@ export function PortalBookingModal({
                       {t("noSlots")}
                     </p>
                   ) : (
-                    <div className="grid grid-cols-4 gap-2">
-                      {slots.map((slot) => {
-                        const isSelected = selectedSlot?.iso === slot.iso;
-                        return (
-                          <button
-                            key={slot.iso}
-                            onClick={() => setSelectedSlot(slot)}
-                            className={`rounded-xl py-2 text-xs font-medium transition border ${
-                              isSelected
-                                ? "text-white border-transparent"
-                                : "text-black/60 border-black/[.08] hover:border-black/20"
-                            }`}
-                            style={isSelected ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
-                          >
-                            {slot.time}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    <>
+                      {crossTz && (
+                        <p className="mb-2 text-[11px] text-black/40 leading-relaxed">
+                          {t("tzHint", { you: timezoneLabel(viewerTz, locale), clinic: timezoneLabel(clinicTz, locale) })}
+                        </p>
+                      )}
+                      <div className="grid grid-cols-4 gap-2">
+                        {slots.map((slot) => {
+                          const isSelected = selectedSlot?.iso === slot.iso;
+                          return (
+                            <button
+                              key={slot.iso}
+                              onClick={() => setSelectedSlot(slot)}
+                              className={`rounded-xl py-2 text-xs font-medium transition border ${
+                                isSelected
+                                  ? "text-white border-transparent"
+                                  : "text-black/60 border-black/[.08] hover:border-black/20"
+                              }`}
+                              style={isSelected ? { backgroundColor: brandColor, borderColor: brandColor } : {}}
+                            >
+                              {slotLabel(slot.iso)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
@@ -294,18 +311,25 @@ export function PortalBookingModal({
               </div>
               <div>
                 <p className="text-base font-semibold text-[#0F1A2E]">{t("doneTitle")}</p>
-                <p className="mt-1.5 text-sm text-black/50">
-                  {new Date(selectedSlot.iso).toLocaleDateString(locale, {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}{" "}
-                  {t("at")}{" "}
-                  {new Date(selectedSlot.iso).toLocaleTimeString(locale, {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </p>
+                {/* Exibição dupla: horário no fuso do paciente e no da clínica
+                    (colapsa quando coincidem). Sempre a partir do instante UTC. */}
+                {(() => {
+                  const dual = formatDualTime({ iso: selectedSlot.iso, patientTz: viewerTz, clinicTz, locale });
+                  return (
+                    <p className="mt-1.5 text-sm text-black/50">
+                      {dual.patient.dateLong} {t("at")} {dual.patient.time}
+                      {!dual.sameZone && <> ({dual.patient.label})</>}
+                      {!dual.sameZone && (
+                        <>
+                          <br />
+                          <span className="text-black/40">
+                            {dual.clinic.time} {t("clinicTimeLabel")} ({dual.clinic.label})
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  );
+                })()}
                 <p className="mt-0.5 text-sm text-black/40">{selectedType.name}</p>
               </div>
               <p className="text-xs text-black/35">{t("whatsappConfirm")}</p>

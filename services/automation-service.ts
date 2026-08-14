@@ -7,6 +7,7 @@ import { sendNpsRequest } from "@/services/email-service";
 import { getServerT, resolveClinicLocale, resolvePatientLocale } from "@/lib/email-i18n";
 import { canUseFeature } from "@/modules/billing/feature-access";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
+import { resolvePatientTimezone, dualTimeLines } from "@/lib/timezone";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 
@@ -162,7 +163,7 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
   const { data: followUps, error } = await supabase
     .from("follow_ups")
-    .select("*, patients(id, full_name, phone, email, locale), appointments(id, starts_at)")
+    .select("*, patients(id, full_name, phone, email, locale, timezone, country), appointments(id, starts_at)")
     .eq("status", "pending")
     .eq("channel", "whatsapp")
     .or(`notes.in.(d-1,nps,d+3,d+30),notes.like.custom:%`)
@@ -254,19 +255,26 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
 
     const tag = fu.notes as string;
     const first = patient.full_name.split(" ")[0];
+    // Fuso do paciente (salvo/inferido) → {horario} em exibição dupla.
+    const patientTz = resolvePatientTimezone({
+      stored: (patient as { timezone?: string | null }).timezone,
+      country: (patient as { country?: string | null }).country,
+      phone: patient.phone,
+      fallback: tz,
+    });
     let body: string;
     if (tag.startsWith("custom:")) {
       const ruleId = tag.replace("custom:", "");
       const tpl = clinicCustomRules.get(fu.clinic_id as string)?.get(ruleId);
       body = tpl
-        ? interpolateTemplate(tpl, first, appt?.starts_at ?? null, tz)
+        ? interpolateTemplate(tpl, first, appt?.starts_at ?? null, tz, patientTz)
         : `Olá, ${first}! 🌿\n\nTemos uma mensagem para você. Entre em contato se precisar de algo.`;
     } else {
       const ruleKey = TAG_TO_RULE_KEY[tag];
       const customTpl = ruleKey ? customTemplates.get(`${fu.clinic_id as string}:${ruleKey}`) : undefined;
       body = customTpl
-        ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null, tz)
-        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null, tz, patient.locale ?? "pt-BR");
+        ? interpolateTemplate(customTpl, first, appt?.starts_at ?? null, tz, patientTz)
+        : buildMessage(tag, patient.full_name, appt?.starts_at ?? null, tz, patient.locale ?? "pt-BR", patientTz);
     }
     const useCase = fu.notes === "d-1" ? "appointment_reminder" : fu.notes === "nps" ? "nps_feedback" : "follow_up";
 
@@ -377,12 +385,23 @@ async function sendReminderEmail(
   const tz = await getClinicTz(fu.clinic_id);
   const t = await getServerT(locale, "emails");
   const first = patient.full_name.split(" ")[0];
-  const dateStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: tz })
-    : t("apptReminder.fallbackDate");
-  const timeStr = appt?.starts_at
-    ? new Date(appt.starts_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz })
-    : t("apptReminder.fallbackTime");
+  // Fuso do paciente (salvo/inferido) → exibição dupla (paciente + clínica).
+  const { data: pTz } = await supabase
+    .from("patients")
+    .select("timezone, country, phone")
+    .eq("id", patient.id)
+    .maybeSingle();
+  const patientTz = resolvePatientTimezone({
+    stored: pTz?.timezone as string | null,
+    country: pTz?.country as string | null,
+    phone: pTz?.phone as string | null,
+    fallback: tz,
+  });
+  const lines = appt?.starts_at
+    ? dualTimeLines({ iso: appt.starts_at, patientTz, clinicTz: tz, locale })
+    : null;
+  const dateStr = lines ? lines.dateStr : t("apptReminder.fallbackDate");
+  const timeStr = lines ? lines.timeStr : t("apptReminder.fallbackTime");
 
   const subject = t("apptReminder.subject", { time: timeStr });
   const bodyText = `Lembrete: sessão amanhã, ${dateStr} às ${timeStr}`;
@@ -650,9 +669,20 @@ export async function sendAppointmentConfirmation(params: {
   const msgLocale = await resolvePatientLocale(patientLocale, clinicId);
   const enMsg = msgLocale.startsWith("en");
   const fmtLocale = enMsg ? "en-US" : "pt-BR";
-  const dateStr = new Date(startsAt).toLocaleDateString(fmtLocale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
-  const timeStr = new Date(startsAt).toLocaleTimeString(fmtLocale, { hour: "2-digit", minute: "2-digit", timeZone: tz });
   const supabase = createSupabaseAdminClient();
+  // Fuso do paciente (salvo/inferido) → exibição dupla (paciente + clínica).
+  const { data: patientTzRow } = await supabase
+    .from("patients")
+    .select("timezone, country")
+    .eq("id", patientId)
+    .maybeSingle();
+  const patientTz = resolvePatientTimezone({
+    stored: patientTzRow?.timezone as string | null,
+    country: patientTzRow?.country as string | null,
+    phone: patientPhone,
+    fallback: tz,
+  });
+  const { dateStr, timeStr } = dualTimeLines({ iso: startsAt, patientTz, clinicTz: tz, locale: fmtLocale });
   const useCase = "appointment_confirmation" as const;
 
   if (patientPhone) {
@@ -690,8 +720,7 @@ export async function sendAppointmentConfirmation(params: {
     const fromAddress = DEFAULT_FROM_EMAIL;
     const locale = msgLocale;
     const t = await getServerT(locale, "emails");
-    const dateStrEmail = new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", timeZone: tz });
-    const timeStrEmail = new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", timeZone: tz });
+    const { dateStr: dateStrEmail, timeStr: timeStrEmail } = dualTimeLines({ iso: startsAt, patientTz, clinicTz: tz, locale });
     const subject = t("apptConfirm.subject", { date: dateStrEmail, time: timeStrEmail });
     const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
     const whatsappUrl = clinicRow?.whatsapp_number

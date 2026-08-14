@@ -2,6 +2,8 @@
   "practitionerDefault": "Practitioner",
   "ageSuffix": "{age}y",
   "minUnit": "min",
+  "clinicTimeShort": "clinic",
+  "patientTimeShort": "patient",
   "sessionNum": "Session #{count}",
   "fullRecord": "Full record",
   "exitSession": "Leave consultation",

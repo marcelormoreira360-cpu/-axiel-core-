@@ -76,10 +76,14 @@ export function UpcomingAppointmentsSection({
   appointments,
   rawToken,
   brandColor,
+  timezone,
+  patientTimezone,
 }: {
   appointments: PatientPortalData["upcomingAppointments"];
   rawToken: string;
   brandColor: string;
+  timezone: string;
+  patientTimezone: string;
 }) {
   const t = useTranslations("portal.dashboard");
   const locale = useLocale();
@@ -93,7 +97,7 @@ export function UpcomingAppointmentsSection({
             className="flex items-start justify-between py-2 border-b border-black/[.05] last:border-0 gap-2"
           >
             <div>
-              <span className="text-sm text-[#0F1A2E]">{formatDateTime(appt.starts_at, locale, t("at"))}</span>
+              <span className="text-sm text-[#0F1A2E]">{formatDateTime(appt.starts_at, locale, t("at"), patientTimezone, timezone)}</span>
               {appt.duration_minutes && (
                 <span className="ml-2 text-xs text-black/40">{appt.duration_minutes} {t("minUnit")}</span>
               )}

@@ -34,6 +34,8 @@
   "whatsappNote": "You'll receive a confirmation via WhatsApp.",
   "errBook": "Error booking. Please try again.",
   "at": "at",
+  "tzHint": "Times in your timezone ({you}); the clinic is in {clinic}.",
+  "clinicTimeLabel": "clinic time",
   "doneTitle": "Booking confirmed!",
   "doneWith": "with {name}",
   "doneConfirmLine1": "A confirmation has been sent to your WhatsApp.",

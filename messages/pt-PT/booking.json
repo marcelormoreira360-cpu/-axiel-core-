@@ -34,6 +34,8 @@
   "whatsappNote": "Você receberá uma confirmação por WhatsApp.",
   "errBook": "Erro ao agendar. Tente novamente.",
   "at": "às",
+  "tzHint": "Horários no seu fuso ({you}); a clínica está em {clinic}.",
+  "clinicTimeLabel": "na clínica",
   "doneTitle": "Agendamento confirmado!",
   "doneWith": "com {name}",
   "doneConfirmLine1": "Uma confirmação foi enviada para o seu WhatsApp.",

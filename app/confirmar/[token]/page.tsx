@@ -3,6 +3,8 @@ import { cache } from "react";
 import { getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getAppointmentByConfirmToken } from "@/services/appointment-service";
+import { getClinicTimezone } from "@/services/clinic-service";
+import { resolvePatientTimezone } from "@/lib/timezone";
 import type { TemplateWithStructure } from "@/lib/types";
 import { pickSessionTypeName } from "@/services/session-type-service";
 import { resolveLocale } from "@/i18n/get-locale";
@@ -50,6 +52,14 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
   const { token } = await params;
   const info = await getInfo(token);
   const locale = await localeForToken(token);
+  // Fuso da clínica + fuso do paciente (salvo/inferido) para exibição dupla.
+  const timezone = info?.clinic_id ? await getClinicTimezone(info.clinic_id) : "UTC";
+  const patientTimezone = resolvePatientTimezone({
+    stored: info?.patient?.timezone,
+    country: info?.patient?.country,
+    phone: info?.patient?.phone,
+    fallback: timezone,
+  });
 
   // Modo da tela:
   //  invalid → link morto/expirado.  confirm → pendente (form + opção cancelar).
@@ -84,6 +94,8 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
         patientName={info?.patient?.full_name ?? ""}
         patientEmail={info?.patient?.email ?? ""}
         patientPhone={info?.patient?.phone ?? ""}
+        timezone={timezone}
+        patientTimezone={patientTimezone}
         intakeForms={questionnaires}
       />
     </NextIntlClientProvider>
