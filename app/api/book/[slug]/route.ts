@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { data: clinic } = await supabase
     .from("clinics")
-    .select("id, name, slug, logo_url, primary_color, no_show_fee_mode, no_show_fee_percent, late_cancel_fee_mode, late_cancel_fee_percent, cancellation_window_hours")
+    .select("id, name, slug, logo_url, primary_color, legal_entity_name, no_show_fee_mode, no_show_fee_percent, late_cancel_fee_mode, late_cancel_fee_percent, cancellation_window_hours")
     .eq("slug", slug)
     .eq("status", "active")
     .maybeSingle();
@@ -77,13 +77,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const lateCancelFeePercent =
     typeof clinic.late_cancel_fee_percent === "number" ? clinic.late_cancel_fee_percent : null;
 
-  // Não expor a config bruta de taxa (modos/janela) no payload público.
+  // Nome legal da entidade que preenche {clinic_name} na política (razão social ->
+  // fallback no nome comercial). Fica no payload porque é EXIBIDO ao paciente dentro
+  // do próprio texto da política (o texto nunca pode divergir do sistema — risco Lex).
+  const policyEntityName =
+    (typeof clinic.legal_entity_name === "string" && clinic.legal_entity_name.trim())
+      ? clinic.legal_entity_name.trim()
+      : clinic.name;
+
+  // Não expor a config bruta de taxa (modos/janela) nem a coluna legal crua no payload.
   const {
     no_show_fee_mode: _nsm,
     no_show_fee_percent: _nsp,
     late_cancel_fee_mode: _lcm,
     late_cancel_fee_percent: _lcp,
     cancellation_window_hours: _cwh,
+    legal_entity_name: _len,
     ...clinicPublic
   } = clinic;
 
@@ -98,6 +107,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       late_cancel_fee_percent: lateCancelFeePercent,
       no_show_chargeable: noShowChargeable,
       late_cancel_chargeable: lateChargeable,
+      policy_entity_name: policyEntityName,
     },
     sessionTypes: localizedSessionTypes,
     workingHours: workingHours ?? [],

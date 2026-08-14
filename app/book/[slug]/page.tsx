@@ -10,7 +10,7 @@ import { getNoShowPolicyText, NO_SHOW_POLICY_VERSION } from "@/modules/no-show-p
 interface SessionType   { id: string; name: string; duration_minutes: number; price_cents: number; }
 interface WorkingHour   { day_of_week: number; is_open: boolean; }
 interface Slot          { time: string; iso: string; }
-interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; show_powered_by?: boolean; requires_policy_consent?: boolean; cancellation_window_hours?: number; no_show_fee_percent?: number | null; late_cancel_fee_percent?: number | null; no_show_chargeable?: boolean; late_cancel_chargeable?: boolean; }
+interface ClinicInfo    { id: string; name: string; slug: string; logo_url?: string | null; primary_color?: string | null; currency?: string; show_powered_by?: boolean; requires_policy_consent?: boolean; cancellation_window_hours?: number; no_show_fee_percent?: number | null; late_cancel_fee_percent?: number | null; no_show_chargeable?: boolean; late_cancel_chargeable?: boolean; policy_entity_name?: string | null; }
 interface Practitioner  { id: string; display_name: string; specialty: string | null; bio: string | null; }
 
 type Step = "profissional" | "service" | "date" | "slot" | "info" | "done";
@@ -476,6 +476,7 @@ export default function BookingPage() {
                 noShowPct: clinic?.no_show_fee_percent ?? 0,
                 lateChargeable: clinic?.late_cancel_chargeable ?? true,
                 noShowChargeable: clinic?.no_show_chargeable ?? true,
+                clinicName: clinic?.policy_entity_name ?? clinic?.name ?? null,
               });
               return (
                 <div className="mt-5 rounded-[10px] border border-black/[.08] bg-[#FBFAF7] px-4 py-3">

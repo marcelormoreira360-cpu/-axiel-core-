@@ -55,6 +55,23 @@ export async function confirmAppointmentAction(
   if (dob && !/^\d{4}-\d{2}-\d{2}$/.test(dob)) return { error: "Data de nascimento inválida." };
   if (!consentData) return { error: "É necessário aceitar o tratamento dos seus dados para confirmar." };
 
+  // Aceite da política de no-show pelo link de confirmação (canal confirm_link).
+  const policyAccepted = formData.get("policy_accepted") === "on";
+
+  // Guard de servidor da política (igual ao booking web): se a clínica cobra falta e o
+  // aceite não veio, não confirma. O checkbox do front é burlável; a checagem real é aqui.
+  {
+    const { getAppointmentByConfirmToken } = await import("@/services/appointment-service");
+    const preInfo = await getAppointmentByConfirmToken(token);
+    if (preInfo?.clinic_id) {
+      const { getClinicPolicyPresentation } = await import("@/services/no-show-policy-presentation");
+      const pres = await getClinicPolicyPresentation(preInfo.clinic_id);
+      if (pres.clinicCharges && !policyAccepted) {
+        return { error: "Para confirmar, leia e aceite a política de agendamento e cancelamento." };
+      }
+    }
+  }
+
   const phone = phoneRaw ? phoneRaw.replace(/\D/g, "") || phoneRaw : null;
 
   const result = await confirmAppointmentByToken(token, {
@@ -89,6 +106,28 @@ export async function confirmAppointmentAction(
     { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "data_processing", granted: true, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding" },
     { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "analytics_anonymized", granted: consentAnalytics, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding" },
   ]);
+
+  // Prova do aceite da política de no-show (canal confirm_link). Mesma tabela append-only,
+  // com consent_type='no_show_policy' + policy_version + appointment_id, igual ao booking
+  // web. Best-effort: se falhar, a confirmação persiste e a fila de decisão de taxa
+  // mostrará "consentimento: ausente". Nunca leva dado clínico.
+  if (policyAccepted && result.appointmentId) {
+    try {
+      const { recordNoShowPolicyConsent } = await import("@/services/no-show-consent-service");
+      await recordNoShowPolicyConsent(
+        {
+          clinicId: result.clinicId,
+          patientId: result.patientId,
+          appointmentId: result.appointmentId,
+          granted: true,
+          source: "confirm_link",
+          ip,
+          userAgent: ua ? ua.slice(0, 300) : null,
+        },
+        supabase,
+      );
+    } catch { /* não bloqueia a confirmação */ }
+  }
 
   // Side-effects pós-confirmação (fire-and-forget): integrações + automações
   if (result.appointmentId && result.startsAt) {

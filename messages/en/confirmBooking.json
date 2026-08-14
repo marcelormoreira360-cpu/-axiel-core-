@@ -49,5 +49,7 @@
   "manageTitle": "Attendance confirmed",
   "manageDesc": "Your time is reserved. See you then!",
   "closedTitle": "Appointment closed",
-  "closedDesc": "This appointment is already closed. Please contact the clinic if you need help."
+  "closedDesc": "This appointment is already closed. Please contact the clinic if you need help.",
+  "policyReadFull": "Read full policy",
+  "policyHide": "Hide policy"
 }

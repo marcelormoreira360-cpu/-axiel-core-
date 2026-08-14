@@ -123,6 +123,13 @@ async function handleBookAppointment(args: Record<string, unknown>): Promise<str
   const email = typeof args.email === "string" && args.email.trim() ? args.email.trim() : null;
   const date = typeof args.date === "string" ? args.date.trim() : "";
   const rawTime = typeof args.time === "string" ? args.time.trim() : "";
+  // Aceite VERBAL da política: a Clara lê a política em voz alta e, quando o paciente
+  // concorda, o agente Vapi manda `policy_acknowledged: true` neste tool call. Só então
+  // registramos a prova (source='voice'). Sem esse argumento, nada é gravado (a fila de
+  // decisão de taxa mostra "consentimento: ausente", como num agendamento interno).
+  // OPERACIONAL: o prompt/tool do Vapi precisa enviar `policy_acknowledged` após ler a
+  // política; caso contrário nenhum aceite verbal é capturado.
+  const policyAcknowledged = args.policy_acknowledged === true || args.policy_acknowledged === "true";
 
   const missing: string[] = [];
   if (!fullName) missing.push("your full name");
@@ -169,6 +176,10 @@ async function handleBookAppointment(args: Record<string, unknown>): Promise<str
     phone,
     email,
     source: "direct",
+    // Voz não bloqueia por consentimento (enforce desligado); só registra o aceite verbal
+    // quando o agente sinaliza que leu a política e o paciente concordou (Lex: verbal
+    // pendente de validação jurídica).
+    voice_verbal_consent: policyAcknowledged,
   });
 
   if (!result.ok) {

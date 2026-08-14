@@ -856,6 +856,16 @@ export async function createPublicBooking(input: {
   /** Prova técnica do aceite (web): IP e user-agent. */
   consent_ip?: string | null;
   consent_user_agent?: string | null;
+  /**
+   * Aceite VERBAL da política pelo canal de VOZ (Vapi). Diferente do checkbox web: a
+   * Clara lê a política em voz alta e o paciente concorda de viva voz. Quando true (e a
+   * clínica cobra falta), registra a prova com source='voice'. Ressalva do Lex: a
+   * suficiência jurídica do aceite verbal (sem assinatura/checkbox) DEPENDE de validação
+   * por advogado — por isso a voz NUNCA bloqueia o agendamento (enforce fica desligado).
+   */
+  voice_verbal_consent?: boolean;
+  /** Nota curta do aceite (sem PHI). Ex.: transcrição "paciente concordou verbalmente". */
+  consent_notes?: string | null;
 }): Promise<CreatePublicBookingResult> {
   const {
     slug,
@@ -1017,6 +1027,32 @@ export async function createPublicBooking(input: {
       );
     } catch (e) {
       log.error("Falha ao registrar aceite da política de no-show", e as Error, {
+        appointment_id: appointment.id,
+        clinic_id: clinic.id,
+      });
+    }
+  } else if (input.voice_verbal_consent === true && clinicCharges) {
+    // Canal de VOZ: aceite VERBAL. Só registra quando a clínica cobra falta (senão não há
+    // política a aceitar). Grava source='voice' + policy_version + appointment_id + nota do
+    // aceite verbal. Ressalva do Lex: a suficiência do verbal (sem assinatura/checkbox)
+    // depende de advogado; por isso a voz não bloqueia a chamada, só registra o que houve.
+    try {
+      const { recordNoShowPolicyConsent } = await import("@/services/no-show-consent-service");
+      await recordNoShowPolicyConsent(
+        {
+          clinicId: clinic.id,
+          patientId,
+          appointmentId: appointment.id,
+          granted: true,
+          source: "voice",
+          notes:
+            input.consent_notes ??
+            "Aceite verbal da politica de agendamento/cancelamento durante a ligacao (Clara/Vapi). Ressalva Lex: suficiencia do verbal pendente de validacao juridica.",
+        },
+        supabase,
+      );
+    } catch (e) {
+      log.error("Falha ao registrar aceite verbal da política de no-show (voz)", e as Error, {
         appointment_id: appointment.id,
         clinic_id: clinic.id,
       });

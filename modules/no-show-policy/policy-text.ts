@@ -21,10 +21,22 @@
  *
  * PLACEHOLDERS DINAMICOS (ligados a config da clinica, para o texto nunca divergir do
  * sistema; risco apontado pelo Lex): {window_hours} = cancellation_window_hours,
- * {late_pct} = late_cancel_fee_percent, {no_show_pct} = no_show_fee_percent. Quando um
- * tipo de taxa esta em modo 'none', a clausula daquele tipo e OMITIDA do documento
- * (ver `chargeable` na config do renderer), para nunca mostrar taxa que a clinica
- * nao cobra.
+ * {late_pct} = late_cancel_fee_percent, {no_show_pct} = no_show_fee_percent,
+ * {clinic_name} = razao social da clinica (clinics.legal_entity_name, com fallback em
+ * clinics.name). Quando um tipo de taxa esta em modo 'none', a clausula daquele tipo e
+ * OMITIDA do documento (ver `chargeable` na config do renderer), para nunca mostrar taxa
+ * que a clinica nao cobra.
+ *
+ * TEMPLATIZACAO DO NOME DA ENTIDADE (decisao honesta de versionamento):
+ *   A v3.0 nasceu com "{clinic_name}" fixo (clinica IFWC). Para o produto vender a
+ *   OUTRAS clinicas, o nome legal virou o placeholder {clinic_name}. Mantivemos a versao
+ *   como no_show_v3.0 (nao criamos v3.1) porque: (a) o nome da entidade e um DADO da
+ *   clinica, ligado a config, exatamente como {window_hours}/{late_pct} ja eram, entao o
+ *   que e versionado e o TEMPLATE, nao o valor injetado; (b) para a IFWC, com
+ *   legal_entity_name = "{clinic_name}", o texto renderizado fica BYTE A BYTE
+ *   igual ao anterior; (c) o gate de consentimento v3.0 ainda NAO foi para producao, logo
+ *   nao existe nenhum aceite arquivado nessa versao a invalidar. Se um dia houver aceite
+ *   em campo e o template mudar de forma substantiva, ai sim cria-se v3.1/v4.0.
  */
 
 /** Status editorial do texto. */
@@ -98,18 +110,26 @@ export type NoShowPolicyConfig = {
   lateChargeable?: boolean;
   /** false quando no_show_fee_mode = 'none' -> omite a clausula de no-show. */
   noShowChargeable?: boolean;
+  /**
+   * Nome legal da clinica que preenche {clinic_name} (clinics.legal_entity_name, com
+   * fallback em clinics.name). Quando ausente/vazio, cai num rotulo generico por idioma
+   * (ver GENERIC_CLINIC_NAME) so para o texto nao ficar quebrado — na pratica os
+   * call-sites sempre passam o nome real (clinics.name nunca e nulo).
+   */
+  clinicName?: string | null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────
 // v3.0 — DOCUMENTO COMPLETO. Texto EN canonico do .docx aprovado; pt-BR/pt-PT/es sao
 // traducoes fieis (tom formal-cordial, sem travessao, sem claim clinico). Nao editar
-// sem versionar (criar v4.0). "Moreira & Angeli LLC" em todos os idiomas.
+// sem versionar (criar v4.0). O nome da entidade sai por {clinic_name} em todos os
+// idiomas (era "{clinic_name}" fixo; ver nota de templatizacao no topo do arquivo).
 // ─────────────────────────────────────────────────────────────────────────────────
 
 const V3_0_EN: PolicyDocument = {
   title: "Appointment Scheduling & Cancellation Policy",
   intro:
-    "At Moreira & Angeli LLC, we reserve each appointment exclusively for you. The time scheduled for your visit is dedicated solely to your care and is generally unavailable to other patients once reserved. If you need to cancel or reschedule, we kindly ask that you provide advance notice so that we may offer the appointment to another patient.",
+    "At {clinic_name}, we reserve each appointment exclusively for you. The time scheduled for your visit is dedicated solely to your care and is generally unavailable to other patients once reserved. If you need to cancel or reschedule, we kindly ask that you provide advance notice so that we may offer the appointment to another patient.",
   sections: [
     {
       heading: "Cancellation and Rescheduling Policy",
@@ -169,7 +189,7 @@ const V3_0_EN: PolicyDocument = {
         {
           kind: "text",
           text:
-            "Moreira & Angeli LLC does not automatically assess cancellation or no-show fees. Before any fee is assessed:",
+            "{clinic_name} does not automatically assess cancellation or no-show fees. Before any fee is assessed:",
         },
         {
           kind: "list",
@@ -252,7 +272,7 @@ const V3_0_EN: PolicyDocument = {
 const V3_0_PT_BR: PolicyDocument = {
   title: "Política de Agendamento e Cancelamento",
   intro:
-    "Na Moreira & Angeli LLC, reservamos cada atendimento exclusivamente para você. O horário marcado para a sua consulta é dedicado unicamente ao seu cuidado e, uma vez reservado, em geral fica indisponível para outros pacientes. Se precisar cancelar ou remarcar, pedimos gentilmente que avise com antecedência, para que possamos oferecer o horário a outro paciente.",
+    "Na {clinic_name}, reservamos cada atendimento exclusivamente para você. O horário marcado para a sua consulta é dedicado unicamente ao seu cuidado e, uma vez reservado, em geral fica indisponível para outros pacientes. Se precisar cancelar ou remarcar, pedimos gentilmente que avise com antecedência, para que possamos oferecer o horário a outro paciente.",
   sections: [
     {
       heading: "Política de Cancelamento e Remarcação",
@@ -312,7 +332,7 @@ const V3_0_PT_BR: PolicyDocument = {
         {
           kind: "text",
           text:
-            "A Moreira & Angeli LLC não aplica automaticamente taxas de cancelamento ou de falta. Antes de qualquer taxa ser aplicada:",
+            "A {clinic_name} não aplica automaticamente taxas de cancelamento ou de falta. Antes de qualquer taxa ser aplicada:",
         },
         {
           kind: "list",
@@ -395,7 +415,7 @@ const V3_0_PT_BR: PolicyDocument = {
 const V3_0_PT_PT: PolicyDocument = {
   title: "Política de Marcação e Cancelamento",
   intro:
-    "Na Moreira & Angeli LLC, reservamos cada consulta exclusivamente para si. O horário marcado para a sua consulta é dedicado unicamente ao seu acompanhamento e, uma vez reservado, fica geralmente indisponível para outros pacientes. Caso precise de cancelar ou remarcar, pedimos gentilmente que avise com antecedência, para que possamos oferecer o horário a outro paciente.",
+    "Na {clinic_name}, reservamos cada consulta exclusivamente para si. O horário marcado para a sua consulta é dedicado unicamente ao seu acompanhamento e, uma vez reservado, fica geralmente indisponível para outros pacientes. Caso precise de cancelar ou remarcar, pedimos gentilmente que avise com antecedência, para que possamos oferecer o horário a outro paciente.",
   sections: [
     {
       heading: "Política de Cancelamento e Remarcação",
@@ -455,7 +475,7 @@ const V3_0_PT_PT: PolicyDocument = {
         {
           kind: "text",
           text:
-            "A Moreira & Angeli LLC não aplica automaticamente taxas de cancelamento ou de falta. Antes de qualquer taxa ser aplicada:",
+            "A {clinic_name} não aplica automaticamente taxas de cancelamento ou de falta. Antes de qualquer taxa ser aplicada:",
         },
         {
           kind: "list",
@@ -538,7 +558,7 @@ const V3_0_PT_PT: PolicyDocument = {
 const V3_0_ES: PolicyDocument = {
   title: "Política de Programación y Cancelación de Citas",
   intro:
-    "En Moreira & Angeli LLC, reservamos cada cita exclusivamente para usted. El horario programado para su visita se dedica únicamente a su cuidado y, una vez reservado, por lo general no está disponible para otros pacientes. Si necesita cancelar o reprogramar, le pedimos amablemente que avise con antelación, para que podamos ofrecer la cita a otro paciente.",
+    "En {clinic_name}, reservamos cada cita exclusivamente para usted. El horario programado para su visita se dedica únicamente a su cuidado y, una vez reservado, por lo general no está disponible para otros pacientes. Si necesita cancelar o reprogramar, le pedimos amablemente que avise con antelación, para que podamos ofrecer la cita a otro paciente.",
   sections: [
     {
       heading: "Política de Cancelación y Reprogramación",
@@ -598,7 +618,7 @@ const V3_0_ES: PolicyDocument = {
         {
           kind: "text",
           text:
-            "Moreira & Angeli LLC no aplica automáticamente cargos por cancelación o ausencia. Antes de aplicar cualquier cargo:",
+            "{clinic_name} no aplica automáticamente cargos por cancelación o ausencia. Antes de aplicar cualquier cargo:",
         },
         {
           kind: "list",
@@ -762,6 +782,18 @@ function normalizeLang(locale: string | null | undefined): PolicyLang {
   return "pt-BR";
 }
 
+/**
+ * Rotulo generico por idioma para {clinic_name} quando nenhum nome e informado. So um
+ * salvaguarda para o texto nao ficar quebrado ("At , we reserve..."). Na pratica os
+ * call-sites sempre passam clinics.legal_entity_name ?? clinics.name (nunca nulo).
+ */
+const GENERIC_CLINIC_NAME: Record<PolicyLang, string> = {
+  en: "our clinic",
+  "pt-BR": "a clínica",
+  "pt-PT": "a clínica",
+  es: "la clínica",
+};
+
 function keepClause(clause: Clause | undefined, cfg: Required<NoShowPolicyConfig>): boolean {
   if (clause === "late") return cfg.lateChargeable;
   if (clause === "no_show") return cfg.noShowChargeable;
@@ -770,6 +802,7 @@ function keepClause(clause: Clause | undefined, cfg: Required<NoShowPolicyConfig
 
 function fill(text: string, cfg: Required<NoShowPolicyConfig>): string {
   return text
+    .replaceAll("{clinic_name}", String(cfg.clinicName))
     .replaceAll("{window_hours}", String(cfg.windowHours))
     .replaceAll("{late_pct}", String(cfg.latePct))
     .replaceAll("{no_show_pct}", String(cfg.noShowPct));
@@ -813,14 +846,15 @@ export function getNoShowPolicyText(
   locale: string | null | undefined,
   config: NoShowPolicyConfig = {},
 ): RenderedNoShowPolicy {
+  const lang = normalizeLang(locale);
   const cfg: Required<NoShowPolicyConfig> = {
     windowHours: config.windowHours ?? 24,
     latePct: config.latePct ?? 0,
     noShowPct: config.noShowPct ?? 0,
     lateChargeable: config.lateChargeable ?? true,
     noShowChargeable: config.noShowChargeable ?? true,
+    clinicName: config.clinicName?.trim() || GENERIC_CLINIC_NAME[lang],
   };
-  const lang = normalizeLang(locale);
   const doc = V3_0[lang];
   return {
     version: NO_SHOW_POLICY_VERSION,
