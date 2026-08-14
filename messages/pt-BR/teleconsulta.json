@@ -2,6 +2,8 @@
   "practitionerDefault": "Praticante",
   "ageSuffix": "{age}a",
   "minUnit": "min",
+  "clinicTimeShort": "clínica",
+  "patientTimeShort": "paciente",
   "sessionNum": "Sessão #{count}",
   "fullRecord": "Prontuário completo",
   "exitSession": "Sair da consulta",

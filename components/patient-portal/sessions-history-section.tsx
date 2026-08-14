@@ -13,11 +13,13 @@ function SessionHistoryCard({
   sessionNumber,
   rawToken,
   brandColor,
+  timezone,
 }: {
   session: import("@/services/patient-portal-service").PatientPortalSessionItem;
   sessionNumber: number;
   rawToken: string;
   brandColor: string;
+  timezone: string;
 }) {
   const t = useTranslations("portal.dashboard");
   const locale = useLocale();
@@ -35,7 +37,7 @@ function SessionHistoryCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-medium text-[#0F1A2E]">{t("sessionNum", { number: sessionNumber })}</span>
-              <span className="text-xs text-black/40">{formatDate(session.starts_at, locale)}</span>
+              <span className="text-xs text-black/40">{formatDate(session.starts_at, locale, timezone)}</span>
               {session.session_type_name && (
                 <span className="text-[10px] bg-black/[.05] text-black/45 rounded-full px-2 py-0.5">
                   {session.session_type_name}
@@ -95,10 +97,12 @@ export function SessionsHistorySection({
   sessions,
   rawToken,
   brandColor,
+  timezone,
 }: {
   sessions: PatientPortalData["sessions"];
   rawToken: string;
   brandColor: string;
+  timezone: string;
 }) {
   const t = useTranslations("portal.dashboard");
 
@@ -116,6 +120,7 @@ export function SessionsHistorySection({
             sessionNumber={sessions.length - index}
             rawToken={rawToken}
             brandColor={brandColor}
+            timezone={timezone}
           />
         ))}
       </div>

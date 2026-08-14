@@ -86,6 +86,8 @@ export function PatientPortalDashboard({
           whatsappUrl={data.whatsappUrl}
           rawToken={rawToken}
           brandColor={brandColor}
+          timezone={data.clinic.timezone}
+          patientTimezone={data.patientTimezone}
         />
 
         {/* Pacote ativo */}
@@ -254,6 +256,7 @@ export function PatientPortalDashboard({
             sessions={data.sessions}
             rawToken={rawToken}
             brandColor={brandColor}
+            timezone={data.patientTimezone}
           />
         )}
 
@@ -290,6 +293,8 @@ export function PatientPortalDashboard({
             appointments={data.upcomingAppointments}
             rawToken={rawToken}
             brandColor={brandColor}
+            timezone={data.clinic.timezone}
+            patientTimezone={data.patientTimezone}
           />
         )}
 

@@ -55,6 +55,9 @@ export type Patient = {
   full_name: string;
   /** Idioma preferido do paciente para mensagens (null = herda o da clínica) */
   locale?: "pt-BR" | "en" | "pt-PT" | null;
+  /** Fuso IANA do paciente (ex.: "America/Sao_Paulo"). Capturado do navegador no
+   *  1º acesso ao link; null = inferir de phone/country → fallback fuso da clínica. */
+  timezone?: string | null;
   first_name: string | null;
   last_name: string | null;
   email: string | null;

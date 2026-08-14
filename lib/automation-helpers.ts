@@ -4,22 +4,30 @@
  * without importing Supabase / Resend dependencies.
  */
 
+import { dualTimeLines } from "./timezone";
+
 // ─── Template interpolation ───────────────────────────────────────────────────
 
 /**
  * Replaces {{nome}}, {{horario}}, {{data}} in a custom template string.
+ * Quando `patientTz` difere de `timeZone` (clínica), {{horario}} vira exibição
+ * dupla (paciente + clínica).
  */
 export function interpolateTemplate(
   template: string,
   firstName: string,
   startsAt: string | null,
-  timeZone?: string
+  timeZone?: string,
+  patientTz?: string
 ): string {
-  const time = startsAt
-    ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
+  const dual = startsAt && timeZone && patientTz && patientTz !== timeZone
+    ? dualTimeLines({ iso: startsAt, patientTz, clinicTz: timeZone, locale: "pt-BR" })
+    : null;
+  const time = dual ? dual.timeStr
+    : startsAt ? new Date(startsAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
     : "horário agendado";
-  const date = startsAt
-    ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone })
+  const date = dual ? dual.dateStr
+    : startsAt ? new Date(startsAt).toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone })
     : "data agendada";
   return template
     .replace(/{{nome}}/g, firstName)
@@ -38,14 +46,18 @@ export function buildMessage(
   fullName: string,
   startsAt: string | null,
   timeZone?: string,
-  locale: string = "pt-BR"
+  locale: string = "pt-BR",
+  patientTz?: string
 ): string {
   const first = fullName.split(" ")[0];
   const en = locale.startsWith("en");
 
   if (tag === "d-1") {
-    const time = startsAt
-      ? new Date(startsAt).toLocaleTimeString(en ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
+    const dual = startsAt && timeZone && patientTz && patientTz !== timeZone
+      ? dualTimeLines({ iso: startsAt, patientTz, clinicTz: timeZone, locale: en ? "en-US" : "pt-BR" })
+      : null;
+    const time = dual ? dual.timeStr
+      : startsAt ? new Date(startsAt).toLocaleTimeString(en ? "en-US" : "pt-BR", { hour: "2-digit", minute: "2-digit", timeZone })
       : en ? "the scheduled time" : "horário agendado";
     return en
       ? `Hi, ${first}! 👋\n\nReminder: your session is *tomorrow* at ${time}. 📅\n\nSee you there!`

@@ -4,6 +4,7 @@
   "subtitle": "Appointment with {clinic}",
   "proposedLabel": "Time reserved for you",
   "minutes": "{count} min",
+  "clinicTimeLabel": "clinic time",
   "sectionPersonal": "Your details",
   "sectionAddress": "Address",
   "sectionConsent": "Consents",

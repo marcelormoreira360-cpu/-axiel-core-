@@ -172,6 +172,8 @@
     "confirm": "Confirm booking",
     "doneTitle": "Booking confirmed!",
     "at": "at",
+    "tzHint": "Times in your timezone ({you}); the clinic is in {clinic}.",
+    "clinicTimeLabel": "clinic time",
     "whatsappConfirm": "A confirmation has been sent via WhatsApp.",
     "errBook": "Error booking. Please try again.",
     "errConn": "Connection error. Please try again."

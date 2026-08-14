@@ -12,11 +12,15 @@ export function NextSessionCard({
   whatsappUrl,
   rawToken,
   brandColor,
+  timezone,
+  patientTimezone,
 }: {
   nextSession: PatientPortalData["upcomingAppointments"][number] | undefined;
   whatsappUrl: PatientPortalData["whatsappUrl"];
   rawToken: string;
   brandColor: string;
+  timezone: string;
+  patientTimezone: string;
 }) {
   const t = useTranslations("portal.dashboard");
   const locale = useLocale();
@@ -24,7 +28,7 @@ export function NextSessionCard({
   return nextSession ? (
     <div className="rounded-2xl p-5 text-white" style={{ backgroundColor: brandColor }}>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50 mb-2">{t("nextSession")}</p>
-      <p className="text-lg font-semibold">{formatDateTime(nextSession.starts_at, locale, t("at"))}</p>
+      <p className="text-lg font-semibold">{formatDateTime(nextSession.starts_at, locale, t("at"), patientTimezone, timezone)}</p>
       {nextSession.duration_minutes && (
         <p className="text-sm text-white/60 mt-1">{t("minutes", { count: nextSession.duration_minutes })}</p>
       )}

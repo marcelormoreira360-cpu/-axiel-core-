@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { getServerT } from "@/lib/email-i18n";
 import { isLocale, DEFAULT_LOCALE } from "@/i18n/locales";
+import { dualTimeLines } from "@/lib/timezone";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const FROM = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
@@ -87,6 +88,8 @@ export async function sendAppointmentConfirmation({
   clinicName,
   sessionTypeName,
   startsAt,
+  timezone,
+  patientTimezone,
   portalUrl,
   locale,
 }: {
@@ -95,14 +98,17 @@ export async function sendAppointmentConfirmation({
   clinicName: string;
   sessionTypeName: string;
   startsAt: string;
+  /** Fuso IANA da clínica (getClinicTimezone). Sem ele, o toLocale* usa o fuso do
+   *  RUNTIME (UTC na Vercel) e o horário sai deslocado no e-mail. */
+  timezone: string;
+  /** Fuso IANA do paciente (salvo/inferido). Exibição dupla quando difere da clínica. */
+  patientTimezone?: string;
   portalUrl?: string;
   locale?: string;
 }) {
   const loc = htmlLang(locale);
   const t = await getServerT(loc, "emails");
-  const date = new Date(startsAt);
-  const dateStr = date.toLocaleDateString(loc, { weekday: "long", day: "numeric", month: "long", year: "numeric" });
-  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+  const { dateStr, timeStr } = dualTimeLines({ iso: startsAt, patientTz: patientTimezone ?? timezone, clinicTz: timezone, locale: loc });
 
   const body = `
     <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("confirm.title")}</p>
@@ -133,6 +139,8 @@ export async function sendAppointmentReminder({
   clinicName,
   sessionTypeName,
   startsAt,
+  timezone,
+  patientTimezone,
   portalUrl,
   locale,
 }: {
@@ -141,13 +149,16 @@ export async function sendAppointmentReminder({
   clinicName: string;
   sessionTypeName: string;
   startsAt: string;
+  /** Fuso IANA da clínica (getClinicTimezone). Ver nota em sendAppointmentConfirmation. */
+  timezone: string;
+  /** Fuso IANA do paciente (salvo/inferido). Exibição dupla quando difere da clínica. */
+  patientTimezone?: string;
   portalUrl?: string;
   locale?: string;
 }) {
   const loc = htmlLang(locale);
   const t = await getServerT(loc, "emails");
-  const date = new Date(startsAt);
-  const timeStr = date.toLocaleTimeString(loc, { hour: "2-digit", minute: "2-digit" });
+  const { timeStr } = dualTimeLines({ iso: startsAt, patientTz: patientTimezone ?? timezone, clinicTz: timezone, locale: loc });
 
   const body = `
     <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#0F1A2E;letter-spacing:-0.02em;">${t("reminder.title")}</p>

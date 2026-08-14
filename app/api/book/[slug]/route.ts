@@ -125,7 +125,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
 
   const { slug } = await params;
   const body = await req.json();
-  const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id, policy_accepted } = body;
+  const { session_type_id, starts_at, full_name, email, phone, notes, practitioner_id, policy_accepted, patient_timezone } = body;
 
   if (!session_type_id || !starts_at || !full_name || !phone) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes." }, { status: 400 });
@@ -181,6 +181,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ slu
     practitioner_id,
     locale: bookingLocale,
     source: "website",
+    patient_timezone: typeof patient_timezone === "string" ? patient_timezone : null,
     policy_accepted: policy_accepted === true,
     enforce_policy_consent: true,
     consent_ip: consentIp,

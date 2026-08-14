@@ -7,6 +7,7 @@ import { LanguageSwitcher } from "@/components/language-switcher";
 import type { TemplateWithStructure } from "@/lib/types";
 import type { RenderedNoShowPolicy } from "@/modules/no-show-policy/policy-text";
 import { confirmAppointmentAction, cancelAppointmentAction } from "./actions";
+import { formatDualTime } from "@/lib/timezone";
 
 export function ConfirmClient({
   token,
@@ -20,6 +21,8 @@ export function ConfirmClient({
   patientName,
   patientEmail,
   patientPhone,
+  timezone,
+  patientTimezone,
   intakeForms = [],
   policy = null,
 }: {
@@ -34,6 +37,10 @@ export function ConfirmClient({
   patientName: string;
   patientEmail: string;
   patientPhone: string;
+  /** Fuso IANA da clínica (ex.: "America/New_York"). */
+  timezone: string;
+  /** Fuso IANA do paciente (salvo/inferido no servidor). Exibição dupla quando difere. */
+  patientTimezone: string;
   /** Questionários de intake para responder ANTES dos dados (obrigatórios). */
   intakeForms?: TemplateWithStructure[];
   /**
@@ -128,11 +135,17 @@ export function ConfirmClient({
     });
   }
 
-  const dateStr = startsAt
-    ? new Date(startsAt).toLocaleDateString(locale, { weekday: "long", day: "numeric", month: "long", year: "numeric" })
-    : "";
-  const timeStr = startsAt
-    ? new Date(startsAt).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })
+  // Exibição dupla: data no fuso do paciente; hora no fuso do paciente e, quando
+  // diferente, também no da clínica. Sempre a partir do instante UTC — nunca do
+  // fuso do navegador (que deslocaria o horário, ex.: Brasil UTC-3 vs NY UTC-4).
+  const dual = startsAt
+    ? formatDualTime({ iso: startsAt, patientTz: patientTimezone, clinicTz: timezone, locale })
+    : null;
+  const dateStr = dual ? dual.patient.dateLong : "";
+  const timeStr = dual
+    ? dual.sameZone
+      ? dual.patient.time
+      : `${dual.patient.time} (${dual.patient.label}) · ${dual.clinic.time} ${t("clinicTimeLabel")} (${dual.clinic.label})`
     : "";
 
   const labelCls = "block text-[12px] font-medium text-[#0F1A2E] mb-[5px]";
@@ -144,6 +157,8 @@ export function ConfirmClient({
     setError(null);
     const fd = new FormData(e.currentTarget);
     fd.set("token", token);
+    // Fuso do navegador do paciente → salvo em patients.timezone (set-if-empty).
+    fd.set("patient_timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     if (intakeForms.length > 0) fd.set("responses", JSON.stringify(buildResponsesPayload()));
     // Aceite da política (canal confirm_link). O checkbox tem name="policy_accepted";
     // reforçamos o valor aqui para não depender só do estado do input não-controlado.

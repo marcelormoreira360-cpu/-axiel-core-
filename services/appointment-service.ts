@@ -4,6 +4,7 @@ import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
 import { generateSlots, dayOfWeekFromDate } from "@/lib/booking-utils";
 import { getClinicTimezone } from "@/services/clinic-service";
+import { isValidTimezone, inferTimezoneFromPhone, inferTimezoneFromCountry } from "@/lib/timezone";
 import { normalizePhoneDigits } from "@/lib/phone";
 import { scheduleAutomations } from "@/services/automation-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
@@ -221,7 +222,7 @@ export type ConfirmAppointmentInfo = {
   status: string | null;
   expired: boolean;
   clinic: { name: string; logo_url: string | null; primary_color: string | null } | null;
-  patient: { id: string; full_name: string; email: string | null; phone: string | null; locale: string | null } | null;
+  patient: { id: string; full_name: string; email: string | null; phone: string | null; locale: string | null; timezone: string | null; country: string | null } | null;
   session_type_name: string | null;
   session_type_name_i18n: Record<string, string>;
 };
@@ -232,7 +233,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
   const supabase = createSupabaseAdminClient();
   const { data } = await supabase
     .from("appointments")
-    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone, locale), clinics(name, logo_url, primary_color), session_types(name, session_type_translations(locale, name))")
+    .select("id, clinic_id, starts_at, duration_minutes, status, confirm_expires_at, patients(id, full_name, email, phone, locale, timezone, country), clinics(name, logo_url, primary_color), session_types(name, session_type_translations(locale, name))")
     .eq("confirm_token_hash", hashConfirmToken(token))
     .maybeSingle();
   if (!data) return null;
@@ -251,7 +252,7 @@ export async function getAppointmentByConfirmToken(token: string): Promise<Confi
     status: data.status,
     expired,
     clinic: clinic ? { name: clinic.name, logo_url: clinic.logo_url ?? null, primary_color: clinic.primary_color ?? null } : null,
-    patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null, locale: patient.locale ?? null } : null,
+    patient: patient ? { id: patient.id, full_name: patient.full_name, email: patient.email ?? null, phone: patient.phone ?? null, locale: patient.locale ?? null, timezone: patient.timezone ?? null, country: patient.country ?? null } : null,
     session_type_name: st?.name ?? null,
     session_type_name_i18n: Object.fromEntries(sttRows.map((r) => [r.locale, r.name])),
   };
@@ -267,6 +268,7 @@ export async function confirmAppointmentByToken(
     full_name: string; email: string | null; phone: string | null; cpf: string | null;
     date_of_birth: string | null; address_line: string | null; neighborhood: string | null;
     city: string | null; state: string | null; zip_code: string | null; country: string | null;
+    timezone: string | null;
   }>,
 ): Promise<{ ok: boolean; error?: string; clinicId?: string; patientId?: string; appointmentId?: string; startsAt?: string }> {
   const info = await getAppointmentByConfirmToken(token);
@@ -275,6 +277,15 @@ export async function confirmAppointmentByToken(
   if (info.expired) return { ok: false, error: "Este link expirou. Solicite um novo à clínica." };
 
   const supabase = createSupabaseAdminClient();
+
+  // O fuso é capturado separadamente (set-if-empty ao final), não junto dos demais
+  // campos — assim não sobrescreve um fuso já salvo a cada confirmação.
+  const providedTimezone = patientFields.timezone ?? null;
+  if ("timezone" in patientFields) {
+    const rest = { ...patientFields };
+    delete rest.timezone;
+    patientFields = rest;
+  }
 
   // Paciente resolvido: começa no cadastro ligado ao agendamento (stub do
   // booking), mas pode ser trocado pelo cadastro já existente se o e-mail
@@ -364,6 +375,26 @@ export async function confirmAppointmentByToken(
     actor_type: "patient",
     reason: null,
   }).then(({ error: e }) => { if (e) log.error("Falha ao logar confirmação (status event)", e); });
+
+  // Captura do fuso do paciente (navegador válido ou inferido do telefone/país),
+  // só se ainda vazio no cadastro. O paciente abre o link de confirmação no
+  // próprio navegador, então o valor reflete onde ele está.
+  if (resolvedPatientId) {
+    const { data: pRow } = await supabase
+      .from("patients")
+      .select("timezone, phone, country")
+      .eq("id", resolvedPatientId)
+      .maybeSingle();
+    if (pRow && !pRow.timezone) {
+      const capturedTz = isValidTimezone(providedTimezone)
+        ? providedTimezone
+        : (inferTimezoneFromPhone(pRow.phone as string | null)
+          ?? inferTimezoneFromCountry(pRow.country as string | null));
+      if (capturedTz) {
+        await supabase.from("patients").update({ timezone: capturedTz }).eq("id", resolvedPatientId);
+      }
+    }
+  }
 
   return { ok: true, clinicId: info.clinic_id, patientId: resolvedPatientId, appointmentId: info.id, startsAt: info.starts_at };
 }
@@ -843,6 +874,13 @@ export async function createPublicBooking(input: {
   locale?: string | null;
   source?: AppointmentSource;
   /**
+   * Fuso IANA do navegador do paciente (Intl…timeZone), capturado no front do
+   * booking. Salvo em patients.timezone quando ainda vazio, para exibir o horário
+   * no fuso do paciente também em e-mail/WhatsApp. Canal de voz não envia (fica
+   * para inferência por telefone/país).
+   */
+  patient_timezone?: string | null;
+  /**
    * Gate de consentimento da política de no-show (Lex). O paciente marcou a caixa
    * de aceite? Só relevante quando a clínica cobra falta/cancelamento tardio.
    */
@@ -945,20 +983,27 @@ export async function createPublicBooking(input: {
   const normalizedPhone = normalizePhoneDigits(phone) ?? phone.replace(/\D/g, "");
   let patientId: string;
 
+  // Fuso a capturar: valor do navegador (se IANA válido) ou inferido do telefone.
+  // Não usa o fuso da clínica como fallback aqui para não "marcar" um paciente de
+  // fuso desconhecido — fica null e é preenchido num acesso futuro.
+  const capturedTz = isValidTimezone(input.patient_timezone)
+    ? input.patient_timezone
+    : inferTimezoneFromPhone(normalizedPhone);
+
   // BUG-01: separate .eq() calls to avoid PostgREST filter injection
   // SEC-05: fetch existing email so we only update if the field was empty
   const { data: existing } = await supabase
     .from("patients")
-    .select("id, email, locale")
+    .select("id, email, locale, timezone")
     .eq("clinic_id", clinic.id)
     .eq("phone", normalizedPhone)
     .maybeSingle();
 
-  let existingByEmail: { id: string; email: string | null; locale: string | null } | null = null;
+  let existingByEmail: { id: string; email: string | null; locale: string | null; timezone: string | null } | null = null;
   if (!existing && email) {
     const { data } = await supabase
       .from("patients")
-      .select("id, email, locale")
+      .select("id, email, locale, timezone")
       .eq("clinic_id", clinic.id)
       .eq("email", email)
       .maybeSingle();
@@ -973,13 +1018,14 @@ export async function createPublicBooking(input: {
     const updates: Record<string, string> = {};
     if (email && !existingPatient.email) updates.email = email;
     if (bookingLocale && !existingPatient.locale) updates.locale = bookingLocale;
+    if (capturedTz && !existingPatient.timezone) updates.timezone = capturedTz;
     if (Object.keys(updates).length > 0) {
       await supabase.from("patients").update(updates).eq("id", patientId);
     }
   } else {
     const { data: newPatient, error: patientError } = await supabase
       .from("patients")
-      .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active", locale: bookingLocale })
+      .insert({ clinic_id: clinic.id, full_name, email: email || null, phone: normalizedPhone, status: "active", locale: bookingLocale, timezone: capturedTz })
       .select("id")
       .single();
     if (patientError) return { ok: false, error: "Erro ao registrar paciente.", code: "PATIENT_ERROR", status: 500 };

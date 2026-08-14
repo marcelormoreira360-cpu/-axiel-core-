@@ -33,6 +33,7 @@ export async function confirmAppointmentAction(
   const state = clean(formData.get("state"), 40) || null;
   const zipCode = clean(formData.get("zip_code"), 20) || null;
   const country = clean(formData.get("country"), 60) || "Brasil";
+  const patientTimezone = clean(formData.get("patient_timezone"), 64) || null;
 
   const consentData = formData.get("consent_data") === "on";
   const consentAnalytics = formData.get("consent_analytics") === "on";
@@ -86,6 +87,7 @@ export async function confirmAppointmentAction(
     state,
     zip_code: zipCode,
     country,
+    timezone: patientTimezone,
   });
 
   if (!result.ok || !result.patientId || !result.clinicId) {
