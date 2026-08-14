@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, CalendarClock, Loader2, AlertCircle, XCircle } from "lucide-react";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import type { TemplateWithStructure } from "@/lib/types";
+import type { RenderedNoShowPolicy } from "@/modules/no-show-policy/policy-text";
 import { confirmAppointmentAction, cancelAppointmentAction } from "./actions";
 
 export function ConfirmClient({
@@ -20,6 +21,7 @@ export function ConfirmClient({
   patientEmail,
   patientPhone,
   intakeForms = [],
+  policy = null,
 }: {
   token: string;
   mode: "invalid" | "confirm" | "manage" | "closed";
@@ -34,6 +36,12 @@ export function ConfirmClient({
   patientPhone: string;
   /** Questionários de intake para responder ANTES dos dados (obrigatórios). */
   intakeForms?: TemplateWithStructure[];
+  /**
+   * Política de no-show renderizada (texto imutável/versionado). Só vem preenchida
+   * quando a clínica cobra falta/cancelamento tardio; nesse caso o paciente precisa
+   * marcar o aceite para confirmar (igual ao booking web). null = clínica não cobra.
+   */
+  policy?: RenderedNoShowPolicy | null;
 }) {
   const t = useTranslations("confirmBooking");
   const locale = useLocale();
@@ -56,6 +64,9 @@ export function ConfirmClient({
   const [attempted, setAttempted] = useState(false);
   // Respostas por template: { [templateId]: { [questionId]: number|string } }.
   const [formAnswers, setFormAnswers] = useState<Record<string, Record<string, number | string>>>({});
+  // Aceite da política de no-show (só relevante quando `policy` veio preenchida).
+  const [policyAccepted, setPolicyAccepted] = useState(false);
+  const [showPolicy, setShowPolicy] = useState(false);
 
   function setAns(tplId: string, qId: string, v: number | string) {
     setFormAnswers((prev) => ({ ...prev, [tplId]: { ...(prev[tplId] ?? {}), [qId]: v } }));
@@ -134,6 +145,9 @@ export function ConfirmClient({
     const fd = new FormData(e.currentTarget);
     fd.set("token", token);
     if (intakeForms.length > 0) fd.set("responses", JSON.stringify(buildResponsesPayload()));
+    // Aceite da política (canal confirm_link). O checkbox tem name="policy_accepted";
+    // reforçamos o valor aqui para não depender só do estado do input não-controlado.
+    if (policy && policyAccepted) fd.set("policy_accepted", "on");
     startTransition(async () => {
       const res = await confirmAppointmentAction(fd);
       if (res.error) setError(res.error);
@@ -536,13 +550,79 @@ export function ConfirmClient({
             </label>
           </section>
 
+          {/* Aceite da política de agendamento e cancelamento (canal confirm_link).
+              Só quando a clínica cobra falta. Texto imutável/versionado (v3.0). O botão
+              Confirmar fica desabilitado até a caixa ser marcada, igual ao booking web. */}
+          {policy && (
+            <section className="pt-[4px]">
+              <div className="rounded-[10px] border border-black/[.08] bg-[#FBFAF7] px-[14px] py-[12px]">
+                <p className="text-[12px] font-semibold text-[#0F1A2E] mb-[3px]">{policy.title}</p>
+                <p className="text-[11px] leading-relaxed text-[#6B6A66]">{policy.intro}</p>
+                <button
+                  type="button"
+                  onClick={() => setShowPolicy((v) => !v)}
+                  className="mt-[7px] text-[11px] font-medium hover:underline"
+                  style={{ color: primaryColor }}
+                >
+                  {showPolicy ? t("policyHide") : t("policyReadFull")}
+                </button>
+                {showPolicy && (
+                  <div className="mt-[7px] max-h-[320px] overflow-y-auto rounded-[8px] bg-white border border-black/[.06] px-[12px] py-[10px] space-y-[12px]">
+                    {policy.sections.map((section, si) => (
+                      <div key={si}>
+                        <p className="text-[11px] font-semibold text-[#0F1A2E] mb-[4px]">{section.heading}</p>
+                        <div className="space-y-[6px]">
+                          {section.blocks.map((block, bi) => {
+                            if (block.kind === "label") {
+                              return <p key={bi} className="text-[11px] font-medium text-[#4A4844]">{block.text}</p>;
+                            }
+                            if (block.kind === "text") {
+                              return <p key={bi} className="text-[11px] leading-relaxed text-[#6B6A66]">{block.text}</p>;
+                            }
+                            return (
+                              <ul key={bi} className="list-disc pl-[16px] space-y-[4px]">
+                                {block.items.map((item, ii) => (
+                                  <li key={ii} className="text-[11px] leading-relaxed text-[#6B6A66]">
+                                    {item.text}
+                                    {item.sub && item.sub.length > 0 && (
+                                      <ul className="list-[circle] pl-[16px] mt-[4px] space-y-[4px]">
+                                        {item.sub.map((sub, xi) => (
+                                          <li key={xi} className="text-[11px] leading-relaxed text-[#6B6A66]">{sub.text}</li>
+                                        ))}
+                                      </ul>
+                                    )}
+                                  </li>
+                                ))}
+                              </ul>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <label className="mt-[10px] flex items-start gap-[9px] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="policy_accepted"
+                    checked={policyAccepted}
+                    onChange={(e) => setPolicyAccepted(e.target.checked)}
+                    className="mt-[2px] h-[15px] w-[15px] shrink-0 accent-[#0F6E56]"
+                  />
+                  <span className="text-[12px] leading-snug text-[#4A4844]">{policy.checkboxLabel}</span>
+                </label>
+                <p className="mt-[5px] pl-[24px] text-[10px] leading-snug text-[#A09E98]">{policy.checkboxNote}</p>
+              </div>
+            </section>
+          )}
+
           {error && (
             <p className="text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px]">{error}</p>
           )}
 
           <button
             type="submit"
-            disabled={isPending}
+            disabled={isPending || (policy != null && !policyAccepted)}
             className="w-full flex items-center justify-center gap-[7px] text-[13px] font-medium text-white rounded-[9px] px-[14px] py-[11px] disabled:opacity-60 transition"
             style={{ background: primaryColor }}
           >

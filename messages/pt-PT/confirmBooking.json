@@ -49,5 +49,7 @@
   "manageTitle": "Presença confirmada",
   "manageDesc": "O seu horário está reservado. Até lá!",
   "closedTitle": "Horário encerrado",
-  "closedDesc": "Este horário já foi encerrado. Fale com a clínica se precisar de ajuda."
+  "closedDesc": "Este horário já foi encerrado. Fale com a clínica se precisar de ajuda.",
+  "policyReadFull": "Ler política completa",
+  "policyHide": "Ocultar política"
 }

@@ -70,6 +70,19 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
     questionnaires = await getOnboardingTemplatesForPatient({ clinicId: info.clinic_id, patientId: info.patient.id });
   }
 
+  // Aceite da política de no-show pelo LINK DE CONFIRMAÇÃO (source='confirm_link').
+  // Igual ao booking web: só aparece quando a clínica cobra falta/cancelamento tardio.
+  // O texto renderizado (imutável/versionado) é serializável e vai pronto para o client.
+  let policy: import("@/modules/no-show-policy/policy-text").RenderedNoShowPolicy | null = null;
+  if (mode === "confirm" && info) {
+    const { getClinicPolicyPresentation } = await import("@/services/no-show-policy-presentation");
+    const pres = await getClinicPolicyPresentation(info.clinic_id);
+    if (pres.clinicCharges) {
+      const { getNoShowPolicyText } = await import("@/modules/no-show-policy/policy-text");
+      policy = getNoShowPolicyText(locale, pres.config);
+    }
+  }
+
   return (
     <NextIntlClientProvider locale={locale} messages={{ confirmBooking: CONFIRM_MESSAGES[locale] }}>
       <ConfirmClient
@@ -85,6 +98,7 @@ export default async function ConfirmPage({ params }: { params: Promise<{ token:
         patientEmail={info?.patient?.email ?? ""}
         patientPhone={info?.patient?.phone ?? ""}
         intakeForms={questionnaires}
+        policy={policy}
       />
     </NextIntlClientProvider>
   );

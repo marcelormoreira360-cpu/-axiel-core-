@@ -26,7 +26,7 @@ function flatten(p: ReturnType<typeof getNoShowPolicyText>): string {
   return parts.join(" \n ");
 }
 
-const IFWC = { windowHours: 24, latePct: 50, noShowPct: 100, lateChargeable: true, noShowChargeable: true };
+const IFWC = { windowHours: 24, latePct: 50, noShowPct: 100, lateChargeable: true, noShowChargeable: true, clinicName: "Moreira & Angeli LLC" };
 
 describe("no-show policy text (v3.0)", () => {
   it("é a versão vigente 'no_show_v3.0' com status 'approved'", () => {
@@ -59,10 +59,27 @@ describe("no-show policy text (v3.0)", () => {
     expect(getNoShowPolicyText("es", IFWC).checkboxLabel).toContain("Reconozco");
   });
 
-  it("usa 'Moreira & Angeli LLC' em todos os idiomas", () => {
+  it("injeta o {clinic_name} (razão social da clínica) em todos os idiomas", () => {
     for (const loc of ["en", "pt-BR", "pt-PT", "es"]) {
-      expect(flatten(getNoShowPolicyText(loc, IFWC))).toContain("Moreira & Angeli LLC");
+      const txt = flatten(getNoShowPolicyText(loc, IFWC));
+      expect(txt).toContain("Moreira & Angeli LLC");
+      expect(txt).not.toContain("{clinic_name}");
     }
+  });
+
+  it("templatiza o nome: outra clínica renderiza a própria razão social", () => {
+    const txt = flatten(getNoShowPolicyText("en", { ...IFWC, clinicName: "Acme Wellness LLC" }));
+    expect(txt).toContain("Acme Wellness LLC");
+    expect(txt).not.toContain("Moreira & Angeli LLC");
+    expect(txt).not.toContain("{clinic_name}");
+  });
+
+  it("usa um rótulo genérico por idioma quando nenhum nome é informado (fallback)", () => {
+    const en = flatten(getNoShowPolicyText("en"));
+    expect(en).toContain("our clinic");
+    expect(en).not.toContain("{clinic_name}");
+    const ptBR = flatten(getNoShowPolicyText("pt-BR"));
+    expect(ptBR).toContain("a clínica");
   });
 
   it("omite a cláusula de no-show quando a clínica não cobra falta (mode='none')", () => {
