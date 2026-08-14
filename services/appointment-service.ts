@@ -4,7 +4,7 @@ import type { Appointment, AppointmentSource, SessionType } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
 import { generateSlots, dayOfWeekFromDate } from "@/lib/booking-utils";
 import { getClinicTimezone } from "@/services/clinic-service";
-import { isValidTimezone, inferTimezoneFromPhone, inferTimezoneFromCountry } from "@/lib/timezone";
+import { isValidTimezone, inferTimezoneFromPhone, inferTimezoneFromCountry, resolvePatientTimezone, formatDualTime, dualTimeLines } from "@/lib/timezone";
 import { normalizePhoneDigits } from "@/lib/phone";
 import { scheduleAutomations } from "@/services/automation-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
@@ -1032,6 +1032,14 @@ export async function createPublicBooking(input: {
     patientId = newPatient.id;
   }
 
+  // Fuso do paciente (salvo/capturado/inferido) — usado nas mensagens ao paciente
+  // (e-mail de Zoom, push) para mostrar o horário no fuso dele, não no da clínica.
+  const patientTz = resolvePatientTimezone({
+    stored: capturedTz ?? existingPatient?.timezone ?? null,
+    phone: normalizedPhone,
+    fallback: clinicTz,
+  });
+
   // Create appointment
   const { data: appointment, error: apptError } = await supabase
     .from("appointments")
@@ -1149,6 +1157,7 @@ export async function createPublicBooking(input: {
             sessionName: sessionType.name,
             startsAt: starts_at,
             timeZone: clinicTz,
+            patientTimezone: patientTz,
             joinUrl: meeting.join_url,
             locale: bookingLocale,
           }).catch((e) => log.error("Zoom email failed", e as Error, { appointment_id: appointment.id }));
@@ -1261,12 +1270,12 @@ export async function createPublicBooking(input: {
     hour: "2-digit", minute: "2-digit",
     timeZone: clinicTz,
   });
-  // Data no idioma do paciente para o push dele (staff continua pt)
-  const patientApptDate = new Date(starts_at).toLocaleString(isEn ? "en-US" : "pt-BR", {
-    weekday: "short", day: "numeric", month: "short",
-    hour: "2-digit", minute: "2-digit",
-    timeZone: clinicTz,
-  });
+  // Push do paciente: horário no fuso DELE (+ clínica quando difere), não no da
+  // clínica — senão o paciente do Brasil recebe a notificação em horário de NY.
+  const pushDual = formatDualTime({ iso: starts_at, patientTz, clinicTz, locale: isEn ? "en-US" : "pt-BR" });
+  const patientApptDate = pushDual.sameZone
+    ? `${pushDual.patient.dateShort}, ${pushDual.patient.time}`
+    : `${pushDual.patient.dateShort}, ${pushDual.patient.time} (${pushDual.patient.label}) · ${pushDual.clinic.time} (${pushDual.clinic.label})`;
   import("@/services/push-service").then(({ sendPushToClinic, sendPushToPatient }) =>
     Promise.allSettled([
       sendPushToClinic(clinic.id, {
@@ -1303,6 +1312,8 @@ async function sendZoomConfirmationEmail(opts: {
   startsAt: string;
   joinUrl: string;
   timeZone: string;
+  /** Fuso do paciente — exibição dupla (paciente + clínica) na sessão online. */
+  patientTimezone?: string;
   locale?: string | null;
 }) {
   const { Resend } = await import("resend");
@@ -1310,9 +1321,12 @@ async function sendZoomConfirmationEmail(opts: {
 
   const isEn = opts.locale === "en";
   const dateLocale = isEn ? "en-US" : "pt-BR";
-  const date = new Date(opts.startsAt);
-  const dateStr = date.toLocaleDateString(dateLocale, { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: opts.timeZone });
-  const timeStr = date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit", timeZone: opts.timeZone });
+  const { dateStr, timeStr } = dualTimeLines({
+    iso: opts.startsAt,
+    patientTz: opts.patientTimezone ?? opts.timeZone,
+    clinicTz: opts.timeZone,
+    locale: dateLocale,
+  });
 
   const s = isEn
     ? {
