@@ -121,6 +121,23 @@ export async function getInvitationByToken(token: string): Promise<InvitationLoo
   }
   if (new Date(inv.expires_at) < new Date()) return { status: "expired" }; // expirado
 
+  // Gate por data da sessão: convite vinculado a um agendamento (onboarding) só
+  // pode ser respondido ATÉ o horário da sessão. Depois disso (ou se a sessão foi
+  // cancelada/apagada) o link expira — o questionário é um preparo pré-consulta.
+  // Convites avulsos/QR (appointment_id null) seguem só pela validade acima.
+  if (inv.appointment_id) {
+    const { data: appt } = await supabase
+      .from("appointments")
+      .select("starts_at, status, deleted_at")
+      .eq("id", inv.appointment_id)
+      .maybeSingle();
+    if (appt) {
+      const past = new Date(appt.starts_at as string) < new Date();
+      const cancelled = ["cancelled", "cancelled_notice", "late_cancel"].includes(appt.status as string);
+      if (appt.deleted_at || past || cancelled) return { status: "expired" };
+    }
+  }
+
   // Get template structure
   const { data: template } = await supabase
     .from("assessment_templates")

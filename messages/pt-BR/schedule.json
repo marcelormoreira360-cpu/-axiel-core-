@@ -20,7 +20,10 @@
     "emailReservedWithDate": "A {clinicName} reservou um horário para você: {dateLabel}.",
     "emailConfirmCta": "Confirme o horário e complete seu cadastro neste link:",
     "emailSendError": "Erro ao enviar e-mail.",
-    "statusUpdateError": "Não foi possível atualizar o status. Tente novamente."
+    "statusUpdateError": "Não foi possível atualizar o status. Tente novamente.",
+    "rescheduleInvalidDate": "Data ou hora inválida.",
+    "rescheduleNotFound": "Agendamento não encontrado.",
+    "rescheduleError": "Não foi possível reagendar. Tente novamente."
   },
   "new": {
     "title": "Agendar sessão",
@@ -91,7 +94,9 @@
       "check_in": "Check-in registrado.",
       "complete": "Sessão concluída.",
       "no_show": "Falta registrada.",
-      "cancel": "Agendamento cancelado."
+      "cancel": "Agendamento cancelado.",
+      "rescheduleMoved": "Horário remarcado.",
+      "rescheduleCreated": "Novo horário criado."
     },
     "confirm": {
       "dismiss": "Voltar",
@@ -118,7 +123,14 @@
     "startTelehealth": "Iniciar teleconsulta (Daily.co)",
     "registerSession": "Registrar sessão",
     "viewProfile": "Ver perfil do paciente",
-    "createFollowup": "Criar follow-up"
+    "createFollowup": "Criar follow-up",
+    "reschedule": "Reagendar",
+    "rescheduleMoveHint": "Move este horário para a nova data e hora.",
+    "rescheduleNewHint": "Cria um novo horário e mantém este registro (a falta continua no relatório).",
+    "rescheduleDate": "Data",
+    "rescheduleTime": "Hora",
+    "rescheduleConfirm": "Confirmar",
+    "rescheduleCancel": "Voltar"
   },
   "calendar": {
     "today": "Hoje",

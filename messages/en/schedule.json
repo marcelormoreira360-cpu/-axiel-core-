@@ -20,7 +20,10 @@
     "emailReservedWithDate": "{clinicName} has reserved a time for you: {dateLabel}.",
     "emailConfirmCta": "Confirm the time and complete your registration at this link:",
     "emailSendError": "Failed to send the email.",
-    "statusUpdateError": "Couldn't update the status. Please try again."
+    "statusUpdateError": "Couldn't update the status. Please try again.",
+    "rescheduleInvalidDate": "Invalid date or time.",
+    "rescheduleNotFound": "Appointment not found.",
+    "rescheduleError": "Couldn't reschedule. Please try again."
   },
   "new": {
     "title": "Schedule session",
@@ -91,7 +94,9 @@
       "check_in": "Check-in recorded.",
       "complete": "Session completed.",
       "no_show": "No-show recorded.",
-      "cancel": "Appointment cancelled."
+      "cancel": "Appointment cancelled.",
+      "rescheduleMoved": "Appointment rescheduled.",
+      "rescheduleCreated": "New appointment created."
     },
     "confirm": {
       "dismiss": "Back",
@@ -118,7 +123,14 @@
     "startTelehealth": "Start telehealth (Daily.co)",
     "registerSession": "Record session",
     "viewProfile": "View patient profile",
-    "createFollowup": "Create follow-up"
+    "createFollowup": "Create follow-up",
+    "reschedule": "Reschedule",
+    "rescheduleMoveHint": "Moves this appointment to the new date and time.",
+    "rescheduleNewHint": "Creates a new appointment and keeps this record (the no-show stays in the report).",
+    "rescheduleDate": "Date",
+    "rescheduleTime": "Time",
+    "rescheduleConfirm": "Confirm",
+    "rescheduleCancel": "Back"
   },
   "calendar": {
     "today": "Today",

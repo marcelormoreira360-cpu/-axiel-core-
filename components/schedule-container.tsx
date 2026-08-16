@@ -42,9 +42,11 @@ export function ScheduleContainer({
   enrichSessionAction,
   deleteSessionAction,
   rescheduleAction,
+  rescheduleSmartAction,
   resizeDurationAction,
   practitioners,
   cancellationWindowHours,
+  clinicTimezone,
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
@@ -58,9 +60,13 @@ export function ScheduleContainer({
   enrichSessionAction?: (appointmentId: string) => Promise<ScheduleSession | null>;
   deleteSessionAction?: (id: string) => Promise<void>;
   rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
+  /** Reagendamento inteligente (move futuro / cria novo se passado/no-show). */
+  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string) => Promise<{ error?: string; created?: boolean }>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
   cancellationWindowHours?: number;
+  /** Fuso IANA da clínica — pré-preenche o reagendamento no wall-clock certo. */
+  clinicTimezone?: string;
 }) {
   const t = useTranslations("schedule.calendar");
   const locale = useLocale();
@@ -293,7 +299,9 @@ export function ScheduleContainer({
         session={selectedSession}
         onClose={closeDrawer}
         updateStatusAction={updateStatusAction}
+        rescheduleSmartAction={rescheduleSmartAction}
         cancellationWindowHours={cancellationWindowHours}
+        clinicTimezone={clinicTimezone}
         enriching={drawerLoading}
       />
     </div>

@@ -12,7 +12,8 @@ import { sendSimpleEmail } from "@/services/email-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getPatientsLite, findOrCreatePatientForBooking } from "@/services/patient-service";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentClinic, getClinicTimezone } from "@/services/clinic-service";
+import { wallClockToUTC } from "@/lib/booking-utils";
 import { getCancellationWindowHours } from "@/services/appointment-status-service";
 import { isPractitioner, getTeamMembers } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
@@ -35,6 +36,10 @@ export default async function SchedulePage() {
     // classificação (com aviso × tardio). O servidor segue sendo a fonte de verdade.
     clinicId ? getCancellationWindowHours(clinicId) : Promise.resolve(24),
   ]);
+
+  // Fuso da clínica: usado no drawer para pré-preencher o reagendamento no
+  // wall-clock certo (a conversão final p/ UTC acontece no servidor).
+  const clinicTz = clinicId ? await getClinicTimezone(clinicId) : "America/Sao_Paulo";
 
   // Practitioners available for the filter dropdown (owners/admins only)
   const practitionerOptions = practitionerId
@@ -320,6 +325,59 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  // Reagendamento inteligente a partir do painel do paciente.
+  // Recebe data+hora em wall-clock (fuso da clínica) e decide no servidor:
+  //  - sessão FUTURA e ativa  → MOVE este agendamento (update starts_at).
+  //  - sessão passada / no-show / cancelada / concluída → CRIA um NOVO agendamento
+  //    (mantém o registro anterior intacto, ex.: a falta continua no relatório).
+  async function rescheduleSmartAction(
+    id: string,
+    dateStr: string,
+    timeStr: string,
+  ): Promise<{ error?: string; created?: boolean }> {
+    "use server";
+    const ts = await getTranslations("schedule.actions");
+    const prof = await getCurrentUserProfile();
+    if (!prof?.clinic_id) return { error: ts("noClinicShort") };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || !/^\d{2}:\d{2}$/.test(timeStr)) {
+      return { error: ts("rescheduleInvalidDate") };
+    }
+    try {
+      const appt = await getAppointmentById(id);
+      if (!appt || appt.clinic_id !== prof.clinic_id) return { error: ts("rescheduleNotFound") };
+
+      const tz = await getClinicTimezone(prof.clinic_id);
+      const startsAtISO = wallClockToUTC(dateStr, timeStr, tz).toISOString();
+
+      const isPast = new Date(appt.starts_at).getTime() < Date.now();
+      const isTerminal = ["no_show", "cancelled", "cancelled_notice", "late_cancel", "completed"].includes(
+        (appt.status as string) ?? "",
+      );
+
+      if (isPast || isTerminal) {
+        // Cria um NOVO agendamento (mesmo paciente/tipo/duração/profissional).
+        await createAppointment({
+          clinic_id: appt.clinic_id,
+          patient_id: appt.patient_id,
+          starts_at: startsAtISO,
+          duration_minutes: appt.duration_minutes,
+          session_type_id: appt.session_type_id ?? null,
+          practitioner_id: appt.practitioner_id ?? null,
+          source: "direct",
+        });
+        revalidatePath("/schedule");
+        return { created: true };
+      }
+
+      // Sessão futura e ativa → move em lugar.
+      await updateAppointment(id, { starts_at: startsAtISO });
+      revalidatePath("/schedule");
+      return { created: false };
+    } catch (e) {
+      return { error: e instanceof Error ? e.message : ts("rescheduleError") };
+    }
+  }
+
   async function resizeDurationAction(id: string, newDuration: number) {
     "use server";
     await updateAppointment(id, { duration_minutes: newDuration });
@@ -394,9 +452,11 @@ export default async function SchedulePage() {
             enrichSessionAction={enrichScheduleSessionAction}
             deleteSessionAction={deleteSessionAction}
             rescheduleAction={rescheduleAction}
+            rescheduleSmartAction={rescheduleSmartAction}
             resizeDurationAction={resizeDurationAction}
             practitioners={practitionerOptions}
             cancellationWindowHours={cancellationWindowHours}
+            clinicTimezone={clinicTz}
           />
         </>
       )}

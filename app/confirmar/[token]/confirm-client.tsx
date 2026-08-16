@@ -510,12 +510,16 @@ export function ConfirmClient({
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]">
-              <div>
+              {/* min-w-0 nos filhos do grid: sem isso, o input type="date" no
+                  iOS/Safari tem largura intrínseca fixa, transborda a coluna e
+                  sobrepõe o campo de CPF (e o valor da data fica cortado).
+                  appearance-none normaliza a renderização do valor no iOS. */}
+              <div className="min-w-0">
                 <label className={labelCls} htmlFor="date_of_birth">{t("dob")}</label>
-                <input id="date_of_birth" name="date_of_birth" type="date" className={inputCls} />
+                <input id="date_of_birth" name="date_of_birth" type="date" className={`${inputCls} min-w-0 appearance-none`} />
               </div>
               {showCpf && (
-                <div>
+                <div className="min-w-0">
                   <label className={labelCls} htmlFor="cpf">{t("cpf")}</label>
                   <input id="cpf" name="cpf" maxLength={20} className={inputCls} inputMode="numeric" />
                 </div>
