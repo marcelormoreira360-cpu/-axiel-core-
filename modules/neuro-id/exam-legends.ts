@@ -79,9 +79,33 @@ PROIBIDO (fronteira fé/clínica — decisão de Marcelo):
   pode estar relacionado".
 `.trim();
 
+const TESTE_CAPILAR_LEGEND = `
+LEGENDA DO TESTE CAPILAR / HIPERSENSIBILIDADE (FWC sensitivity test — leitura por
+biorressonância de fio de cabelo, ~1.700 itens de alimentos e químicos/ambientais).
+A escala de reatividade do exame (ex.: baixa/média/alta, ou faixa numérica) indica o
+quanto o corpo "reagiu" a cada item; os de reatividade ALTA são os relevantes.
+
+O QUE EXTRAIR (leitura FUNCIONAL, nunca diagnóstica):
+- Os itens de MAIOR reatividade, nomeando-os de verdade, separados em duas categorias:
+  • ALIMENTOS (ex.: leite/lácteos, glúten/trigo, ovo, soja, milho, café, frutas cítricas…).
+  • QUÍMICOS / AMBIENTAIS (ex.: metais, aditivos, conservantes, fragrâncias, mofo…).
+- Para cada item, registre o NÍVEL de reatividade como o exame traz (alta/média ou o valor).
+- Destaque os itens de reatividade ALTA que merecem RETIRADA temporária (lista de retirada).
+- Agrupe o que costuma andar junto (ex.: todos os lácteos num item de "laticínios").
+
+REGRAS DE LEITURA (decisões do Marcelo):
+- Linguagem prudente: "o exame registrou reatividade a…", "sugere sensibilidade a…";
+  NUNCA "alergia"/"intolerância" fechada nem diagnóstico (não é teste de alergia IgE).
+- Uso FUNCIONAL: reatividade é sinal para observar → retirar → reintroduzir, não doença.
+- PROIBIDO conteúdo esotérico/holístico (sem chakra, aura, energia/vibração).
+- NÃO citar marca/fabricante de suplemento — a suplementação fica só no Documento 3.
+- Foque no ACIONÁVEL: o que retirar agora e observar; a reintrodução vem depois.
+`.trim();
+
 /** Bloco de legenda específico do tipo de exame, para anexar ao system prompt. */
 export function examLegendBlock(examType: string): string {
   if (examType === "neurometria") return NEUROMETRIA_LEGEND;
   if (examType === "biorressonancia") return BIORRESSONANCIA_LEGEND;
+  if (examType === "teste_capilar") return TESTE_CAPILAR_LEGEND;
   return "";
 }

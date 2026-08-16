@@ -305,6 +305,7 @@
     "typeLabel": "Tipo de exame",
     "typeNeurometria": "Neurometria",
     "typeBiorressonancia": "Biorressonância",
+    "typeTesteCapilar": "Teste capilar (hipersensibilidade)",
     "typeOutro": "Outro",
     "dateLabel": "Data do exame",
     "titleLabel": "Nome do exame",
