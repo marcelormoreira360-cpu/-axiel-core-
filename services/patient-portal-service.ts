@@ -3,6 +3,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import type { AiInsight, Appointment, Patient, SessionRecord } from "@/lib/types";
 import type { AssessmentProgress } from "@/services/assessment-progress-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { effectivePlanSlug } from "@/modules/billing/plan-config";
 import { resolvePatientTimezone } from "@/lib/timezone";
 
 export type PatientPortalIntakeItem = {
@@ -486,7 +487,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
     // PLG: plano da clínica para decidir se o rodapé "Powered by AXIEL" aparece
     supabase
       .from("subscriptions")
-      .select("plans(code, slug)")
+      .select("status, trial_ends_at, plans(code, slug)")
       .eq("clinic_id", link.clinic_id)
       .maybeSingle(),
   ]);
@@ -495,7 +496,8 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   // PLG: oculta o "Powered by AXIEL" para clínicas com white_label (Enterprise)
   const clinicPlans = clinicSubscription?.plans as { code?: string | null; slug?: string | null } | null;
-  const clinicPlanSlug = clinicPlans?.code ?? clinicPlans?.slug ?? "starter";
+  const clinicSub = clinicSubscription as { status?: string | null; trial_ends_at?: string | null } | null;
+  const clinicPlanSlug = effectivePlanSlug(clinicPlans?.code ?? clinicPlans?.slug, clinicSub?.status ?? null, clinicSub?.trial_ends_at ?? null);
   const showPoweredBy = !canUseFeature({ planSlug: clinicPlanSlug }, "white_label");
 
   // Additional data: all approved insights + exams + active prescriptions

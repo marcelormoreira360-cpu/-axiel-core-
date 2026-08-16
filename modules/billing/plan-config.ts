@@ -205,6 +205,41 @@ export function getPlanConfig(slug: string | null | undefined): PlanConfig {
   return AXIEL_PLANS.starter;
 }
 
+/**
+ * A assinatura dá direito ao plano CONTRATADO?
+ * - "active": pagando → sim.
+ * - "past_due": pagamento falhou mas em cobrança (dunning) → sim, período de tolerância
+ *   (não trava um cliente pagante por uma falha transitória de cartão).
+ * - "trialing": só enquanto o trial não venceu (trial_ends_at no futuro).
+ * - qualquer outro (canceled, unpaid, incomplete_expired, trial vencido) → não.
+ * Sem `now`, usa o instante atual.
+ */
+export function isSubscriptionEntitled(
+  status: string | null | undefined,
+  trialEndsAt: string | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (status === "active" || status === "past_due") return true;
+  if (status === "trialing") return !!trialEndsAt && new Date(trialEndsAt) > now;
+  return false;
+}
+
+/**
+ * Plano EFETIVO da clínica: entrega o plano contratado quando a assinatura dá
+ * direito; caso contrário (trial vencido, cancelada, etc.) cai para o piso "starter",
+ * gateando os recursos premium. É o que impede "Professional de graça para sempre"
+ * depois que o trial expira.
+ */
+export function effectivePlanSlug(
+  rawSlug: string | null | undefined,
+  status: string | null | undefined,
+  trialEndsAt: string | null | undefined,
+  now: Date = new Date(),
+): AxielPlanSlug {
+  const entitled = isSubscriptionEntitled(status, trialEndsAt, now);
+  return entitled ? getPlanConfig(rawSlug).slug : "starter";
+}
+
 export type CurrencyCode = "BRL" | "USD" | "EUR";
 
 export function formatPlanPrice(plan: PlanConfig, currency: CurrencyCode = "BRL"): string {

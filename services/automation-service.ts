@@ -6,6 +6,7 @@ import { AppointmentReminderEmail } from "@/components/email/appointment-reminde
 import { sendNpsRequest } from "@/services/email-service";
 import { getServerT, resolveClinicLocale, resolvePatientLocale } from "@/lib/email-i18n";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { effectivePlanSlug } from "@/modules/billing/plan-config";
 import { interpolateTemplate, buildMessage } from "@/lib/automation-helpers";
 import { resolvePatientTimezone, dualTimeLines } from "@/lib/timezone";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -33,11 +34,12 @@ async function getClinicPlanSlug(
 ): Promise<string> {
   const { data } = await supabase
     .from("subscriptions")
-    .select("plans(code, slug)")
+    .select("status, trial_ends_at, plans(code, slug)")
     .eq("clinic_id", clinicId)
     .maybeSingle();
   const plans = (data?.plans as { code?: string | null; slug?: string | null } | null);
-  return plans?.code ?? plans?.slug ?? "starter";
+  // Respeita o status: trial vencido/cancelada cai para "starter" (gate premium).
+  return effectivePlanSlug(plans?.code ?? plans?.slug, data?.status as string | null, data?.trial_ends_at as string | null);
 }
 
 // A-05: sentinel email used for the demo patient created during onboarding.
@@ -180,11 +182,14 @@ export async function processAutomations(): Promise<{ processed: number; sent: n
   if (clinicIds.length > 0) {
     const { data: subs } = await supabase
       .from("subscriptions")
-      .select("clinic_id, plans(code, slug)")
+      .select("clinic_id, status, trial_ends_at, plans(code, slug)")
       .in("clinic_id", clinicIds);
     (subs ?? []).forEach((s) => {
       const plans = s.plans as { code?: string | null; slug?: string | null } | null;
-      clinicPlanMap.set(s.clinic_id as string, plans?.code ?? plans?.slug ?? "starter");
+      clinicPlanMap.set(
+        s.clinic_id as string,
+        effectivePlanSlug(plans?.code ?? plans?.slug, s.status as string | null, s.trial_ends_at as string | null),
+      );
     });
   }
 

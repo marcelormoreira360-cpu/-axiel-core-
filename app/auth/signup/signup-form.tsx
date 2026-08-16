@@ -21,6 +21,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
   const [email, setEmail] = useState(prefillEmail ?? "");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -83,6 +84,16 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
       }
     }
 
+    // Se a confirmação de e-mail estiver ligada no Supabase, o signUp NÃO retorna
+    // sessão — o usuário precisa clicar no link do e-mail antes de ter acesso. Sem
+    // sessão, mandar direto p/ /onboarding quebra (getCurrentUserProfile = null).
+    // Então: com sessão → segue pro onboarding; sem sessão → orienta a confirmar.
+    if (!data.session) {
+      setNotice(t("checkEmail"));
+      setLoading(false);
+      return;
+    }
+
     router.push("/onboarding");
     router.refresh();
   }
@@ -122,6 +133,7 @@ export function SignupForm({ inviteToken, prefillEmail }: SignupFormProps) {
         {loading ? t("submitting") : t("submit")}
       </Button>
       {message && <p className="text-sm text-red-600">{message}</p>}
+      {notice && <p className="text-sm text-[#0F6E56]">{notice}</p>}
       <p className="text-center text-sm text-black/40">
         {t("hasAccount")}{" "}
         <a

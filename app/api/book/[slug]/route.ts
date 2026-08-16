@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { effectivePlanSlug } from "@/modules/billing/plan-config";
 import { createPublicBooking } from "@/services/appointment-service";
 import { localeFromAcceptLanguage } from "@/i18n/get-locale";
 import { isLocale } from "@/i18n/locales";
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     supabase.from("working_hours").select("day_of_week, opens_at, closes_at, is_open").eq("clinic_id", clinic.id),
     supabase.from("clinic_users").select("user_id, display_name, specialty, bio, users(full_name)").eq("clinic_id", clinic.id).eq("status", "active").eq("is_bookable", true),
     supabase.from("clinic_settings").select("settings").eq("clinic_id", clinic.id).maybeSingle(),
-    supabase.from("subscriptions").select("plans(code, slug)").eq("clinic_id", clinic.id).maybeSingle(),
+    supabase.from("subscriptions").select("status, trial_ends_at, plans(code, slug)").eq("clinic_id", clinic.id).maybeSingle(),
     supabase.from("session_type_translations").select("session_type_id, name").eq("clinic_id", clinic.id).eq("locale", displayLocale),
   ]);
 
@@ -48,7 +49,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   // PLG: rodapé "Powered by AXIEL" — oculto para clínicas com white_label (Enterprise)
   const subscriptionPlans = subscription?.plans as { code?: string | null; slug?: string | null } | null;
-  const planSlug = subscriptionPlans?.code ?? subscriptionPlans?.slug ?? "starter";
+  const subRow = subscription as { status?: string | null; trial_ends_at?: string | null } | null;
+  const planSlug = effectivePlanSlug(subscriptionPlans?.code ?? subscriptionPlans?.slug, subRow?.status ?? null, subRow?.trial_ends_at ?? null);
   const showPoweredBy = !canUseFeature({ planSlug }, "white_label");
 
   const practitioners = (practitionersRaw ?? []).map((p) => {
