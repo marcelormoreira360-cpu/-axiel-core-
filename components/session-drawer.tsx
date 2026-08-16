@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { X, User, FileText, CalendarDays, Video, Check, LogIn, CheckCheck, UserX, Ban } from "lucide-react";
+import { X, User, FileText, CalendarDays, CalendarClock, Video, Check, LogIn, CheckCheck, UserX, Ban } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
 import {
@@ -48,14 +48,20 @@ export function SessionDrawer({
   session,
   onClose,
   updateStatusAction,
+  rescheduleSmartAction,
   cancellationWindowHours = DEFAULT_CANCELLATION_WINDOW_HOURS,
+  clinicTimezone,
   enriching = false,
 }: {
   session: ScheduleSession | null;
   onClose: () => void;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
+  /** Reagendar (inteligente): move se futuro; cria novo se passado/no-show/cancelado. */
+  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string) => Promise<{ error?: string; created?: boolean }>;
   /** Janela (horas) da clínica p/ classificar cancelamento (com aviso × tardio). */
   cancellationWindowHours?: number;
+  /** Fuso IANA da clínica — pré-preenche a nova data/hora no wall-clock certo. */
+  clinicTimezone?: string;
   /** true enquanto o ScheduleSession é enriquecido sob demanda (abertura na Semana). */
   enriching?: boolean;
 }) {
@@ -67,6 +73,12 @@ export function SessionDrawer({
   const [optimisticStatus, setOptimisticStatus] = useState<string | null>(null);
   // Ação sensível aguardando confirmação (no_show | cancel), ou null.
   const [pendingAction, setPendingAction] = useState<StaffQuickAction | null>(null);
+  // Reagendamento: form inline (data/hora) e transição de envio.
+  const [showReschedule, setShowReschedule] = useState(false);
+  const [rDate, setRDate] = useState("");
+  const [rTime, setRTime] = useState("");
+  const [rCreatesNew, setRCreatesNew] = useState(false);
+  const [isRescheduling, startReschedule] = useTransition();
 
   if (!session) return null;
 
@@ -109,6 +121,40 @@ export function SessionDrawer({
       return;
     }
     applyAction(action);
+  }
+
+  function openReschedule() {
+    if (!session) return;
+    // Rótulo do que o servidor fará: se a sessão já passou / está em estado
+    // terminal (no-show, cancelada, concluída), CRIA um novo agendamento e mantém
+    // este; caso contrário, MOVE este. (Date.now aqui, no handler, não no render.)
+    const isPastSession = new Date(session.starts_at).getTime() < Date.now();
+    const isTerminalStatus = ["no_show", "cancelled", "cancelled_notice", "late_cancel", "completed"].includes(currentStatus);
+    setRCreatesNew(isPastSession || isTerminalStatus);
+    // Pré-preenche com a data/hora atual no fuso da clínica (wall-clock).
+    const tz = clinicTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(new Date(session.starts_at));
+    const g = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+    setRDate(`${g("year")}-${g("month")}-${g("day")}`);
+    // Hora "24" à meia-noite em alguns runtimes → normaliza para "00".
+    const hh = g("hour") === "24" ? "00" : g("hour");
+    setRTime(`${hh}:${g("minute")}`);
+    setShowReschedule(true);
+  }
+
+  function submitReschedule() {
+    if (!rescheduleSmartAction || !session || !rDate || !rTime) return;
+    startReschedule(async () => {
+      const res = await rescheduleSmartAction(session.id, rDate, rTime);
+      if (res?.error) { toast.error(res.error); return; }
+      toast.success(res?.created ? t("toast.rescheduleCreated") : t("toast.rescheduleMoved"));
+      setShowReschedule(false);
+      router.refresh();
+      onClose();
+    });
   }
 
   return (
@@ -255,6 +301,56 @@ export function SessionDrawer({
               </div>
             </div>
           )}
+          {/* Reagendar (inteligente): move se futuro; cria novo se passado/no-show */}
+          {rescheduleSmartAction && (
+            showReschedule ? (
+              <div className="border border-black/[.10] dark:border-white/[.10] rounded-[8px] p-[12px] space-y-[8px]">
+                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("reschedule")}</p>
+                <p className="text-[11px] text-[#A09E98] leading-relaxed">
+                  {rCreatesNew ? t("rescheduleNewHint") : t("rescheduleMoveHint")}
+                </p>
+                <div className="grid grid-cols-2 gap-[8px]">
+                  <div className="min-w-0">
+                    <label className="block text-[10px] text-[#6B6A66] dark:text-[#9E9C97] mb-[3px]" htmlFor="reschedule_date">{t("rescheduleDate")}</label>
+                    <input
+                      id="reschedule_date" type="date" value={rDate} onChange={(e) => setRDate(e.target.value)}
+                      className="w-full min-w-0 appearance-none text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#0E1117] border border-black/[.10] dark:border-white/[.10] rounded-[7px] px-[9px] py-[7px] outline-none focus:border-[#0F6E56]/50"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="block text-[10px] text-[#6B6A66] dark:text-[#9E9C97] mb-[3px]" htmlFor="reschedule_time">{t("rescheduleTime")}</label>
+                    <input
+                      id="reschedule_time" type="time" value={rTime} onChange={(e) => setRTime(e.target.value)}
+                      className="w-full min-w-0 appearance-none text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#0E1117] border border-black/[.10] dark:border-white/[.10] rounded-[7px] px-[9px] py-[7px] outline-none focus:border-[#0F6E56]/50"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-[6px] pt-[2px]">
+                  <button
+                    type="button" onClick={() => setShowReschedule(false)} disabled={isRescheduling}
+                    className="flex-1 text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] rounded-[7px] py-[7px] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition disabled:opacity-50"
+                  >
+                    {t("rescheduleCancel")}
+                  </button>
+                  <button
+                    type="button" onClick={submitReschedule} disabled={isRescheduling || !rDate || !rTime}
+                    className="flex-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[7px] py-[7px] transition disabled:opacity-50"
+                  >
+                    {isRescheduling ? "…" : t("rescheduleConfirm")}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button" onClick={openReschedule}
+                className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition px-[14px] py-[10px] rounded-[8px]"
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                {t("reschedule")}
+              </button>
+            )
+          )}
+
           {currentStatus === "completed" && (
             <div className="flex items-center justify-center gap-[6px] bg-[#E1F5EE] rounded-[8px] py-[8px]">
               <svg className="w-3.5 h-3.5 text-[#0F6E56]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

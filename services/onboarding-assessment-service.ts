@@ -145,6 +145,8 @@ export async function sendAssessmentsToPatient(input: {
   supabase?: SupabaseAdmin;
   /** Base absoluta para os links (ex.: derivada do host da requisição). Default: NEXT_PUBLIC_APP_URL. */
   baseUrl?: string;
+  /** Agendamento de origem: o link do /f expira quando essa sessão passa. Null = avulso. */
+  appointmentId?: string | null;
 }): Promise<{ sent: number; links: { name: string; url: string; token: string }[] }> {
   const supabase = input.supabase ?? createSupabaseAdminClient();
   if (!input.templateIds.length) return { sent: 0, links: [] };
@@ -191,9 +193,13 @@ export async function sendAssessmentsToPatient(input: {
       .maybeSingle();
 
     if (open) {
+      // Reaproveita o convite girando o token; também atualiza o agendamento de
+      // origem (quando informado) p/ o link seguir a data da sessão atual.
+      const update: Record<string, unknown> = { token_hash, expires_at };
+      if (input.appointmentId !== undefined) update.appointment_id = input.appointmentId;
       const { error } = await supabase
         .from("assessment_invitations")
-        .update({ token_hash, expires_at })
+        .update(update)
         .eq("id", open.id);
       if (error) continue;
     } else {
@@ -203,6 +209,7 @@ export async function sendAssessmentsToPatient(input: {
         patient_id: input.patientId,
         clinic_id: input.clinicId,
         expires_at,
+        appointment_id: input.appointmentId ?? null,
       });
       if (error) continue;
     }
@@ -334,6 +341,7 @@ export async function sendOnboardingAssessments(appt: {
     templateIds: chosen.map((t) => t.id as string),
     supabase,
     baseUrl: appt.baseUrl,
+    appointmentId: appt.id, // vincula o link do intake à 1ª sessão
   });
   return { links };
 }
