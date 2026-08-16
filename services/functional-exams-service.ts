@@ -1,4 +1,4 @@
-export type FunctionalExamType = "neurometria" | "biorressonancia" | "outro";
+export type FunctionalExamType = "neurometria" | "biorressonancia" | "teste_capilar" | "outro";
 
 export type PatientFunctionalExam = {
   id: string;

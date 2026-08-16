@@ -14,7 +14,7 @@ import { getPatientById } from "@/services/patient-service";
 import { resolvePatientLocale } from "@/lib/email-i18n";
 import { coerceExamMetricsDraft, type ExamInstrument } from "@/modules/neuro-id/exam-metrics";
 
-const TYPES: FunctionalExamType[] = ["neurometria", "biorressonancia", "outro"];
+const TYPES: FunctionalExamType[] = ["neurometria", "biorressonancia", "teste_capilar", "outro"];
 
 export async function addFunctionalExamAction(formData: FormData) {
   const profile = await getCurrentUserProfile();

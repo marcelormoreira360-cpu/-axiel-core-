@@ -10,6 +10,7 @@ import { addFunctionalExamAction, deleteFunctionalExamAction, reviewExamMetricsA
 function typeLabel(t: ReturnType<typeof useTranslations>, exam: PatientFunctionalExam): string {
   if (exam.exam_type === "neurometria") return t("typeNeurometria");
   if (exam.exam_type === "biorressonancia") return t("typeBiorressonancia");
+  if (exam.exam_type === "teste_capilar") return t("typeTesteCapilar");
   return exam.title || t("typeOutro");
 }
 
@@ -53,6 +54,7 @@ export function PatientFunctionalExamsPanel({
               <select name="exam_type" value={examType} onChange={(e) => setExamType(e.target.value)} className={inputCls}>
                 <option value="neurometria">{t("typeNeurometria")}</option>
                 <option value="biorressonancia">{t("typeBiorressonancia")}</option>
+                <option value="teste_capilar">{t("typeTesteCapilar")}</option>
                 <option value="outro">{t("typeOutro")}</option>
               </select>
             </div>

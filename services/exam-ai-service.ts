@@ -138,7 +138,9 @@ export async function analyzeExamPdf(opts: {
     ? "exame de biorressonância emocional"
     : opts.examType === "neurometria"
       ? "exame de neurometria"
-      : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
+      : opts.examType === "teste_capilar"
+        ? "teste capilar de hipersensibilidade (reatividade alimentar/química)"
+        : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
 
   const base = buildExamSynthesisSystemPrompt(opts.locale);
   const legend = examLegendBlock(opts.examType);
