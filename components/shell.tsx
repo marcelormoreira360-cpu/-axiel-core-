@@ -205,16 +205,14 @@ export async function Shell({
                 <line x1="12" y1="17" x2="12.01" y2="17" />
               </svg>
               <span className="font-medium truncate">
-                {isPastDue
-                  ? "Pagamento pendente, seu acesso pode ser suspenso em breve."
-                  : "Seu acesso expirou, escolha um plano para continuar."}
+                {isPastDue ? tShell("billing.pastDue") : tShell("billing.expired")}
               </span>
             </div>
             <Link
               href="/upgrade"
               className="shrink-0 bg-white text-amber-600 font-semibold text-[11px] px-3 py-1 rounded-full hover:bg-amber-50 transition"
             >
-              Assinar agora
+              {tShell("billing.subscribeNow")}
             </Link>
           </div>
         )}
@@ -223,15 +221,13 @@ export async function Shell({
         {!showBillingBanner && trialEndingSoon && (
           <div className="bg-[#0F6E56] text-white px-4 py-2.5 flex items-center justify-between gap-3 text-[12px]">
             <span className="font-medium truncate">
-              {trialDaysLeft === 0
-                ? "Seu teste termina hoje. Escolha um plano para não perder o acesso."
-                : `Seu teste termina em ${trialDaysLeft} ${trialDaysLeft === 1 ? "dia" : "dias"}. Garanta seu plano.`}
+              {tShell("billing.trialEndingSoon", { days: trialDaysLeft ?? 0 })}
             </span>
             <Link
               href="/upgrade"
               className="shrink-0 bg-white text-[#0F6E56] font-semibold text-[11px] px-3 py-1 rounded-full hover:bg-[#E1F5EE] transition"
             >
-              Ver planos
+              {tShell("billing.viewPlans")}
             </Link>
           </div>
         )}
