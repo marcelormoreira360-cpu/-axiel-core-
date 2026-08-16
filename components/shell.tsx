@@ -14,6 +14,7 @@ import { NotificationBell } from "@/components/notification-bell";
 import { ClinicSwitcher } from "@/components/clinic-switcher";
 import { getClinicsForUser, getCurrentClinic, ACTIVE_CLINIC_COOKIE } from "@/services/clinic-service";
 import { getClinicSubscription } from "@/services/billing-service";
+import { isSubscriptionEntitled } from "@/modules/billing/plan-config";
 import { getClinicCurrency } from "@/services/finance-service";
 import { getLocale, getTranslations } from "next-intl/server";
 import { CurrencyProvider } from "@/components/currency-provider";
@@ -67,12 +68,22 @@ export async function Shell({
 
   const subStatus = (subscription as { status?: string | null } | null)?.status ?? null;
   const trialEndsAtRaw = (subscription as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
-  const trialExpired =
-    subStatus === "trialing" && trialEndsAtRaw != null
-      ? new Date(trialEndsAtRaw) < new Date()
-      : false;
+  // Lock duro: existe assinatura mas ela NÃO dá direito (trial vencido, cancelada,
+  // unpaid…). past_due fica de FORA (é tolerância/dunning → só banner, sem travar).
+  // Sem assinatura (subscription null, inclui erro de leitura) NÃO trava — fail-open,
+  // pra nunca bloquear a clínica por uma falha transitória. Mesma regra do #129.
+  const entitled = isSubscriptionEntitled(subStatus, trialEndsAtRaw);
   const isPastDue = subStatus === "past_due";
-  const showBillingBanner = trialExpired || isPastDue;
+  const billingLocked = subscription != null && !entitled;
+
+  // Nudge proativo: trial ainda válido mas terminando (≤7 dias) → banner suave.
+  const trialDaysLeft =
+    subStatus === "trialing" && trialEndsAtRaw != null
+      ? Math.ceil((new Date(trialEndsAtRaw).getTime() - new Date().getTime()) / 86_400_000)
+      : null;
+  const trialEndingSoon = entitled && trialDaysLeft != null && trialDaysLeft >= 0 && trialDaysLeft <= 7;
+
+  const showBillingBanner = billingLocked || isPastDue;
 
   const logoUrl = clinic?.logo_url ?? null;
   const primaryColor = clinic?.primary_color ?? "#0F6E56";
@@ -195,8 +206,8 @@ export async function Shell({
               </svg>
               <span className="font-medium truncate">
                 {isPastDue
-                  ? "Pagamento pendente — seu acesso pode ser suspenso em breve."
-                  : "Seu trial expirou — escolha um plano para continuar."}
+                  ? "Pagamento pendente, seu acesso pode ser suspenso em breve."
+                  : "Seu acesso expirou, escolha um plano para continuar."}
               </span>
             </div>
             <Link
@@ -208,9 +219,26 @@ export async function Shell({
           </div>
         )}
 
+        {/* Nudge de upgrade: trial ainda válido mas terminando em ≤7 dias */}
+        {!showBillingBanner && trialEndingSoon && (
+          <div className="bg-[#0F6E56] text-white px-4 py-2.5 flex items-center justify-between gap-3 text-[12px]">
+            <span className="font-medium truncate">
+              {trialDaysLeft === 0
+                ? "Seu teste termina hoje. Escolha um plano para não perder o acesso."
+                : `Seu teste termina em ${trialDaysLeft} ${trialDaysLeft === 1 ? "dia" : "dias"}. Garanta seu plano.`}
+            </span>
+            <Link
+              href="/upgrade"
+              className="shrink-0 bg-white text-[#0F6E56] font-semibold text-[11px] px-3 py-1 rounded-full hover:bg-[#E1F5EE] transition"
+            >
+              Ver planos
+            </Link>
+          </div>
+        )}
+
         <div className={fullWidth ? "px-4 py-4 lg:px-6 lg:py-5" : "mx-auto max-w-5xl px-5 py-6 lg:px-8 lg:py-8"}>
           <CurrencyProvider currency={clinicCurrency} locale={shellLocale}>
-            {trialExpired && !billingLockExempt ? (
+            {billingLocked && !billingLockExempt ? (
               <div className="mx-auto max-w-lg py-16 text-center">
                 <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 text-3xl">⏳</div>
                 <h1 className="text-2xl font-semibold tracking-tight text-[#0F1A2E]">{tShell("trialLock.title")}</h1>
