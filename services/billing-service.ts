@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { createSupabaseServerClient as createClient } from "@/lib/supabase-server";
-import { AXIEL_PLANS, getPlanConfig } from "@/modules/billing/plan-config";
+import { AXIEL_PLANS, getPlanConfig, effectivePlanSlug, isSubscriptionEntitled } from "@/modules/billing/plan-config";
 import type { ClinicBillingContext } from "@/modules/billing/feature-access";
 import { createLogger } from "@/lib/logger";
 
@@ -32,11 +32,23 @@ export const getClinicPlanContext = cache(async (clinicId: string) => {
   // 'slug' is an alias added in 007 — prefer 'code' so fresh and migrated DBs
   // resolve the same value; fall back to 'slug' for older rows, then 'starter'.
   const plans = subscription?.plans as { slug?: string | null; code?: string | null } | null;
-  const planSlug = plans?.code ?? plans?.slug ?? "starter";
+  const contractedSlug = plans?.code ?? plans?.slug ?? "starter";
+
+  // BILL-ENFORCE: o plano só vale enquanto a assinatura DÁ DIREITO (active/past_due
+  // ou trial não vencido). Trial expirado / cancelada → cai para "starter", senão a
+  // clínica ficava com o plano do trial (ex.: Professional) de graça para sempre.
+  const status = (subscription as { status?: string | null } | null)?.status ?? null;
+  const trialEndsAt = (subscription as { trial_ends_at?: string | null } | null)?.trial_ends_at ?? null;
+  const planSlug = effectivePlanSlug(contractedSlug, status, trialEndsAt);
+  const entitled = isSubscriptionEntitled(status, trialEndsAt);
 
   return {
     subscription,
     plan: getPlanConfig(planSlug),
+    /** true quando a assinatura dá direito ao plano contratado (para nudge/paywall na UI). */
+    entitled,
+    /** plano contratado (antes do rebaixamento por status), p/ mostrar "seu plano expirou". */
+    contractedPlan: getPlanConfig(contractedSlug),
   };
 });
 

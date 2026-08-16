@@ -10,6 +10,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { openaiChatCompletion } from "@/lib/openai-chat-fetch";
 import { chatModel } from "@/lib/ai-models";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { effectivePlanSlug } from "@/modules/billing/plan-config";
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 export type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -154,10 +155,10 @@ export async function clinicHasWhatsAppAutomation(
 ): Promise<boolean> {
   const { data: subRow } = await supabase
     .from("subscriptions")
-    .select("plans(code, slug)")
+    .select("status, trial_ends_at, plans(code, slug)")
     .eq("clinic_id", clinicId)
     .maybeSingle();
   const plans = subRow?.plans as { code?: string | null; slug?: string | null } | null;
-  const planSlug = plans?.code ?? plans?.slug ?? "starter";
+  const planSlug = effectivePlanSlug(plans?.code ?? plans?.slug, subRow?.status as string | null, subRow?.trial_ends_at as string | null);
   return canUseFeature({ planSlug }, "whatsapp_automation");
 }

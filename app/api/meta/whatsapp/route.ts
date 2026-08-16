@@ -11,6 +11,7 @@ import type { Lang } from "@/lib/whatsapp-lang";
 import { getServerT, resolveChatLocaleByPhone } from "@/lib/email-i18n";
 import { createLogger } from "@/lib/logger";
 import { canUseFeature } from "@/modules/billing/feature-access";
+import { effectivePlanSlug } from "@/modules/billing/plan-config";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
 
@@ -349,11 +350,11 @@ async function clinicCanUseWhatsAppBot(
   try {
     const { data } = await supabase
       .from("subscriptions")
-      .select("plans(code, slug)")
+      .select("status, trial_ends_at, plans(code, slug)")
       .eq("clinic_id", clinicId)
       .maybeSingle();
     const plans = data?.plans as { code?: string | null; slug?: string | null } | null;
-    const planSlug = plans?.code ?? plans?.slug ?? "starter";
+    const planSlug = effectivePlanSlug(plans?.code ?? plans?.slug, data?.status as string | null, data?.trial_ends_at as string | null);
     return canUseFeature({ planSlug }, "whatsapp_automation");
   } catch {
     // Fail closed — if we can't verify the plan, don't run the bot
