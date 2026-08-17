@@ -20,3 +20,6 @@ _GUIA_APP_REVIEW_META.md
 /CLARA_*.md
 /_VIDEO_*.md
 /_BRIEF_*.md
+.backup.env
+backups/
+*.dump
