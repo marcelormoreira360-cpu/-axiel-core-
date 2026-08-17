@@ -99,5 +99,12 @@
     "body": "Your 30-day AXIEL Core trial is over. Pick a plan to keep caring for your patients right where you left off: your data is safe and nothing was lost.",
     "cta": "Choose my plan",
     "helper": "Questions? Reach out to support."
+  },
+  "billing": {
+    "pastDue": "Payment pending, your access may be suspended soon.",
+    "expired": "Your access has expired. Choose a plan to continue.",
+    "subscribeNow": "Subscribe now",
+    "viewPlans": "View plans",
+    "trialEndingSoon": "{days, plural, =0 {Your trial ends today. Choose a plan to keep your access.} one {Your trial ends in # day. Get your plan.} other {Your trial ends in # days. Get your plan.}}"
   }
 }
