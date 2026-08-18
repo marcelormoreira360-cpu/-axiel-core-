@@ -5,7 +5,7 @@ import type { PatientLite } from "@/services/patient-service";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type ScheduleSession } from "@/components/session-card";
-import { buildPatientSnapshot } from "@/components/patient-snapshot";
+import { buildPatientSnapshot } from "@/modules/patient-journey/snapshot-builder";
 import { SessionDrawer } from "@/components/session-drawer";
 import type { SessionType } from "@/lib/types";
 import type { TimeSlot } from "@/modules/schedule/time-slots";
@@ -69,6 +69,7 @@ export function ScheduleContainer({
   clinicTimezone?: string;
 }) {
   const t = useTranslations("schedule.calendar");
+  const tSnap = useTranslations("patientSnapshot");
   const locale = useLocale();
   const [view, setView]                       = useState<View>("semana");
   const [navDate, setNavDate]                 = useState(new Date());
@@ -86,7 +87,7 @@ export function ScheduleContainer({
       ...appt,
       latestInsightStatus: "review",
       previousSessions: [],
-      snapshot: buildPatientSnapshot({ appointment: appt, previousSessions: [], latestInsightText: null }),
+      snapshot: buildPatientSnapshot({ appointment: appt, previousSessions: [], latestInsightText: null }, tSnap),
     };
     setSelectedSession(minimal);
     if (!enrichSessionAction) return;
@@ -160,6 +161,7 @@ export function ScheduleContainer({
     attention_needed: "",
     pending_reviews_count: 0,
     follow_up_status: "",
+    pending_follow_ups_count: 0,
   };
   const dayViewSessions: ScheduleSession[] = useMemo(() => {
     if (isNavToday) return filteredSessions;

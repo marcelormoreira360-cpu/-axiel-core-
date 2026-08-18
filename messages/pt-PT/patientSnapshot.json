@@ -1,0 +1,38 @@
+{
+  "title": "Resumo do paciente",
+  "subtitle": "Contexto para a próxima decisão.",
+  "latestInsight": "Último Insight",
+  "lastSession": "Última sessão",
+  "keyNotes": "Notas principais",
+  "nextStep": "Próximo passo",
+  "viewDetails": "Ver detalhes",
+  "attention": "Atenção:",
+  "followUp": "Acompanhamento:",
+  "patientStatus": "Estado do paciente:",
+  "openPatient": "Abrir paciente",
+  "addNote": "Adicionar nota",
+  "createFollowUp": "Criar acompanhamento",
+  "status": {
+    "final": "Final",
+    "inReview": "Em revisão",
+    "notReady": "Não pronto"
+  },
+  "insight": {
+    "latestTitle": "Último Insight",
+    "reviewTitle": "Insight em revisão",
+    "noneTitle": "Ainda sem Insight",
+    "noneSummary": "Ainda não há Insight pronto."
+  },
+  "attentionInsightReviews": "{count, plural, one {# Insight a aguardar revisão.} other {# Insights a aguardar revisão.}}",
+  "attentionOpenFollowUps": "{count, plural, one {# acompanhamento em aberto.} other {# acompanhamentos em aberto.}}",
+  "attentionNone": "Nada urgente de momento.",
+  "nextStepReviewNext": "Reveja o próximo passo do paciente.",
+  "nextStepReviewInsight": "Reveja a Insight antes de sugerir o próximo passo.",
+  "nextStepConfirmFocus": "Confirme o foco de hoje e mantenha o acompanhamento simples.",
+  "lastSessionCompleted": "Sessão de {minutes} minutos concluída.",
+  "lastSessionNone": "Nenhuma sessão anterior registada.",
+  "keyNotesReviewIntake": "Reveja a anamnese antes desta sessão.",
+  "followUpClear": "Em dia",
+  "followUpPending": "{count, plural, one {# pendente} other {# pendentes}}",
+  "patientFallback": "Paciente"
+}
