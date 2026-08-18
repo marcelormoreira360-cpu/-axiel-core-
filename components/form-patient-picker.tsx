@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X, ArrowRight } from "lucide-react";
 import type { Patient } from "@/lib/types";
 
@@ -12,6 +13,7 @@ export function FormPatientPicker({
   patients: Patient[];
   templateId: string;
 }) {
+  const t = useTranslations("forms.picker");
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Patient | null>(null);
@@ -56,7 +58,7 @@ export function FormPatientPicker({
             setQuery(e.target.value);
             if (selected && e.target.value !== selected.full_name) setSelected(null);
           }}
-          placeholder="Buscar paciente..."
+          placeholder={t("searchPlaceholder")}
           autoComplete="off"
           className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
@@ -91,7 +93,7 @@ export function FormPatientPicker({
       {selected && (
         <div className="mb-[10px] flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[8px]">
           <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1">{selected.full_name}</span>
-          <button type="button" onClick={clear} aria-label="Limpar seleção" className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
+          <button type="button" onClick={clear} aria-label={t("clearSelection")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -103,7 +105,7 @@ export function FormPatientPicker({
         disabled={!selected}
         className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[8px] py-[9px] transition"
       >
-        Preencher formulário <ArrowRight className="h-3.5 w-3.5" />
+        {t("fillForm")} <ArrowRight className="h-3.5 w-3.5" />
       </button>
     </div>
   );

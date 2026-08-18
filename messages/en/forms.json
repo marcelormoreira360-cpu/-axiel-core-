@@ -172,5 +172,24 @@
     "totalScore": "Total score",
     "sectionScore": "Score by section",
     "notes": "Notes"
+  },
+  "picker": {
+    "searchPlaceholder": "Search patient...",
+    "clearSelection": "Clear selection",
+    "fillForm": "Fill out form"
+  },
+  "invite": {
+    "searchPlaceholder": "Search patient...",
+    "clearSelection": "Clear selection",
+    "generating": "Generating…",
+    "generateLink": "Generate link",
+    "linkReady": "Link generated (valid for 15 days)",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "email": "Email",
+    "generateForAnother": "Generate for another patient",
+    "error": "Could not generate the link. Please try again.",
+    "emailSubject": "Form to fill out",
+    "emailBody": "Hi {name}!\n\nPlease fill out the form by clicking the link below:\n\n{url}"
   }
 }

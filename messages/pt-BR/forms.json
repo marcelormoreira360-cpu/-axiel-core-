@@ -172,5 +172,24 @@
     "totalScore": "Pontuação total",
     "sectionScore": "Pontuação por seção",
     "notes": "Observações"
+  },
+  "picker": {
+    "searchPlaceholder": "Buscar paciente...",
+    "clearSelection": "Limpar seleção",
+    "fillForm": "Preencher formulário"
+  },
+  "invite": {
+    "searchPlaceholder": "Buscar paciente...",
+    "clearSelection": "Limpar seleção",
+    "generating": "Gerando…",
+    "generateLink": "Gerar link",
+    "linkReady": "Link gerado (válido por 15 dias)",
+    "copied": "Copiado!",
+    "copyLink": "Copiar link",
+    "email": "E-mail",
+    "generateForAnother": "Gerar para outro paciente",
+    "error": "Não foi possível gerar o link. Tente novamente.",
+    "emailSubject": "Questionário para preencher",
+    "emailBody": "Olá, {name}!\n\nPor favor, preencha o formulário clicando no link abaixo:\n\n{url}"
   }
 }

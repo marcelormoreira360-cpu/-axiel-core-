@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Search, X, Link2, Copy, Check, Send } from "lucide-react";
 import type { Patient } from "@/lib/types";
@@ -13,6 +14,7 @@ export function FormInvitationPanel({
   patients: Patient[];
   templateId: string;
 }) {
+  const t = useTranslations("forms.invite");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Patient | null>(null);
   const [generatedUrl, setGeneratedUrl] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export function FormInvitationPanel({
       const result = await createInvitationAction(templateId, selected.id);
       setGeneratedUrl(result.url);
     } catch {
-      toast.error("Não foi possível gerar o link. Tente novamente.");
+      toast.error(t("error"));
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ export function FormInvitationPanel({
               setGeneratedUrl(null);
             }
           }}
-          placeholder="Buscar paciente..."
+          placeholder={t("searchPlaceholder")}
           autoComplete="off"
           className="w-full pl-[30px] pr-3 py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
@@ -119,7 +121,7 @@ export function FormInvitationPanel({
       {selected && !generatedUrl && (
         <div className="flex items-center gap-[8px] px-[10px] py-[7px] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 rounded-[8px]">
           <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1">{selected.full_name}</span>
-          <button type="button" onClick={clear} aria-label="Limpar seleção" className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
+          <button type="button" onClick={clear} aria-label={t("clearSelection")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
             <X className="h-3 w-3" />
           </button>
         </div>
@@ -133,7 +135,7 @@ export function FormInvitationPanel({
           className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-[#1a2d4a] disabled:opacity-40 rounded-[8px] py-[9px] transition"
         >
           <Link2 className="h-3.5 w-3.5" />
-          {loading ? "Gerando…" : "Gerar link"}
+          {loading ? t("generating") : t("generateLink")}
         </button>
       ) : (
         <div className="space-y-[8px]">
@@ -141,7 +143,7 @@ export function FormInvitationPanel({
             <span className="text-[12px] text-[#085041] dark:text-[#9FE1CB] font-medium flex-1 truncate">{selected?.full_name}</span>
           </div>
           <div className="bg-[#FAFAF8] dark:bg-white/[.04] border border-black/[.08] dark:border-white/[.08] rounded-[8px] px-[10px] py-[8px]">
-            <p className="text-[10px] text-[#A09E98] mb-[4px]">Link gerado (válido por 15 dias)</p>
+            <p className="text-[10px] text-[#A09E98] mb-[4px]">{t("linkReady")}</p>
             <p className="text-[11px] text-[#0F1A2E] dark:text-[#E8E6E2] break-all font-mono leading-relaxed">{generatedUrl}</p>
           </div>
           <div className="flex gap-[6px]">
@@ -156,14 +158,14 @@ export function FormInvitationPanel({
               ].join(" ")}
             >
               {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Copiado!" : "Copiar link"}
+              {copied ? t("copied") : t("copyLink")}
             </button>
             {selected?.email && (
               <a
-                href={`mailto:${selected.email}?subject=Questionário%20para%20preencher&body=Olá%2C%20${encodeURIComponent(selected.full_name)}!%0A%0APor%20favor%2C%20preencha%20o%20formulário%20clicando%20no%20link%20abaixo%3A%0A%0A${encodeURIComponent(generatedUrl)}`}
+                href={`mailto:${selected.email}?subject=${encodeURIComponent(t("emailSubject"))}&body=${encodeURIComponent(t("emailBody", { name: selected.full_name, url: generatedUrl }))}`}
                 className="flex items-center justify-center gap-[5px] text-[12px] font-medium bg-[#0F6E56] text-white rounded-[8px] px-[12px] py-[8px] hover:bg-[#085041] transition"
               >
-                <Send className="h-3.5 w-3.5" /> E-mail
+                <Send className="h-3.5 w-3.5" /> {t("email")}
               </a>
             )}
           </div>
@@ -172,7 +174,7 @@ export function FormInvitationPanel({
             onClick={() => { setGeneratedUrl(null); clear(); }}
             className="w-full text-[11px] text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
           >
-            Gerar para outro paciente
+            {t("generateForAnother")}
           </button>
         </div>
       )}
