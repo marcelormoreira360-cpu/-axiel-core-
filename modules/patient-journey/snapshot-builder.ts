@@ -4,10 +4,6 @@ import type { AiInsight, Appointment, FollowUp, IntakeResponse, Patient, Session
 // useTranslations no client). Mantém este módulo puro/agnóstico de idioma.
 export type SnapshotTranslator = (key: string, values?: Record<string, string | number>) => string;
 
-// Fallback identidade: se nenhum tradutor for passado, devolve a própria chave
-// (evita quebrar; a camada de render sempre deve passar o tradutor real).
-const identity: SnapshotTranslator = (key) => key;
-
 export type PatientJourneySnapshot = {
   patient_name: string;
   patient_status: string;
@@ -64,7 +60,7 @@ export function buildPatientJourneySnapshot(input: {
   intakeResponses?: IntakeResponse[];
   aiInsights?: AiInsight[];
   followUps?: FollowUp[];
-}, t: SnapshotTranslator = identity): PatientJourneySnapshot {
+}, t: SnapshotTranslator): PatientJourneySnapshot {
   const appointments = input.appointments ?? [];
   const sessionRecords = input.sessionRecords ?? [];
   const intakeResponses = input.intakeResponses ?? [];
@@ -131,7 +127,7 @@ export function buildPatientSnapshot(
     previousSessions: Appointment[];
     latestInsightText?: string | null;
   },
-  t: SnapshotTranslator = identity,
+  t: SnapshotTranslator,
 ): PatientJourneySnapshot {
   const fallbackInsight: AiInsight | null = input.latestInsightText
     ? {
@@ -145,7 +141,7 @@ export function buildPatientSnapshot(
           structured_summary: {
             overview: input.latestInsightText,
             key_context: [],
-            current_status: t("nextStepConfirmFocus"),
+            current_status: "",
           },
           patterns_and_correlations: [],
           practitioner_review_points: [],

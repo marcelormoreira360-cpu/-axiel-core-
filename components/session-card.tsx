@@ -3,7 +3,7 @@
 import { useTranslations, useLocale } from "next-intl";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
-import type { PatientSnapshotData } from "@/components/patient-snapshot";
+import type { PatientJourneySnapshot as PatientSnapshotData } from "@/modules/patient-journey/snapshot-builder";
 import { Video } from "lucide-react";
 
 export type ScheduleSession = Appointment & {

@@ -1,22 +1,4 @@
 {
-  "title": "Patient Snapshot",
-  "subtitle": "Context for the next decision.",
-  "latestInsight": "Latest Insight",
-  "lastSession": "Last Session",
-  "keyNotes": "Key Notes",
-  "nextStep": "Next Step",
-  "viewDetails": "View details",
-  "attention": "Attention:",
-  "followUp": "Follow-up:",
-  "patientStatus": "Patient status:",
-  "openPatient": "Open patient",
-  "addNote": "Add note",
-  "createFollowUp": "Create follow-up",
-  "status": {
-    "final": "Final",
-    "inReview": "In Review",
-    "notReady": "Not ready"
-  },
   "insight": {
     "latestTitle": "Latest Insight",
     "reviewTitle": "Insight in review",
@@ -29,10 +11,8 @@
   "nextStepReviewNext": "Review the next patient step.",
   "nextStepReviewInsight": "Review the insight before sharing any next step.",
   "nextStepConfirmFocus": "Confirm today’s focus and keep the follow-up simple.",
-  "lastSessionCompleted": "{minutes} minute session completed.",
+  "lastSessionCompleted": "{minutes, plural, one {# minute session completed.} other {# minutes session completed.}}",
   "lastSessionNone": "No previous session recorded.",
   "keyNotesReviewIntake": "Review intake before this session.",
-  "followUpClear": "Clear",
-  "followUpPending": "{count, plural, one {# pending} other {# pending}}",
   "patientFallback": "Patient"
 }

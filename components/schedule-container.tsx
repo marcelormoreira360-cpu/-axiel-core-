@@ -160,7 +160,7 @@ export function ScheduleContainer({
     next_step: "",
     attention_needed: "",
     pending_reviews_count: 0,
-    follow_up_status: "",
+    follow_up_status: "Clear",
     pending_follow_ups_count: 0,
   };
   const dayViewSessions: ScheduleSession[] = useMemo(() => {
