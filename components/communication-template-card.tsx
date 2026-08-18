@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { CommunicationTemplate } from "@/services/communication-service";
 import { communicationUseCaseLabels } from "@/modules/communications/templates";
 
@@ -6,13 +7,14 @@ const CHANNEL_BADGE: Record<string, { label: string; className: string }> = {
   sms:   { label: "SMS",    className: "bg-purple-50 text-purple-600" },
 };
 
-export function CommunicationTemplateCard({
+export async function CommunicationTemplateCard({
   template,
   updateAction,
 }: {
   template: CommunicationTemplate;
   updateAction: (formData: FormData) => Promise<void>;
 }) {
+  const t = await getTranslations("emails.communications.templateCard");
   const badge = CHANNEL_BADGE[template.channel] ?? { label: template.channel, className: "bg-[#F4F3EF] text-[#6B6A66]" };
 
   return (
@@ -39,18 +41,18 @@ export function CommunicationTemplateCard({
           type="submit"
           className="shrink-0 text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[7px] px-[10px] py-[5px] transition"
         >
-          Salvar
+          {t("save")}
         </button>
       </div>
 
       {/* Subject — email only */}
       {template.channel === "email" && (
         <label className="block mb-[8px]">
-          <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[4px]">Assunto</span>
+          <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[4px]">{t("subject")}</span>
           <input
             name="subject"
             defaultValue={template.subject ?? ""}
-            placeholder="Assunto do e-mail"
+            placeholder={t("subjectPlaceholder")}
             className="w-full text-[12px] text-[#0F1A2E] bg-[#FAFAF8] border border-black/[.08] rounded-[8px] px-[9px] py-[7px] outline-none focus:border-[#0F6E56] transition"
           />
         </label>
@@ -58,7 +60,7 @@ export function CommunicationTemplateCard({
 
       {/* Body */}
       <label className="block">
-        <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[4px]">Mensagem</span>
+        <span className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[4px]">{t("message")}</span>
         <textarea
           name="body"
           defaultValue={template.body}
@@ -68,7 +70,7 @@ export function CommunicationTemplateCard({
       </label>
 
       <p className="text-[10px] text-[#D3D1C7] mt-[5px]">
-        Variáveis: {`{{name}}`}, {`{{date}}`}, {`{{time}}`}, {`{{duration}}`}
+        {t("variables")} {`{{name}}`}, {`{{date}}`}, {`{{time}}`}, {`{{duration}}`}
       </p>
     </form>
   );

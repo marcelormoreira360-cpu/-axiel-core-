@@ -144,6 +144,32 @@
     "templatesTitle": "Message templates",
     "installDefaults": "Create default templates",
     "emptyTemplates": "No templates yet.",
-    "historyTitle": "Send history"
+    "historyTitle": "Send history",
+    "compose": {
+      "newMessage": "New message",
+      "channel": "Channel",
+      "useTemplate": "Use template",
+      "recipientEmail": "Recipient email",
+      "recipientPhone": "Phone",
+      "emailPlaceholder": "patient@email.com",
+      "phonePlaceholder": "+15551234567",
+      "subject": "Subject",
+      "subjectPlaceholder": "Email subject",
+      "message": "Message",
+      "messagePlaceholder": "Type your message...",
+      "variables": "Variables:",
+      "sendError": "Failed to send message.",
+      "sendSuccess": "Message sent successfully!",
+      "cancel": "Cancel",
+      "sending": "Sending…",
+      "send": "Send"
+    },
+    "templateCard": {
+      "save": "Save",
+      "subject": "Subject",
+      "subjectPlaceholder": "Email subject",
+      "message": "Message",
+      "variables": "Variables:"
+    }
   }
 }
