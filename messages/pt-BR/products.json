@@ -12,5 +12,51 @@
   "inactive": "Inativo",
   "inStock": "{count} em estoque",
   "activate": "Ativar",
-  "deactivate": "Desativar"
+  "deactivate": "Desativar",
+  "newProduct": {
+    "heading": "Novo produto",
+    "subheading": "Adicionar item ao catálogo da clínica",
+    "name": "Nome",
+    "namePlaceholder": "Ex: Magnésio Dimalato 300mg",
+    "category": "Categoria",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Descrição opcional do produto",
+    "price": "Preço (R$)",
+    "cost": "Custo (R$)",
+    "pricePlaceholder": "0,00",
+    "costPlaceholder": "0,00 (opcional)",
+    "inventory": "Quantidade em estoque",
+    "sku": "SKU",
+    "skuPlaceholder": "Ex: MAG-300 (opcional)",
+    "safetyNotes": "Notas de segurança",
+    "safetyNotesPlaceholder": "Informações sobre uso seguro, contraindicações, etc. (opcional)",
+    "save": "Salvar produto",
+    "cancel": "Cancelar"
+  },
+  "patientProducts": {
+    "heading": "Produtos de {name}",
+    "activeCount": "{count, plural, one {# produto ativo} other {# produtos ativos}}",
+    "emptyTitle": "Nenhum produto vinculado",
+    "emptyText": "Use o formulário ao lado para adicionar suplementos ou itens de suporte.",
+    "reviewOn": "Revisar em:",
+    "pause": "Pausar",
+    "complete": "Concluir",
+    "cancel": "Cancelar",
+    "reactivate": "Reativar",
+    "addTitle": "Adicionar produto",
+    "selectCatalog": "Selecionar do catálogo",
+    "customOption": "— produto personalizado —",
+    "productName": "Nome do produto",
+    "productNamePlaceholder": "Ex: Magnésio Dimalato",
+    "reason": "Motivo / indicação",
+    "reasonPlaceholder": "Por que este produto foi indicado?",
+    "reviewDate": "Data de revisão",
+    "addButton": "+ Adicionar",
+    "status": {
+      "active": "Ativo",
+      "paused": "Pausado",
+      "completed": "Concluído",
+      "canceled": "Cancelado"
+    }
+  }
 }

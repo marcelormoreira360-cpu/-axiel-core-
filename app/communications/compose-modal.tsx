@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { sendManualAction } from "./actions";
 import type { CommunicationTemplate } from "@/services/communication-service";
 
@@ -17,11 +18,12 @@ export function ComposeModal({ templates = [] }: Props) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("emails.communications.compose");
 
-  function applyTemplate(t: CommunicationTemplate) {
-    setChannel(t.channel);
-    setSubject(t.subject ?? "");
-    setBody(t.body);
+  function applyTemplate(tpl: CommunicationTemplate) {
+    setChannel(tpl.channel);
+    setSubject(tpl.subject ?? "");
+    setBody(tpl.body);
   }
 
   function handleClose() {
@@ -44,13 +46,13 @@ export function ComposeModal({ templates = [] }: Props) {
         setBody("");
         setTimeout(handleClose, 1800);
       } else {
-        setError(res.error ?? "Erro ao enviar mensagem.");
+        setError(res.error ?? t("sendError"));
       }
     });
   }
 
-  const emailTemplates = templates.filter(t => t.channel === "email");
-  const smsTemplates = templates.filter(t => t.channel === "sms");
+  const emailTemplates = templates.filter(tpl => tpl.channel === "email");
+  const smsTemplates = templates.filter(tpl => tpl.channel === "sms");
   const relevantTemplates = channel === "email" ? emailTemplates : smsTemplates;
 
   return (
@@ -62,7 +64,7 @@ export function ComposeModal({ templates = [] }: Props) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
         </svg>
-        Nova mensagem
+        {t("newMessage")}
       </button>
 
       {open && (
@@ -78,7 +80,7 @@ export function ComposeModal({ templates = [] }: Props) {
             >
               {/* Header */}
               <div className="flex items-center justify-between px-[20px] py-[15px] border-b border-black/[.06]">
-                <p className="text-[14px] font-semibold text-[#0F1A2E]">Nova mensagem</p>
+                <p className="text-[14px] font-semibold text-[#0F1A2E]">{t("newMessage")}</p>
                 <button
                   onClick={handleClose}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-[#A09E98] hover:bg-[#F4F3EF] transition"
@@ -92,7 +94,7 @@ export function ComposeModal({ templates = [] }: Props) {
               <form onSubmit={handleSubmit} className="p-[20px] flex flex-col gap-[14px]">
                 {/* Channel toggle */}
                 <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">Canal</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">{t("channel")}</label>
                   <div className="flex gap-[6px]">
                     {(["email", "sms"] as const).map(ch => (
                       <button
@@ -116,17 +118,17 @@ export function ComposeModal({ templates = [] }: Props) {
                 {relevantTemplates.length > 0 && (
                   <div>
                     <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">
-                      Usar template
+                      {t("useTemplate")}
                     </label>
                     <div className="flex flex-wrap gap-[5px]">
-                      {relevantTemplates.map(t => (
+                      {relevantTemplates.map(tpl => (
                         <button
-                          key={t.id}
+                          key={tpl.id}
                           type="button"
-                          onClick={() => applyTemplate(t)}
+                          onClick={() => applyTemplate(tpl)}
                           className="text-[10px] font-medium text-[#0F6E56] border border-[#0F6E56]/25 hover:bg-[#E1F5EE] rounded-full px-[9px] py-[3px] transition"
                         >
-                          {t.name.replace(/\s*—\s*e-mail|\s*—\s*SMS/i, "")}
+                          {tpl.name.replace(/\s*—\s*e-mail|\s*—\s*SMS/i, "")}
                         </button>
                       ))}
                     </div>
@@ -136,13 +138,13 @@ export function ComposeModal({ templates = [] }: Props) {
                 {/* Recipient */}
                 <div>
                   <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">
-                    {channel === "email" ? "Email do destinatário" : "Telefone (+5511999999999)"}
+                    {channel === "email" ? t("recipientEmail") : t("recipientPhone")}
                   </label>
                   <input
                     type={channel === "email" ? "email" : "tel"}
                     value={recipient}
                     onChange={e => setRecipient(e.target.value)}
-                    placeholder={channel === "email" ? "paciente@email.com" : "+5511999999999"}
+                    placeholder={channel === "email" ? t("emailPlaceholder") : t("phonePlaceholder")}
                     required
                     className="w-full text-[13px] text-[#0F1A2E] bg-[#FAFAF8] border border-black/[.08] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                   />
@@ -151,12 +153,12 @@ export function ComposeModal({ templates = [] }: Props) {
                 {/* Subject — email only */}
                 {channel === "email" && (
                   <div>
-                    <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">Assunto</label>
+                    <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">{t("subject")}</label>
                     <input
                       type="text"
                       value={subject}
                       onChange={e => setSubject(e.target.value)}
-                      placeholder="Assunto do e-mail"
+                      placeholder={t("subjectPlaceholder")}
                       className="w-full text-[13px] text-[#0F1A2E] bg-[#FAFAF8] border border-black/[.08] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition"
                     />
                   </div>
@@ -164,17 +166,17 @@ export function ComposeModal({ templates = [] }: Props) {
 
                 {/* Body */}
                 <div>
-                  <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">Mensagem</label>
+                  <label className="text-[10px] font-semibold uppercase tracking-[.07em] text-[#A09E98] block mb-[6px]">{t("message")}</label>
                   <textarea
                     value={body}
                     onChange={e => setBody(e.target.value)}
                     rows={5}
-                    placeholder="Digite sua mensagem..."
+                    placeholder={t("messagePlaceholder")}
                     required
                     className="w-full text-[13px] text-[#0F1A2E] bg-[#FAFAF8] border border-black/[.08] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56] transition resize-none"
                   />
                   <p className="text-[10px] text-[#D3D1C7] mt-[4px]">
-                    Variáveis: {`{{name}}`}, {`{{date}}`}, {`{{time}}`}
+                    {t("variables")} {`{{name}}`}, {`{{date}}`}, {`{{time}}`}
                   </p>
                 </div>
 
@@ -184,7 +186,7 @@ export function ComposeModal({ templates = [] }: Props) {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
-                    Mensagem enviada com sucesso!
+                    {t("sendSuccess")}
                   </p>
                 )}
 
@@ -194,7 +196,7 @@ export function ComposeModal({ templates = [] }: Props) {
                     onClick={handleClose}
                     className="text-[12px] font-medium text-[#6B6A66] border border-black/[.10] hover:bg-[#F4F3EF] rounded-[8px] px-[14px] py-[8px] transition"
                   >
-                    Cancelar
+                    {t("cancel")}
                   </button>
                   <button
                     type="submit"
@@ -204,7 +206,7 @@ export function ComposeModal({ templates = [] }: Props) {
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
                     </svg>
-                    {isPending ? "Enviando…" : "Enviar"}
+                    {isPending ? t("sending") : t("send")}
                   </button>
                 </div>
               </form>

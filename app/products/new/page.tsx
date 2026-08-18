@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { createProductAction } from "./actions";
@@ -19,7 +20,8 @@ const inputClass =
 
 const labelClass = "flex flex-col gap-[6px] text-[12px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2]";
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  const t = await getTranslations("products.newProduct");
   return (
     <Shell>
       {/* Header */}
@@ -32,10 +34,10 @@ export default function NewProductPage() {
         </BackLink>
         <div>
           <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-            Novo produto
+            {t("heading")}
           </h1>
           <p className="text-[12px] text-[#A09E98] mt-[1px]">
-            Adicionar item ao catálogo da clínica
+            {t("subheading")}
           </p>
         </div>
       </div>
@@ -45,18 +47,18 @@ export default function NewProductPage() {
         <form action={createProductAction} className="grid gap-[16px]">
           {/* Nome */}
           <label className={labelClass}>
-            Nome
+            {t("name")}
             <input
               name="name"
               required
               className={inputClass}
-              placeholder="Ex: Magnésio Dimalato 300mg"
+              placeholder={t("namePlaceholder")}
             />
           </label>
 
           {/* Categoria */}
           <label className={labelClass}>
-            Categoria
+            {t("category")}
             <select name="category" className={inputClass} defaultValue="Outro">
               {CATEGORIES.map((cat) => (
                 <option key={cat} value={cat}>
@@ -68,36 +70,36 @@ export default function NewProductPage() {
 
           {/* Descrição */}
           <label className={labelClass}>
-            Descrição
+            {t("description")}
             <textarea
               name="description"
               rows={3}
               className={inputClass}
-              placeholder="Descrição opcional do produto"
+              placeholder={t("descriptionPlaceholder")}
             />
           </label>
 
           {/* Preço + Custo */}
           <div className="grid grid-cols-2 gap-[12px]">
             <label className={labelClass}>
-              Preço (R$)
+              {t("price")}
               <input
                 name="price_brl"
                 required
                 type="text"
                 inputMode="decimal"
                 className={inputClass}
-                placeholder="0,00"
+                placeholder={t("pricePlaceholder")}
               />
             </label>
             <label className={labelClass}>
-              Custo (R$)
+              {t("cost")}
               <input
                 name="cost_brl"
                 type="text"
                 inputMode="decimal"
                 className={inputClass}
-                placeholder="0,00 (opcional)"
+                placeholder={t("costPlaceholder")}
               />
             </label>
           </div>
@@ -105,7 +107,7 @@ export default function NewProductPage() {
           {/* Estoque + SKU */}
           <div className="grid grid-cols-2 gap-[12px]">
             <label className={labelClass}>
-              Quantidade em estoque
+              {t("inventory")}
               <input
                 name="inventory_quantity"
                 type="number"
@@ -115,24 +117,24 @@ export default function NewProductPage() {
               />
             </label>
             <label className={labelClass}>
-              SKU
+              {t("sku")}
               <input
                 name="sku"
                 type="text"
                 className={inputClass}
-                placeholder="Ex: MAG-300 (opcional)"
+                placeholder={t("skuPlaceholder")}
               />
             </label>
           </div>
 
           {/* Notas de segurança */}
           <label className={labelClass}>
-            Notas de segurança
+            {t("safetyNotes")}
             <textarea
               name="safety_notes"
               rows={3}
               className={inputClass}
-              placeholder="Informações sobre uso seguro, contraindicações, etc. (opcional)"
+              placeholder={t("safetyNotesPlaceholder")}
             />
           </label>
 
@@ -142,13 +144,13 @@ export default function NewProductPage() {
               type="submit"
               className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[18px] py-[9px] rounded-lg"
             >
-              Salvar produto
+              {t("save")}
             </button>
             <Link
               href="/products"
               className="flex items-center text-[13px] font-medium text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[18px] py-[9px] rounded-lg"
             >
-              Cancelar
+              {t("cancel")}
             </Link>
           </div>
         </form>

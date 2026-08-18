@@ -144,6 +144,32 @@
     "templatesTitle": "Templates de mensagem",
     "installDefaults": "Criar templates padrão",
     "emptyTemplates": "Nenhum template ainda.",
-    "historyTitle": "Histórico de envios"
+    "historyTitle": "Histórico de envios",
+    "compose": {
+      "newMessage": "Nova mensagem",
+      "channel": "Canal",
+      "useTemplate": "Usar modelo",
+      "recipientEmail": "E-mail do destinatário",
+      "recipientPhone": "Telefone",
+      "emailPlaceholder": "paciente@email.com",
+      "phonePlaceholder": "+351912345678",
+      "subject": "Assunto",
+      "subjectPlaceholder": "Assunto do e-mail",
+      "message": "Mensagem",
+      "messagePlaceholder": "Escreva a sua mensagem...",
+      "variables": "Variáveis:",
+      "sendError": "Erro ao enviar a mensagem.",
+      "sendSuccess": "Mensagem enviada com sucesso!",
+      "cancel": "Cancelar",
+      "sending": "A enviar…",
+      "send": "Enviar"
+    },
+    "templateCard": {
+      "save": "Guardar",
+      "subject": "Assunto",
+      "subjectPlaceholder": "Assunto do e-mail",
+      "message": "Mensagem",
+      "variables": "Variáveis:"
+    }
   }
 }

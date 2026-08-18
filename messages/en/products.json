@@ -12,5 +12,51 @@
   "inactive": "Inactive",
   "inStock": "{count} in stock",
   "activate": "Activate",
-  "deactivate": "Deactivate"
+  "deactivate": "Deactivate",
+  "newProduct": {
+    "heading": "New product",
+    "subheading": "Add an item to the clinic catalog",
+    "name": "Name",
+    "namePlaceholder": "e.g. Magnesium Dimalate 300mg",
+    "category": "Category",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional product description",
+    "price": "Price (R$)",
+    "cost": "Cost (R$)",
+    "pricePlaceholder": "0.00",
+    "costPlaceholder": "0.00 (optional)",
+    "inventory": "Stock quantity",
+    "sku": "SKU",
+    "skuPlaceholder": "e.g. MAG-300 (optional)",
+    "safetyNotes": "Safety notes",
+    "safetyNotesPlaceholder": "Info on safe use, contraindications, etc. (optional)",
+    "save": "Save product",
+    "cancel": "Cancel"
+  },
+  "patientProducts": {
+    "heading": "{name}'s products",
+    "activeCount": "{count, plural, one {# active product} other {# active products}}",
+    "emptyTitle": "No products linked",
+    "emptyText": "Use the form to add supplements or support items.",
+    "reviewOn": "Review on:",
+    "pause": "Pause",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "reactivate": "Reactivate",
+    "addTitle": "Add product",
+    "selectCatalog": "Select from catalog",
+    "customOption": "— custom product —",
+    "productName": "Product name",
+    "productNamePlaceholder": "e.g. Magnesium Dimalate",
+    "reason": "Reason / indication",
+    "reasonPlaceholder": "Why was this product recommended?",
+    "reviewDate": "Review date",
+    "addButton": "+ Add",
+    "status": {
+      "active": "Active",
+      "paused": "Paused",
+      "completed": "Completed",
+      "canceled": "Canceled"
+    }
+  }
 }
