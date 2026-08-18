@@ -14,5 +14,30 @@
     "void": "Cancelado",
     "draft": "Rascunho",
     "uncollectible": "Não cobrado"
+  },
+  "success": {
+    "eyebrow": "Subscrição atualizada",
+    "title": "Tudo certo!",
+    "body": "O Stripe confirmará a sua subscrição via webhook. O acesso da clínica será atualizado automaticamente dentro de instantes.",
+    "goDashboard": "Ir ao dashboard",
+    "viewBilling": "Ver faturação"
+  },
+  "statusCard": {
+    "status": {
+      "active": "Ativo",
+      "trialing": "Trial",
+      "past_due": "Pagamento pendente",
+      "canceled": "Cancelado",
+      "incomplete": "Incompleto",
+      "incomplete_expired": "Expirado",
+      "unpaid": "Em dívida"
+    },
+    "noPlan": "Sem plano",
+    "cancelsAtPeriodEnd": "Cancela no fim do período",
+    "trialEndsOn": "Trial termina em {date}",
+    "renewsOn": "Renova em {date}",
+    "noActiveSubscription": "Nenhuma subscrição ativa",
+    "manage": "Gerir subscrição",
+    "viewPlans": "Ver planos"
   }
 }

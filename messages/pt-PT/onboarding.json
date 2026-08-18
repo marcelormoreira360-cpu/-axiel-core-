@@ -184,5 +184,13 @@
     "notSure": "Ainda não tem a certeza?",
     "continueTrial": "Continuar com 14 dias grátis →",
     "noCard": "Sem cartão necessário. Escolha um plano mais tarde em Definições → Faturação."
+  },
+  "ready": {
+    "eyebrow": "Configuração concluída",
+    "title": "A sua clínica está pronta.",
+    "subtitle": "Tudo configurado. Já pode começar a usar o sistema.",
+    "goDashboard": "Ir para o Dashboard",
+    "addFirstPatient": "Registar o primeiro paciente",
+    "demoNote": "Criámos dados de demonstração para explorar o sistema. A redirecionar automaticamente dentro de instantes…"
   }
 }

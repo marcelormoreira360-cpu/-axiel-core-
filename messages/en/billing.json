@@ -14,5 +14,30 @@
     "void": "Cancelled",
     "draft": "Draft",
     "uncollectible": "Uncollectible"
+  },
+  "success": {
+    "eyebrow": "Subscription updated",
+    "title": "All set!",
+    "body": "Stripe will confirm your subscription via webhook. Your clinic's access will update automatically in a moment.",
+    "goDashboard": "Go to dashboard",
+    "viewBilling": "View billing"
+  },
+  "statusCard": {
+    "status": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Payment due",
+      "canceled": "Canceled",
+      "incomplete": "Incomplete",
+      "incomplete_expired": "Expired",
+      "unpaid": "Unpaid"
+    },
+    "noPlan": "No plan",
+    "cancelsAtPeriodEnd": "Cancels at period end",
+    "trialEndsOn": "Trial ends on {date}",
+    "renewsOn": "Renews on {date}",
+    "noActiveSubscription": "No active subscription",
+    "manage": "Manage subscription",
+    "viewPlans": "View plans"
   }
 }
