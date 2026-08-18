@@ -4,7 +4,7 @@ import type { Locale } from "./locales";
 
 // Namespaces de mensagens. Ao adicionar um novo módulo, criar o JSON em
 // messages/<locale>/<namespace>.json e incluir o nome aqui.
-const NAMESPACES = ["common", "nav", "dashboard", "auth", "onboarding", "patients", "patientProfile", "patientPanels", "patientSnapshot", "patientEdit", "patientAssessment", "schedule", "session", "forms", "finance", "results", "reports", "analytics", "settings", "automations", "portal", "booking", "landing", "pricing", "publicForm", "join", "links", "teleconsulta", "legal", "professionals", "hotmart", "clinicChat", "actions", "admin", "insights", "intake", "referral", "publicRegister", "trends", "confirmBooking", "neuroId", "leads", "clinics", "upgrade", "whatsapp", "monetization", "products", "billing", "assinaturas", "directionPanel", "feeDecisions"] as const;
+const NAMESPACES = ["common", "nav", "dashboard", "auth", "onboarding", "patients", "patientProfile", "patientPanels", "patientSnapshot", "patientEdit", "patientAssessment", "schedule", "session", "forms", "finance", "results", "reports", "analytics", "settings", "automations", "portal", "booking", "landing", "pricing", "publicForm", "join", "links", "teleconsulta", "legal", "professionals", "hotmart", "clinicChat", "actions", "admin", "insights", "intake", "referral", "publicRegister", "trends", "confirmBooking", "neuroId", "leads", "clinics", "upgrade", "whatsapp", "emails", "monetization", "products", "billing", "assinaturas", "directionPanel", "feeDecisions"] as const;
 
 async function loadMessages(locale: Locale) {
   const entries = await Promise.all(

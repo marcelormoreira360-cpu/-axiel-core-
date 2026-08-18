@@ -23,7 +23,14 @@ const labelClass = "flex flex-col gap-[5px] text-[12px] font-medium text-[#0F1A2
 
 function formatDate(value: string | null, locale: string) {
   if (!value) return null;
-  return new Date(value).toLocaleDateString(locale, {
+  // review_date vem como "YYYY-MM-DD"; new Date(str) parsearia como UTC meia-noite
+  // e exibiria o dia anterior em fusos ocidentais. Construir como data LOCAL.
+  const [y, m, d] = value.split("-").map(Number);
+  const date =
+    Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)
+      ? new Date(y, m - 1, d)
+      : new Date(value);
+  return date.toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
