@@ -14,5 +14,18 @@
   "addPatientFirst": "Add a patient first. Then return here to assign a package or membership.",
   "createOfferFirst": "Create an active offer first. Then assign it to a patient.",
   "structureOnly": "Structure only",
-  "structureNoteTail": "Later this can connect to Stripe, invoices, automated renewals, and patient portal payments."
+  "structureNoteTail": "Later this can connect to Stripe, invoices, automated renewals, and patient portal payments.",
+  "offerForm": {
+    "title": "Assign to patient",
+    "subtitle": "Track package or membership usage manually.",
+    "patient": "Patient",
+    "choosePatient": "Choose patient",
+    "offer": "Offer",
+    "chooseOffer": "Choose offer",
+    "sessionsIncluded": "Sessions included",
+    "startDate": "Start date",
+    "notes": "Notes",
+    "notesPlaceholder": "Optional internal note",
+    "assign": "Assign offer"
+  }
 }

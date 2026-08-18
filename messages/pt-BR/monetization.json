@@ -14,5 +14,18 @@
   "addPatientFirst": "Adicione um paciente primeiro. Depois volte aqui para atribuir um pacote ou assinatura.",
   "createOfferFirst": "Crie uma oferta ativa primeiro. Depois atribua a um paciente.",
   "structureOnly": "Apenas estrutura",
-  "structureNoteTail": "Depois isto pode conectar ao Stripe, faturas, renovações automáticas e pagamentos no portal do paciente."
+  "structureNoteTail": "Depois isto pode conectar ao Stripe, faturas, renovações automáticas e pagamentos no portal do paciente.",
+  "offerForm": {
+    "title": "Atribuir ao paciente",
+    "subtitle": "Acompanhe o uso de pacote ou assinatura manualmente.",
+    "patient": "Paciente",
+    "choosePatient": "Escolha o paciente",
+    "offer": "Oferta",
+    "chooseOffer": "Escolha a oferta",
+    "sessionsIncluded": "Sessões incluídas",
+    "startDate": "Data de início",
+    "notes": "Notas",
+    "notesPlaceholder": "Nota interna opcional",
+    "assign": "Atribuir oferta"
+  }
 }
