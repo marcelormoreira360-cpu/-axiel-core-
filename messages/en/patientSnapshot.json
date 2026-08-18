@@ -1,0 +1,18 @@
+{
+  "insight": {
+    "latestTitle": "Latest Insight",
+    "reviewTitle": "Insight in review",
+    "noneTitle": "No insight yet",
+    "noneSummary": "No insight is ready yet."
+  },
+  "attentionInsightReviews": "{count, plural, one {# insight review waiting.} other {# insight reviews waiting.}}",
+  "attentionOpenFollowUps": "{count, plural, one {# follow-up is open.} other {# follow-ups are open.}}",
+  "attentionNone": "No urgent attention needed.",
+  "nextStepReviewNext": "Review the next patient step.",
+  "nextStepReviewInsight": "Review the insight before sharing any next step.",
+  "nextStepConfirmFocus": "Confirm today’s focus and keep the follow-up simple.",
+  "lastSessionCompleted": "{minutes, plural, one {# minute session completed.} other {# minutes session completed.}}",
+  "lastSessionNone": "No previous session recorded.",
+  "keyNotesReviewIntake": "Review intake before this session.",
+  "patientFallback": "Patient"
+}

@@ -1,0 +1,18 @@
+{
+  "insight": {
+    "latestTitle": "Último Insight",
+    "reviewTitle": "Insight em revisão",
+    "noneTitle": "Ainda sem Insight",
+    "noneSummary": "Ainda não há Insight pronto."
+  },
+  "attentionInsightReviews": "{count, plural, one {# Insight a aguardar revisão.} other {# Insights a aguardar revisão.}}",
+  "attentionOpenFollowUps": "{count, plural, one {# acompanhamento em aberto.} other {# acompanhamentos em aberto.}}",
+  "attentionNone": "Nada urgente de momento.",
+  "nextStepReviewNext": "Reveja o próximo passo do paciente.",
+  "nextStepReviewInsight": "Reveja a Insight antes de sugerir o próximo passo.",
+  "nextStepConfirmFocus": "Confirme o foco de hoje e mantenha o acompanhamento simples.",
+  "lastSessionCompleted": "{minutes, plural, one {Sessão de # minuto concluída.} other {Sessão de # minutos concluída.}}",
+  "lastSessionNone": "Nenhuma sessão anterior registada.",
+  "keyNotesReviewIntake": "Reveja a anamnese antes desta sessão.",
+  "patientFallback": "Paciente"
+}

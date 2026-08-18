@@ -1,5 +1,9 @@
 import type { AiInsight, Appointment, FollowUp, IntakeResponse, Patient, SessionRecord } from "@/lib/types";
 
+// Tradutor injetado pela camada de render (next-intl: getTranslations no server,
+// useTranslations no client). Mantém este módulo puro/agnóstico de idioma.
+export type SnapshotTranslator = (key: string, values?: Record<string, string | number>) => string;
+
 export type PatientJourneySnapshot = {
   patient_name: string;
   patient_status: string;
@@ -13,6 +17,7 @@ export type PatientJourneySnapshot = {
   attention_needed: string;
   pending_reviews_count: number;
   follow_up_status: string;
+  pending_follow_ups_count: number;
 };
 
 function cleanText(value: unknown, fallback: string) {
@@ -26,14 +31,14 @@ function formatSessionDate(value?: string | null) {
   return new Date(value).toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
 }
 
-function insightSummary(insight?: AiInsight | null) {
+function insightSummary(t: SnapshotTranslator, insight?: AiInsight | null) {
   const output = insight?.review_status === "final" ? insight.final_output ?? insight.output : insight?.output;
-  return cleanText(output?.structured_summary?.overview, "No Insight is ready yet.");
+  return cleanText(output?.structured_summary?.overview, t("insight.noneSummary"));
 }
 
-function insightTitle(insight?: AiInsight | null) {
-  if (!insight) return "No Insight yet";
-  return insight.review_status === "final" ? "Latest Insight" : "Insight in review";
+function insightTitle(t: SnapshotTranslator, insight?: AiInsight | null) {
+  if (!insight) return t("insight.noneTitle");
+  return insight.review_status === "final" ? t("insight.latestTitle") : t("insight.reviewTitle");
 }
 
 function insightStatus(insight?: AiInsight | null): PatientJourneySnapshot["latest_insight_status"] {
@@ -55,7 +60,7 @@ export function buildPatientJourneySnapshot(input: {
   intakeResponses?: IntakeResponse[];
   aiInsights?: AiInsight[];
   followUps?: FollowUp[];
-}): PatientJourneySnapshot {
+}, t: SnapshotTranslator): PatientJourneySnapshot {
   const appointments = input.appointments ?? [];
   const sessionRecords = input.sessionRecords ?? [];
   const intakeResponses = input.intakeResponses ?? [];
@@ -82,34 +87,94 @@ export function buildPatientJourneySnapshot(input: {
 
   const attentionNeeded =
     pendingReviews > 0
-      ? `${pendingReviews} Insight ${pendingReviews === 1 ? "review" : "reviews"} waiting.`
+      ? t("attentionInsightReviews", { count: pendingReviews })
       : pendingFollowUps > 0
-        ? `${pendingFollowUps} follow-up ${pendingFollowUps === 1 ? "is" : "are"} open.`
-        : "No urgent attention needed.";
+        ? t("attentionOpenFollowUps", { count: pendingFollowUps })
+        : t("attentionNone");
 
   const nextStep =
     latestInsight?.review_status === "final"
-      ? cleanText((latestInsight.final_output ?? latestInsight.output)?.structured_summary?.current_status, "Review the next patient step.")
+      ? cleanText((latestInsight.final_output ?? latestInsight.output)?.structured_summary?.current_status, t("nextStepReviewNext"))
       : pendingReviews > 0
-        ? "Review the Insight before sharing any next step."
-        : "Confirm today’s focus and keep the follow-up simple.";
+        ? t("nextStepReviewInsight")
+        : t("nextStepConfirmFocus");
 
   return {
     patient_name: input.patient.full_name,
     patient_status: input.patient.status,
-    latest_insight_title: insightTitle(latestInsight),
-    latest_insight_summary: insightSummary(latestInsight),
+    latest_insight_title: insightTitle(t, latestInsight),
+    latest_insight_summary: insightSummary(t, latestInsight),
     latest_insight_status: insightStatus(latestInsight),
     last_session_date: formatSessionDate(lastSession?.starts_at),
     last_session_summary: lastSession
-      ? cleanText(lastSession.notes, `${lastSession.duration_minutes} minute Session completed.`)
-      : "No previous Session recorded.",
-    key_notes: keyNotes.length ? keyNotes : ["Review intake before this Session."],
+      ? cleanText(lastSession.notes, t("lastSessionCompleted", { minutes: lastSession.duration_minutes ?? 0 }))
+      : t("lastSessionNone"),
+    key_notes: keyNotes.length ? keyNotes : [t("keyNotesReviewIntake")],
     next_step: nextStep,
     attention_needed: attentionNeeded,
     pending_reviews_count: pendingReviews,
     follow_up_status: pendingFollowUps ? `${pendingFollowUps} pending` : "Clear",
+    pending_follow_ups_count: pendingFollowUps,
   };
+}
+
+// Adapta um Appointment (+ texto de insight inline opcional) para o snapshot.
+// Vive aqui (camada de módulo, pura) para poder rodar tanto em Server quanto
+// em Client Components; a tradução é injetada via `t`.
+export function buildPatientSnapshot(
+  input: {
+    appointment: Appointment;
+    previousSessions: Appointment[];
+    latestInsightText?: string | null;
+  },
+  t: SnapshotTranslator,
+): PatientJourneySnapshot {
+  const fallbackInsight: AiInsight | null = input.latestInsightText
+    ? {
+        id: "inline-insight",
+        clinic_id: input.appointment.clinic_id,
+        patient_id: input.appointment.patient_id,
+        created_by: null,
+        input_snapshot: {},
+        output: {
+          label: "AI-generated insights (not medical advice)",
+          structured_summary: {
+            overview: input.latestInsightText,
+            key_context: [],
+            current_status: "",
+          },
+          patterns_and_correlations: [],
+          practitioner_review_points: [],
+          data_limitations: [],
+          safety_note: "AI-generated insights are not medical advice.",
+        },
+        final_output: null,
+        status: "completed",
+        review_status: "pending_review",
+        approved_by: null,
+        approved_at: null,
+        reviewer_notes: null,
+        changes_made: null,
+        last_reviewed_by: null,
+        last_reviewed_at: null,
+        created_at: input.appointment.created_at,
+      }
+    : null;
+
+  const patient: Pick<Patient, "full_name" | "status" | "notes"> = {
+    full_name: input.appointment.patients?.full_name ?? t("patientFallback"),
+    status: input.appointment.patients?.status ?? "active",
+    notes: input.appointment.notes,
+  };
+
+  return buildPatientJourneySnapshot(
+    {
+      patient,
+      appointments: [input.appointment, ...input.previousSessions],
+      aiInsights: fallbackInsight ? [fallbackInsight] : [],
+    },
+    t,
+  );
 }
 
 export function buildPatientPortalSnapshot(snapshot: PatientJourneySnapshot) {

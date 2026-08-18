@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
-import { buildPatientSnapshot } from "@/components/patient-snapshot";
+import { buildPatientSnapshot } from "@/modules/patient-journey/snapshot-builder";
 import type { ScheduleSession } from "@/components/session-card";
 import { getAppointments, getAppointmentsByPatients, getAppointmentById, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes } from "@/services/appointment-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
@@ -62,6 +62,7 @@ export default async function SchedulePage() {
     getLatestAiInsightsByPatients(todayPatientIds),
   ]);
 
+  const tSnap = await getTranslations("patientSnapshot");
   const sessions: ScheduleSession[] = todayAppointments.map((appointment) => {
     const patientAppointments = appointmentsByPatient.get(appointment.patient_id) ?? [];
     const latestInsight = insightsByPatient.get(appointment.patient_id) ?? null;
@@ -80,7 +81,7 @@ export default async function SchedulePage() {
         appointment,
         previousSessions: patientAppointments,
         latestInsightText: insightOutput?.structured_summary?.overview ?? null,
-      }),
+      }, tSnap),
     };
   });
 
@@ -274,6 +275,7 @@ export default async function SchedulePage() {
       latestInsight?.review_status === "final"
         ? latestInsight.final_output ?? latestInsight.output
         : latestInsight?.output;
+    const tSnap = await getTranslations("patientSnapshot");
 
     return {
       ...appointment,
@@ -283,7 +285,7 @@ export default async function SchedulePage() {
         appointment,
         previousSessions: patientAppointments,
         latestInsightText: insightOutput?.structured_summary?.overview ?? null,
-      }),
+      }, tSnap),
     };
   }
 
