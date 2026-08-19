@@ -1,11 +1,14 @@
-const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  active:            { label: "Ativo",          className: "bg-[#E1F5EE] text-[#0F6E56]" },
-  trialing:          { label: "Trial",           className: "bg-blue-50 text-blue-600" },
-  past_due:          { label: "Pagamento pendente", className: "bg-amber-50 text-amber-600" },
-  canceled:          { label: "Cancelado",       className: "bg-red-50 text-red-500" },
-  incomplete:        { label: "Incompleto",      className: "bg-[#F4F3EF] text-[#6B6A66]" },
-  incomplete_expired:{ label: "Expirado",        className: "bg-red-50 text-red-500" },
-  unpaid:            { label: "Inadimplente",    className: "bg-red-50 text-red-500" },
+import { getTranslations, getLocale } from "next-intl/server";
+
+// Classes por status (estilo). O RÓTULO vem do i18n (billing.statusCard.status.*).
+const STATUS_CLASS: Record<string, string> = {
+  active:             "bg-[#E1F5EE] text-[#0F6E56]",
+  trialing:           "bg-blue-50 text-blue-600",
+  past_due:           "bg-amber-50 text-amber-600",
+  canceled:           "bg-red-50 text-red-500",
+  incomplete:         "bg-[#F4F3EF] text-[#6B6A66]",
+  incomplete_expired: "bg-red-50 text-red-500",
+  unpaid:             "bg-red-50 text-red-500",
 };
 
 type Props = {
@@ -17,12 +20,20 @@ type Props = {
   hasCustomer?: boolean;
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
+function formatDate(iso: string, locale: string) {
+  return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
 }
 
-export function SubscriptionStatusCard({ planName, status, trialEndsAt, renewsAt, cancelAtPeriodEnd, hasCustomer }: Props) {
-  const cfg = STATUS_CONFIG[status ?? ""] ?? { label: status ?? "Sem plano", className: "bg-[#F4F3EF] text-[#6B6A66]" };
+export async function SubscriptionStatusCard({ planName, status, trialEndsAt, renewsAt, cancelAtPeriodEnd, hasCustomer }: Props) {
+  const t = await getTranslations("billing.statusCard");
+  const locale = await getLocale();
+
+  const statusClass = STATUS_CLASS[status ?? ""] ?? "bg-[#F4F3EF] text-[#6B6A66]";
+  const statusLabel = status
+    ? Object.hasOwn(STATUS_CLASS, status)
+      ? t(`status.${status}`)
+      : status
+    : t("noPlan");
 
   return (
     <div className="bg-[#0F1A2E] rounded-[14px] px-[18px] py-[16px] flex flex-col gap-[12px] md:flex-row md:items-center md:justify-between">
@@ -35,22 +46,22 @@ export function SubscriptionStatusCard({ planName, status, trialEndsAt, renewsAt
         </div>
         <div>
           <div className="flex items-center gap-[8px] mb-[3px]">
-            <p className="text-[15px] font-semibold text-white">{planName ?? "Sem plano"}</p>
-            <span className={`text-[9px] font-bold uppercase tracking-wider px-[7px] py-[2px] rounded-full ${cfg.className}`}>
-              {cfg.label}
+            <p className="text-[15px] font-semibold text-white">{planName ?? t("noPlan")}</p>
+            <span className={`text-[9px] font-bold uppercase tracking-wider px-[7px] py-[2px] rounded-full ${statusClass}`}>
+              {statusLabel}
             </span>
             {cancelAtPeriodEnd && (
               <span className="text-[9px] font-bold uppercase tracking-wider px-[7px] py-[2px] rounded-full bg-amber-50 text-amber-600">
-                Cancela no fim do período
+                {t("cancelsAtPeriodEnd")}
               </span>
             )}
           </div>
           <p className="text-[11px] text-white/50">
             {trialEndsAt
-              ? `Trial encerra em ${formatDate(trialEndsAt)}`
+              ? t("trialEndsOn", { date: formatDate(trialEndsAt, locale) })
               : renewsAt
-              ? `Renova em ${formatDate(renewsAt)}`
-              : "Nenhuma assinatura ativa"}
+              ? t("renewsOn", { date: formatDate(renewsAt, locale) })
+              : t("noActiveSubscription")}
           </p>
         </div>
       </div>
@@ -63,7 +74,7 @@ export function SubscriptionStatusCard({ planName, status, trialEndsAt, renewsAt
               type="submit"
               className="text-[12px] font-medium text-white border border-white/20 hover:bg-white/10 rounded-[8px] px-[14px] py-[8px] transition"
             >
-              Gerenciar assinatura
+              {t("manage")}
             </button>
           </form>
         )}
@@ -72,7 +83,7 @@ export function SubscriptionStatusCard({ planName, status, trialEndsAt, renewsAt
             href="#planos"
             className="text-[12px] font-medium text-[#0F1A2E] bg-white hover:bg-[#F4F3EF] rounded-[8px] px-[14px] py-[8px] transition"
           >
-            Ver planos
+            {t("viewPlans")}
           </a>
         )}
       </div>

@@ -184,5 +184,13 @@
     "notSure": "Not sure yet?",
     "continueTrial": "Continue with 14 days free →",
     "noCard": "No card required. Pick a plan later in Settings → Billing."
+  },
+  "ready": {
+    "eyebrow": "Setup complete",
+    "title": "Your clinic is ready.",
+    "subtitle": "All set. You can start using the system now.",
+    "goDashboard": "Go to Dashboard",
+    "addFirstPatient": "Add your first patient",
+    "demoNote": "We created demo data for you to explore the system. Redirecting automatically in a moment…"
   }
 }
