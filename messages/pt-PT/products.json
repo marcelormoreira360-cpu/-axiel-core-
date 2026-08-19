@@ -58,5 +58,38 @@
       "completed": "Concluído",
       "canceled": "Cancelado"
     }
+  },
+  "orders": {
+    "status": {
+      "draft": "Rascunho",
+      "pending": "Pendente",
+      "paid": "Pago",
+      "delivered": "Entregue",
+      "canceled": "Cancelado"
+    },
+    "payment": {
+      "unpaid": "Não pago",
+      "paid": "Pago",
+      "refunded": "Reembolsado",
+      "failed": "Falhou"
+    },
+    "title": "Encomendas de produtos",
+    "ordersCount": "{count, plural, one {# encomenda} other {# encomendas}}",
+    "noneYet": "Ainda sem encomendas",
+    "noneYetText": "As encomendas de produtos aparecerão aqui assim que forem criadas.",
+    "newOrder": "+ Nova encomenda",
+    "walkIn": "Venda avulsa",
+    "chargeError": "Erro ao gerar a cobrança.",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "open": "Abrir",
+    "card": "Cartão",
+    "markDelivered": "Marcar entregue",
+    "back": "Encomendas",
+    "newOrderTitle": "Nova encomenda",
+    "newOrderSubtitle": "Selecione produtos e quantidades para gerar uma encomenda.",
+    "noProducts": "Nenhum produto ativo",
+    "noProductsText": "Registe produtos com valor para poder criar encomendas.",
+    "addProduct": "Registar produto"
   }
 }

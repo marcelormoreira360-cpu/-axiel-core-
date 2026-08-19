@@ -58,5 +58,38 @@
       "completed": "Completed",
       "canceled": "Canceled"
     }
+  },
+  "orders": {
+    "status": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "paid": "Paid",
+      "delivered": "Delivered",
+      "canceled": "Canceled"
+    },
+    "payment": {
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "refunded": "Refunded",
+      "failed": "Failed"
+    },
+    "title": "Product orders",
+    "ordersCount": "{count, plural, one {# order} other {# orders}}",
+    "noneYet": "No orders yet",
+    "noneYetText": "Product orders will appear here once they're created.",
+    "newOrder": "+ New order",
+    "walkIn": "Walk-in sale",
+    "chargeError": "Error generating charge.",
+    "copied": "Copied!",
+    "copy": "Copy",
+    "open": "Open",
+    "card": "Card",
+    "markDelivered": "Mark delivered",
+    "back": "Orders",
+    "newOrderTitle": "New order",
+    "newOrderSubtitle": "Select products and quantities to generate an order.",
+    "noProducts": "No active products",
+    "noProductsText": "Add products with a price to create orders.",
+    "addProduct": "Add product"
   }
 }
