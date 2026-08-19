@@ -39,5 +39,14 @@
   "doneTitle": "Booking confirmed!",
   "doneWith": "with {name}",
   "doneConfirmLine1": "A confirmation has been sent to your WhatsApp.",
-  "doneConfirmLine2": "See you then!"
+  "doneConfirmLine2": "See you then!",
+  "linkCard": {
+    "title": "Online Booking Link",
+    "subtitle": "Send this link to your patients so they can book directly, no call needed.",
+    "copied": "Copied!",
+    "copyLink": "Copy link",
+    "preview": "Preview",
+    "sendWhatsApp": "Send via WhatsApp",
+    "whatsappText": "Book your appointment here: {url}"
+  }
 }

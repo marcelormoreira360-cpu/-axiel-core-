@@ -15,6 +15,7 @@
  */
 
 import { useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Mic, MicOff, Square, Loader2, X } from "lucide-react";
 
 type RecState = "idle" | "recording" | "transcribing";
@@ -36,6 +37,7 @@ function formatElapsed(secs: number) {
 }
 
 export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName, defaultValue }: Props) {
+  const t = useTranslations("common.voiceDictation");
   const [recState, setRecState] = useState<RecState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +74,7 @@ export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName,
       setElapsed(0);
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     } catch {
-      setError("Microfone não disponível. Verifique as permissões do navegador.");
+      setError(t("micUnavailable"));
     }
   }
 
@@ -88,7 +90,7 @@ export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName,
       fd.append("file", blob, "audio.webm");
       const res = await fetch("/api/transcribe", { method: "POST", body: fd });
       const data = await res.json() as { text?: string; error?: string };
-      if (!res.ok) throw new Error(data.error ?? "Erro na transcrição.");
+      if (!res.ok) throw new Error(data.error ?? t("transcribeError"));
       const text = (data.text ?? "").trim();
       if (text && textareaRef.current) {
         const current = textareaRef.current.value.trim();
@@ -96,7 +98,7 @@ export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName,
       }
       setRecState("idle");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao transcrever.");
+      setError(err instanceof Error ? err.message : t("transcribeErrorGeneric"));
       setRecState("idle");
     }
   }
@@ -121,7 +123,7 @@ export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName,
           <button
             type="button"
             onClick={startRecording}
-            title="Ditar nota de voz"
+            title={t("dictate")}
             className="flex items-center justify-center w-[20px] h-[20px] rounded text-[#C4C2BC] hover:text-[#0F6E56] hover:bg-[#E1F5EE] transition"
           >
             <Mic className="w-[12px] h-[12px]" />
@@ -134,7 +136,7 @@ export function VoiceDictation({ name, placeholder, rows = 3, textareaClassName,
             <button
               type="button"
               onClick={stopRecording}
-              title="Parar gravação"
+              title={t("stop")}
               className="flex items-center justify-center w-[20px] h-[20px] rounded text-red-500 hover:bg-red-50 transition"
             >
               <Square className="w-[10px] h-[10px] fill-current" />
