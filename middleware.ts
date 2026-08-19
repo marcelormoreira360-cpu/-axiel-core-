@@ -160,7 +160,10 @@ export async function middleware(request: NextRequest) {
 export const config = {
   // Exclui também assets estáticos (ícones, imagens, sw.js, manifest): eles não
   // precisam de auth/cookies e pagavam a latência do middleware em toda carga.
+  // `monitoring` = rota de túnel do Sentry (tunnelRoute em next.config.ts): precisa
+  // passar direto ao handler do Sentry, senão o middleware de auth redireciona o
+  // envelope de erro p/ /auth/login (500) e os erros de client-side não chegam ao Sentry.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icons/|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?|mp4|webm|mp3)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|manifest.webmanifest|sw.js|icons/|monitoring|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|avif|woff2?|mp4|webm|mp3)$).*)",
   ],
 };
