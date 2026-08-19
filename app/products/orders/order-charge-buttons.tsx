@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 // Botões de cobrança de um pedido: Cartão (Stripe) + Pix/Boleto (Asaas).
 export function OrderChargeButtons({ orderId, asaasEnabled }: { orderId: string; asaasEnabled: boolean }) {
+  const t = useTranslations("products.orders");
   const [loading, setLoading] = useState<string | null>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -19,10 +21,10 @@ export function OrderChargeButtons({ orderId, asaasEnabled }: { orderId: string;
         body: JSON.stringify({ order_id: orderId, ...(billingType ? { billing_type: billingType } : {}) }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
-      if (!res.ok || !data.url) { setError(data.error ?? "Erro ao gerar cobrança."); return; }
+      if (!res.ok || !data.url) { setError(data.error ?? t("chargeError")); return; }
       setUrl(data.url);
     } catch {
-      setError("Erro ao gerar cobrança.");
+      setError(t("chargeError"));
     } finally {
       setLoading(null);
     }
@@ -39,9 +41,9 @@ export function OrderChargeButtons({ orderId, asaasEnabled }: { orderId: string;
         <input readOnly value={url} onFocus={(e) => e.currentTarget.select()}
           className="w-40 text-[10px] text-[#6B6A66] dark:text-[#9E9C97] bg-axiel-background border border-axiel-line rounded-md px-2 py-1" />
         <button onClick={copy} className="text-[10px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/20 bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#d0f0e6] dark:hover:bg-[#0F6E56]/30 rounded-md px-2 py-1 transition">
-          {copied ? "Copiado!" : "Copiar"}
+          {copied ? t("copied") : t("copy")}
         </button>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-axiel-line hover:bg-axiel-background rounded-md px-2 py-1 transition">Abrir</a>
+        <a href={url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-axiel-line hover:bg-axiel-background rounded-md px-2 py-1 transition">{t("open")}</a>
       </div>
     );
   }
@@ -51,7 +53,7 @@ export function OrderChargeButtons({ orderId, asaasEnabled }: { orderId: string;
   return (
     <div className="flex items-center gap-1.5 flex-wrap justify-end">
       <button onClick={() => run("card", "/api/stripe/order-checkout")} disabled={!!loading} className={btn}>
-        {loading === "card" ? "…" : "Cartão"}
+        {loading === "card" ? "…" : t("card")}
       </button>
       {asaasEnabled && (
         <>

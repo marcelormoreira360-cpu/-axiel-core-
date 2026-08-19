@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
+import { getTranslations, getLocale } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { EmptyState } from "@/components/empty-state";
@@ -19,14 +20,6 @@ type DbOrder = {
   patients: { full_name: string } | null;
 };
 
-const ORDER_STATUS_LABELS: Record<DbOrder["status"], string> = {
-  draft: "Rascunho",
-  pending: "Pendente",
-  paid: "Pago",
-  delivered: "Entregue",
-  canceled: "Cancelado",
-};
-
 const ORDER_STATUS_CLASSES: Record<DbOrder["status"], string> = {
   draft: "bg-[#F4F3EF] dark:bg-white/[.06] text-[#6B6A66] dark:text-[#9E9C97]",
   pending: "bg-[#FEF3C7] text-[#92400E]",
@@ -35,19 +28,12 @@ const ORDER_STATUS_CLASSES: Record<DbOrder["status"], string> = {
   canceled: "bg-[#FEE2E2] text-[#991B1B]",
 };
 
-const PAYMENT_STATUS_LABELS: Record<DbOrder["payment_status"], string> = {
-  unpaid: "Não pago",
-  paid: "Pago",
-  refunded: "Reembolsado",
-  failed: "Falhou",
-};
-
-function formatBRL(cents: number, currency: string) {
-  return formatMoney(cents, currency, "pt-BR");
+function formatBRL(cents: number, currency: string, locale: string) {
+  return formatMoney(cents, currency, locale);
 }
 
-function formatDate(value: string) {
-  return new Date(value).toLocaleDateString("pt-BR", {
+function formatDate(value: string, locale: string) {
+  return new Date(value).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -69,6 +55,8 @@ async function getProductOrders(): Promise<DbOrder[]> {
 export default async function ProductOrdersPage() {
   const orders = await getProductOrders();
   const asaasEnabled = isAsaasConfigured();
+  const t = await getTranslations("products.orders");
+  const locale = await getLocale();
 
   return (
     <Shell>
@@ -83,12 +71,10 @@ export default async function ProductOrdersPage() {
           </BackLink>
           <div>
             <h1 className="text-[18px] font-medium tracking-[-0.025em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-              Pedidos de produtos
+              {t("title")}
             </h1>
             <p className="text-[12px] text-[#A09E98] mt-[2px]">
-              {orders.length > 0
-                ? `${orders.length} pedido${orders.length !== 1 ? "s" : ""}`
-                : "Nenhum pedido ainda"}
+              {orders.length > 0 ? t("ordersCount", { count: orders.length }) : t("noneYet")}
             </p>
           </div>
         </div>
@@ -96,15 +82,15 @@ export default async function ProductOrdersPage() {
           href="/products/orders/new"
           className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-lg px-3 py-1.5 transition"
         >
-          + Novo pedido
+          {t("newOrder")}
         </Link>
       </div>
 
       {orders.length === 0 ? (
         <EmptyState
           icon={<ShoppingBag className="h-7 w-7" />}
-          title="Nenhum pedido ainda"
-          text="Os pedidos de produtos aparecerão aqui assim que forem criados."
+          title={t("noneYet")}
+          text={t("noneYetText")}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-[10px]">
@@ -120,28 +106,28 @@ export default async function ProductOrdersPage() {
                     #{order.id.slice(0, 8).toUpperCase()}
                   </p>
                   <p className="text-[11px] text-[#A09E98] mt-[1px]">
-                    {order.patients?.full_name ?? "Venda avulsa"}
+                    {order.patients?.full_name ?? t("walkIn")}
                   </p>
                 </div>
                 <span
                   className={`shrink-0 text-[10px] font-medium px-[8px] py-[2px] rounded-full ${ORDER_STATUS_CLASSES[order.status]}`}
                 >
-                  {ORDER_STATUS_LABELS[order.status]}
+                  {t(`status.${order.status}`)}
                 </span>
               </div>
 
               {/* Total + payment */}
               <div className="flex items-center justify-between">
                 <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-                  {formatBRL(order.total_cents, order.currency)}
+                  {formatBRL(order.total_cents, order.currency, locale)}
                 </p>
                 <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
-                  {PAYMENT_STATUS_LABELS[order.payment_status]}
+                  {t(`payment.${order.payment_status}`)}
                 </span>
               </div>
 
               {/* Date */}
-              <p className="text-[10px] text-[#A09E98] mt-[6px]">{formatDate(order.created_at)}</p>
+              <p className="text-[10px] text-[#A09E98] mt-[6px]">{formatDate(order.created_at, locale)}</p>
 
               {/* Cobrança (pedidos não pagos) */}
               {order.payment_status !== "paid" && order.status !== "canceled" && order.total_cents > 0 && (

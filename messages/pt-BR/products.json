@@ -58,5 +58,38 @@
       "completed": "Concluído",
       "canceled": "Cancelado"
     }
+  },
+  "orders": {
+    "status": {
+      "draft": "Rascunho",
+      "pending": "Pendente",
+      "paid": "Pago",
+      "delivered": "Entregue",
+      "canceled": "Cancelado"
+    },
+    "payment": {
+      "unpaid": "Não pago",
+      "paid": "Pago",
+      "refunded": "Reembolsado",
+      "failed": "Falhou"
+    },
+    "title": "Pedidos de produtos",
+    "ordersCount": "{count, plural, one {# pedido} other {# pedidos}}",
+    "noneYet": "Nenhum pedido ainda",
+    "noneYetText": "Os pedidos de produtos aparecerão aqui assim que forem criados.",
+    "newOrder": "+ Novo pedido",
+    "walkIn": "Venda avulsa",
+    "chargeError": "Erro ao gerar cobrança.",
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "open": "Abrir",
+    "card": "Cartão",
+    "markDelivered": "Marcar entregue",
+    "back": "Pedidos",
+    "newOrderTitle": "Novo pedido",
+    "newOrderSubtitle": "Selecione produtos e quantidades para gerar um pedido.",
+    "noProducts": "Nenhum produto ativo",
+    "noProductsText": "Cadastre produtos com valor para poder criar pedidos.",
+    "addProduct": "Cadastrar produto"
   }
 }
