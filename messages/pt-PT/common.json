@@ -106,5 +106,19 @@
     "subscribeNow": "Assinar agora",
     "viewPlans": "Ver planos",
     "trialEndingSoon": "{days, plural, =0 {O seu teste termina hoje. Escolha um plano para não perder o acesso.} one {O seu teste termina em # dia. Garanta o seu plano.} other {O seu teste termina em # dias. Garanta o seu plano.}}"
+  },
+  "pwa": {
+    "title": "Instalar AXIEL Core",
+    "subtitle": "Acesso rápido no ecrã inicial",
+    "install": "Instalar",
+    "close": "Fechar",
+    "installHint": "Para instalar: menu do navegador → \"Instalar aplicação\" (ou \"Adicionar ao ecrã principal\" no iPhone)."
+  },
+  "voiceDictation": {
+    "dictate": "Ditar nota de voz",
+    "stop": "Parar gravação",
+    "micUnavailable": "Microfone não disponível. Verifique as permissões do navegador.",
+    "transcribeError": "Erro na transcrição.",
+    "transcribeErrorGeneric": "Erro ao transcrever."
   }
 }

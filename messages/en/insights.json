@@ -83,5 +83,23 @@
     "channelNoReport": "• {label}: no report",
     "followupPrompt": "Insight approved. Would you like to create a follow-up for this patient?",
     "createFollowup": "Create follow-up"
+  },
+  "generator": {
+    "availableAfterSave": "Available after saving",
+    "idleUnsavedHint": "Save the session to generate an automatic insight with patterns, correlations and suggested next steps.",
+    "readyToGenerate": "Session saved, ready to generate",
+    "readyHint": "AI will analyze this session's notes, the patient history and vitals to generate patterns and clinical suggestions.",
+    "generateButton": "Generate AI Insight for this session",
+    "generating": "Generating…",
+    "generatingHint": "Analyzing the patient's notes, history and vitals. This may take a few seconds…",
+    "failed": "Failed to generate",
+    "retry": "Try again",
+    "generatedTitle": "AI Insight generated",
+    "pendingReview": "Pending review",
+    "viewFull": "View full",
+    "patternLabel": "Pattern identified",
+    "reviewPointLabel": "Review point",
+    "disclaimer": "AI insights: not a medical diagnosis. Review before clinical use.",
+    "unknownError": "Unknown error."
   }
 }

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { IntakeFormWithQuestions, IntakeResponse } from "@/lib/types";
 import { anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 import { BodyMapField } from "@/components/body-map-input";
@@ -12,11 +13,12 @@ function getExistingAnswer(questionId: string, responses: IntakeResponse[]) {
   return responses.find((response) => response.question_id === questionId)?.answer ?? "";
 }
 
-export function PatientIntakeForm({ form, existingResponses = [], action }: Props) {
+export async function PatientIntakeForm({ form, existingResponses = [], action }: Props) {
+  const t = await getTranslations("intake.patientForm");
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-8">
       <div className="mb-8">
-        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold dark:text-[#9FE1CB]">FORMULÁRIO DE INTAKE</p>
+        <p className="text-sm font-medium tracking-[0.22em] text-axiel-gold dark:text-[#9FE1CB]">{t("eyebrow")}</p>
         <h2 className="mt-2 text-3xl font-semibold tracking-tight">{form.name}</h2>
         {form.description && <p className="mt-2 text-black/55">{form.description}</p>}
       </div>
@@ -47,9 +49,9 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
                 <textarea name={`answer_${question.id}`} rows={5} defaultValue={value} required={question.is_required} className={`${baseClass} resize-none`} />
               ) : question.question_type === "yes_no" ? (
                 <select name={`answer_${question.id}`} defaultValue={value} required={question.is_required} className={baseClass}>
-                  <option value="">Selecione</option>
-                  <option value="Sim">Sim</option>
-                  <option value="Não">Não</option>
+                  <option value="">{t("selectPlaceholder")}</option>
+                  <option value="Sim">{t("yes")}</option>
+                  <option value="Não">{t("no")}</option>
                 </select>
               ) : (
                 <input
@@ -66,7 +68,7 @@ export function PatientIntakeForm({ form, existingResponses = [], action }: Prop
       </div>
 
       <button type="submit" className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
-        Salvar respostas
+        {t("save")}
       </button>
     </form>
   );

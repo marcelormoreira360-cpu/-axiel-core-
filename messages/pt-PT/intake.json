@@ -57,5 +57,12 @@
   "mapNotesPlaceholder": "Descreva os pontos/regiões (ex.: 11, 12 — lombar)",
   "viewMore": "Ver mais {count} formulários",
   "mapHint": "Clique no mapa para marcar os pontos.",
-  "mapClear": "Remover marca"
+  "mapClear": "Remover marca",
+  "patientForm": {
+    "eyebrow": "FORMULÁRIO DE INTAKE",
+    "selectPlaceholder": "Selecione",
+    "save": "Guardar respostas",
+    "yes": "Sim",
+    "no": "Não"
+  }
 }

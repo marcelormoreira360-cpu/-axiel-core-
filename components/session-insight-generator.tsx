@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Sparkles, ExternalLink, RotateCcw, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { generateSessionInsightAction } from "@/app/schedule/[id]/session/actions";
@@ -18,6 +19,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
   const [insight, setInsight] = useState<AiInsight | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  const t = useTranslations("insights.generator");
 
   function generate() {
     setState("generating");
@@ -25,7 +27,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
     startTransition(async () => {
       const result = await generateSessionInsightAction(patientId);
       if (result.error || !result.insight) {
-        setErrorMsg(result.error ?? "Erro desconhecido.");
+        setErrorMsg(result.error ?? t("unknownError"));
         setState("error");
       } else {
         setInsight(result.insight);
@@ -49,11 +51,11 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           </div>
           <div>
             <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight</p>
-            <p className="text-[10px] text-[#A09E98]">Disponível após salvar</p>
+            <p className="text-[10px] text-[#A09E98]">{t("availableAfterSave")}</p>
           </div>
         </div>
         <p className="text-[12px] text-[#A09E98] leading-relaxed bg-[#FAFAF8] rounded-[8px] px-[10px] py-[9px]">
-          Salve a sessão para gerar um insight automático com padrões, correlações e próximos passos sugeridos.
+          {t("idleUnsavedHint")}
         </p>
       </div>
     );
@@ -69,11 +71,11 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           </div>
           <div>
             <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight</p>
-            <p className="text-[10px] text-[#0F6E56]">Sessão salva — pronto para gerar</p>
+            <p className="text-[10px] text-[#0F6E56]">{t("readyToGenerate")}</p>
           </div>
         </div>
         <p className="text-[12px] text-[#6B6A66] leading-relaxed mb-[12px]">
-          A IA vai analisar as notas desta sessão, o histórico do paciente e os vitais para gerar padrões e sugestões clínicas.
+          {t("readyHint")}
         </p>
         <button
           type="button"
@@ -81,7 +83,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           className="w-full flex items-center justify-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[9px] rounded-[8px]"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          Gerar AI Insight desta sessão
+          {t("generateButton")}
         </button>
       </div>
     );
@@ -97,11 +99,11 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           </div>
           <div>
             <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight</p>
-            <p className="text-[10px] text-[#0F6E56]">Gerando…</p>
+            <p className="text-[10px] text-[#0F6E56]">{t("generating")}</p>
           </div>
         </div>
         <p className="text-[12px] text-[#A09E98] bg-[#FAFAF8] rounded-[8px] px-[10px] py-[9px]">
-          Analisando notas, histórico e vitais do paciente. Isso pode levar alguns segundos…
+          {t("generatingHint")}
         </p>
       </div>
     );
@@ -117,7 +119,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           </div>
           <div>
             <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight</p>
-            <p className="text-[10px] text-red-400">Falha ao gerar</p>
+            <p className="text-[10px] text-red-400">{t("failed")}</p>
           </div>
         </div>
         <p className="text-[11px] text-red-400 bg-red-50 rounded-[8px] px-[10px] py-[8px] mb-[10px]">
@@ -129,7 +131,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           className="flex items-center gap-[5px] text-[11px] font-medium text-[#6B6A66] border border-black/[.10] hover:border-[#0F6E56] hover:text-[#0F6E56] rounded-[7px] px-[10px] py-[6px] transition"
         >
           <RotateCcw className="h-3 w-3" />
-          Tentar novamente
+          {t("retry")}
         </button>
       </div>
     );
@@ -144,8 +146,8 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
             <Sparkles className="h-3.5 w-3.5 text-[#0F6E56]" />
           </div>
           <div>
-            <p className="text-[12px] font-medium text-[#0F1A2E]">AI Insight gerado</p>
-            <p className="text-[10px] text-[#A09E98]">Pendente de revisão</p>
+            <p className="text-[12px] font-medium text-[#0F1A2E]">{t("generatedTitle")}</p>
+            <p className="text-[10px] text-[#A09E98]">{t("pendingReview")}</p>
           </div>
         </div>
         <Link
@@ -153,7 +155,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
           target="_blank" rel="noopener noreferrer"
           className="flex items-center gap-[4px] text-[10px] font-medium text-[#0F6E56] hover:text-[#085041] transition"
         >
-          Ver completo
+          {t("viewFull")}
           <ExternalLink className="h-2.5 w-2.5" />
         </Link>
       </div>
@@ -169,7 +171,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
       {firstPattern && (
         <div className="mb-[8px]">
           <p className="text-[10px] font-semibold uppercase tracking-[.05em] text-[#A09E98] mb-[4px]">
-            Padrão identificado
+            {t("patternLabel")}
           </p>
           <div className="bg-[#FAFAF8] rounded-[8px] px-[10px] py-[8px]">
             <p className="text-[11px] font-medium text-[#0F1A2E] mb-[2px]">{firstPattern.title}</p>
@@ -182,7 +184,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
       {firstReviewPoint && (
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[.05em] text-[#A09E98] mb-[4px]">
-            Ponto de revisão
+            {t("reviewPointLabel")}
           </p>
           <p className="text-[11px] text-[#6B6A66] bg-[#FAFAF8] rounded-[8px] px-[10px] py-[8px] line-clamp-2">
             {firstReviewPoint}
@@ -191,7 +193,7 @@ export function SessionInsightGenerator({ patientId, saved }: Props) {
       )}
 
       <p className="text-[9px] text-[#D3D1C7] mt-[10px]">
-        Insights de IA — não constituem diagnóstico médico. Revisar antes de usar clinicamente.
+        {t("disclaimer")}
       </p>
     </div>
   );

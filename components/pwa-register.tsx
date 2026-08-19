@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { X, Download } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -9,6 +10,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function PwaRegister() {
+  const t = useTranslations("common.pwa");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showBanner, setShowBanner] = useState(false);
 
@@ -41,7 +43,7 @@ export function PwaRegister() {
     if (!installPrompt) {
       setShowBanner(false);
       const { toast } = await import("sonner");
-      toast.info("Para instalar: menu do navegador → \"Instalar aplicativo\" (ou \"Adicionar à Tela de Início\" no iPhone).");
+      toast.info(t("installHint"));
       return;
     }
     try {
@@ -49,7 +51,7 @@ export function PwaRegister() {
       await installPrompt.userChoice;
     } catch {
       const { toast } = await import("sonner");
-      toast.info("Para instalar: menu do navegador → \"Instalar aplicativo\" (ou \"Adicionar à Tela de Início\" no iPhone).");
+      toast.info(t("installHint"));
     } finally {
       setShowBanner(false);
       setInstallPrompt(null);
@@ -66,19 +68,19 @@ export function PwaRegister() {
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 bg-[#0F1A2E] text-white rounded-2xl shadow-xl px-4 py-3 flex items-center gap-3">
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold">Instalar AXIEL Core</p>
-        <p className="text-[11px] text-white/50 mt-0.5">Acesso rápido na tela inicial</p>
+        <p className="text-[13px] font-semibold">{t("title")}</p>
+        <p className="text-[11px] text-white/50 mt-0.5">{t("subtitle")}</p>
       </div>
       <button
         onClick={handleInstall}
         className="shrink-0 flex items-center gap-1.5 bg-[#0F6E56] hover:bg-[#085041] text-white text-[12px] font-medium px-3 py-1.5 rounded-lg transition"
       >
         <Download className="h-3.5 w-3.5" />
-        Instalar
+        {t("install")}
       </button>
       <button
         onClick={handleDismiss}
-        aria-label="Fechar"
+        aria-label={t("close")}
         className="shrink-0 text-white/40 hover:text-white/70 transition"
       >
         <X className="h-4 w-4" />

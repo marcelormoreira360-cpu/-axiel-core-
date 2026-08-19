@@ -106,5 +106,19 @@
     "subscribeNow": "Subscribe now",
     "viewPlans": "View plans",
     "trialEndingSoon": "{days, plural, =0 {Your trial ends today. Choose a plan to keep your access.} one {Your trial ends in # day. Get your plan.} other {Your trial ends in # days. Get your plan.}}"
+  },
+  "pwa": {
+    "title": "Install AXIEL Core",
+    "subtitle": "Quick access on your home screen",
+    "install": "Install",
+    "close": "Close",
+    "installHint": "To install: browser menu → \"Install app\" (or \"Add to Home Screen\" on iPhone)."
+  },
+  "voiceDictation": {
+    "dictate": "Dictate voice note",
+    "stop": "Stop recording",
+    "micUnavailable": "Microphone unavailable. Check your browser permissions.",
+    "transcribeError": "Transcription error.",
+    "transcribeErrorGeneric": "Error transcribing."
   }
 }

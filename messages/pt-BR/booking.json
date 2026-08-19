@@ -39,5 +39,14 @@
   "doneTitle": "Agendamento confirmado!",
   "doneWith": "com {name}",
   "doneConfirmLine1": "Uma confirmação foi enviada para o seu WhatsApp.",
-  "doneConfirmLine2": "Até lá!"
+  "doneConfirmLine2": "Até lá!",
+  "linkCard": {
+    "title": "Link de Agendamento Online",
+    "subtitle": "Envie este link para seus pacientes agendarem diretamente, sem precisar ligar.",
+    "copied": "Copiado!",
+    "copyLink": "Copiar link",
+    "preview": "Visualizar",
+    "sendWhatsApp": "Enviar via WhatsApp",
+    "whatsappText": "Agende sua consulta aqui: {url}"
+  }
 }

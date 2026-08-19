@@ -83,5 +83,23 @@
     "channelNoReport": "• {label}: sem relatório",
     "followupPrompt": "Insight aprovado. Deseja criar um follow-up para este paciente?",
     "createFollowup": "Criar follow-up"
+  },
+  "generator": {
+    "availableAfterSave": "Disponível após guardar",
+    "idleUnsavedHint": "Guarde a sessão para gerar um insight automático com padrões, correlações e próximos passos sugeridos.",
+    "readyToGenerate": "Sessão guardada, pronto para gerar",
+    "readyHint": "A IA vai analisar as notas desta sessão, o histórico do paciente e os sinais vitais para gerar padrões e sugestões clínicas.",
+    "generateButton": "Gerar AI Insight desta sessão",
+    "generating": "A gerar…",
+    "generatingHint": "A analisar notas, histórico e sinais vitais do paciente. Pode demorar alguns segundos…",
+    "failed": "Falha ao gerar",
+    "retry": "Tentar novamente",
+    "generatedTitle": "AI Insight gerado",
+    "pendingReview": "Pendente de revisão",
+    "viewFull": "Ver completo",
+    "patternLabel": "Padrão identificado",
+    "reviewPointLabel": "Ponto de revisão",
+    "disclaimer": "Insights de IA: não constituem diagnóstico médico. Rever antes de usar clinicamente.",
+    "unknownError": "Erro desconhecido."
   }
 }
