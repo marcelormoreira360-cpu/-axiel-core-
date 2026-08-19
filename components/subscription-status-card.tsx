@@ -30,7 +30,7 @@ export async function SubscriptionStatusCard({ planName, status, trialEndsAt, re
 
   const statusClass = STATUS_CLASS[status ?? ""] ?? "bg-[#F4F3EF] text-[#6B6A66]";
   const statusLabel = status
-    ? status in STATUS_CLASS
+    ? Object.hasOwn(STATUS_CLASS, status)
       ? t(`status.${status}`)
       : status
     : t("noPlan");
