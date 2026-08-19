@@ -38,8 +38,9 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body className={`${inter.variable} min-h-screen font-sans antialiased`} suppressHydrationWarning>
         <NextIntlClientProvider>
           <ThemeProvider>{children}</ThemeProvider>
+          {/* PwaRegister usa useTranslations → precisa ficar DENTRO do provider */}
+          <PwaRegister />
         </NextIntlClientProvider>
-        <PwaRegister />
         <Toaster position="top-center" richColors closeButton />
         {/* Analytics PostHog — só ativa quando NEXT_PUBLIC_POSTHOG_KEY existe */}
         <PostHogProvider />
