@@ -28,10 +28,6 @@ const ORDER_STATUS_CLASSES: Record<DbOrder["status"], string> = {
   canceled: "bg-[#FEE2E2] text-[#991B1B]",
 };
 
-function formatBRL(cents: number, currency: string, locale: string) {
-  return formatMoney(cents, currency, locale);
-}
-
 function formatDate(value: string, locale: string) {
   return new Date(value).toLocaleDateString(locale, {
     day: "numeric",
@@ -119,7 +115,7 @@ export default async function ProductOrdersPage() {
               {/* Total + payment */}
               <div className="flex items-center justify-between">
                 <p className="text-[15px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-                  {formatBRL(order.total_cents, order.currency, locale)}
+                  {formatMoney(order.total_cents, order.currency, locale)}
                 </p>
                 <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">
                   {t(`payment.${order.payment_status}`)}
