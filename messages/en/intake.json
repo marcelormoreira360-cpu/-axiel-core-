@@ -57,5 +57,10 @@
   "mapNotesPlaceholder": "Describe the points/regions (e.g., 11, 12 — lower back)",
   "viewMore": "View {count} more forms",
   "mapHint": "Click the map to mark the points.",
-  "mapClear": "Remove marker"
+  "mapClear": "Remove marker",
+  "patientForm": {
+    "eyebrow": "INTAKE FORM",
+    "selectPlaceholder": "Select",
+    "save": "Save answers"
+  }
 }

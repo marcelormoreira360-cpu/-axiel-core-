@@ -89,5 +89,17 @@
     "emptyTitle": "Nenhum membro na equipe",
     "emptyText": "Convide o primeiro profissional quando a clínica estiver pronta.",
     "emptyAction": "Convidar equipe"
+  },
+  "editForm": {
+    "bookingLink": "link de agendamento:",
+    "saved": "Salvo ✓",
+    "edit": "Editar",
+    "clinicName": "Nome da clínica",
+    "slugLabel": "Slug (aparece na URL de agendamento)",
+    "slugPlaceholder": "minha-clinica",
+    "slugHint": "Use apenas letras minúsculas, números e hífens. Ex:",
+    "saving": "Salvando…",
+    "save": "Salvar",
+    "cancel": "Cancelar"
   }
 }

@@ -89,5 +89,17 @@
     "emptyTitle": "No team members",
     "emptyText": "Invite your first practitioner when the clinic is ready.",
     "emptyAction": "Invite team"
+  },
+  "editForm": {
+    "bookingLink": "booking link:",
+    "saved": "Saved ✓",
+    "edit": "Edit",
+    "clinicName": "Clinic name",
+    "slugLabel": "Slug (appears in the booking URL)",
+    "slugPlaceholder": "my-clinic",
+    "slugHint": "Use only lowercase letters, numbers and hyphens. e.g.",
+    "saving": "Saving…",
+    "save": "Save",
+    "cancel": "Cancel"
   }
 }
