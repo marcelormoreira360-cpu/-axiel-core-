@@ -61,6 +61,8 @@
   "patientForm": {
     "eyebrow": "INTAKE FORM",
     "selectPlaceholder": "Select",
-    "save": "Save answers"
+    "save": "Save answers",
+    "yes": "Yes",
+    "no": "No"
   }
 }

@@ -61,6 +61,8 @@
   "patientForm": {
     "eyebrow": "FORMULÁRIO DE INTAKE",
     "selectPlaceholder": "Selecione",
-    "save": "Salvar respostas"
+    "save": "Salvar respostas",
+    "yes": "Sim",
+    "no": "Não"
   }
 }

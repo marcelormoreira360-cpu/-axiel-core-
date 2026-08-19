@@ -50,8 +50,8 @@ export async function PatientIntakeForm({ form, existingResponses = [], action }
               ) : question.question_type === "yes_no" ? (
                 <select name={`answer_${question.id}`} defaultValue={value} required={question.is_required} className={baseClass}>
                   <option value="">{t("selectPlaceholder")}</option>
-                  <option value="Sim">Sim</option>
-                  <option value="Não">Não</option>
+                  <option value="Sim">{t("yes")}</option>
+                  <option value="Não">{t("no")}</option>
                 </select>
               ) : (
                 <input

@@ -87,7 +87,7 @@
   "generator": {
     "availableAfterSave": "Disponível após guardar",
     "idleUnsavedHint": "Guarde a sessão para gerar um insight automático com padrões, correlações e próximos passos sugeridos.",
-    "readyToGenerate": "Sessão guardada — pronto para gerar",
+    "readyToGenerate": "Sessão guardada, pronto para gerar",
     "readyHint": "A IA vai analisar as notas desta sessão, o histórico do paciente e os sinais vitais para gerar padrões e sugestões clínicas.",
     "generateButton": "Gerar AI Insight desta sessão",
     "generating": "A gerar…",
@@ -99,7 +99,7 @@
     "viewFull": "Ver completo",
     "patternLabel": "Padrão identificado",
     "reviewPointLabel": "Ponto de revisão",
-    "disclaimer": "Insights de IA — não constituem diagnóstico médico. Rever antes de usar clinicamente.",
+    "disclaimer": "Insights de IA: não constituem diagnóstico médico. Rever antes de usar clinicamente.",
     "unknownError": "Erro desconhecido."
   }
 }
