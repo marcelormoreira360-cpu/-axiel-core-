@@ -47,5 +47,10 @@
     "eyebrow": "Gestão",
     "title": "Equipe",
     "subtitle": "Produtividade, receita e NPS por profissional."
+  },
+  "detail": {
+    "back": "Voltar à equipe",
+    "eyebrow": "Profissional",
+    "title": "Relatório de Produtividade"
   }
 }

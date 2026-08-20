@@ -65,5 +65,11 @@
     "notesPlaceholder": "Algo importante a lembrar sobre este paciente?",
     "save": "Salvar paciente",
     "cancel": "Cancelar"
+  },
+  "portalLink": {
+    "title": "Ligação segura do paciente",
+    "expires": "Esta ligação privada expira em 7 dias. Partilhe apenas com o paciente.",
+    "copied": "Copiado",
+    "copy": "Copiar ligação"
   }
 }

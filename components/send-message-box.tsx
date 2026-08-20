@@ -1,6 +1,7 @@
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/button";
 
-export function SendMessageBox({
+export async function SendMessageBox({
   title,
   helper,
   channel,
@@ -19,6 +20,7 @@ export function SendMessageBox({
   action: (formData: FormData) => Promise<void>;
   hiddenFields?: Record<string, string | null | undefined>;
 }) {
+  const t = await getTranslations("common.sendBox");
   return (
     <form action={action} className="rounded-xl border border-axiel-line bg-white p-6 shadow-sm">
       {Object.entries(hiddenFields).map(([key, value]) => value ? <input key={key} type="hidden" name={key} value={value} /> : null)}
@@ -30,9 +32,9 @@ export function SendMessageBox({
         <div>
           <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
           <p className="mt-1 text-sm text-black/45">{helper}</p>
-          <p className="mt-2 text-xs text-black/40">To: {recipient || `No ${channel === "email" ? "email" : "phone"} added`}</p>
+          <p className="mt-2 text-xs text-black/40">{t("to")} {recipient || t(channel === "email" ? "noEmail" : "noPhone")}</p>
         </div>
-        <Button disabled={!recipient} className="min-h-12">Send {channel.toUpperCase()}</Button>
+        <Button disabled={!recipient} className="min-h-12">{t("send", { channel: channel.toUpperCase() })}</Button>
       </div>
       <div className="mt-4 rounded-2xl bg-axiel-soft p-4 text-sm leading-6 text-black/60">
         {subject && <p className="mb-2 font-semibold text-black/70">{subject}</p>}

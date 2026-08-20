@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import type { BusinessAnalytics } from "@/services/business-analytics-service";
 
 function fmtBRL(cents: number) {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function ResultsExportButton({ data }: Props) {
+  const t = useTranslations("results.export");
   function handleExport() {
     const rows: string[] = [];
 
@@ -62,7 +64,7 @@ export function ResultsExportButton({ data }: Props) {
       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
         <path d="M6 1v7M3 5.5l3 3 3-3M2 10h8" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
-      Exportar CSV
+      {t("button")}
     </button>
   );
 }

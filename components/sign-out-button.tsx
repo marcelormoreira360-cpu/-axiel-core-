@@ -1,11 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 export function SignOutButton() {
   const router = useRouter();
+  const t = useTranslations("common");
 
   async function signOut() {
     const supabase = createSupabaseBrowserClient();
@@ -16,7 +18,7 @@ export function SignOutButton() {
 
   return (
     <Button type="button" variant="ghost" className="w-full justify-start" onClick={signOut}>
-      Sign out
+      {t("signOut")}
     </Button>
   );
 }

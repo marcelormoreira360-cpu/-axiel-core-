@@ -43,5 +43,14 @@
     "none": "No insights generated for this period.",
     "refresh": "Refresh",
     "refreshTitle": "Regenerate the analysis now"
+  },
+  "chart": {
+    "title": "Monthly evolution",
+    "sessions": "Sessions",
+    "newPatients": "New patients",
+    "revenue": "Revenue"
+  },
+  "export": {
+    "button": "Export CSV"
   }
 }

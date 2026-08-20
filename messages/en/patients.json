@@ -65,5 +65,11 @@
     "notesPlaceholder": "Anything important to remember about this patient?",
     "save": "Save patient",
     "cancel": "Cancel"
+  },
+  "portalLink": {
+    "title": "Secure patient link",
+    "expires": "This private link expires in 7 days. Share it only with the patient.",
+    "copied": "Copied",
+    "copy": "Copy link"
   }
 }

@@ -123,5 +123,7 @@
     "objective": "Goal",
     "note": "Note",
     "generalNotes": "General notes"
-  }
+  },
+  "pyramidAria": "Bio³ pyramid — weight of each axis in the total, color by severity",
+  "scaleAria": "Score 0 to 10"
 }

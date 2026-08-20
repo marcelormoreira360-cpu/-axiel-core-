@@ -4,32 +4,34 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
+import { useTranslations } from "next-intl";
 import type { NpsTrendPoint } from "@/modules/analytics/analytics-kpis";
 
 interface NpsTrendChartProps {
   data: NpsTrendPoint[];
 }
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; payload: NpsTrendPoint }[]; label?: string }) {
+function CustomTooltip({ active, payload, label, t }: { active?: boolean; payload?: { value: number; payload: NpsTrendPoint }[]; label?: string; t: ReturnType<typeof useTranslations> }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
   if (point.count === 0) return null;
   return (
     <div className="bg-white border border-black/[.08] rounded-xl shadow-lg px-3 py-2 text-xs">
       <p className="font-semibold text-[#0F1A2E] mb-0.5">{label}</p>
-      <p className="text-black/60">Média: <span className="font-semibold text-[#0F6E56]">{point.score.toFixed(1)}</span></p>
-      <p className="text-black/40">{point.count} avaliação{point.count !== 1 ? "ões" : ""}</p>
+      <p className="text-black/60">{t("chartAverage")} <span className="font-semibold text-[#0F6E56]">{point.score.toFixed(1)}</span></p>
+      <p className="text-black/40">{t("ratings", { count: point.count })}</p>
     </div>
   );
 }
 
 export function NpsTrendChart({ data }: NpsTrendChartProps) {
+  const t = useTranslations("analytics");
   const hasData = data.some((d) => d.count > 0);
 
   if (!hasData) {
     return (
       <div className="flex items-center justify-center h-[140px] text-sm text-black/30">
-        Sem avaliações ainda
+        {t("chartEmpty")}
       </div>
     );
   }
@@ -46,7 +48,7 @@ export function NpsTrendChart({ data }: NpsTrendChartProps) {
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
         <XAxis dataKey="month" tick={{ fontSize: 10, fill: "rgba(0,0,0,0.35)" }} axisLine={false} tickLine={false} />
         <YAxis domain={[0, 10]} ticks={[0, 5, 10]} tick={{ fontSize: 10, fill: "rgba(0,0,0,0.35)" }} axisLine={false} tickLine={false} />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip t={t} />} />
         <Area
           type="monotone"
           dataKey="score"

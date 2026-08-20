@@ -45,5 +45,7 @@
   "daysSince": "{label} sem sessão",
   "daysMonths": "{count} meses",
   "daysM": "{count} m",
-  "daysD": "{count}d"
+  "daysD": "{count}d",
+  "chartAverage": "Média:",
+  "chartEmpty": "Sem avaliações ainda"
 }

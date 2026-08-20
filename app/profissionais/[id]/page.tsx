@@ -1,6 +1,7 @@
 import { Shell } from "@/components/shell";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ProfissionalReportClient } from "@/components/profissional-report-client";
 
 export default async function ProfissionalReportPage({
@@ -9,6 +10,7 @@ export default async function ProfissionalReportPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("professionals.detail");
 
   return (
     <Shell>
@@ -18,10 +20,10 @@ export default async function ProfissionalReportPage({
           className="flex items-center gap-1 text-[12px] text-black/40 hover:text-[#0F1A2E] transition mb-4"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
-          Voltar à equipe
+          {t("back")}
         </Link>
-        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">Profissional</p>
-        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">Relatório de Produtividade</h1>
+        <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-black/35">{t("eyebrow")}</p>
+        <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
       </div>
 
       <ProfissionalReportClient professionalId={id} />

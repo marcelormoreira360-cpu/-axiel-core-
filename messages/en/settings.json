@@ -288,7 +288,8 @@
     "confirming": "Confirming...",
     "confirm": "Confirm and enable",
     "errStart": "Error starting enrollment",
-    "errInvalidCode": "Invalid code. Try again."
+    "errInvalidCode": "Invalid code. Try again.",
+    "qrAlt": "2FA QR code"
   },
   "equipe": {
     "subtitle": "Team access and practitioner public profiles, all in one place.",

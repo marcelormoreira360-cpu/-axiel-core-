@@ -55,6 +55,7 @@ function LinkCard({
   url: string;
   badge?: string;
 }) {
+  const t = useTranslations("links");
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
       <div className="flex items-start justify-between gap-[12px]">
@@ -76,7 +77,7 @@ function LinkCard({
               <span className="text-[11px] font-mono text-[#6B6A66] bg-[#F4F3EF] rounded-[5px] px-[8px] py-[3px] truncate max-w-[260px]">
                 {url}
               </span>
-              <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#A09E98] hover:text-[#0F6E56] transition" title="Abrir">
+              <a href={url} target="_blank" rel="noopener noreferrer" className="text-[#A09E98] hover:text-[#0F6E56] transition" title={t("open")}>
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
