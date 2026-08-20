@@ -50,10 +50,11 @@ function BandPill({ band, label, className = "" }: { band: Band; label: string; 
 // Cor = severidade (disfunção do eixo) · número = PESO do eixo no total (soma 100%).
 // Ordem fixa topo→base: Biomecânico (topo) / Bioquímico (meio) / Bioemocional (base).
 function NeuroPyramid({ data, className = "w-full max-w-[260px] h-auto mx-auto shrink-0" }: { data: { dys: number | null; share: number | null; isPriority: boolean }[]; className?: string }) {
+  const t = useTranslations("neuroId");
   const polys = ["120,10 150,54 90,54", "90,54 150,54 182,98 58,98", "58,98 182,98 214,142 26,142"];
   const cy = [46, 84, 128];
   return (
-    <svg viewBox="0 0 240 152" className={className} role="img" aria-label="Pirâmide Bio³ — peso de cada eixo no total, cor por gravidade">
+    <svg viewBox="0 0 240 152" className={className} role="img" aria-label={t("pyramidAria")}>
       {data.map((d, i) => {
         const c = severityColor(d.dys);
         return (
@@ -74,9 +75,10 @@ function NeuroPyramid({ data, className = "w-full max-w-[260px] h-auto mx-auto s
 // Prático: o terapeuta só clica. Preserva valor decimal auto-importado (destaca o
 // botão arredondado; o valor cru fica no hidden input até alguém clicar).
 function ScaleButtons({ value, onSelect }: { value: string; onSelect: (v: string) => void }) {
+  const t = useTranslations("neuroId");
   const sel = value === "" || !Number.isFinite(Number(value)) ? null : Math.round(Number(value));
   return (
-    <div className="flex gap-[3px] flex-wrap" role="group" aria-label="Pontuação 0 a 10">
+    <div className="flex gap-[3px] flex-wrap" role="group" aria-label={t("scaleAria")}>
       {Array.from({ length: 11 }, (_, n) => {
         const c = bandForItem(n)?.colors ?? { fill: "#F4F3EF", stroke: "#A09E98", text: "#6B6A66" };
         const active = sel === n;

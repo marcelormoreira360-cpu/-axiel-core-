@@ -236,7 +236,7 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
                 <input
                   value={row.biomarker}
                   onChange={(e) => updateRow(i, "biomarker", e.target.value)}
-                  placeholder="Ex: TSH"
+                  placeholder={t("biomarkerPlaceholder")}
                   className="px-[8px] py-[6px] rounded-[6px] border border-black/[.10] dark:border-white/[.10] text-[11px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56]"
                 />
                 <input

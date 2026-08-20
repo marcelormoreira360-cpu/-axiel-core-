@@ -288,7 +288,8 @@
     "confirming": "Confirmando...",
     "confirm": "Confirmar e ativar",
     "errStart": "Erro ao iniciar cadastro",
-    "errInvalidCode": "Código inválido. Tente novamente."
+    "errInvalidCode": "Código inválido. Tente novamente.",
+    "qrAlt": "Código QR 2FA"
   },
   "equipe": {
     "subtitle": "Acesso da equipe e perfil público dos profissionais, em um só lugar.",

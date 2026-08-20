@@ -47,5 +47,10 @@
     "eyebrow": "Management",
     "title": "Team",
     "subtitle": "Productivity, revenue and NPS per practitioner."
+  },
+  "detail": {
+    "back": "Back to team",
+    "eyebrow": "Professional",
+    "title": "Productivity report"
   }
 }

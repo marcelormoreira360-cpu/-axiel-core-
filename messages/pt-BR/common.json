@@ -120,5 +120,12 @@
     "micUnavailable": "Microfone não disponível. Verifique as permissões do navegador.",
     "transcribeError": "Erro na transcrição.",
     "transcribeErrorGeneric": "Erro ao transcrever."
+  },
+  "signOut": "Sair",
+  "sendBox": {
+    "to": "Para:",
+    "send": "Enviar {channel}",
+    "noEmail": "Nenhum e-mail cadastrado",
+    "noPhone": "Nenhum telefone cadastrado"
   }
 }

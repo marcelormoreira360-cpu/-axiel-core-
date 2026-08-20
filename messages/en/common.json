@@ -120,5 +120,12 @@
     "micUnavailable": "Microphone unavailable. Check your browser permissions.",
     "transcribeError": "Transcription error.",
     "transcribeErrorGeneric": "Error transcribing."
+  },
+  "signOut": "Sign out",
+  "sendBox": {
+    "to": "To:",
+    "send": "Send {channel}",
+    "noEmail": "No email added",
+    "noPhone": "No phone added"
   }
 }

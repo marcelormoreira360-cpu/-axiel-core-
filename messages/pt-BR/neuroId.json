@@ -123,5 +123,7 @@
     "objective": "Objetivo",
     "note": "Obs.",
     "generalNotes": "Observações gerais"
-  }
+  },
+  "pyramidAria": "Pirâmide Bio³ — peso de cada eixo no total, cor por gravidade",
+  "scaleAria": "Pontuação 0 a 10"
 }

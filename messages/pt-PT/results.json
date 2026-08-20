@@ -43,5 +43,14 @@
     "none": "Nenhum insight gerado para este período.",
     "refresh": "Atualizar",
     "refreshTitle": "Regenerar a análise agora"
+  },
+  "chart": {
+    "title": "Evolução mensal",
+    "sessions": "Sessões",
+    "newPatients": "Novos pacientes",
+    "revenue": "Receita"
+  },
+  "export": {
+    "button": "Exportar CSV"
   }
 }

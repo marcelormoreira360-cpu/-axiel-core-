@@ -11,6 +11,7 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { useTranslations } from "next-intl";
 import type { MonthlyBreakdown } from "@/services/business-analytics-service";
 
 function fmtBRLShort(cents: number) {
@@ -24,12 +25,14 @@ interface Props {
 }
 
 export function ResultsChart({ monthly }: Props) {
+  const t = useTranslations("results.chart");
+  const revenueLabel = t("revenue");
   if (monthly.length === 0) return null;
 
   return (
     <div className="bg-white border border-black/[.07] rounded-[12px] p-[15px]">
       <p className="text-[12px] font-medium text-[#0F1A2E] mb-[14px]">
-        Evolução mensal
+        {t("title")}
       </p>
       <ResponsiveContainer width="100%" height={200}>
         <ComposedChart data={monthly} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -64,7 +67,7 @@ export function ResultsChart({ monthly }: Props) {
               boxShadow: "0 2px 8px rgba(0,0,0,.06)",
             }}
             formatter={(value, name) => {
-              if (name === "Receita") return [fmtBRLShort(Number(value)), name];
+              if (name === revenueLabel) return [fmtBRLShort(Number(value)), name];
               return [value, name];
             }}
           />
@@ -76,7 +79,7 @@ export function ResultsChart({ monthly }: Props) {
           <Bar
             yAxisId="left"
             dataKey="sessions"
-            name="Sessões"
+            name={t("sessions")}
             fill="#0F6E56"
             radius={[3, 3, 0, 0]}
             maxBarSize={36}
@@ -84,7 +87,7 @@ export function ResultsChart({ monthly }: Props) {
           <Bar
             yAxisId="left"
             dataKey="new_patients"
-            name="Novos pacientes"
+            name={t("newPatients")}
             fill="#C7D2FE"
             radius={[3, 3, 0, 0]}
             maxBarSize={36}
@@ -93,7 +96,7 @@ export function ResultsChart({ monthly }: Props) {
             yAxisId="right"
             type="monotone"
             dataKey="revenue_cents"
-            name="Receita"
+            name={revenueLabel}
             stroke="#4F46E5"
             strokeWidth={2}
             dot={{ r: 3, fill: "#4F46E5" }}
