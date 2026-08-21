@@ -13,13 +13,14 @@ function snap(partial: {
   return {
     patient: {
       id: "p1", clinic_id: "c1", full_name: "Teste", locale: null, status: "active",
-      notes: null, age: null, sex: null, weight_kg: null, height_cm: null, city: null,
+      notes: null, age: null, sex: null, weight_kg: null, height_cm: null, city: null, country: null,
       anamnese: partial.anamnese ?? null, antecedents: null, pain_level: null,
       pain_location: null, treatment_note: null, assessment_extra: partial.extra ?? [],
     },
     intake: [], session_notes: [], patient_history: [], assessments: [],
     lab_exams: [], functional_exams: partial.exams ?? [], prescriptions: partial.prescriptions ?? [],
     neuro_id: partial.neuro ?? null,
+    bioemocional_source: null,
   };
 }
 
@@ -86,8 +87,8 @@ describe("buildCaseSummaryFallback", () => {
 
   it("agrega as sínteses dos exames funcionais (pt e en)", () => {
     const exams = [
-      { type: "neurometria", title: "Neurometria", date: "2026-08-11", summary: "Predomínio simpático, baixa VFC" },
-      { type: "biorressonancia", title: null, date: "2026-08-11", summary: "Alterações digestivas" },
+      { type: "neurometria", title: "Neurometria", date: "2026-08-11", summary: "Predomínio simpático, baixa VFC", metrics: [] },
+      { type: "biorressonancia", title: null, date: "2026-08-11", summary: "Alterações digestivas", metrics: [] },
     ];
     const pt = buildCaseSummaryFallback(snap({ exams }), "pt-BR");
     expect(pt.summary).toContain("Sínteses de exames");
@@ -102,7 +103,7 @@ describe("buildCaseSummaryFallback", () => {
 
   it("exame sem síntese não entra no resumo", () => {
     const out = buildCaseSummaryFallback(
-      snap({ exams: [{ type: "outro", title: "Exame X", date: "2026-08-11", summary: null }] }),
+      snap({ exams: [{ type: "outro", title: "Exame X", date: "2026-08-11", summary: null, metrics: [] }] }),
       "pt-BR",
     );
     expect(out.summary).toBe("");

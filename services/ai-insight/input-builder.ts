@@ -8,6 +8,7 @@ import { getPatientExams, getPatientPrescriptions } from "@/services/exams-servi
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { getClinicAssessmentFields, assessmentReportPairs, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
+import { EXAM_METRIC_META } from "@/modules/neuro-id/exam-metrics";
 import { normalizeInsightText } from "@/modules/ai-insights/guardrails";
 
 export type AiInsightInputSnapshot = {
@@ -24,6 +25,8 @@ export type AiInsightInputSnapshot = {
     weight_kg: number | null;
     height_cm: number | null;
     city: string | null;
+    /** País do paciente (patients.country). Determina a linha de crise por país (Doc 1/Doc 2). */
+    country: string | null;
     anamnese: string | null;
     antecedents: string | null;
     pain_level: number | null;
@@ -63,7 +66,11 @@ export type AiInsightInputSnapshot = {
     title: string | null;
     date: string;
     summary: string | null;
+    /** Valores brutos por métrica, SÓ revisados pelo gate humano (metrics_reviewed_at != null). */
+    metrics: Array<{ code: string; label: string; unit: string; value: number }>;
   }>;
+  /** Síntese da biorressonância com ORIGEM própria (não se mistura no bloco genérico). */
+  bioemocional_source: { summary: string } | null;
   prescriptions: Array<{
     type: string;
     name: string;
@@ -99,6 +106,11 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   const neuroIdMap = await getLatestNeuroIdMap(patientId).catch(() => null);
   const clinicFields = await getClinicAssessmentFields(patient.clinic_id, { activeOnly: true }).catch(() => []);
 
+  // Biorressonância com origem própria: a síntese mais recente do exame do tipo
+  // "biorressonancia" (o slot bioemocional do Doc 1 nunca some no bloco genérico).
+  const bioExam = functionalExams.find((f) => f.exam_type === "biorressonancia" && (f.summary ?? "").trim());
+  const bioemocional_source = bioExam ? { summary: normalizeInsightText(bioExam.summary) } : null;
+
   // Avaliação: fonte viva = assessment_data (com fallback às colunas legadas).
   // Só entram no relatório os campos que a clínica mantém ATIVOS e marcados
   // "incluir no relatório" — campo deletado/desativado/excluído não injeta dado legado obsoleto.
@@ -130,6 +142,7 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       weight_kg: patient.weight_kg,
       height_cm: patient.height_cm,
       city: patient.city,
+      country: patient.country,
       // Seção "Avaliação" — escrita do terapeuta entra no relatório.
       anamnese: adText("anamnese", patient.anamnese),
       antecedents: adText("antecedents", patient.antecedents),
@@ -174,6 +187,20 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
       title: f.title,
       date: f.exam_date,
       summary: normalizeInsightText(f.summary),
+      // Só entram valores revisados pelo gate humano (bruto não confirmado nunca vai ao Doc 1),
+      // SÓ do instrumento neurometria (a biorressonância é qualitativa: vai pelo slot
+      // bioemocional_source, sem número nem a palavra "biorressonância" ao paciente),
+      // e SÓ valores numéricos finitos (jsonb pode trazer null/NaN).
+      metrics: f.metrics_reviewed_at && f.metrics_values
+        ? Object.entries(f.metrics_values)
+            .filter(([code, value]) => EXAM_METRIC_META[code]?.instrument === "neurometria" && Number.isFinite(value))
+            .map(([code, value]) => ({
+              code,
+              label: EXAM_METRIC_META[code].label,
+              unit: EXAM_METRIC_META[code].unit,
+              value,
+            }))
+        : [],
     })),
     prescriptions: prescriptions.map((p) => ({
       type: p.type,
@@ -191,5 +218,6 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
           is_partial: neuroIdMap.is_partial,
         }
       : null,
+    bioemocional_source,
   };
 }

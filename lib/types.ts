@@ -1,3 +1,10 @@
+import type {
+  CondutaEmocional,
+  ClinicalFlag,
+  FormatoAtendimento,
+  SuplementacaoStage,
+} from "@/modules/ai-insights/neuro-enums";
+
 export type AppRole =
   | "admin"
   | "platform_admin"
@@ -325,6 +332,21 @@ export type NeuroIdentificacao = {
 /** Item de seção com título em negrito + descrição (ex.: "Resultados encontrados"). */
 export type NeuroSecaoItem = { titulo: string; descricao: string };
 
+/** Doc 1 — leitura bioemocional (SLOT dedicado; biorressonância não se perde). */
+export type NeuroLeituraBioemocional = {
+  /** 3–4 temas macro; NUNCA item-a-item. */
+  temas: string[];
+  /** Síntese qualitativa; sem número, sem diagnóstico. */
+  sintese: string;
+};
+
+/** Bloco de crise — SEMPRE computado no server, nunca vindo da LLM. */
+export type CrisisHotlineBlock = {
+  country: string;   // "BR" | "US" | ...
+  render: boolean;
+  text: string;      // resolvido do i18n no locale do paciente
+};
+
 /**
  * Neuro ID 360 — Documento 1: RELATÓRIO FUNCIONAL INTEGRADO ("o que foi identificado").
  * Campos novos seguem o modelo-padrão; os antigos permanecem opcionais para
@@ -338,6 +360,27 @@ export type NeuroMapaIntegrativo = {
   conclusao_funcional?: string;
   fase_jornada?: string;
   observacao?: string;
+  // ── Doc 1 persuasivo (Rota A) — anatomia de 6 seções (todos opcionais) ──
+  /** Seção 1 — abertura calorosa. */
+  abertura_calorosa?: string;
+  /** Seção 2 — retrato-herói + pirâmide Bio³. */
+  leitura_bio3?: NeuroSecaoItem;
+  /** Seção 3a — leituras do sistema nervoso (achado → significa → o que sente). */
+  leitura_neurometrica?: NeuroSecaoItem[];
+  /** Seção 3b — leitura bioemocional (slot dedicado). */
+  leitura_bioemocional?: NeuroLeituraBioemocional;
+  /** Âncora positiva obrigatória (≥1 achado preservado). */
+  ancora_positiva?: string;
+  /** Seção 4 — a conexão "aha". */
+  conexao_aha?: string;
+  /** Seção 5 — por que agir agora joga a favor (variante "possibilidade" se flag de saúde mental). */
+  porque_agir_agora?: string;
+  /** Seção 6 — próximo passo. */
+  proximo_passo?: string;
+  // ── Resolvidos NO SERVER (nunca da LLM); eco para render/PDF/gate ──
+  conduta_emocional?: CondutaEmocional;
+  clinical_flags?: ClinicalFlag[];
+  crisis_hotline_block?: CrisisHotlineBlock | null;
   // Campos antigos (fallback)
   principais_achados?: string[];
   padroes_observados?: string[];
@@ -363,6 +406,17 @@ export type NeuroPlanoRegulacao = {
   acompanhamento_evolucao?: string;
   proximo_passo?: string;
   observacao?: string;
+  // ── Doc 2 (Plano Integrativo) — 4 blocos (todos opcionais) ──
+  /** Bloco 1 — onde queremos chegar. */
+  onde_queremos_chegar?: string;
+  /** Bloco 2 — os 3 pilares. */
+  tres_pilares?: { nervoso: string; emocional: string; estilo_de_vida: string };
+  /** Bloco 3 — como caminhar juntos (varia por formato_atendimento). */
+  como_caminhar_juntos?: string;
+  formato_atendimento?: FormatoAtendimento;
+  suplementacao_stage?: SuplementacaoStage;
+  /** Resolvido no server (nunca da LLM); eco para render/PDF. */
+  conduta_emocional?: CondutaEmocional;
   // Campos antigos (fallback)
   proximos_passos?: string[];
   orientacoes_iniciais?: string[];

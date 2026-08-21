@@ -1,7 +1,9 @@
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
+import { coerceFormatoAtendimento, coerceSuplementacaoStage } from "@/modules/ai-insights/neuro-enums";
 import type {
   AiInsightOutput,
   NeuroIdentificacao,
+  NeuroLeituraBioemocional,
   NeuroMapaIntegrativo,
   NeuroPlanoRegulacao,
   NeuroProtocoloSuplementacao,
@@ -39,6 +41,23 @@ function coerceSecaoItens(v: unknown, max = 15): NeuroSecaoItem[] {
     .slice(0, max)
     .map((it: any) => ({ titulo: str(it?.titulo), descricao: str(it?.descricao) }))
     .filter((it) => it.titulo.length > 0 || it.descricao.length > 0);
+}
+
+/** Slot dedicado da leitura bioemocional: 3–4 temas macro + síntese qualitativa. */
+function coerceLeituraBioemocional(v: any): NeuroLeituraBioemocional | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const temas = list(v.temas, 4);
+  const sintese = str(v.sintese);
+  return temas.length > 0 || sintese.length > 0 ? { temas, sintese } : undefined;
+}
+
+/** Doc 2 — os 3 pilares (nervoso / emocional / estilo de vida). */
+function coerceTresPilares(v: any): { nervoso: string; emocional: string; estilo_de_vida: string } | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const nervoso = str(v.nervoso);
+  const emocional = str(v.emocional);
+  const estilo_de_vida = str(v.estilo_de_vida);
+  return nervoso || emocional || estilo_de_vida ? { nervoso, emocional, estilo_de_vida } : undefined;
 }
 
 export const aiInsightJsonShape = {
@@ -123,6 +142,17 @@ function coerceMapa(o: any): NeuroMapaIntegrativo | undefined {
     conclusao_funcional: str(m.conclusao_funcional) || undefined,
     fase_jornada: str(m.fase_jornada) || undefined,
     observacao: str(m.observacao) || undefined,
+    // ── Doc 1 persuasivo (Rota A) — 6 seções (opcionais; LLM pode ainda não preencher) ──
+    abertura_calorosa: str(m.abertura_calorosa) || undefined,
+    leitura_bio3: coerceSecaoItens([m.leitura_bio3])[0],
+    leitura_neurometrica: coerceSecaoItens(m.leitura_neurometrica),
+    leitura_bioemocional: coerceLeituraBioemocional(m.leitura_bioemocional),
+    ancora_positiva: str(m.ancora_positiva) || undefined,
+    conexao_aha: str(m.conexao_aha) || undefined,
+    porque_agir_agora: str(m.porque_agir_agora) || undefined,
+    proximo_passo: str(m.proximo_passo) || undefined,
+    // conduta_emocional / clinical_flags / crisis_hotline_block: RESOLVIDOS NO SERVER
+    // (workflow.ts), nunca aqui — o que a LLM mandar nesses campos é descartado.
     // fallback antigos
     principais_achados: list(m.principais_achados),
     padroes_observados: list(m.padroes_observados),
@@ -148,6 +178,13 @@ function coercePlano(o: any): NeuroPlanoRegulacao | undefined {
     acompanhamento_evolucao: str(p.acompanhamento_evolucao) || undefined,
     proximo_passo: str(p.proximo_passo) || undefined,
     observacao: str(p.observacao) || undefined,
+    // ── Doc 2 (Plano Integrativo) — 4 blocos (opcionais) ──
+    onde_queremos_chegar: str(p.onde_queremos_chegar) || undefined,
+    tres_pilares: coerceTresPilares(p.tres_pilares),
+    como_caminhar_juntos: str(p.como_caminhar_juntos) || undefined,
+    formato_atendimento: coerceFormatoAtendimento(p.formato_atendimento),
+    suplementacao_stage: coerceSuplementacaoStage(p.suplementacao_stage),
+    // conduta_emocional: RESOLVIDO NO SERVER (workflow.ts), descartado aqui.
     // fallback antigos
     proximos_passos: list(p.proximos_passos),
     orientacoes_iniciais: list(p.orientacoes_iniciais),
