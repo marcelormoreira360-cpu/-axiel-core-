@@ -51,7 +51,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
     if (mapa && hasPersuasiveDoc1(mapa)) {
-      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, patientName, clinic: brand });
+      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand });
     } else {
       buffer = await buildNeuroIdPatientReportPdf({
         map, patientName, clinic: brand,

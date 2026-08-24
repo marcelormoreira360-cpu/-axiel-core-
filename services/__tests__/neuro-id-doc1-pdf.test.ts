@@ -59,4 +59,26 @@ describe("buildNeuroIdDoc1Pdf", () => {
     });
     expect(full.length).toBeGreaterThan(min.length);
   });
+
+  it("anexa o Doc 2 (Plano) quando o plano é persuasivo", async () => {
+    const plano = coerceAiInsightOutput({
+      plano_regulacao: {
+        onde_queremos_chegar: "Recuperar calma, descanso e energia, no seu ritmo.",
+        tres_pilares: { nervoso: "respiração e pausas", emocional: "autocuidado, sem cobrança", estilo_de_vida: "sono e movimento" },
+        como_caminhar_juntos: "Acompanhamento remoto em sessões terapêuticas de acompanhamento.",
+        proximo_passo: "Começar por uma prática curta de respiração por dia.",
+      },
+    }).plano_regulacao!;
+    const so1 = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3 });
+    const comDoc2 = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, plano });
+    expect(comDoc2.length).toBeGreaterThan(so1.length);
+    expect(comDoc2.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
+  it("NÃO anexa Doc 2 quando o plano é legado/vazio", async () => {
+    const legado = coerceAiInsightOutput({ plano_regulacao: { direcao_terapeutica: "eixo autonômico" } }).plano_regulacao!;
+    const so1 = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3 });
+    const comLegado = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, plano: legado });
+    expect(comLegado.length).toBe(so1.length);
+  });
 });

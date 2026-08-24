@@ -52,6 +52,22 @@ describe("scanPatientText — guardrail de texto ao paciente (Rota A)", () => {
     });
   });
 
+  it("léxico trilíngue: jargão em EN e ES também é pego", () => {
+    expect(scanPatientText(cleanOutput({ conexao_aha: "Your exam shows a pattern." })).violations
+      .some((v) => v.kind === "termo_interno" && v.term === "exam")).toBe(true);
+    expect(scanPatientText(cleanOutput({ conexao_aha: "Su examen muestra un patrón." })).violations
+      .some((v) => v.kind === "termo_interno" && v.term === "examen")).toBe(true);
+    expect(scanPatientText(cleanOutput({ conexao_aha: "The neurometry reading is high." })).violations
+      .some((v) => v.kind === "termo_interno" && v.term === "neurometry")).toBe(true);
+  });
+
+  it("número de sessões em EN e ES (dígito e por extenso)", () => {
+    expect(scanPatientText(cleanOutput({ proximo_passo: "It will take 12 sessions." })).violations
+      .some((v) => v.kind === "numero_sessoes")).toBe(true);
+    expect(scanPatientText(cleanOutput({ proximo_passo: "Serán tres sesiones al inicio." })).violations
+      .some((v) => v.kind === "numero_sessoes")).toBe(true);
+  });
+
   it("travessão vira violação travessao", () => {
     const scan = scanPatientText(cleanOutput({ conexao_aha: "A emoção — o corpo responde." }));
     expect(scan.violations).toContainEqual({ kind: "travessao", field: "mapa.conexao_aha" });

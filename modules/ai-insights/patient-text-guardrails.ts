@@ -37,14 +37,30 @@ export function hasPersuasiveDoc2(plano?: NeuroPlanoRegulacao | null): boolean {
   return Boolean(plano.onde_queremos_chegar || plano.tres_pilares || plano.como_caminhar_juntos);
 }
 
-/** Termos INTERNOS que nunca podem aparecer no texto ao paciente (match por palavra inteira). */
+/**
+ * Termos INTERNOS que nunca podem aparecer no texto ao paciente (match por palavra inteira).
+ * Trilíngue: o relatório é gerado no idioma do paciente (pt/en/es), então o léxico cobre os três.
+ */
 export const NAO_AO_PACIENTE_TERMS = [
-  "exame", "exames", "neurometria", "biorressonância", "biorressonancia", "protocolo",
+  // pt
+  "exame", "exames", "neurometria", "biorressonância", "biorressonancia", "protocolo", "protocolos",
+  // en
+  "exam", "exams", "neurometry", "bioresonance", "protocol", "protocols",
+  // es
+  "examen", "exámenes", "examenes", "neurometría", "biorresonancia",
 ];
 
 const EM_DASH = "—";
-/** Número (dígito ou "doze") + sessão/sessões: expõe a contagem de sessões do exame. */
-const NUM_SESSOES_RE = /(\d+|doze)\s*sess(ão|ões|oes|ao)/iu;
+// Número de sessões exposto ao paciente. Cobre dígito ou número por extenso (pt/en/es) +
+// a palavra sessão nos três idiomas (sessão/ões · session(s) · sesión/sesiones).
+const NUM_WORDS =
+  "dois|duas|tr[êe]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|" +
+  "two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|" +
+  "dos|cuatro|siete|ocho|nueve|diez|once|doce";
+const NUM_SESSOES_RE = new RegExp(
+  `(\\d+|${NUM_WORDS})\\s*(sess(ão|ões|oes|ao)|sessions?|sesi(ó|o)n(es)?)`,
+  "iu",
+);
 
 export type PatientTextViolation =
   | { kind: "termo_interno"; term: string; field: string }

@@ -136,7 +136,7 @@ export async function sendNeuroIdReportToPatientAction(
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
     pdfBuffer = mapa && hasPersuasiveDoc1(mapa)
-      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, patientName: patient.full_name ?? null, clinic: brand })
+      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand })
       : await buildNeuroIdPatientReportPdf({
           map,
           patientName: patient.full_name ?? null,
