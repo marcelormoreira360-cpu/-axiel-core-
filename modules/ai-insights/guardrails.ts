@@ -167,9 +167,11 @@ Regras:
 
 export function normalizeInsightText(value: unknown): string {
   if (typeof value !== "string") return "";
-  // Limite por CAMPO. Com o Doc 1 em 8 seções separadas (Rota A), cada seção é curta por natureza;
-  // ~1500 chars dá espaço a um parágrafo bem desenvolvido sem permitir respostas descontroladas.
-  return value.trim().slice(0, 1500);
+  // Teto de sanidade para campos de ENTRADA do snapshot (resumos de exame, notas de
+  // sessão, anamnese, intake) e para as notas do revisor — NÃO para o output da IA
+  // (o output é normalizado por str() no coerce, sem corte). Mantido em 3200 para não
+  // deixar o modelo sem contexto clínico (é justamente o que dá o "peso de laudo").
+  return value.trim().slice(0, 3200);
 }
 
 export function safeList(values: unknown, fallback: string[] = []): string[] {

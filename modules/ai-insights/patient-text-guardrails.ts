@@ -88,6 +88,9 @@ function patientFacingFields(output: AiInsightOutput): Array<{ field: string; te
     push("plano.tres_pilares.estilo_de_vida", p.tres_pilares.estilo_de_vida);
   }
   push("plano.como_caminhar_juntos", p?.como_caminhar_juntos);
+  // proximo_passo é compartilhado com o formato legado; só o varremos quando o Doc 2
+  // está no formato persuasivo (senão um plano legado passaria a contar como persuasivo).
+  if (hasPersuasiveDoc2(p)) push("plano.proximo_passo", p?.proximo_passo);
   return out;
 }
 
@@ -116,8 +119,9 @@ export function scanPatientText(output: AiInsightOutput): PatientTextScan {
     if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });
   }
 
-  // Âncora positiva obrigatória, só quando o formato novo está em uso.
-  if (hasPersuasiveContent && !output.mapa_integrativo?.ancora_positiva?.trim()) {
+  // Âncora positiva obrigatória, só quando o Doc 1 está no formato persuasivo
+  // (a âncora é uma seção do Doc 1; um Doc 2 persuasivo sem Doc 1 não deve exigi-la).
+  if (hasPersuasiveDoc1(output.mapa_integrativo) && !output.mapa_integrativo?.ancora_positiva?.trim()) {
     violations.push({ kind: "sem_ancora_positiva" });
   }
 
