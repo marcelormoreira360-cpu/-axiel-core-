@@ -120,7 +120,7 @@ export const aiInsightJsonShape = {
     observacao: "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.",
   },
 
-  // ── DOCUMENTO 2 — PLANO INTEGRATIVO NEURO ID ("o que fazer agora", rascunho) ──
+  // ── DOCUMENTO 2 — PLANO INTEGRATIVO (Rota A, 4 blocos persuasivos: o que fazer juntos) ──
   plano_regulacao: {
     identificacao: {
       paciente: "Nome do paciente",
@@ -131,14 +131,16 @@ export const aiInsightJsonShape = {
       exame_cabelo: "Situação do exame de cabelo, se aplicável",
       base_orientacao: "Base da orientação (exames funcionais e relatos considerados).",
     },
-    fase_jornada_nome: "Nome da fase (ex.: Regulação Inicial e Redução de Sobrecarga).",
-    fase_jornada_justificativa: "Por que o paciente está nesta fase e qual o foco do momento.",
-    direcao_terapeutica: "Direção terapêutica: eixo principal de atenção e prioridades, conduta simples e progressiva.",
-    plano_inicial: [
-      { titulo: "Tema do passo (ex.: Sono e higiene do sono)", descricao: "Orientação prática e bem tolerada para este tema." },
-    ],
-    acompanhamento_evolucao: "Acompanhamento da evolução relatada nas sessões e padrões a observar.",
-    proximo_passo: "Próximo passo concreto do acompanhamento.",
+    onde_queremos_chegar: "Aonde vamos juntos, em linguagem de destino e possibilidade (descanso, calma, energia, presença). Sem prometer cura.",
+    tres_pilares: {
+      nervoso: "Frente do sistema nervoso: acalmar (respiração, regulação, pausas). Uma frase, prática simples.",
+      emocional: "Frente emocional: cuidar do que pesa, no seu ritmo, em linguagem de autocuidado (nunca psicoterapia formal nem diagnóstico).",
+      estilo_de_vida: "Frente de estilo de vida: sono, movimento e alimentação como apoio do dia a dia.",
+    },
+    como_caminhar_juntos: "Como o acompanhamento acontece na prática (formato à distância/presencial; encontros como sequência progressiva). 'Sessões terapêuticas de acompanhamento', sem número/protocolo/exame.",
+    proximo_passo: "O primeiro passo concreto, em convite ('vamos começar por...').",
+    formato_atendimento: "remoto",
+    suplementacao_stage: "ponteiro_doc3",
     observacao: "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.",
   },
 

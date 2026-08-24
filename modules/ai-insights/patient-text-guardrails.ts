@@ -28,6 +28,15 @@ export function hasPersuasiveDoc1(mapa?: NeuroMapaIntegrativo | null): boolean {
   );
 }
 
+/**
+ * true se o Doc 2 (plano_regulacao) já veio no formato persuasivo (Rota A, 4 blocos).
+ * Fonte única usada pela tela para decidir entre o render novo e o fallback antigo.
+ */
+export function hasPersuasiveDoc2(plano?: NeuroPlanoRegulacao | null): boolean {
+  if (!plano) return false;
+  return Boolean(plano.onde_queremos_chegar || plano.tres_pilares || plano.como_caminhar_juntos);
+}
+
 /** Termos INTERNOS que nunca podem aparecer no texto ao paciente (match por palavra inteira). */
 export const NAO_AO_PACIENTE_TERMS = [
   "exame", "exames", "neurometria", "biorressonância", "biorressonancia", "protocolo",

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
-import { scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
+import { scanPatientText, summarizeViolations, hasPersuasiveDoc1, hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
 
 /** Base persuasiva LIMPA (com âncora), à qual os testes injetam 1 violação por vez. */
 function cleanOutput(overrides: Record<string, unknown> = {}) {
@@ -86,5 +86,25 @@ describe("scanPatientText — guardrail de texto ao paciente (Rota A)", () => {
     const scan = scanPatientText(cleanOutput({ abertura_calorosa: "Sua neurometria." }));
     expect(summarizeViolations(scan.violations)).toContain("neurometria");
     expect(summarizeViolations([])).toBe("");
+  });
+});
+
+describe("hasPersuasiveDoc1 / hasPersuasiveDoc2 — detecção de formato", () => {
+  it("Doc 1: detecta formato persuasivo vs legado/vazio", () => {
+    expect(hasPersuasiveDoc1(cleanOutput().mapa_integrativo)).toBe(true);
+    expect(hasPersuasiveDoc1(coerceAiInsightOutput({}).mapa_integrativo)).toBe(false);
+    expect(hasPersuasiveDoc1(null)).toBe(false);
+  });
+
+  it("Doc 2: detecta os 4 blocos persuasivos vs legado/vazio", () => {
+    const novo = coerceAiInsightOutput({
+      plano_regulacao: { onde_queremos_chegar: "Regular o sistema nervoso, no seu ritmo." },
+    }).plano_regulacao;
+    expect(hasPersuasiveDoc2(novo)).toBe(true);
+    const legado = coerceAiInsightOutput({
+      plano_regulacao: { direcao_terapeutica: "Eixo principal: regulação autonômica." },
+    }).plano_regulacao;
+    expect(hasPersuasiveDoc2(legado)).toBe(false);
+    expect(hasPersuasiveDoc2(null)).toBe(false);
   });
 });

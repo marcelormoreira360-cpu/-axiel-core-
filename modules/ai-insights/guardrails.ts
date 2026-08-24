@@ -95,17 +95,24 @@ Preencha EXATAMENTE estas seções, nesta ordem:
 - fase_jornada: nome da fase da Jornada Neuro ID em que o paciente se encontra (uso interno/rótulo).
 - observacao: aviso de que não substitui avaliação médica/diagnóstico/exames/condutas prescritas.
 
-DOCUMENTO 2 — "plano_regulacao" = PLANO INTEGRATIVO NEURO ID ("o que fazer agora" — RASCUNHO p/ aprovação). Campos:
-- identificacao: { paciente, idade, sexo, local, microfisioterapia, exame_cabelo, base_orientacao }.
-- fase_jornada_nome + fase_jornada_justificativa: a fase e por que o paciente está nela, com o foco do momento.
-- direcao_terapeutica: parágrafo(s) com o eixo principal de atenção e as prioridades; conduta simples e progressiva.
-- plano_inicial: lista NUMERADA de { titulo, descricao } com passos práticos (ex.: sono e higiene do sono,
-  respiração guiada, escrita expressiva, alimentação, acompanhamento médico de medicações, bruxismo etc.).
-  Quando houver suplementação, registre um item dizendo que a suplementação completa fica no Documento 3.
-- acompanhamento_evolucao: o que a evolução das sessões mostra e quais padrões observar; quando possível,
-  defina os MARCADORES MENSURÁVEIS a reavaliar (ex.: "reavaliar Q-SNA em 4 semanas, meta de reduzir de 71%",
-  temperatura periférica, % simpático/parassimpático) para acompanhar o progresso de forma objetiva.
-- proximo_passo: o próximo passo concreto do acompanhamento.
+DOCUMENTO 2 — "plano_regulacao" = PLANO INTEGRATIVO, caloroso e simples, escrito em parceria, como a
+continuação natural do Documento 1 ("o que vamos fazer juntos"). Preencha EXATAMENTE estes 4 blocos, nesta ordem:
+- identificacao: { paciente, idade, sexo, local, microfisioterapia, exame_cabelo, base_orientacao } (só o que houver).
+- onde_queremos_chegar: aonde vamos juntos, em linguagem de destino e possibilidade (o que a pessoa vai
+  recuperar: descanso, calma, energia, presença). Sem prometer cura nem prazo mágico.
+- tres_pilares: { nervoso, emocional, estilo_de_vida }, as três frentes do cuidado, uma frase por pilar,
+  com práticas simples e bem toleradas:
+  • nervoso: acalmar o sistema nervoso (respiração, regulação, momentos de pausa).
+  • emocional: cuidar do que tem pesado, NO SEU RITMO, em linguagem de autocuidado (nunca soar psicoterapia
+    formal, nunca diagnóstico).
+  • estilo_de_vida: sono, movimento e alimentação como apoio do dia a dia.
+- como_caminhar_juntos: como o acompanhamento acontece na prática (o formato, à distância ou presencial, e os
+  encontros como uma SEQUÊNCIA PROGRESSIVA). Fale em "sessões terapêuticas de acompanhamento", NUNCA em número
+  de sessões, "protocolo" ou "exame".
+- proximo_passo: o primeiro passo concreto do cuidado, em convite ("vamos começar por...").
+- formato_atendimento: "remoto", "presencial" ou "hibrido", conforme os dados.
+- suplementacao_stage: quando houver suplementação, aponte que ela vem no Documento 3 ("ponteiro_doc3"); se
+  faltar dado de segurança (medicação em uso, gestação, condições), use "pendente_dados_seguranca"; senão "nao_iniciada".
 - observacao: aviso de que não substitui avaliação médica/exames/condutas prescritas.
 
 DOCUMENTO 3 — "protocolo_suplementacao" (DOCUMENTO SEPARADO; rascunho que EXIGE aprovação humana explícita):
