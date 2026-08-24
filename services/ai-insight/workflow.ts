@@ -5,6 +5,7 @@ import { writeAuditLog } from "@/services/audit-service";
 import { buildAiInsightInput } from "@/services/ai-insight/input-builder";
 import { buildAiFallbackOutput, generateAiInsightOutput } from "@/services/ai-insight/generation";
 import { completeAiRequest, createAiRequest, saveAiInsight } from "@/services/ai-insight/insight-repository";
+import { scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
 
 export async function generateAndSaveAiInsight(patientId: string): Promise<AiInsight> {
   const snapshot = await buildAiInsightInput(patientId);
@@ -39,12 +40,21 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
       },
     });
 
+    // Guardrail determinístico sobre o texto ao PACIENTE (formato persuasivo Rota A):
+    // se vazar jargão interno (exame/neurometria), número de sessões, travessão, ou
+    // faltar âncora positiva, o insight NASCE em needs_changes p/ o gate humano revisar.
+    // Nunca reescreve escondido; só sinaliza. Campos antigos (educativos) não são varridos.
+    const scan = scanPatientText(output);
+    const guardrailNote = scan.ok ? null : summarizeViolations(scan.violations);
+
     return saveAiInsight({
       clinic_id: snapshot.patient.clinic_id,
       patient_id: patientId,
       ai_request_id: aiRequest.id,
       input_snapshot: snapshot,
       output,
+      review_status: scan.ok ? "pending_review" : "needs_changes",
+      guardrail_note: guardrailNote,
     });
   } catch (error) {
     const safeError = toAppError(error, "AI insights are temporarily unavailable.");

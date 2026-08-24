@@ -78,7 +78,7 @@ export const aiInsightJsonShape = {
   data_limitations: ["O que está faltando ou incompleto nos dados."],
   safety_note: "AI-generated insights (not medical advice). This does not diagnose, treat, prescribe, or replace professional clinical judgment.",
 
-  // ── DOCUMENTO 1 — RELATÓRIO FUNCIONAL INTEGRADO ("o que foi identificado") ──
+  // ── DOCUMENTO 1 — RELATÓRIO FUNCIONAL INTEGRADO (Report of Findings, 8 seções persuasivas) ──
   mapa_integrativo: {
     identificacao: {
       paciente: "Nome completo do paciente",
@@ -89,14 +89,34 @@ export const aiInsightJsonShape = {
       local: "Local de acompanhamento, se informado",
       data_avaliacoes: "Data das avaliações, se informada",
     },
-    exames_avaliados:
-      "Parágrafo descrevendo os exames e informações considerados (neurometria, vias nervosas, cardiorrespiratório, questionários funcionais, biorressonância, relato clínico). Sem finalidade de diagnóstico médico absoluto.",
-    resultados_encontrados: [
-      { titulo: "Padrão observado (título curto em negrito)", descricao: "Explicação do achado nos exames + tradução 'na prática' do que isso costuma significar para o paciente." },
+    abertura_calorosa:
+      "2 a 3 frases acolhendo o paciente pelo nome e reconhecendo a coragem de buscar esse cuidado. Sem jargão.",
+    leitura_bio3: {
+      titulo: "Retrato humano de como o corpo está hoje (ex.: 'Como seu corpo está hoje').",
+      descricao:
+        "Tradução do Mapa Bio³ nos três pilares (Biomecânico, Bioquímico, Bioemocional) em linguagem do dia a dia, sem despejar os percentuais.",
+    },
+    leitura_neurometrica: [
+      {
+        titulo: "Achado principal em linguagem humana (ex.: 'Seu ritmo interno está acelerado')",
+        descricao:
+          "Achado → o que significa → o que ele sente no dia a dia, ancorado em 2 a 3 dados reais de metrics (valor + tradução simples).",
+      },
     ],
-    sintese_clinico_funcional: "Síntese conectando os achados (sobrecarga, pontos de atenção e pontos preservados).",
-    conclusao_funcional: "Conclusão em linguagem simples: padrão principal, o que pode causar e o ponto positivo/evolução. Termina indicando a fase da Jornada Neuro ID.",
-    fase_jornada: "Nome da fase da Jornada Neuro ID em que o paciente se encontra.",
+    leitura_bioemocional: {
+      temas: [
+        "3 a 4 temas macro com as EMOÇÕES REAIS da avaliação (ex.: 'peso emocional ligado à família', 'autocobrança'), nunca inventadas.",
+      ],
+      sintese: "1 a 2 frases costurando os temas com cuidado, sem citar exame/órgão/número/diagnóstico.",
+    },
+    ancora_positiva: "1 a 2 frases sobre um ponto REAL preservado/forte do paciente. Obrigatório em todo relatório.",
+    conexao_aha:
+      "O momento 'agora faz sentido': conecta os achados entre si e com a queixa, mostrando como corpo, sistema nervoso e emoções conversam.",
+    porque_agir_agora:
+      "Por que começar agora joga a favor, em tom de oportunidade e possibilidade, nunca de medo.",
+    proximo_passo:
+      "Convite concreto e simples, em linguagem de parceria; 'sessões terapêuticas de acompanhamento', sem número/protocolo/exame.",
+    fase_jornada: "Nome da fase da Jornada Neuro ID em que o paciente se encontra (uso interno/rótulo).",
     observacao: "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.",
   },
 

@@ -29,7 +29,7 @@ TOM E ESTILO (obrigatório em todos os documentos):
   temperatura das suas mãos está em 28,8 °C, um pouco abaixo do ideal (31,5–32,5 °C), o que costuma
   aparecer como mãos frias e dificuldade de relaxar". Traga também os índices do Mapa Bio³ por eixo e
   os pontos POSITIVOS com o dado que os sustenta (ex.: "sua recuperação reflexa está ótima, 96,44%").
-  NÃO encha o texto de números crus nem liste métrica por métrica: 1 a 2 dados-âncora por achado bastam;
+  NÃO encha o texto de números crus nem liste métrica por métrica: 2 a 3 dados-âncora por achado bastam;
   o detalhamento técnico completo vai em practitioner_review_points (ficha interna do terapeuta).
   NUNCA invente um número que não esteja nos dados.
 - OS TRÊS PILARES DA SAÚDE (fio condutor do Documento 1): o paciente deve sair entendendo que a saúde
@@ -43,6 +43,11 @@ TOM E ESTILO (obrigatório em todos os documentos):
 - Sempre que descrever um achado, traduza "na prática": o que aquilo costuma significar no dia a dia
   do paciente (ex.: "na prática, isso pode aparecer como sono mais leve e despertar de madrugada").
 - PONTUAÇÃO: NÃO use travessão (—) no texto ao paciente; prefira vírgula, dois-pontos ou parênteses.
+- TERMOS INTERNOS (NUNCA ao paciente no Documento 1): "exame", "exames", "neurometria", "biorressonância",
+  "protocolo" e o NÚMERO de sessões não podem aparecer no texto destinado ao paciente. O protocolo do exame é
+  insumo INTERNO que gera as práticas; ao paciente fala-se "a sua avaliação apontou uma direção de cuidado" e
+  "sessões terapêuticas de acompanhamento" (sequência progressiva, sem quantidade). Os nomes técnicos dos exames
+  podem aparecer só em practitioner_review_points (ficha interna do terapeuta).
 - NÃO é diagnóstico médico. Descreva "padrões funcionais e adaptativos", nunca doença.
 - NUNCA comente ou julgue o grau de evidência científica dos exames, métodos ou suplementos no texto.
   PROIBIDO escrever coisas como "tem evidência científica limitada", "não é cientificamente comprovado",
@@ -53,19 +58,41 @@ TOM E ESTILO (obrigatório em todos os documentos):
 - Respeite condutas e medicações já prescritas; nunca oriente alterar medicação sem o profissional prescritor.
 - Conduta simples, progressiva e bem tolerada (evitar muitas mudanças ao mesmo tempo).
 
-DOCUMENTO 1 — "mapa_integrativo" = RELATÓRIO FUNCIONAL INTEGRADO ("o que foi identificado"). Campos:
+DOCUMENTO 1 — "mapa_integrativo" = RELATÓRIO FUNCIONAL INTEGRADO, escrito como um REPORT OF FINDINGS que o
+paciente lê e ENTENDE. Objetivo: ao terminar a leitura, ele pensa "agora entendo o que está acontecendo comigo,
+e faz sentido cuidar disso agora". Tom caloroso, confiante e claro; nunca frio, nunca alarmista, nunca vendedor.
+Preencha EXATAMENTE estas seções, nesta ordem:
 - identificacao: { paciente, idade, sexo, peso, altura, local, data_avaliacoes } (preencha só o que houver nos dados).
-- exames_avaliados: parágrafo dos exames/informações considerados; reforce "sem finalidade de diagnóstico médico absoluto".
-- resultados_encontrados: lista de { titulo, descricao }. Cada item = um padrão (título curto, ex.: "Padrão de
-  hiperalerta autonômico") + descrição que ANCORA o padrão em pelo menos um DADO MENSURÁVEL citado (valor +
-  unidade + faixa de referência/comparação, e a fonte/exame), seguido da tradução "na prática". Inclua também
-  pontos POSITIVOS/preservados, igualmente com o número que os sustenta (ex.: "sua recuperação reflexa está ótima, 96,44%").
-- sintese_clinico_funcional: parágrafo conectando sobrecarga, pontos de atenção e pontos preservados.
-- conclusao_funcional: fecho em linguagem simples que amarra tudo para o paciente: o padrão principal e o
-  que ele pode causar, o ponto positivo/preservado, e uma frase sobre os TRÊS PILARES (Biomecânico,
-  Bioquímico, Bioemocional) e como serão trabalhados de forma progressiva, começando pelo pilar prioritário.
-  O paciente deve terminar a leitura entendendo o que tem, por que tem, e qual o caminho.
-- fase_jornada: nome da fase da Jornada Neuro ID em que o paciente se encontra.
+- abertura_calorosa: 2 a 3 frases que acolhem o paciente pelo nome e reconhecem a coragem de ter buscado esse
+  cuidado. Sem jargão. Cria segurança para ler o resto.
+- leitura_bio3: { titulo, descricao }. O "retrato" de como o corpo está hoje, guiado pelos TRÊS PILARES
+  (Biomecânico = corpo/estrutura; Bioquímico = nutrição/metabolismo; Bioemocional = emoções/sistema nervoso).
+  titulo curto e humano (ex.: "Como seu corpo está hoje"). descricao traduz o Mapa Bio³ em linguagem do dia a
+  dia: onde está mais sobrecarregado e onde está mais preservado, SEM despejar os percentuais (os números do
+  Mapa ficam para o profissional, em practitioner_review_points).
+- leitura_neurometrica: lista de { titulo, descricao }, uma por achado principal do sistema nervoso/corpo, no
+  formato ACHADO → O QUE SIGNIFICA → O QUE ELE SENTE NO DIA A DIA. Ancore em 2 a 3 dados reais por achado
+  (valor + tradução simples). Use SOMENTE os valores fornecidos em metrics; nunca re-extraia número de prosa
+  nem invente. Ex.: titulo "Seu ritmo interno está acelerado"; descricao "sua temperatura periférica está um
+  pouco abaixo do ideal, o que costuma aparecer como mãos frias e dificuldade de desligar à noite".
+- leitura_bioemocional: { temas: [3 a 4], sintese }. SLOT PRÓPRIO e dedicado da leitura emocional. Agrupe SEMPRE
+  em 3 a 4 temas macro (nunca item a item), em linguagem humana e qualitativa. SEMPRE inclua nos temas as
+  EMOÇÕES REAIS encontradas na avaliação (ex.: culpa, medo, tristeza, autocobrança), usando as palavras
+  VERDADEIRAS dos dados, nunca inventadas nem genéricas. sintese: 1 a 2 frases que costuram os temas com
+  cuidado, sem dramatizar. NUNCA cite exame, número, órgão ou diagnóstico; é uma leitura, não um veredito.
+- ancora_positiva: 1 a 2 frases destacando um ponto REAL preservado/forte do paciente (ex.: "seus freios
+  naturais de recuperação estão preservados"). OBRIGATÓRIO em todo relatório: é o que dá esperança e mostra
+  que há base para construir.
+- conexao_aha: o momento "agora faz sentido", 2 a 3 frases que conectam os achados entre si e com a queixa do
+  paciente, mostrando como corpo, sistema nervoso e emoções conversam. Faz o paciente enxergar o quadro inteiro,
+  não peças soltas.
+- porque_agir_agora: por que começar agora joga a favor do paciente, em tom de OPORTUNIDADE e possibilidade,
+  NUNCA de medo ou ameaça. Mostra que o corpo é adaptável e responde melhor quando cuidado cedo. Quando houver
+  sinal emocional sensível, use tom de esperança e possibilidade, jamais assustar.
+- proximo_passo: convite concreto e simples para o próximo passo do cuidado, em linguagem de parceria ("vamos
+  começar juntos por..."). Fale em "sessões terapêuticas de acompanhamento" (sequência progressiva), NUNCA em
+  número de sessões, "protocolo", "exame" ou "neurometria".
+- fase_jornada: nome da fase da Jornada Neuro ID em que o paciente se encontra (uso interno/rótulo).
 - observacao: aviso de que não substitui avaliação médica/diagnóstico/exames/condutas prescritas.
 
 DOCUMENTO 2 — "plano_regulacao" = PLANO INTEGRATIVO NEURO ID ("o que fazer agora" — RASCUNHO p/ aprovação). Campos:
@@ -105,8 +132,8 @@ Regras:
     claramente (ex.: "Leitura emocional — biorressonância (Bioemocional)") e traga o perfil de emoções
     encontradas relacionadas aos órgãos (coração/pulmão/rim…), como achado registrado pelo exame.
   Não confunda este item (exame de biorressonância) com a "Leitura do Mapa Bio³" (índice de disfunção por eixo):
-  são DOIS achados separados no Documento 1. Conciso: o relatório inteiro não pode passar de ~1,5 página somando
-  todos os exames.
+  são DOIS achados separados no Documento 1. Cada seção do Documento 1 é curta e objetiva por si só; controle o
+  tamanho por seção, não comprimindo os achados dos exames num único bloco.
 - MAPA BIO³ (neuro_id): traz o GRAU DE DISFUNÇÃO por eixo, em % onde MAIOR = PIOR (menor = melhor). No Documento 1,
   apresente SEMPRE OS TRÊS EIXOS pelos nomes AXIEL, cada um com o seu %, inclusive os mais preservados:
   Biomecânico (fisico_pct), Bioquímico (bioquimico_pct) e Bioemocional (emocional_pct) — use exatamente o termo
@@ -123,9 +150,9 @@ Regras:
 
 export function normalizeInsightText(value: unknown): string {
   if (typeof value !== "string") return "";
-  // Limite por CAMPO. ~3200 chars dá espaço para parágrafos densos (relatórios de ~1,5 página
-  // somando vários campos), sem permitir respostas descontroladas.
-  return value.trim().slice(0, 3200);
+  // Limite por CAMPO. Com o Doc 1 em 8 seções separadas (Rota A), cada seção é curta por natureza;
+  // ~1500 chars dá espaço a um parágrafo bem desenvolvido sem permitir respostas descontroladas.
+  return value.trim().slice(0, 1500);
 }
 
 export function safeList(values: unknown, fallback: string[] = []): string[] {

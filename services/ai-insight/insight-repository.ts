@@ -64,6 +64,10 @@ export async function saveAiInsight(input: {
   ai_request_id?: string | null;
   input_snapshot: AiInsightInputSnapshot;
   output: AiInsightOutput;
+  /** Override do status inicial (ex.: "needs_changes" quando guardrails ao paciente falham). */
+  review_status?: "pending_review" | "needs_changes";
+  /** Nota do guardrail (registrada no audit) explicando por que nasceu needs_changes. */
+  guardrail_note?: string | null;
 }): Promise<AiInsight> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -81,7 +85,7 @@ export async function saveAiInsight(input: {
       input_snapshot: input.input_snapshot,
       output: input.output,
       status: "completed",
-      review_status: "pending_review",
+      review_status: input.review_status ?? "pending_review",
       final_output: null,
       safety_label: "AI-generated insights (not medical advice)",
       created_by: user?.id ?? null,
@@ -96,7 +100,12 @@ export async function saveAiInsight(input: {
     action: "ai_insight.generated",
     entityType: "ai_insight",
     entityId: data.id,
-    metadata: { patient_id: input.patient_id, ai_request_id: input.ai_request_id ?? null },
+    metadata: {
+      patient_id: input.patient_id,
+      ai_request_id: input.ai_request_id ?? null,
+      review_status: input.review_status ?? "pending_review",
+      guardrail_note: input.guardrail_note ?? null,
+    },
   });
 
   return data as AiInsight;
