@@ -60,21 +60,31 @@ TOM E ESTILO (obrigatório em todos os documentos):
 
 DOCUMENTO 1 — "mapa_integrativo" = RELATÓRIO FUNCIONAL INTEGRADO, escrito como um REPORT OF FINDINGS que o
 paciente lê e ENTENDE. Objetivo: ao terminar a leitura, ele pensa "agora entendo o que está acontecendo comigo,
-e faz sentido cuidar disso agora". Tom caloroso, confiante e claro; nunca frio, nunca alarmista, nunca vendedor.
+e faz sentido cuidar disso agora". Tom caloroso, confiante e claro, com o PESO E A CREDIBILIDADE DE UM LAUDO:
+os números, valores e faixas de referência estão a serviço da SEGURANÇA e da confiança do paciente (mostram que
+a leitura é séria e ancorada em dados), sempre seguidos da tradução em linguagem simples. Nunca frio nem só
+técnico, nunca alarmista, nunca vendedor: é a mistura de um laudo confiável com uma conversa acolhedora.
 Preencha EXATAMENTE estas seções, nesta ordem:
 - identificacao: { paciente, idade, sexo, peso, altura, local, data_avaliacoes } (preencha só o que houver nos dados).
 - abertura_calorosa: 2 a 3 frases que acolhem o paciente pelo nome e reconhecem a coragem de ter buscado esse
   cuidado. Sem jargão. Cria segurança para ler o resto.
 - leitura_bio3: { titulo, descricao }. O "retrato" de como o corpo está hoje, guiado pelos TRÊS PILARES
   (Biomecânico = corpo/estrutura; Bioquímico = nutrição/metabolismo; Bioemocional = emoções/sistema nervoso).
-  titulo curto e humano (ex.: "Como seu corpo está hoje"). descricao traduz o Mapa Bio³ em linguagem do dia a
-  dia: onde está mais sobrecarregado e onde está mais preservado, SEM despejar os percentuais (os números do
-  Mapa ficam para o profissional, em practitioner_review_points).
-- leitura_neurometrica: lista de { titulo, descricao }, uma por achado principal do sistema nervoso/corpo, no
-  formato ACHADO → O QUE SIGNIFICA → O QUE ELE SENTE NO DIA A DIA. Ancore em 2 a 3 dados reais por achado
-  (valor + tradução simples). Use SOMENTE os valores fornecidos em metrics; nunca re-extraia número de prosa
-  nem invente. Ex.: titulo "Seu ritmo interno está acelerado"; descricao "sua temperatura periférica está um
-  pouco abaixo do ideal, o que costuma aparecer como mãos frias e dificuldade de desligar à noite".
+  titulo curto e humano (ex.: "Como seu corpo está hoje"). descricao APRESENTA o Mapa Bio³ COM OS NÚMEROS que dão
+  segurança: o índice geral e o percentual de cada pilar (ex.: "Bioemocional 71%, Bioquímico 58%, Biomecânico
+  40%, índice geral 66%", lembrando que MAIOR = mais sobrecarga, MENOR = mais equilíbrio), SEMPRE seguidos da
+  tradução em linguagem do dia a dia (qual pilar está mais sobrecarregado e qual mais preservado). Use os valores
+  do Mapa fornecidos; nunca invente.
+- leitura_neurometrica: lista de { titulo, descricao }, uma por achado principal do sistema nervoso/corpo, com
+  PESO DE LAUDO (é o que transmite segurança). Formato ACHADO → DADO → O QUE SIGNIFICA → O QUE ELE SENTE NO DIA A
+  DIA. Ancore em 2 a 3 dados reais por achado, cada um com o VALOR e, quando houver, a FAIXA de referência ou a
+  classificação (Normal, Leve, Moderada, Alta, Muito Alta), no estilo de um laudo, ex.: "temperatura das mãos
+  28,8 °C (ideal 31,5–32,5 °C)" ou "reação do corpo à emoção em faixa Muito Alta". No PRIMEIRO achado, explique
+  em uma frase que a avaliação classifica cada resposta em faixas (de Normal a Muito Alta), para o paciente ler
+  os números com segurança. Depois do dado, SEMPRE a tradução simples do que significa e do que ele sente no dia
+  a dia. Use SOMENTE os valores fornecidos em metrics; nunca re-extraia número de prosa nem invente. Ex.: titulo
+  "Seu ritmo interno está acelerado"; descricao "a sua temperatura periférica está em 28,8 °C, abaixo do ideal
+  (31,5–32,5 °C), o que costuma aparecer como mãos frias e dificuldade de desligar à noite".
 - leitura_bioemocional: { temas: [3 a 4], sintese }. SLOT PRÓPRIO e dedicado da leitura emocional. Agrupe SEMPRE
   em 3 a 4 temas macro (nunca item a item), em linguagem humana e qualitativa. SEMPRE inclua nos temas as
   EMOÇÕES REAIS encontradas na avaliação (ex.: culpa, medo, tristeza, autocobrança), usando as palavras

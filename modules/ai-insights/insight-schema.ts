@@ -94,13 +94,13 @@ export const aiInsightJsonShape = {
     leitura_bio3: {
       titulo: "Retrato humano de como o corpo está hoje (ex.: 'Como seu corpo está hoje').",
       descricao:
-        "Tradução do Mapa Bio³ nos três pilares (Biomecânico, Bioquímico, Bioemocional) em linguagem do dia a dia, sem despejar os percentuais.",
+        "Mapa Bio³ COM os números (índice geral + % de cada pilar, maior = mais sobrecarga), sempre seguidos da tradução em linguagem do dia a dia (qual pilar mais sobrecarregado, qual mais preservado).",
     },
     leitura_neurometrica: [
       {
         titulo: "Achado principal em linguagem humana (ex.: 'Seu ritmo interno está acelerado')",
         descricao:
-          "Achado → o que significa → o que ele sente no dia a dia, ancorado em 2 a 3 dados reais de metrics (valor + tradução simples).",
+          "Peso de laudo: achado → dado (valor + faixa de referência ou classificação Normal/Leve/Moderada/Alta/Muito Alta) → o que significa → o que ele sente. 2 a 3 dados reais de metrics, nunca inventados.",
       },
     ],
     leitura_bioemocional: {
