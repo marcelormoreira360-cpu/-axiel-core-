@@ -11,12 +11,12 @@ import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "OXIEL Core",
+  title: "OXIEL Core™",
   description: "Sistema integrativo de clínica.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "OXIEL Core",
+    title: "OXIEL Core™",
   },
 };
 

@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: t("title"),
       description: t("description"),
       type: "website",
-      siteName: "OXIEL Core",
+      siteName: "OXIEL Core™",
     },
     twitter: {
       card: "summary_large_image",
@@ -263,7 +263,7 @@ export default async function LandingPage() {
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 border-b border-black/[.06] bg-[#FAFAF8]/90 backdrop-blur-sm dark:border-white/[.07] dark:bg-[#0B0F17]/90">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE</span>
+          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE™</span>
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#tour" className="text-sm text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("nav.tour")}</a>
             <a href="#jornada" className="text-sm text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("nav.journey")}</a>
@@ -581,7 +581,7 @@ export default async function LandingPage() {
       {/* ── Footer ── */}
       <footer className="border-t border-black/[.06] py-10 dark:border-white/[.07]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:px-6 md:flex-row">
-          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE</span>
+          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE™</span>
           <p className="text-sm text-black/35 dark:text-[#6B6A66]">{t("footer.rights")}</p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="/auth/login" className="text-sm text-black/45 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("footer.login")}</Link>
