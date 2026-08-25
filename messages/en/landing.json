@@ -12,8 +12,10 @@
     "startFree": "Start free"
   },
   "hero": {
-    "title": "Your patient journey on autopilot.",
-    "subtitle": "From first click to ongoing care: online booking, automatic questionnaires, visual assessment, AI-drafted reports and billing — in one place, in your patient's language.",
+    "eyebrow": "Care. Value. Connect.",
+    "title": "Your patients don't experience your software. They experience your care.",
+    "payoff": "The intelligent engine behind the patient journey.",
+    "subtitle": "From the first click to ongoing care, OXIEL Core connects the whole clinical journey in one intelligent workflow: booking, intake, assessment, AI-assisted documentation, reports, billing and follow-up.",
     "ctaPrimary": "Start free for 30 days",
     "ctaSecondary": "Watch the 90-second tour",
     "microProof": "No credit card required. Cancel anytime.",
@@ -125,7 +127,8 @@
   "cta": {
     "title": "Next week can look different.",
     "subtitle": "Set up your clinic in 5 minutes. Decide in 30 days — with a fuller schedule and freer evenings.",
-    "button": "Start now, free"
+    "button": "Start now, free",
+    "signature": "One patient. One journey. One connected system."
   },
   "system": {
     "eyebrow": "Part of the OXIEL Intelligent Care System",

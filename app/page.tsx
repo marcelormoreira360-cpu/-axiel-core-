@@ -286,9 +286,13 @@ export default async function LandingPage() {
       {/* ── 1. Hero ── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 md:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl md:text-[60px]">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56] dark:text-[#9FE1CB]">{t("hero.eyebrow")}</p>
+          <h1 className="text-3xl font-semibold leading-[1.12] tracking-[-0.03em] sm:text-4xl md:text-5xl">
             {t("hero.title")}
           </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-xl font-medium leading-snug text-black/70 sm:text-2xl dark:text-[#C9C7C2]">
+            {t("hero.payoff")}
+          </p>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-black/55 dark:text-[#9E9C97]">
             {t("hero.subtitle")}
           </p>
@@ -550,6 +554,7 @@ export default async function LandingPage() {
       {/* ── 10. CTA final ── */}
       <section className="border-t border-black/[.06] bg-white py-24 dark:border-white/[.07] dark:bg-[#0E1117]">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56] dark:text-[#9FE1CB]">{t("cta.signature")}</p>
           <h2 className="text-3xl font-semibold tracking-[-0.025em] sm:text-4xl">{t("cta.title")}</h2>
           <p className="mt-4 text-lg text-black/55 dark:text-[#9E9C97]">{t("cta.subtitle")}</p>
           <Link

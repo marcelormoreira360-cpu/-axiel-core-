@@ -12,8 +12,10 @@
     "startFree": "Começar grátis"
   },
   "hero": {
-    "title": "A jornada do seu paciente no piloto automático.",
-    "subtitle": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente.",
+    "eyebrow": "Cuidar. Valorizar. Conectar.",
+    "title": "Os seus pacientes não sentem o seu software. Sentem o seu cuidado.",
+    "payoff": "O motor inteligente por trás do percurso do paciente.",
+    "subtitle": "Do primeiro clique ao acompanhamento contínuo, o OXIEL Core liga todo o percurso clínico num só fluxo inteligente: marcações, questionários, avaliação, documentação assistida por IA, relatórios, faturação e acompanhamento.",
     "ctaPrimary": "Comece grátis por 30 dias",
     "ctaSecondary": "Veja o tour de 90 segundos",
     "microProof": "Sem cartão de crédito. Cancele quando quiser.",
@@ -125,7 +127,8 @@
   "cta": {
     "title": "Sua próxima semana pode ser diferente.",
     "subtitle": "Crie sua clínica em 5 minutos. Em 30 dias você decide — com a agenda mais cheia e as noites mais livres.",
-    "button": "Começar agora, grátis"
+    "button": "Começar agora, grátis",
+    "signature": "Um paciente. Um percurso. Um sistema ligado."
   },
   "system": {
     "eyebrow": "Parte do OXIEL Intelligent Care System",
