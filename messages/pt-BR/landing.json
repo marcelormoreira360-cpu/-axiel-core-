@@ -127,6 +127,12 @@
     "subtitle": "Crie sua clínica em 5 minutos. Em 30 dias você decide — com a agenda mais cheia e as noites mais livres.",
     "button": "Começar agora, grátis"
   },
+  "system": {
+    "eyebrow": "Parte do OXIEL Intelligent Care System",
+    "line": "O OXIEL Growth traz os pacientes. O OXIEL Core faz o cuidado durar. Juntos, formam o OXIEL Intelligent Care System.",
+    "growthLabel": "Conheça o OXIEL Growth",
+    "systemLabel": "Veja o sistema completo"
+  },
   "footer": {
     "rights": "© 2026 OXIEL Core. Todos os direitos reservados.",
     "login": "Entrar",

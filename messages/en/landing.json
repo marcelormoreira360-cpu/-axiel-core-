@@ -127,6 +127,12 @@
     "subtitle": "Set up your clinic in 5 minutes. Decide in 30 days — with a fuller schedule and freer evenings.",
     "button": "Start now, free"
   },
+  "system": {
+    "eyebrow": "Part of the OXIEL Intelligent Care System",
+    "line": "OXIEL Growth brings patients in. OXIEL Core makes care last. Together, they are the OXIEL Intelligent Care System.",
+    "growthLabel": "Explore OXIEL Growth",
+    "systemLabel": "See the whole system"
+  },
   "footer": {
     "rights": "© 2026 OXIEL Core. All rights reserved.",
     "login": "Log in",

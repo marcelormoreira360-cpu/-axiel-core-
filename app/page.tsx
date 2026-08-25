@@ -562,6 +562,22 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── Sistema (coerência OXIEL) ── */}
+      <section className="border-t border-black/[.06] bg-[#FAFAF8] py-16 dark:border-white/[.07] dark:bg-[#0E1117]">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0F6E56]">{t("system.eyebrow")}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-black/60 dark:text-[#B8B6B1]">{t("system.line")}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <a href="https://www.oxielgrowth.com" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0F6E56] transition hover:gap-2.5">
+              {t("system.growthLabel")} <ArrowRight className="h-4 w-4" />
+            </a>
+            <a href="https://www.oxiel.co" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-sm font-semibold text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">
+              {t("system.systemLabel")} <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="border-t border-black/[.06] py-10 dark:border-white/[.07]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:px-6 md:flex-row">
