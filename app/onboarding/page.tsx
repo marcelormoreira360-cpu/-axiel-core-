@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
           Configuração inicial
         </p>
         <h1 className="text-[32px] font-semibold tracking-[-0.04em] text-[#0F1A2E]">
-          Bem-vindo ao AXIEL
+          Bem-vindo ao OXIEL
         </h1>
         <p className="text-[14px] text-[#A09E98] mt-[6px] leading-relaxed">
           4 passos simples. O sistema se configura automaticamente para o seu perfil.

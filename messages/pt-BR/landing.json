@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "AXIEL Core — A jornada do seu paciente no piloto automático",
+    "title": "OXIEL Core — A jornada do seu paciente no piloto automático",
     "description": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente. 30 dias grátis, sem cartão."
   },
   "nav": {
@@ -17,7 +17,7 @@
     "ctaPrimary": "Comece grátis por 30 dias",
     "ctaSecondary": "Veja o tour de 90 segundos",
     "microProof": "Sem cartão de crédito. Cancele quando quiser.",
-    "videoLabel": "Tour do AXIEL Core (2 min)",
+    "videoLabel": "Tour do OXIEL Core (2 min)",
     "videoCaption": "Narrado em português. Ative o som."
   },
   "pain": {
@@ -128,7 +128,7 @@
     "button": "Começar agora, grátis"
   },
   "footer": {
-    "rights": "© 2026 AXIEL Core. Todos os direitos reservados.",
+    "rights": "© 2026 OXIEL Core. Todos os direitos reservados.",
     "login": "Entrar",
     "contact": "Contato",
     "privacy": "Privacidade",

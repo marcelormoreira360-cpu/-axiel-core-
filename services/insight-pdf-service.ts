@@ -185,7 +185,7 @@ export async function buildNeuroId360Pdf(opts: {
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
     size: "LETTER",
-    info: { Title: "Relatório Neuro ID 360", Author: brand.name ?? "AXIEL Core" },
+    info: { Title: "Relatório Neuro ID 360", Author: brand.name ?? "OXIEL Core" },
   });
 
   // Cabeçalho/rodapé em TODAS as páginas. Guarda de reentrância para nunca recursar.

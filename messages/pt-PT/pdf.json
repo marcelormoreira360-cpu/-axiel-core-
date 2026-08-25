@@ -1,6 +1,6 @@
 {
   "period": "PERÍODO: {label}",
-  "generatedBy": "{clinic} · Relatório gerado pelo AXIEL Core",
+  "generatedBy": "{clinic} · Relatório gerado pelo OXIEL Core",
   "generatedAt": "Gerado em {date}",
   "financeReport": {
     "featureGate": "Relatórios avançados disponíveis no plano Professional ou superior.",
@@ -80,7 +80,7 @@
     "notFound": "Paciente não encontrado",
     "title": "Prontuário Completo — {name}",
     "headerSubtitle": "Prontuário Completo do Paciente",
-    "subject": "Relatório gerado pelo AXIEL Core",
+    "subject": "Relatório gerado pelo OXIEL Core",
     "email": "E-mail: {value}",
     "phone": "Telefone: {value}",
     "birth": "Nascimento: {value}",
@@ -155,7 +155,7 @@
     "pattern": "Padrão: {title}",
     "reviewerNote": "Nota do profissional: ",
     "moreInsights": "({count} insights adicionais não exibidos)",
-    "footer": "{clinic} · Prontuário gerado pelo AXIEL Core · Documento confidencial — não substitui avaliação clínica",
+    "footer": "{clinic} · Prontuário gerado pelo OXIEL Core · Documento confidencial — não substitui avaliação clínica",
     "gradeLabel": "Grau",
     "clinicalTests": "Testes clínicos presenciais"
   },
@@ -213,7 +213,7 @@
     "since": "desde {date}",
     "empty": "Nenhum item prescrito ativo.",
     "professionalFallback": "Profissional de Saúde",
-    "generatedBy": "Gerado pelo AXIEL Core · {clinic}",
+    "generatedBy": "Gerado pelo OXIEL Core · {clinic}",
     "validity": "Válido somente com assinatura do profissional"
   }
 }

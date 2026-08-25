@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "AXIEL Core — Your patient journey on autopilot",
+    "title": "OXIEL Core — Your patient journey on autopilot",
     "description": "From first click to ongoing care: online booking, automatic questionnaires, visual assessment, AI-drafted reports and billing — in one place, in your patient's language. 30 days free, no credit card."
   },
   "nav": {
@@ -17,7 +17,7 @@
     "ctaPrimary": "Start free for 30 days",
     "ctaSecondary": "Watch the 90-second tour",
     "microProof": "No credit card required. Cancel anytime.",
-    "videoLabel": "AXIEL Core tour (2 min)",
+    "videoLabel": "OXIEL Core tour (2 min)",
     "videoCaption": "Narrated in English. Turn on the sound."
   },
   "pain": {
@@ -128,7 +128,7 @@
     "button": "Start now, free"
   },
   "footer": {
-    "rights": "© 2026 AXIEL Core. All rights reserved.",
+    "rights": "© 2026 OXIEL Core. All rights reserved.",
     "login": "Log in",
     "contact": "Contact",
     "privacy": "Privacy",

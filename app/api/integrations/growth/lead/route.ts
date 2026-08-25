@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 
 // =============================================================================
 // POST /api/integrations/growth/lead
-// Recebe um lead "quente" do AXIEL Growth e cria/atualiza o lead no Core.
+// Recebe um lead "quente" do OXIEL Growth e cria/atualiza o lead no Core.
 // Auth: Authorization: Bearer <INTEGRATION_KEY>  (chave gerada em Settings).
 // Idempotência: header Idempotency-Key OU body.growth_lead_id.
 // =============================================================================

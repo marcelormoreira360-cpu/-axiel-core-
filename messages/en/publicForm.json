@@ -8,7 +8,7 @@
   "completedDesc": "Thank you! This questionnaire has already been completed and is on file. No need to fill it out again.",
   "eyebrow": "Questionnaire",
   "greeting": "Hi, {name}",
-  "secureFooter": "AXIEL Core · Secure form",
+  "secureFooter": "OXIEL Core · Secure form",
   "answeredOf": "{answered} of {total, plural, one {# question answered} other {# questions answered}}",
   "yes": "Yes",
   "no": "No",

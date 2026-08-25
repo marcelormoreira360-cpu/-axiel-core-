@@ -203,7 +203,7 @@ export async function buildNeuroIdMapPdf(opts: {
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
     size: "LETTER",
-    info: { Title: "Mapa Bio³ · Índice Neuro ID", Author: brand.name ?? "AXIEL Core" },
+    info: { Title: "Mapa Bio³ · Índice Neuro ID", Author: brand.name ?? "OXIEL Core" },
   });
   let decorating = false;
   const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
@@ -325,7 +325,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
     size: "LETTER",
-    info: { Title: "Mapa Bio³ · Seu Relatório", Author: brand.name ?? "AXIEL Core" },
+    info: { Title: "Mapa Bio³ · Seu Relatório", Author: brand.name ?? "OXIEL Core" },
   });
   let decorating = false;
   const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };

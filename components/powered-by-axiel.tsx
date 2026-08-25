@@ -1,4 +1,4 @@
-// Rodapé "Powered by AXIEL" — loop viral PLG nas superfícies públicas
+// Rodapé "Powered by OXIEL" — loop viral PLG nas superfícies públicas
 // (booking público e portal do paciente). Oculto para clínicas com a
 // feature `white_label` (Enterprise) — a decisão vem do servidor via
 // flag `show_powered_by` no payload da clínica.
@@ -16,12 +16,12 @@ const BASE_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://axielcore.com").re
 
 const COPY: Record<PoweredByAxielProps["variant"], { pt: string; en: string }> = {
   booking: {
-    pt: "⚡ Agendamento por AXIEL — crie o sistema da sua clínica",
-    en: "⚡ Scheduling by AXIEL — build your clinic's system",
+    pt: "⚡ Agendamento por OXIEL — crie o sistema da sua clínica",
+    en: "⚡ Scheduling by OXIEL — build your clinic's system",
   },
   portal: {
-    pt: "Portal por AXIEL",
-    en: "Portal by AXIEL",
+    pt: "Portal por OXIEL",
+    en: "Portal by OXIEL",
   },
 };
 

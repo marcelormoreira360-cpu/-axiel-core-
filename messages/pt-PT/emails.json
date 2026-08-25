@@ -8,13 +8,13 @@
   "rowClinic": "🏥 Clínica",
   "minutes": "{n} minutos",
   "base": {
-    "footerSentBy": "Este e-mail foi enviado por <b>{clinic}</b> usando o AXIEL Core.",
+    "footerSentBy": "Este e-mail foi enviado por <b>{clinic}</b> usando o OXIEL Core.",
     "footerIgnore": "Se você não esperava este e-mail, pode ignorá-lo com segurança."
   },
   "invite": {
-    "subject": "Convite para {clinic} — AXIEL Core",
+    "subject": "Convite para {clinic} — OXIEL Core",
     "heading": "Você foi convidado para {clinic}",
-    "body": "Clique no botão abaixo para aceitar o convite e acessar o AXIEL Core como <b>{role}</b>.",
+    "body": "Clique no botão abaixo para aceitar o convite e acessar o OXIEL Core como <b>{role}</b>.",
     "cta": "Aceitar convite",
     "footer": "Se não esperava este e-mail, pode ignorá-lo. O link expira em 7 dias."
   },
@@ -66,7 +66,7 @@
     "rowInactive": "💤 Pacientes sem sessão há 30+ dias",
     "tipReengage": "<b>💡 Dica de reengajamento:</b> Você tem <b>{count, plural, one {# paciente} other {# pacientes}}</b> sem sessão há mais de 30 dias. Uma mensagem personalizada pode ser a oportunidade de retomada do tratamento.",
     "cta": "Ver análise completa →",
-    "footerAuto": "Este relatório é enviado automaticamente no início de cada mês pelo AXIEL Core."
+    "footerAuto": "Este relatório é enviado automaticamente no início de cada mês pelo OXIEL Core."
   },
   "simple": {
     "defaultSubject": "Mensagem da sua clínica",
@@ -111,14 +111,14 @@
   "trialExpiry": {
     "subject3d": "⏳ Seu período de teste termina em 3 dias — {clinic}",
     "subject1d": "⚠️ Último dia! Seu período de teste termina amanhã — {clinic}",
-    "preview": "Seu período de teste do AXIEL Core termina em {days, plural, one {# dia} other {# dias}}.",
+    "preview": "Seu período de teste do OXIEL Core termina em {days, plural, one {# dia} other {# dias}}.",
     "heading3d": "Faltam 3 dias para o fim do seu teste",
     "heading1d": "Seu período de teste termina amanhã",
-    "intro": "O período de teste gratuito de {clinic} no AXIEL Core termina em {date}.",
+    "intro": "O período de teste gratuito de {clinic} no OXIEL Core termina em {date}.",
     "body3d": "Para manter agendamentos, pacientes e automações funcionando sem interrupção, escolha um plano antes do fim do período de teste. Leva menos de 2 minutos.",
     "body1d": "Este é o último aviso: após essa data, o acesso da sua clínica será suspenso até a contratação de um plano. Seus dados ficam guardados em segurança e tudo volta exatamente de onde parou.",
     "cta": "Escolher meu plano →",
-    "footerAuto": "Este aviso é enviado automaticamente pelo AXIEL Core durante o período de teste."
+    "footerAuto": "Este aviso é enviado automaticamente pelo OXIEL Core durante o período de teste."
   },
   "neuroIdReport": {
     "subject": "Seu relatório está pronto — {clinic}",

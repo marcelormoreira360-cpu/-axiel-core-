@@ -6,7 +6,7 @@ import { isManager } from "@/lib/team-utils";
 import { getPatientTrends } from "@/services/patient-trends-service";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Tendências — AXIEL Core" };
+export const metadata = { title: "Tendências — OXIEL Core" };
 
 export default async function TrendsPage() {
   const profile = await getCurrentUserProfile();

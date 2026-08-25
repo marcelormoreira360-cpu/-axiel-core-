@@ -87,7 +87,7 @@ export async function Shell({
 
   const logoUrl = clinic?.logo_url ?? null;
   const primaryColor = clinic?.primary_color ?? "#0F6E56";
-  const clinicName = clinic?.name ?? "AXIEL";
+  const clinicName = clinic?.name ?? "OXIEL";
 
   // Moeda da clínica (BRL/USD/EUR) — vem da config da clínica, não do idioma.
   const tShell = await getTranslations("common");

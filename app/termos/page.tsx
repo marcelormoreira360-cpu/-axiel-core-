@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Termos de Uso — AXIEL Core",
+  title: "Termos de Uso — OXIEL Core",
   description:
-    "Leia os Termos de Uso do AXIEL Core, a plataforma SaaS de gestao clinica para profissionais de saude integrativa.",
+    "Leia os Termos de Uso do OXIEL Core, a plataforma SaaS de gestao clinica para profissionais de saude integrativa.",
 };
 
 async function Navbar() {

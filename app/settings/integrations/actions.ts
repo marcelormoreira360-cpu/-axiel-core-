@@ -79,7 +79,7 @@ export async function saveGoogleReviewUrlAction(formData: FormData): Promise<{ o
   return { ok: true, error: null };
 }
 
-// ── AXIEL Growth — Integration Keys ───────────────────────────────────────────
+// ── OXIEL Growth — Integration Keys ───────────────────────────────────────────
 
 export async function generateGrowthKeyAction(
   formData: FormData

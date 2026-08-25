@@ -1,5 +1,5 @@
 /**
- * Scrubbing de PHI/PII para eventos do Sentry (AXIEL Core).
+ * Scrubbing de PHI/PII para eventos do Sentry (OXIEL Core).
  *
  * Objetivo: garantir que NENHUM dado de paciente saia daqui para o Sentry.
  * Isso vale para HIPAA/LGPD — e-mail, telefone, nome, data de nascimento,

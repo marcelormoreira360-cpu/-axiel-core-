@@ -6,7 +6,7 @@ import { SignupForm } from "./signup-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth.signup");
-  return { title: `${t("title")} | AXIEL Core` };
+  return { title: `${t("title")} | OXIEL Core` };
 }
 
 export default async function SignupPage({

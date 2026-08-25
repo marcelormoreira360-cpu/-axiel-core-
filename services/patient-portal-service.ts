@@ -134,7 +134,7 @@ export type PatientPortalData = {
     /** Fuso IANA da clínica (clinic_settings.timezone). Toda data/hora de agendamento
      *  exibida ao paciente usa este fuso, não o do navegador. */
     timezone: string;
-    /** PLG: false quando a clínica tem white_label (Enterprise) — oculta o rodapé "Powered by AXIEL" */
+    /** PLG: false quando a clínica tem white_label (Enterprise) — oculta o rodapé "Powered by OXIEL" */
     show_powered_by?: boolean;
   };
   /** Fuso IANA do paciente (salvo/inferido) — para exibir horários no fuso dele. */
@@ -484,7 +484,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    // PLG: plano da clínica para decidir se o rodapé "Powered by AXIEL" aparece
+    // PLG: plano da clínica para decidir se o rodapé "Powered by OXIEL" aparece
     supabase
       .from("subscriptions")
       .select("status, trial_ends_at, plans(code, slug)")
@@ -494,7 +494,7 @@ export async function getPatientPortalDataByToken(token: string): Promise<Patien
 
   if (!patient || !clinic) return null;
 
-  // PLG: oculta o "Powered by AXIEL" para clínicas com white_label (Enterprise)
+  // PLG: oculta o "Powered by OXIEL" para clínicas com white_label (Enterprise)
   const clinicPlans = clinicSubscription?.plans as { code?: string | null; slug?: string | null } | null;
   const clinicSub = clinicSubscription as { status?: string | null; trial_ends_at?: string | null } | null;
   const clinicPlanSlug = effectivePlanSlug(clinicPlans?.code ?? clinicPlans?.slug, clinicSub?.status ?? null, clinicSub?.trial_ends_at ?? null);

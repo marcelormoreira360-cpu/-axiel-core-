@@ -38,7 +38,7 @@ export async function generateIcalFeed(clinicId: string, clinicName: string): Pr
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    `PRODID:-//AXIEL Core//Clinic Calendar//PT`,
+    `PRODID:-//OXIEL Core//Clinic Calendar//PT`,
     `X-WR-CALNAME:${escapeIcal(clinicName)}`,
     "X-WR-CALDESC:Consultas agendadas",
     "CALSCALE:GREGORIAN",

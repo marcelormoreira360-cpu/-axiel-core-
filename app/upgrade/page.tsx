@@ -85,7 +85,7 @@ export default async function UpgradePage() {
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/[.07]">
         <div className="text-[17px] font-semibold tracking-[-0.035em] text-white">
           <span className="text-[#0F6E56]">●</span>{" "}
-          <span className="text-[14px]">AXIEL Core</span>
+          <span className="text-[14px]">OXIEL Core</span>
         </div>
         <Link
           href="/billing"

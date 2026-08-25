@@ -7,7 +7,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { LinksHub } from "./links-hub";
 
-export const metadata = { title: "Links de Agendamento — AXIEL Core" };
+export const metadata = { title: "Links de Agendamento — OXIEL Core" };
 
 export default async function LinksPage() {
   const t = await getTranslations("links");

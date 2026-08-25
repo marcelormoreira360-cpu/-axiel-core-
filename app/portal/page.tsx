@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { PortalAccessForm } from "./portal-access-form";
 
 export const metadata: Metadata = {
-  title: "Portal do Paciente | AXIEL Core",
+  title: "Portal do Paciente | OXIEL Core",
   robots: { index: false, follow: false },
 };
 
@@ -15,7 +15,7 @@ export default async function PatientPortalLoginPage() {
         {/* Logo / brand */}
         <div className="text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-black/35 mb-3">
-            AXIEL Core
+            OXIEL Core
           </p>
           <h1 className="text-2xl font-semibold tracking-tight text-[#0F1A2E]">
             {t("title")}

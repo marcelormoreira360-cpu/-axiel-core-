@@ -8,7 +8,7 @@
   "completedDesc": "Obrigado! Este questionário já foi respondido e está na sua ficha. Não é preciso responder de novo.",
   "eyebrow": "Questionário",
   "greeting": "Olá, {name}",
-  "secureFooter": "AXIEL Core · Formulário seguro",
+  "secureFooter": "OXIEL Core · Formulário seguro",
   "answeredOf": "{answered} de {total, plural, one {# pergunta respondida} other {# perguntas respondidas}}",
   "yes": "Sim",
   "no": "Não",

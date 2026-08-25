@@ -144,7 +144,7 @@
       "notesLabel": "Observações:",
       "sessionHistory": "Histórico de sessões",
       "empty": "Nenhum registro de sessão.",
-      "generatedBy": "Documento gerado pelo AXIEL Core",
+      "generatedBy": "Documento gerado pelo OXIEL Core",
       "sessionCount": "{count, plural, one {# sessão} other {# sessões}}",
       "soap": {
         "subjective": "S — Subjetivo",

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "AXIEL Core",
-    short_name: "AXIEL",
+    name: "OXIEL Core",
+    short_name: "OXIEL",
     description: "Sistema integrativo de clínica",
     start_url: "/dashboard",
     display: "standalone",

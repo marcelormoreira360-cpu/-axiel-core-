@@ -4,7 +4,7 @@ import { isLocale, DEFAULT_LOCALE } from "@/i18n/locales";
 import { dualTimeLines } from "@/lib/timezone";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = process.env.RESEND_FROM_EMAIL ?? "AXIEL Core <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM_EMAIL ?? "OXIEL Core <onboarding@resend.dev>";
 
 // Envio simples e genérico (assunto + HTML), para fluxos avulsos.
 // O SDK do Resend NÃO lança exceção em erro de API — retorna { data, error }.

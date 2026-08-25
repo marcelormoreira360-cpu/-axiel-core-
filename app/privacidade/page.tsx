@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
 export const metadata: Metadata = {
-  title: "Politica de Privacidade — AXIEL Core",
+  title: "Politica de Privacidade — OXIEL Core",
   description:
-    "Saiba como o AXIEL Core coleta, usa, armazena e protege os seus dados e os dados dos seus pacientes, em conformidade com a LGPD (Lei n. 13.709/2018).",
+    "Saiba como o OXIEL Core coleta, usa, armazena e protege os seus dados e os dados dos seus pacientes, em conformidade com a LGPD (Lei n. 13.709/2018).",
 };
 
 const MAIL = "privacidade@axielcore.com";

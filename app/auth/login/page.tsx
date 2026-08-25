@@ -6,7 +6,7 @@ import { LoginForm } from "./login-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("auth.login");
-  return { title: `${t("title")} | AXIEL Core` };
+  return { title: `${t("title")} | OXIEL Core` };
 }
 
 export default async function LoginPage({

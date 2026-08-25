@@ -29,7 +29,7 @@ const IG_GRAPH = "https://graph.instagram.com/v21.0";
 // de estourar o maxDuration da função e abortar a página com TimeoutError.
 const GRAPH_TIMEOUT_MS = 4000;
 
-// App Meta (AXIEL Core) — mesmo default usado no webhook do Messenger.
+// App Meta (OXIEL Core) — mesmo default usado no webhook do Messenger.
 const META_APP_ID = process.env.META_APP_ID ?? "1468755454577652";
 
 export type ChannelConnectionState = "connected" | "configured" | "disconnected";

@@ -41,7 +41,7 @@
     "USD": "🇺🇸 US$",
     "EUR": "🇪🇺 €"
   },
-  "enterpriseMailSubject": "Enterprise AXIEL",
+  "enterpriseMailSubject": "Enterprise OXIEL",
   "navLogin": "Log in",
   "heroEyebrow": "Pricing · Plans",
   "heroTitleLine1": "Premium infrastructure",
@@ -115,7 +115,7 @@
   "ctaTitle": "30 days free on any plan",
   "ctaSubtitle": "No card needed. Get started in 2 minutes.",
   "ctaButton": "Create free account →",
-  "footerRights": "© {year} AXIEL Core · All rights reserved",
+  "footerRights": "© {year} OXIEL Core · All rights reserved",
   "footerTerms": "Terms",
   "footerPrivacy": "Privacy",
   "footerContact": "Contact"

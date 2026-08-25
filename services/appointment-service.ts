@@ -1338,7 +1338,7 @@ async function sendZoomConfirmationEmail(opts: {
         dateTime: `${dateStr} at ${timeStr}`,
         button: "Join Zoom meeting",
         directAccess: "Or open the link directly:",
-        sentBy: `Sent by ${opts.clinicName} via AXIEL Core`,
+        sentBy: `Sent by ${opts.clinicName} via OXIEL Core`,
       }
     : {
         subject: `Link da sua sessão online — ${opts.clinicName}`,
@@ -1349,7 +1349,7 @@ async function sendZoomConfirmationEmail(opts: {
         dateTime: `${dateStr} às ${timeStr}`,
         button: "Entrar na reunião Zoom",
         directAccess: "Ou acesse diretamente:",
-        sentBy: `Enviado por ${opts.clinicName} via AXIEL Core`,
+        sentBy: `Enviado por ${opts.clinicName} via OXIEL Core`,
       };
 
   await resend.emails.send({

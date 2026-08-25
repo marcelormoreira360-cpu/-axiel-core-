@@ -108,7 +108,7 @@ export async function sendPortalAccessAction(
             </td>
           </tr>
         </table>
-        <p style="margin:20px 0 0;font-size:11px;color:rgba(0,0,0,0.3);">Powered by AXIEL Core</p>
+        <p style="margin:20px 0 0;font-size:11px;color:rgba(0,0,0,0.3);">Powered by OXIEL Core</p>
       </td>
     </tr>
   </table>

@@ -105,12 +105,12 @@
     "stepProfile": {
       "eyebrow": "First step",
       "title": "What is your clinic's profile?",
-      "subtitle": "AXIEL will set up session types, forms, and terminology automatically for you."
+      "subtitle": "OXIEL will set up session types, forms, and terminology automatically for you."
     },
     "stepName": {
       "eyebrow": "Profile: {label}",
       "title": "What is your clinic called?",
-      "subtitle": "This is the name your team will see inside AXIEL.",
+      "subtitle": "This is the name your team will see inside OXIEL.",
       "namePlaceholder": "E.g.: {label} Clinical Center",
       "nameTooShort": "Name too short: minimum 2 characters.",
       "logoLabel": "Clinic logo",
@@ -133,13 +133,13 @@
       "selfInviteWarning": "This is your own email. The invitation should go to a different colleague. You are already the clinic owner."
     },
     "summary": {
-      "title": "AXIEL will automatically create",
+      "title": "OXIEL will automatically create",
       "sessionTypes": "Session types for {label}",
       "anamnesisForm": "Personalized anamnesis form",
       "demoData": "Demo patient and lead",
       "schedule": "Schedule with the selected hours"
     },
-    "terms": "I have read and accept the AXIEL Core <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>, including the processing of health data under the LGPD (Law 13.709/2018).",
+    "terms": "I have read and accept the OXIEL Core <terms>Terms of Use</terms> and <privacy>Privacy Policy</privacy>, including the processing of health data under the LGPD (Law 13.709/2018).",
     "successCreated": "Clinic created! Redirecting…",
     "back": "Back",
     "continue": "Continue",

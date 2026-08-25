@@ -8,7 +8,7 @@ import enPublic from "@/messages/en/publicForm.json";
 import ptPublic from "@/messages/pt-BR/publicForm.json";
 
 export const metadata: Metadata = {
-  title: "Questionário | AXIEL Core",
+  title: "Questionário | OXIEL Core",
   robots: { index: false, follow: false },
 };
 
