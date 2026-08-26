@@ -21,9 +21,10 @@ export async function GET(req: Request) {
   }
 
   try {
-    const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // SEC (S1): mesmo segredo dedicado usado na assinatura (não a service-role key).
+    const secret = process.env.OAUTH_STATE_SECRET ?? process.env.CRON_SECRET;
     if (!secret) {
-      log.error("CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
+      log.error("OAUTH_STATE_SECRET (ou CRON_SECRET) precisa estar configurado para a integração Google.");
       return NextResponse.redirect(`${appUrl}/settings/integrations?error=google_config_error`);
     }
     const { payload, sig } = JSON.parse(Buffer.from(state, "base64url").toString()) as {

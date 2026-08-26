@@ -5,6 +5,7 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".claude/**",       // worktrees do Claude Code (cópias duplicadas) — não lintar
       "node_modules/**",
       "public/**",
       "supabase/**",
