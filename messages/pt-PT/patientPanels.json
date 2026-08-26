@@ -34,8 +34,8 @@
         "em_tratamento": "Em tratamento",
         "reavaliacao": "Reavaliação",
         "manutencao": "Manutenção",
-        "inativo": "Inativo",
-        "reativacao": "Reativação"
+        "inativo": "Cuidado interrompido",
+        "reativacao": "Retoma de cuidado"
       },
       "next": {
         "novo": "Agendar avaliação inicial",
@@ -45,8 +45,8 @@
         "em_tratamento": "Registrar evolução e confirmar a próxima sessão",
         "reavaliacao": "Reavaliar progresso e reforçar a percepção de melhora",
         "manutencao": "Oferecer plano de manutenção",
-        "inativo": "Enviar mensagem de reativação",
-        "reativacao": "Reativar com foco em cuidado contínuo"
+        "inativo": "Convidar a retomar o cuidado",
+        "reativacao": "Retomar o contacto e dar continuidade ao cuidado"
       }
     }
   },

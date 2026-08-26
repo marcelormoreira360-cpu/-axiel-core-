@@ -34,8 +34,8 @@
         "em_tratamento": "In treatment",
         "reavaliacao": "Reassessment",
         "manutencao": "Maintenance",
-        "inativo": "Inactive",
-        "reativacao": "Reactivation"
+        "inativo": "Care interrupted",
+        "reativacao": "Resuming care"
       },
       "next": {
         "novo": "Schedule the initial assessment",
@@ -45,8 +45,8 @@
         "em_tratamento": "Log progress and confirm the next session",
         "reavaliacao": "Reassess progress and reinforce perceived improvement",
         "manutencao": "Offer a maintenance plan",
-        "inativo": "Send a reactivation message",
-        "reativacao": "Re-engage with a focus on continued care"
+        "inativo": "Invite them back to continue care",
+        "reativacao": "Reconnect and continue their care"
       }
     }
   },
