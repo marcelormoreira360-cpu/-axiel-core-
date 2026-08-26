@@ -9,6 +9,7 @@
     "intake": "Intake",
     "chart": "Medical record",
     "session": "Record session",
+    "newSession": "New session",
     "schedule": "Schedule session",
     "startTelehealth": "Start telehealth",
     "telehealth": "Telehealth"

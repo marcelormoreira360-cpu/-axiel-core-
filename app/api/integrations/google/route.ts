@@ -13,9 +13,12 @@ export async function GET() {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) return NextResponse.json({ error: "No clinic" }, { status: 401 });
 
-  const secret = process.env.CRON_SECRET ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // SEC (S1): usa um segredo DEDICADO para assinar o state (CSRF), não a chave
+  // service-role do banco. Reusar a "crown jewel" como segredo de assinatura
+  // acopla dois domínios de confiança e complica a rotação. Fail-closed se ausente.
+  const secret = process.env.OAUTH_STATE_SECRET ?? process.env.CRON_SECRET;
   if (!secret) {
-    log.error("CRON_SECRET or SUPABASE_SERVICE_ROLE_KEY must be configured.");
+    log.error("OAUTH_STATE_SECRET (ou CRON_SECRET) precisa estar configurado para a integração Google.");
     return NextResponse.json({ error: "Integração com Google não configurada. Contate o suporte." }, { status: 500 });
   }
 

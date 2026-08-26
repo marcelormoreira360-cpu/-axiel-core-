@@ -125,40 +125,61 @@ export async function createAppointment(input: {
   notes?: string | null;
   video_url?: string | null;
   practitioner_id?: string | null;
+  /**
+   * Pula os side-effects voltados ao paciente (confirmação por e-mail/WhatsApp,
+   * questionários de onboarding, integrações Zoom/Google e automações). Usado na
+   * sessão presencial iniciada NA HORA pelo botão "Nova sessão" — não faz sentido
+   * confirmar/questionar um atendimento que já está acontecendo.
+   */
+  skipSideEffects?: boolean;
+  /**
+   * Pula a verificação de conflito de horário. Usado SÓ pela sessão presencial
+   * "agora": o check bloqueia quando qualquer sessão da clínica sobrepõe o instante
+   * atual (com practitioner_id nulo, o guard casa com todo mundo), o que barraria
+   * exatamente o caso comum (paciente presente enquanto outra sessão rola). Não é
+   * um double-booking a evitar — é o registro de um atendimento que já começou.
+   */
+  skipConflictCheck?: boolean;
 }) {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+
+  // Flags de controle, não colunas: separa antes do insert.
+  const { skipSideEffects = false, skipConflictCheck = false, ...apptInput } = input;
 
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (await hasAppointmentConflict(input)) {
+  if (!skipConflictCheck && await hasAppointmentConflict(apptInput)) {
     throw new Error("Conflito de horário: já existe uma sessão nesse período.");
   }
 
   const { data, error } = await supabase
     .from("appointments")
-    .insert({ ...input, created_by: user?.id ?? null })
+    .insert({ ...apptInput, created_by: user?.id ?? null })
     .select("*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)")
     .single();
 
   if (error) throw error;
   const appt = data as Appointment;
 
-  // Fire-and-forget: integrations + package auto-renewal + booking confirmation
-  createIntegrationsSideEffects(appt).catch(() => {});
-  import("@/services/package-service").then(({ checkAndAutoRenewPackages }) =>
-    checkAndAutoRenewPackages(appt.patient_id, appt.clinic_id, appt.starts_at).catch(() => {})
-  );
-  sendConfirmationSideEffect(appt).catch(() => {});
-  import("@/services/automation-service").then(({ scheduleAutomations }) =>
-    scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {})
-  );
-  // Questionários automáticos na 1ª sessão (fire-and-forget)
-  import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
-    sendOnboardingAssessments({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id }).catch(() => {})
-  );
+  // Sessão presencial "agora": grava o agendamento, mas não dispara nada ao paciente.
+  if (!skipSideEffects) {
+    // Fire-and-forget: integrations + package auto-renewal + booking confirmation
+    createIntegrationsSideEffects(appt).catch(() => {});
+    import("@/services/package-service").then(({ checkAndAutoRenewPackages }) =>
+      checkAndAutoRenewPackages(appt.patient_id, appt.clinic_id, appt.starts_at).catch(() => {})
+    );
+    sendConfirmationSideEffect(appt).catch(() => {});
+    import("@/services/automation-service").then(({ scheduleAutomations }) =>
+      scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {})
+    );
+    // Questionários automáticos na 1ª sessão (fire-and-forget)
+    import("@/services/onboarding-assessment-service").then(({ sendOnboardingAssessments }) =>
+      sendOnboardingAssessments({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id }).catch(() => {})
+    );
+  }
 
   return appt;
 }
@@ -944,6 +965,22 @@ export async function createPublicBooking(input: {
 
   if (!sessionType) return { ok: false, error: "Tipo de sessão não encontrado.", code: "SESSION_TYPE_NOT_FOUND", status: 404 };
 
+  // SEC: valida que o profissional pertence a ESTA clínica (membro ativo). Sem isso,
+  // o booking público aceitaria um practitioner_id de outra clínica e o gravaria no
+  // agendamento (contaminação entre tenants). Se não pertencer, anula o campo.
+  let bookingPractitionerId = practitioner_id;
+  if (bookingPractitionerId) {
+    const { data: member } = await supabase
+      .from("clinic_users")
+      .select("user_id")
+      .eq("clinic_id", clinic.id)
+      .eq("user_id", bookingPractitionerId)
+      .eq("status", "active")
+      .eq("is_bookable", true)   // booking público só aceita profissional agendável
+      .maybeSingle();
+    if (!member) bookingPractitionerId = null;
+  }
+
   // ── Gate de consentimento da política de no-show (Lex 2.1) ──────────────────
   // Se a clínica cobra falta/cancelamento tardio, o aceite da política é EXIGIDO
   // antes de criar o agendamento (guard de servidor: aceite só no front é burlável).
@@ -974,7 +1011,7 @@ export async function createPublicBooking(input: {
     clinic_id: clinic.id,
     starts_at,
     duration_minutes: sessionType.duration_minutes,
-    practitioner_id: practitioner_id || null,
+    practitioner_id: bookingPractitionerId,
   })) {
     return { ok: false, error: "Este horário acabou de ser reservado. Escolha outro.", code: "SLOT_TAKEN", status: 409 };
   }
@@ -1051,7 +1088,7 @@ export async function createPublicBooking(input: {
       duration_minutes: sessionType.duration_minutes,
       source,
       notes: notes || null,
-      practitioner_id: practitioner_id || null,
+      practitioner_id: bookingPractitionerId,
     })
     .select("id, clinic_id, patient_id, starts_at")
     .single();
