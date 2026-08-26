@@ -1,7 +1,22 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/07/2026 (40)
+> Atualizado em: 26/08/2026 (41)
+
+## 🟢 Reposicionamento "Intelligent Patient Journey" — Fases 0-2 (25-26/08/2026) — NO AR (main)
+
+> Rebrand AXIEL→OXIEL feito e no ar (só marca visível; identificadores `AXIEL_PLANS`/`AXIEL_LOCALE`/`AXIEL_REF`/tailwind `axiel`/package `axiel-core` PRESERVADOS — não trocar). Landing oxielcore.com com herói novo ("Seus pacientes não sentem o seu software. Sentem o seu cuidado." + "motor inteligente por trás da jornada"), ™ padronizado. Contexto de marca/estratégia: sessão do Oxiel/CEO (scratchpad OXIEL_CORE_BRIEFING_v3.md).
+
+**Jornada de cuidado — modelo e features (tudo na `main`, deployado):**
+1. **Fase 0 — modelo canônico** (`modules/patient-journey/journey.ts`): 7 etapas canônicas `prepare→assess→care→understand→follow_up→continue→return`, mapa 9→7 dos estados vivos de `stage.ts` (`toCanonicalStage`, `CLINICAL_STAGE_TO_CANONICAL`), `JOURNEY_STAGE_KIND` permanência vs evento (understand/follow_up são EVENTO, não destino de permanência). NÃO renomear os 9 ids de `stage.ts` (chaves i18n + 4 consumidores dependem). `master-flow.ts` REMOVIDO (código morto, verbos banidos). Teste `modules/patient-journey/__tests__/journey.test.ts`.
+2. **Fase 1 — Command Center** (`services/journey-board-service.ts` + `components/dashboard/journey-board.tsx`, no `app/dashboard`): board de pacientes por etapa (5 colunas de permanência), RLS-safe (getCurrentClinic/SEC-05 + createSupabaseServerClient + `.eq clinic_id`, NUNCA admin client, derive não materializa, escopo por profissional igual /patients, janela 120d, teto 20/etapa). Eventos: understand=proxy `ai_insights.review_status='final'`; follow_up=`follow_ups.status='pending'`. Wired com `.catch(()=>null)` (se falhar, board some, dashboard não quebra). i18n `dashboard.journeyBoard`.
+3. **Fase 2 — stepper na ficha** (`components/patient-journey-stepper.tsx` em `app/patients/[id]`): percurso de cuidado no topo da ficha, etapa atual destacada, aditivo (NÃO toca `sectionLayout`). i18n `patientPanels.journeyStepper`.
+
+**Rótulos das etapas (pt-BR):** Preparação · Avaliação · Cuidado ativo · Compreensão · Acompanhamento · Continuidade · Renovação (Return=Renovação, NUNCA "reativação" — compliance).
+
+🔴 **DIAGNÓSTICO DOS DADOS (read-only, 26/08) — LER:** o Command Center mostrou 633 em "Renovação" e 0 no meio. NÃO é bug. Banco: 756 pacientes, 755 "active" mas SÓ 52 tiveram alguma sessão concluída na vida (~703 nunca tiveram → leads/importados marcados como paciente); 0 sessões concluídas em 30d; `treatment_plans` VAZIA; 8 pacotes ativos. Causa: a IFWC roda as sessões no **VAGARO** e isso não flui para o Core → a jornada não tem combustível. **PENDÊNCIAS:** (a) sincronizar sessões do Vagaro→Core (Marcelo fará depois); (b) higiene leads×pacientes; (c) calibrar derivação p/ dados esparsos (reconhecer cuidado ativo por sessões recentes, não só plano). Sem isso, Fase 3/4 têm pouco valor real.
+
+🔴 **FALTA da jornada:** Fase 3 (nav patient-first — SÓ atrás de feature flag e DEPOIS do bug de dedup fechar; risco i18n) + Fase 4 (auditoria de copy/verbos de compliance — no FINAL de tudo). Regras i18n do projeto valem: namespace novo exige os 3 arquivos no MESMO commit antes de mexer no array de `i18n/request.ts`; componente global com useTranslations monta DENTRO do provider.
 
 ## 🟡 Fase 1 de rollout — 5 frentes (15/07/2026) — TUDO MERGEADO NO MAIN, DEPLOY GATED
 
