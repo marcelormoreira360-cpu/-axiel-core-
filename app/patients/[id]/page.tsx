@@ -42,6 +42,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
+import { PatientJourneyStepper } from "@/components/patient-journey-stepper";
 import { PatientDirectionPanel } from "@/components/patient-direction-panel";
 import { readMedicationLoad } from "@/services/medication-load-service";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
@@ -50,6 +51,7 @@ import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-fo
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
+import { toCanonicalStage } from "@/modules/patient-journey/journey";
 import { WaitlistButton } from "@/components/waitlist-button";
 import { getWaitlistEntryForPatient } from "@/services/waitlist-service";
 import { getPatientSectionLayout } from "@/services/clinic-patient-sections-service";
@@ -688,6 +690,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Intelligence strip (fixo, fecha o cartão do cabeçalho) ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
+
+      {/* ── Stepper da jornada (Fase 2, aditivo — não toca o sectionLayout) ── */}
+      <PatientJourneyStepper current={toCanonicalStage(journeyStage.stage)} />
 
       {/* ── Seções reordenáveis (ordem/visibilidade por clínica, /settings/personalizar) ── */}
       <div className="flex flex-col gap-[18px] mt-[18px]">

@@ -412,5 +412,15 @@
     "tabBiomarkers": "Biomarcadores · {count}",
     "tabAssessments": "Formulários · {count}",
     "all": "Todos"
+  },
+  "journeyStepper": {
+    "title": "Percurso de cuidado",
+    "stage": {
+      "prepare": "Preparação",
+      "assess": "Avaliação",
+      "care": "Acompanhamento",
+      "continue": "Continuidade",
+      "return": "Renovação"
+    }
   }
 }

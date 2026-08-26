@@ -412,5 +412,15 @@
     "tabBiomarkers": "Biomarkers · {count}",
     "tabAssessments": "Forms · {count}",
     "all": "All"
+  },
+  "journeyStepper": {
+    "title": "Care journey",
+    "stage": {
+      "prepare": "Preparation",
+      "assess": "Assessment",
+      "care": "Active care",
+      "continue": "Continuity",
+      "return": "Renewal"
+    }
   }
 }
