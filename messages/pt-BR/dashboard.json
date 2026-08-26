@@ -65,5 +65,33 @@
     "newSession": "Nova sessão",
     "patientFallback": "Paciente",
     "minutes": "{count} min"
+  },
+  "journeyBoard": {
+    "title": "Onde estão seus pacientes",
+    "subtitle": "Registros de pacientes ativos por etapa do cuidado",
+    "needs": "Precisa de atenção",
+    "allClear": "Tudo em ordem",
+    "stage": {
+      "prepare": "Preparação",
+      "assess": "Avaliação",
+      "care": "Cuidado ativo",
+      "continue": "Continuidade",
+      "return": "Renovação"
+    },
+    "reason": {
+      "churn": {
+        "high": "Em risco",
+        "medium": "Esfriando"
+      },
+      "followUp": {
+        "pending": "Follow-up pendente"
+      },
+      "insight": {
+        "missing": "Relatório pendente"
+      },
+      "action": {
+        "awaiting": "Aguardando você"
+      }
+    }
   }
 }

@@ -65,5 +65,33 @@
     "newSession": "New session",
     "patientFallback": "Patient",
     "minutes": "{count} min"
+  },
+  "journeyBoard": {
+    "title": "Where your patients are",
+    "subtitle": "Active patient records by care stage",
+    "needs": "Needs attention",
+    "allClear": "All clear",
+    "stage": {
+      "prepare": "Preparation",
+      "assess": "Assessment",
+      "care": "Active care",
+      "continue": "Continuity",
+      "return": "Renewal"
+    },
+    "reason": {
+      "churn": {
+        "high": "At risk",
+        "medium": "Cooling off"
+      },
+      "followUp": {
+        "pending": "Follow-up pending"
+      },
+      "insight": {
+        "missing": "Report pending"
+      },
+      "action": {
+        "awaiting": "Awaiting your action"
+      }
+    }
   }
 }
