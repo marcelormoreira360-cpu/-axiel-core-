@@ -69,8 +69,8 @@
   "journeyBoard": {
     "title": "Onde estão os seus pacientes",
     "subtitle": "Registos de pacientes ativos por etapa do cuidado",
-    "needs": "Precisa de atenção",
     "allClear": "Tudo em ordem",
+    "patientFallback": "Paciente",
     "stage": {
       "prepare": "Preparação",
       "assess": "Avaliação",

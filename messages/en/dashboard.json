@@ -69,8 +69,8 @@
   "journeyBoard": {
     "title": "Where your patients are",
     "subtitle": "Active patient records by care stage",
-    "needs": "Needs attention",
     "allClear": "All clear",
+    "patientFallback": "Patient",
     "stage": {
       "prepare": "Preparation",
       "assess": "Assessment",

@@ -53,7 +53,7 @@ export async function JourneyBoard({ board }: { board: JourneyBoardData }) {
                       className="group flex items-center justify-between gap-2"
                     >
                       <span className="truncate text-[12px] text-[#0F1A2E] group-hover:text-[#0F6E56] dark:text-[#C9C7C2]">
-                        {a.patientName}
+                        {a.patientName || t("patientFallback")}
                       </span>
                       <span className="shrink-0 text-[10px] text-[#A09E98]">{t(`reason.${a.reason}`)}</span>
                     </Link>

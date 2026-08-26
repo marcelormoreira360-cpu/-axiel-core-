@@ -16,6 +16,8 @@
  */
 
 import { getCurrentClinic } from "@/services/clinic-service";
+import { getCurrentUserProfile } from "@/services/user-service";
+import { isPractitioner } from "@/services/team-service";
 import { getPatientsLite } from "@/services/patient-service";
 import { getAppointments } from "@/services/appointment-service";
 import { getActivePlanPatientIds } from "@/services/treatment-plan-service";
@@ -102,19 +104,24 @@ function attentionReason(input: {
 export async function getJourneyBoard(): Promise<JourneyBoard> {
   const generatedAt = new Date().toISOString();
 
-  const clinic = await getCurrentClinic();
+  const [clinic, profile] = await Promise.all([
+    getCurrentClinic(),
+    getCurrentUserProfile().catch(() => null),
+  ]);
   if (!clinic) {
     return { buckets: emptyBuckets(), patientsConsidered: 0, generatedAt };
   }
   const clinicId = clinic.id;
+  // Mesmo escopo do /patients: profissional vê só os seus; gestor vê a clínica.
+  const practitionerId = profile && isPractitioner(profile.role) ? profile.id : undefined;
 
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
 
   const [patients, appointments, activePlanArr, packagesRes, followUpsRes, insightsRes] =
     await Promise.all([
-      getPatientsLite(clinicId, undefined, PATIENT_CAP),
-      getAppointments(clinicId, undefined, APPT_WINDOW),
+      getPatientsLite(clinicId, practitionerId, PATIENT_CAP),
+      getAppointments(clinicId, practitionerId, APPT_WINDOW),
       getActivePlanPatientIds(clinicId),
       supabase.from("patient_packages").select("patient_id").eq("clinic_id", clinicId).eq("is_active", true),
       supabase.from("follow_ups").select("patient_id").eq("clinic_id", clinicId).eq("status", "pending"),
@@ -142,12 +149,16 @@ export async function getJourneyBoard(): Promise<JourneyBoard> {
   for (const p of patients) {
     const appts = apptsByPatient.get(p.id) ?? [];
     const churnRisk = computePatientEngagement(appts, p).churnRisk;
+    // Um pacote/assinatura ativo conta como cuidado ativo mesmo sem plano
+    // formal: sintetizamos o plano ativo aqui para que a derivação de fato
+    // considere o sinal (derivePatientJourneyStage checa `!anyPlan` ANTES de
+    // `hasActivePackageOrSub`, então passá-lo direto seria inerte).
+    const hasActiveCare = activePlanIds.has(p.id) || packageIds.has(p.id);
     const clinical = derivePatientJourneyStage({
       patientStatus: p.status,
       appointments: appts,
-      treatmentPlans: activePlanIds.has(p.id) ? [{ status: "active" }] : [],
+      treatmentPlans: hasActiveCare ? [{ status: "active" }] : [],
       churnRisk,
-      hasActivePackageOrSub: packageIds.has(p.id),
     });
     const bucket = byStage.get(toCanonicalStage(clinical.stage));
     if (!bucket) continue;
@@ -164,7 +175,8 @@ export async function getJourneyBoard(): Promise<JourneyBoard> {
       if (bucket.needsAttention.length < ATTENTION_CAP) {
         bucket.needsAttention.push({
           patientId: p.id,
-          patientName: p.full_name ?? "Paciente",
+          // Fallback i18n resolvido na UI (t("patientFallback")); vazio aqui.
+          patientName: p.full_name ?? "",
           reason,
         });
       }
