@@ -9,6 +9,8 @@ export { generateAiInsightOutput, suggestAtmIntegration, suggestScribeAtm, sugge
 export { buildCaseSummaryFallback } from "@/services/ai-insight/case-summary";
 export type { CaseSummaryDraft } from "@/services/ai-insight/case-summary";
 
+export { saveAiInsightEdits } from "@/services/ai-insight/edit";
+
 export {
   createAiRequest,
   completeAiRequest,
