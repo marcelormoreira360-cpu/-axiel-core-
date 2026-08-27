@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
+import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, saveAiInsightEdits, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -21,6 +22,31 @@ function describeError(error: unknown): string {
     return [e.message, e.details, e.hint, e.code].filter(Boolean).join(" · ") || JSON.stringify(error).slice(0, 300);
   }
   return "Unknown error.";
+}
+
+/**
+ * Salva a edição MANUAL do Doc 1 / Doc 2 (sem aprovar). Retorna valor (não
+ * redireciona) para a mesa de revisão poder mostrar um aviso de guardrail sem
+ * sair da página. O texto editado vai para final_output; a aprovação o envia.
+ */
+export async function saveAiInsightEditsAction(
+  patientId: string,
+  aiInsightId: string,
+  payload: { mapa_integrativo?: Partial<NeuroMapaIntegrativo>; plano_regulacao?: Partial<NeuroPlanoRegulacao> },
+): Promise<{ ok: boolean; error?: string; guardrailNote?: string | null }> {
+  try {
+    const { guardrailNote } = await saveAiInsightEdits({
+      aiInsightId,
+      editedMapa: payload.mapa_integrativo ?? null,
+      editedPlano: payload.plano_regulacao ?? null,
+    });
+    revalidatePath(`/patients/${patientId}/insights`);
+    revalidatePath(`/patients/${patientId}`);
+    revalidatePath(`/patients/${patientId}/reports/clinical-insight`);
+    return { ok: true, guardrailNote: guardrailNote ?? null };
+  } catch (error) {
+    return { ok: false, error: describeError(error) };
+  }
 }
 
 export async function generateAiInsightAction(patientId: string) {

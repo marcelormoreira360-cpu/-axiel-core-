@@ -133,7 +133,20 @@
     "suggestedDose": "Suggested dose",
     "objective": "Goal",
     "note": "Note",
-    "generalNotes": "General notes"
+    "generalNotes": "General notes",
+    "editor": {
+      "editButton": "Edit text",
+      "title": "Edit report",
+      "hint": "Adjust the text and save. The edited text is what gets sent to the patient.",
+      "opening": "Opening",
+      "bio3": "Bio³ snapshot",
+      "detail": "Detail",
+      "themes": "Themes (one per line)",
+      "synthesis": "Synthesis",
+      "saving": "Saving...",
+      "saved": "Changes saved",
+      "guardrailWarn": "Heads up: {note}"
+    }
   },
   "pyramidAria": "Bio³ pyramid — weight of each axis in the total, color by severity",
   "scaleAria": "Score 0 to 10"

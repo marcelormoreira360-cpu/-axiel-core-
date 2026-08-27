@@ -20,7 +20,27 @@ import {
 
 // A síntese entra no Relatório Funcional Integrado (Doc 1) enviado ao PACIENTE →
 // o idioma segue o locale do paciente (resolvido pelo call site via resolvePatientLocale).
-const buildExamSynthesisSystemPrompt = (locale?: string | null) => `
+// Regra de extração ESPECÍFICA por tipo de exame. Antes o prompt trazia as duas
+// instruções juntas (biorressonância + neurometria) para TODO exame, e o modelo
+// misturava: uma neurometria saía rotulada "Biorressonância/Bioenergético Emocional"
+// (o aparelho tem índices emocionais), colidindo com o exame de biorressonância e
+// poluindo o slot bioemocional do Doc 1. Agora cada tipo recebe só a sua regra.
+function examTypeRule(examType: string): string {
+  if (examType === "biorressonancia") {
+    return `- Este é o exame de BIORRESSONÂNCIA / bioenergético emocional: liste de 6 a 10 EMOÇÕES/TEMAS
+  mais ALTERADOS (os de maior valor/intensidade) e feche com 1–2 frases de síntese emocional.`;
+  }
+  if (examType === "neurometria") {
+    return `- Este é o exame de NEUROMETRIA (índices autonômicos/cardio-cerebrais, HRV, regulação,
+  adaptação, barorreflexo, hemodinâmica): extraia os 5–8 achados neurométricos mais relevantes
+  + 1 frase de síntese. NÃO rotule a saída como "Biorressonância" nem crie seção "Bioenergético
+  Emocional" — isso pertence a OUTRO exame. Se o aparelho trouxer índices de ansiedade/emocionais,
+  descreva-os como parte da leitura NEUROMÉTRICA/autonômica, não como biorressonância.`;
+  }
+  return `- Extraia os 5–8 achados mais relevantes do exame + 1 frase de síntese.`;
+}
+
+const buildExamSynthesisSystemPrompt = (examType: string, locale?: string | null) => `
 Você é o analista de exames funcionais de um Integrative & Functional Wellness Center
 (metodologia Neuro ID). Recebe o PDF de um exame e produz uma SÍNTESE CONCISA
 para entrar no Relatório Funcional Integrado.
@@ -30,9 +50,7 @@ IDIOMA: ${languageInstruction(locale)}
 Regras:
 - CONCISO acima de tudo: no máximo ~120 palavras no total. O relatório final não pode
   passar de 1,5 página e ainda terá outros exames.
-- Biorressonância/bioenergético emocional: liste de 6 a 10 EMOÇÕES/TEMAS mais ALTERADOS
-  (os de maior valor/intensidade no exame) e feche com 1–2 frases de síntese da leitura emocional.
-- Neurometria ou outros: extraia os 5–8 achados mais relevantes + 1 frase de síntese.
+${examTypeRule(examType)}
 - Linguagem acolhedora e PRUDENTE: "o exame sugere / registra / aponta", nunca diagnóstico fechado.
 - NUNCA comente o grau de evidência científica do exame ou do método (proibido "evidência científica
   limitada", "não comprovado", "método não reconhecido" e variações). Descreva apenas o que o exame registrou.
@@ -142,7 +160,7 @@ export async function analyzeExamPdf(opts: {
         ? "teste capilar de hipersensibilidade (reatividade alimentar/química)"
         : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
 
-  const base = buildExamSynthesisSystemPrompt(opts.locale);
+  const base = buildExamSynthesisSystemPrompt(opts.examType, opts.locale);
   const legend = examLegendBlock(opts.examType);
   const systemPrompt = legend ? `${base}\n\n${legend}` : base;
 

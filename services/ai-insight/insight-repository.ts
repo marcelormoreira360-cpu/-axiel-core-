@@ -112,6 +112,50 @@ export async function saveAiInsight(input: {
 }
 
 
+/** Busca um insight pelo id (para edição manual / revisão). */
+export async function getAiInsightById(id: string): Promise<AiInsight | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.from("ai_insights").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as AiInsight | null;
+}
+
+/**
+ * Grava a edição MANUAL do revisor em `final_output` (sem aprovar). A aprovação
+ * (approveAiInsightAsFinal) usa `final_output ?? output`, então o texto editado
+ * pelo humano é preservado no envio. Só permite editar enquanto NÃO finalizado.
+ */
+export async function updateAiInsightFinalOutput(input: {
+  id: string;
+  final_output: AiInsightOutput;
+}): Promise<void> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data, error } = await supabase
+    .from("ai_insights")
+    .update({ final_output: input.final_output })
+    .eq("id", input.id)
+    .in("review_status", ["pending_review", "needs_changes"])
+    .select("id, clinic_id, patient_id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("Insight não encontrado ou já finalizado (não editável).");
+
+  await writeAuditLog({
+    clinicId: data.clinic_id,
+    action: "ai_insight.edited",
+    entityType: "ai_insight",
+    entityId: data.id,
+    metadata: { patient_id: data.patient_id, edited_by: user?.id ?? null },
+  });
+}
+
 export async function getPendingAiInsightReviewCount(clinicId?: string | null): Promise<number> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
