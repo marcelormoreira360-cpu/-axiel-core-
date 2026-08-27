@@ -69,7 +69,8 @@
     "keyContext": "Key context",
     "patterns": "Patterns",
     "approvedAt": "Approved: {date}",
-    "changes": "Changes: {changes}"
+    "changes": "Changes: {changes}",
+    "pendingMetricsWarn": "{count, plural, one {# exam with unconfirmed metrics} other {# exams with unconfirmed metrics}}. Confirm them in the functional exams panel to include the numbers in the report."
   },
   "patientPage": {
     "title": "AI Insights",
