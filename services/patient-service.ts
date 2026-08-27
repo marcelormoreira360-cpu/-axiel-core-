@@ -151,17 +151,32 @@ export async function findOrCreatePatientForBooking(input: {
   const { normalizePhoneDigits } = await import("@/lib/phone");
   const phoneDigits = normalizePhoneDigits(phoneRaw);
 
+  // Família compartilha e-mail/telefone (ver lib/name-match). Por isso e-mail e
+  // telefone NÃO reusam sozinhos: dentre os candidatos que batem o contato, só
+  // reaproveita o cadastro cujo NOME também bate. Se o contato bate mas o nome
+  // difere, é outro parente → cai para os próximos sinais e acaba criando novo.
+  // (Antes usava .maybeSingle(), que ERRAVA em silêncio quando 2 pacientes
+  // dividiam o mesmo telefone/e-mail — origem de duplicatas.)
+  const { namesMatch } = await import("@/lib/name-match");
+  const pickByName = (rows: Patient[] | null | undefined): Patient | null => {
+    const list = (rows ?? []) as Patient[];
+    if (list.length === 0) return null;
+    if (name) return list.find((p) => namesMatch(p.full_name, name)) ?? null;
+    // Sem nome informado não dá para desambiguar: só reusa se houver UM candidato.
+    return list.length === 1 ? list[0] : null;
+  };
+
   let existing: Patient | null = null;
   if (email) {
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).eq("email", email).is("deleted_at", null).limit(1).maybeSingle();
-    existing = (data as Patient) ?? null;
+      .eq("clinic_id", input.clinic_id).eq("email", email).is("deleted_at", null).limit(20);
+    existing = pickByName(data as Patient[]);
   }
   if (!existing && phoneDigits) {
     const phones = [...new Set([phoneDigits, phoneRaw].filter(Boolean) as string[])];
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).in("phone", phones).is("deleted_at", null).limit(1).maybeSingle();
-    existing = (data as Patient) ?? null;
+      .eq("clinic_id", input.clinic_id).in("phone", phones).is("deleted_at", null).limit(20);
+    existing = pickByName(data as Patient[]);
   }
   if (!existing && name) {
     // ilike sem curinga = igualdade case-insensitive; escapa %/_ por segurança.
