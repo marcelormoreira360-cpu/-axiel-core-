@@ -1,7 +1,26 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 15/07/2026 (40)
+> Atualizado em: 28/08/2026 (41)
+
+## 🟡 Questionário Neuro ID UNIFICADO (28/08/2026) — branch `feat/neuroid-questionario-unificado`, NÃO mergeado, sem deploy
+
+> Redesenho do questionário do Mapa Bio³: um formulário único ("Perfil Clínico Integrado de 30 Dias") substitui o envio separado de QRM + Q-SNA. Specs em `_BRIEF_NEUROID_*.md` (raiz, gitignored) e no vault Obsidian "Neuro ID - Questionario". Aprovado por Marcelo (gates do squad Salvo/Aval passaram). **6 commits no branch, suíte real 575 verdes, typecheck limpo, `verify:i18n` 0 erros. Motor `scoring.ts`/`bands.ts` INTOCADO.**
+
+**Feito (Estágios 1–3b-1):**
+- `lib/safety-flags.ts` (NOVO): precaução cardiorrespiratória por frequência isolada (`bf_*_freq ≥ 2`) + gatilho de crise (`be_crisis_gosto_vida ≥ 3`), FORA do score.
+- `lib/medication-complexity.ts` (NOVO): Índice de Complexidade Medicamentosa 0–100, SEPARADO do Global.
+- `modules/neuro-id/questionnaire-scale.ts`: `combineFreqImp` (freq×impacto 0–9) + `freqImpToScale10` (combinação na camada de import, não no motor).
+- `modules/neuro-id/catalog.ts`: **56 códigos novos ADITIVOS** (`bm_`/`bf_`/`be_`) nos pilares corretos — autonômico/digestivo/sono/cognição no Biofuncional, Bioemocional limpo (humor/ansiedade/regulação), ideação (`be_crisis_gosto_vida`) FORA do catálogo (não pontua). Mapeamento legado (QRM/Q-SNA/MSQ) intocado → pacientes atuais sem regressão. **Rename de rótulo Bioquímico → Biofuncional** (PILLAR_LABELS, i18n pt-BR/pt-PT/en, PDF, case-summary, prompts IA); chave interna `bioquimico` preservada (zero migração).
+- `modules/neuro-id/unified-form-import.ts` (NOVO): respostas cruas → valores 0–10 por código + sinais de segurança + ICM; `unifiedScaleKind` decide escala por prefixo (freqimp / mood6 / scale3; exceção `bf_apneia`=scale3).
+- `modules/neuro-id/unified-form-template.ts` (NOVO): fonte de verdade do formulário — 8 blocos (A–H), ~80 perguntas ao paciente, disclaimer "não é serviço de emergência". Item de ideação só encaminha; humor com âncoras estilo MADRS-S; ansiedade/regulação 0–3 com rótulos de frequência.
+- Testes novos travam a coerência template↔catálogo↔fiação (cobertura reversa 100%).
+- `vitest.config.ts`: excluído `.claude` (worktrees temporárias duplicavam a suíte — a contagem "real" caiu de ~1451 para 575).
+- **Preview visual interativo aprovado por Marcelo** (artifact `8d5735a7-3800-4f46-9f97-6f7a074c08f0`): humor em botões de FAIXA (0-1/2-3/4-5/6), escalas explicadas, crise encaminha.
+
+**Falta (Estágio 3b-2):** ligar no subsistema de formulários REAL do Core. O seed atual (`services/assessment-seed-service.ts` + `CanonicalTemplate`) é simples (escala 0–4 fixa) e NÃO expressa freq×impacto, escala 0–6, uploads nem grupo de medicação repetível. Precisa: estender o modelo de seed (tipo/escala por pergunta), semear o template, coletar respostas e disparar `processUnifiedForm` → `computeNeuroId`. Depende de Docker (teste local) ou plano Pro (branch) — indisponíveis em 28/08.
+
+**Guarda-corpos (uso interno/teste até paciente real):** item de ideação só encaminha (não gradua risco), score emocional só interno, disclaimer de emergência, parecer FL assinado + revisor de saúde mental licenciado + BAA + consentimentos. Ver `_BRIEF_NEUROID_COMPLIANCE*.md` e `_BRIEF_NEUROID_PARECER_ADVOGADO.md`. **Antes de merge: rodar `/code-review --fix`.**
 
 ## 🟡 Fase 1 de rollout — 5 frentes (15/07/2026) — TUDO MERGEADO NO MAIN, DEPLOY GATED
 
