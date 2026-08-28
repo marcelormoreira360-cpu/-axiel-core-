@@ -21,6 +21,7 @@ export type UnifiedQuestionType =
   | "date"
   | "choice"
   | "multi"
+  | "info"      // cabeçalho/explicação, sem entrada
   | "crisis";   // item de ideação: NÃO pontua, dispara encaminhamento estático
 
 export type UnifiedQuestion = {
@@ -31,6 +32,8 @@ export type UnifiedQuestion = {
   options?: string[];
   /** âncoras descritivas por nível (humor 0/2/4/6). */
   anchors?: Record<number, string>;
+  /** rótulo por opção de escala (índice = valor), ex.: frequência 0–3. */
+  scaleLabels?: string[];
   /** aparece só se este código for "sim"/marcado/freq≥1. */
   conditionalOn?: string;
   note?: string;
@@ -58,6 +61,11 @@ const IMP_LABELS = ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante"
 
 // helper compacto para item de sintoma comum (freq×impacto)
 const s = (code: string, label: string): UnifiedQuestion => ({ code, label, type: "freqimp" });
+
+// escala de frequência 0–3 (ansiedade/regulação e itens simples), com rótulos.
+const FREQ3 = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"];
+const af = (code: string, label: string): UnifiedQuestion =>
+  ({ code, label, type: "scale", max: 3, scaleLabels: FREQ3 });
 
 export const UNIFIED_FORM: UnifiedFormTemplate = {
   name: "Neuro ID — Perfil Clínico Integrado de 30 Dias",
@@ -148,13 +156,12 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
         s("bf_concentracao", "Dificuldade de concentração em tarefas simples"),
         s("bf_memoria", "Esquecimentos com mais frequência que o normal"),
         s("bf_brain_fog", "Mente enevoada ou travada para pensar/decidir"),
-        { code: "bf_apneia", label: "Alguém já disse que você ronca alto ou para de respirar dormindo?", type: "scale", max: 3 },
+        { code: "bf_apneia", label: "Alguém já disse que você ronca alto ou para de respirar dormindo?", type: "scale", max: 3, scaleLabels: FREQ3 },
       ],
     },
     {
       key: "F",
-      title: "Como você tem se sentido",
-      intro: "Sobre como você tem se sentido por dentro nos últimos 30 dias. Responda com gentileza consigo.",
+      title: "Como você tem se sentido nos últimos 30 dias",
       pillar: "emocional",
       scored: true,
       questions: [
@@ -167,17 +174,18 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
         { code: "be_mood_envolvimento", label: "Ainda sente interesse e prazer nas coisas de que gosta?", type: "scale", max: 6, anchors: { 0: "Sim, como sempre", 2: "Um pouco menos", 4: "Bem menos", 6: "Perdi o interesse por quase tudo" } },
         { code: "be_mood_pessimismo", label: "Como tem enxergado o futuro e a si?", type: "scale", max: 6, anchors: { 0: "Com esperança", 2: "Às vezes me cobro", 4: "Sensação de fracasso/culpa", 6: "Futuro sem saída, culpa constante" } },
         { code: "be_crisis_gosto_vida", label: "Como está a sua vontade de viver e de seguir em frente?", type: "crisis", max: 6, anchors: { 0: "Aproveito a vida", 2: "Às vezes parece sem graça", 3: "Penso que seria melhor não estar aqui", 4: "Penso que preferiria não acordar", 6: "Tenho pensado em me machucar" }, note: "Item de encaminhamento (não pontua)." },
-        { code: "be_anx_nervosismo", label: "Nervosismo, ansiedade ou sensação de estar no limite", type: "scale", max: 3 },
-        { code: "be_anx_preocupacao_control", label: "Dificuldade de parar ou controlar as preocupações", type: "scale", max: 3 },
-        { code: "be_anx_preocupacao_demais", label: "Preocupação demais com coisas diferentes", type: "scale", max: 3 },
-        { code: "be_anx_relaxar", label: "Dificuldade de relaxar", type: "scale", max: 3 },
-        { code: "be_anx_inquietacao", label: "Inquietação, difícil ficar parado", type: "scale", max: 3 },
-        { code: "be_anx_medo_ruim", label: "Medo de que algo ruim fosse acontecer", type: "scale", max: 3 },
-        { code: "be_anx_sobressalto", label: "Assustar-se ou ficar em alerta com facilidade", type: "scale", max: 3 },
-        { code: "be_reg_irritabilidade", label: "Perder a paciência ou irritação com facilidade", type: "scale", max: 3 },
-        { code: "be_reg_hipervigilancia", label: "Sentir-se em alerta constante, sem baixar a guarda", type: "scale", max: 3 },
-        { code: "be_reg_culpa", label: "Culpa ou autocobrança por coisas do dia a dia", type: "scale", max: 3 },
-        { code: "be_reg_recuperar_estresse", label: "Dificuldade de voltar ao normal após um estresse", type: "scale", max: 3 },
+        { code: "be_anx_intro", label: "Com que frequência você sentiu, nos últimos 30 dias:", type: "info" },
+        af("be_anx_nervosismo", "Nervosismo, ansiedade ou sensação de estar no limite"),
+        af("be_anx_preocupacao_control", "Dificuldade de parar ou controlar as preocupações"),
+        af("be_anx_preocupacao_demais", "Preocupação demais com coisas diferentes"),
+        af("be_anx_relaxar", "Dificuldade de relaxar"),
+        af("be_anx_inquietacao", "Inquietação, difícil ficar parado"),
+        af("be_anx_medo_ruim", "Medo de que algo ruim fosse acontecer"),
+        af("be_anx_sobressalto", "Assustar-se ou ficar em alerta com facilidade"),
+        af("be_reg_irritabilidade", "Perder a paciência ou irritação com facilidade"),
+        af("be_reg_hipervigilancia", "Sentir-se em alerta constante, sem baixar a guarda"),
+        af("be_reg_culpa", "Culpa ou autocobrança por coisas do dia a dia"),
+        af("be_reg_recuperar_estresse", "Dificuldade de voltar ao normal após um estresse"),
       ],
     },
     {
@@ -200,8 +208,8 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
         { code: "med_usa", label: "Você toma algum medicamento contínuo?", type: "yes_no" },
         { code: "med_lista", label: "Liste cada medicamento, dose e frequência.", type: "text", conditionalOn: "med_usa" },
         { code: "med_suplementos", label: "Toma suplementos, vitaminas ou fitoterápicos? Quais?", type: "text" },
-        { code: "med_efeitos_adversos_freq", label: "Sente efeitos colaterais dos seus remédios?", type: "scale", max: 3 },
-        { code: "med_adesao_dificuldade_freq", label: "Tem dificuldade de tomar certinho (esquece, atrasa, para)?", type: "scale", max: 3 },
+        { code: "med_efeitos_adversos_freq", label: "Sente efeitos colaterais dos seus remédios?", type: "scale", max: 3, scaleLabels: FREQ3 },
+        { code: "med_adesao_dificuldade_freq", label: "Tem dificuldade de tomar certinho (esquece, atrasa, para)?", type: "scale", max: 3, scaleLabels: FREQ3 },
         { code: "med_mudanca_recente", label: "Mudou algum medicamento nos últimos 30 dias?", type: "yes_no" },
       ],
     },
