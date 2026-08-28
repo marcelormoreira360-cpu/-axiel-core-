@@ -97,3 +97,38 @@ export function buildUnifiedSeed(): SeedTemplateFull {
 export function unifiedSeedCodes(): string[] {
   return buildUnifiedSeed().sections.flatMap((s) => s.questions.map((q) => q.code));
 }
+
+/** Linha de `assessment_questions` pronta para insert (requer coluna `code`, migration 148). */
+export type AssessmentQuestionRow = {
+  template_id: string;
+  section_id: string;
+  text: string;
+  code: string;
+  question_type: SeedQuestionType;
+  min_score: number;
+  max_score: number;
+  options: string[] | null;
+  order_index: number;
+  is_required: boolean;
+};
+
+/** Mapeia perguntas semeáveis nas linhas do banco (puro; a gravação é de quem chama). */
+export function buildQuestionRows(
+  templateId: string,
+  sectionId: string,
+  questions: SeedQuestion[],
+  startOrder = 0,
+): AssessmentQuestionRow[] {
+  return questions.map((q, i) => ({
+    template_id: templateId,
+    section_id: sectionId,
+    text: q.text,
+    code: q.code,
+    question_type: q.question_type,
+    min_score: q.min_score,
+    max_score: q.max_score,
+    options: q.options ?? null,
+    order_index: startOrder + i,
+    is_required: q.is_required,
+  }));
+}
