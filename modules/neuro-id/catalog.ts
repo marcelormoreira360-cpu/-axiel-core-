@@ -130,6 +130,79 @@ export const DEFAULT_CATALOG: CatalogItemDef[] = [
   auto("msq_weight", "MSQ — Peso", "bioquimico", 770, 0.5),
   auto("msq_other", "MSQ — Outros", "bioquimico", 780, 0.5),
   auto("hpa_adrenal", "HPA — Hiperplasia adrenal", "bioquimico", 790, 0.5),
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // FORMULÁRIO UNIFICADO Neuro ID (2026-08) — códigos novos, taxonomia corrigida.
+  // Aditivo: NÃO substitui o mapeamento legado (QRM/Q-SNA/MSQ acima continuam
+  // servindo pacientes atuais). Sintomas comuns: valor 0–10 vindo de freq×impacto
+  // (freqImpToScale10, camada de import). Ver _BRIEF_NEUROID_FORMULARIO.md.
+  // O item de ideação (be_crisis_gosto_vida) NÃO entra aqui: não pontua, só
+  // dispara encaminhamento (lib/safety-flags). Decisão de Marcelo (28/08).
+  // ══════════════════════════════════════════════════════════════════════════
+
+  // ── Bloco B → Biomecânico ──
+  scale("bm_dor", "Dor no corpo", "fisico", "pain", 1010),
+  scale("bm_rigidez", "Rigidez / travamento", "fisico", "symptom", 1020),
+  scale("bm_limitacao", "Limitação de movimento", "fisico", "symptom", 1030),
+  scale("bm_equilibrio", "Desequilíbrio / instabilidade", "fisico", "symptom", 1040),
+  scale("bm_fraqueza_muscular", "Fraqueza muscular", "fisico", "symptom", 1050),
+
+  // ── Blocos C/D/E → Biofuncional (autonômico, digestivo/metabólico, sono/cognição) ──
+  scale("bf_palpitacoes", "Palpitações", "bioquimico", "symptom", 1110),
+  scale("bf_tontura_levantar", "Tontura ao levantar", "bioquimico", "symptom", 1120),
+  scale("bf_termorregulacao", "Termorregulação / suores", "bioquimico", "symptom", 1130),
+  scale("bf_desconforto_toracico", "Desconforto torácico", "bioquimico", "symptom", 1140),
+  scale("bf_falta_ar", "Falta de ar", "bioquimico", "symptom", 1150),
+  scale("bf_respiracao_estresse", "Respiração curta sob tensão", "bioquimico", "symptom", 1160),
+  scale("bf_pressao_instavel", "Pressão instável", "bioquimico", "symptom", 1170),
+  scale("bf_refluxo", "Refluxo / azia / náusea", "bioquimico", "symptom", 1210),
+  scale("bf_intestino", "Intestino (prisão / diarreia)", "bioquimico", "symptom", 1220),
+  scale("bf_inchaco", "Inchaço / gases", "bioquimico", "symptom", 1230),
+  scale("bf_dor_abdominal_estresse", "Dor abdominal ligada a estresse", "bioquimico", "symptom", 1240),
+  scale("bf_apetite", "Alteração de apetite", "bioquimico", "symptom", 1250),
+  scale("bf_peso", "Variação de peso", "bioquimico", "symptom", 1260),
+  scale("bf_pele_cabelo", "Pele / cabelo / unhas", "bioquimico", "symptom", 1270),
+  scale("bf_infeccoes", "Infecções / recuperação lenta", "bioquimico", "symptom", 1280),
+  scale("bf_hormonal", "Sinais hormonais", "bioquimico", "symptom", 1290),
+  // Sistemas complementares (condicionais) — peso menor (§ Laudo).
+  scale("bf_olhos", "Olhos", "bioquimico", "symptom", 1310, 0.5),
+  scale("bf_ouvidos", "Ouvidos", "bioquimico", "symptom", 1320, 0.5),
+  scale("bf_nariz", "Nariz / sinusite", "bioquimico", "symptom", 1330, 0.5),
+  scale("bf_garganta", "Boca / garganta", "bioquimico", "symptom", 1340, 0.5),
+  scale("bf_urinario", "Urinário", "bioquimico", "symptom", 1350, 0.5),
+  scale("bf_genital", "Genital / íntimo", "bioquimico", "symptom", 1360, 0.5),
+  // Sono / energia / cognição
+  scale("bf_sono_iniciar", "Dificuldade para iniciar o sono", "bioquimico", "symptom", 1410),
+  scale("bf_sono_manter", "Acordar várias vezes", "bioquimico", "symptom", 1420),
+  scale("bf_sono_reparador", "Sono não reparador", "bioquimico", "symptom", 1430),
+  scale("bf_sonolencia_dia", "Sonolência diurna", "bioquimico", "symptom", 1440),
+  scale("bf_fadiga", "Fadiga / baixa energia", "bioquimico", "symptom", 1450),
+  scale("bf_recuperacao", "Recuperação lenta pós-esforço", "bioquimico", "symptom", 1460),
+  scale("bf_concentracao", "Dificuldade de concentração", "bioquimico", "symptom", 1470),
+  scale("bf_memoria", "Esquecimentos", "bioquimico", "symptom", 1480),
+  scale("bf_brain_fog", "Mente enevoada", "bioquimico", "symptom", 1490),
+  scale("bf_apneia", "Ronco / apneia referida", "bioquimico", "symptom", 1500),
+
+  // ── Bloco F → Bioemocional (LIMPO: humor, ansiedade, regulação) ──
+  scale("be_mood_humor", "Humor / disposição", "emocional", "symptom", 1610),
+  scale("be_mood_tensao", "Tensão interna", "emocional", "symptom", 1620),
+  scale("be_mood_sono", "Sono (humor)", "emocional", "symptom", 1630),
+  scale("be_mood_apetite", "Apetite (humor)", "emocional", "symptom", 1640),
+  scale("be_mood_concentracao", "Concentração (humor)", "emocional", "symptom", 1650),
+  scale("be_mood_iniciativa", "Iniciativa / energia", "emocional", "symptom", 1660),
+  scale("be_mood_envolvimento", "Interesse / prazer", "emocional", "symptom", 1670),
+  scale("be_mood_pessimismo", "Visão de futuro / autocrítica", "emocional", "symptom", 1680),
+  scale("be_anx_nervosismo", "Nervosismo / ansiedade", "emocional", "symptom", 1710),
+  scale("be_anx_preocupacao_control", "Preocupação difícil de controlar", "emocional", "symptom", 1720),
+  scale("be_anx_preocupacao_demais", "Preocupação excessiva", "emocional", "symptom", 1730),
+  scale("be_anx_relaxar", "Dificuldade de relaxar", "emocional", "symptom", 1740),
+  scale("be_anx_inquietacao", "Inquietação", "emocional", "symptom", 1750),
+  scale("be_anx_medo_ruim", "Medo de que algo ruim aconteça", "emocional", "symptom", 1760),
+  scale("be_anx_sobressalto", "Sobressalto / alerta fácil", "emocional", "symptom", 1770),
+  scale("be_reg_irritabilidade", "Irritabilidade", "emocional", "symptom", 1810),
+  scale("be_reg_hipervigilancia", "Hipervigilância", "emocional", "symptom", 1820),
+  scale("be_reg_culpa", "Culpa / autocobrança", "emocional", "symptom", 1830),
+  scale("be_reg_recuperar_estresse", "Dificuldade de recuperar do estresse", "emocional", "symptom", 1840),
 ];
 
 /** Lookup por code (band_type, label, pillar) — usado na UI/PDF para itens armazenados. */
