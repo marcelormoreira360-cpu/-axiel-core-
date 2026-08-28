@@ -22,6 +22,7 @@ type ScaleKind = "freqimp" | "mood6" | "scale3";
 
 /** Escala de um código do formulário unificado, pelo prefixo. null = não é do form novo. */
 export function unifiedScaleKind(code: string): ScaleKind | null {
+  if (code === "bf_apneia") return "scale3"; // exceção: escala única (não é freq×impacto)
   if (code.startsWith("bm_") || code.startsWith("bf_")) return "freqimp";
   if (code.startsWith("be_mood_")) return "mood6";
   if (code.startsWith("be_anx_") || code.startsWith("be_reg_")) return "scale3";
