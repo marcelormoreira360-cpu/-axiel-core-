@@ -18,7 +18,17 @@
 - `vitest.config.ts`: excluído `.claude` (worktrees temporárias duplicavam a suíte — a contagem "real" caiu de ~1451 para 575).
 - **Preview visual interativo aprovado por Marcelo** (artifact `8d5735a7-3800-4f46-9f97-6f7a074c08f0`): humor em botões de FAIXA (0-1/2-3/4-5/6), escalas explicadas, crise encaminha.
 
-**Falta (Estágio 3b-2):** ligar no subsistema de formulários REAL do Core. O seed atual (`services/assessment-seed-service.ts` + `CanonicalTemplate`) é simples (escala 0–4 fixa) e NÃO expressa freq×impacto, escala 0–6, uploads nem grupo de medicação repetível. Precisa: estender o modelo de seed (tipo/escala por pergunta), semear o template, coletar respostas e disparar `processUnifiedForm` → `computeNeuroId`. Depende de Docker (teste local) ou plano Pro (branch) — indisponíveis em 28/08.
+**Estágio 3b-2 — FEITO em código (28/08, sem Docker/Pro, sem deploy):**
+- `modules/neuro-id/unified-form-seed.ts`: converte o template em formato semeável (perguntas com `code`/tipo/escala/opções; freqimp → 2 perguntas de escala `_freq`/`_imp`).
+- `supabase/migrations/148_assessment_questions_code.sql` (NÃO aplicada): coluna nullable `code` em `assessment_questions`.
+- `services/unified-form-seed-service.ts`: `seedUnifiedFormForClinic` semeia o template INATIVO + placement vazio (uso interno/teste, fora do envio automático); onboarding intocado.
+- `modules/neuro-id/unified-form-result.ts`: `bio3FromAnswerRows` (respostas por código → Bio³ completo).
+- `services/unified-form-bio3-service.ts`: `saveUnifiedFormResult` grava o Bio³ reusando `patient_assessments`/`patient_assessment_values`/`patient_neuro_id_scores` (`source='unified_form'`).
+- `components/neuroid-unified-form.tsx`: tela React (UX aprovada: freq×impacto, humor em faixas, crise só encaminha, Bio³ ao vivo).
+- Rota INTERNA `/patients/[id]/neuro-id/unified` (page + client) + `submitUnifiedFormAction` (auth por clínica). **A rota é AUTO-CONTIDA: renderiza a tela em código e grava os scores direto — NÃO depende da migration 148 nem do seed.**
+- 20 commits no branch, suíte real 587 verdes, typecheck limpo. Nada aplicado/deployado.
+
+**Falta para o envio a PACIENTE (não para o teste interno):** aplicar migration 148 + `seedUnifiedFormForClinic` (fluxo por link do formulário público, que ainda renderiza no componente genérico — a UX rica está só na rota interna); e as travas de compliance do Bloco F. Para VER a rota interna rodando: `next dev` logado, ou deploy de preview do branch.
 
 **Guarda-corpos (uso interno/teste até paciente real):** item de ideação só encaminha (não gradua risco), score emocional só interno, disclaimer de emergência, parecer FL assinado + revisor de saúde mental licenciado + BAA + consentimentos. Ver `_BRIEF_NEUROID_COMPLIANCE*.md` e `_BRIEF_NEUROID_PARECER_ADVOGADO.md`. **Antes de merge: rodar `/code-review --fix`.**
 
