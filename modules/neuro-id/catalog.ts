@@ -44,7 +44,7 @@ const LAB_RULE: ScoringRule = { lab: { normal: 0, leve: 25, moderado: 50, alto: 
 
 export const PILLAR_LABELS: Record<NeuroPillar, string> = {
   fisico: "Biomecânico",
-  bioquimico: "Bioquímico",
+  bioquimico: "Biofuncional",
   emocional: "Bioemocional",
 };
 

@@ -49,7 +49,7 @@
     "integracao": "Ties it together: patterns, dysregulated systems, plan."
   },
   "medTitle": "Medication load",
-  "medHint": "AI reads the medications/supplements answered in the QRM and splits them for you to confirm. Only medications score (Biochemical pillar).",
+  "medHint": "AI reads the medications/supplements answered in the QRM and splits them for you to confirm. Only medications score (Biofunctional pillar).",
   "medExtract": "Extract medication (AI)",
   "medExtracting": "Analyzing…",
   "medMeds": "Medications",

@@ -33,7 +33,7 @@ TOM E ESTILO (obrigatório em todos os documentos):
   o detalhamento técnico completo vai em practitioner_review_points (ficha interna do terapeuta).
   NUNCA invente um número que não esteja nos dados.
 - OS TRÊS PILARES DA SAÚDE (fio condutor do Documento 1): o paciente deve sair entendendo que a saúde
-  dele é olhada em TRÊS PILARES — Biomecânico (corpo/estrutura), Bioquímico (nutrição/metabolismo) e
+  dele é olhada em TRÊS PILARES — Biomecânico (corpo/estrutura), Biofuncional (função/regulação/metabolismo) e
   Bioemocional (emoções/sistema nervoso) — e onde cada um está hoje (use o Mapa Bio³). Deixe claro que
   esses pilares serão trabalhados de forma PROGRESSIVA, um passo de cada vez, começando pelo pilar
   prioritário. Isso dá ao paciente um mapa mental simples do cuidado e do caminho pela frente.
@@ -69,9 +69,9 @@ Preencha EXATAMENTE estas seções, nesta ordem:
 - abertura_calorosa: 2 a 3 frases que acolhem o paciente pelo nome e reconhecem a coragem de ter buscado esse
   cuidado. Sem jargão. Cria segurança para ler o resto.
 - leitura_bio3: { titulo, descricao }. O "retrato" de como o corpo está hoje, guiado pelos TRÊS PILARES
-  (Biomecânico = corpo/estrutura; Bioquímico = nutrição/metabolismo; Bioemocional = emoções/sistema nervoso).
+  (Biomecânico = corpo/estrutura; Biofuncional = nutrição/metabolismo; Bioemocional = emoções/sistema nervoso).
   titulo curto e humano (ex.: "Como seu corpo está hoje"). descricao APRESENTA o Mapa Bio³ COM OS NÚMEROS que dão
-  segurança: o índice geral e o percentual de cada pilar (ex.: "Bioemocional 71%, Bioquímico 58%, Biomecânico
+  segurança: o índice geral e o percentual de cada pilar (ex.: "Bioemocional 71%, Biofuncional 58%, Biomecânico
   40%, índice geral 66%", lembrando que MAIOR = mais sobrecarga, MENOR = mais equilíbrio), SEMPRE seguidos da
   tradução em linguagem do dia a dia (qual pilar está mais sobrecarregado e qual mais preservado). Use os valores
   do Mapa fornecidos; nunca invente.
@@ -153,9 +153,9 @@ Regras:
   tamanho por seção, não comprimindo os achados dos exames num único bloco.
 - MAPA BIO³ (neuro_id): traz o GRAU DE DISFUNÇÃO por eixo, em % onde MAIOR = PIOR (menor = melhor). No Documento 1,
   apresente SEMPRE OS TRÊS EIXOS pelos nomes AXIEL, cada um com o seu %, inclusive os mais preservados:
-  Biomecânico (fisico_pct), Bioquímico (bioquimico_pct) e Bioemocional (emocional_pct) — use exatamente o termo
+  Biomecânico (fisico_pct), Biofuncional (bioquimico_pct) e Bioemocional (emocional_pct) — use exatamente o termo
   "Bioemocional", não "emocional" — além do índice geral (indice_geral). Ex.: "Mapa Bio³ — Bioemocional 71%
-  (maior disfunção), Bioquímico 58%, Biomecânico 40%; índice geral 66%." De preferência traga isso como um
+  (maior disfunção), Biofuncional 58%, Biomecânico 40%; índice geral 66%." De preferência traga isso como um
   resultado/achado próprio ("Leitura do Mapa Bio³"). Use o priority_pillar como eixo prioritário do plano.
   Se is_partial = true, registre que o mapa é parcial (falta o exame físico/Biomecânico).
 - Baseie TUDO apenas nos dados fornecidos. Se faltar dado, escreva isso de forma honesta no próprio texto

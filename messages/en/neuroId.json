@@ -22,7 +22,7 @@
   "compute": "Compute Map",
   "pillar": {
     "fisico": "Biomechanical",
-    "bioquimico": "Biochemical",
+    "bioquimico": "Biofunctional",
     "emocional": "Bioemotional"
   },
   "pillarHint": {

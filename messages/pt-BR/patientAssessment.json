@@ -49,7 +49,7 @@
     "integracao": "Amarra tudo: padrões, sistemas desregulados, conduta."
   },
   "medTitle": "Medicação (carga)",
-  "medHint": "A IA lê os medicamentos/suplementos respondidos no QRM e separa para você confirmar. Só remédios pontuam (pilar Bioquímico).",
+  "medHint": "A IA lê os medicamentos/suplementos respondidos no QRM e separa para você confirmar. Só remédios pontuam (pilar Biofuncional).",
   "medExtract": "Extrair medicação (IA)",
   "medExtracting": "Analisando…",
   "medMeds": "Remédios",

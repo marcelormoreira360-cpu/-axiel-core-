@@ -37,7 +37,7 @@ export type NeuroIdPdfMap = {
 };
 
 const PILLAR_LABEL: Record<NeuroPillar, string> = {
-  fisico: "Biomecânico", bioquimico: "Bioquímico", emocional: "Bioemocional",
+  fisico: "Biomecânico", bioquimico: "Biofuncional", emocional: "Bioemocional",
 };
 const PILLAR_HINT: Record<NeuroPillar, string> = {
   fisico: "corpo & movimento", bioquimico: "energia & química interna", emocional: "mente & equilíbrio",

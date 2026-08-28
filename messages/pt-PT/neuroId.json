@@ -22,7 +22,7 @@
   "compute": "Calcular Mapa",
   "pillar": {
     "fisico": "Biomecânico",
-    "bioquimico": "Bioquímico",
+    "bioquimico": "Biofuncional",
     "emocional": "Bioemocional"
   },
   "pillarHint": {
