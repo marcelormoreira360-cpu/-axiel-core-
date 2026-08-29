@@ -50,7 +50,7 @@ export async function createNeuroIdAssessmentAction(formData: FormData) {
  */
 export async function submitUnifiedFormAction(
   patientId: string,
-  answers: Record<string, number | string>,
+  answers: Record<string, number | string | string[]>,
 ): Promise<{ assessmentId: string; crisis: boolean; cardioresp: boolean }> {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) throw new Error("Clínica obrigatória");

@@ -33,6 +33,7 @@ export default function UnifiedFormClient({ patientId }: { patientId: string }) 
             setSaved({ assessmentId: r.assessmentId, crisis: r.crisis });
           } catch (e) {
             setError(e instanceof Error ? e.message : "Falha ao salvar.");
+            if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
           } finally {
             setSaving(false);
           }

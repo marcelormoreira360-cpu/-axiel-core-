@@ -21,7 +21,17 @@ const FREQ = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os
 const IMP = ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"];
 const PILLAR_ORDER: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
 
-type AnswerMap = Record<string, number | string>;
+type AnswerValue = number | string | string[];
+type AnswerMap = Record<string, AnswerValue>;
+
+/** Pergunta condicional só aparece quando a porta (conditionalOn) está satisfeita. */
+function isVisible(q: UnifiedQuestion, answers: AnswerMap): boolean {
+  if (!q.conditionalOn) return true;
+  const gate = answers[q.conditionalOn];
+  if (Array.isArray(gate)) return q.showIfValue ? gate.includes(q.showIfValue) : gate.length > 0;
+  if (q.showIfValue !== undefined) return gate === q.showIfValue;
+  return gate !== undefined && gate !== "";
+}
 
 function bandColor(v: number): string {
   if (v <= 30) return "bg-emerald-600";
@@ -35,7 +45,7 @@ export default function NeuroIdUnifiedForm({
   onComplete?: (answers: AnswerMap) => void;
 }) {
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const set = (code: string, value: number | string) => setAnswers((a) => ({ ...a, [code]: value }));
+  const set = (code: string, value: AnswerValue) => setAnswers((a) => ({ ...a, [code]: value }));
 
   // Bio³ ao vivo: converte respostas numéricas em linhas por código.
   const outcome = useMemo(() => {
@@ -113,7 +123,7 @@ function SafetyRow({ ok, okText, warnText, crit }: { ok: boolean; okText: string
   );
 }
 
-function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: AnswerMap; set: (c: string, v: number | string) => void }) {
+function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <div className="mb-1 flex items-baseline gap-2.5">
@@ -122,7 +132,7 @@ function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: Answ
       </div>
       {block.intro && <p className="mb-2 text-sm text-neutral-500">{block.intro}</p>}
       <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-        {block.questions.map((q) =>
+        {block.questions.filter((q) => isVisible(q, answers)).map((q) =>
           q.type === "info" ? (
             <p key={q.code} className="pt-4 text-sm text-neutral-500">{q.label}</p>
           ) : (
@@ -134,7 +144,7 @@ function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: Answ
   );
 }
 
-function QuestionView({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: number | string) => void }) {
+function QuestionView({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
   return (
     <div className="py-3.5">
       <div className="mb-2 text-sm font-medium">{q.label}</div>
@@ -160,7 +170,7 @@ function OptButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: number | string) => void }) {
+function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
   const max = q.max ?? 3;
 
   if (q.type === "freqimp") {
@@ -226,17 +236,28 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
   if (q.type === "yes_no") {
     return (
       <div className="flex gap-1.5">
-        {["Não", "Sim"].map((lb, v) => (
-          <OptButton key={v} active={answers[q.code] === v} onClick={() => set(q.code, v)}>{lb}</OptButton>
+        {["Não", "Sim"].map((lb) => (
+          <OptButton key={lb} active={answers[q.code] === lb} onClick={() => set(q.code, lb)}>{lb}</OptButton>
         ))}
       </div>
     );
   }
-  if (q.type === "choice" || q.type === "multi") {
+  if (q.type === "choice") {
     return (
       <div className="flex flex-wrap gap-1.5">
         {(q.options ?? []).map((o) => (
           <OptButton key={o} active={answers[q.code] === o} onClick={() => set(q.code, o)}>{o}</OptButton>
+        ))}
+      </div>
+    );
+  }
+  if (q.type === "multi") {
+    const sel = Array.isArray(answers[q.code]) ? (answers[q.code] as string[]) : [];
+    const toggle = (o: string) => set(q.code, sel.includes(o) ? sel.filter((x) => x !== o) : [...sel, o]);
+    return (
+      <div className="flex flex-wrap gap-1.5">
+        {(q.options ?? []).map((o) => (
+          <OptButton key={o} active={sel.includes(o)} onClick={() => toggle(o)}>{o}</OptButton>
         ))}
       </div>
     );
@@ -254,7 +275,7 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
 }
 
 /** Botões de FAIXA para escalas com âncoras (0-1, 2-3, 4-5, 6…) — cada um rotulado. */
-function RangeButtons({ q, max, value, onPick }: { q: UnifiedQuestion; max: number; value: number | string | undefined; onPick: (v: number) => void }) {
+function RangeButtons({ q, max, value, onPick }: { q: UnifiedQuestion; max: number; value: AnswerValue | undefined; onPick: (v: number) => void }) {
   const anchors = q.anchors ?? {};
   const ks = Object.keys(anchors).map(Number).sort((a, b) => a - b);
   return (

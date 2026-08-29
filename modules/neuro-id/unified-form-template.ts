@@ -34,8 +34,10 @@ export type UnifiedQuestion = {
   anchors?: Record<number, string>;
   /** rótulo por opção de escala (índice = valor), ex.: frequência 0–3. */
   scaleLabels?: string[];
-  /** aparece só se este código for "sim"/marcado/freq≥1. */
+  /** aparece só se este código (porta) estiver satisfeito. */
   conditionalOn?: string;
+  /** valor/opção da porta que revela esta pergunta (ex.: "Olhos", "Sim"). */
+  showIfValue?: string;
   note?: string;
 };
 
@@ -133,12 +135,12 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
         s("bf_infeccoes", "Fica doente com facilidade ou demora a se recuperar"),
         s("bf_hormonal", "Alterações menstruais, de menopausa ou sinais hormonais"),
         { code: "bf_sistemas_extra", label: "Teve incômodo importante em alguma destas áreas?", type: "multi", options: ["Olhos", "Ouvidos", "Nariz/sinusite", "Boca/garganta", "Bexiga/urinário", "Genital/íntima", "Nenhuma"] },
-        { ...s("bf_olhos", "Incômodo nos olhos (ardência, coceira, visão embaçada)"), conditionalOn: "bf_sistemas_extra" },
-        { ...s("bf_ouvidos", "Incômodo nos ouvidos (zumbido, dor, coceira)"), conditionalOn: "bf_sistemas_extra" },
-        { ...s("bf_nariz", "Congestão nasal, sinusite ou espirros frequentes"), conditionalOn: "bf_sistemas_extra" },
-        { ...s("bf_garganta", "Incômodo na boca/garganta (tosse, pigarro, rouquidão, aftas)"), conditionalOn: "bf_sistemas_extra" },
-        { ...s("bf_urinario", "Urgência ou desconforto para urinar"), conditionalOn: "bf_sistemas_extra" },
-        { ...s("bf_genital", "Coceira, corrimento ou desconforto íntimo"), conditionalOn: "bf_sistemas_extra" },
+        { ...s("bf_olhos", "Incômodo nos olhos (ardência, coceira, visão embaçada)"), conditionalOn: "bf_sistemas_extra", showIfValue: "Olhos" },
+        { ...s("bf_ouvidos", "Incômodo nos ouvidos (zumbido, dor, coceira)"), conditionalOn: "bf_sistemas_extra", showIfValue: "Ouvidos" },
+        { ...s("bf_nariz", "Congestão nasal, sinusite ou espirros frequentes"), conditionalOn: "bf_sistemas_extra", showIfValue: "Nariz/sinusite" },
+        { ...s("bf_garganta", "Incômodo na boca/garganta (tosse, pigarro, rouquidão, aftas)"), conditionalOn: "bf_sistemas_extra", showIfValue: "Boca/garganta" },
+        { ...s("bf_urinario", "Urgência ou desconforto para urinar"), conditionalOn: "bf_sistemas_extra", showIfValue: "Bexiga/urinário" },
+        { ...s("bf_genital", "Coceira, corrimento ou desconforto íntimo"), conditionalOn: "bf_sistemas_extra", showIfValue: "Genital/íntima" },
       ],
     },
     {
@@ -206,7 +208,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
       scored: false,
       questions: [
         { code: "med_usa", label: "Você toma algum medicamento contínuo?", type: "yes_no" },
-        { code: "med_lista", label: "Liste cada medicamento, dose e frequência.", type: "text", conditionalOn: "med_usa" },
+        { code: "med_lista", label: "Liste cada medicamento, dose e frequência.", type: "text", conditionalOn: "med_usa", showIfValue: "Sim" },
         { code: "med_suplementos", label: "Toma suplementos, vitaminas ou fitoterápicos? Quais?", type: "text" },
         { code: "med_efeitos_adversos_freq", label: "Sente efeitos colaterais dos seus remédios?", type: "scale", max: 3, scaleLabels: FREQ3 },
         { code: "med_adesao_dificuldade_freq", label: "Tem dificuldade de tomar certinho (esquece, atrasa, para)?", type: "scale", max: 3, scaleLabels: FREQ3 },
