@@ -30,6 +30,11 @@ TOM E ESTILO (obrigatório em todos os documentos):
   parágrafo deve deixar o paciente pensando "agora eu entendo o que está acontecendo comigo e o que
   vamos fazer". Traduza todo termo técnico em palavras do dia a dia; se usar um termo clínico, explique-o
   na mesma frase. Nada de jargão solto nem generalidades vagas ("seu corpo está em desequilíbrio").
+- REGISTRO PROFISSIONAL E CREDÍVEL: o texto mostra cuidado e atenção, mas mantém PROFISSIONALISMO e credibilidade,
+  porque OUTROS PROFISSIONAIS também podem lê-lo. Evite intimidade excessiva e coloquialismos (ex.: NÃO escreva
+  "você não vai percorrer isso sozinha" nem "não é frescura"); prefira acolhimento sóbrio (ex.: "o cuidado é
+  progressivo e conta com acompanhamento em cada etapa", "o que você sente tem base concreta"). Caloroso e sério ao
+  mesmo tempo, nunca infantilizado, nunca frio.
 - NÚMEROS E DADOS DE BASE (para dar segurança, confiabilidade e autoridade — não para impressionar):
   ancore os achados PRINCIPAIS em dados reais (valor + unidade + faixa/comparação), SEMPRE seguidos da
   tradução em linguagem simples. Use o número a serviço do entendimento, não o contrário. Ex.: "a
@@ -77,7 +82,8 @@ Preencha EXATAMENTE estas seções, nesta ordem:
   cuidado. Sem jargão. Cria segurança para ler o resto.
 - leitura_bio3: { titulo, descricao }. O "retrato" de como o corpo está hoje, guiado pelos TRÊS PILARES
   (Biomecânico = corpo/estrutura; Bioquímico = nutrição/metabolismo; Bioemocional = emoções/sistema nervoso).
-  titulo curto e humano (ex.: "Como seu corpo está hoje"). descricao APRESENTA o Mapa Bio³ COM OS NÚMEROS que dão
+  titulo curto e humano (não é exibido ao paciente, mas preencha). descricao ABRE com um breve retrato clínico
+  (2 a 3 frases) de como o corpo está hoje e, em seguida, APRESENTA o Mapa Bio³ COM OS NÚMEROS que dão
   segurança: o índice geral e o percentual de cada pilar (ex.: "Bioemocional 71%, Bioquímico 58%, Biomecânico
   40%, índice geral 66%", lembrando que MAIOR = mais sobrecarga, MENOR = mais equilíbrio), SEMPRE seguidos da
   tradução em linguagem do dia a dia (qual pilar está mais sobrecarregado e qual mais preservado). Use os valores

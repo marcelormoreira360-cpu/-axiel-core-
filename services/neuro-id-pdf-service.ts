@@ -387,11 +387,15 @@ export async function buildNeuroIdPatientReportPdf(opts: {
 // Rótulos fixos das seções do Doc 1 no PDF. O PDF é PT (como buildNeuroIdMapPdf);
 // o CONTEÚDO das seções segue o idioma gerado pela IA. i18n do PDF é follow-up.
 const DOC1_LABELS = {
-  neurometric: "Suas leituras principais",
-  emotional: "Leitura emocional",
+  s1: "1.  Antes de tudo, uma palavra para você",
+  s2: "2.  O seu quadro clínico de hoje",
+  s3: "3.  O que a avaliação encontrou",
+  neurometric: "3.1  Como o seu sistema nervoso está funcionando (Exame de Neurometria)",
+  emotional: "3.2  A sua leitura emocional (Exame de Biorressonância)",
+  s4: "4.  A conexão, e um ponto de força",
   anchor: "Um ponto forte a seu favor",
-  aha: "Como tudo se conecta",
-  whyNow: "Por que começar agora",
+  s5: "5.  Por que começar agora é a melhor opção",
+  s6: "6.  Os próximos passos",
   nextStep: "Próximo passo",
 };
 
@@ -435,7 +439,7 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   doc.on("pageAdded", () => { decorate(); resetBody(doc); });
   resetBody(doc);
 
-  docTitle(doc, "Relatório Funcional Integrado", "Resultado da sua Avaliação Neuro ID");
+  docTitle(doc, "Relatório Neuro ID", "Resultado da sua Avaliação Neuro ID");
 
   const id = mapa.identificacao;
   const idParts = [
@@ -448,14 +452,14 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     doc.moveDown(0.5);
   }
 
-  // 1. Abertura calorosa
+  // ── Documento 1 fundido, em seções numeradas (1..6) ──
+  // 1
+  sectionTitle(doc, DOC1_LABELS.s1);
   paragraph(doc, mapa.abertura_calorosa);
 
-  // 2. Retrato Bio³ (título humano + parágrafo) + pirâmide
-  if (mapa.leitura_bio3?.titulo || mapa.leitura_bio3?.descricao) {
-    if (mapa.leitura_bio3?.titulo) sectionTitle(doc, mapa.leitura_bio3.titulo);
-    paragraph(doc, mapa.leitura_bio3?.descricao);
-  }
+  // 2 — retrato Bio³ + pirâmide
+  sectionTitle(doc, DOC1_LABELS.s2);
+  paragraph(doc, mapa.leitura_bio3?.descricao);
   const bio3 = opts.bio3;
   if (bio3) {
     drawPyramid(doc, [
@@ -466,7 +470,8 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     doc.moveDown(0.3);
   }
 
-  // 3. Leituras principais (neurometria): título em negrito + descrição, sem travessão.
+  // 3 — neurometria (3.1) e biorressonância (3.2), SEPARADAS e condicionais
+  sectionTitle(doc, DOC1_LABELS.s3);
   const readings = (mapa.leitura_neurometrica ?? []).filter((it) => it.titulo || it.descricao);
   if (readings.length > 0) {
     sectionTitle(doc, DOC1_LABELS.neurometric);
@@ -476,8 +481,6 @@ export async function buildNeuroIdDoc1Pdf(opts: {
       paragraph(doc, it.descricao);
     }
   }
-
-  // 4. Leitura emocional: temas (linha) + síntese.
   const bio = mapa.leitura_bioemocional;
   if (bio && ((bio.temas?.length ?? 0) > 0 || bio.sintese?.trim())) {
     sectionTitle(doc, DOC1_LABELS.emotional);
@@ -488,35 +491,34 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     paragraph(doc, bio.sintese);
   }
 
-  // 5. Âncora positiva (destaque: título verde).
+  // 4 — conexão + ponto de força
+  sectionTitle(doc, DOC1_LABELS.s4);
+  if (mapa.conexao_aha?.trim()) paragraph(doc, mapa.conexao_aha);
   if (mapa.ancora_positiva?.trim()) {
-    ensureSpace(doc, 70); doc.moveDown(0.5);
-    doc.font("Times-Bold").fontSize(12.5).fillColor("#0F6E56").text(DOC1_LABELS.anchor.toUpperCase(), MARGIN, doc.y, { width: CONTENT_W });
-    doc.moveDown(0.35);
+    ensureSpace(doc, 60);
+    doc.font("Times-Bold").fontSize(10.5).fillColor("#0F6E56").text(DOC1_LABELS.anchor, MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.15);
     paragraph(doc, mapa.ancora_positiva);
   }
 
-  // 6/7/8. Conexão · Por que agora · Próximo passo
-  if (mapa.conexao_aha?.trim()) { sectionTitle(doc, DOC1_LABELS.aha); paragraph(doc, mapa.conexao_aha); }
-  if (mapa.porque_agir_agora?.trim()) { sectionTitle(doc, DOC1_LABELS.whyNow); paragraph(doc, mapa.porque_agir_agora); }
-  // FUSÃO: quando existe plano persuasivo, ele é o FECHO deste MESMO relatório.
-  // Nesse caso o próximo passo e o disclaimer vêm do plano (no fim), para não
-  // duplicar. Sem plano persuasivo, o relatório fecha aqui, com o mapa.
+  // 5
+  sectionTitle(doc, DOC1_LABELS.s5);
+  paragraph(doc, mapa.porque_agir_agora);
+
+  // 6 — os próximos passos (fecho). Com plano persuasivo, ele é o conteúdo; senão, o próximo passo do mapa.
   const plano = opts.plano ?? null;
   const planoPersuasivo = hasPersuasiveDoc2(plano);
-  if (mapa.proximo_passo?.trim() && !planoPersuasivo) { sectionTitle(doc, DOC1_LABELS.nextStep); paragraph(doc, mapa.proximo_passo); }
-
+  sectionTitle(doc, DOC1_LABELS.s6);
   if (!planoPersuasivo) {
+    if (mapa.proximo_passo?.trim()) paragraph(doc, mapa.proximo_passo);
     const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
     doc.moveDown(0.5);
     doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
   }
 
-  // ── PRÓXIMOS PASSOS (o plano) — FECHO do mesmo relatório, em continuação (sem nova página nem título de documento) ──
+  // ── PRÓXIMOS PASSOS (conteúdo da seção 6, o plano) — em continuação, sem novo título de documento ──
   if (planoPersuasivo && plano) {
-    ensureSpace(doc, 140);
-    sectionTitle(doc, "Os próximos passos, juntos");
-    if (plano.onde_queremos_chegar?.trim()) { sectionTitle(doc, DOC2_LABELS.goal); paragraph(doc, plano.onde_queremos_chegar); }
+    if (plano.onde_queremos_chegar?.trim()) { paragraph(doc, plano.onde_queremos_chegar); }
     if (plano.tres_pilares) {
       sectionTitle(doc, DOC2_LABELS.pillars);
       const tp = plano.tres_pilares;
