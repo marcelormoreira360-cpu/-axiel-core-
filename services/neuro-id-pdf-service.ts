@@ -7,6 +7,8 @@
  */
 
 import PDFDocument from "pdfkit";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
+import { hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
@@ -378,6 +380,158 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   }
   doc.moveDown(0.5);
   doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(copy.disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+
+  return pdfToBuffer(doc);
+}
+
+// Rótulos fixos das seções do Doc 1 no PDF. O PDF é PT (como buildNeuroIdMapPdf);
+// o CONTEÚDO das seções segue o idioma gerado pela IA. i18n do PDF é follow-up.
+const DOC1_LABELS = {
+  neurometric: "Suas leituras principais",
+  emotional: "Leitura emocional",
+  anchor: "Um ponto forte a seu favor",
+  aha: "Como tudo se conecta",
+  whyNow: "Por que começar agora",
+  nextStep: "Próximo passo",
+};
+
+const DOC2_LABELS = {
+  goal: "Aonde vamos juntos",
+  pillars: "As três frentes do cuidado",
+  pillarNervous: "Sistema nervoso",
+  pillarEmotional: "Emoções",
+  pillarLifestyle: "Estilo de vida",
+  howWeWalk: "Como caminhamos juntos",
+  nextStep: "Próximo passo",
+};
+
+/**
+ * PDF do Documento 1 persuasivo (Rota A) alimentado pelas 8 seções do Doc 1
+ * APROVADO (final_output.mapa_integrativo), não mais por scores. Reaproveita
+ * header/footer/pirâmide/branding. Fonte única de verdade = Doc 1 aprovado;
+ * a versão por scores (buildNeuroIdPatientReportPdf) fica como fallback enquanto
+ * não houver Doc 1 aprovado no formato novo.
+ */
+export async function buildNeuroIdDoc1Pdf(opts: {
+  mapa: NeuroMapaIntegrativo;
+  bio3?: NeuroIdPdfMap | null;
+  /** Doc 2 (Plano) aprovado; quando persuasivo, é anexado como 2ª parte do mesmo PDF. */
+  plano?: NeuroPlanoRegulacao | null;
+  patientName?: string | null;
+  clinic?: ClinicBrand;
+}): Promise<Buffer> {
+  const { mapa } = opts;
+  const brand = opts.clinic ?? {};
+  const logo = await fetchLogo(brand.logoUrl);
+
+  const doc = new PDFDocument({
+    margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
+    size: "LETTER",
+    info: { Title: "Relatório Funcional Integrado", Author: brand.name ?? "AXIEL Core" },
+  });
+  let decorating = false;
+  const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
+  decorate();
+  doc.on("pageAdded", () => { decorate(); resetBody(doc); });
+  resetBody(doc);
+
+  docTitle(doc, "Relatório Funcional Integrado", "Resultado da sua Avaliação Neuro ID");
+
+  const id = mapa.identificacao;
+  const idParts = [
+    id?.paciente ?? opts.patientName ?? null,
+    id?.idade ? `Idade: ${id.idade}` : null,
+    id?.data_avaliacoes ? `Data: ${id.data_avaliacoes}` : null,
+  ].filter(Boolean) as string[];
+  if (idParts.length > 0) {
+    doc.font("Times-Italic").fontSize(10).fillColor(MUTED).text(idParts.join("   |   "), MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+    doc.moveDown(0.5);
+  }
+
+  // 1. Abertura calorosa
+  paragraph(doc, mapa.abertura_calorosa);
+
+  // 2. Retrato Bio³ (título humano + parágrafo) + pirâmide
+  if (mapa.leitura_bio3?.titulo || mapa.leitura_bio3?.descricao) {
+    if (mapa.leitura_bio3?.titulo) sectionTitle(doc, mapa.leitura_bio3.titulo);
+    paragraph(doc, mapa.leitura_bio3?.descricao);
+  }
+  const bio3 = opts.bio3;
+  if (bio3) {
+    drawPyramid(doc, [
+      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico" },
+      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico" },
+      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional" },
+    ]);
+    doc.moveDown(0.3);
+  }
+
+  // 3. Leituras principais (neurometria): título em negrito + descrição, sem travessão.
+  const readings = (mapa.leitura_neurometrica ?? []).filter((it) => it.titulo || it.descricao);
+  if (readings.length > 0) {
+    sectionTitle(doc, DOC1_LABELS.neurometric);
+    for (const it of readings) {
+      ensureSpace(doc, 50);
+      if (it.titulo) { doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(it.titulo, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.15); }
+      paragraph(doc, it.descricao);
+    }
+  }
+
+  // 4. Leitura emocional: temas (linha) + síntese.
+  const bio = mapa.leitura_bioemocional;
+  if (bio && ((bio.temas?.length ?? 0) > 0 || bio.sintese?.trim())) {
+    sectionTitle(doc, DOC1_LABELS.emotional);
+    if (bio.temas?.length) {
+      doc.font("Times-Italic").fontSize(10).fillColor(INK).text(bio.temas.join("  ·  "), MARGIN, doc.y, { width: CONTENT_W });
+      doc.moveDown(0.3);
+    }
+    paragraph(doc, bio.sintese);
+  }
+
+  // 5. Âncora positiva (destaque: título verde).
+  if (mapa.ancora_positiva?.trim()) {
+    ensureSpace(doc, 70); doc.moveDown(0.5);
+    doc.font("Times-Bold").fontSize(12.5).fillColor("#0F6E56").text(DOC1_LABELS.anchor.toUpperCase(), MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.35);
+    paragraph(doc, mapa.ancora_positiva);
+  }
+
+  // 6/7/8. Conexão · Por que agora · Próximo passo
+  if (mapa.conexao_aha?.trim()) { sectionTitle(doc, DOC1_LABELS.aha); paragraph(doc, mapa.conexao_aha); }
+  if (mapa.porque_agir_agora?.trim()) { sectionTitle(doc, DOC1_LABELS.whyNow); paragraph(doc, mapa.porque_agir_agora); }
+  if (mapa.proximo_passo?.trim()) { sectionTitle(doc, DOC1_LABELS.nextStep); paragraph(doc, mapa.proximo_passo); }
+
+  // Disclaimer
+  const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
+  doc.moveDown(0.5);
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+
+  // ── DOCUMENTO 2 (Plano Integrativo) — anexado no mesmo PDF quando aprovado no formato persuasivo ──
+  const plano = opts.plano ?? null;
+  if (hasPersuasiveDoc2(plano) && plano) {
+    doc.addPage();
+    docTitle(doc, "Plano Integrativo", "Os seus próximos passos, Neuro ID");
+    if (plano.onde_queremos_chegar?.trim()) { sectionTitle(doc, DOC2_LABELS.goal); paragraph(doc, plano.onde_queremos_chegar); }
+    if (plano.tres_pilares) {
+      sectionTitle(doc, DOC2_LABELS.pillars);
+      const tp = plano.tres_pilares;
+      const pilar = (label: string, text?: string | null) => {
+        if (!text || !text.trim()) return;
+        ensureSpace(doc, 46);
+        doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(label, MARGIN, doc.y, { width: CONTENT_W });
+        doc.moveDown(0.1);
+        paragraph(doc, text);
+      };
+      pilar(DOC2_LABELS.pillarNervous, tp.nervoso);
+      pilar(DOC2_LABELS.pillarEmotional, tp.emocional);
+      pilar(DOC2_LABELS.pillarLifestyle, tp.estilo_de_vida);
+    }
+    if (plano.como_caminhar_juntos?.trim()) { sectionTitle(doc, DOC2_LABELS.howWeWalk); paragraph(doc, plano.como_caminhar_juntos); }
+    if (plano.proximo_passo?.trim()) { sectionTitle(doc, DOC2_LABELS.nextStep); paragraph(doc, plano.proximo_passo); }
+    const disc2 = plano.observacao?.trim() || "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.";
+    doc.moveDown(0.5);
+    doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disc2, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
 
   return pdfToBuffer(doc);
 }

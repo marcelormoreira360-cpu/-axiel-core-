@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatientById } from "@/services/patient-service";
 import { createNeuroIdAssessment, updateNeuroIdAssessment, importQuestionnaireAnswers, getLatestNeuroIdMap, type QuestionnaireImport } from "@/services/neuro-id-service";
-import { buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
+import { buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
+import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
+import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
 import { sendSimpleEmail } from "@/services/email-service";
 import { sendPushToPatient } from "@/services/push-service";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
@@ -126,19 +128,25 @@ export async function sendNeuroIdReportToPatientAction(
     if (data) brand = { name: data.name, logoUrl: data.logo_url, primaryColor: data.primary_color, tagline: data.report_tagline };
   } catch { /* usa defaults */ }
 
-  // Gera o PDF do RELATÓRIO DO PACIENTE (mesmos dados da rota de "Ver PDF").
+  // Gera o PDF do RELATÓRIO DO PACIENTE (mesma lógica da rota de "Ver PDF"):
+  // Doc 1 APROVADO no formato persuasivo → 8 seções; senão → PDF por scores.
   let pdfBuffer: Buffer;
   try {
-    pdfBuffer = await buildNeuroIdPatientReportPdf({
-      map,
-      patientName: patient.full_name ?? null,
-      clinic: brand,
-      vars: {
-        q1: patient.chief_complaint ?? null,
-        q2: null,
-        sintoma: patient.chief_complaint ?? null,
-      },
-    });
+    const finalInsight = await getLatestFinalAiInsight(patientId);
+    const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
+    const mapa = finalOutput?.mapa_integrativo ?? null;
+    pdfBuffer = mapa && hasPersuasiveDoc1(mapa)
+      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand })
+      : await buildNeuroIdPatientReportPdf({
+          map,
+          patientName: patient.full_name ?? null,
+          clinic: brand,
+          vars: {
+            q1: patient.chief_complaint ?? null,
+            q2: null,
+            sintoma: patient.chief_complaint ?? null,
+          },
+        });
   } catch {
     return { error: "Não foi possível gerar o PDF do relatório." };
   }

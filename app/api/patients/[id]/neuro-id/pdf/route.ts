@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
-import { buildNeuroIdMapPdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
+import { buildNeuroIdMapPdf, buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
 import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { patientIdentificacao } from "@/lib/patient-demographics";
+import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
+import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -39,9 +41,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   } catch { /* usa defaults */ }
 
   const patientName = patient?.full_name ?? null;
-  const buffer = view === "clinical"
-    ? await buildNeuroIdMapPdf({ map, patientName, clinic: brand, demographics: patient ? patientIdentificacao(patient) : null })
-    : await buildNeuroIdPatientReportPdf({
+  let buffer: Buffer;
+  if (view === "clinical") {
+    buffer = await buildNeuroIdMapPdf({ map, patientName, clinic: brand, demographics: patient ? patientIdentificacao(patient) : null });
+  } else {
+    // Rota A: se existe um Doc 1 APROVADO (review_status="final") no formato persuasivo,
+    // o PDF sai das 8 seções aprovadas. Senão, mantém o PDF por scores (comportamento atual).
+    const finalInsight = await getLatestFinalAiInsight(id);
+    const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
+    const mapa = finalOutput?.mapa_integrativo ?? null;
+    if (mapa && hasPersuasiveDoc1(mapa)) {
+      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand });
+    } else {
+      buffer = await buildNeuroIdPatientReportPdf({
         map, patientName, clinic: brand,
         vars: {
           q1: patient?.chief_complaint ?? null,
@@ -49,6 +61,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           sintoma: patient?.chief_complaint ?? null,
         },
       });
+    }
+  }
   const safeName = (patient?.full_name ?? "paciente").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "paciente";
 
   return new Response(new Uint8Array(buffer), {

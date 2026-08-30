@@ -78,7 +78,7 @@ export const aiInsightJsonShape = {
   data_limitations: ["O que está faltando ou incompleto nos dados."],
   safety_note: "AI-generated insights (not medical advice). This does not diagnose, treat, prescribe, or replace professional clinical judgment.",
 
-  // ── DOCUMENTO 1 — RELATÓRIO FUNCIONAL INTEGRADO ("o que foi identificado") ──
+  // ── DOCUMENTO 1 — RELATÓRIO FUNCIONAL INTEGRADO (Report of Findings, 8 seções persuasivas) ──
   mapa_integrativo: {
     identificacao: {
       paciente: "Nome completo do paciente",
@@ -89,18 +89,38 @@ export const aiInsightJsonShape = {
       local: "Local de acompanhamento, se informado",
       data_avaliacoes: "Data das avaliações, se informada",
     },
-    exames_avaliados:
-      "Parágrafo descrevendo os exames e informações considerados (neurometria, vias nervosas, cardiorrespiratório, questionários funcionais, biorressonância, relato clínico). Sem finalidade de diagnóstico médico absoluto.",
-    resultados_encontrados: [
-      { titulo: "Padrão observado (título curto em negrito)", descricao: "Explicação do achado nos exames + tradução 'na prática' do que isso costuma significar para o paciente." },
+    abertura_calorosa:
+      "2 a 3 frases acolhendo o paciente pelo nome e reconhecendo a coragem de buscar esse cuidado. Sem jargão.",
+    leitura_bio3: {
+      titulo: "Retrato humano de como o corpo está hoje (ex.: 'Como seu corpo está hoje').",
+      descricao:
+        "Mapa Bio³ COM os números (índice geral + % de cada pilar, maior = mais sobrecarga), sempre seguidos da tradução em linguagem do dia a dia (qual pilar mais sobrecarregado, qual mais preservado).",
+    },
+    leitura_neurometrica: [
+      {
+        titulo: "Achado principal em linguagem humana (ex.: 'Seu ritmo interno está acelerado')",
+        descricao:
+          "Peso de laudo: achado → dado (valor + faixa de referência ou classificação Normal/Leve/Moderada/Alta/Muito Alta) → o que significa → o que ele sente. 2 a 3 dados reais de metrics, nunca inventados.",
+      },
     ],
-    sintese_clinico_funcional: "Síntese conectando os achados (sobrecarga, pontos de atenção e pontos preservados).",
-    conclusao_funcional: "Conclusão em linguagem simples: padrão principal, o que pode causar e o ponto positivo/evolução. Termina indicando a fase da Jornada Neuro ID.",
-    fase_jornada: "Nome da fase da Jornada Neuro ID em que o paciente se encontra.",
+    leitura_bioemocional: {
+      temas: [
+        "3 a 4 temas macro com as EMOÇÕES REAIS da avaliação (ex.: 'peso emocional ligado à família', 'autocobrança'), nunca inventadas.",
+      ],
+      sintese: "1 a 2 frases costurando os temas com cuidado, sem citar exame/órgão/número/diagnóstico.",
+    },
+    ancora_positiva: "1 a 2 frases sobre um ponto REAL preservado/forte do paciente. Obrigatório em todo relatório.",
+    conexao_aha:
+      "O momento 'agora faz sentido': conecta os achados entre si e com a queixa, mostrando como corpo, sistema nervoso e emoções conversam.",
+    porque_agir_agora:
+      "Por que começar agora joga a favor, em tom de oportunidade e possibilidade, nunca de medo.",
+    proximo_passo:
+      "Convite concreto e simples, em linguagem de parceria; 'sessões terapêuticas de acompanhamento', sem número/protocolo/exame.",
+    fase_jornada: "Nome da fase da Jornada Neuro ID em que o paciente se encontra (uso interno/rótulo).",
     observacao: "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.",
   },
 
-  // ── DOCUMENTO 2 — PLANO INTEGRATIVO NEURO ID ("o que fazer agora", rascunho) ──
+  // ── DOCUMENTO 2 — PLANO INTEGRATIVO (Rota A, 4 blocos persuasivos: o que fazer juntos) ──
   plano_regulacao: {
     identificacao: {
       paciente: "Nome do paciente",
@@ -111,14 +131,16 @@ export const aiInsightJsonShape = {
       exame_cabelo: "Situação do exame de cabelo, se aplicável",
       base_orientacao: "Base da orientação (exames funcionais e relatos considerados).",
     },
-    fase_jornada_nome: "Nome da fase (ex.: Regulação Inicial e Redução de Sobrecarga).",
-    fase_jornada_justificativa: "Por que o paciente está nesta fase e qual o foco do momento.",
-    direcao_terapeutica: "Direção terapêutica: eixo principal de atenção e prioridades, conduta simples e progressiva.",
-    plano_inicial: [
-      { titulo: "Tema do passo (ex.: Sono e higiene do sono)", descricao: "Orientação prática e bem tolerada para este tema." },
-    ],
-    acompanhamento_evolucao: "Acompanhamento da evolução relatada nas sessões e padrões a observar.",
-    proximo_passo: "Próximo passo concreto do acompanhamento.",
+    onde_queremos_chegar: "Aonde vamos juntos, em linguagem de destino e possibilidade (descanso, calma, energia, presença). Sem prometer cura.",
+    tres_pilares: {
+      nervoso: "Frente do sistema nervoso: acalmar (respiração, regulação, pausas). Uma frase, prática simples.",
+      emocional: "Frente emocional: cuidar do que pesa, no seu ritmo, em linguagem de autocuidado (nunca psicoterapia formal nem diagnóstico).",
+      estilo_de_vida: "Frente de estilo de vida: sono, movimento e alimentação como apoio do dia a dia.",
+    },
+    como_caminhar_juntos: "Como o acompanhamento acontece na prática (formato à distância/presencial; encontros como sequência progressiva). 'Sessões terapêuticas de acompanhamento', sem número/protocolo/exame.",
+    proximo_passo: "O primeiro passo concreto, em convite ('vamos começar por...').",
+    formato_atendimento: "remoto",
+    suplementacao_stage: "ponteiro_doc3",
     observacao: "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.",
   },
 

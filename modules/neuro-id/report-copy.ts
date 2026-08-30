@@ -58,7 +58,7 @@ function interpolate(tpl: string, vars: ReportVars): string {
     .replaceAll("{sintoma}", (vars.sintoma ?? "").trim());
 }
 
-// ── Beat 1 — "Eu te ouvi" ──
+// ── Beat 1 — "Nós te ouvimos" ──
 function beat1(vars: ReportVars): string {
   const q1 = (vars.q1 ?? "").trim();
   const q2 = (vars.q2 ?? "").trim();
@@ -141,7 +141,7 @@ export function buildPatientReportCopy(input: {
   );
 
   const beats: ReportBeat[] = [
-    { title: "Eu te ouvi", body: beat1(vars) },
+    { title: "Nós te ouvimos", body: beat1(vars) },
     { title: "Seu retrato hoje", body: interpolate(BEAT2[band], vars) },
     { title: "O que isso significa no seu dia a dia", body: interpolate(beat3Tpl, vars) },
     { title: "Por onde começar", body: interpolate(BEAT4_INTRO + BEAT4[pillar], vars) },

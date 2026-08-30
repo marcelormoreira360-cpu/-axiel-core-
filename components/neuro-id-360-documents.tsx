@@ -1,7 +1,8 @@
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
-import type { AiInsightOutput, NeuroIdentificacao, NeuroSecaoItem } from "@/lib/types";
+import type { AiInsightOutput, NeuroIdentificacao, NeuroLeituraBioemocional, NeuroSecaoItem } from "@/lib/types";
 import type { PatientIdentificacao } from "@/lib/patient-demographics";
+import { hasPersuasiveDoc1, hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
 
 function Section({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
@@ -44,6 +45,80 @@ function LeadItems({ title, items, numbered }: { title: string; items?: NeuroSec
           </p>
         ))}
       </div>
+    </div>
+  );
+}
+
+const LABEL_CLASS = "text-[11px] font-semibold uppercase tracking-wide text-[#6B6A66] mb-1";
+
+/** Documento 1 na Rota A persuasiva: leituras achado→significado (sem travessão). */
+function Readings({ title, items }: { title: string; items?: NeuroSecaoItem[] }) {
+  const arr = (items ?? []).filter((it) => it.titulo || it.descricao);
+  if (arr.length === 0) return null;
+  return (
+    <div className="mb-3">
+      <p className={LABEL_CLASS}>{title}</p>
+      <div className="space-y-2">
+        {arr.map((it, i) => (
+          <div key={i}>
+            {it.titulo ? <p className="text-[13px] font-semibold text-[#0F1A2E]">{it.titulo}</p> : null}
+            {it.descricao ? <p className="text-[13px] leading-5 text-[#4b5563] text-justify">{it.descricao}</p> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Slot bioemocional dedicado: temas (chips) + síntese qualitativa. */
+function EmotionalReading({ title, data }: { title: string; data?: NeuroLeituraBioemocional }) {
+  if (!data || ((data.temas ?? []).length === 0 && !data.sintese?.trim())) return null;
+  return (
+    <div className="mb-3">
+      <p className={LABEL_CLASS}>{title}</p>
+      {(data.temas ?? []).length > 0 ? (
+        <div className="flex flex-wrap gap-1.5 mb-1.5">
+          {data.temas.map((tema, i) => (
+            <span key={i} className="rounded-full bg-[#0F1A2E]/[.05] text-[#0F1A2E] text-[12px] px-2.5 py-0.5">
+              {tema}
+            </span>
+          ))}
+        </div>
+      ) : null}
+      {data.sintese?.trim() ? <p className="text-[13px] leading-5 text-[#0F1A2E] text-justify">{data.sintese}</p> : null}
+    </div>
+  );
+}
+
+/** Âncora positiva obrigatória: destaque verde, o ponto forte a favor do paciente. */
+function AnchorHighlight({ title, text }: { title: string; text?: string | null }) {
+  if (!text || !text.trim()) return null;
+  return (
+    <div className="mb-3 rounded-xl bg-[#0F6E56]/[.06] border border-[#0F6E56]/20 px-3 py-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-[#0F6E56] mb-1">{title}</p>
+      <p className="text-[13px] leading-5 text-[#0F1A2E]">{text}</p>
+    </div>
+  );
+}
+
+/** Um dos três pilares do Doc 2: rótulo humano + frase. */
+function PillarItem({ label, text }: { label: string; text?: string | null }) {
+  if (!text || !text.trim()) return null;
+  return (
+    <div>
+      <p className="text-[13px] font-semibold text-[#0F1A2E]">{label}</p>
+      <p className="text-[13px] leading-5 text-[#4b5563] text-justify">{text}</p>
+    </div>
+  );
+}
+
+/** Bloco simples de título humano (não-uppercase) + parágrafo (ex.: retrato Bio³). */
+function TitledParagraph({ item }: { item?: NeuroSecaoItem }) {
+  if (!item || (!item.titulo && !item.descricao)) return null;
+  return (
+    <div className="mb-3">
+      {item.titulo ? <p className="text-[13px] font-semibold text-[#0F1A2E] mb-1">{item.titulo}</p> : null}
+      {item.descricao ? <p className="text-[13px] leading-5 text-[#0F1A2E] text-justify">{item.descricao}</p> : null}
     </div>
   );
 }
@@ -110,20 +185,40 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
           </summary>
           <div className="px-5 pb-5">
           <Identificacao id={mapa.identificacao} live={liveId} fallbackName={patientName} />
-          <Paragraph title={t("examsReviewed")} text={mapa.exames_avaliados ?? mapa.leitura_integrativa} />
-          {mapa.resultados_encontrados && mapa.resultados_encontrados.length > 0 ? (
-            <LeadItems title={t("resultsFound")} items={mapa.resultados_encontrados} />
+          {hasPersuasiveDoc1(mapa) ? (
+            <>
+              {mapa.abertura_calorosa ? (
+                <p className="mb-3 text-[14px] leading-6 text-[#0F1A2E] text-justify">{mapa.abertura_calorosa}</p>
+              ) : null}
+              <TitledParagraph item={mapa.leitura_bio3} />
+              <Readings title={t("neurometricReading")} items={mapa.leitura_neurometrica} />
+              <EmotionalReading title={t("emotionalReading")} data={mapa.leitura_bioemocional} />
+              <AnchorHighlight title={t("positiveAnchor")} text={mapa.ancora_positiva} />
+              <Paragraph title={t("ahaConnection")} text={mapa.conexao_aha} />
+              <Paragraph title={t("whyActNow")} text={mapa.porque_agir_agora} />
+              <Paragraph title={t("nextStep")} text={mapa.proximo_passo} />
+              {mapa.observacao ? (
+                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{mapa.observacao}</p>
+              ) : null}
+            </>
           ) : (
             <>
-              <Section title={t("mainFindings")} items={mapa.principais_achados} />
-              <Section title={t("observedPatterns")} items={mapa.padroes_observados} />
-              <Section title={t("functionalFindings")} items={mapa.achados_funcionais} />
-              <Section title={t("snaDysregulation")} items={mapa.desregulacao_sna} />
+              <Paragraph title={t("examsReviewed")} text={mapa.exames_avaliados ?? mapa.leitura_integrativa} />
+              {mapa.resultados_encontrados && mapa.resultados_encontrados.length > 0 ? (
+                <LeadItems title={t("resultsFound")} items={mapa.resultados_encontrados} />
+              ) : (
+                <>
+                  <Section title={t("mainFindings")} items={mapa.principais_achados} />
+                  <Section title={t("observedPatterns")} items={mapa.padroes_observados} />
+                  <Section title={t("functionalFindings")} items={mapa.achados_funcionais} />
+                  <Section title={t("snaDysregulation")} items={mapa.desregulacao_sna} />
+                </>
+              )}
+              <Paragraph title={t("clinicalSynthesis")} text={mapa.sintese_clinico_funcional} />
+              <Paragraph title={t("functionalConclusion")} text={mapa.conclusao_funcional} />
+              {mapa.fase_jornada && <Paragraph title={t("journeyPhase")} text={mapa.fase_jornada} />}
             </>
           )}
-          <Paragraph title={t("clinicalSynthesis")} text={mapa.sintese_clinico_funcional} />
-          <Paragraph title={t("functionalConclusion")} text={mapa.conclusao_funcional} />
-          {mapa.fase_jornada && <Paragraph title={t("journeyPhase")} text={mapa.fase_jornada} />}
           </div>
         </details>
       )}
@@ -139,24 +234,47 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
           </summary>
           <div className="px-5 pb-5">
           <Identificacao id={plano.identificacao} live={liveId} fallbackName={patientName} />
-          {(plano.fase_jornada_nome || plano.fase_jornada_justificativa) && (
-            <Paragraph
-              title={t("journeyPhase")}
-              text={[plano.fase_jornada_nome, plano.fase_jornada_justificativa].filter(Boolean).join(" — ")}
-            />
-          )}
-          <Paragraph title={t("therapeuticDirection")} text={plano.direcao_terapeutica} />
-          {plano.plano_inicial && plano.plano_inicial.length > 0 ? (
-            <LeadItems title={t("initialPlan")} items={plano.plano_inicial} numbered />
+          {hasPersuasiveDoc2(plano) ? (
+            <>
+              <Paragraph title={t("goalTitle")} text={plano.onde_queremos_chegar} />
+              {plano.tres_pilares ? (
+                <div className="mb-3">
+                  <p className={LABEL_CLASS}>{t("pillarsTitle")}</p>
+                  <div className="space-y-2">
+                    <PillarItem label={t("pillarNervous")} text={plano.tres_pilares.nervoso} />
+                    <PillarItem label={t("pillarEmotional")} text={plano.tres_pilares.emocional} />
+                    <PillarItem label={t("pillarLifestyle")} text={plano.tres_pilares.estilo_de_vida} />
+                  </div>
+                </div>
+              ) : null}
+              <Paragraph title={t("howWeWalk")} text={plano.como_caminhar_juntos} />
+              <Paragraph title={t("nextStep")} text={plano.proximo_passo} />
+              {plano.observacao ? (
+                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{plano.observacao}</p>
+              ) : null}
+            </>
           ) : (
             <>
-              <Section title={t("nextSteps")} items={plano.proximos_passos} />
-              <Section title={t("initialGuidance")} items={plano.orientacoes_iniciais} />
-              <Section title={t("routineRecommendations")} items={plano.recomendacoes_rotina} />
+              {(plano.fase_jornada_nome || plano.fase_jornada_justificativa) && (
+                <Paragraph
+                  title={t("journeyPhase")}
+                  text={[plano.fase_jornada_nome, plano.fase_jornada_justificativa].filter(Boolean).join(" · ")}
+                />
+              )}
+              <Paragraph title={t("therapeuticDirection")} text={plano.direcao_terapeutica} />
+              {plano.plano_inicial && plano.plano_inicial.length > 0 ? (
+                <LeadItems title={t("initialPlan")} items={plano.plano_inicial} numbered />
+              ) : (
+                <>
+                  <Section title={t("nextSteps")} items={plano.proximos_passos} />
+                  <Section title={t("initialGuidance")} items={plano.orientacoes_iniciais} />
+                  <Section title={t("routineRecommendations")} items={plano.recomendacoes_rotina} />
+                </>
+              )}
+              <Paragraph title={t("evolutionFollowUp")} text={plano.acompanhamento_evolucao} />
+              <Paragraph title={t("nextStep")} text={plano.proximo_passo} />
             </>
           )}
-          <Paragraph title={t("evolutionFollowUp")} text={plano.acompanhamento_evolucao} />
-          <Paragraph title={t("nextStep")} text={plano.proximo_passo} />
           </div>
         </details>
       )}
