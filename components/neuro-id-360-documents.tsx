@@ -172,6 +172,11 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
 
   if (!mapa && !plano && !sup) return null;
 
+  // FUSÃO Doc 1 + Doc 2: quando os dois estão no formato persuasivo, o plano é o
+  // FECHO ("próximos passos") do MESMO relatório, não um documento separado. O
+  // card do plano só aparece à parte no formato legado.
+  const fused = !!mapa && hasPersuasiveDoc1(mapa) && !!plano && hasPersuasiveDoc2(plano);
+
   return (
     <div className="space-y-3">
       {mapa && (
@@ -196,9 +201,29 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
               <AnchorHighlight title={t("positiveAnchor")} text={mapa.ancora_positiva} />
               <Paragraph title={t("ahaConnection")} text={mapa.conexao_aha} />
               <Paragraph title={t("whyActNow")} text={mapa.porque_agir_agora} />
-              <Paragraph title={t("nextStep")} text={mapa.proximo_passo} />
-              {mapa.observacao ? (
-                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{mapa.observacao}</p>
+              {/* Fecho do relatório = plano (próximos passos), no mesmo documento.
+                  Quando fundido, o próximo passo vem do plano; senão, do próprio mapa. */}
+              {fused && plano ? (
+                <>
+                  <Paragraph title={t("goalTitle")} text={plano.onde_queremos_chegar} />
+                  {plano.tres_pilares ? (
+                    <div className="mb-3">
+                      <p className={LABEL_CLASS}>{t("pillarsTitle")}</p>
+                      <div className="space-y-2">
+                        <PillarItem label={t("pillarNervous")} text={plano.tres_pilares.nervoso} />
+                        <PillarItem label={t("pillarEmotional")} text={plano.tres_pilares.emocional} />
+                        <PillarItem label={t("pillarLifestyle")} text={plano.tres_pilares.estilo_de_vida} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <Paragraph title={t("howWeWalk")} text={plano.como_caminhar_juntos} />
+                  <Paragraph title={t("nextStep")} text={plano.proximo_passo ?? mapa.proximo_passo} />
+                </>
+              ) : (
+                <Paragraph title={t("nextStep")} text={mapa.proximo_passo} />
+              )}
+              {(fused ? plano?.observacao : null) ?? mapa.observacao ? (
+                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{(fused ? plano?.observacao : null) ?? mapa.observacao}</p>
               ) : null}
             </>
           ) : (
@@ -223,7 +248,7 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
         </details>
       )}
 
-      {plano && (
+      {plano && !fused && (
         <details className="group rounded-2xl border border-black/[.08] bg-white">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
             <span>

@@ -499,18 +499,23 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   // 6/7/8. Conexão · Por que agora · Próximo passo
   if (mapa.conexao_aha?.trim()) { sectionTitle(doc, DOC1_LABELS.aha); paragraph(doc, mapa.conexao_aha); }
   if (mapa.porque_agir_agora?.trim()) { sectionTitle(doc, DOC1_LABELS.whyNow); paragraph(doc, mapa.porque_agir_agora); }
-  if (mapa.proximo_passo?.trim()) { sectionTitle(doc, DOC1_LABELS.nextStep); paragraph(doc, mapa.proximo_passo); }
-
-  // Disclaimer
-  const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
-  doc.moveDown(0.5);
-  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
-
-  // ── DOCUMENTO 2 (Plano Integrativo) — anexado no mesmo PDF quando aprovado no formato persuasivo ──
+  // FUSÃO: quando existe plano persuasivo, ele é o FECHO deste MESMO relatório.
+  // Nesse caso o próximo passo e o disclaimer vêm do plano (no fim), para não
+  // duplicar. Sem plano persuasivo, o relatório fecha aqui, com o mapa.
   const plano = opts.plano ?? null;
-  if (hasPersuasiveDoc2(plano) && plano) {
-    doc.addPage();
-    docTitle(doc, "Plano Integrativo", "Os seus próximos passos, Neuro ID");
+  const planoPersuasivo = hasPersuasiveDoc2(plano);
+  if (mapa.proximo_passo?.trim() && !planoPersuasivo) { sectionTitle(doc, DOC1_LABELS.nextStep); paragraph(doc, mapa.proximo_passo); }
+
+  if (!planoPersuasivo) {
+    const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
+    doc.moveDown(0.5);
+    doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+
+  // ── PRÓXIMOS PASSOS (o plano) — FECHO do mesmo relatório, em continuação (sem nova página nem título de documento) ──
+  if (planoPersuasivo && plano) {
+    ensureSpace(doc, 140);
+    sectionTitle(doc, "Os próximos passos, juntos");
     if (plano.onde_queremos_chegar?.trim()) { sectionTitle(doc, DOC2_LABELS.goal); paragraph(doc, plano.onde_queremos_chegar); }
     if (plano.tres_pilares) {
       sectionTitle(doc, DOC2_LABELS.pillars);
