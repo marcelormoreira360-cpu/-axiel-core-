@@ -189,26 +189,29 @@ function drawPyramidPanel(
   topY: number,
   w: number,
   bands: { dysfunction: number | null; isPriority: boolean; label: string }[],
+  indiceGeral?: number | null,
 ) {
-  const titleH = 16, pyrH = 86, capH = 14, padBottom = 10;
+  const titleH = 15, pyrH = 80, capH = 16, padBottom = 8;
   const panelH = titleH + pyrH + capH + padBottom + 6;
   doc.save();
   doc.roundedRect(x, topY, w, panelH, 8).fillAndStroke("#FBFAF7", "#E6E4DC");
   doc.restore();
 
-  const cx = x + w / 2;
   doc.font("Helvetica-Bold").fontSize(7.5).fillColor(MUTED)
     .text("MAPA BIO³", x, topY + 6, { width: w, align: "center", characterSpacing: 1 });
 
-  const y0 = topY + titleH + 4;
-  const half = Math.min(54, w / 2 - 12);
-  const H = pyrH;
+  // Pirâmide na região ESQUERDA do painel; legenda (nomes) à direita.
+  const padX = 12;
+  const half = 32;
+  const pyrCx = x + padX + half;
+  const y0 = topY + titleH + 6;
+  const H = pyrH - 12;
   const yB = y0 + H / 3, yC = y0 + (2 * H) / 3, yBase = y0 + H;
   const xAt = (y: number) => (half * (y - y0)) / H;
   const polys: [number, number][][] = [
-    [[cx, y0], [cx + xAt(yB), yB], [cx - xAt(yB), yB]],
-    [[cx - xAt(yB), yB], [cx + xAt(yB), yB], [cx + xAt(yC), yC], [cx - xAt(yC), yC]],
-    [[cx - xAt(yC), yC], [cx + xAt(yC), yC], [cx + xAt(yBase), yBase], [cx - xAt(yBase), yBase]],
+    [[pyrCx, y0], [pyrCx + xAt(yB), yB], [pyrCx - xAt(yB), yB]],
+    [[pyrCx - xAt(yB), yB], [pyrCx + xAt(yB), yB], [pyrCx + xAt(yC), yC], [pyrCx - xAt(yC), yC]],
+    [[pyrCx - xAt(yC), yC], [pyrCx + xAt(yC), yC], [pyrCx + xAt(yBase), yBase], [pyrCx - xAt(yBase), yBase]],
   ];
   const centersY = [y0 + H / 6, y0 + H / 2, y0 + (5 * H) / 6];
   doc.lineWidth(1.5);
@@ -218,16 +221,30 @@ function drawPyramidPanel(
     doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
   });
   doc.lineWidth(1);
-  // Rótulos autoexplicativos (nome do pilar + %), centrados sobre cada faixa.
+  // Número (%) sobre cada faixa.
   bands.forEach((b, i) => {
     const disf = round(b.dysfunction);
-    const star = b.isPriority ? "★ " : "";
-    const line = `${star}${b.label}  ${disf === null ? "—" : disf + "%"}`;
-    doc.font("Times-Bold").fontSize(8.5).fillColor("#0F1A2E")
-      .text(line, x + 2, centersY[i] - 5, { width: w - 4, align: "center" });
+    doc.font("Times-Bold").fontSize(8).fillColor("#1f2937")
+      .text(disf === null ? "—" : `${disf}%`, pyrCx - 18, centersY[i] - 4, { width: 36, align: "center" });
   });
-  doc.font("Helvetica-Oblique").fontSize(6.8).fillColor(MUTED)
-    .text("maior % = mais sobrecarga", x, yBase + 6, { width: w, align: "center" });
+  // Legenda à direita: bolinha da cor da faixa + nome do pilar, alinhada a cada faixa.
+  const legendX = x + padX + 2 * half + 14;
+  const legendW = x + w - padX - legendX;
+  bands.forEach((b, i) => {
+    const bd = bandForDysfunction(b.dysfunction);
+    const dot = bd ? bd.colors.fill : "#E9E7E0";
+    const cy = centersY[i];
+    doc.save(); doc.circle(legendX + 3, cy, 3).fill(dot); doc.restore();
+    // Eixo prioritário destacado em negrito verde (sem o glifo ★, que vira "&" nas fontes do PDF).
+    doc.font(b.isPriority ? "Times-Bold" : "Times-Roman").fontSize(8.5).fillColor(b.isPriority ? "#0F6E56" : "#1f2937")
+      .text(b.label, legendX + 11, cy - 5, { width: Math.max(40, legendW - 11), align: "left" });
+  });
+  // Rodapé: índice geral + direção.
+  const capParts: string[] = [];
+  if (indiceGeral != null) capParts.push(`Índice geral ${Math.round(indiceGeral)}%`);
+  capParts.push("maior % = mais sobrecarga");
+  doc.font("Helvetica-Oblique").fontSize(6.6).fillColor(MUTED)
+    .text(capParts.join("   ·   "), x, yBase + 8, { width: w, align: "center" });
 
   return topY + panelH;
 }
@@ -528,7 +545,7 @@ export async function buildNeuroIdDoc1Pdf(opts: {
       { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
       { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico", label: PILLAR_LABEL.bioquimico },
       { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional", label: PILLAR_LABEL.emocional },
-    ]);
+    ], bio3.indice_geral);
     doc.y = Math.max(textBottom, panelBottom) + 8;
   } else {
     paragraph(doc, mapa.leitura_bio3?.descricao);
