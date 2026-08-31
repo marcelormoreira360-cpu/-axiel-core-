@@ -6,6 +6,14 @@ import {
   createPublicCaptureInvitation,
 } from "@/services/assessment-invitation-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { isUnifiedTemplate } from "@/services/unified-form-link-service";
+
+// O formulário unificado Neuro ID é renderizado numa rota RICA dedicada
+// (freq×impacto, humor em faixas, ideação só encaminha, pirâmide oculta ao
+// paciente). Os demais formulários usam o renderizador genérico em /f/[token].
+async function linkPathForTemplate(templateId: string): Promise<"neuro-id" | "f"> {
+  return (await isUnifiedTemplate(templateId)) ? "neuro-id" : "f";
+}
 
 async function resolveBaseUrl(): Promise<string> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -30,7 +38,8 @@ export async function createInvitationAction(
   });
 
   const baseUrl = await resolveBaseUrl();
-  return { url: `${baseUrl}/f/${token}` };
+  const path = await linkPathForTemplate(templateId);
+  return { url: `${baseUrl}/${path}/${token}` };
 }
 
 /**
@@ -49,5 +58,6 @@ export async function createPublicCaptureLinkAction(
   });
 
   const baseUrl = await resolveBaseUrl();
-  return { url: `${baseUrl}/f/${token}` };
+  const path = await linkPathForTemplate(templateId);
+  return { url: `${baseUrl}/${path}/${token}` };
 }

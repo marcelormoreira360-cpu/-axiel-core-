@@ -1,7 +1,31 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 28/08/2026 (41)
+> Atualizado em: 29/08/2026 (42)
+
+## 🟡 Link de envio do questionário unificado (29/08/2026) — branch `feat/neuroid-questionario-unificado`, NÃO mergeado, sem deploy
+
+> Fecha o "falta para o envio a PACIENTE": o formulário unificado é enviado PELA SEÇÃO FORMULÁRIOS, como os outros (Q-SNA/QRM). **Decisão do Marcelo (29/08): o envio NÃO fica no prontuário/Bio³ Map; entra no fluxo padrão de Formulários.** Reusa `assessment_invitations` + o componente rico. **NÃO usa a migration 148 nem semeia perguntas no banco** (form renderizado do código, pontuação code→Bio³ em código) — só um template placeholder por clínica. Typecheck 0, **587 testes verdes**, verify:i18n 53/0/0. Rota pública testada no dev.
+
+**Como funciona:** o template unificado ("Neuro ID — Perfil Clínico Integrado de 30 Dias") é semeado ATIVO e idempotente (`ensureUnifiedTemplate`, chamado no load de `/forms` e `/patients/[id]/forms/new`), então aparece na lista de Formulários. O ENVIO padrão (`createInvitationAction` / `createPublicCaptureLinkAction` em `app/forms/[id]/invite/actions.ts`) detecta o template unificado (`isUnifiedTemplate`) e DESVIA o link para a rota rica `/neuro-id/[token]` em vez do genérico `/f/[token]`. O preenchimento in-app (`/patients/[id]/forms/new?template=<unificado>`) redireciona para a tela rica interna `/patients/[id]/neuro-id/unified`.
+
+**Novos arquivos:**
+- `services/unified-form-link-service.ts`: `ensureUnifiedTemplate` (template ATIVO, placement vazio, idempotente por nome — flipa is_active se já existir), `isUnifiedTemplate`, `getUnifiedLinkByToken`, `submitUnifiedFormViaToken` (roteia: convite de paciente → `saveUnifiedFormResult` + marca respondido; link público → Lead com Índice Bio na nota + `public_form_submissions`).
+- `app/neuro-id/[token]/` (ROTA PÚBLICA): `page.tsx`, `unified-public-client.tsx` (form rico em `patientFacing` → contato+consentimento no fluxo público), `actions.ts` (`submitUnifiedFormPublicAction`, IP/UA de `headers()`).
+
+**Mudanças:**
+- `components/neuroid-unified-form.tsx`: prop `patientFacing` (oculta a pirâmide Bio³ ao vivo + painel de segurança — grau de disfunção é INTERNO, compliance) + `completeLabel`. Interno inalterado.
+- `app/forms/[id]/invite/actions.ts`: as 2 actions de envio desviam o unificado para `/neuro-id/[token]`.
+- `app/forms/page.tsx` + `app/patients/[id]/forms/new/page.tsx`: `ensureUnifiedTemplate` no load; picker redireciona o unificado para a tela rica.
+- `middleware.ts`: `/neuro-id/` na allowlist pública (token-based, sem login). Sem colisão com `/patients/.../neuro-id`.
+- REMOVIDO: `components/neuroid-link-buttons.tsx` e as actions `createUnifiedPatientLinkAction`/`createUnifiedPublicLinkAction` (os botões que ficavam no Bio³ Map) — o envio agora é só pela seção Formulários.
+
+**Falta / gaps conhecidos (não bloqueiam o TESTE, bloqueiam paciente REAL):**
+- Sinal de CRISE em submissão REMOTA de link de paciente: o Bio³ é gravado e o flag é calculado, mas ainda NÃO é exibido ao terapeuta (no fluxo interno a pirâmide ao vivo mostra; no link não). Surfacar antes de paciente real (parte do gate do Bloco F).
+- Tradução EN do formulário (hoje só PT, como o resto do unificado).
+- Gate de compliance do Bloco F (parecer FL + revisor MH + BAA + consentimentos) continua valendo: uso INTERNO/TESTE com dados próprios/fictícios até lá.
+- Colisão de numeração da migration 148 (`assessment_questions_code` deste branch × `appointment_dedup_guard` do branch de dedup) — renumerar antes de qualquer merge; este link NÃO depende da 148.
+- Antes de merge: `/code-review --fix`.
 
 ## 🟡 Questionário Neuro ID UNIFICADO (28/08/2026) — branch `feat/neuroid-questionario-unificado`, NÃO mergeado, sem deploy
 

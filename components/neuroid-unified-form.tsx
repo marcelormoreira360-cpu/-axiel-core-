@@ -41,8 +41,14 @@ function bandColor(v: number): string {
 
 export default function NeuroIdUnifiedForm({
   onComplete,
+  patientFacing = false,
+  completeLabel = "Concluir",
 }: {
   onComplete?: (answers: AnswerMap) => void;
+  /** Fluxo por link (paciente): oculta o Bio³ ao vivo e o painel de segurança —
+   *  o grau de disfunção é interno, revisado pelo terapeuta. Interno = false. */
+  patientFacing?: boolean;
+  completeLabel?: string;
 }) {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const set = (code: string, value: AnswerValue) => setAnswers((a) => ({ ...a, [code]: value }));
@@ -56,7 +62,7 @@ export default function NeuroIdUnifiedForm({
   }, [answers]);
 
   return (
-    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 p-4 lg:grid-cols-[1fr_320px]">
+    <div className={`mx-auto grid max-w-6xl grid-cols-1 gap-6 p-4 ${patientFacing ? "" : "lg:grid-cols-[1fr_320px]"}`}>
       <main className="flex flex-col gap-4">
         <div className="rounded-xl border-l-4 border-amber-500 bg-white p-3 text-xs text-neutral-600 shadow-sm dark:bg-neutral-900 dark:text-neutral-400">
           {UNIFIED_FORM.disclaimer}
@@ -69,10 +75,11 @@ export default function NeuroIdUnifiedForm({
           onClick={() => onComplete?.(answers)}
           className="mt-2 self-start rounded-lg bg-teal-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-teal-800"
         >
-          Concluir
+          {completeLabel}
         </button>
       </main>
 
+      {!patientFacing && (
       <aside className="lg:sticky lg:top-4 lg:self-start">
         <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
           <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wider text-neutral-500">Mapa Bio³ ao vivo</h3>
@@ -108,6 +115,7 @@ export default function NeuroIdUnifiedForm({
           <SafetyRow ok={!outcome.safety.crisis} okText="Sem sinal de encaminhamento" warnText="Encaminhamento de apoio ativado (988/188)" crit />
         </div>
       </aside>
+      )}
     </div>
   );
 }

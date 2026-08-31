@@ -5,6 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatients } from "@/services/patient-service";
+import { ensureUnifiedTemplate } from "@/services/unified-form-link-service";
 import { FileText, Plus, Pencil, ClipboardList, ArrowLeft } from "lucide-react";
 import {
   importQSNAAction, importQSNAENAction, importQRMAction, deleteTemplateAction,
@@ -22,6 +23,8 @@ export default async function FormsPage() {
   const tSettings = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
+  // Garante o formulário unificado Neuro ID na seção Formulários (idempotente).
+  if (clinicId) await ensureUnifiedTemplate(clinicId);
   const [templates, patients] = await Promise.all([
     getAssessmentTemplates(clinicId),
     getPatients(clinicId),
