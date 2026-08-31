@@ -166,16 +166,23 @@ export async function findOrCreatePatientForBooking(input: {
     return list.length === 1 ? list[0] : null;
   };
 
+  // Ordem determinística + teto maior: famílias compartilham e-mail/telefone, então
+  // vários cadastros podem cair no mesmo contato. Sem .order() os N retornados eram
+  // arbitrários e o cadastro certo podia ficar de fora do corte → duplicata. Ordena
+  // por created_at asc (estável); teto 50 (ainda pode ser excedido em famílias muito
+  // grandes, mas é raro).
   let existing: Patient | null = null;
   if (email) {
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).eq("email", email).is("deleted_at", null).limit(20);
+      .eq("clinic_id", input.clinic_id).eq("email", email).is("deleted_at", null)
+      .order("created_at", { ascending: true }).limit(50);
     existing = pickByName(data as Patient[]);
   }
   if (!existing && phoneDigits) {
     const phones = [...new Set([phoneDigits, phoneRaw].filter(Boolean) as string[])];
     const { data } = await supabase.from("patients").select("*")
-      .eq("clinic_id", input.clinic_id).in("phone", phones).is("deleted_at", null).limit(20);
+      .eq("clinic_id", input.clinic_id).in("phone", phones).is("deleted_at", null)
+      .order("created_at", { ascending: true }).limit(50);
     existing = pickByName(data as Patient[]);
   }
   if (!existing && name) {

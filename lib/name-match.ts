@@ -10,7 +10,16 @@
 // bate. Na dúvida, NÃO funde — o pior caso aceitável é criar uma duplicata (chato,
 // reversível), nunca fundir/arquivar pessoas diferentes (perda de dados).
 
-/** minúsculas, sem acentos, só alfanumérico + espaço, espaços colapsados. */
+/** minúsculas, sem acentos, só alfanumérico + espaço, espaços colapsados.
+ *
+ * ATENÇÃO (comportamento consciente, finding #6): o filtro `[^a-z0-9\s]` mantém
+ * apenas caracteres latinos ASCII. Nomes escritos inteiramente em outros scripts
+ * (cirílico, CJK, árabe, etc.) são reduzidos a string vazia. Como `namesMatch`
+ * retorna false quando um dos lados é vazio, o dedup fica efetivamente DESLIGADO
+ * para esses nomes — o que gera cadastro separado (duplicata). Isso é ACEITÁVEL
+ * pela regra de ouro deste módulo (duplicata reversível > fusão errada de pessoas
+ * diferentes). Não "consertar" transliterando sem uma estratégia que não aumente
+ * o risco de fusão indevida. */
 export function normalizeName(raw: string | null | undefined): string {
   if (!raw) return "";
   return raw
@@ -28,15 +37,25 @@ function tokens(raw: string | null | undefined): string[] {
 }
 
 /**
- * `true` só quando há confiança razoável de que os dois nomes são a MESMA pessoa.
- * Conservador por design:
+ * `true` só quando temos ALTA confiança de que os dois nomes são a MESMA pessoa.
+ * Conservador por design (finding #1 do code-review): o casamento "frouxo" antigo
+ * (mesmo primeiro nome + um sobrenome em comum) fundia parentes que compartilham
+ * contato — ex.: "Ana Paula Souza" vs "Ana Beatriz Souza" no mesmo telefone. Isso
+ * viola a regra de ouro (nunca fundir pessoas diferentes).
+ *
+ * Nova semântica: só casa quando o CONJUNTO de tokens normalizados é IDÊNTICO.
  *  - vazio de um dos lados → false (não dá para confirmar).
- *  - normalizados idênticos → true.
- *  - se qualquer lado tem menos de 2 tokens (só primeiro nome) → exige igualdade
- *    exata (senão "Maria" casaria com qualquer Maria).
- *  - caso geral: exige MESMO primeiro nome E pelo menos um sobrenome em comum.
- *    Assim "Rafael Castelo" ≈ "Rafael Castelo Branco de Andrade" (mesma pessoa),
- *    mas "Pedro Valpereira" ≠ "Fabio Valpereira" (parentes, mesmo telefone).
+ *  - todos os tokens iguais (ignorando acento/caixa/espaço; ordem irrelevante,
+ *    comparada por sort dos tokens) → true.
+ *  - qualquer token diferente (a mais, a menos ou trocado) → false.
+ *
+ * Consequências intencionais:
+ *  - "João Silva" == "Joao Silva" → true (só acento/caixa).
+ *  - "Marina Fumagalli Graveli" == "Marina Graveli Fumagalli" → true (só ordem).
+ *  - "João P Silva" != "João Silva" → false (token a mais → duplicata, aceitável).
+ *  - "Rafael Castelo" != "Rafael Castelo Branco de Andrade" → false (nome curto
+ *    vs completo: pode ser a mesma pessoa, mas na dúvida NÃO funde; duplicata é
+ *    o pior caso aceitável).
  */
 export function namesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
   const na = normalizeName(a);
@@ -46,11 +65,9 @@ export function namesMatch(a: string | null | undefined, b: string | null | unde
 
   const ta = tokens(a);
   const tb = tokens(b);
-  if (ta.length < 2 || tb.length < 2) return false;
+  if (ta.length !== tb.length) return false;
 
-  const firstMatch = ta[0] === tb[0];
-  if (!firstMatch) return false;
-  const restA = new Set(ta.slice(1));
-  const sharedSurname = tb.slice(1).some((t) => restA.has(t));
-  return sharedSurname;
+  const sa = [...ta].sort();
+  const sb = [...tb].sort();
+  return sa.every((t, i) => t === sb[i]);
 }

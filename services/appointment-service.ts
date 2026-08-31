@@ -364,6 +364,10 @@ export async function confirmAppointmentByToken(
         .select("id, email, full_name")
         .eq("clinic_id", info.clinic_id)
         .neq("id", info.patient.id)
+        // Só considera cadastros ATIVOS: nunca "ressuscitar" (deleted_at=null) um
+        // paciente que foi soft-deletado de propósito por causa de um e-mail
+        // reaproveitado por outro parente.
+        .is("deleted_at", null)
         .ilike("email", email);
       const existing = (candidates ?? []).find(
         (c) =>
@@ -377,15 +381,32 @@ export async function confirmAppointmentByToken(
           .eq("id", existing.id)
           .eq("clinic_id", info.clinic_id);
         if (uErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
-        // Reaponta o agendamento para o cadastro existente e arquiva o stub.
-        await supabase.from("appointments").update({ patient_id: existing.id }).eq("id", info.id);
-        await supabase
-          .from("patients")
-          .update({ deleted_at: new Date().toISOString() })
-          .eq("id", info.patient.id)
-          .eq("clinic_id", info.clinic_id);
-        resolvedPatientId = existing.id;
-        mergedIntoExisting = true;
+        // Reaponta o agendamento para o cadastro existente e SÓ ENTÃO arquiva o
+        // stub. O reaponte pode violar o índice único da migration 148 (um único
+        // agendamento por slot/paciente) → erro 23505. Se isso acontecer, NÃO
+        // podemos arquivar o stub: senão o agendamento ficaria apontando para um
+        // paciente soft-deletado. Nesse caso mantemos o estado consistente (o
+        // agendamento segue no stub ATIVO) e só logamos.
+        const { error: reErr } = await supabase
+          .from("appointments")
+          .update({ patient_id: existing.id })
+          .eq("id", info.id);
+        if (reErr) {
+          console.error(
+            `[confirmAppointmentByToken] falha ao reapontar agendamento ${info.id} para paciente ${existing.id} (code=${reErr.code}); mantendo stub ${info.patient.id} ativo e NÃO arquivando.`,
+            reErr,
+          );
+          // Não funde, não arquiva: duplicata/estado atual é preferível a apontar
+          // para um registro arquivado. Segue o fluxo normal atualizando o stub.
+        } else {
+          await supabase
+            .from("patients")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", info.patient.id)
+            .eq("clinic_id", info.clinic_id);
+          resolvedPatientId = existing.id;
+          mergedIntoExisting = true;
+        }
       }
     }
 
@@ -1072,13 +1093,19 @@ export async function createPublicBooking(input: {
   const pickExisting = (rows: Cand[] | null): Cand | null =>
     (rows ?? []).find((r) => namesMatch(r.full_name, full_name)) ?? null;
 
+  // Ordem determinística + teto maior: famílias compartilham telefone/e-mail,
+  // então pode haver vários cadastros no mesmo contato. Sem .order() os N
+  // retornados eram arbitrários e o cadastro certo podia ficar de fora do corte
+  // → duplicata. Ordena por created_at asc (estável) e sobe o teto para 50 (o
+  // limite ainda pode ser excedido em famílias muito grandes, mas é raro).
   const { data: byPhone } = await supabase
     .from("patients")
     .select("id, full_name, email, locale, timezone")
     .eq("clinic_id", clinic.id)
     .eq("phone", normalizedPhone)
     .is("deleted_at", null)
-    .limit(20);
+    .order("created_at", { ascending: true })
+    .limit(50);
   let existingPatient = pickExisting(byPhone as Cand[]);
 
   if (!existingPatient && email) {
@@ -1088,7 +1115,8 @@ export async function createPublicBooking(input: {
       .eq("clinic_id", clinic.id)
       .eq("email", email)
       .is("deleted_at", null)
-      .limit(20);
+      .order("created_at", { ascending: true })
+      .limit(50);
     existingPatient = pickExisting(byEmail as Cand[]);
   }
 

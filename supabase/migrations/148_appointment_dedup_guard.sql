@@ -16,6 +16,13 @@
 --   2º  status mais avançado (completed > checked_in > confirmed > scheduled > pending);
 --   3º  o mais antigo (created_at) como desempate estável.
 -- Soft-delete (deleted_at) é reversível e auditável; não apaga nada de fato.
+--
+-- (finding #4) A checagem de session_records vem ANTES de created_at de propósito:
+-- garante que uma re-execução desta limpeza nunca soft-delete a duplicata que
+-- carrega a nota clínica (esconderia SOAP). session_records.appointment_id é
+-- NOT NULL e unique (migration 001), então o EXISTS por appointment é confiável
+-- e há no máximo 1 session_record por agendamento — isto torna re-execuções
+-- seguras. Migration já aplicada em prod; aqui só reforçamos a documentação.
 WITH ranked AS (
   SELECT
     a.id,
