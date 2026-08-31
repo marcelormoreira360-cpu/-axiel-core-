@@ -96,7 +96,7 @@
   },
   "trialLock": {
     "title": "O seu período de teste terminou",
-    "body": "Os 30 dias de teste do AXIEL Core terminaram. Escolha um plano para continuar a cuidar dos seus pacientes exatamente onde parou: os seus dados estão guardados e nada foi perdido.",
+    "body": "Os 30 dias de teste do OXIEL Core terminaram. Escolha um plano para continuar a cuidar dos seus pacientes exatamente onde parou: os seus dados estão guardados e nada foi perdido.",
     "cta": "Escolher o meu plano",
     "helper": "Dúvidas? Fale connosco pelo suporte."
   },
@@ -108,7 +108,7 @@
     "trialEndingSoon": "{days, plural, =0 {O seu teste termina hoje. Escolha um plano para não perder o acesso.} one {O seu teste termina em # dia. Garanta o seu plano.} other {O seu teste termina em # dias. Garanta o seu plano.}}"
   },
   "pwa": {
-    "title": "Instalar AXIEL Core",
+    "title": "Instalar OXIEL Core",
     "subtitle": "Acesso rápido no ecrã inicial",
     "install": "Instalar",
     "close": "Fechar",

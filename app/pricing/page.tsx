@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { PricingClient } from "./pricing-client";
 
 export const metadata: Metadata = {
-  title: "Planos — AXIEL Core",
+  title: "Planos — OXIEL Core",
   description:
     "Infraestrutura premium com IA para clínicas integrativas e wellness. Planos a partir de R$ 147/mês.",
   openGraph: {
-    title: "Planos — AXIEL Core",
+    title: "Planos — OXIEL Core",
     description:
       "Infraestrutura premium com IA para clínicas integrativas e wellness.",
     type: "website",

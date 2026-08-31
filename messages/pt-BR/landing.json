@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "AXIEL Core — A jornada do seu paciente no piloto automático",
+    "title": "OXIEL Core™ — O motor inteligente por trás da jornada do paciente",
     "description": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente. 30 dias grátis, sem cartão."
   },
   "nav": {
@@ -12,12 +12,14 @@
     "startFree": "Começar grátis"
   },
   "hero": {
-    "title": "A jornada do seu paciente no piloto automático.",
-    "subtitle": "Do primeiro clique ao acompanhamento contínuo: agenda online, questionários automáticos, avaliação visual, relatórios com IA e cobrança — num só lugar, no idioma do seu paciente.",
+    "eyebrow": "Cuidar. Valorizar. Conectar.",
+    "title": "Seus pacientes não sentem o seu software. Sentem o seu cuidado.",
+    "payoff": "O motor inteligente por trás da jornada do paciente.",
+    "subtitle": "Do primeiro clique ao acompanhamento contínuo, o OXIEL Core conecta toda a jornada clínica num só fluxo inteligente: agenda, questionários, avaliação, documentação assistida por IA, relatórios, cobrança e acompanhamento.",
     "ctaPrimary": "Comece grátis por 30 dias",
     "ctaSecondary": "Veja o tour de 90 segundos",
     "microProof": "Sem cartão de crédito. Cancele quando quiser.",
-    "videoLabel": "Tour do AXIEL Core (2 min)",
+    "videoLabel": "Tour do OXIEL Core (2 min)",
     "videoCaption": "Narrado em português. Ative o som."
   },
   "pain": {
@@ -125,10 +127,17 @@
   "cta": {
     "title": "Sua próxima semana pode ser diferente.",
     "subtitle": "Crie sua clínica em 5 minutos. Em 30 dias você decide — com a agenda mais cheia e as noites mais livres.",
-    "button": "Começar agora, grátis"
+    "button": "Começar agora, grátis",
+    "signature": "Um paciente. Uma jornada. Um sistema conectado."
+  },
+  "system": {
+    "eyebrow": "Parte do OXIEL Intelligent Care System",
+    "line": "O OXIEL Growth traz os pacientes. O OXIEL Core faz o cuidado durar. Juntos, formam o OXIEL Intelligent Care System.",
+    "growthLabel": "Conheça o OXIEL Growth",
+    "systemLabel": "Veja o sistema completo"
   },
   "footer": {
-    "rights": "© 2026 AXIEL Core. Todos os direitos reservados.",
+    "rights": "© 2026 OXIEL Core™. Todos os direitos reservados.",
     "login": "Entrar",
     "contact": "Contato",
     "privacy": "Privacidade",

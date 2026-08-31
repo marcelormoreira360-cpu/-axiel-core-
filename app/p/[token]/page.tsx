@@ -12,7 +12,7 @@ const PatientPushPrompt = nextDynamic(
 );
 
 export const metadata: Metadata = {
-  title: "Portal do Paciente | AXIEL Core",
+  title: "Portal do Paciente | OXIEL Core",
   robots: {
     index: false,
     follow: false,

@@ -22,7 +22,7 @@
   "compute": "Compute Map",
   "pillar": {
     "fisico": "Biomechanical",
-    "bioquimico": "Biofunctional",
+    "bioquimico": "Biochemical",
     "emocional": "Bioemotional"
   },
   "pillarHint": {
@@ -112,11 +112,11 @@
     "clinicalSynthesis": "Clinical-functional synthesis",
     "functionalConclusion": "Functional conclusion",
     "journeyPhase": "Neuro ID Journey phase",
-    "neurometricReading": "Your main readings",
-    "emotionalReading": "Emotional reading",
+    "neurometricReading": "How your nervous system is working (Neurometry Exam)",
+    "emotionalReading": "Your emotional reading (Bioresonance Exam)",
     "positiveAnchor": "A strength in your favor",
     "ahaConnection": "How it all connects",
-    "whyActNow": "Why start now",
+    "whyActNow": "Why starting now is the best choice",
     "goalTitle": "Where we're going together",
     "pillarsTitle": "The three fronts of care",
     "pillarNervous": "Nervous system",
@@ -134,19 +134,11 @@
     "objective": "Goal",
     "note": "Note",
     "generalNotes": "General notes",
-    "editor": {
-      "editButton": "Edit text",
-      "title": "Edit report",
-      "hint": "Adjust the text and save. The edited text is what gets sent to the patient.",
-      "opening": "Opening",
-      "bio3": "Bio³ snapshot",
-      "detail": "Detail",
-      "themes": "Themes (one per line)",
-      "synthesis": "Synthesis",
-      "saving": "Saving...",
-      "saved": "Changes saved",
-      "guardrailWarn": "Heads up: {note}"
-    }
+    "greetingTitle": "First, a word for you",
+    "clinicalPictureTitle": "Your clinical picture today",
+    "whatWeFoundTitle": "What the assessment found",
+    "connectionTitle": "The connection, and a strength",
+    "nextStepsTitle": "Your next steps"
   },
   "pyramidAria": "Bio³ pyramid — weight of each axis in the total, color by severity",
   "scaleAria": "Score 0 to 10"

@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from "crypto";
 
 // =============================================================================
-// AXIEL Growth → AXIEL Core — serviço de integração (handoff de lead quente).
+// OXIEL Growth → OXIEL Core — serviço de integração (handoff de lead quente).
 // - Integration Keys por clínica (hash SHA-256; a chave bruta nunca é guardada).
 // - Resolução de clínica pela chave (admin client, sem sessão — usado no webhook).
 // - Upsert idempotente de lead a partir do payload do Growth.
@@ -173,7 +173,7 @@ export async function upsertGrowthLead(
   };
 
   const notesParts = [
-    "Lead recebido do AXIEL Growth.",
+    "Lead recebido do OXIEL Growth.",
     interestArea ? `Área de interesse: ${INTEREST_AREA_LABELS_PT[interestArea]}` : null,
     payload.interest ? `Interesse: ${payload.interest}` : null,
     payload.source_platform ? `Plataforma: ${payload.source_platform}` : null,

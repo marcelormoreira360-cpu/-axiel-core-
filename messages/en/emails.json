@@ -8,13 +8,13 @@
   "rowClinic": "🏥 Clinic",
   "minutes": "{n} minutes",
   "base": {
-    "footerSentBy": "This email was sent by <b>{clinic}</b> using AXIEL Core.",
+    "footerSentBy": "This email was sent by <b>{clinic}</b> using OXIEL Core.",
     "footerIgnore": "If you weren't expecting this email, you can safely ignore it."
   },
   "invite": {
-    "subject": "Invitation to {clinic} — AXIEL Core",
+    "subject": "Invitation to {clinic} — OXIEL Core",
     "heading": "You've been invited to {clinic}",
-    "body": "Click the button below to accept the invitation and access AXIEL Core as <b>{role}</b>.",
+    "body": "Click the button below to accept the invitation and access OXIEL Core as <b>{role}</b>.",
     "cta": "Accept invitation",
     "footer": "If you weren't expecting this email, you can ignore it. The link expires in 7 days."
   },
@@ -66,7 +66,7 @@
     "rowInactive": "💤 Patients with no session for 30+ days",
     "tipReengage": "<b>💡 Re-engagement tip:</b> You have <b>{count, plural, one {# patient} other {# patients}}</b> with no session for over 30 days. A personalized message could be the opportunity to resume treatment.",
     "cta": "View full analysis →",
-    "footerAuto": "This report is sent automatically at the beginning of each month by AXIEL Core."
+    "footerAuto": "This report is sent automatically at the beginning of each month by OXIEL Core."
   },
   "simple": {
     "defaultSubject": "Message from your clinic",
@@ -111,14 +111,14 @@
   "trialExpiry": {
     "subject3d": "⏳ Your free trial ends in 3 days — {clinic}",
     "subject1d": "⚠️ Last day! Your free trial ends tomorrow — {clinic}",
-    "preview": "Your AXIEL Core free trial ends in {days, plural, one {# day} other {# days}}.",
+    "preview": "Your OXIEL Core free trial ends in {days, plural, one {# day} other {# days}}.",
     "heading3d": "3 days left in your trial",
     "heading1d": "Your trial ends tomorrow",
-    "intro": "{clinic}'s free trial of AXIEL Core ends on {date}.",
+    "intro": "{clinic}'s free trial of OXIEL Core ends on {date}.",
     "body3d": "To keep appointments, patients and automations running without interruption, pick a plan before your trial ends. It takes less than 2 minutes.",
     "body1d": "This is the final notice: after that date, your clinic's access will be suspended until a plan is subscribed. Your data is kept safe and everything resumes exactly where you left off.",
     "cta": "Choose my plan →",
-    "footerAuto": "This notice is sent automatically by AXIEL Core during the trial period."
+    "footerAuto": "This notice is sent automatically by OXIEL Core during the trial period."
   },
   "neuroIdReport": {
     "subject": "Your report is ready — {clinic}",

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   // L-05: include the clinic's configured currency in the public response
   const currency = (clinicSettings?.settings as Record<string, unknown> | null)?.default_currency as string ?? "BRL";
 
-  // PLG: rodapé "Powered by AXIEL" — oculto para clínicas com white_label (Enterprise)
+  // PLG: rodapé "Powered by OXIEL" — oculto para clínicas com white_label (Enterprise)
   const subscriptionPlans = subscription?.plans as { code?: string | null; slug?: string | null } | null;
   const subRow = subscription as { status?: string | null; trial_ends_at?: string | null } | null;
   const planSlug = effectivePlanSlug(subscriptionPlans?.code ?? subscriptionPlans?.slug, subRow?.status ?? null, subRow?.trial_ends_at ?? null);

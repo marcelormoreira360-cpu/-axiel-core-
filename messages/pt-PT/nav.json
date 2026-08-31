@@ -75,14 +75,14 @@
     "forms": "{count, plural, one {# formulário a aguardar resposta} other {# formulários a aguardar resposta}}"
   },
   "errorPage": {
-    "brand": "AXIEL Core",
+    "brand": "OXIEL Core",
     "title": "Algo correu mal",
     "text": "O sistema protegeu os seus dados e parou a ação em segurança. Tente novamente. Se o problema persistir, contacte o suporte.",
     "reference": "Referência: {digest}",
     "retry": "Tentar novamente"
   },
   "notFoundPage": {
-    "brand": "AXIEL Core",
+    "brand": "OXIEL Core",
     "title": "Página não encontrada",
     "text": "Esta página não existe ou não tem acesso a este registo.",
     "cta": "Ir para o dashboard"

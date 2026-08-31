@@ -15,6 +15,7 @@ import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getPatientPackages } from "@/services/package-service";
 import { getPatientTreatmentPlans } from "@/services/treatment-plan-service";
 import { generateAiInsightAction } from "@/app/patients/[id]/insights/actions";
+import { startNewSessionAction } from "@/app/patients/[id]/session/actions";
 import { PatientExamsPanel } from "@/components/patient-exams-panel";
 import { PatientFunctionalExamsPanel } from "@/components/patient-functional-exams-panel";
 import { PatientPrescriptionsPanel } from "@/components/patient-prescriptions-panel";
@@ -42,6 +43,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { QuickVoiceNote } from "@/components/quick-voice-note";
 import { SessionPackageBadge } from "@/components/session-package-badge";
 import { PatientIntelligenceStrip } from "@/components/patient-intelligence-strip";
+import { PatientJourneyStepper } from "@/components/patient-journey-stepper";
 import { PatientDirectionPanel } from "@/components/patient-direction-panel";
 import { readMedicationLoad } from "@/services/medication-load-service";
 import { PatientAssessmentPanel } from "@/components/patient-assessment-panel";
@@ -50,6 +52,7 @@ import { PatientTreatmentFollowupPanel } from "@/components/patient-treatment-fo
 import { PatientTimeline } from "@/components/patient-timeline";
 import { computePatientEngagement, buildPatientTimeline } from "@/services/patient-intelligence-service";
 import { derivePatientJourneyStage } from "@/modules/patient-journey/stage";
+import { toCanonicalStage } from "@/modules/patient-journey/journey";
 import { WaitlistButton } from "@/components/waitlist-button";
 import { getWaitlistEntryForPatient } from "@/services/waitlist-service";
 import { getPatientSectionLayout } from "@/services/clinic-patient-sections-service";
@@ -183,6 +186,7 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const latestInsight = aiInsights.find((i) => i.review_status === "final") ?? aiInsights[0] ?? null;
   const pendingReviews = aiInsights.filter((i) => i.review_status !== "final").length;
   const generateAction = generateAiInsightAction.bind(null, patient.id);
+  const startSession = startNewSessionAction.bind(null, patient.id);
 
   // Demografia compacta no cabeçalho (fonte única; edição na ficha /edit). Substitui o card.
   const demo = liveIdentificacaoPt(patient);
@@ -626,7 +630,19 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
             isOnWaitlist={!!waitlistEntry}
             waitlistEntryId={waitlistEntry?.id ?? null}
           />
-          {/* Registrar sessão (SOAP) — leva à sessão mais recente; sem sessão, agenda */}
+          {/* Nova sessão — cria o agendamento de AGORA e abre o registro em branco.
+              (session_records.appointment_id é UNIQUE: sessão nova exige agendamento novo.) */}
+          <form action={startSession}>
+            <button
+              type="submit"
+              className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-[#0F1A2E] dark:bg-white/[.12] border border-black/[.1] text-white dark:text-[#E8E6E2] text-[11px] font-medium hover:bg-[#1a2942] dark:hover:bg-white/[.18] transition"
+              title={t("actions.newSession")}
+            >
+              <svg className="w-[13px] h-[13px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {t("actions.newSession")}
+            </button>
+          </form>
+          {/* Registrar sessão (SOAP) — retoma a sessão atual/mais recente; sem sessão, agenda */}
           <Link
             href={soapTargetSession ? `/schedule/${soapTargetSession.id}/session` : `/schedule/new?patient_id=${patient.id}`}
             className="flex items-center gap-1.5 px-[10px] h-[30px] rounded-lg bg-white border border-black/[.1] text-[#0F1A2E] dark:text-[#E8E6E2] text-[11px] font-medium hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition"
@@ -688,6 +704,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
       {/* ── Intelligence strip (fixo, fecha o cartão do cabeçalho) ── */}
       <PatientIntelligenceStrip engagement={engagement} journey={journeyStage} />
+
+      {/* ── Stepper da jornada (Fase 2, aditivo — não toca o sectionLayout) ── */}
+      <PatientJourneyStepper current={toCanonicalStage(journeyStage.stage)} />
 
       {/* ── Seções reordenáveis (ordem/visibilidade por clínica, /settings/personalizar) ── */}
       <div className="flex flex-col gap-[18px] mt-[18px]">

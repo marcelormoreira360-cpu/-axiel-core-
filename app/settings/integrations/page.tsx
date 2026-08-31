@@ -303,7 +303,7 @@ export default async function IntegrationsPage({
           <GoogleReviewUrlForm current={googleReviewUrl} />
         </div>
 
-        {/* ── AXIEL Growth ── */}
+        {/* ── OXIEL Growth ── */}
         <GrowthIntegrationCard
           endpointUrl={`${appUrl}/api/integrations/growth/lead`}
           keys={growthKeys}

@@ -23,3 +23,6 @@ _GUIA_APP_REVIEW_META.md
 .backup.env
 backups/
 *.dump
+
+# Worktrees do Claude Code (não versionar)
+.claude/worktrees/

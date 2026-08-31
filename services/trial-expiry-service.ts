@@ -75,7 +75,7 @@ export async function processTrialExpiryEmails(): Promise<{ sent: number; skippe
 
     const clinicId = sub.clinic_id as string;
     const clinic = (sub.clinics as unknown) as { name: string } | null;
-    const clinicName = clinic?.name ?? "AXIEL Core";
+    const clinicName = clinic?.name ?? "OXIEL Core";
 
     // Dedup: já enviamos este aviso para esta clínica neste trial?
     // Janela limitada ao trial atual (começo ≈ trial_ends_at - 90d) para não

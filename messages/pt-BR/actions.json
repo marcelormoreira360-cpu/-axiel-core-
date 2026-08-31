@@ -5,7 +5,7 @@
   "activeTitle": "Ações ativas",
   "viewMoreActive": "Ver mais {count} ações ativas",
   "emptyActiveTitle": "Nenhuma ação no momento",
-  "emptyActiveText": "Tudo certo por aqui. O AXIEL vai sugerir o próximo passo quando um paciente, lead, revisão ou follow-up precisar de atenção.",
+  "emptyActiveText": "Tudo certo por aqui. O OXIEL vai sugerir o próximo passo quando um paciente, lead, revisão ou follow-up precisar de atenção.",
   "goToDashboard": "Ir para o painel",
   "closedTitle": "Encerradas recentemente",
   "viewMoreClosed": "Ver mais {count} ações encerradas",
@@ -20,7 +20,7 @@
   "panel": {
     "eyebrow": "FLUXO GUIADO",
     "title": "Próximos passos",
-    "subtitle": "Aceite, ignore ou conclua. O AXIEL acompanha.",
+    "subtitle": "Aceite, ignore ou conclua. O OXIEL acompanha.",
     "emptyTitle": "Nenhum próximo passo",
     "emptyText": "O sistema vai destacar os próximos passos conforme pacientes, leads, sessões e follow-ups forem adicionados.",
     "viewAll": "Ver todos os próximos passos",

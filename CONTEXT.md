@@ -1,60 +1,24 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 29/08/2026 (42)
+> Atualizado em: 26/08/2026 (41)
 
-## 🟡 Link de envio do questionário unificado (29/08/2026) — branch `feat/neuroid-questionario-unificado`, NÃO mergeado, sem deploy
+## 🟢 Reposicionamento "Intelligent Patient Journey" — Fases 0-2 (25-26/08/2026) — NO AR (main)
 
-> Fecha o "falta para o envio a PACIENTE": o formulário unificado é enviado PELA SEÇÃO FORMULÁRIOS, como os outros (Q-SNA/QRM). **Decisão do Marcelo (29/08): o envio NÃO fica no prontuário/Bio³ Map; entra no fluxo padrão de Formulários.** Reusa `assessment_invitations` + o componente rico. **NÃO usa a migration 148 nem semeia perguntas no banco** (form renderizado do código, pontuação code→Bio³ em código) — só um template placeholder por clínica. Typecheck 0, **587 testes verdes**, verify:i18n 53/0/0. Rota pública testada no dev.
+> Rebrand AXIEL→OXIEL feito e no ar (só marca visível; identificadores `AXIEL_PLANS`/`AXIEL_LOCALE`/`AXIEL_REF`/tailwind `axiel`/package `axiel-core` PRESERVADOS — não trocar). Landing oxielcore.com com herói novo ("Seus pacientes não sentem o seu software. Sentem o seu cuidado." + "motor inteligente por trás da jornada"), ™ padronizado. Contexto de marca/estratégia: sessão do Oxiel/CEO (scratchpad OXIEL_CORE_BRIEFING_v3.md).
 
-**Como funciona:** o template unificado ("Neuro ID — Perfil Clínico Integrado de 30 Dias") é semeado ATIVO e idempotente (`ensureUnifiedTemplate`, chamado no load de `/forms` e `/patients/[id]/forms/new`), então aparece na lista de Formulários. O ENVIO padrão (`createInvitationAction` / `createPublicCaptureLinkAction` em `app/forms/[id]/invite/actions.ts`) detecta o template unificado (`isUnifiedTemplate`) e DESVIA o link para a rota rica `/neuro-id/[token]` em vez do genérico `/f/[token]`. O preenchimento in-app (`/patients/[id]/forms/new?template=<unificado>`) redireciona para a tela rica interna `/patients/[id]/neuro-id/unified`.
+**Jornada de cuidado — modelo e features (tudo na `main`, deployado):**
+1. **Fase 0 — modelo canônico** (`modules/patient-journey/journey.ts`): 7 etapas canônicas `prepare→assess→care→understand→follow_up→continue→return`, mapa 9→7 dos estados vivos de `stage.ts` (`toCanonicalStage`, `CLINICAL_STAGE_TO_CANONICAL`), `JOURNEY_STAGE_KIND` permanência vs evento (understand/follow_up são EVENTO, não destino de permanência). NÃO renomear os 9 ids de `stage.ts` (chaves i18n + 4 consumidores dependem). `master-flow.ts` REMOVIDO (código morto, verbos banidos). Teste `modules/patient-journey/__tests__/journey.test.ts`.
+2. **Fase 1 — Command Center** (`services/journey-board-service.ts` + `components/dashboard/journey-board.tsx`, no `app/dashboard`): board de pacientes por etapa (5 colunas de permanência), RLS-safe (getCurrentClinic/SEC-05 + createSupabaseServerClient + `.eq clinic_id`, NUNCA admin client, derive não materializa, escopo por profissional igual /patients, janela 120d, teto 20/etapa). Eventos: understand=proxy `ai_insights.review_status='final'`; follow_up=`follow_ups.status='pending'`. Wired com `.catch(()=>null)` (se falhar, board some, dashboard não quebra). i18n `dashboard.journeyBoard`.
+3. **Fase 2 — stepper na ficha** (`components/patient-journey-stepper.tsx` em `app/patients/[id]`): percurso de cuidado no topo da ficha, etapa atual destacada, aditivo (NÃO toca `sectionLayout`). i18n `patientPanels.journeyStepper`.
 
-**Novos arquivos:**
-- `services/unified-form-link-service.ts`: `ensureUnifiedTemplate` (template ATIVO, placement vazio, idempotente por nome — flipa is_active se já existir), `isUnifiedTemplate`, `getUnifiedLinkByToken`, `submitUnifiedFormViaToken` (roteia: convite de paciente → `saveUnifiedFormResult` + marca respondido; link público → Lead com Índice Bio na nota + `public_form_submissions`).
-- `app/neuro-id/[token]/` (ROTA PÚBLICA): `page.tsx`, `unified-public-client.tsx` (form rico em `patientFacing` → contato+consentimento no fluxo público), `actions.ts` (`submitUnifiedFormPublicAction`, IP/UA de `headers()`).
+**Rótulos das etapas (pt-BR):** Preparação · Avaliação · Cuidado ativo · Compreensão · Acompanhamento · Continuidade · Renovação (Return=Renovação, NUNCA "reativação" — compliance).
 
-**Mudanças:**
-- `components/neuroid-unified-form.tsx`: prop `patientFacing` (oculta a pirâmide Bio³ ao vivo + painel de segurança — grau de disfunção é INTERNO, compliance) + `completeLabel`. Interno inalterado.
-- `app/forms/[id]/invite/actions.ts`: as 2 actions de envio desviam o unificado para `/neuro-id/[token]`.
-- `app/forms/page.tsx` + `app/patients/[id]/forms/new/page.tsx`: `ensureUnifiedTemplate` no load; picker redireciona o unificado para a tela rica.
-- `middleware.ts`: `/neuro-id/` na allowlist pública (token-based, sem login). Sem colisão com `/patients/.../neuro-id`.
-- REMOVIDO: `components/neuroid-link-buttons.tsx` e as actions `createUnifiedPatientLinkAction`/`createUnifiedPublicLinkAction` (os botões que ficavam no Bio³ Map) — o envio agora é só pela seção Formulários.
+🔴 **DIAGNÓSTICO DOS DADOS (read-only, 26/08) — LER:** o Command Center mostrou 633 em "Renovação" e 0 no meio. NÃO é bug. Banco: 756 pacientes, 755 "active" mas SÓ 52 tiveram alguma sessão concluída na vida (~703 nunca tiveram → leads/importados marcados como paciente); 0 sessões concluídas em 30d; `treatment_plans` VAZIA; 8 pacotes ativos. Causa: a IFWC roda as sessões no **VAGARO** e isso não flui para o Core → a jornada não tem combustível. **PENDÊNCIAS:** (a) sincronizar sessões do Vagaro→Core (Marcelo fará depois); (b) higiene leads×pacientes; (c) calibrar derivação p/ dados esparsos (reconhecer cuidado ativo por sessões recentes, não só plano). Sem isso, Fase 3/4 têm pouco valor real.
 
-**Falta / gaps conhecidos (não bloqueiam o TESTE, bloqueiam paciente REAL):**
-- Sinal de CRISE em submissão REMOTA de link de paciente: o Bio³ é gravado e o flag é calculado, mas ainda NÃO é exibido ao terapeuta (no fluxo interno a pirâmide ao vivo mostra; no link não). Surfacar antes de paciente real (parte do gate do Bloco F).
-- Tradução EN do formulário (hoje só PT, como o resto do unificado).
-- Gate de compliance do Bloco F (parecer FL + revisor MH + BAA + consentimentos) continua valendo: uso INTERNO/TESTE com dados próprios/fictícios até lá.
-- Colisão de numeração da migration 148 (`assessment_questions_code` deste branch × `appointment_dedup_guard` do branch de dedup) — renumerar antes de qualquer merge; este link NÃO depende da 148.
-- Antes de merge: `/code-review --fix`.
+4. **Fase 4 — copy de compliance** (NO AR): auditoria de verbos/linguagem na copy clínica da jornada (`patientPanels.intelligenceStrip.journey`): "Reativação"→"Retomada de cuidado", "Inativo"→"Cuidado interrompido", "Enviar mensagem de reativação"→"Convidar a retomar o cuidado", "Reativar..."→"Retomar o contato...". Sujeito=clínica, sem "reativar"; Return=continuidade. IDs de estado em `stage.ts` intactos. + teste `modules/patient-journey/__tests__/journey-copy-compliance.test.ts` trava termos banidos nos VALORES da jornada (3 locales). (automations.json ainda tem "reativação" — tool de campanha da própria clínica, não mexido.)
 
-## 🟡 Questionário Neuro ID UNIFICADO (28/08/2026) — branch `feat/neuroid-questionario-unificado`, NÃO mergeado, sem deploy
-
-> Redesenho do questionário do Mapa Bio³: um formulário único ("Perfil Clínico Integrado de 30 Dias") substitui o envio separado de QRM + Q-SNA. Specs em `_BRIEF_NEUROID_*.md` (raiz, gitignored) e no vault Obsidian "Neuro ID - Questionario". Aprovado por Marcelo (gates do squad Salvo/Aval passaram). **6 commits no branch, suíte real 575 verdes, typecheck limpo, `verify:i18n` 0 erros. Motor `scoring.ts`/`bands.ts` INTOCADO.**
-
-**Feito (Estágios 1–3b-1):**
-- `lib/safety-flags.ts` (NOVO): precaução cardiorrespiratória por frequência isolada (`bf_*_freq ≥ 2`) + gatilho de crise (`be_crisis_gosto_vida ≥ 3`), FORA do score.
-- `lib/medication-complexity.ts` (NOVO): Índice de Complexidade Medicamentosa 0–100, SEPARADO do Global.
-- `modules/neuro-id/questionnaire-scale.ts`: `combineFreqImp` (freq×impacto 0–9) + `freqImpToScale10` (combinação na camada de import, não no motor).
-- `modules/neuro-id/catalog.ts`: **56 códigos novos ADITIVOS** (`bm_`/`bf_`/`be_`) nos pilares corretos — autonômico/digestivo/sono/cognição no Biofuncional, Bioemocional limpo (humor/ansiedade/regulação), ideação (`be_crisis_gosto_vida`) FORA do catálogo (não pontua). Mapeamento legado (QRM/Q-SNA/MSQ) intocado → pacientes atuais sem regressão. **Rename de rótulo Bioquímico → Biofuncional** (PILLAR_LABELS, i18n pt-BR/pt-PT/en, PDF, case-summary, prompts IA); chave interna `bioquimico` preservada (zero migração).
-- `modules/neuro-id/unified-form-import.ts` (NOVO): respostas cruas → valores 0–10 por código + sinais de segurança + ICM; `unifiedScaleKind` decide escala por prefixo (freqimp / mood6 / scale3; exceção `bf_apneia`=scale3).
-- `modules/neuro-id/unified-form-template.ts` (NOVO): fonte de verdade do formulário — 8 blocos (A–H), ~80 perguntas ao paciente, disclaimer "não é serviço de emergência". Item de ideação só encaminha; humor com âncoras estilo MADRS-S; ansiedade/regulação 0–3 com rótulos de frequência.
-- Testes novos travam a coerência template↔catálogo↔fiação (cobertura reversa 100%).
-- `vitest.config.ts`: excluído `.claude` (worktrees temporárias duplicavam a suíte — a contagem "real" caiu de ~1451 para 575).
-- **Preview visual interativo aprovado por Marcelo** (artifact `8d5735a7-3800-4f46-9f97-6f7a074c08f0`): humor em botões de FAIXA (0-1/2-3/4-5/6), escalas explicadas, crise encaminha.
-
-**Estágio 3b-2 — FEITO em código (28/08, sem Docker/Pro, sem deploy):**
-- `modules/neuro-id/unified-form-seed.ts`: converte o template em formato semeável (perguntas com `code`/tipo/escala/opções; freqimp → 2 perguntas de escala `_freq`/`_imp`).
-- `supabase/migrations/148_assessment_questions_code.sql` (NÃO aplicada): coluna nullable `code` em `assessment_questions`.
-- `services/unified-form-seed-service.ts`: `seedUnifiedFormForClinic` semeia o template INATIVO + placement vazio (uso interno/teste, fora do envio automático); onboarding intocado.
-- `modules/neuro-id/unified-form-result.ts`: `bio3FromAnswerRows` (respostas por código → Bio³ completo).
-- `services/unified-form-bio3-service.ts`: `saveUnifiedFormResult` grava o Bio³ reusando `patient_assessments`/`patient_assessment_values`/`patient_neuro_id_scores` (`source='unified_form'`).
-- `components/neuroid-unified-form.tsx`: tela React (UX aprovada: freq×impacto, humor em faixas, crise só encaminha, Bio³ ao vivo).
-- Rota INTERNA `/patients/[id]/neuro-id/unified` (page + client) + `submitUnifiedFormAction` (auth por clínica). **A rota é AUTO-CONTIDA: renderiza a tela em código e grava os scores direto — NÃO depende da migration 148 nem do seed.**
-- 20 commits no branch, suíte real 587 verdes, typecheck limpo. Nada aplicado/deployado.
-
-**Falta para o envio a PACIENTE (não para o teste interno):** aplicar migration 148 + `seedUnifiedFormForClinic` (fluxo por link do formulário público, que ainda renderiza no componente genérico — a UX rica está só na rota interna); e as travas de compliance do Bloco F. Para VER a rota interna rodando: `next dev` logado, ou deploy de preview do branch.
-
-**Guarda-corpos (uso interno/teste até paciente real):** item de ideação só encaminha (não gradua risco), score emocional só interno, disclaimer de emergência, parecer FL assinado + revisor de saúde mental licenciado + BAA + consentimentos. Ver `_BRIEF_NEUROID_COMPLIANCE*.md` e `_BRIEF_NEUROID_PARECER_ADVOGADO.md`. **Antes de merge: rodar `/code-review --fix`.**
+🔴 **FASE 3 (nav patient-first) ADIADA (decisão de Marcelo 26/08):** só quando as travas forem cumpridas — bug de DEDUP fechado + dados reais (sessões do Vagaro no Core). É a fase mais arriscada (nav global i18n já derrubou prod em 18/08). Regras i18n do projeto valem: namespace novo exige os 3 arquivos no MESMO commit antes de mexer no array de `i18n/request.ts`; componente global com useTranslations monta DENTRO do provider.
 
 ## 🟡 Fase 1 de rollout — 5 frentes (15/07/2026) — TUDO MERGEADO NO MAIN, DEPLOY GATED
 

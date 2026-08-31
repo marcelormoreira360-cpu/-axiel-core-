@@ -11,7 +11,7 @@ const NpsTrendChart = dynamicImport(
   { loading: () => <div className="h-32 rounded-[12px] bg-black/[.03] dark:bg-white/[.04] animate-pulse" /> },
 );
 
-export const metadata: Metadata = { title: "Analytics | AXIEL Core" };
+export const metadata: Metadata = { title: "Analytics | OXIEL Core" };
 export const dynamic = "force-dynamic";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

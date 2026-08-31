@@ -113,6 +113,21 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (apptError) {
+    // 23505 = trava anti-duplicata (migration 148): duplo-submit do portal.
+    // Devolve o agendamento existente e pula a notificação (idempotente).
+    if ((apptError as { code?: string }).code === "23505") {
+      const { data: dup } = await supabase
+        .from("appointments")
+        .select("id")
+        .eq("clinic_id", link.clinic_id)
+        .eq("patient_id", link.patient_id)
+        .eq("starts_at", starts_at)
+        .is("deleted_at", null)
+        .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
+        .limit(1)
+        .maybeSingle();
+      if (dup) return NextResponse.json({ ok: true, appointment_id: dup.id });
+    }
     return NextResponse.json({ error: "Erro ao criar agendamento." }, { status: 500 });
   }
 

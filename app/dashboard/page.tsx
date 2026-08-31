@@ -10,6 +10,8 @@ import { getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
 import { getDashboardKPIs } from "@/modules/dashboard/dashboard-kpis";
 import { getRevenueChartData } from "@/modules/dashboard/dashboard-charts";
 import { getDashboardAlerts } from "@/services/dashboard-alerts-service";
+import { getJourneyBoard } from "@/services/journey-board-service";
+import { JourneyBoard } from "@/components/dashboard/journey-board";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SetupProgressBanner } from "@/components/setup-progress-banner";
 import { DashboardRealtimeKpis } from "@/components/dashboard/dashboard-realtime-kpis";
@@ -63,7 +65,7 @@ export default async function Dashboard() {
     redirect("/onboarding");
   }
 
-  const [pendingReviews, alerts, kpis, chartData, setupTasks] = await Promise.all([
+  const [pendingReviews, alerts, kpis, chartData, setupTasks, journeyBoard] = await Promise.all([
     getPendingAiInsightReviewCount(clinic?.id).catch(() => 0),
     clinic
       ? getDashboardAlerts(clinic.id).catch(() => ({ packageAlerts: [], biomarkerAlerts: [] }))
@@ -74,6 +76,7 @@ export default async function Dashboard() {
     // PERF: chart data and setup tasks run in parallel with KPIs
     clinic ? getRevenueChartData(clinic.id, 6).catch(() => []) : Promise.resolve([]),
     clinic ? getSetupTasks(clinic).catch(() => []) : Promise.resolve([]),
+    clinic ? getJourneyBoard().catch(() => null) : Promise.resolve(null),
   ]);
 
   const today = new Date().toDateString();
@@ -147,6 +150,9 @@ export default async function Dashboard() {
           initialTodayCount={todayAppts.length}
         />
       )}
+
+      {/* ── Command Center — pacientes por etapa da jornada ── */}
+      {journeyBoard && <JourneyBoard board={journeyBoard} />}
 
       {/* ── Indique e ganhe (programa de indicação — só gestores) ── */}
       {clinic && profile?.role && isManager(profile.role) && (

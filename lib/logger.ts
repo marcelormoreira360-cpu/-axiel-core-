@@ -1,5 +1,5 @@
 /**
- * Structured logger for AXIEL Core.
+ * Structured logger for OXIEL Core.
  *
  * - Development / test: writes to console (unchanged DX)
  * - Production: writes to console AND adds Sentry breadcrumbs for all

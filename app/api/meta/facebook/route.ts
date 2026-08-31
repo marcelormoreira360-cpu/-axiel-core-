@@ -24,7 +24,7 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 const IFWC_CLINIC_ID =
   process.env.META_BOT_CLINIC_ID ?? "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
 
-// Id do app Meta (AXIEL Core). Echoes com este app_id são as mensagens que o
+// Id do app Meta (OXIEL Core). Echoes com este app_id são as mensagens que o
 // próprio bot enviou pela Graph API; echoes de outro app (ou sem app_id) são
 // um HUMANO respondendo pela caixa de entrada do Messenger/Business Suite.
 const META_APP_ID = process.env.META_APP_ID ?? "1468755454577652";

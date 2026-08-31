@@ -246,7 +246,7 @@ export function PricingClient({ appUrl }: { appUrl: string }) {
       {/* Nav */}
       <nav className="border-b border-black/[.06] bg-white/80 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-[56px] flex items-center justify-between">
-          <span className="text-[16px] font-bold tracking-[-0.03em] text-[#0F1A2E]">AXIEL</span>
+          <span className="text-[16px] font-bold tracking-[-0.03em] text-[#0F1A2E]">OXIEL</span>
           <a
             href={`${appUrl}/auth/login`}
             className="text-[12px] font-semibold text-white bg-[#0F1A2E] hover:bg-[#1a2d47] px-[16px] py-[7px] rounded-[8px] transition"

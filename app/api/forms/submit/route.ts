@@ -362,17 +362,35 @@ export async function POST(req: NextRequest) {
     if (rErr) throw rErr;
 
     // Insert answers — colunas reais: section_id, value_number, value_text
+    // SEC (S3): question_id/section_id vêm do cliente. Antes de gravar, valida que
+    // pertencem AO TEMPLATE deste convite — senão um submit forjado poderia inserir
+    // respostas apontando para perguntas/seções de outro template (garbage-in).
     if (answers.length > 0) {
-      const { error: aErr } = await supabase.from("assessment_answers").insert(
-        answers.map((a) => ({
-          response_id:  response.id,
-          question_id:  a.question_id,
-          section_id:   a.section_id   ?? null,
-          value_number: a.value_number ?? null,
-          value_text:   a.value_text   ?? null,
-        }))
-      );
-      if (aErr) throw aErr;
+      const [{ data: validQ, error: qErr }, { data: validS, error: sErr }] = await Promise.all([
+        supabase.from("assessment_questions").select("id").eq("template_id", inv.template_id),
+        supabase.from("assessment_sections").select("id").eq("template_id", inv.template_id),
+      ]);
+      // Fail-loud: se a validação falhar, NÃO descarte silenciosamente as respostas
+      // do paciente (isso marcaria o convite como completo com zero answers).
+      if (qErr) throw qErr;
+      if (sErr) throw sErr;
+      const qIds = new Set((validQ ?? []).map((r) => r.id as string));
+      const sIds = new Set((validS ?? []).map((r) => r.id as string));
+      const validAnswers = answers.filter((a) => qIds.has(a.question_id));
+
+      if (validAnswers.length > 0) {
+        const { error: aErr } = await supabase.from("assessment_answers").insert(
+          validAnswers.map((a) => ({
+            response_id:  response.id,
+            question_id:  a.question_id,
+            // Descarta section_id que não seja do template (evita ligação cruzada).
+            section_id:   a.section_id && sIds.has(a.section_id) ? a.section_id : null,
+            value_number: a.value_number ?? null,
+            value_text:   a.value_text   ?? null,
+          }))
+        );
+        if (aErr) throw aErr;
+      }
     }
 
     // Mark invitation complete

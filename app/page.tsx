@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: t("title"),
       description: t("description"),
       type: "website",
-      siteName: "AXIEL Core",
+      siteName: "OXIEL Core™",
     },
     twitter: {
       card: "summary_large_image",
@@ -263,7 +263,7 @@ export default async function LandingPage() {
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 border-b border-black/[.06] bg-[#FAFAF8]/90 backdrop-blur-sm dark:border-white/[.07] dark:bg-[#0B0F17]/90">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <span className="text-sm font-semibold tracking-[0.18em]">AXIEL CORE</span>
+          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE™</span>
           <nav className="hidden items-center gap-8 md:flex">
             <a href="#tour" className="text-sm text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("nav.tour")}</a>
             <a href="#jornada" className="text-sm text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("nav.journey")}</a>
@@ -286,9 +286,13 @@ export default async function LandingPage() {
       {/* ── 1. Hero ── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 md:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <h1 className="text-4xl font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl md:text-[60px]">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56] dark:text-[#9FE1CB]">{t("hero.eyebrow")}</p>
+          <h1 className="text-3xl font-semibold leading-[1.12] tracking-[-0.03em] sm:text-4xl md:text-5xl">
             {t("hero.title")}
           </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-xl font-medium leading-snug text-black/70 sm:text-2xl dark:text-[#C9C7C2]">
+            {t("hero.payoff")}
+          </p>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-black/55 dark:text-[#9E9C97]">
             {t("hero.subtitle")}
           </p>
@@ -550,6 +554,7 @@ export default async function LandingPage() {
       {/* ── 10. CTA final ── */}
       <section className="border-t border-black/[.06] bg-white py-24 dark:border-white/[.07] dark:bg-[#0E1117]">
         <div className="mx-auto max-w-2xl px-4 text-center sm:px-6">
+          <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-[#0F6E56] dark:text-[#9FE1CB]">{t("cta.signature")}</p>
           <h2 className="text-3xl font-semibold tracking-[-0.025em] sm:text-4xl">{t("cta.title")}</h2>
           <p className="mt-4 text-lg text-black/55 dark:text-[#9E9C97]">{t("cta.subtitle")}</p>
           <Link
@@ -562,10 +567,26 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ── Sistema (coerência OXIEL) ── */}
+      <section className="border-t border-black/[.06] bg-[#FAFAF8] py-16 dark:border-white/[.07] dark:bg-[#0E1117]">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#0F6E56]">{t("system.eyebrow")}</p>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-black/60 dark:text-[#B8B6B1]">{t("system.line")}</p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
+            <a href="https://www.oxielgrowth.com" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#0F6E56] transition hover:gap-2.5">
+              {t("system.growthLabel")} <ArrowRight className="h-4 w-4" />
+            </a>
+            <a href="https://www.oxiel.co" target="_blank" rel="noopener" className="inline-flex items-center gap-1.5 text-sm font-semibold text-black/55 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">
+              {t("system.systemLabel")} <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── Footer ── */}
       <footer className="border-t border-black/[.06] py-10 dark:border-white/[.07]">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 px-4 sm:px-6 md:flex-row">
-          <span className="text-sm font-semibold tracking-[0.18em]">AXIEL CORE</span>
+          <span className="text-sm font-semibold tracking-[0.18em]">OXIEL CORE™</span>
           <p className="text-sm text-black/35 dark:text-[#6B6A66]">{t("footer.rights")}</p>
           <div className="flex flex-wrap justify-center gap-6">
             <Link href="/auth/login" className="text-sm text-black/45 transition hover:text-[#0F1A2E] dark:text-[#9E9C97] dark:hover:text-[#E8E6E2]">{t("footer.login")}</Link>
