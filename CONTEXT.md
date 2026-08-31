@@ -1,7 +1,21 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 26/08/2026 (41)
+> Atualizado em: 31/08/2026 (42)
+
+## 🟢 Relatório Neuro ID fundido + dedup + questionário na seção Formulários (30-31/08/2026) — TUDO MERGEADO E NO AR
+
+> Três frentes fechadas em produção nesta sessão. Gates finais: typecheck 0, i18n 53/0/0, 612 testes.
+
+1. **Dedup de agendamento (PR #135, incidente Celestino):** trava anti-duplicata (índice unique parcial `appointments_no_dup_patient_slot`, migration **148** já aplicada na prod via MCP) + os 4 pontos de insert tratam 23505 como idempotência. `lib/name-match.ts` (`namesMatch`) = **IGUALDADE EXATA do nome normalizado** (famílias compartilham email/telefone; nunca fundir pessoas diferentes; não funde anagrama). `confirmAppointmentByToken` reaponta o agendamento ANTES de mutar o paciente existente. 2 rodadas de /code-review; follow-ups baixos anotados na #135.
+
+2. **Doc 1 + Doc 2 fundidos num relatório único (PRs #137 + #138):** o relatório ao paciente é UM só (3-4 pág), seções numeradas **1-6** (render `neuro-id-360-documents.tsx` + PDF `neuro-id-pdf-service.ts`): 1 abertura · 2 "O seu quadro clínico de hoje" (Bio³) · 3 "O que a avaliação encontrou" com **3.1 (Exame de Neurometria)** e **3.2 (Exame de Biorressonância)** SEPARADAS e condicionais · 4 conexão+ponto de força · 5 "Por que começar agora é a melhor opção" · 6 próximos passos (o plano). **Degradação graciosa** (sem exame, não gera 3.1/3.2, fica mais explanatório). **Pirâmide Bio³ num QUADRO à direita** (`drawPyramidPanel`): texto à esquerda, % dentro de cada faixa, nomes na legenda ao lado, eixo prioritário em **negrito verde** (nunca o glifo ★, vira "&" nas fontes do PDF), índice geral no rodapé. Tom PROFISSIONAL. PDF no timbrado (drawHeader/Footer). #137 = correção da síntese de exame (neurometria não sai como biorressonância). Renumeração conceitual: **Doc 2 = suplementos, Doc 3 = hipersensibilidade** (docs próprios).
+
+3. **Questionário unificado + envio pela seção Formulários (PR #139):** o unificado ("Perfil Clínico Integrado de 30 Dias") entra na seção Formulários (`ensureUnifiedTemplate` ATIVO no load de /forms e /patients/[id]/forms/new) e é enviado pelo fluxo padrão; o envio detecta o unificado (`isUnifiedTemplate`) e desvia o link para a rota rica **`/neuro-id/[token]`** (allowlist no `middleware.ts`) em vez do genérico `/f/[token]`. Componente com prop `patientFacing` (oculta a pirâmide ao vivo no link). Serviço `services/unified-form-link-service.ts`. Preenchimento in-app redireciona pra tela rica interna. Migration renumerada **148→149** (`149_assessment_questions_code`, coluna nullable `code`, **NÃO aplicada na prod** — o fluxo por link não precisa dela).
+
+**DECISÃO Marcelo:** 3º pilar do Bio³ = **"Biofuncional"** (não "Bioquímico"), aplicado em TODO o app (questionário + Doc 1: guardrails/PDF/i18n/catalog). Chave interna segue `bioquimico`.
+
+**Pendências:** aplicar a migration 149 só quando usar o seed com perguntas; **Bloco F (emocional) do questionário = teste até a trava de compliance** (parecer FL + BAA + consentimentos); editor manual do Doc 1 (PR #136) NÃO mergeado (tinha bug de perda de conteúdo, reconstruir na fase da fusão se quiser); follow-ups baixos do dedup na #135.
 
 ## 🟢 Reposicionamento "Intelligent Patient Journey" — Fases 0-2 (25-26/08/2026) — NO AR (main)
 
