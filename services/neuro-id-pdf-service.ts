@@ -177,6 +177,60 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   doc.lineWidth(1);
   doc.y = yBase + 12;
 }
+
+/**
+ * Pirâmide Bio³ dentro de um PAINEL (quadro), com RÓTULOS autoexplicativos por
+ * faixa (nome do pilar + %), para colocar À DIREITA do texto da seção 2.
+ * Desenha a partir de (x, topY) com largura w e devolve o y do rodapé do painel.
+ */
+function drawPyramidPanel(
+  doc: Doc,
+  x: number,
+  topY: number,
+  w: number,
+  bands: { dysfunction: number | null; isPriority: boolean; label: string }[],
+) {
+  const titleH = 16, pyrH = 86, capH = 14, padBottom = 10;
+  const panelH = titleH + pyrH + capH + padBottom + 6;
+  doc.save();
+  doc.roundedRect(x, topY, w, panelH, 8).fillAndStroke("#FBFAF7", "#E6E4DC");
+  doc.restore();
+
+  const cx = x + w / 2;
+  doc.font("Helvetica-Bold").fontSize(7.5).fillColor(MUTED)
+    .text("MAPA BIO³", x, topY + 6, { width: w, align: "center", characterSpacing: 1 });
+
+  const y0 = topY + titleH + 4;
+  const half = Math.min(54, w / 2 - 12);
+  const H = pyrH;
+  const yB = y0 + H / 3, yC = y0 + (2 * H) / 3, yBase = y0 + H;
+  const xAt = (y: number) => (half * (y - y0)) / H;
+  const polys: [number, number][][] = [
+    [[cx, y0], [cx + xAt(yB), yB], [cx - xAt(yB), yB]],
+    [[cx - xAt(yB), yB], [cx + xAt(yB), yB], [cx + xAt(yC), yC], [cx - xAt(yC), yC]],
+    [[cx - xAt(yC), yC], [cx + xAt(yC), yC], [cx + xAt(yBase), yBase], [cx - xAt(yBase), yBase]],
+  ];
+  const centersY = [y0 + H / 6, y0 + H / 2, y0 + (5 * H) / 6];
+  doc.lineWidth(1.5);
+  bands.forEach((b, i) => {
+    const bd = bandForDysfunction(b.dysfunction);
+    const fill = bd ? bd.colors.fill : "#E9E7E0";
+    doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
+  });
+  doc.lineWidth(1);
+  // Rótulos autoexplicativos (nome do pilar + %), centrados sobre cada faixa.
+  bands.forEach((b, i) => {
+    const disf = round(b.dysfunction);
+    const star = b.isPriority ? "★ " : "";
+    const line = `${star}${b.label}  ${disf === null ? "—" : disf + "%"}`;
+    doc.font("Times-Bold").fontSize(8.5).fillColor("#0F1A2E")
+      .text(line, x + 2, centersY[i] - 5, { width: w - 4, align: "center" });
+  });
+  doc.font("Helvetica-Oblique").fontSize(6.8).fillColor(MUTED)
+    .text("maior % = mais sobrecarga", x, yBase + 6, { width: w, align: "center" });
+
+  return topY + panelH;
+}
 function pdfToBuffer(doc: Doc): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -457,17 +511,27 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   sectionTitle(doc, DOC1_LABELS.s1);
   paragraph(doc, mapa.abertura_calorosa);
 
-  // 2 — retrato Bio³ + pirâmide
+  // 2 — retrato Bio³: TEXTO à esquerda, PIRÂMIDE (com rótulos) num painel à direita.
   sectionTitle(doc, DOC1_LABELS.s2);
-  paragraph(doc, mapa.leitura_bio3?.descricao);
   const bio3 = opts.bio3;
   if (bio3) {
-    drawPyramid(doc, [
-      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico" },
-      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico" },
-      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional" },
+    ensureSpace(doc, 150);
+    const topY = doc.y;
+    const leftW = Math.round(CONTENT_W * 0.56);
+    const gap = 16;
+    const rightX = MARGIN + leftW + gap;
+    const rightW = CONTENT_W - leftW - gap;
+    doc.font("Times-Roman").fontSize(10.5).fillColor(INK)
+      .text(mapa.leitura_bio3?.descricao ?? "", MARGIN, topY, { width: leftW, align: "justify", lineGap: 2 });
+    const textBottom = doc.y;
+    const panelBottom = drawPyramidPanel(doc, rightX, topY, rightW, [
+      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
+      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico", label: PILLAR_LABEL.bioquimico },
+      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional", label: PILLAR_LABEL.emocional },
     ]);
-    doc.moveDown(0.3);
+    doc.y = Math.max(textBottom, panelBottom) + 8;
+  } else {
+    paragraph(doc, mapa.leitura_bio3?.descricao);
   }
 
   // 3 — neurometria (3.1) e biorressonância (3.2), SEPARADAS e condicionais
