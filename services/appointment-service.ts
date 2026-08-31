@@ -155,13 +155,33 @@ export async function createAppointment(input: {
     throw new Error("Conflito de horário: já existe uma sessão nesse período.");
   }
 
+  const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)";
   const { data, error } = await supabase
     .from("appointments")
     .insert({ ...apptInput, created_by: user?.id ?? null })
-    .select("*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)")
+    .select(selectCols)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    // 23505 = a trava anti-duplicata (migration 148) barrou um agendamento no
+    // MESMO (clinic_id, patient_id, starts_at). É duplo-submit: em vez de estourar,
+    // devolve o agendamento que já existe (idempotência). Side-effects NÃO rodam
+    // de novo (return antecipado abaixo).
+    if ((error as { code?: string }).code === "23505") {
+      const { data: existingAppt } = await supabase
+        .from("appointments")
+        .select(selectCols)
+        .eq("clinic_id", apptInput.clinic_id)
+        .eq("patient_id", apptInput.patient_id)
+        .eq("starts_at", apptInput.starts_at)
+        .is("deleted_at", null)
+        .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
+        .limit(1)
+        .maybeSingle();
+      if (existingAppt) return existingAppt as Appointment;
+    }
+    throw error;
+  }
   const appt = data as Appointment;
 
   // Sessão presencial "agora": grava o agendamento, mas não dispara nada ao paciente.
@@ -231,7 +251,14 @@ export async function createPendingAppointmentWithToken(input: {
     .select("id")
     .single();
 
-  if (error || !data) throw error ?? new Error("Falha ao criar agendamento pendente.");
+  if (error || !data) {
+    // 23505 = trava anti-duplicata (migration 148): já existe agendamento ativo
+    // nesse mesmo horário para este paciente.
+    if ((error as { code?: string } | null)?.code === "23505") {
+      throw new Error("Este paciente já tem uma sessão nesse horário.");
+    }
+    throw error ?? new Error("Falha ao criar agendamento pendente.");
+  }
   return { appointmentId: data.id, token };
 }
 
@@ -317,42 +344,71 @@ export async function confirmAppointmentByToken(
     const cleaned = Object.fromEntries(Object.entries(patientFields).filter(([, v]) => v !== undefined));
     const email = (patientFields.email ?? "").trim();
 
-    // A constraint patients_clinic_email_unique é (clinic_id, lower(email)).
-    // Se o e-mail informado já pertence a OUTRO cadastro da clínica (paciente
-    // que já existe / está voltando), não dá para gravá-lo no cadastro-stub
-    // deste agendamento — o insert/update bateria na unique e a confirmação
-    // falhava com "Não foi possível salvar seus dados". Nesse caso, reaproveita
-    // o cadastro existente: atualiza os dados nele, reaponta o agendamento e
-    // arquiva o stub recém-criado.
+    // Paciente que está voltando: se o e-mail informado já pertence a OUTRO
+    // cadastro da clínica, reaproveita esse cadastro (atualiza dados, reaponta o
+    // agendamento e arquiva o stub deste booking) em vez de deixar duplicata.
+    //
+    // ⚠️ CONSCIENTE DE FAMÍLIA: parentes compartilham e-mail (dependente usa o do
+    // responsável) — a unique de e-mail foi removida na migration 140 justamente
+    // por isso. Portanto só funde+arquiva quando o NOME também bate. Se o e-mail
+    // casa mas o nome difere, é outro parente → mantém os dois cadastros e NÃO
+    // arquiva nada (era exatamente o soft-delete errado do incidente 2026-08-21).
+    const { namesMatch } = await import("@/lib/name-match");
+    const incomingName = (patientFields.full_name ?? info.patient?.full_name ?? "").toString();
     let mergedIntoExisting = false;
     if (email) {
       // ilike ≈ igualdade case-insensitive; a comparação exata em JS descarta
       // eventual over-match do `_`/`%` do ilike.
       const { data: candidates } = await supabase
         .from("patients")
-        .select("id, email")
+        .select("id, email, full_name")
         .eq("clinic_id", info.clinic_id)
         .neq("id", info.patient.id)
+        // Só considera cadastros ATIVOS: nunca "ressuscitar" (deleted_at=null) um
+        // paciente que foi soft-deletado de propósito por causa de um e-mail
+        // reaproveitado por outro parente.
+        .is("deleted_at", null)
         .ilike("email", email);
       const existing = (candidates ?? []).find(
-        (c) => (c.email ?? "").toLowerCase() === email.toLowerCase(),
+        (c) =>
+          (c.email ?? "").toLowerCase() === email.toLowerCase() &&
+          namesMatch(c.full_name as string, incomingName),
       );
       if (existing?.id) {
-        const { error: uErr } = await supabase
-          .from("patients")
-          .update({ ...cleaned, status: "active", deleted_at: null, updated_at: new Date().toISOString() })
-          .eq("id", existing.id)
-          .eq("clinic_id", info.clinic_id);
-        if (uErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
-        // Reaponta o agendamento para o cadastro existente e arquiva o stub.
-        await supabase.from("appointments").update({ patient_id: existing.id }).eq("id", info.id);
-        await supabase
-          .from("patients")
-          .update({ deleted_at: new Date().toISOString() })
-          .eq("id", info.patient.id)
-          .eq("clinic_id", info.clinic_id);
-        resolvedPatientId = existing.id;
-        mergedIntoExisting = true;
+        // Reaponta o agendamento para o cadastro existente ANTES de mexer nele
+        // (finding #2). O reaponte pode violar o índice único da migration 148 (um
+        // único agendamento por slot/paciente) → erro 23505. Se isso acontecer, NÃO
+        // tocamos no paciente existente nem arquivamos o stub: o agendamento segue
+        // no stub ATIVO (estado consistente, sem sobrescrever dados de quem já existe).
+        const { error: reErr } = await supabase
+          .from("appointments")
+          .update({ patient_id: existing.id })
+          .eq("id", info.id);
+        if (reErr) {
+          console.error(
+            `[confirmAppointmentByToken] falha ao reapontar agendamento ${info.id} para paciente ${existing.id} (code=${reErr.code}); mantendo stub ${info.patient.id} ativo e NÃO fundindo.`,
+            reErr,
+          );
+          // Não funde, não enriquece, não arquiva: duplicata é preferível a perda de dados.
+        } else {
+          // Reaponte OK: agora sim enriquece o cadastro existente com os dados do
+          // stub (best-effort) e arquiva o stub.
+          const { error: uErr } = await supabase
+            .from("patients")
+            .update({ ...cleaned, status: "active", deleted_at: null, updated_at: new Date().toISOString() })
+            .eq("id", existing.id)
+            .eq("clinic_id", info.clinic_id);
+          if (uErr) {
+            console.error(`[confirmAppointmentByToken] reaponte OK mas falha ao enriquecer paciente ${existing.id}; seguindo.`, uErr);
+          }
+          await supabase
+            .from("patients")
+            .update({ deleted_at: new Date().toISOString() })
+            .eq("id", info.patient.id)
+            .eq("clinic_id", info.clinic_id);
+          resolvedPatientId = existing.id;
+          mergedIntoExisting = true;
+        }
       }
     }
 
@@ -1029,25 +1085,42 @@ export async function createPublicBooking(input: {
 
   // BUG-01: separate .eq() calls to avoid PostgREST filter injection
   // SEC-05: fetch existing email so we only update if the field was empty
-  const { data: existing } = await supabase
+  //
+  // Dedup CONSCIENTE DE FAMÍLIA (ver lib/name-match): telefone/e-mail são
+  // compartilhados entre parentes, então só reaproveita o cadastro cujo NOME
+  // também bate. Antes usava .maybeSingle() no telefone, que dava ERRO SILENCIOSO
+  // quando 2 pacientes dividiam o número → existing=null → duplicata.
+  const { namesMatch } = await import("@/lib/name-match");
+  type Cand = { id: string; full_name: string; email: string | null; locale: string | null; timezone: string | null };
+  const pickExisting = (rows: Cand[] | null): Cand | null =>
+    (rows ?? []).find((r) => namesMatch(r.full_name, full_name)) ?? null;
+
+  // Ordem determinística + teto maior: famílias compartilham telefone/e-mail,
+  // então pode haver vários cadastros no mesmo contato. Sem .order() os N
+  // retornados eram arbitrários e o cadastro certo podia ficar de fora do corte
+  // → duplicata. Ordena por created_at asc (estável) e sobe o teto para 50 (o
+  // limite ainda pode ser excedido em famílias muito grandes, mas é raro).
+  const { data: byPhone } = await supabase
     .from("patients")
-    .select("id, email, locale, timezone")
+    .select("id, full_name, email, locale, timezone")
     .eq("clinic_id", clinic.id)
     .eq("phone", normalizedPhone)
-    .maybeSingle();
+    .is("deleted_at", null)
+    .order("created_at", { ascending: true })
+    .limit(50);
+  let existingPatient = pickExisting(byPhone as Cand[]);
 
-  let existingByEmail: { id: string; email: string | null; locale: string | null; timezone: string | null } | null = null;
-  if (!existing && email) {
-    const { data } = await supabase
+  if (!existingPatient && email) {
+    const { data: byEmail } = await supabase
       .from("patients")
-      .select("id, email, locale, timezone")
+      .select("id, full_name, email, locale, timezone")
       .eq("clinic_id", clinic.id)
       .eq("email", email)
-      .maybeSingle();
-    existingByEmail = data ?? null;
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true })
+      .limit(50);
+    existingPatient = pickExisting(byEmail as Cand[]);
   }
-
-  const existingPatient = existing ?? existingByEmail;
 
   if (existingPatient) {
     patientId = existingPatient.id;
@@ -1093,7 +1166,27 @@ export async function createPublicBooking(input: {
     .select("id, clinic_id, patient_id, starts_at")
     .single();
 
-  if (apptError) return { ok: false, error: "Erro ao criar agendamento.", code: "APPT_ERROR", status: 500 };
+  if (apptError) {
+    // 23505 = trava anti-duplicata (migration 148): o paciente enviou o mesmo
+    // horário 2x (duplo-clique / retry de rede / 2 abas). Devolve o agendamento
+    // que já existe e PULA os side-effects (não re-notifica) → idempotente.
+    if ((apptError as { code?: string }).code === "23505") {
+      const { data: dup } = await supabase
+        .from("appointments")
+        .select("id, zoom_join_url")
+        .eq("clinic_id", clinic.id)
+        .eq("patient_id", patientId)
+        .eq("starts_at", starts_at)
+        .is("deleted_at", null)
+        .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
+        .limit(1)
+        .maybeSingle();
+      if (dup) {
+        return { ok: true, appointment_id: dup.id, is_online: sessionType.is_online ?? false, zoom_join_url: (dup.zoom_join_url as string | null) ?? null };
+      }
+    }
+    return { ok: false, error: "Erro ao criar agendamento.", code: "APPT_ERROR", status: 500 };
+  }
 
   // ── Registro do aceite da política (Lex 3) ──────────────────────────────────
   // Grava a PROVA do aceite na mesma sequência lógica em que o paciente+appointment
