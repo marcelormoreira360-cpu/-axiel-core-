@@ -1,4 +1,4 @@
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown, RefreshCw, AlertTriangle } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { AiInsight } from "@/lib/types";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
@@ -7,6 +7,12 @@ import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
+import { InsightEditor } from "@/components/insight-editor";
+import { NeuroPyramid } from "@/components/neuro-pyramid";
+import { pyramidDataFromMap } from "@/modules/neuro-id/pyramid";
+import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
+import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
+import { countExamsPendingMetricsReview } from "@/services/functional-exams-service";
 import { DeleteInsightButton } from "@/components/delete-insight-button";
 import type { PatientIdentificacao } from "@/lib/patient-demographics";
 
@@ -27,6 +33,18 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   const isFinal = insight.review_status === "final";
   const output = insightOutput(insight);
 
+  // Prévia da pirâmide Bio³ na própria mesa de revisão: quando o Doc 1 é o
+  // persuasivo, mostra o mesmo gráfico que vai no PDF final (texto + pirâmide),
+  // para o revisor ver o entregável completo sem abrir o PDF.
+  const showPyramid = hasPersuasiveDoc1(output?.mapa_integrativo);
+  const neuroMap = showPyramid ? await getLatestNeuroIdMap(patientId) : null;
+  const pyramidData = neuroMap ? pyramidDataFromMap(neuroMap) : null;
+  const tNeuro = await getTranslations("neuroId");
+
+  // Aviso de degradação silenciosa: exames com métricas extraídas mas NÃO
+  // confirmadas não entram no relatório. Só relevante enquanto não-final.
+  const pendingMetrics = !isFinal ? await countExamsPendingMetricsReview(patientId) : 0;
+
   const insightTitle =
     output?.patterns_and_correlations?.[0]?.title ||
     output?.structured_summary?.current_status ||
@@ -42,8 +60,31 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
 
       <p className="line-clamp-3 text-sm leading-6 text-axiel-text-secondary">{shortSummary}</p>
 
+      {/* Aviso: métricas de exame extraídas mas não confirmadas não entram no relatório */}
+      {pendingMetrics > 0 ? (
+        <p className="flex items-start gap-2 rounded-xl bg-yellow-50 dark:bg-yellow-500/10 px-4 py-3 text-xs font-medium text-yellow-800 dark:text-yellow-300">
+          <AlertTriangle className="mt-[1px] h-4 w-4 shrink-0" />
+          {t("pendingMetricsWarn", { count: pendingMetrics })}
+        </p>
+      ) : null}
+
+      {/* Prévia da pirâmide Bio³ (mesmo gráfico do PDF final) na mesa de revisão */}
+      {pyramidData ? (
+        <div className="flex items-center gap-4 rounded-2xl bg-gray-50 dark:bg-white/[.05] px-4 py-3">
+          <NeuroPyramid data={pyramidData} className="w-[120px] h-auto shrink-0" />
+          <p className="text-xs leading-5 text-axiel-text-secondary">
+            {tNeuro("pyramidShareCaption")}
+          </p>
+        </div>
+      ) : null}
+
       {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
       <NeuroId360Documents output={output} liveId={liveId} />
+
+      {/* Edição manual do Doc 1/Doc 2 antes de aprovar/enviar (só no formato persuasivo, não-final) */}
+      {output && !isFinal && showPyramid ? (
+        <InsightEditor patientId={patientId} insightId={insight.id} output={output} />
+      ) : null}
 
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">

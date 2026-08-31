@@ -48,7 +48,7 @@ describe("buildCaseSummaryFallback", () => {
       }),
       "pt-BR",
     );
-    expect(out.summary).toContain("Bioquímico");
+    expect(out.summary).toContain("Biofuncional");
     expect(out.summary).toContain("62%");
     expect(out.summary).toContain("leitura parcial");
     expect(out.summary).toContain("Levotiroxina");

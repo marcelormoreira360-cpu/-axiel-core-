@@ -37,7 +37,7 @@ export type NeuroIdPdfMap = {
 };
 
 const PILLAR_LABEL: Record<NeuroPillar, string> = {
-  fisico: "Biomecânico", bioquimico: "Bioquímico", emocional: "Bioemocional",
+  fisico: "Biomecânico", bioquimico: "Biofuncional", emocional: "Bioemocional",
 };
 const PILLAR_HINT: Record<NeuroPillar, string> = {
   fisico: "corpo & movimento", bioquimico: "energia & química interna", emocional: "mente & equilíbrio",
@@ -147,7 +147,7 @@ function drawStar(doc: Doc, cx: number, cy: number, r: number, color: string) {
 }
 
 // Pirâmide Bio³: 3 faixas coloridas pela banda de DISFUNÇÃO.
-// Ordem fixa [ápice, meio, base] = [Biomecânico, Bioquímico, Bioemocional].
+// Ordem fixa [ápice, meio, base] = [Biomecânico, Biofuncional, Bioemocional].
 function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: boolean }[]) {
   ensureSpace(doc, 150);
   const cx = PAGE_W / 2;

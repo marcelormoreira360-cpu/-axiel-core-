@@ -66,3 +66,32 @@ export function normalizedToRaw(code: string, normStr: string): string {
   if (!Number.isFinite(norm)) return "";
   return String(Math.round(clamp((norm / 10) * max, 0, max)));
 }
+
+// ── Sintoma comum: duas perguntas curtas (frequência 0–3 × impacto 0–3) ────────
+// Decisão de Marcelo: carga = freq × impacto (0–9). O motor recebe um valor único
+// por code; a combinação acontece AQUI (camada de import), NUNCA em `scoring.ts`.
+// Regra: freq ausente = null (dado faltando). freq 0 = 0 (não pergunta impacto).
+// freq ≥ 1 com impacto ausente = null (incompleto, não zera falsamente). A
+// segurança cardiorrespiratória usa a frequência sozinha (ver lib/safety-flags).
+
+const to0to3 = (v: unknown): number | null => {
+  const n = typeof v === "number" ? v : typeof v === "string" ? Number(v.replace(",", ".")) : NaN;
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.min(3, n));
+};
+
+/** Combina frequência (0–3) e impacto (0–3) na carga do sintoma (0–9). null = dado faltando. */
+export function combineFreqImp(freq: unknown, imp: unknown): number | null {
+  const f = to0to3(freq);
+  if (f === null) return null;
+  if (f === 0) return 0;
+  const i = to0to3(imp);
+  if (i === null) return null;
+  return f * i; // 0..9
+}
+
+/** Carga combinada (0–9) → escala 0–10 do motor. Use RAW_MAX = 9 no code do sintoma. */
+export function freqImpToScale10(freq: unknown, imp: unknown): number | null {
+  const combined = combineFreqImp(freq, imp);
+  return combined === null ? null : clamp((combined / 9) * 10, 0, 10);
+}

@@ -33,7 +33,7 @@ IDIOMA: ${languageInstruction(locale)}
 
 DEVOLVA SÓ JSON: {"chief": string, "summary": string}
 - "chief" (queixa principal): UMA linha curta (até ~120 caracteres) com o foco central do caso. Priorize o campo "objetivo" (as 3 prioridades do paciente) e a anamnese.
-- "summary" (resumo do caso): um parágrafo curto (2 a 4 frases). Sintetize, nesta ordem de prioridade: os objetivos (3 prioridades), a anamnese e a integração clínica (ATM), o eixo prioritário do Mapa Neuro ID (Biomecânico/Bioquímico/Bioemocional) com o índice geral, e os medicamentos em uso com atenção a possíveis interações.
+- "summary" (resumo do caso): um parágrafo curto (2 a 4 frases). Sintetize, nesta ordem de prioridade: os objetivos (3 prioridades), a anamnese e a integração clínica (ATM), o eixo prioritário do Mapa Neuro ID (Biomecânico/Biofuncional/Bioemocional) com o índice geral, e os medicamentos em uso com atenção a possíveis interações.
 
 REGRAS INEGOCIÁVEIS (segurança e ciência):
 - É RASCUNHO para o terapeuta humano revisar e editar. NÃO é diagnóstico e NÃO vai ao paciente.
@@ -54,7 +54,7 @@ IDIOMA: ${languageInstruction(locale)}
 
 COMO ORGANIZAR (4 a 8 linhas, texto corrido ou bullets curtos):
 - Espinha ATM: separe o que veio na consulta em Antecedentes (histórico/cirurgias), Gatilhos (o que iniciou/piora, linha do tempo) e Mediadores (o que mantém: sono, dor, estresse, alimentação, sintomas atuais).
-- Eixos Bio³: aponte os eixos mais desregulados que a fala sugere, usando os nomes canônicos Biomecânico, Bioquímico e Bioemocional (nunca "emocional" sozinho).
+- Eixos Bio³: aponte os eixos mais desregulados que a fala sugere, usando os nomes canônicos Biomecânico, Biofuncional e Bioemocional (nunca "emocional" sozinho).
 - 1 a 3 hipóteses funcionais a confirmar e o que merece acompanhamento ou investigação.
 
 REGRAS INEGOCIÁVEIS (segurança e ciência):

@@ -69,7 +69,8 @@
     "keyContext": "Contexto-chave",
     "patterns": "Padrões",
     "approvedAt": "Aprovado: {date}",
-    "changes": "Alterações: {changes}"
+    "changes": "Alterações: {changes}",
+    "pendingMetricsWarn": "{count, plural, one {# exame com métricas não confirmadas} other {# exames com métricas não confirmadas}}. Confirme no painel de exames funcionais para incluir os números no relatório."
   },
   "patientPage": {
     "title": "AI Insights",

@@ -13,7 +13,7 @@ const isPt = (locale?: string | null) => (locale ?? "pt-BR").toLowerCase().start
 
 function pillarLabel(pillar: string | null): string {
   if (pillar === "fisico") return "Biomecânico";
-  if (pillar === "bioquimico") return "Bioquímico";
+  if (pillar === "bioquimico") return "Biofuncional";
   if (pillar === "emocional") return "Bioemocional";
   return pillar ?? "";
 }

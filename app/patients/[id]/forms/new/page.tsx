@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { getAssessmentTemplates, getTemplateWithStructure } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
+import { ensureUnifiedTemplate, isUnifiedTemplate } from "@/services/unified-form-link-service";
 import { AssessmentFillForm } from "@/components/assessment-fill-form";
 import { submitFormAction } from "./actions";
 
@@ -21,6 +22,15 @@ export default async function FillFormPage({ params, searchParams }: Props) {
 
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
+  // Garante o formulário unificado Neuro ID na lista (idempotente).
+  if (clinicId) await ensureUnifiedTemplate(clinicId);
+
+  // O unificado tem UX própria: o preenchimento in-app abre a tela rica dedicada,
+  // não o renderizador genérico (que não tem as perguntas no banco).
+  if (templateId && (await isUnifiedTemplate(templateId))) {
+    redirect(`/patients/${patientId}/neuro-id/unified`);
+  }
+
   const templates = await getAssessmentTemplates(clinicId);
 
   let template = null;

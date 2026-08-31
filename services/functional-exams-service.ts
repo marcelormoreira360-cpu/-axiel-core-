@@ -34,6 +34,26 @@ export async function getPatientFunctionalExams(patientId: string): Promise<Pati
   return (data ?? []) as PatientFunctionalExam[];
 }
 
+/**
+ * Conta exames com métricas EXTRAÍDAS (metrics_draft não vazio) mas ainda NÃO
+ * confirmadas pelo gate humano (metrics_reviewed_at nulo). Enquanto pendentes, os
+ * números não entram no relatório (input-builder exige metrics_reviewed_at) — este
+ * contador alimenta o aviso na mesa de revisão para acabar com a degradação silenciosa.
+ */
+export async function countExamsPendingMetricsReview(patientId: string): Promise<number> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("patient_functional_exams")
+    .select("id, metrics_draft, metrics_reviewed_at")
+    .eq("patient_id", patientId)
+    .is("metrics_reviewed_at", null);
+  if (error) throw error;
+  return (data ?? []).filter(
+    (e) => e.metrics_draft && Object.keys(e.metrics_draft as Record<string, unknown>).length > 0,
+  ).length;
+}
+
 /** Sobe o PDF do exame para o bucket patient-docs e devolve o caminho. */
 export async function uploadFunctionalExamFile(
   fileBuffer: Buffer,

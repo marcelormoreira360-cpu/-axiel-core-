@@ -11,6 +11,7 @@ import { sendSimpleEmail } from "@/services/email-service";
 import { sendPushToPatient } from "@/services/push-service";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { saveUnifiedFormResult } from "@/services/unified-form-bio3-service";
 
 export async function createNeuroIdAssessmentAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -40,6 +41,30 @@ export async function createNeuroIdAssessmentAction(formData: FormData) {
   });
 
   revalidatePath(`/patients/${patientId}`);
+}
+
+/**
+ * Envio do FORMULÁRIO UNIFICADO Neuro ID: grava o Bio³ (reusa o motor + as
+ * tabelas do fluxo atual). Uso interno/teste. Respostas vêm por código
+ * (numéricas alimentam o score; texto/choice ficam de fora do cálculo).
+ */
+export async function submitUnifiedFormAction(
+  patientId: string,
+  answers: Record<string, number | string | string[]>,
+): Promise<{ assessmentId: string; crisis: boolean; cardioresp: boolean }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+
+  const patient = await getPatientById(patientId, profile.clinic_id);
+  if (!patient) throw new Error("Paciente não encontrado nesta clínica.");
+
+  const rows = Object.entries(answers)
+    .filter(([, v]) => typeof v === "number")
+    .map(([code, v]) => ({ code, value: v as number }));
+
+  const res = await saveUnifiedFormResult(patientId, profile.clinic_id, rows);
+  revalidatePath(`/patients/${patientId}`);
+  return { assessmentId: res.assessmentId, crisis: res.safety.crisis, cardioresp: res.safety.cardioresp };
 }
 
 /**
