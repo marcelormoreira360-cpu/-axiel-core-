@@ -50,6 +50,24 @@ function LeadItems({ title, items, numbered }: { title: string; items?: NeuroSec
 }
 
 const LABEL_CLASS = "text-[11px] font-semibold uppercase tracking-wide text-[#6B6A66] mb-1";
+const SUBHEAD_CLASS = "text-[13px] font-semibold text-[#0F6E56] mb-1";
+
+/** Cabeçalho numerado de seção do relatório fundido (1..6): número em destaque + régua fina. */
+function SectionHead({ n, title }: { n: string; title: string }) {
+  return (
+    <div className="mt-4 mb-2 border-b border-black/[.08] pb-1">
+      <p className="text-[14px] font-semibold text-[#0F1A2E]">
+        <span className="text-[#0F6E56]">{n}.</span> {title}
+      </p>
+    </div>
+  );
+}
+
+/** Parágrafo do corpo, justificado, sem rótulo (fluxo contínuo do relatório). */
+function BodyP({ text }: { text?: string | null }) {
+  if (!text || !text.trim()) return null;
+  return <p className="mb-2 text-[13px] leading-6 text-[#0F1A2E] text-justify">{text}</p>;
+}
 
 /** Documento 1 na Rota A persuasiva: leituras achado→significado (sem travessão). */
 function Readings({ title, items }: { title: string; items?: NeuroSecaoItem[] }) {
@@ -57,7 +75,7 @@ function Readings({ title, items }: { title: string; items?: NeuroSecaoItem[] })
   if (arr.length === 0) return null;
   return (
     <div className="mb-3">
-      <p className={LABEL_CLASS}>{title}</p>
+      <p className={SUBHEAD_CLASS}>{title}</p>
       <div className="space-y-2">
         {arr.map((it, i) => (
           <div key={i}>
@@ -75,7 +93,7 @@ function EmotionalReading({ title, data }: { title: string; data?: NeuroLeituraB
   if (!data || ((data.temas ?? []).length === 0 && !data.sintese?.trim())) return null;
   return (
     <div className="mb-3">
-      <p className={LABEL_CLASS}>{title}</p>
+      <p className={SUBHEAD_CLASS}>{title}</p>
       {(data.temas ?? []).length > 0 ? (
         <div className="flex flex-wrap gap-1.5 mb-1.5">
           {data.temas.map((tema, i) => (
@@ -108,17 +126,6 @@ function PillarItem({ label, text }: { label: string; text?: string | null }) {
     <div>
       <p className="text-[13px] font-semibold text-[#0F1A2E]">{label}</p>
       <p className="text-[13px] leading-5 text-[#4b5563] text-justify">{text}</p>
-    </div>
-  );
-}
-
-/** Bloco simples de título humano (não-uppercase) + parágrafo (ex.: retrato Bio³). */
-function TitledParagraph({ item }: { item?: NeuroSecaoItem }) {
-  if (!item || (!item.titulo && !item.descricao)) return null;
-  return (
-    <div className="mb-3">
-      {item.titulo ? <p className="text-[13px] font-semibold text-[#0F1A2E] mb-1">{item.titulo}</p> : null}
-      {item.descricao ? <p className="text-[13px] leading-5 text-[#0F1A2E] text-justify">{item.descricao}</p> : null}
     </div>
   );
 }
@@ -172,6 +179,11 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
 
   if (!mapa && !plano && !sup) return null;
 
+  // FUSÃO Doc 1 + Doc 2: quando os dois estão no formato persuasivo, o plano é o
+  // FECHO ("próximos passos") do MESMO relatório, não um documento separado. O
+  // card do plano só aparece à parte no formato legado.
+  const fused = !!mapa && hasPersuasiveDoc1(mapa) && !!plano && hasPersuasiveDoc2(plano);
+
   return (
     <div className="space-y-3">
       {mapa && (
@@ -187,18 +199,46 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
           <Identificacao id={mapa.identificacao} live={liveId} fallbackName={patientName} />
           {hasPersuasiveDoc1(mapa) ? (
             <>
-              {mapa.abertura_calorosa ? (
-                <p className="mb-3 text-[14px] leading-6 text-[#0F1A2E] text-justify">{mapa.abertura_calorosa}</p>
-              ) : null}
-              <TitledParagraph item={mapa.leitura_bio3} />
-              <Readings title={t("neurometricReading")} items={mapa.leitura_neurometrica} />
-              <EmotionalReading title={t("emotionalReading")} data={mapa.leitura_bioemocional} />
+              {/* 1 */}
+              <SectionHead n="1" title={t("greetingTitle")} />
+              <BodyP text={mapa.abertura_calorosa} />
+              {/* 2 */}
+              <SectionHead n="2" title={t("clinicalPictureTitle")} />
+              <BodyP text={mapa.leitura_bio3?.descricao} />
+              {/* 3 — neurometria e biorressonância em subseções SEPARADAS e condicionais */}
+              <SectionHead n="3" title={t("whatWeFoundTitle")} />
+              <Readings title={`3.1  ${t("neurometricReading")}`} items={mapa.leitura_neurometrica} />
+              <EmotionalReading title={`3.2  ${t("emotionalReading")}`} data={mapa.leitura_bioemocional} />
+              {/* 4 */}
+              <SectionHead n="4" title={t("connectionTitle")} />
+              <BodyP text={mapa.conexao_aha} />
               <AnchorHighlight title={t("positiveAnchor")} text={mapa.ancora_positiva} />
-              <Paragraph title={t("ahaConnection")} text={mapa.conexao_aha} />
-              <Paragraph title={t("whyActNow")} text={mapa.porque_agir_agora} />
-              <Paragraph title={t("nextStep")} text={mapa.proximo_passo} />
-              {mapa.observacao ? (
-                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{mapa.observacao}</p>
+              {/* 5 */}
+              <SectionHead n="5" title={t("whyActNow")} />
+              <BodyP text={mapa.porque_agir_agora} />
+              {/* 6 — o plano é o fecho do mesmo relatório */}
+              <SectionHead n="6" title={t("nextStepsTitle")} />
+              {fused && plano ? (
+                <>
+                  <BodyP text={plano.onde_queremos_chegar} />
+                  {plano.tres_pilares ? (
+                    <div className="mb-3">
+                      <p className={SUBHEAD_CLASS}>{t("pillarsTitle")}</p>
+                      <div className="space-y-2">
+                        <PillarItem label={t("pillarNervous")} text={plano.tres_pilares.nervoso} />
+                        <PillarItem label={t("pillarEmotional")} text={plano.tres_pilares.emocional} />
+                        <PillarItem label={t("pillarLifestyle")} text={plano.tres_pilares.estilo_de_vida} />
+                      </div>
+                    </div>
+                  ) : null}
+                  <BodyP text={plano.como_caminhar_juntos} />
+                  <BodyP text={plano.proximo_passo ?? mapa.proximo_passo} />
+                </>
+              ) : (
+                <BodyP text={mapa.proximo_passo} />
+              )}
+              {((fused ? plano?.observacao : null) ?? mapa.observacao) ? (
+                <p className="mt-3 text-[11px] leading-4 text-[#A09E98]">{(fused ? plano?.observacao : null) ?? mapa.observacao}</p>
               ) : null}
             </>
           ) : (
@@ -223,7 +263,7 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
         </details>
       )}
 
-      {plano && (
+      {plano && !fused && (
         <details className="group rounded-2xl border border-black/[.08] bg-white">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
             <span>

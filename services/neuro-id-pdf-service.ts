@@ -177,6 +177,77 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   doc.lineWidth(1);
   doc.y = yBase + 12;
 }
+
+/**
+ * Pirâmide Bio³ dentro de um PAINEL (quadro), com RÓTULOS autoexplicativos por
+ * faixa (nome do pilar + %), para colocar À DIREITA do texto da seção 2.
+ * Desenha a partir de (x, topY) com largura w e devolve o y do rodapé do painel.
+ */
+function drawPyramidPanel(
+  doc: Doc,
+  x: number,
+  topY: number,
+  w: number,
+  bands: { dysfunction: number | null; isPriority: boolean; label: string }[],
+  indiceGeral?: number | null,
+) {
+  const titleH = 15, pyrH = 80, capH = 16, padBottom = 8;
+  const panelH = titleH + pyrH + capH + padBottom + 6;
+  doc.save();
+  doc.roundedRect(x, topY, w, panelH, 8).fillAndStroke("#FBFAF7", "#E6E4DC");
+  doc.restore();
+
+  doc.font("Helvetica-Bold").fontSize(7.5).fillColor(MUTED)
+    .text("MAPA BIO³", x, topY + 6, { width: w, align: "center", characterSpacing: 1 });
+
+  // Pirâmide na região ESQUERDA do painel; legenda (nomes) à direita.
+  const padX = 12;
+  const half = 32;
+  const pyrCx = x + padX + half;
+  const y0 = topY + titleH + 6;
+  const H = pyrH - 12;
+  const yB = y0 + H / 3, yC = y0 + (2 * H) / 3, yBase = y0 + H;
+  const xAt = (y: number) => (half * (y - y0)) / H;
+  const polys: [number, number][][] = [
+    [[pyrCx, y0], [pyrCx + xAt(yB), yB], [pyrCx - xAt(yB), yB]],
+    [[pyrCx - xAt(yB), yB], [pyrCx + xAt(yB), yB], [pyrCx + xAt(yC), yC], [pyrCx - xAt(yC), yC]],
+    [[pyrCx - xAt(yC), yC], [pyrCx + xAt(yC), yC], [pyrCx + xAt(yBase), yBase], [pyrCx - xAt(yBase), yBase]],
+  ];
+  const centersY = [y0 + H / 6, y0 + H / 2, y0 + (5 * H) / 6];
+  doc.lineWidth(1.5);
+  bands.forEach((b, i) => {
+    const bd = bandForDysfunction(b.dysfunction);
+    const fill = bd ? bd.colors.fill : "#E9E7E0";
+    doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
+  });
+  doc.lineWidth(1);
+  // Número (%) sobre cada faixa.
+  bands.forEach((b, i) => {
+    const disf = round(b.dysfunction);
+    doc.font("Times-Bold").fontSize(8).fillColor("#1f2937")
+      .text(disf === null ? "—" : `${disf}%`, pyrCx - 18, centersY[i] - 4, { width: 36, align: "center" });
+  });
+  // Legenda à direita: bolinha da cor da faixa + nome do pilar, alinhada a cada faixa.
+  const legendX = x + padX + 2 * half + 14;
+  const legendW = x + w - padX - legendX;
+  bands.forEach((b, i) => {
+    const bd = bandForDysfunction(b.dysfunction);
+    const dot = bd ? bd.colors.fill : "#E9E7E0";
+    const cy = centersY[i];
+    doc.save(); doc.circle(legendX + 3, cy, 3).fill(dot); doc.restore();
+    // Eixo prioritário destacado em negrito verde (sem o glifo ★, que vira "&" nas fontes do PDF).
+    doc.font(b.isPriority ? "Times-Bold" : "Times-Roman").fontSize(8.5).fillColor(b.isPriority ? "#0F6E56" : "#1f2937")
+      .text(b.label, legendX + 11, cy - 5, { width: Math.max(40, legendW - 11), align: "left" });
+  });
+  // Rodapé: índice geral + direção.
+  const capParts: string[] = [];
+  if (indiceGeral != null) capParts.push(`Índice geral ${Math.round(indiceGeral)}%`);
+  capParts.push("maior % = mais sobrecarga");
+  doc.font("Helvetica-Oblique").fontSize(6.6).fillColor(MUTED)
+    .text(capParts.join("   ·   "), x, yBase + 8, { width: w, align: "center" });
+
+  return topY + panelH;
+}
 function pdfToBuffer(doc: Doc): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -387,11 +458,15 @@ export async function buildNeuroIdPatientReportPdf(opts: {
 // Rótulos fixos das seções do Doc 1 no PDF. O PDF é PT (como buildNeuroIdMapPdf);
 // o CONTEÚDO das seções segue o idioma gerado pela IA. i18n do PDF é follow-up.
 const DOC1_LABELS = {
-  neurometric: "Suas leituras principais",
-  emotional: "Leitura emocional",
+  s1: "1.  Antes de tudo, uma palavra para você",
+  s2: "2.  O seu quadro clínico de hoje",
+  s3: "3.  O que a avaliação encontrou",
+  neurometric: "3.1  Como o seu sistema nervoso está funcionando (Exame de Neurometria)",
+  emotional: "3.2  A sua leitura emocional (Exame de Biorressonância)",
+  s4: "4.  A conexão, e um ponto de força",
   anchor: "Um ponto forte a seu favor",
-  aha: "Como tudo se conecta",
-  whyNow: "Por que começar agora",
+  s5: "5.  Por que começar agora é a melhor opção",
+  s6: "6.  Os próximos passos",
   nextStep: "Próximo passo",
 };
 
@@ -435,7 +510,7 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   doc.on("pageAdded", () => { decorate(); resetBody(doc); });
   resetBody(doc);
 
-  docTitle(doc, "Relatório Funcional Integrado", "Resultado da sua Avaliação Neuro ID");
+  docTitle(doc, "Relatório Neuro ID", "Resultado da sua Avaliação Neuro ID");
 
   const id = mapa.identificacao;
   const idParts = [
@@ -448,25 +523,36 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     doc.moveDown(0.5);
   }
 
-  // 1. Abertura calorosa
+  // ── Documento 1 fundido, em seções numeradas (1..6) ──
+  // 1
+  sectionTitle(doc, DOC1_LABELS.s1);
   paragraph(doc, mapa.abertura_calorosa);
 
-  // 2. Retrato Bio³ (título humano + parágrafo) + pirâmide
-  if (mapa.leitura_bio3?.titulo || mapa.leitura_bio3?.descricao) {
-    if (mapa.leitura_bio3?.titulo) sectionTitle(doc, mapa.leitura_bio3.titulo);
-    paragraph(doc, mapa.leitura_bio3?.descricao);
-  }
+  // 2 — retrato Bio³: TEXTO à esquerda, PIRÂMIDE (com rótulos) num painel à direita.
+  sectionTitle(doc, DOC1_LABELS.s2);
   const bio3 = opts.bio3;
   if (bio3) {
-    drawPyramid(doc, [
-      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico" },
-      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico" },
-      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional" },
-    ]);
-    doc.moveDown(0.3);
+    ensureSpace(doc, 150);
+    const topY = doc.y;
+    const leftW = Math.round(CONTENT_W * 0.56);
+    const gap = 16;
+    const rightX = MARGIN + leftW + gap;
+    const rightW = CONTENT_W - leftW - gap;
+    doc.font("Times-Roman").fontSize(10.5).fillColor(INK)
+      .text(mapa.leitura_bio3?.descricao ?? "", MARGIN, topY, { width: leftW, align: "justify", lineGap: 2 });
+    const textBottom = doc.y;
+    const panelBottom = drawPyramidPanel(doc, rightX, topY, rightW, [
+      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
+      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico", label: PILLAR_LABEL.bioquimico },
+      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional", label: PILLAR_LABEL.emocional },
+    ], bio3.indice_geral);
+    doc.y = Math.max(textBottom, panelBottom) + 8;
+  } else {
+    paragraph(doc, mapa.leitura_bio3?.descricao);
   }
 
-  // 3. Leituras principais (neurometria): título em negrito + descrição, sem travessão.
+  // 3 — neurometria (3.1) e biorressonância (3.2), SEPARADAS e condicionais
+  sectionTitle(doc, DOC1_LABELS.s3);
   const readings = (mapa.leitura_neurometrica ?? []).filter((it) => it.titulo || it.descricao);
   if (readings.length > 0) {
     sectionTitle(doc, DOC1_LABELS.neurometric);
@@ -476,8 +562,6 @@ export async function buildNeuroIdDoc1Pdf(opts: {
       paragraph(doc, it.descricao);
     }
   }
-
-  // 4. Leitura emocional: temas (linha) + síntese.
   const bio = mapa.leitura_bioemocional;
   if (bio && ((bio.temas?.length ?? 0) > 0 || bio.sintese?.trim())) {
     sectionTitle(doc, DOC1_LABELS.emotional);
@@ -488,30 +572,34 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     paragraph(doc, bio.sintese);
   }
 
-  // 5. Âncora positiva (destaque: título verde).
+  // 4 — conexão + ponto de força
+  sectionTitle(doc, DOC1_LABELS.s4);
+  if (mapa.conexao_aha?.trim()) paragraph(doc, mapa.conexao_aha);
   if (mapa.ancora_positiva?.trim()) {
-    ensureSpace(doc, 70); doc.moveDown(0.5);
-    doc.font("Times-Bold").fontSize(12.5).fillColor("#0F6E56").text(DOC1_LABELS.anchor.toUpperCase(), MARGIN, doc.y, { width: CONTENT_W });
-    doc.moveDown(0.35);
+    ensureSpace(doc, 60);
+    doc.font("Times-Bold").fontSize(10.5).fillColor("#0F6E56").text(DOC1_LABELS.anchor, MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.15);
     paragraph(doc, mapa.ancora_positiva);
   }
 
-  // 6/7/8. Conexão · Por que agora · Próximo passo
-  if (mapa.conexao_aha?.trim()) { sectionTitle(doc, DOC1_LABELS.aha); paragraph(doc, mapa.conexao_aha); }
-  if (mapa.porque_agir_agora?.trim()) { sectionTitle(doc, DOC1_LABELS.whyNow); paragraph(doc, mapa.porque_agir_agora); }
-  if (mapa.proximo_passo?.trim()) { sectionTitle(doc, DOC1_LABELS.nextStep); paragraph(doc, mapa.proximo_passo); }
+  // 5
+  sectionTitle(doc, DOC1_LABELS.s5);
+  paragraph(doc, mapa.porque_agir_agora);
 
-  // Disclaimer
-  const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
-  doc.moveDown(0.5);
-  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
-
-  // ── DOCUMENTO 2 (Plano Integrativo) — anexado no mesmo PDF quando aprovado no formato persuasivo ──
+  // 6 — os próximos passos (fecho). Com plano persuasivo, ele é o conteúdo; senão, o próximo passo do mapa.
   const plano = opts.plano ?? null;
-  if (hasPersuasiveDoc2(plano) && plano) {
-    doc.addPage();
-    docTitle(doc, "Plano Integrativo", "Os seus próximos passos, Neuro ID");
-    if (plano.onde_queremos_chegar?.trim()) { sectionTitle(doc, DOC2_LABELS.goal); paragraph(doc, plano.onde_queremos_chegar); }
+  const planoPersuasivo = hasPersuasiveDoc2(plano);
+  sectionTitle(doc, DOC1_LABELS.s6);
+  if (!planoPersuasivo) {
+    if (mapa.proximo_passo?.trim()) paragraph(doc, mapa.proximo_passo);
+    const disclaimer = mapa.observacao?.trim() || "Este documento não substitui avaliação médica, diagnóstico, exames laboratoriais ou condutas já prescritas.";
+    doc.moveDown(0.5);
+    doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+
+  // ── PRÓXIMOS PASSOS (conteúdo da seção 6, o plano) — em continuação, sem novo título de documento ──
+  if (planoPersuasivo && plano) {
+    if (plano.onde_queremos_chegar?.trim()) { paragraph(doc, plano.onde_queremos_chegar); }
     if (plano.tres_pilares) {
       sectionTitle(doc, DOC2_LABELS.pillars);
       const tp = plano.tres_pilares;

@@ -112,11 +112,11 @@
     "clinicalSynthesis": "Síntese clínico-funcional",
     "functionalConclusion": "Conclusão funcional",
     "journeyPhase": "Fase na Jornada Neuro ID",
-    "neurometricReading": "Suas leituras principais",
-    "emotionalReading": "Leitura emocional",
+    "neurometricReading": "Como o seu sistema nervoso está funcionando (Exame de Neurometria)",
+    "emotionalReading": "A sua leitura emocional (Exame de Biorressonância)",
     "positiveAnchor": "Um ponto forte a seu favor",
     "ahaConnection": "Como tudo se conecta",
-    "whyActNow": "Por que começar agora",
+    "whyActNow": "Por que começar agora é a melhor opção",
     "goalTitle": "Aonde vamos juntos",
     "pillarsTitle": "As três frentes do cuidado",
     "pillarNervous": "Sistema nervoso",
@@ -133,7 +133,12 @@
     "suggestedDose": "Dose sugerida",
     "objective": "Objetivo",
     "note": "Obs.",
-    "generalNotes": "Observações gerais"
+    "generalNotes": "Observações gerais",
+    "greetingTitle": "Antes de tudo, uma palavra para você",
+    "clinicalPictureTitle": "O seu quadro clínico de hoje",
+    "whatWeFoundTitle": "O que a avaliação encontrou",
+    "connectionTitle": "A conexão, e um ponto de força",
+    "nextStepsTitle": "Os próximos passos"
   },
   "pyramidAria": "Pirâmide Bio³ — peso de cada eixo no total, cor por gravidade",
   "scaleAria": "Pontuação 0 a 10"
