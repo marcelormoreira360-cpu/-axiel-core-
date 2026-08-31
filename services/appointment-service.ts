@@ -16,6 +16,33 @@ function hashConfirmToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
+/**
+ * Busca o agendamento ATIVO que ocupa um slot (clinic_id, patient_id, starts_at),
+ * respeitando o MESMO predicado do índice único parcial da migration 148
+ * (deleted_at null + status fora de cancelados/no_show). Centralizado para os 3
+ * pontos que tratam o 23505 (createAppointment, createPublicBooking, /api/p/book)
+ * não drifarem a lista de status. Passe o `select`; o chamador tipa o retorno.
+ */
+export async function findActiveAppointmentAtSlot(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+  clinicId: string,
+  patientId: string,
+  startsAt: string,
+  select: string,
+): Promise<Record<string, unknown> | null> {
+  const { data } = await supabase
+    .from("appointments")
+    .select(select)
+    .eq("clinic_id", clinicId)
+    .eq("patient_id", patientId)
+    .eq("starts_at", startsAt)
+    .is("deleted_at", null)
+    .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
+    .limit(1)
+    .maybeSingle();
+  return (data as Record<string, unknown> | null) ?? null;
+}
+
 export async function getSessionTypes(clinicId?: string): Promise<SessionType[]> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -168,17 +195,10 @@ export async function createAppointment(input: {
     // devolve o agendamento que já existe (idempotência). Side-effects NÃO rodam
     // de novo (return antecipado abaixo).
     if ((error as { code?: string }).code === "23505") {
-      const { data: existingAppt } = await supabase
-        .from("appointments")
-        .select(selectCols)
-        .eq("clinic_id", apptInput.clinic_id)
-        .eq("patient_id", apptInput.patient_id)
-        .eq("starts_at", apptInput.starts_at)
-        .is("deleted_at", null)
-        .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
-        .limit(1)
-        .maybeSingle();
-      if (existingAppt) return existingAppt as Appointment;
+      const existingAppt = await findActiveAppointmentAtSlot(
+        supabase, apptInput.clinic_id, apptInput.patient_id, apptInput.starts_at, selectCols,
+      );
+      if (existingAppt) return existingAppt as unknown as Appointment;
     }
     throw error;
   }
@@ -1171,18 +1191,13 @@ export async function createPublicBooking(input: {
     // horário 2x (duplo-clique / retry de rede / 2 abas). Devolve o agendamento
     // que já existe e PULA os side-effects (não re-notifica) → idempotente.
     if ((apptError as { code?: string }).code === "23505") {
-      const { data: dup } = await supabase
-        .from("appointments")
-        .select("id, zoom_join_url")
-        .eq("clinic_id", clinic.id)
-        .eq("patient_id", patientId)
-        .eq("starts_at", starts_at)
-        .is("deleted_at", null)
-        .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")')
-        .limit(1)
-        .maybeSingle();
+      const dup = await findActiveAppointmentAtSlot(supabase, clinic.id, patientId, starts_at, "id, zoom_join_url");
       if (dup) {
-        return { ok: true, appointment_id: dup.id, is_online: sessionType.is_online ?? false, zoom_join_url: (dup.zoom_join_url as string | null) ?? null };
+        // Nota (follow-up baixo #1): num duplo-clique de sessão ONLINE, o vencedor
+        // grava o zoom_join_url de forma assíncrona após o insert, então este
+        // retorno idempotente pode vir com zoom_join_url null. Aceito por ora
+        // (corrida rara); o link também vai por e-mail/WhatsApp de confirmação.
+        return { ok: true, appointment_id: dup.id as string, is_online: sessionType.is_online ?? false, zoom_join_url: (dup.zoom_join_url as string | null) ?? null };
       }
     }
     return { ok: false, error: "Erro ao criar agendamento.", code: "APPT_ERROR", status: 500 };
