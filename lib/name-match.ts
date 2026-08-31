@@ -31,43 +31,30 @@ export function normalizeName(raw: string | null | undefined): string {
     .trim();
 }
 
-function tokens(raw: string | null | undefined): string[] {
-  const n = normalizeName(raw);
-  return n ? n.split(" ").filter(Boolean) : [];
-}
-
 /**
  * `true` só quando temos ALTA confiança de que os dois nomes são a MESMA pessoa.
- * Conservador por design (finding #1 do code-review): o casamento "frouxo" antigo
- * (mesmo primeiro nome + um sobrenome em comum) fundia parentes que compartilham
- * contato — ex.: "Ana Paula Souza" vs "Ana Beatriz Souza" no mesmo telefone. Isso
- * viola a regra de ouro (nunca fundir pessoas diferentes).
+ * Conservador por design: o casamento "frouxo" original (mesmo primeiro nome + um
+ * sobrenome em comum) fundia parentes que compartilham contato — ex.: "Ana Paula
+ * Souza" vs "Ana Beatriz Souza" no mesmo telefone. Isso viola a regra de ouro
+ * (nunca fundir pessoas diferentes).
  *
- * Nova semântica: só casa quando o CONJUNTO de tokens normalizados é IDÊNTICO.
+ * Semântica: só casa em IGUALDADE EXATA do nome normalizado (mesma ordem de
+ * tokens). Igualdade insensível à ordem (finding #6 do code-review) foi DESCARTADA
+ * porque funde anagramas de nome ("Maria Silva Santos" vs "Maria Santos Silva"),
+ * que podem ser pessoas diferentes — na dúvida, NÃO funde.
  *  - vazio de um dos lados → false (não dá para confirmar).
- *  - todos os tokens iguais (ignorando acento/caixa/espaço; ordem irrelevante,
- *    comparada por sort dos tokens) → true.
- *  - qualquer token diferente (a mais, a menos ou trocado) → false.
+ *  - nomes normalizados idênticos → true.
+ *  - qualquer diferença (token a mais/a menos/trocado/reordenado) → false.
  *
- * Consequências intencionais:
- *  - "João Silva" == "Joao Silva" → true (só acento/caixa).
- *  - "Marina Fumagalli Graveli" == "Marina Graveli Fumagalli" → true (só ordem).
- *  - "João P Silva" != "João Silva" → false (token a mais → duplicata, aceitável).
- *  - "Rafael Castelo" != "Rafael Castelo Branco de Andrade" → false (nome curto
- *    vs completo: pode ser a mesma pessoa, mas na dúvida NÃO funde; duplicata é
- *    o pior caso aceitável).
+ * Consequências intencionais (o pior caso aceitável é criar duplicata, reversível):
+ *  - "João Silva" == "Joao  Silva" → true (só acento/caixa/espaço).
+ *  - "Maria Silva Santos" != "Maria Santos Silva" → false (ordem trocada, na dúvida não funde).
+ *  - "João P Silva" != "João Silva" → false (token a mais).
+ *  - "Rafael Castelo" != "Rafael Castelo Branco de Andrade" → false (curto vs completo).
  */
 export function namesMatch(a: string | null | undefined, b: string | null | undefined): boolean {
   const na = normalizeName(a);
   const nb = normalizeName(b);
   if (!na || !nb) return false;
-  if (na === nb) return true;
-
-  const ta = tokens(a);
-  const tb = tokens(b);
-  if (ta.length !== tb.length) return false;
-
-  const sa = [...ta].sort();
-  const sb = [...tb].sort();
-  return sa.every((t, i) => t === sb[i]);
+  return na === nb;
 }

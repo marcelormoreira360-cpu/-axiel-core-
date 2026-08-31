@@ -22,12 +22,15 @@ describe("namesMatch — mesma pessoa (deve fundir)", () => {
   it("nome idêntico casa", () => {
     expect(namesMatch("João Silva", "João Silva")).toBe(true);
   });
-  it("mesma pessoa com ordem dos tokens trocada (conjunto idêntico)", () => {
-    expect(namesMatch("Marina Fumagalli Graveli", "Marina Graveli Fumagalli")).toBe(true);
+  it("espaços/acento/caixa não impedem o casamento", () => {
+    expect(namesMatch("João  SILVA", "joao silva")).toBe(true);
   });
 });
 
 describe("namesMatch — pessoas DIFERENTES (não pode fundir)", () => {
+  it("nomes com a MESMA ordem trocada (anagrama) NÃO funde (na dúvida, não funde)", () => {
+    expect(namesMatch("Maria Silva Santos", "Maria Santos Silva")).toBe(false);
+  });
   it("parentes com mesmo sobrenome mas primeiro nome diferente (caso telefone compartilhado)", () => {
     expect(namesMatch("Pedro Valpereira", "Fabio Valpereira")).toBe(false);
     expect(namesMatch("Angelo Celestino", "Roseli Celestino")).toBe(false);

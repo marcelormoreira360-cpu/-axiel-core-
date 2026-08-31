@@ -375,30 +375,32 @@ export async function confirmAppointmentByToken(
           namesMatch(c.full_name as string, incomingName),
       );
       if (existing?.id) {
-        const { error: uErr } = await supabase
-          .from("patients")
-          .update({ ...cleaned, status: "active", deleted_at: null, updated_at: new Date().toISOString() })
-          .eq("id", existing.id)
-          .eq("clinic_id", info.clinic_id);
-        if (uErr) return { ok: false, error: "Não foi possível salvar seus dados. Tente novamente." };
-        // Reaponta o agendamento para o cadastro existente e SÓ ENTÃO arquiva o
-        // stub. O reaponte pode violar o índice único da migration 148 (um único
-        // agendamento por slot/paciente) → erro 23505. Se isso acontecer, NÃO
-        // podemos arquivar o stub: senão o agendamento ficaria apontando para um
-        // paciente soft-deletado. Nesse caso mantemos o estado consistente (o
-        // agendamento segue no stub ATIVO) e só logamos.
+        // Reaponta o agendamento para o cadastro existente ANTES de mexer nele
+        // (finding #2). O reaponte pode violar o índice único da migration 148 (um
+        // único agendamento por slot/paciente) → erro 23505. Se isso acontecer, NÃO
+        // tocamos no paciente existente nem arquivamos o stub: o agendamento segue
+        // no stub ATIVO (estado consistente, sem sobrescrever dados de quem já existe).
         const { error: reErr } = await supabase
           .from("appointments")
           .update({ patient_id: existing.id })
           .eq("id", info.id);
         if (reErr) {
           console.error(
-            `[confirmAppointmentByToken] falha ao reapontar agendamento ${info.id} para paciente ${existing.id} (code=${reErr.code}); mantendo stub ${info.patient.id} ativo e NÃO arquivando.`,
+            `[confirmAppointmentByToken] falha ao reapontar agendamento ${info.id} para paciente ${existing.id} (code=${reErr.code}); mantendo stub ${info.patient.id} ativo e NÃO fundindo.`,
             reErr,
           );
-          // Não funde, não arquiva: duplicata/estado atual é preferível a apontar
-          // para um registro arquivado. Segue o fluxo normal atualizando o stub.
+          // Não funde, não enriquece, não arquiva: duplicata é preferível a perda de dados.
         } else {
+          // Reaponte OK: agora sim enriquece o cadastro existente com os dados do
+          // stub (best-effort) e arquiva o stub.
+          const { error: uErr } = await supabase
+            .from("patients")
+            .update({ ...cleaned, status: "active", deleted_at: null, updated_at: new Date().toISOString() })
+            .eq("id", existing.id)
+            .eq("clinic_id", info.clinic_id);
+          if (uErr) {
+            console.error(`[confirmAppointmentByToken] reaponte OK mas falha ao enriquecer paciente ${existing.id}; seguindo.`, uErr);
+          }
           await supabase
             .from("patients")
             .update({ deleted_at: new Date().toISOString() })
