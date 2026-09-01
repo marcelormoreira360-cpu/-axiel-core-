@@ -51,28 +51,17 @@ export default async function UnifiedFormLinkPage({ params }: Props) {
     clinicName = (clinic?.name as string) ?? "";
   } catch { /* usa header genérico */ }
 
-  const greeting =
-    data.kind === "patient" && data.patientName
-      ? chrome.greetingNamed.replace("{name}", data.patientName.split(/\s+/)[0])
-      : chrome.greetingAnon;
-
   return (
     <div className="min-h-screen bg-[#FAFAF8] py-[28px] dark:bg-[#0E1117]">
-      <div className="mx-auto mb-2 max-w-6xl px-4">
-        {clinicName && (
-          <p className="text-[11px] font-medium uppercase tracking-[.10em] text-[#A09E98] dark:text-[#6B6A66]">{clinicName}</p>
-        )}
-        <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-          {chrome.headerTitle}
-        </h1>
-        <p className="mt-[2px] text-[13px] text-[#A09E98] dark:text-[#6B6A66]">{greeting}</p>
-      </div>
-
-      <UnifiedPublicClient token={token} kind={data.kind} locale={locale} />
-
-      <p className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] text-[#D3D1C7] dark:text-white/20">
-        {chrome.footerPrivacy}
-      </p>
+      {/* Cabeçalho, formulário e rodapé vivem no client para trocar de idioma ao
+          vivo quando o paciente escolhe outro idioma na 1ª pergunta. */}
+      <UnifiedPublicClient
+        token={token}
+        kind={data.kind}
+        locale={locale}
+        clinicName={clinicName}
+        patientName={data.patientName}
+      />
     </div>
   );
 }

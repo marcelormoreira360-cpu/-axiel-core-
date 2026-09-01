@@ -45,6 +45,7 @@ export default function NeuroIdUnifiedForm({
   patientFacing = false,
   completeLabel = "Concluir",
   locale = "pt-BR",
+  onLocaleChange,
 }: {
   onComplete?: (answers: AnswerMap) => void;
   /** Fluxo por link (paciente): oculta o Bio³ ao vivo e o painel de segurança —
@@ -54,9 +55,17 @@ export default function NeuroIdUnifiedForm({
   /** Idioma do paciente (message_language). Traduz a EXIBIÇÃO; valores guardados
    *  seguem canônicos (PT), então score/import/condicionais não quebram. */
   locale?: FormLocale;
+  /** Chamado quando o paciente troca o idioma na 1ª pergunta (a_idioma), para o
+   *  pai re-renderizar TUDO (formulário + cabeçalho) no idioma escolhido. */
+  onLocaleChange?: (locale: FormLocale) => void;
 }) {
   const [answers, setAnswers] = useState<AnswerMap>({});
-  const set = (code: string, value: AnswerValue) => setAnswers((a) => ({ ...a, [code]: value }));
+  const set = (code: string, value: AnswerValue) => {
+    setAnswers((a) => ({ ...a, [code]: value }));
+    // A 1ª pergunta ("Em qual idioma…") controla o idioma exibido de todo o fluxo.
+    // Valor guardado é canônico ("Português"/"English"); só a exibição muda.
+    if (code === "a_idioma") onLocaleChange?.(value === "English" ? "en" : "pt-BR");
+  };
 
   const form = useMemo(() => localizeForm(locale), [locale]);
   const chrome = useMemo(() => formChrome(locale), [locale]);

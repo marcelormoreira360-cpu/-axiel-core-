@@ -13,9 +13,30 @@ type Kind = "patient" | "public";
  * `patientFacing` (sem pirâmide ao vivo). Fluxo:
  *  - convite de paciente: preenche → envia → agradece;
  *  - link público: preenche → dados de contato + consentimento → envia → agradece.
+ *
+ * O idioma inicial vem do `patients.locale` (default pt-BR); a 1ª pergunta do
+ * formulário ("Em qual idioma…") troca o idioma AO VIVO de todo o cabeçalho e
+ * das perguntas, para o paciente que prefere outro idioma se virar sozinho.
  */
-export default function UnifiedPublicClient({ token, kind, locale = "pt-BR" }: { token: string; kind: Kind; locale?: FormLocale }) {
+export default function UnifiedPublicClient({
+  token,
+  kind,
+  locale: initialLocale = "pt-BR",
+  clinicName = "",
+  patientName = null,
+}: {
+  token: string;
+  kind: Kind;
+  locale?: FormLocale;
+  clinicName?: string;
+  patientName?: string | null;
+}) {
+  const [locale, setLocale] = useState<FormLocale>(initialLocale);
   const chrome = formChrome(locale);
+  const greeting =
+    kind === "patient" && patientName
+      ? chrome.greetingNamed.replace("{name}", patientName.split(/\s+/)[0])
+      : chrome.greetingAnon;
   const [step, setStep] = useState<"form" | "contact" | "done" | "error">("form");
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [saving, setSaving] = useState(false);
@@ -57,20 +78,44 @@ export default function UnifiedPublicClient({ token, kind, locale = "pt-BR" }: {
     }
   }
 
+  // Cabeçalho e rodapé vivem no client para acompanhar a troca de idioma ao vivo.
+  const header = (
+    <div className="mx-auto mb-2 max-w-6xl px-4">
+      {clinicName && (
+        <p className="text-[11px] font-medium uppercase tracking-[.10em] text-[#A09E98] dark:text-[#6B6A66]">{clinicName}</p>
+      )}
+      <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
+        {chrome.headerTitle}
+      </h1>
+      <p className="mt-[2px] text-[13px] text-[#A09E98] dark:text-[#6B6A66]">{greeting}</p>
+    </div>
+  );
+  const footer = (
+    <p className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] text-[#D3D1C7] dark:text-white/20">
+      {chrome.footerPrivacy}
+    </p>
+  );
+
   if (step === "done") {
     return (
-      <div className="mx-auto max-w-xl rounded-2xl border border-emerald-300 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950/30">
-        <p className="mb-2 text-2xl">✅</p>
-        <h2 className="mb-1 text-lg font-semibold text-emerald-900 dark:text-emerald-200">{chrome.done.title}</h2>
-        <p className="text-sm text-emerald-800/80 dark:text-emerald-300/80">
-          {chrome.done.desc}
-        </p>
-      </div>
+      <>
+        {header}
+        <div className="mx-auto max-w-xl rounded-2xl border border-emerald-300 bg-emerald-50 p-6 text-center dark:border-emerald-800 dark:bg-emerald-950/30">
+          <p className="mb-2 text-2xl">✅</p>
+          <h2 className="mb-1 text-lg font-semibold text-emerald-900 dark:text-emerald-200">{chrome.done.title}</h2>
+          <p className="text-sm text-emerald-800/80 dark:text-emerald-300/80">
+            {chrome.done.desc}
+          </p>
+        </div>
+        {footer}
+      </>
     );
   }
 
   return (
-    <div>
+    <>
+      {header}
+      <div>
       {error && (
         <div className="mx-auto mb-3 max-w-2xl rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30">{error}</div>
       )}
@@ -79,6 +124,7 @@ export default function UnifiedPublicClient({ token, kind, locale = "pt-BR" }: {
         <NeuroIdUnifiedForm
           patientFacing
           locale={locale}
+          onLocaleChange={setLocale}
           completeLabel={kind === "public" ? chrome.continueLabel : chrome.submitAnswersLabel}
           onComplete={handleComplete}
         />
@@ -145,6 +191,8 @@ export default function UnifiedPublicClient({ token, kind, locale = "pt-BR" }: {
           </button>
         </form>
       )}
-    </div>
+      </div>
+      {footer}
+    </>
   );
 }
