@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getUnifiedLinkByToken } from "@/services/unified-form-link-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { normFormLocale, formChrome } from "@/modules/neuro-id/form-i18n";
 import UnifiedPublicClient from "./unified-public-client";
 
 export const metadata: Metadata = {
@@ -28,14 +29,18 @@ export default async function UnifiedFormLinkPage({ params }: Props) {
   const { token } = await params;
   const data = await getUnifiedLinkByToken(token);
 
+  // Idioma do paciente (message_language). Estados sem paciente caem no default (pt-BR).
+  const locale = normFormLocale(data.status === "ok" ? data.locale : null);
+  const chrome = formChrome(locale);
+
   if (data.status === "completed") {
-    return <StatusCard icon="✅" title="Você já respondeu" desc="Este questionário já foi enviado. Obrigado." />;
+    return <StatusCard icon="✅" title={chrome.status.completedTitle} desc={chrome.status.completedDesc} />;
   }
   if (data.status === "expired") {
-    return <StatusCard icon="⏰" title="Link expirado" desc="Peça um novo link à clínica para responder." />;
+    return <StatusCard icon="⏰" title={chrome.status.expiredTitle} desc={chrome.status.expiredDesc} />;
   }
   if (data.status !== "ok") {
-    return <StatusCard icon="🔗" title="Link inválido" desc="Verifique o endereço ou peça um novo link à clínica." />;
+    return <StatusCard icon="🔗" title={chrome.status.invalidTitle} desc={chrome.status.invalidDesc} />;
   }
 
   // Nome da clínica para o cabeçalho (marca).
@@ -48,8 +53,8 @@ export default async function UnifiedFormLinkPage({ params }: Props) {
 
   const greeting =
     data.kind === "patient" && data.patientName
-      ? `Olá, ${data.patientName.split(/\s+/)[0]}. Responda pensando nos últimos 30 dias.`
-      : "Responda pensando nos últimos 30 dias. Leva alguns minutos.";
+      ? chrome.greetingNamed.replace("{name}", data.patientName.split(/\s+/)[0])
+      : chrome.greetingAnon;
 
   return (
     <div className="min-h-screen bg-[#FAFAF8] py-[28px] dark:bg-[#0E1117]">
@@ -58,15 +63,15 @@ export default async function UnifiedFormLinkPage({ params }: Props) {
           <p className="text-[11px] font-medium uppercase tracking-[.10em] text-[#A09E98] dark:text-[#6B6A66]">{clinicName}</p>
         )}
         <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-[#0F1A2E] dark:text-[#E8E6E2]">
-          Perfil Clínico Integrado de 30 Dias
+          {chrome.headerTitle}
         </h1>
         <p className="mt-[2px] text-[13px] text-[#A09E98] dark:text-[#6B6A66]">{greeting}</p>
       </div>
 
-      <UnifiedPublicClient token={token} kind={data.kind} />
+      <UnifiedPublicClient token={token} kind={data.kind} locale={locale} />
 
       <p className="mx-auto mt-6 max-w-6xl px-4 text-center text-[11px] text-[#D3D1C7] dark:text-white/20">
-        Seus dados são tratados com segurança. Este questionário não é um serviço de emergência.
+        {chrome.footerPrivacy}
       </p>
     </div>
   );

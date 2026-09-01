@@ -13,12 +13,13 @@
  */
 
 import { useMemo, useState, type ReactNode } from "react";
-import { UNIFIED_FORM, type UnifiedQuestion, type UnifiedBlock } from "@/modules/neuro-id/unified-form-template";
+import { type UnifiedQuestion } from "@/modules/neuro-id/unified-form-template";
+import { localizeForm, formChrome, type FormLocale, type LocalizedBlock, type LocalizedQuestion, type FormChrome } from "@/modules/neuro-id/form-i18n";
 import { bio3FromAnswerRows, type AnswerRow } from "@/modules/neuro-id/unified-form-result";
 import { PILLAR_LABELS, type NeuroPillar } from "@/modules/neuro-id/catalog";
 
-const FREQ = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"];
-const IMP = ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"];
+// Valor canônico (PT) de sim/não — NUNCA muda; só a exibição é traduzida (chrome.yesNo).
+const YESNO_CANON = ["Não", "Sim"];
 const PILLAR_ORDER: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
 
 type AnswerValue = number | string | string[];
@@ -43,15 +44,22 @@ export default function NeuroIdUnifiedForm({
   onComplete,
   patientFacing = false,
   completeLabel = "Concluir",
+  locale = "pt-BR",
 }: {
   onComplete?: (answers: AnswerMap) => void;
   /** Fluxo por link (paciente): oculta o Bio³ ao vivo e o painel de segurança —
    *  o grau de disfunção é interno, revisado pelo terapeuta. Interno = false. */
   patientFacing?: boolean;
   completeLabel?: string;
+  /** Idioma do paciente (message_language). Traduz a EXIBIÇÃO; valores guardados
+   *  seguem canônicos (PT), então score/import/condicionais não quebram. */
+  locale?: FormLocale;
 }) {
   const [answers, setAnswers] = useState<AnswerMap>({});
   const set = (code: string, value: AnswerValue) => setAnswers((a) => ({ ...a, [code]: value }));
+
+  const form = useMemo(() => localizeForm(locale), [locale]);
+  const chrome = useMemo(() => formChrome(locale), [locale]);
 
   // Bio³ ao vivo: converte respostas numéricas em linhas por código.
   const outcome = useMemo(() => {
@@ -65,10 +73,10 @@ export default function NeuroIdUnifiedForm({
     <div className={`mx-auto grid max-w-6xl grid-cols-1 gap-6 p-4 ${patientFacing ? "" : "lg:grid-cols-[1fr_320px]"}`}>
       <main className="flex flex-col gap-4">
         <div className="rounded-xl border-l-4 border-amber-500 bg-white p-3 text-xs text-neutral-600 shadow-sm dark:bg-neutral-900 dark:text-neutral-400">
-          {UNIFIED_FORM.disclaimer}
+          {form.disclaimer}
         </div>
-        {UNIFIED_FORM.blocks.map((b) => (
-          <BlockView key={b.key} block={b} answers={answers} set={set} />
+        {form.blocks.map((b) => (
+          <BlockView key={b.key} block={b} answers={answers} set={set} chrome={chrome} />
         ))}
         <button
           type="button"
@@ -82,7 +90,7 @@ export default function NeuroIdUnifiedForm({
       {!patientFacing && (
       <aside className="lg:sticky lg:top-4 lg:self-start">
         <div className="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wider text-neutral-500">Mapa Bio³ ao vivo</h3>
+          <h3 className="mb-3 font-mono text-[11px] uppercase tracking-wider text-neutral-500">{chrome.aside.live}</h3>
           <div className="flex flex-col items-center gap-1.5">
             {PILLAR_ORDER.map((p, i) => {
               const v = outcome.neuro.pillars[p].dysfunction;
@@ -102,7 +110,7 @@ export default function NeuroIdUnifiedForm({
             })}
           </div>
           <div className="mt-3 flex items-baseline justify-between border-t border-neutral-200 pt-3 dark:border-neutral-800">
-            <span className="text-xs text-neutral-500">Índice geral</span>
+            <span className="text-xs text-neutral-500">{chrome.aside.index}</span>
             <span className="font-mono text-xl tabular-nums">
               {outcome.neuro.indiceGeral === null ? "—" : `${Math.round(outcome.neuro.indiceGeral)}%`}
             </span>
@@ -110,9 +118,9 @@ export default function NeuroIdUnifiedForm({
         </div>
 
         <div className="mt-3 rounded-xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-          <h3 className="mb-2 font-mono text-[11px] uppercase tracking-wider text-neutral-500">Segurança (fora do score)</h3>
-          <SafetyRow ok={!outcome.safety.cardioresp} okText="Sem sinal cardiorrespiratório" warnText="Precaução cardiorrespiratória" />
-          <SafetyRow ok={!outcome.safety.crisis} okText="Sem sinal de encaminhamento" warnText="Encaminhamento de apoio ativado (988/188)" crit />
+          <h3 className="mb-2 font-mono text-[11px] uppercase tracking-wider text-neutral-500">{chrome.aside.safety}</h3>
+          <SafetyRow ok={!outcome.safety.cardioresp} okText={chrome.aside.cardioOk} warnText={chrome.aside.cardioWarn} />
+          <SafetyRow ok={!outcome.safety.crisis} okText={chrome.aside.crisisOk} warnText={chrome.aside.crisisWarn} crit />
         </div>
       </aside>
       )}
@@ -131,7 +139,7 @@ function SafetyRow({ ok, okText, warnText, crit }: { ok: boolean; okText: string
   );
 }
 
-function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
+function BlockView({ block, answers, set, chrome }: { block: LocalizedBlock; answers: AnswerMap; set: (c: string, v: AnswerValue) => void; chrome: FormChrome }) {
   return (
     <section className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
       <div className="mb-1 flex items-baseline gap-2.5">
@@ -144,7 +152,7 @@ function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: Answ
           q.type === "info" ? (
             <p key={q.code} className="pt-4 text-sm text-neutral-500">{q.label}</p>
           ) : (
-            <QuestionView key={q.code} q={q} answers={answers} set={set} />
+            <QuestionView key={q.code} q={q} answers={answers} set={set} chrome={chrome} />
           ),
         )}
       </div>
@@ -152,11 +160,11 @@ function BlockView({ block, answers, set }: { block: UnifiedBlock; answers: Answ
   );
 }
 
-function QuestionView({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
+function QuestionView({ q, answers, set, chrome }: { q: LocalizedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void; chrome: FormChrome }) {
   return (
     <div className="py-3.5">
       <div className="mb-2 text-sm font-medium">{q.label}</div>
-      <QuestionInput q={q} answers={answers} set={set} />
+      <QuestionInput q={q} answers={answers} set={set} chrome={chrome} />
     </div>
   );
 }
@@ -178,7 +186,7 @@ function OptButton({ active, onClick, children }: { active: boolean; onClick: ()
   );
 }
 
-function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void }) {
+function QuestionInput({ q, answers, set, chrome }: { q: LocalizedQuestion; answers: AnswerMap; set: (c: string, v: AnswerValue) => void; chrome: FormChrome }) {
   const max = q.max ?? 3;
 
   if (q.type === "freqimp") {
@@ -186,18 +194,18 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
     return (
       <div className="flex flex-col gap-2.5">
         <div className="flex flex-col gap-1.5">
-          <span className="font-mono text-[10px] uppercase tracking-wide text-neutral-500">Com que frequência</span>
+          <span className="font-mono text-[10px] uppercase tracking-wide text-neutral-500">{chrome.freqHeader}</span>
           <div className="flex flex-wrap gap-1.5">
-            {FREQ.map((lb, v) => (
+            {chrome.freq.map((lb, v) => (
               <OptButton key={v} active={freq === v} onClick={() => set(`${q.code}_freq`, v)}>{v} · {lb}</OptButton>
             ))}
           </div>
         </div>
         {typeof freq === "number" && freq >= 1 && (
           <div className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] uppercase tracking-wide text-neutral-500">O quanto atrapalha</span>
+            <span className="font-mono text-[10px] uppercase tracking-wide text-neutral-500">{chrome.impHeader}</span>
             <div className="flex flex-wrap gap-1.5">
-              {IMP.map((lb, v) => (
+              {chrome.imp.map((lb, v) => (
                 <OptButton key={v} active={answers[`${q.code}_imp`] === v} onClick={() => set(`${q.code}_imp`, v)}>{v} · {lb}</OptButton>
               ))}
             </div>
@@ -230,11 +238,11 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
         <RangeButtons q={q} max={q.max ?? 6} value={v} onPick={(nv) => set(q.code, nv)} />
         {typeof v === "number" && v >= 3 && (
           <div className="rounded-xl border border-rose-500 bg-rose-50 p-3 text-[13px] dark:bg-rose-950/30">
-            <b className="text-rose-700 dark:text-rose-300">Você não está sozinho.</b> O que você sente importa. Se estiver pensando em se machucar, fale com alguém agora.
+            <b className="text-rose-700 dark:text-rose-300">{chrome.crisis.title}</b> {chrome.crisis.body}
             <div className="mt-1.5 flex flex-wrap gap-3 font-mono text-xs">
-              <span>EUA · 988</span><span>Brasil · 188 (CVV)</span><span>Emergência · 911 / 192</span>
+              <span>{chrome.crisis.us}</span><span>{chrome.crisis.br}</span><span>{chrome.crisis.emergency}</span>
             </div>
-            <div className="mt-1.5 text-[11px] text-neutral-500">Este item não gera nota. Encaminhamento para apoio, sem avaliação de risco pela clínica.</div>
+            <div className="mt-1.5 text-[11px] text-neutral-500">{chrome.crisis.note}</div>
           </div>
         )}
       </div>
@@ -242,30 +250,35 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
   }
 
   if (q.type === "yes_no") {
+    // Valor guardado = canônico PT ("Não"/"Sim"); exibição = chrome.yesNo.
     return (
       <div className="flex gap-1.5">
-        {["Não", "Sim"].map((lb) => (
-          <OptButton key={lb} active={answers[q.code] === lb} onClick={() => set(q.code, lb)}>{lb}</OptButton>
+        {YESNO_CANON.map((val, i) => (
+          <OptButton key={val} active={answers[q.code] === val} onClick={() => set(q.code, val)}>{chrome.yesNo[i]}</OptButton>
         ))}
       </div>
     );
   }
   if (q.type === "choice") {
+    const opts = q.options ?? [];
+    const labels = q.optionLabels ?? opts;
     return (
       <div className="flex flex-wrap gap-1.5">
-        {(q.options ?? []).map((o) => (
-          <OptButton key={o} active={answers[q.code] === o} onClick={() => set(q.code, o)}>{o}</OptButton>
+        {opts.map((o, i) => (
+          <OptButton key={o} active={answers[q.code] === o} onClick={() => set(q.code, o)}>{labels[i] ?? o}</OptButton>
         ))}
       </div>
     );
   }
   if (q.type === "multi") {
+    const opts = q.options ?? [];
+    const labels = q.optionLabels ?? opts;
     const sel = Array.isArray(answers[q.code]) ? (answers[q.code] as string[]) : [];
     const toggle = (o: string) => set(q.code, sel.includes(o) ? sel.filter((x) => x !== o) : [...sel, o]);
     return (
       <div className="flex flex-wrap gap-1.5">
-        {(q.options ?? []).map((o) => (
-          <OptButton key={o} active={sel.includes(o)} onClick={() => toggle(o)}>{o}</OptButton>
+        {opts.map((o, i) => (
+          <OptButton key={o} active={sel.includes(o)} onClick={() => toggle(o)}>{labels[i] ?? o}</OptButton>
         ))}
       </div>
     );
@@ -276,7 +289,7 @@ function QuestionInput({ q, answers, set }: { q: UnifiedQuestion; answers: Answe
       type={q.type === "date" ? "date" : "text"}
       value={typeof answers[q.code] === "string" ? (answers[q.code] as string) : ""}
       onChange={(e) => set(q.code, e.target.value)}
-      placeholder={q.type === "text" ? "Escreva aqui…" : ""}
+      placeholder={q.type === "text" ? chrome.writeHere : ""}
       className="w-full rounded-lg border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-800"
     />
   );

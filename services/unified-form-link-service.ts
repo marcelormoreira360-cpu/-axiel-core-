@@ -77,7 +77,7 @@ export async function isUnifiedTemplate(templateId: string): Promise<boolean> {
 
 /** Resolução do token do link do formulário unificado (rota pública dedicada). */
 export type UnifiedLinkLookup =
-  | { status: "ok"; clinicId: string; patientId: string | null; kind: "patient" | "public"; patientName: string | null; tokenHash: string }
+  | { status: "ok"; clinicId: string; patientId: string | null; kind: "patient" | "public"; patientName: string | null; locale: string | null; tokenHash: string }
   | { status: "completed" }
   | { status: "expired" }
   | { status: "invalid" };
@@ -113,13 +113,15 @@ export async function getUnifiedLinkByToken(token: string): Promise<UnifiedLinkL
   if (new Date(inv.expires_at) < new Date()) return { status: "expired" };
 
   let patientName: string | null = null;
+  let locale: string | null = null;
   if (inv.patient_id) {
     const { data: p } = await supabase
       .from("patients")
-      .select("full_name")
+      .select("full_name, locale")
       .eq("id", inv.patient_id)
       .maybeSingle();
     patientName = p?.full_name ?? "Paciente";
+    locale = (p?.locale as string | null) ?? null;
   }
 
   return {
@@ -128,6 +130,7 @@ export async function getUnifiedLinkByToken(token: string): Promise<UnifiedLinkL
     patientId: (inv.patient_id as string | null) ?? null,
     kind: isPublic ? "public" : "patient",
     patientName,
+    locale,
     tokenHash: token_hash,
   };
 }

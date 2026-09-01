@@ -73,7 +73,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
   name: "Neuro ID — Perfil Clínico Integrado de 30 Dias",
   recall: "Responda pensando nos últimos 30 dias.",
   disclaimer:
-    "Este formulário não é um serviço de emergência e pode não ser revisado em tempo real. Se você ou outra pessoa estiver em perigo imediato, ligue 911 (EUA) ou 192 (Brasil). Para apoio em crise, ligue ou envie mensagem para 988 (EUA) ou 188 (CVV, Brasil).",
+    "Este formulário não é um serviço de emergência e pode não ser revisado em tempo real. Se você ou outra pessoa estiver em perigo imediato, ligue 911 (EUA) ou 192 (Brasil). Para apoio em crise, ligue ou envie mensagem para o 988 (EUA); no Brasil, ligue 188 (CVV) ou converse pelo chat em cvv.org.br.",
   blocks: [
     {
       key: "A",
