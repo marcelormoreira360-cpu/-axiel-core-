@@ -5,7 +5,8 @@ import type { PatientLite } from "@/services/patient-service";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { Search, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Download, ArrowLeft } from "lucide-react";
+import { BackLink } from "@/components/back-link";
 import type { Patient } from "@/lib/types";
 import type { PatientJourneyStage, ClinicalJourneyStage, JourneyStageTone } from "@/modules/patient-journey/stage";
 
@@ -75,6 +76,7 @@ export function PatientsClient({
   journeyByPatientId?: Record<string, PatientJourneyStage>;
 }) {
   const t = useTranslations("patients.list");
+  const tCommon = useTranslations("common");
   const tJourney = useTranslations("patientPanels.intelligenceStrip.journey");
   const locale = useLocale();
   const router = useRouter();
@@ -159,6 +161,14 @@ export function PatientsClient({
 
   return (
     <>
+      {/* Voltar */}
+      <BackLink
+        fallbackHref="/dashboard"
+        className="mb-4 inline-flex items-center gap-1.5 text-[12px] text-black/45 dark:text-white/45 hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> {tCommon("actions.back")}
+      </BackLink>
+
       {/* Topbar */}
       <div className="flex items-start justify-between mb-[16px]">
         <div>
