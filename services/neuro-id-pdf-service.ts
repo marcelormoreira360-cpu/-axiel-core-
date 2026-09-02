@@ -10,7 +10,7 @@ import PDFDocument from "pdfkit";
 import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
 import { hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
-import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
+import { bandForDysfunction, dysfunctionToBalance, labelFor } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
 import { buildPatientReportCopy, copyBandForDysfunction, type CopyPillar } from "@/modules/neuro-id/report-copy";
 
@@ -176,6 +176,64 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   });
   doc.lineWidth(1);
   doc.y = yBase + 12;
+}
+
+// Anel Bio³ Circular (equilíbrio) desenhado no pdfkit — espelha o componente da tela.
+// Três fatias iguais (nome + % de EQUILÍBRIO), borda arredondada por estado, nós nas
+// junções, boneco no centro. Cor pela banda da DISFUNÇÃO crua; número exibido = equilíbrio.
+// items em [fisico, bioquimico, emocional]. Desenha centrado em (cx, cy); não move doc.y.
+type RingItem = { dys: number | null; balance: number | null; label: string; isPriority: boolean };
+function drawBio3Ring(doc: Doc, cx: number, cy: number, items: RingItem[]) {
+  const OUTER = 60, INNER = 17, RIM = 57, CORE_R = 11, ANCHOR_R = 39, HALF = 55;
+  const CENTERS = [30, 150, -90];
+  const BOUNDARIES = [-30, 90, -150];
+  const NEUTRAL_STROKE = "#C9C7BF", NODE = "#7C7A72";
+  const pol = (r: number, a: number) => ({ x: cx + r * Math.cos((a * Math.PI) / 180), y: cy + r * Math.sin((a * Math.PI) / 180) });
+  const wedge = (a0: number, a1: number) => {
+    const oS = pol(OUTER, a0), oE = pol(OUTER, a1), iE = pol(INNER, a1), iS = pol(INNER, a0);
+    const L = a1 - a0 > 180 ? 1 : 0;
+    return `M${oS.x} ${oS.y} A${OUTER} ${OUTER} 0 ${L} 1 ${oE.x} ${oE.y} L${iE.x} ${iE.y} A${INNER} ${INNER} 0 ${L} 0 ${iS.x} ${iS.y} Z`;
+  };
+  const rim = (a0: number, a1: number) => {
+    const s = pol(RIM, a0), e = pol(RIM, a1);
+    const L = a1 - a0 > 180 ? 1 : 0;
+    return `M${s.x} ${s.y} A${RIM} ${RIM} 0 ${L} 1 ${e.x} ${e.y}`;
+  };
+
+  items.forEach((d, i) => {
+    const c = CENTERS[i];
+    const bd = bandForDysfunction(d.dys);
+    const fill = bd ? bd.colors.fill : "#E9E7E0";
+    const stroke = bd ? bd.colors.stroke : "#D3D1C7";
+    doc.save(); doc.path(wedge(c - HALF, c + HALF)).fill(fill); doc.restore();
+    doc.save(); doc.lineWidth(d.isPriority ? 4 : 3).lineCap("round").path(rim(c - HALF, c + HALF)).stroke(stroke); doc.restore();
+  });
+
+  BOUNDARIES.forEach((b) => {
+    const p = pol(RIM, b);
+    doc.save(); doc.lineWidth(0.8).circle(p.x, p.y, 2.4).fillAndStroke("#FFFFFF", NEUTRAL_STROKE); doc.restore();
+  });
+
+  // núcleo: disco branco + anel pontilhado + boneco
+  doc.save(); doc.circle(cx, cy, CORE_R).fill("#FFFFFF"); doc.restore();
+  doc.save(); doc.lineWidth(0.7).dash(1.2, { space: 2 }).circle(cx, cy, CORE_R).stroke(NEUTRAL_STROKE); doc.undash(); doc.restore();
+  doc.save(); doc.lineWidth(1.3).lineCap("round").strokeColor(NODE);
+  doc.circle(cx, cy - 5.5, 2).stroke();
+  doc.moveTo(cx, cy - 3.5).lineTo(cx, cy + 2.5).stroke();
+  doc.moveTo(cx - 4, cy - 1.5).lineTo(cx + 4, cy - 1.5).stroke();
+  doc.moveTo(cx, cy + 2.5).lineTo(cx - 3, cy + 7).stroke();
+  doc.moveTo(cx, cy + 2.5).lineTo(cx + 3, cy + 7).stroke();
+  doc.restore();
+
+  // rótulos: nome + % de equilíbrio (pilha vertical na âncora da fatia)
+  items.forEach((d, i) => {
+    const c = CENTERS[i];
+    const bd = bandForDysfunction(d.dys);
+    const txt = bd ? bd.colors.text : "#9ca3af";
+    const an = pol(ANCHOR_R, c);
+    doc.font("Helvetica-Bold").fontSize(6.5).fillColor(txt).text(d.label, an.x - 34, an.y - 11, { width: 68, align: "center" });
+    doc.font("Times-Bold").fontSize(13).fillColor(txt).text(d.balance === null ? "—" : `${d.balance}%`, an.x - 30, an.y - 1, { width: 60, align: "center" });
+  });
 }
 
 /**
@@ -380,6 +438,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   const pillar: CopyPillar = (map.priority_pillar ?? "emocional") as CopyPillar;
   const band = copyBandForDysfunction(map.indice_geral);
   const indice = map.indice_geral === null ? 0 : Math.round(map.indice_geral);
+  const equilibrio = dysfunctionToBalance(map.indice_geral) ?? 0; // número exibido ao paciente
   const showSafeguard = opts.showSafeguard ?? ((map.emocional_pct ?? 0) >= 70);
 
   const copy = buildPatientReportCopy({
@@ -387,6 +446,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
     vars: {
       nome: (opts.patientName ?? "").split(" ")[0] || "Olá",
       indice,
+      equilibrio,
       pilar: PILLAR_LABEL[pillar],
       hint: COPY_HINT[pillar],
       q1: opts.vars?.q1 ?? null,
@@ -412,16 +472,21 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   paragraph(doc, copy.beats[0].body);
 
   sectionTitle(doc, copy.beats[1].title);
-  const indexBand = bandForDysfunction(map.indice_geral);
+  const indexBand = bandForDysfunction(map.indice_geral); // cor/estado vêm da disfunção crua
   doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
-    .text(map.indice_geral === null ? "—" : `${indice}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
-  doc.moveDown(0.2);
-  drawPyramid(doc, [
-    { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
-    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
-    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
+    .text(map.indice_geral === null ? "—" : `${equilibrio}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.font("Times-Italic").fontSize(9).fillColor(MUTED)
+    .text("Índice Bio³ de equilíbrio · maior = melhor", MARGIN, doc.y + 1, { width: CONTENT_W, align: "center" });
+  ensureSpace(doc, 170);
+  const ringCy = doc.y + 64;
+  drawBio3Ring(doc, PAGE_W / 2, ringCy, [
+    { dys: dysByPillar.fisico, balance: dysfunctionToBalance(dysByPillar.fisico), label: PILLAR_LABEL.fisico, isPriority: map.priority_pillar === "fisico" },
+    { dys: dysByPillar.bioquimico, balance: dysfunctionToBalance(dysByPillar.bioquimico), label: PILLAR_LABEL.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dys: dysByPillar.emocional, balance: dysfunctionToBalance(dysByPillar.emocional), label: PILLAR_LABEL.emocional, isPriority: map.priority_pillar === "emocional" },
   ]);
-  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("0–30 em função · 31–69 disfunção crônica · 70–100 grande disfunção", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.y = ringCy + 66;
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af")
+    .text("Solto = em bom equilíbrio · Tenso = merece atenção · Bloqueado = prioridade de cuidado", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
   doc.moveDown(0.3);
   paragraph(doc, copy.beats[1].body);
 

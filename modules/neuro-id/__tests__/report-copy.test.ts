@@ -8,7 +8,7 @@ const BANDS: CopyBand[] = ["solto", "tenso", "bloqueado"];
 const PILLARS: CopyPillar[] = ["fisico", "bioquimico", "emocional"];
 
 function vars(overrides: Partial<ReportVars> = {}): ReportVars {
-  return { nome: "Ana", indice: 48, pilar: "Bioemocional", hint: "mente & emoção", q1: "dor de cabeça", q2: "insônia", sintoma: "sono ruim", ...overrides };
+  return { nome: "Ana", indice: 48, equilibrio: 52, pilar: "Bioemocional", hint: "mente & emoção", q1: "dor de cabeça", q2: "insônia", sintoma: "sono ruim", ...overrides };
 }
 
 function allText(c: ReturnType<typeof buildPatientReportCopy>): string {
