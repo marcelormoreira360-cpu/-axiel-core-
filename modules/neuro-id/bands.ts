@@ -27,6 +27,20 @@ const BANDS: Record<BandKey, Band> = {
   bloqueado:  { key: "bloqueado",  icon: "ban",   colors: { fill: "#EFD7CC", fillStrong: "#E2B09A", stroke: "#C2643C", text: "#8A3216" } },
 };
 
+/**
+ * OXIEL Dual Language — ÚNICO ponto de tradução disfunção → equilíbrio.
+ *
+ * Motor clínico raciocina em DISFUNÇÃO (maior = pior; fonte da verdade: banco,
+ * scoring, thresholds, prioridade, cor/banda). A camada do PACIENTE mostra
+ * EQUILÍBRIO = 100 − disfunção (maior = melhor). Arredonda AQUI e em nenhum
+ * outro lugar. Cor/estado/prioridade NUNCA saem deste número — saem sempre da
+ * disfunção crua (severityColor/bandForDysfunction/priorityPillars).
+ */
+export function dysfunctionToBalance(dysfunction: number | null): number | null {
+  if (dysfunction === null || !Number.isFinite(dysfunction)) return null;
+  return Math.round(100 - Math.max(0, Math.min(100, dysfunction)));
+}
+
 /** Banda a partir da DISFUNÇÃO 0–100 (0–30 solto · 31–69 tenso · 70–100 bloqueado). */
 export function bandForDysfunction(dysfunction: number | null): Band | null {
   if (dysfunction === null || !Number.isFinite(dysfunction)) return null;
