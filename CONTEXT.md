@@ -1,7 +1,19 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 31/08/2026 (42)
+> Atualizado em: 02/09/2026 (43)
+
+## 🟡 Bio³ Circular + leitura em EQUILÍBRIO na camada do paciente (02/09/2026) — EM BRANCH `feat/bio3-circular-equilibrio`, PR aberto, deploy/publish GATED
+
+> Doutrina **OXIEL Dual Language**: o motor clínico fala DISFUNÇÃO (fonte única: banco, scoring, thresholds, prioridade, cor/estado); o paciente vê EQUILÍBRIO = 100 − disfunção (maior = melhor). Tradução SÓ na saída, num ponto único. Gates: typecheck 0, verify:i18n 53/0/0, 106 testes neuro-id. NÃO mergeado/deployado — aguarda OK de Marcelo + de-olho de advogado humano na copy do paciente.
+
+1. **Ponto único de conversão** (`modules/neuro-id/bands.ts`): `dysfunctionToBalance(dys) = round(100 − clamp(dys))`. Arredonda e limita AQUI e em nenhum outro lugar. Cor/estado/prioridade NUNCA saem do número exibido — saem sempre da disfunção crua (`bandForDysfunction`/`severityColor`/`priorityPillars`).
+2. **Anel Bio³ Circular** (`components/bio3-ring.tsx`, novo): substitui a pirâmide SÓ no painel do paciente (`patient-neuro-id-panel.tsx`). Três fatias iguais (120°) com ícone (lucide person/atom/brain) + nome + % de equilíbrio empilhados na vertical, borda arredondada por estado (solto verde/tenso âmbar/bloqueado terracota), nós nas junções, boneco pequeno num anel pontilhado no centro. Índice geral vira "55% · Índice Bio³ de equilíbrio"; cards em equilíbrio + tooltip "disfunção identificada". Layout/cores iterados com Marcelo. A pirâmide (`neuro-pyramid.tsx`) FICA intacta na mesa de revisão interna (`ai-insight-review-card.tsx`) — interna → disfunção.
+3. **PDF do paciente** (`buildNeuroIdPatientReportPdf` em `services/neuro-id-pdf-service.ts`): número herói em equilíbrio + anel Bio³ desenhado no pdfkit (`drawBio3Ring`, via `doc.path()` com arcos SVG — pdfkit suporta 'A'). Copy (`report-copy.ts` Beat 2/5 + legenda) reescrita para narrativa de equilíbrio, REVISADA por Aval + Termo (aprovado com ajustes, aplicados): direção como META, não fato futuro. Placeholder novo `{equilibrio}`. Smoke test `services/__tests__/neuro-id-patient-report-pdf.test.ts`. PDF **clínico** (`view=clinical`, `buildNeuroIdMapPdf`) e **Doc 1** (`buildNeuroIdDoc1Pdf`) permanecem em disfunção/inalterados.
+
+**Escopo mantido:** só patient-facing (tela + PDF do paciente). Global (Laudo/agentes/relatórios internos) fica pra depois via flag. `Pontos de atenção` seguem em disfunção (decisão de Marcelo). i18n `neuroId.json` nos 3 locales (novas: ringCaption/indexBalanceSub/dysfunctionTooltip; reescritas: indexCaption/cardSubtitle/legendRanges; pyramidShareCaption mantida p/ o card interno).
+
+🔴 **PUBLISH GATED:** a copy do paciente pede revisão de advogado humano (combinação "cuidar da causa + equilíbrio" caso algum beat antigo cite condição nomeada) + confirmar que o disclaimer aprovado cobre a terminologia "equilíbrio". Rascunho revisado em `_DRAFT_COPY_BIO3_EQUILIBRIO.md` (raiz, untracked).
 
 ## 🟢 Relatório Neuro ID fundido + dedup + questionário na seção Formulários (30-31/08/2026) — TUDO MERGEADO E NO AR
 
