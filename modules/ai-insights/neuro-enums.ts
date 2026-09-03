@@ -21,6 +21,20 @@ export const KNOWN_CLINICAL_FLAGS = [
 ] as const;
 export type ClinicalFlag = (typeof KNOWN_CLINICAL_FLAGS)[number];
 
+/** Flags emocionais que exigem a salvaguarda de saúde mental (encaminhamento + linha de crise). */
+export const EMOTIONAL_SAFEGUARD_FLAGS: readonly ClinicalFlag[] = ["ideacao_suicida", "depressao", "desesperanca"];
+
+/**
+ * Gatilho DETERMINÍSTICO da salvaguarda emocional do Doc 1 (gate Salvo): dispara quando o eixo
+ * Bioemocional está em grande disfunção (>= 70, "bloqueado") OU quando há flag emocional sensível
+ * (ideação/depressão/desesperança). Calculado sobre a DISFUNÇÃO/flags CRUAS, não sobre o texto da
+ * IA — a moldura de equilíbrio nunca pode enfraquecer o encaminhamento.
+ */
+export function needsEmotionalSafeguard(emocionalDysfunctionPct: number | null, clinicalFlags?: readonly string[] | null): boolean {
+  if ((emocionalDysfunctionPct ?? 0) >= 70) return true;
+  return !!clinicalFlags && clinicalFlags.some((f) => (EMOTIONAL_SAFEGUARD_FLAGS as readonly string[]).includes(f));
+}
+
 /** País da clínica -> chave i18n do texto de crise (renderiza no locale do paciente). */
 export const CRISIS_HOTLINE_BY_COUNTRY: Record<string, string> = {
   BR: "neuroId.crisis.br",   // CVV 188 / SAMU 192

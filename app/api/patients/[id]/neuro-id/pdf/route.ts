@@ -6,6 +6,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { patientIdentificacao } from "@/lib/patient-demographics";
 import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
+import { needsEmotionalSafeguard } from "@/modules/ai-insights/neuro-enums";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export const runtime = "nodejs";
@@ -50,11 +51,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const finalInsight = await getLatestFinalAiInsight(id);
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
+    // Salvaguarda emocional DETERMINÍSTICA (gate Salvo): calculada da disfunção/flags CRUAS,
+    // não do texto da IA, para o encaminhamento/linha de crise nunca ser suprimido pela
+    // moldura de equilíbrio.
+    const showSafeguard = needsEmotionalSafeguard(map.emocional_pct);
     if (mapa && hasPersuasiveDoc1(mapa)) {
-      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand });
+      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand, showSafeguard });
     } else {
       buffer = await buildNeuroIdPatientReportPdf({
-        map, patientName, clinic: brand,
+        map, patientName, clinic: brand, showSafeguard,
         vars: {
           q1: patient?.chief_complaint ?? null,
           q2: null,

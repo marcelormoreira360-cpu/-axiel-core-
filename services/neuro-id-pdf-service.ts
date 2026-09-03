@@ -530,6 +530,14 @@ const DOC2_LABELS = {
  * a versão por scores (buildNeuroIdPatientReportPdf) fica como fallback enquanto
  * não houver Doc 1 aprovado no formato novo.
  */
+// Salvaguarda de saúde mental — DETERMINÍSTICA (gate Salvo): renderizada pelo código, nunca
+// dependente do texto da IA. Linha de crise BR+US (sempre um número válido, independe de país/idioma).
+const DOC1_SAFEGUARD =
+  "Acompanhamento de um profissional de saúde mental é fortemente recomendado, junto do seu médico. " +
+  "Se você tiver pensamentos de se machucar, procure ajuda imediata: no Brasil, ligue 188 (CVV, 24 horas) " +
+  "ou 192 (SAMU); nos EUA, ligue ou envie mensagem para 988 (Suicide & Crisis Lifeline) ou 911. " +
+  "Você não está sozinho(a), e há pessoas prontas para te ouvir.";
+
 export async function buildNeuroIdDoc1Pdf(opts: {
   mapa: NeuroMapaIntegrativo;
   bio3?: NeuroIdPdfMap | null;
@@ -537,6 +545,9 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   plano?: NeuroPlanoRegulacao | null;
   patientName?: string | null;
   clinic?: ClinicBrand;
+  /** Salvaguarda emocional determinística (encaminhamento + linha de crise). Calculada no server
+   *  a partir da disfunção/flags CRUAS (needsEmotionalSafeguard), nunca do texto da IA. */
+  showSafeguard?: boolean;
 }): Promise<Buffer> {
   const { mapa } = opts;
   const brand = opts.clinic ?? {};
@@ -664,6 +675,14 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     const disc2 = plano.observacao?.trim() || "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.";
     doc.moveDown(0.5);
     doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disc2, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+
+  // Salvaguarda de saúde mental — SEMPRE renderizada pelo código quando o sinal cru dispara,
+  // independentemente do que a IA escreveu (o tom de equilíbrio não pode suprimir o encaminhamento).
+  if (opts.showSafeguard) {
+    ensureSpace(doc, 70);
+    doc.moveDown(0.5);
+    doc.font("Times-Bold").fontSize(9.5).fillColor("#8A3216").text(DOC1_SAFEGUARD, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
   }
 
   return pdfToBuffer(doc);

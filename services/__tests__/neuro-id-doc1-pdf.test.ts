@@ -75,6 +75,13 @@ describe("buildNeuroIdDoc1Pdf", () => {
     expect(comDoc2.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
+  it("com salvaguarda emocional, o PDF fica maior (bloco de crise determinístico entra)", async () => {
+    const sem = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, showSafeguard: false });
+    const com = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, showSafeguard: true });
+    expect(com.length).toBeGreaterThan(sem.length);
+    expect(com.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
   it("NÃO anexa Doc 2 quando o plano é legado/vazio", async () => {
     const legado = coerceAiInsightOutput({ plano_regulacao: { direcao_terapeutica: "eixo autonômico" } }).plano_regulacao!;
     const so1 = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3 });
