@@ -120,8 +120,8 @@ const BEAT5: Record<CopyBand, string> = {
 // ── Beat 6 — "Se nada mudar" (por faixa) — Aval/Termo reformulado ──
 const BEAT6: Record<CopyBand, string> = {
   solto: "E se você não fizer nada? Por ora, provavelmente tudo bem, mas equilíbrio se mantém com cuidado. Pequenos hábitos hoje evitam grandes ajustes amanhã.",
-  tenso: "E se nada mudar? O desequilíbrio crônico tende a se acomodar e cobrar mais caro com o tempo: mais sintomas, menos energia, recuperação mais lenta. Agir agora, enquanto o corpo ainda se adapta, costuma ser o momento mais fácil de virar o jogo.",
-  bloqueado: "Com franqueza e cuidado: quadros que seguem em desequilíbrio, sem atenção, costumam exigir mais tempo e esforço para reequilibrar mais adiante e podem favorecer momentos de maior desconforto. Não é uma sentença, e isto não substitui avaliação médica. É justamente por isso que começar a cuidar agora faz diferença.",
+  tenso: "E se nada mudar? Sem cuidado, é comum a pessoa sentir que custa mais para recuperar energia e disposição com o tempo. Agir agora, enquanto o corpo ainda se adapta, costuma ser o momento mais fácil de virar o jogo.",
+  bloqueado: "Com franqueza e cuidado: quadros que seguem sem atenção costumam pedir mais tempo de cuidado adiante. Não é uma sentença nem uma previsão sobre você, e isto não substitui avaliação médica. Por isso, começar cedo tende a deixar o caminho mais tranquilo.",
 };
 
 // ── Beat 7 — "Seu próximo passo" ──
@@ -129,7 +129,7 @@ const BEAT7 = "Seu próximo passo é simples: o plano que preparamos começa exa
 
 const AUTHORITY = "Este mapa nasce do método Neuro ID, que olha corpo, química e sistema nervoso como um sistema só: cuidar da causa, não só do sintoma.";
 const SOCIAL_PROOF = "Acompanhar a própria evolução ao longo do cuidado costuma ser o que mais motiva os pacientes. Cada corpo responde no seu tempo.";
-const DISCLAIMER = "Este mapa é uma leitura funcional de bem-estar para orientar o seu cuidado. Não é diagnóstico médico nem substitui avaliação ou tratamento médico. Resultados variam de pessoa para pessoa. Para sintomas que persistem ou se agravam, procure avaliação médica.";
+const DISCLAIMER = "Este mapa é uma leitura funcional de bem-estar para orientar o seu cuidado. O Índice Bio³ de equilíbrio é um número do nosso método, usado para acompanhar sua evolução e organizar o cuidado: não é uma medida médica, laboratorial ou de diagnóstico, e não deve ser lido como percentual de saúde. Não é diagnóstico médico nem substitui avaliação ou tratamento médico. Resultados variam de pessoa para pessoa. Para sintomas que persistem ou se agravam, procure avaliação médica.";
 const SAFEGUARD = "Recomendamos também acompanhamento de um profissional de saúde mental. Em caso de pensamentos de se machucar, procure ajuda imediata (CVV 188).";
 
 /** Monta a copy dos 7 beats já resolvida (placeholders interpolados). */
