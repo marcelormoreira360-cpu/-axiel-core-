@@ -1,7 +1,20 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 03/09/2026 (44)
+> Atualizado em: 03/09/2026 (45)
+
+## 🟢 Bio³ EQUILÍBRIO — follow-ups pós-deploy (03/09/2026, direto na main, TODOS NO AR)
+
+> Correções e redesign aplicados APÓS o merge b4cf023, commitados na main e deployados (Vercel axiel-core success cada um). Gates de cada: tsc 0 · i18n 53/0/0 · 625 testes · lint 0.
+>
+> 1. **Trava de exibição (commit 2de68df):** relatórios ANTIGOS tinham a prosa da seção 2 com % de disfunção ("Bioemocional 47%, índice 24%") → CONTRADIZIA o anel de equilíbrio. `bio3ProseHasPercent` (patient-text-guardrails) detecta % e o render (PDF + 360) troca por frase qualitativa determinística do `priority_pillar`. Relatórios novos (sem %) passam intactos. **Conserta todos os antigos no render, sem regerar.**
+> 2. **Numeração 3.x dinâmica (2de68df):** só um exame presente vira "3.1" (fim do "3.2" órfão). PDF + 360.
+> 3. **PDF sem Mapa Bio³ (2de68df):** paciente só com exames/anamnese (sem questionário Q-SNA) agora gera/envia o Doc 1 (degrada sem anel). Rota `/api/patients/[id]/neuro-id/pdf` + `sendNeuroIdReportToPatientAction` não bloqueiam mais em `!map`; clínico e fallback-por-scores ainda exigem mapa; sem mapa e sem Doc 1 → 404/erro. Tenant por getPatientById escopado.
+> 4. **REDESIGN da seção 2 do Doc 1 (commit f5f62de) — aprovado por Marcelo via mock:** título "O seu quadro clínico de hoje" → **"Como está o seu equilíbrio hoje"** (tira "clínico"/diagnóstico; PDF DOC1_LABELS.s2 + i18n clinicalPictureTitle 3 locales). Herói **"SEU ÍNDICE DE EQUILÍBRIO"** + % grande + "no seu Mapa Bio³ · maior = melhor" (framing de índice, pedido do Aval). **Breakdown** dos 3 pilares: % + rótulo de estado (`balanceStatePt`: Bom equilíbrio / Requer atenção / Prioridade de cuidado), ordenado por disfunção desc, prioritário em negrito. **Anel: "Você" no centro** (era bonequinho) em PDF (drawBio3Ring) e tela (bio3-ring.tsx). `drawBio3RingPanel` REMOVIDO. TODOS os números vêm do código/mapa → a "prosa sem número" continua valendo, zero regeneração.
+>
+> **Aplicação:** tudo é render-time → vale para TODOS os pacientes automaticamente (tela + qualquer PDF gerado/reenviado). Banco intocado (disfunção). Prompt novo só afeta relatórios FUTUROS (a trava #1 cobre os antigos). PDFs já enviados por e-mail ficam congelados (reenviar usa a versão nova).
+>
+> 🔴 **DÍVIDA JURÍDICA ABERTA (adiada por Marcelo):** montar o pacote do advogado (copy patient-facing no ar sem revisão: equilíbrio, disclaimer novo, Beat 6, herói do índice; + 4 pontos do parecer do Termo). Marcelo disse "deixamos para depois".
 
 ## 🟢 Bio³ EQUILÍBRIO (paciente + profissional) + salvaguarda emocional — MERGEADO NA MAIN E DEPLOYADO (03/09/2026, PR #141, merge b4cf023)
 
