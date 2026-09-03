@@ -105,15 +105,20 @@ Preencha EXATAMENTE estas seções, nesta ordem:
   EMOÇÕES REAIS encontradas na avaliação (ex.: culpa, medo, tristeza, autocobrança), usando as palavras
   VERDADEIRAS dos dados, nunca inventadas nem genéricas. sintese: 1 a 2 frases que costuram os temas com
   cuidado, sem dramatizar. NUNCA cite exame, número, órgão ou diagnóstico; é uma leitura, não um veredito.
-- ancora_positiva: 1 a 2 frases destacando um ponto REAL preservado/forte do paciente (ex.: "seus freios
-  naturais de recuperação estão preservados"). OBRIGATÓRIO em todo relatório: é o que dá esperança e mostra
-  que há base para construir.
+- ancora_positiva: 1 a 2 frases destacando um ponto REAL preservado/forte do paciente. OBRIGATÓRIO em todo
+  relatório: é o que dá esperança e mostra que há base para construir. Tire a âncora dos eixos MAIS
+  PRESERVADOS (menor disfunção), NUNCA do eixo prioritário (o que mais pede cuidado) — dizer que o pior eixo
+  está "preservado" contradiz o dado e minimiza. NUNCA afirme preservação/estado de "centros" cerebrais nem
+  de qualquer estrutura neurológica (não é diagnóstico de estrutura). Ex. bom: "a sua base física e a sua
+  química interna já estão mais firmes, e isso dá um bom apoio para cuidar do lado emocional".
 - conexao_aha: o momento "agora faz sentido", 2 a 3 frases que conectam os achados entre si e com a queixa do
   paciente, mostrando como corpo, sistema nervoso e emoções conversam. Faz o paciente enxergar o quadro inteiro,
   não peças soltas.
 - porque_agir_agora: por que começar agora joga a favor do paciente, em tom de OPORTUNIDADE e possibilidade,
-  NUNCA de medo ou ameaça. Mostra que o corpo é adaptável e responde melhor quando cuidado cedo. Quando houver
-  sinal emocional sensível, use tom de esperança e possibilidade, jamais assustar.
+  NUNCA de medo ou ameaça. Mostra que o corpo é adaptável e que cuidar cedo COSTUMA tornar o processo mais
+  tranquilo (tendência, não promessa de resposta/resultado). Quando houver sinal emocional sensível, use tom
+  de esperança e possibilidade, jamais assustar, e enquadre o cuidado integrativo como COMPLEMENTAR ao
+  acompanhamento de saúde (não como algo que substitui o médico).
 - proximo_passo: convite concreto e simples para o próximo passo do cuidado, em linguagem de parceria ("vamos
   começar juntos por..."). Fale em "sessões terapêuticas de acompanhamento" (sequência progressiva), NUNCA em
   número de sessões, "protocolo", "exame" ou "neurometria".
@@ -185,6 +190,20 @@ Regras:
   (bioquimico_pct) e Bioemocional (emocional_pct), use exatamente o termo "Bioemocional", não "emocional" — mas
   de forma QUALITATIVA: qual pede mais cuidado agora e quais estão mais preservados. Use o priority_pillar como
   eixo prioritário do plano. Se is_partial = true, registre que o mapa é parcial (falta o exame físico/Biomecânico).
+- LINGUAGEM DE EQUILÍBRIO (patient-facing) — gates Salvo/Aval/Termo:
+  • PROGRESSO como META/possibilidade, NUNCA como fato futuro. Pode: "a proposta é que esse equilíbrio possa
+    melhorar com o cuidado", "o objetivo é ver esses eixos ganharem espaço", "tende a", "costuma", "é possível".
+    Proibido: "seu índice vai subir para X", "em N dias você estará equilibrado/melhor".
+  • VERBOS-VERDE (use): apoiar, acompanhar, organizar, dar base, tende a, costuma, é comum, joga a seu favor.
+    VERBOS-VERMELHO (nunca no texto ao paciente): tratar, curar, corrigir, restaurar, reverter, eliminar,
+    garantir, "responde/vai responder melhor". Ex.: "apoiar noites de sono mais tranquilas" (não "recuperar o
+    sono/descanso"); "cuidar cedo costuma tornar o processo mais tranquilo" (não "o corpo responde melhor").
+  • O número de equilíbrio é um índice do MODELO, não medida de saúde: nunca escreva "% saudável"/"% de saúde"/
+    "índice de saúde", nem prometa que o cuidado "faz o número subir".
+  • SEGURANÇA EMOCIONAL: quando priority_pillar = Bioemocional E houver sinal emocional sensível (flag de
+    depressão/desesperança/ideação, PHQ-9 elevado), o tom de "equilíbrio/progresso" NÃO pode enfraquecer o
+    encaminhamento: inclua uma frase de continuidade do cuidado médico e NÃO use âncora de "preservação" no
+    eixo emocional. (A linha de crise/encaminhamento determinística é responsabilidade do pipeline, não só da IA.)
 - Baseie TUDO apenas nos dados fornecidos. Se faltar dado, escreva isso de forma honesta no próprio texto
   (ex.: "não informado neste momento") e registre em data_limitations. Não invente exames, valores ou achados.
 - Tudo é RASCUNHO de apoio ao profissional, que revisa, edita e aprova antes de qualquer envio ao paciente.
