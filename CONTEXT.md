@@ -1,11 +1,15 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 02/09/2026 (43)
+> Atualizado em: 03/09/2026 (44)
 
-## 🟡 Bio³ Circular + leitura em EQUILÍBRIO na camada do paciente (02/09/2026) — EM BRANCH `feat/bio3-circular-equilibrio`, PR aberto, deploy/publish GATED
+## 🟢 Bio³ EQUILÍBRIO (paciente + profissional) + salvaguarda emocional — MERGEADO NA MAIN E DEPLOYADO (03/09/2026, PR #141, merge b4cf023)
 
-> Doutrina **OXIEL Dual Language**: o motor clínico fala DISFUNÇÃO (fonte única: banco, scoring, thresholds, prioridade, cor/estado); o paciente vê EQUILÍBRIO = 100 − disfunção (maior = melhor). Tradução SÓ na saída, num ponto único. Gates: typecheck 0, verify:i18n 53/0/0, 106 testes neuro-id. NÃO mergeado/deployado — aguarda OK de Marcelo + de-olho de advogado humano na copy do paciente.
+> Doutrina **OXIEL Dual Language**: o motor clínico fala DISFUNÇÃO (fonte única: banco, scoring, thresholds, prioridade, cor/estado); o paciente vê EQUILÍBRIO = 100 − disfunção (maior = melhor); o profissional vê os DOIS. Tradução SÓ na saída, num ponto único. **NO AR** (Vercel axiel-core success). Gates finais: tsc 0, verify:i18n 53/0/0, 623 testes, lint 0.
+>
+> 🔴 **DÍVIDA PÓS-DEPLOY (Marcelo optou por subir antes do advogado):** a copy patient-facing (equilíbrio + disclaimer novo + Beat 6) foi ao ar SEM revisão de advogado humano. Itens do Termo em aberto: aprovar linha do disclaimer, pacote de urgência do Beat 6, base de substanciação do índice (FTC), fronteira sono/energia (estrutura-função vs tratar). Passar advogado o quanto antes; se reprovar algo, reverter/ajustar em produção. Item de segurança do PACIENTE (Salvo, red flag emocional) JÁ fechado no deploy (ver abaixo).
+>
+> **Salvaguarda emocional DETERMINÍSTICA (03/09, item D do Salvo — FECHADA no deploy):** `needsEmotionalSafeguard(emocional_pct, flags)` em `neuro-enums.ts` (dispara com Bioemocional ≥ 70 OU flag ideação/depressão/desesperança, sinal CRU). `buildNeuroIdDoc1Pdf` ganhou `showSafeguard` → renderiza bloco fixo (saúde mental + crise BR 188/192 e US 988/911) pelo CÓDIGO, nunca dependente do texto da IA. Rota do PDF + `sendNeuroIdReportToPatientAction` computam e passam (Doc 1 e fallback). Doc 1 só sai de insight FINAL/aprovado. Testes: `emotional-safeguard.test.ts` + render no doc1-pdf.
 
 1. **Ponto único de conversão** (`modules/neuro-id/bands.ts`): `dysfunctionToBalance(dys) = round(100 − clamp(dys))`. Arredonda e limita AQUI e em nenhum outro lugar. Cor/estado/prioridade NUNCA saem do número exibido — saem sempre da disfunção crua (`bandForDysfunction`/`severityColor`/`priorityPillars`).
 2. **Anel Bio³ Circular** (`components/bio3-ring.tsx`, novo): substitui a pirâmide SÓ no painel do paciente (`patient-neuro-id-panel.tsx`). Três fatias iguais (120°) com ícone (lucide person/atom/brain) + nome + % de equilíbrio empilhados na vertical, borda arredondada por estado (solto verde/tenso âmbar/bloqueado terracota), nós nas junções, boneco pequeno num anel pontilhado no centro. Índice geral vira "55% · Índice Bio³ de equilíbrio"; cards em equilíbrio + tooltip "disfunção identificada". Layout/cores iterados com Marcelo. A pirâmide (`neuro-pyramid.tsx`) FICA intacta na mesa de revisão interna (`ai-insight-review-card.tsx`) — interna → disfunção.
