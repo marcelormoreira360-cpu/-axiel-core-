@@ -79,7 +79,7 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
       ) : null}
 
       {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
-      <NeuroId360Documents output={output} liveId={liveId} />
+      <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} />
 
       {/* Edição manual do Doc 1/Doc 2 antes de aprovar/enviar (só no formato persuasivo, não-final) */}
       {output && !isFinal && showPyramid ? (

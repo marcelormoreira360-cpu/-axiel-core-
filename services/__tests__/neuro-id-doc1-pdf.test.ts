@@ -41,7 +41,7 @@ describe("buildNeuroIdDoc1Pdf", () => {
     expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
-  it("funciona sem o mapa Bio³ (sem pirâmide)", async () => {
+  it("funciona sem o mapa Bio³ (sem anel)", async () => {
     const pdf = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3: null });
     expect(pdf.length).toBeGreaterThan(0);
   });
