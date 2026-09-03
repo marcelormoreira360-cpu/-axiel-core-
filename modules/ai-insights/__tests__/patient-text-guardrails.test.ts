@@ -1,6 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
-import { scanPatientText, summarizeViolations, hasPersuasiveDoc1, hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
+import { scanPatientText, summarizeViolations, hasPersuasiveDoc1, hasPersuasiveDoc2, bio3ProseHasPercent } from "@/modules/ai-insights/patient-text-guardrails";
+
+describe("bio3ProseHasPercent", () => {
+  it("detecta prosa antiga com percentual (contradiz o anel de equilíbrio)", () => {
+    expect(bio3ProseHasPercent("Bioemocional 47% (maior disfunção); índice geral 24%.")).toBe(true);
+    expect(bio3ProseHasPercent("carga de 70 %")).toBe(true);
+  });
+  it("NÃO dispara em prosa nova qualitativa (sem número)", () => {
+    expect(bio3ProseHasPercent("O eixo Bioemocional é o que mais pede o seu cuidado hoje.")).toBe(false);
+    expect(bio3ProseHasPercent("")).toBe(false);
+    expect(bio3ProseHasPercent(null)).toBe(false);
+  });
+});
 
 /** Base persuasiva LIMPA (com âncora), à qual os testes injetam 1 violação por vez. */
 function cleanOutput(overrides: Record<string, unknown> = {}) {

@@ -139,6 +139,7 @@
     "generalNotes": "Observações gerais",
     "greetingTitle": "Antes de mais, uma palavra para si",
     "clinicalPictureTitle": "O seu quadro clínico de hoje",
+    "bio3PortraitFallback": "O seu retrato de hoje aparece no Mapa Bio³ ao lado. Hoje, o eixo que mais pede o seu cuidado é o {pillar}; os outros dois estão mais preservados e já trabalham a seu favor.",
     "whatWeFoundTitle": "O que a avaliação encontrou",
     "connectionTitle": "A ligação, e um ponto de força",
     "nextStepsTitle": "Os próximos passos"

@@ -10,6 +10,16 @@
 import type { AiInsightOutput, NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroSecaoItem } from "@/lib/types";
 
 /**
+ * true se a prosa do Bio³ (leitura_bio3.descricao) traz PERCENTUAIS — típico dos relatórios
+ * GERADOS ANTES da virada de equilíbrio (prompt antigo mandava citar disfunção "47%, índice 24%").
+ * Como o Anel Bio³ agora mostra o número em EQUILÍBRIO, esse texto antigo CONTRADIZ a figura;
+ * o render troca por uma frase qualitativa determinística. Relatórios novos não têm % → não disparam.
+ */
+export function bio3ProseHasPercent(text?: string | null): boolean {
+  return !!text && /\d\s*%/.test(text);
+}
+
+/**
  * true se o Doc 1 (mapa_integrativo) já veio no formato persuasivo (Rota A, 8 seções).
  * Fonte única usada pela tela (neuro-id-360-documents) e pelo PDF (neuro-id-pdf-service)
  * para decidir entre o render novo e o fallback do formato antigo.

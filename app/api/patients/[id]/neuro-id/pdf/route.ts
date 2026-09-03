@@ -17,15 +17,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const view = new URL(request.url).searchParams.get("view") === "clinical" ? "clinical" : "patient";
 
   const clinic = await getCurrentClinic();
+  if (!clinic?.id) notFound();
   const map = await getLatestNeuroIdMap(id);
-  if (!map) notFound();
 
-  // Defense-in-depth de tenant (mesmo padrão de app/api/documents/[id]/route.ts):
-  // a RLS já protege o select, mas checamos explicitamente que o mapa pertence
-  // à clínica atual. Divergência (ou ausência de clínica) responde como 404.
-  if (!clinic?.id || map.clinic_id !== clinic.id) notFound();
+  // Defense-in-depth de tenant: se HÁ mapa, ele precisa ser da clínica atual. Quando NÃO há
+  // mapa (paciente só com exames/anamnese, sem questionário Q-SNA), o tenant é garantido pelo
+  // getPatientById escopado por clinic_id logo abaixo.
+  if (map && map.clinic_id !== clinic.id) notFound();
 
-  const patient = await getPatientById(id, clinic?.id);
+  const patient = await getPatientById(id, clinic.id);
+  if (!patient) notFound();
 
   // Marca da clínica (mesmo padrão do relatório 360).
   let brand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
@@ -44,20 +45,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const patientName = patient?.full_name ?? null;
   let buffer: Buffer;
   if (view === "clinical") {
+    // O relatório técnico clínico É o Mapa Bio³ — sem questionário/mapa não há o que emitir.
+    if (!map) notFound();
     buffer = await buildNeuroIdMapPdf({ map, patientName, clinic: brand, demographics: patient ? patientIdentificacao(patient) : null });
   } else {
     // Rota A: se existe um Doc 1 APROVADO (review_status="final") no formato persuasivo,
-    // o PDF sai das 8 seções aprovadas. Senão, mantém o PDF por scores (comportamento atual).
+    // o PDF sai das 8 seções aprovadas. Senão, cai no PDF por scores (que exige o mapa).
     const finalInsight = await getLatestFinalAiInsight(id);
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
-    // Salvaguarda emocional DETERMINÍSTICA (gate Salvo): calculada da disfunção/flags CRUAS,
-    // não do texto da IA, para o encaminhamento/linha de crise nunca ser suprimido pela
-    // moldura de equilíbrio.
-    const showSafeguard = needsEmotionalSafeguard(map.emocional_pct);
+    // Salvaguarda emocional DETERMINÍSTICA (gate Salvo): da disfunção CRUA, nunca do texto da IA.
+    const showSafeguard = needsEmotionalSafeguard(map?.emocional_pct ?? null);
     if (mapa && hasPersuasiveDoc1(mapa)) {
-      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand, showSafeguard });
-    } else {
+      // Doc 1 SAI mesmo sem Mapa Bio³ (paciente só com exames/anamnese): a seção 2 degrada
+      // graciosamente (sem anel) e as seções de exames/plano carregam o relatório.
+      buffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map ?? null, plano: finalOutput?.plano_regulacao ?? null, patientName, clinic: brand, showSafeguard });
+    } else if (map) {
       buffer = await buildNeuroIdPatientReportPdf({
         map, patientName, clinic: brand, showSafeguard,
         vars: {
@@ -66,6 +69,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
           sintoma: patient?.chief_complaint ?? null,
         },
       });
+    } else {
+      // Sem mapa E sem Doc 1 aprovado: não há conteúdo para o relatório do paciente.
+      notFound();
     }
   }
   const safeName = (patient?.full_name ?? "paciente").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "paciente";

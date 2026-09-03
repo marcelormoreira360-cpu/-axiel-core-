@@ -8,7 +8,7 @@
 
 import PDFDocument from "pdfkit";
 import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
-import { hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
+import { hasPersuasiveDoc2, bio3ProseHasPercent } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, dysfunctionToBalance, labelFor } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
@@ -504,8 +504,9 @@ const DOC1_LABELS = {
   s1: "1.  Antes de tudo, uma palavra para você",
   s2: "2.  O seu quadro clínico de hoje",
   s3: "3.  O que a avaliação encontrou",
-  neurometric: "3.1  Como o seu sistema nervoso está funcionando (Exame de Neurometria)",
-  emotional: "3.2  A sua leitura emocional (Exame de Biorressonância)",
+  // Sub-números 3.x atribuídos DINAMICAMENTE no render (evita "3.2" órfão quando só há biorressonância).
+  neurometric: "Como o seu sistema nervoso está funcionando (Exame de Neurometria)",
+  emotional: "A sua leitura emocional (Exame de Biorressonância)",
   s4: "4.  A conexão, e um ponto de força",
   anchor: "Um ponto forte a seu favor",
   s5: "5.  Por que começar agora é a melhor opção",
@@ -522,6 +523,19 @@ const DOC2_LABELS = {
   howWeWalk: "Como caminhamos juntos",
   nextStep: "Próximo passo",
 };
+
+/**
+ * Texto do retrato Bio³ (seção 2). Se a prosa da IA trouxer percentuais (relatório ANTIGO,
+ * pré-equilíbrio), CONTRADIZ o anel → troca por uma frase qualitativa determinística, sem número.
+ * Prosa nova (sem %) passa intacta.
+ */
+function bio3PortraitPtText(descricao: string | null | undefined, priorityPillar: NeuroPillar | null): string {
+  if (descricao && descricao.trim() && !bio3ProseHasPercent(descricao)) return descricao;
+  if (priorityPillar) {
+    return `O seu retrato de hoje aparece no Mapa Bio³ ao lado. Hoje, o eixo que mais pede o seu cuidado é o ${PILLAR_LABEL[priorityPillar]}; os outros dois estão mais preservados e já trabalham a seu favor.`;
+  }
+  return "O seu retrato de hoje aparece no Mapa Bio³ ao lado, mostrando quais eixos estão mais equilibrados e qual pede mais cuidado.";
+}
 
 /**
  * PDF do Documento 1 persuasivo (Rota A) alimentado pelas 8 seções do Doc 1
@@ -595,7 +609,7 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     const rightX = MARGIN + leftW + gap;
     const rightW = CONTENT_W - leftW - gap;
     doc.font("Times-Roman").fontSize(10.5).fillColor(INK)
-      .text(mapa.leitura_bio3?.descricao ?? "", MARGIN, topY, { width: leftW, align: "justify", lineGap: 2 });
+      .text(bio3PortraitPtText(mapa.leitura_bio3?.descricao, bio3.priority_pillar), MARGIN, topY, { width: leftW, align: "justify", lineGap: 2 });
     const textBottom = doc.y;
     const panelBottom = drawBio3RingPanel(doc, rightX, topY, rightW, [
       { dys: bio3.fisico_pct, balance: dysfunctionToBalance(bio3.fisico_pct), isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
@@ -607,11 +621,14 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     paragraph(doc, mapa.leitura_bio3?.descricao);
   }
 
-  // 3 — neurometria (3.1) e biorressonância (3.2), SEPARADAS e condicionais
+  // 3 — neurometria e biorressonância, SEPARADAS e condicionais. Sub-número DINÂMICO:
+  // só um exame presente vira "3.1" (nunca "3.2" órfão).
   sectionTitle(doc, DOC1_LABELS.s3);
   const readings = (mapa.leitura_neurometrica ?? []).filter((it) => it.titulo || it.descricao);
+  let sub3 = 0;
   if (readings.length > 0) {
-    sectionTitle(doc, DOC1_LABELS.neurometric);
+    sub3 += 1;
+    sectionTitle(doc, `3.${sub3}  ${DOC1_LABELS.neurometric}`);
     for (const it of readings) {
       ensureSpace(doc, 50);
       if (it.titulo) { doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(it.titulo, MARGIN, doc.y, { width: CONTENT_W }); doc.moveDown(0.15); }
@@ -620,7 +637,8 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   }
   const bio = mapa.leitura_bioemocional;
   if (bio && ((bio.temas?.length ?? 0) > 0 || bio.sintese?.trim())) {
-    sectionTitle(doc, DOC1_LABELS.emotional);
+    sub3 += 1;
+    sectionTitle(doc, `3.${sub3}  ${DOC1_LABELS.emotional}`);
     if (bio.temas?.length) {
       doc.font("Times-Italic").fontSize(10).fillColor(INK).text(bio.temas.join("  ·  "), MARGIN, doc.y, { width: CONTENT_W });
       doc.moveDown(0.3);

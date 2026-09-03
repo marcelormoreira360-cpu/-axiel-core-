@@ -2,7 +2,7 @@ import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroLeituraBioemocional, NeuroSecaoItem } from "@/lib/types";
 import type { PatientIdentificacao } from "@/lib/patient-demographics";
-import { hasPersuasiveDoc1, hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
+import { hasPersuasiveDoc1, hasPersuasiveDoc2, bio3ProseHasPercent } from "@/modules/ai-insights/patient-text-guardrails";
 import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
 import { dysfunctionToBalance } from "@/modules/neuro-id/bands";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
@@ -212,6 +212,23 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
     ? `${tn("title")}: ${ringData.map((d) => `${d.label} ${d.balance === null ? "—" : `${d.balance}%`}`).join(", ")}.`
     : "";
 
+  // Retrato Bio³ (seção 2): prosa ANTIGA com % contradiz o anel de equilíbrio → troca por frase
+  // qualitativa determinística (só quando há anel). Prosa nova (sem %) passa intacta.
+  const bio3Descr = mapa?.leitura_bio3?.descricao;
+  const bio3PortraitText = bio3Descr && !bio3ProseHasPercent(bio3Descr)
+    ? bio3Descr
+    : bio3Map?.priority_pillar
+      ? tn("bio3PortraitFallback", { pillar: tn(`pillar.${bio3Map.priority_pillar}`) })
+      : (bio3Descr ?? "");
+
+  // Sub-número 3.x DINÂMICO (evita "3.2" órfão quando só há um exame).
+  const hasNeuro = (mapa?.leitura_neurometrica ?? []).some((it) => it.titulo || it.descricao);
+  const emo3 = mapa?.leitura_bioemocional;
+  const hasEmo = !!emo3 && (((emo3.temas?.length ?? 0) > 0) || !!emo3.sintese?.trim());
+  let s3n = 0;
+  const neuroNum = hasNeuro ? `3.${(s3n += 1)}` : "";
+  const emoNum = hasEmo ? `3.${(s3n += 1)}` : "";
+
   // FUSÃO Doc 1 + Doc 2: quando os dois estão no formato persuasivo, o plano é o
   // FECHO ("próximos passos") do MESMO relatório, não um documento separado. O
   // card do plano só aparece à parte no formato legado.
@@ -240,7 +257,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
               {ringData ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
                   <div className="sm:flex-1">
-                    <BodyP text={mapa.leitura_bio3?.descricao} />
+                    <BodyP text={bio3PortraitText} />
                   </div>
                   <div className="shrink-0 sm:w-[188px] sm:mx-0 mx-auto w-full max-w-[212px]">
                     <Bio3Ring data={ringData} ariaLabel={ringAria} className="w-full h-auto" />
@@ -252,10 +269,10 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
               ) : (
                 <BodyP text={mapa.leitura_bio3?.descricao} />
               )}
-              {/* 3 — neurometria e biorressonância em subseções SEPARADAS e condicionais */}
+              {/* 3 — neurometria e biorressonância em subseções SEPARADAS e condicionais (número dinâmico) */}
               <SectionHead n="3" title={t("whatWeFoundTitle")} />
-              <Readings title={`3.1  ${t("neurometricReading")}`} items={mapa.leitura_neurometrica} />
-              <EmotionalReading title={`3.2  ${t("emotionalReading")}`} data={mapa.leitura_bioemocional} />
+              <Readings title={`${neuroNum}  ${t("neurometricReading")}`} items={mapa.leitura_neurometrica} />
+              <EmotionalReading title={`${emoNum}  ${t("emotionalReading")}`} data={mapa.leitura_bioemocional} />
               {/* 4 */}
               <SectionHead n="4" title={t("connectionTitle")} />
               <BodyP text={mapa.conexao_aha} />

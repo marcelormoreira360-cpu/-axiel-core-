@@ -139,8 +139,10 @@ export async function sendNeuroIdReportToPatientAction(
   if (!patient) return { error: "Paciente não encontrado nesta clínica." };
   if (!patient.email) return { error: "Paciente sem e-mail cadastrado." };
 
+  // Mapa Bio³ pode não existir (paciente só com exames/anamnese, sem questionário Q-SNA):
+  // nesse caso o Doc 1 ainda é enviável (degrada sem o anel). Só bloqueia mais abaixo se
+  // NÃO houver nem mapa nem Doc 1 aprovado.
   const map = await getLatestNeuroIdMap(patientId);
-  if (!map) return { error: "Nenhum Mapa Bio³ disponível para enviar." };
 
   // Marca da clínica (mesmo caminho da rota /api/patients/[id]/neuro-id/pdf).
   let brand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
@@ -162,20 +164,24 @@ export async function sendNeuroIdReportToPatientAction(
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
     // Salvaguarda emocional DETERMINÍSTICA (gate Salvo) — sinal cru, não texto da IA.
-    const showSafeguard = needsEmotionalSafeguard(map.emocional_pct);
-    pdfBuffer = mapa && hasPersuasiveDoc1(mapa)
-      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand, showSafeguard })
-      : await buildNeuroIdPatientReportPdf({
-          map,
-          patientName: patient.full_name ?? null,
-          clinic: brand,
-          showSafeguard,
-          vars: {
-            q1: patient.chief_complaint ?? null,
-            q2: null,
-            sintoma: patient.chief_complaint ?? null,
-          },
-        });
+    const showSafeguard = needsEmotionalSafeguard(map?.emocional_pct ?? null);
+    if (mapa && hasPersuasiveDoc1(mapa)) {
+      pdfBuffer = await buildNeuroIdDoc1Pdf({ mapa, bio3: map ?? null, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand, showSafeguard });
+    } else if (map) {
+      pdfBuffer = await buildNeuroIdPatientReportPdf({
+        map,
+        patientName: patient.full_name ?? null,
+        clinic: brand,
+        showSafeguard,
+        vars: {
+          q1: patient.chief_complaint ?? null,
+          q2: null,
+          sintoma: patient.chief_complaint ?? null,
+        },
+      });
+    } else {
+      return { error: "Nenhum relatório disponível para enviar (sem Mapa Bio³ nem Doc 1 aprovado)." };
+    }
   } catch {
     return { error: "Não foi possível gerar o PDF do relatório." };
   }
