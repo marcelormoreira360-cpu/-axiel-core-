@@ -10,7 +10,7 @@ import PDFDocument from "pdfkit";
 import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
 import { hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
-import { bandForDysfunction, labelFor } from "@/modules/neuro-id/bands";
+import { bandForDysfunction, dysfunctionToBalance, labelFor } from "@/modules/neuro-id/bands";
 import { pillarContributions } from "@/modules/neuro-id/scoring";
 import { buildPatientReportCopy, copyBandForDysfunction, type CopyPillar } from "@/modules/neuro-id/report-copy";
 
@@ -123,11 +123,14 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
   doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ·  comece aqui (prioridade)" : ""}`);
   const pct = disf ?? 0;
+  const balance = dysfunctionToBalance(dysfunction); // camada profissional vê os dois
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
   doc.roundedRect(MARGIN, barY, barW, 8, 4).fill("#EFEDE7");
   if (disf !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
-  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
+  // Preenchimento = DISFUNÇÃO (cor/estado). À direita: disfunção (destaque) + equilíbrio (apoio).
+  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 5, { width: 48, align: "right" });
+  doc.font("Times-Roman").fontSize(7).fillColor(MUTED).text(balance === null ? "" : `eq ${balance}%`, MARGIN + barW + 8, barY + 7, { width: 48, align: "right" });
   doc.y = barY + 18;
 }
 
@@ -178,21 +181,81 @@ function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: 
   doc.y = yBase + 12;
 }
 
+// Anel Bio³ Circular (equilíbrio) desenhado no pdfkit — espelha o componente da tela.
+// Três fatias iguais (nome + % de EQUILÍBRIO), borda arredondada por estado, nós nas
+// junções, boneco no centro. Cor pela banda da DISFUNÇÃO crua; número exibido = equilíbrio.
+// items em [fisico, bioquimico, emocional]. Desenha centrado em (cx, cy); não move doc.y.
+type RingItem = { dys: number | null; balance: number | null; label: string; isPriority: boolean };
+function drawBio3Ring(doc: Doc, cx: number, cy: number, items: RingItem[]) {
+  const OUTER = 60, INNER = 17, RIM = 57, CORE_R = 11, ANCHOR_R = 39, HALF = 55;
+  const CENTERS = [30, 150, -90];
+  const BOUNDARIES = [-30, 90, -150];
+  const NEUTRAL_STROKE = "#C9C7BF", NODE = "#7C7A72";
+  const pol = (r: number, a: number) => ({ x: cx + r * Math.cos((a * Math.PI) / 180), y: cy + r * Math.sin((a * Math.PI) / 180) });
+  const wedge = (a0: number, a1: number) => {
+    const oS = pol(OUTER, a0), oE = pol(OUTER, a1), iE = pol(INNER, a1), iS = pol(INNER, a0);
+    const L = a1 - a0 > 180 ? 1 : 0;
+    return `M${oS.x} ${oS.y} A${OUTER} ${OUTER} 0 ${L} 1 ${oE.x} ${oE.y} L${iE.x} ${iE.y} A${INNER} ${INNER} 0 ${L} 0 ${iS.x} ${iS.y} Z`;
+  };
+  const rim = (a0: number, a1: number) => {
+    const s = pol(RIM, a0), e = pol(RIM, a1);
+    const L = a1 - a0 > 180 ? 1 : 0;
+    return `M${s.x} ${s.y} A${RIM} ${RIM} 0 ${L} 1 ${e.x} ${e.y}`;
+  };
+
+  items.forEach((d, i) => {
+    const c = CENTERS[i];
+    const bd = bandForDysfunction(d.dys);
+    const fill = bd ? bd.colors.fill : "#E9E7E0";
+    const stroke = bd ? bd.colors.stroke : "#D3D1C7";
+    doc.save(); doc.path(wedge(c - HALF, c + HALF)).fill(fill); doc.restore();
+    doc.save(); doc.lineWidth(d.isPriority ? 4 : 3).lineCap("round").path(rim(c - HALF, c + HALF)).stroke(stroke); doc.restore();
+  });
+
+  BOUNDARIES.forEach((b) => {
+    const p = pol(RIM, b);
+    doc.save(); doc.lineWidth(0.8).circle(p.x, p.y, 2.4).fillAndStroke("#FFFFFF", NEUTRAL_STROKE); doc.restore();
+  });
+
+  // núcleo: disco branco + anel pontilhado + boneco
+  doc.save(); doc.circle(cx, cy, CORE_R).fill("#FFFFFF"); doc.restore();
+  doc.save(); doc.lineWidth(0.7).dash(1.2, { space: 2 }).circle(cx, cy, CORE_R).stroke(NEUTRAL_STROKE); doc.undash(); doc.restore();
+  doc.save(); doc.lineWidth(1.3).lineCap("round").strokeColor(NODE);
+  doc.circle(cx, cy - 5.5, 2).stroke();
+  doc.moveTo(cx, cy - 3.5).lineTo(cx, cy + 2.5).stroke();
+  doc.moveTo(cx - 4, cy - 1.5).lineTo(cx + 4, cy - 1.5).stroke();
+  doc.moveTo(cx, cy + 2.5).lineTo(cx - 3, cy + 7).stroke();
+  doc.moveTo(cx, cy + 2.5).lineTo(cx + 3, cy + 7).stroke();
+  doc.restore();
+
+  // rótulos: nome + % de equilíbrio (pilha vertical na âncora da fatia)
+  items.forEach((d, i) => {
+    const c = CENTERS[i];
+    const bd = bandForDysfunction(d.dys);
+    const txt = bd ? bd.colors.text : "#9ca3af";
+    const an = pol(ANCHOR_R, c);
+    doc.font("Helvetica-Bold").fontSize(6.5).fillColor(txt).text(d.label, an.x - 34, an.y - 11, { width: 68, align: "center" });
+    doc.font("Times-Bold").fontSize(13).fillColor(txt).text(d.balance === null ? "—" : `${d.balance}%`, an.x - 30, an.y - 1, { width: 60, align: "center" });
+  });
+}
+
 /**
- * Pirâmide Bio³ dentro de um PAINEL (quadro), com RÓTULOS autoexplicativos por
- * faixa (nome do pilar + %), para colocar À DIREITA do texto da seção 2.
+ * Anel Bio³ Circular dentro de um PAINEL (quadro), para a versão PACIENTE do Doc 1.
+ * Moldura + título + rodapé, mas em EQUILÍBRIO: o anel
+ * (drawBio3Ring) já rotula cada fatia com NOME + % de equilíbrio; a COR/estado sai
+ * SEMPRE da disfunção crua (dentro do drawBio3Ring), nunca do número exibido.
  * Desenha a partir de (x, topY) com largura w e devolve o y do rodapé do painel.
  */
-function drawPyramidPanel(
+function drawBio3RingPanel(
   doc: Doc,
   x: number,
   topY: number,
   w: number,
-  bands: { dysfunction: number | null; isPriority: boolean; label: string }[],
-  indiceGeral?: number | null,
-) {
-  const titleH = 15, pyrH = 80, capH = 16, padBottom = 8;
-  const panelH = titleH + pyrH + capH + padBottom + 6;
+  items: RingItem[],
+  indiceEquilibrio?: number | null,
+): number {
+  const titleH = 15, ringH = 122, capH = 16, padBottom = 8;
+  const panelH = titleH + ringH + capH + padBottom;
   doc.save();
   doc.roundedRect(x, topY, w, panelH, 8).fillAndStroke("#FBFAF7", "#E6E4DC");
   doc.restore();
@@ -200,51 +263,17 @@ function drawPyramidPanel(
   doc.font("Helvetica-Bold").fontSize(7.5).fillColor(MUTED)
     .text("MAPA BIO³", x, topY + 6, { width: w, align: "center", characterSpacing: 1 });
 
-  // Pirâmide na região ESQUERDA do painel; legenda (nomes) à direita.
-  const padX = 12;
-  const half = 32;
-  const pyrCx = x + padX + half;
-  const y0 = topY + titleH + 6;
-  const H = pyrH - 12;
-  const yB = y0 + H / 3, yC = y0 + (2 * H) / 3, yBase = y0 + H;
-  const xAt = (y: number) => (half * (y - y0)) / H;
-  const polys: [number, number][][] = [
-    [[pyrCx, y0], [pyrCx + xAt(yB), yB], [pyrCx - xAt(yB), yB]],
-    [[pyrCx - xAt(yB), yB], [pyrCx + xAt(yB), yB], [pyrCx + xAt(yC), yC], [pyrCx - xAt(yC), yC]],
-    [[pyrCx - xAt(yC), yC], [pyrCx + xAt(yC), yC], [pyrCx + xAt(yBase), yBase], [pyrCx - xAt(yBase), yBase]],
-  ];
-  const centersY = [y0 + H / 6, y0 + H / 2, y0 + (5 * H) / 6];
-  doc.lineWidth(1.5);
-  bands.forEach((b, i) => {
-    const bd = bandForDysfunction(b.dysfunction);
-    const fill = bd ? bd.colors.fill : "#E9E7E0";
-    doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
-  });
-  doc.lineWidth(1);
-  // Número (%) sobre cada faixa.
-  bands.forEach((b, i) => {
-    const disf = round(b.dysfunction);
-    doc.font("Times-Bold").fontSize(8).fillColor("#1f2937")
-      .text(disf === null ? "—" : `${disf}%`, pyrCx - 18, centersY[i] - 4, { width: 36, align: "center" });
-  });
-  // Legenda à direita: bolinha da cor da faixa + nome do pilar, alinhada a cada faixa.
-  const legendX = x + padX + 2 * half + 14;
-  const legendW = x + w - padX - legendX;
-  bands.forEach((b, i) => {
-    const bd = bandForDysfunction(b.dysfunction);
-    const dot = bd ? bd.colors.fill : "#E9E7E0";
-    const cy = centersY[i];
-    doc.save(); doc.circle(legendX + 3, cy, 3).fill(dot); doc.restore();
-    // Eixo prioritário destacado em negrito verde (sem o glifo ★, que vira "&" nas fontes do PDF).
-    doc.font(b.isPriority ? "Times-Bold" : "Times-Roman").fontSize(8.5).fillColor(b.isPriority ? "#0F6E56" : "#1f2937")
-      .text(b.label, legendX + 11, cy - 5, { width: Math.max(40, legendW - 11), align: "left" });
-  });
-  // Rodapé: índice geral + direção.
+  // Anel centrado (OUTER=60 ⇒ ~120 de diâmetro); rótulos nome+% dentro das fatias.
+  const cx = x + w / 2;
+  const cy = topY + titleH + 6 + 60;
+  drawBio3Ring(doc, cx, cy, items);
+
+  // Rodapé: índice geral em EQUILÍBRIO + direção (maior = melhor).
   const capParts: string[] = [];
-  if (indiceGeral != null) capParts.push(`Índice geral ${Math.round(indiceGeral)}%`);
-  capParts.push("maior % = mais sobrecarga");
+  if (indiceEquilibrio != null) capParts.push(`Índice de equilíbrio ${indiceEquilibrio}%`);
+  capParts.push("maior = melhor");
   doc.font("Helvetica-Oblique").fontSize(6.6).fillColor(MUTED)
-    .text(capParts.join("   ·   "), x, yBase + 8, { width: w, align: "center" });
+    .text(capParts.join("   ·   "), x, topY + titleH + 6 + ringH + 2, { width: w, align: "center" });
 
   return topY + panelH;
 }
@@ -296,10 +325,17 @@ export async function buildNeuroIdMapPdf(opts: {
   }
 
   const generalDys = round(map.indice_geral);
+  const generalBalance = dysfunctionToBalance(map.indice_geral); // camada profissional vê os dois
   const indexBand = bandForDysfunction(map.indice_geral);
   sectionTitle(doc, "Índice Bio · Grau de Disfunção");
   doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
     .text(generalDys === null ? "—" : `${generalDys}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  // Leitura dupla para o profissional: disfunção (clínica) + equilíbrio (o que o paciente vê).
+  doc.font("Times-Roman").fontSize(9.5).fillColor(MUTED)
+    .text(
+      generalDys === null ? "" : `Disfunção ${generalDys}%  ·  Equilíbrio ${generalBalance}% (o número que o paciente vê)`,
+      MARGIN, doc.y + 1, { width: CONTENT_W, align: "center" },
+    );
   if (indexBand) {
     doc.font("Times-Italic").fontSize(11).fillColor(indexBand.colors.text)
       .text(`${labelFor(indexBand.key, "axis")}: ${band(map.indice_geral)}`, MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
@@ -380,6 +416,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   const pillar: CopyPillar = (map.priority_pillar ?? "emocional") as CopyPillar;
   const band = copyBandForDysfunction(map.indice_geral);
   const indice = map.indice_geral === null ? 0 : Math.round(map.indice_geral);
+  const equilibrio = dysfunctionToBalance(map.indice_geral) ?? 0; // número exibido ao paciente
   const showSafeguard = opts.showSafeguard ?? ((map.emocional_pct ?? 0) >= 70);
 
   const copy = buildPatientReportCopy({
@@ -387,6 +424,7 @@ export async function buildNeuroIdPatientReportPdf(opts: {
     vars: {
       nome: (opts.patientName ?? "").split(" ")[0] || "Olá",
       indice,
+      equilibrio,
       pilar: PILLAR_LABEL[pillar],
       hint: COPY_HINT[pillar],
       q1: opts.vars?.q1 ?? null,
@@ -412,16 +450,21 @@ export async function buildNeuroIdPatientReportPdf(opts: {
   paragraph(doc, copy.beats[0].body);
 
   sectionTitle(doc, copy.beats[1].title);
-  const indexBand = bandForDysfunction(map.indice_geral);
+  const indexBand = bandForDysfunction(map.indice_geral); // cor/estado vêm da disfunção crua
   doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
-    .text(map.indice_geral === null ? "—" : `${indice}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
-  doc.moveDown(0.2);
-  drawPyramid(doc, [
-    { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
-    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
-    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
+    .text(map.indice_geral === null ? "—" : `${equilibrio}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.font("Times-Italic").fontSize(9).fillColor(MUTED)
+    .text("Índice Bio³ de equilíbrio · maior = melhor", MARGIN, doc.y + 1, { width: CONTENT_W, align: "center" });
+  ensureSpace(doc, 170);
+  const ringCy = doc.y + 64;
+  drawBio3Ring(doc, PAGE_W / 2, ringCy, [
+    { dys: dysByPillar.fisico, balance: dysfunctionToBalance(dysByPillar.fisico), label: PILLAR_LABEL.fisico, isPriority: map.priority_pillar === "fisico" },
+    { dys: dysByPillar.bioquimico, balance: dysfunctionToBalance(dysByPillar.bioquimico), label: PILLAR_LABEL.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dys: dysByPillar.emocional, balance: dysfunctionToBalance(dysByPillar.emocional), label: PILLAR_LABEL.emocional, isPriority: map.priority_pillar === "emocional" },
   ]);
-  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("0–30 em função · 31–69 disfunção crônica · 70–100 grande disfunção", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  doc.y = ringCy + 66;
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af")
+    .text("Solto = em bom equilíbrio · Tenso = merece atenção · Bloqueado = prioridade de cuidado", MARGIN, doc.y, { width: CONTENT_W, align: "center" });
   doc.moveDown(0.3);
   paragraph(doc, copy.beats[1].body);
 
@@ -487,6 +530,14 @@ const DOC2_LABELS = {
  * a versão por scores (buildNeuroIdPatientReportPdf) fica como fallback enquanto
  * não houver Doc 1 aprovado no formato novo.
  */
+// Salvaguarda de saúde mental — DETERMINÍSTICA (gate Salvo): renderizada pelo código, nunca
+// dependente do texto da IA. Linha de crise BR+US (sempre um número válido, independe de país/idioma).
+const DOC1_SAFEGUARD =
+  "Acompanhamento de um profissional de saúde mental é fortemente recomendado, junto do seu médico. " +
+  "Se você tiver pensamentos de se machucar, procure ajuda imediata: no Brasil, ligue 188 (CVV, 24 horas) " +
+  "ou 192 (SAMU); nos EUA, ligue ou envie mensagem para 988 (Suicide & Crisis Lifeline) ou 911. " +
+  "Você não está sozinho(a), e há pessoas prontas para te ouvir.";
+
 export async function buildNeuroIdDoc1Pdf(opts: {
   mapa: NeuroMapaIntegrativo;
   bio3?: NeuroIdPdfMap | null;
@@ -494,6 +545,9 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   plano?: NeuroPlanoRegulacao | null;
   patientName?: string | null;
   clinic?: ClinicBrand;
+  /** Salvaguarda emocional determinística (encaminhamento + linha de crise). Calculada no server
+   *  a partir da disfunção/flags CRUAS (needsEmotionalSafeguard), nunca do texto da IA. */
+  showSafeguard?: boolean;
 }): Promise<Buffer> {
   const { mapa } = opts;
   const brand = opts.clinic ?? {};
@@ -528,11 +582,13 @@ export async function buildNeuroIdDoc1Pdf(opts: {
   sectionTitle(doc, DOC1_LABELS.s1);
   paragraph(doc, mapa.abertura_calorosa);
 
-  // 2 — retrato Bio³: TEXTO à esquerda, PIRÂMIDE (com rótulos) num painel à direita.
+  // 2 — retrato Bio³: TEXTO à esquerda, ANEL Bio³ em EQUILÍBRIO (com rótulos) num painel à direita.
+  // Doutrina dupla linguagem: paciente vê equilíbrio (= 100 − disfunção, maior = melhor);
+  // a cor/estado de cada fatia continua saindo da DISFUNÇÃO crua (dentro do drawBio3Ring).
   sectionTitle(doc, DOC1_LABELS.s2);
   const bio3 = opts.bio3;
   if (bio3) {
-    ensureSpace(doc, 150);
+    ensureSpace(doc, 180);
     const topY = doc.y;
     const leftW = Math.round(CONTENT_W * 0.56);
     const gap = 16;
@@ -541,11 +597,11 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     doc.font("Times-Roman").fontSize(10.5).fillColor(INK)
       .text(mapa.leitura_bio3?.descricao ?? "", MARGIN, topY, { width: leftW, align: "justify", lineGap: 2 });
     const textBottom = doc.y;
-    const panelBottom = drawPyramidPanel(doc, rightX, topY, rightW, [
-      { dysfunction: bio3.fisico_pct, isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
-      { dysfunction: bio3.bioquimico_pct, isPriority: bio3.priority_pillar === "bioquimico", label: PILLAR_LABEL.bioquimico },
-      { dysfunction: bio3.emocional_pct, isPriority: bio3.priority_pillar === "emocional", label: PILLAR_LABEL.emocional },
-    ], bio3.indice_geral);
+    const panelBottom = drawBio3RingPanel(doc, rightX, topY, rightW, [
+      { dys: bio3.fisico_pct, balance: dysfunctionToBalance(bio3.fisico_pct), isPriority: bio3.priority_pillar === "fisico", label: PILLAR_LABEL.fisico },
+      { dys: bio3.bioquimico_pct, balance: dysfunctionToBalance(bio3.bioquimico_pct), isPriority: bio3.priority_pillar === "bioquimico", label: PILLAR_LABEL.bioquimico },
+      { dys: bio3.emocional_pct, balance: dysfunctionToBalance(bio3.emocional_pct), isPriority: bio3.priority_pillar === "emocional", label: PILLAR_LABEL.emocional },
+    ], dysfunctionToBalance(bio3.indice_geral));
     doc.y = Math.max(textBottom, panelBottom) + 8;
   } else {
     paragraph(doc, mapa.leitura_bio3?.descricao);
@@ -619,6 +675,14 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     const disc2 = plano.observacao?.trim() || "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.";
     doc.moveDown(0.5);
     doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disc2, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+
+  // Salvaguarda de saúde mental — SEMPRE renderizada pelo código quando o sinal cru dispara,
+  // independentemente do que a IA escreveu (o tom de equilíbrio não pode suprimir o encaminhamento).
+  if (opts.showSafeguard) {
+    ensureSpace(doc, 70);
+    doc.moveDown(0.5);
+    doc.font("Times-Bold").fontSize(9.5).fillColor("#8A3216").text(DOC1_SAFEGUARD, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
   }
 
   return pdfToBuffer(doc);

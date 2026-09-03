@@ -6,11 +6,11 @@ import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTr
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { RAW_MAX_BY_CODE, rawToNormalized, normalizedToRaw } from "@/modules/neuro-id/questionnaire-scale";
 import {
-  bandForDysfunction, bandForItem, severityColor, priorityPillars, sharesSummingTo100,
+  bandForDysfunction, bandForItem, severityColor, priorityPillars, dysfunctionToBalance,
   type Band, type BandIcon as BandIconKey, type BandItemType,
 } from "@/modules/neuro-id/bands";
 import { createNeuroIdAssessmentAction, updateNeuroIdAssessmentAction, importQuestionnaireAnswersAction, sendNeuroIdReportToPatientAction } from "@/app/patients/[id]/neuro-id/actions";
-import { NeuroPyramid } from "@/components/neuro-pyramid";
+import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
 
 export type NeuroIdMapView = {
   fisico_pct: number | null;
@@ -185,22 +185,24 @@ export function PatientNeuroIdPanel({
     bioquimico: map?.bioquimico_pct ?? null,
     emocional: map?.emocional_pct ?? null,
   };
+  // Camada do paciente: EQUILÍBRIO (100 − disfunção). Motor interno segue em disfunção;
+  // cor/estado/prioridade continuam saindo da disfunção crua, nunca do número exibido.
   const generalDys = round(map?.indice_geral ?? null);
+  const generalBalance = dysfunctionToBalance(map?.indice_geral ?? null);
   const indexBand = bandForDysfunction(map?.indice_geral ?? null);
-
-  // Peso de cada eixo no total — porcentagens inteiras que somam exatamente 100%.
-  const [shareFisico, shareBioq, shareEmo] = sharesSummingTo100(PILLARS.map((p) => pillarDys[p]));
-  const shareByPillar: Record<NeuroPillar, number | null> = {
-    fisico: shareFisico, bioquimico: shareBioq, emocional: shareEmo,
-  };
 
   // Prioritários: o(s) pior(es) eixo(s); permite empate/quase-empate (2+ simultâneos).
   const prioritySet = new Set<NeuroPillar>(priorityPillars(pillarDys));
 
-  // Pirâmide topo→base: Biomecânico (topo) / Bioquímico (meio) / Bioemocional (base).
-  const pyramidData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
-    dys: pillarDys[p], share: shareByPillar[p], isPriority: prioritySet.has(p),
+  // Anel Bio³: ordem [fisico, bioquimico, emocional]. Preenchimento por equilíbrio,
+  // cor pela disfunção crua. label = nome do eixo (tooltip nativo do segmento).
+  const RING_ICON = { fisico: "person", bioquimico: "atom", emocional: "brain" } as const;
+  const ringData: Bio3RingDatum[] = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
+    dys: pillarDys[p], balance: dysfunctionToBalance(pillarDys[p]), isPriority: prioritySet.has(p), label: t(`pillar.${p}`), icon: RING_ICON[p],
   }));
+  const ringAria = `${t("title")}: ${(["fisico", "bioquimico", "emocional"] as NeuroPillar[])
+    .map((p) => { const b = dysfunctionToBalance(pillarDys[p]); return `${t(`pillar.${p}`)} ${b === null ? "—" : `${b}%`}`; })
+    .join(", ")}.`;
 
   function bandLabel(band: Band | null, itemType: BandItemType): string {
     return band ? t(`band.${itemType}.${band.key}`) : "—";
@@ -266,17 +268,18 @@ export function PatientNeuroIdPanel({
           {/* Resumo escaneável: índice-herói + pirâmide pequena (assinatura) */}
           <div className="flex flex-col items-center gap-[12px] sm:flex-row sm:items-center sm:gap-[16px] rounded-[10px] bg-[#FAFAF8] px-[14px] py-[12px]">
             <div className="w-full sm:w-auto shrink-0 flex flex-col items-center gap-[3px]">
-              <NeuroPyramid data={pyramidData} className="w-full max-w-[200px] h-auto mx-auto sm:w-[120px] sm:h-[76px] sm:mx-0" />
-              <p className="text-[8px] text-[#A09E98] text-center leading-tight max-w-[200px] sm:max-w-[124px]">{t("pyramidShareCaption")}</p>
+              <Bio3Ring data={ringData} ariaLabel={ringAria} className="w-full max-w-[212px] h-auto mx-auto sm:w-[176px] sm:mx-0" />
+              <p className="text-[8px] text-[#A09E98] text-center leading-tight max-w-[200px] sm:max-w-[124px]">{t("ringCaption")}</p>
             </div>
             <div className="min-w-0 flex-1 w-full text-center sm:text-left">
               <p className="text-[10px] text-[#A09E98] leading-snug">{t("indexCaption")}</p>
               <div className="flex items-baseline justify-center sm:justify-start gap-[8px] flex-wrap mt-[2px]">
                 <p className="text-[40px] font-semibold leading-none" style={{ color: indexBand?.colors.text ?? "#A09E98" }}>
-                  {generalDys === null ? "—" : `${generalDys}%`}
+                  {generalBalance === null ? "—" : `${generalBalance}%`}
                 </p>
                 {indexBand && <BandPill band={indexBand} label={bandLabel(indexBand, "axis")} />}
               </div>
+              <p className="text-[10px] text-[#A09E98] leading-snug mt-[3px]">{t("indexBalanceSub")}</p>
               {map.priority_pillar && (
                 <p className="text-[11px] text-[#0F1A2E] mt-[4px]"><span className="font-medium">{t("startHere")}:</span> {t(`pillar.${map.priority_pillar}`)}</p>
               )}
@@ -291,17 +294,18 @@ export function PatientNeuroIdPanel({
             {(["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
               const band = bandForDysfunction(pillarDys[p]);
               const c = severityColor(pillarDys[p]);
-              const disf = round(pillarDys[p]);
+              const bal = dysfunctionToBalance(pillarDys[p]);
               const isPriority = prioritySet.has(p);
               return (
                 <div key={p} className="rounded-[10px] border px-[12px] py-[10px]"
+                  title={bal === null ? undefined : t("dysfunctionTooltip", { value: 100 - bal })}
                   style={{ background: c.fill, borderColor: isPriority ? c.stroke : "transparent", borderWidth: isPriority ? 2 : 1 }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-medium" style={{ color: c.text }}>{t(`pillar.${p}`)}</span>
                     {band && <BandPill band={band} label={bandLabel(band, "axis")} />}
                   </div>
                   <p className="text-[26px] font-semibold leading-none mt-[6px]" style={{ color: c.text }}>
-                    {disf === null ? "—" : `${disf}%`}
+                    {bal === null ? "—" : `${bal}%`}
                   </p>
                   <p className="text-[9px] mt-[2px] opacity-70" style={{ color: c.text }}>{t("cardSubtitle")}</p>
                   {isPriority && (

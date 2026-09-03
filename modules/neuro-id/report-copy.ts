@@ -6,7 +6,11 @@
  * Sem cura/garantia/medo (ver PROHIBITED_TERMS). Não recalcula nada — só consome
  * scores existentes. Texto editável por Celso/Verbo sem mexer no layout do PDF.
  *
- * Placeholders: {nome} {indice} {pilar} {hint} {q1} {q2} {sintoma}.
+ * Placeholders: {nome} {indice} {equilibrio} {pilar} {hint} {q1} {q2} {sintoma}.
+ *
+ * OXIEL dual language: o número mostrado ao paciente é EQUILÍBRIO ({equilibrio} = 100 −
+ * disfunção; maior = melhor). A FAIXA (solto/tenso/bloqueado) continua vindo da disfunção
+ * crua via copyBandForDysfunction. Copy de equilíbrio revisada por Aval + Termo (02/09/2026).
  */
 
 export type CopyBand = "solto" | "tenso" | "bloqueado"; // 0–30 / 31–69 / 70–100
@@ -14,7 +18,8 @@ export type CopyPillar = "fisico" | "bioquimico" | "emocional";
 
 export type ReportVars = {
   nome: string;
-  indice: number;
+  indice: number;      // índice de DISFUNÇÃO (interno; mantido para compatibilidade)
+  equilibrio: number;  // índice de EQUILÍBRIO exibido ao paciente (= 100 − disfunção)
   pilar: string; // rótulo do pilar prioritário (ex.: "Bioemocional")
   hint: string;  // ex.: "mente & emoção"
   q1?: string | null;
@@ -51,6 +56,7 @@ function interpolate(tpl: string, vars: ReportVars): string {
   return tpl
     .replaceAll("{nome}", vars.nome || "")
     .replaceAll("{indice}", String(vars.indice))
+    .replaceAll("{equilibrio}", String(vars.equilibrio))
     .replaceAll("{pilar}", vars.pilar || "")
     .replaceAll("{hint}", vars.hint || "")
     .replaceAll("{q1}", (vars.q1 ?? "").trim())
@@ -78,9 +84,9 @@ function beat1(vars: ReportVars): string {
 
 // ── Beat 2 — "Seu retrato hoje" (por faixa) ──
 const BEAT2: Record<CopyBand, string> = {
-  solto: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio. Hoje ele está em {indice}%: você está em função e equilíbrio. Seu corpo está respondendo bem, e o foco agora é proteger e otimizar isso.",
-  tenso: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio. Hoje ele está em {indice}%: em disfunção e desequilíbrio crônico. Em bom português, seu corpo vem “segurando as pontas” há um tempo, e isso cobra um preço. A boa notícia é que esse quadro costuma responder bem quando cuidamos da causa.",
-  bloqueado: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio. Hoje ele está em {indice}%: em grande disfunção e desequilíbrio. Seu corpo vem fazendo um esforço enorme pra te manter de pé e já pede cuidado. Isso não é pra assustar: é pra mostrar que existe um caminho, e ele começa por um ponto específico.",
+  solto: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio³ de equilíbrio. Hoje ele está em {equilibrio}%: nesse retrato seu equilíbrio está alto. As áreas avaliadas vêm se mantendo bem, e o foco agora é proteger e sustentar isso.",
+  tenso: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio³ de equilíbrio. Hoje ele está em {equilibrio}%: há um equilíbrio parcial, com áreas que vêm “segurando as pontas” há um tempo e isso cobra um preço. A boa notícia é que esse quadro costuma responder bem quando cuidamos da causa.",
+  bloqueado: "Reunimos tudo o que avaliamos em um retrato único, o seu Índice Bio³ de equilíbrio. Hoje ele está em {equilibrio}%: o equilíbrio está reduzido, e seu corpo vem fazendo um esforço grande pra te manter de pé. Isso não é pra assustar: é pra mostrar que existe um caminho de cuidado, e ele começa por um ponto específico.",
 };
 
 // ── Beat 3 — "O que isso significa no seu dia a dia" (por pilar) ──
@@ -104,18 +110,18 @@ const BEAT4: Record<CopyPillar, string> = {
 };
 
 // ── Beat 5 — "O caminho" (por faixa) ──
-const BEAT5_INTRO = "O Índice Bio é o seu norte. A meta do tratamento é simples de enxergar: vê-lo baixar. ";
+const BEAT5_INTRO = "O seu Índice Bio³ de equilíbrio é o seu norte. A meta do cuidado é simples de enxergar: apoiar seu equilíbrio para que ele tenda a subir ao longo do acompanhamento. ";
 const BEAT5: Record<CopyBand, string> = {
   solto: "No seu caso, o caminho é de manutenção inteligente: pequenos ajustes pra você seguir em função e equilíbrio por muito mais tempo.",
-  tenso: "No seu caso, o caminho é de recuperação: a cada etapa a gente reavalia e você acompanha a evolução do número, eixo por eixo. Não é da noite pro dia, é consistente.",
-  bloqueado: "No seu caso, o caminho é de reorganização profunda, com passos claros. A cada reavaliação você acompanha a evolução do número, preto no branco.",
+  tenso: "No seu caso, o caminho é de recuperação: a cada etapa a gente reavalia e você acompanha como o seu equilíbrio evolui, eixo por eixo. Não é da noite pro dia, é consistente.",
+  bloqueado: "No seu caso, o caminho é de reorganização profunda, com passos claros. A cada reavaliação você acompanha a evolução do seu equilíbrio, medido e registrado, preto no branco.",
 };
 
 // ── Beat 6 — "Se nada mudar" (por faixa) — Aval/Termo reformulado ──
 const BEAT6: Record<CopyBand, string> = {
   solto: "E se você não fizer nada? Por ora, provavelmente tudo bem, mas equilíbrio se mantém com cuidado. Pequenos hábitos hoje evitam grandes ajustes amanhã.",
-  tenso: "E se nada mudar? O desequilíbrio crônico tende a se acomodar e cobrar mais caro com o tempo: mais sintomas, menos energia, recuperação mais lenta. Agir agora, enquanto o corpo ainda se adapta, costuma ser o momento mais fácil de virar o jogo.",
-  bloqueado: "Com franqueza e cuidado: quadros que seguem em desequilíbrio, sem atenção, costumam exigir mais tempo e esforço para reequilibrar mais adiante e podem favorecer momentos de maior desconforto. Não é uma sentença, e isto não substitui avaliação médica. É justamente por isso que começar a cuidar agora faz diferença.",
+  tenso: "E se nada mudar? Sem cuidado, é comum a pessoa sentir que custa mais para recuperar energia e disposição com o tempo. Agir agora, enquanto o corpo ainda se adapta, costuma ser o momento mais fácil de virar o jogo.",
+  bloqueado: "Com franqueza e cuidado: quadros que seguem sem atenção costumam pedir mais tempo de cuidado adiante. Não é uma sentença nem uma previsão sobre você, e isto não substitui avaliação médica. Por isso, começar cedo tende a deixar o caminho mais tranquilo.",
 };
 
 // ── Beat 7 — "Seu próximo passo" ──
@@ -123,7 +129,7 @@ const BEAT7 = "Seu próximo passo é simples: o plano que preparamos começa exa
 
 const AUTHORITY = "Este mapa nasce do método Neuro ID, que olha corpo, química e sistema nervoso como um sistema só: cuidar da causa, não só do sintoma.";
 const SOCIAL_PROOF = "Acompanhar a própria evolução ao longo do cuidado costuma ser o que mais motiva os pacientes. Cada corpo responde no seu tempo.";
-const DISCLAIMER = "Este mapa é uma leitura funcional de bem-estar para orientar o seu cuidado. Não é diagnóstico médico nem substitui avaliação ou tratamento médico. Resultados variam de pessoa para pessoa. Para sintomas que persistem ou se agravam, procure avaliação médica.";
+const DISCLAIMER = "Este mapa é uma leitura funcional de bem-estar para orientar o seu cuidado. O Índice Bio³ de equilíbrio é um número do nosso método, usado para acompanhar sua evolução e organizar o cuidado: não é uma medida médica, laboratorial ou de diagnóstico, e não deve ser lido como percentual de saúde. Não é diagnóstico médico nem substitui avaliação ou tratamento médico. Resultados variam de pessoa para pessoa. Para sintomas que persistem ou se agravam, procure avaliação médica.";
 const SAFEGUARD = "Recomendamos também acompanhamento de um profissional de saúde mental. Em caso de pensamentos de se machucar, procure ajuda imediata (CVV 188).";
 
 /** Monta a copy dos 7 beats já resolvida (placeholders interpolados). */

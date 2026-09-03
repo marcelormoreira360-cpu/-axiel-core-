@@ -3,6 +3,19 @@ import { useTranslations } from "next-intl";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroLeituraBioemocional, NeuroSecaoItem } from "@/lib/types";
 import type { PatientIdentificacao } from "@/lib/patient-demographics";
 import { hasPersuasiveDoc1, hasPersuasiveDoc2 } from "@/modules/ai-insights/patient-text-guardrails";
+import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
+import { dysfunctionToBalance } from "@/modules/neuro-id/bands";
+import type { NeuroPillar } from "@/modules/neuro-id/catalog";
+
+/** Mapa numérico Bio³ (em DISFUNÇÃO) para desenhar o Anel de equilíbrio no preview. */
+export type Bio3MapNumbers = {
+  fisico_pct: number | null;
+  bioquimico_pct: number | null;
+  emocional_pct: number | null;
+  indice_geral: number | null;
+  priority_pillar: NeuroPillar | null;
+};
+const RING_ICON = { fisico: "person", bioquimico: "atom", emocional: "brain" } as const;
 
 function Section({ title, items }: { title: string; items?: string[] }) {
   if (!items || items.length === 0) return null;
@@ -171,13 +184,33 @@ function Identificacao({ id, live, fallbackName }: { id?: NeuroIdentificacao; li
  * Renderiza os documentos do Neuro ID 360 no padrão dos relatórios oficiais.
  * Componente apenas de apresentação (server-compatible). Faz fallback p/ campos antigos.
  */
-export function NeuroId360Documents({ output, patientName, liveId }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao }) {
+export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao; bio3Map?: Bio3MapNumbers | null }) {
   const t = useTranslations("neuroId.documents360");
+  const tn = useTranslations("neuroId");
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
 
   if (!mapa && !plano && !sup) return null;
+
+  // Anel Bio³ em EQUILÍBRIO para o preview da seção 2 (espelha o PDF do paciente).
+  // Cor/estado saem da disfunção crua (dentro do Bio3Ring); número exibido = equilíbrio.
+  // Prioridade = priority_pillar único (mesma convenção do drawBio3RingPanel do PDF do
+  // Doc 1), para o preview destacar exatamente a mesma fatia que o paciente vai receber.
+  let ringData: Bio3RingDatum[] | null = null;
+  let ringGeneralBalance: number | null = null;
+  if (bio3Map) {
+    const pillarDys: Record<NeuroPillar, number | null> = {
+      fisico: bio3Map.fisico_pct, bioquimico: bio3Map.bioquimico_pct, emocional: bio3Map.emocional_pct,
+    };
+    ringData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
+      dys: pillarDys[p], balance: dysfunctionToBalance(pillarDys[p]), isPriority: bio3Map.priority_pillar === p, label: tn(`pillar.${p}`), icon: RING_ICON[p],
+    }));
+    ringGeneralBalance = dysfunctionToBalance(bio3Map.indice_geral);
+  }
+  const ringAria = ringData
+    ? `${tn("title")}: ${ringData.map((d) => `${d.label} ${d.balance === null ? "—" : `${d.balance}%`}`).join(", ")}.`
+    : "";
 
   // FUSÃO Doc 1 + Doc 2: quando os dois estão no formato persuasivo, o plano é o
   // FECHO ("próximos passos") do MESMO relatório, não um documento separado. O
@@ -202,9 +235,23 @@ export function NeuroId360Documents({ output, patientName, liveId }: { output: A
               {/* 1 */}
               <SectionHead n="1" title={t("greetingTitle")} />
               <BodyP text={mapa.abertura_calorosa} />
-              {/* 2 */}
+              {/* 2 — texto à esquerda, Anel Bio³ (equilíbrio) à direita, como no PDF */}
               <SectionHead n="2" title={t("clinicalPictureTitle")} />
-              <BodyP text={mapa.leitura_bio3?.descricao} />
+              {ringData ? (
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-5">
+                  <div className="sm:flex-1">
+                    <BodyP text={mapa.leitura_bio3?.descricao} />
+                  </div>
+                  <div className="shrink-0 sm:w-[188px] sm:mx-0 mx-auto w-full max-w-[212px]">
+                    <Bio3Ring data={ringData} ariaLabel={ringAria} className="w-full h-auto" />
+                    <p className="mt-1 text-center text-[10px] text-[#8A8880]">
+                      <span className="font-semibold text-[#0F1A2E]">{ringGeneralBalance === null ? "—" : `${ringGeneralBalance}%`}</span>{" · "}{tn("indexCaption")}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <BodyP text={mapa.leitura_bio3?.descricao} />
+              )}
               {/* 3 — neurometria e biorressonância em subseções SEPARADAS e condicionais */}
               <SectionHead n="3" title={t("whatWeFoundTitle")} />
               <Readings title={`3.1  ${t("neurometricReading")}`} items={mapa.leitura_neurometrica} />

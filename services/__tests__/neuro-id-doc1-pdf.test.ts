@@ -41,7 +41,7 @@ describe("buildNeuroIdDoc1Pdf", () => {
     expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
-  it("funciona sem o mapa Bio³ (sem pirâmide)", async () => {
+  it("funciona sem o mapa Bio³ (sem anel)", async () => {
     const pdf = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3: null });
     expect(pdf.length).toBeGreaterThan(0);
   });
@@ -73,6 +73,13 @@ describe("buildNeuroIdDoc1Pdf", () => {
     const comDoc2 = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, plano });
     expect(comDoc2.length).toBeGreaterThan(so1.length);
     expect(comDoc2.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
+  it("com salvaguarda emocional, o PDF fica maior (bloco de crise determinístico entra)", async () => {
+    const sem = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, showSafeguard: false });
+    const com = await buildNeuroIdDoc1Pdf({ mapa: mapa(), bio3, showSafeguard: true });
+    expect(com.length).toBeGreaterThan(sem.length);
+    expect(com.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
   it("NÃO anexa Doc 2 quando o plano é legado/vazio", async () => {

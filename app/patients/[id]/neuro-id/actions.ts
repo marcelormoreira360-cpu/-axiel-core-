@@ -7,6 +7,7 @@ import { createNeuroIdAssessment, updateNeuroIdAssessment, importQuestionnaireAn
 import { buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf } from "@/services/neuro-id-pdf-service";
 import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
+import { needsEmotionalSafeguard } from "@/modules/ai-insights/neuro-enums";
 import { sendSimpleEmail } from "@/services/email-service";
 import { sendPushToPatient } from "@/services/push-service";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
@@ -160,12 +161,15 @@ export async function sendNeuroIdReportToPatientAction(
     const finalInsight = await getLatestFinalAiInsight(patientId);
     const finalOutput = finalInsight?.final_output ?? finalInsight?.output ?? null;
     const mapa = finalOutput?.mapa_integrativo ?? null;
+    // Salvaguarda emocional DETERMINÍSTICA (gate Salvo) — sinal cru, não texto da IA.
+    const showSafeguard = needsEmotionalSafeguard(map.emocional_pct);
     pdfBuffer = mapa && hasPersuasiveDoc1(mapa)
-      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand })
+      ? await buildNeuroIdDoc1Pdf({ mapa, bio3: map, plano: finalOutput?.plano_regulacao ?? null, patientName: patient.full_name ?? null, clinic: brand, showSafeguard })
       : await buildNeuroIdPatientReportPdf({
           map,
           patientName: patient.full_name ?? null,
           clinic: brand,
+          showSafeguard,
           vars: {
             q1: patient.chief_complaint ?? null,
             q2: null,
