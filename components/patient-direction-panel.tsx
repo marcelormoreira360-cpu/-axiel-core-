@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { saveCaseSummaryAction, draftCaseSummaryAction, type CaseSummaryState } from "@/app/patients/[id]/case-summary/actions";
 import { SessionPackageBadge } from "@/components/session-package-badge";
-import { severityColor } from "@/modules/neuro-id/bands";
+import { severityColor, dysfunctionToBalance } from "@/modules/neuro-id/bands";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import type { PatientPackage } from "@/services/package-service";
 import type { MedicationLoadDisplay } from "@/services/medication-load-service";
@@ -339,8 +339,14 @@ export function PatientDirectionPanel({
                             <div className="flex-1 h-[5px] rounded-full overflow-hidden" style={{ background: c.fill }}>
                               <div className="h-full rounded-full" style={{ width: `${val ?? 0}%`, background: c.stroke }} />
                             </div>
-                            <span className="text-[10px] font-semibold w-[26px] text-right shrink-0" style={{ color: c.text }}>
-                              {val ?? "·"}{val !== null ? "%" : ""}
+                            {/* Profissional vê os dois: disfunção (destaque, cor do estado) + equilíbrio (apoio). */}
+                            <span className="w-[44px] text-right shrink-0 leading-[1.05]">
+                              <span className="block text-[10px] font-semibold" style={{ color: c.text }}>
+                                {val ?? "·"}{val !== null ? "%" : ""}
+                              </span>
+                              {val !== null && (
+                                <span className="block text-[8px] text-[#A09E98]">eq {dysfunctionToBalance(val)}%</span>
+                              )}
                             </span>
                           </div>
                         );
@@ -349,8 +355,11 @@ export function PatientDirectionPanel({
                         <div className="flex items-center gap-[7px] pt-[3px] border-t border-black/[.05]">
                           <span className="text-[10px] font-medium text-[#0F1A2E] dark:text-[#E8E6E2] w-[74px] shrink-0">{t("index")}</span>
                           <div className="flex-1" />
-                          <span className="text-[11px] font-semibold w-[26px] text-right shrink-0" style={{ color: severityColor(round(neuro.indice_geral)).text }}>
-                            {round(neuro.indice_geral)}%
+                          <span className="w-[44px] text-right shrink-0 leading-[1.05]">
+                            <span className="block text-[11px] font-semibold" style={{ color: severityColor(round(neuro.indice_geral)).text }}>
+                              {round(neuro.indice_geral)}%
+                            </span>
+                            <span className="block text-[8px] text-[#A09E98]">eq {dysfunctionToBalance(neuro.indice_geral)}%</span>
                           </span>
                         </div>
                       )}
