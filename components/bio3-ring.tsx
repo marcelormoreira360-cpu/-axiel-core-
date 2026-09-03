@@ -41,7 +41,6 @@ const CENTERS = [30, 150, -90]; // fisico, bioquimico, emocional
 const BOUNDARIES = [-30, 90, -150]; // junções entre fatias (nós)
 const ANCHOR_R = 60; // centro da pilha vertical (ícone → nome → %) dentro da fatia
 const NEUTRAL = { fill: "#EFEEE9", text: "#8A8880", stroke: "#C9C7BF" };
-const NODE = "#7C7A72";
 
 function pol(r: number, angleDeg: number) {
   const a = (angleDeg * Math.PI) / 180;
@@ -123,15 +122,11 @@ export function Bio3Ring({
         return <circle key={`n${i}`} cx={p.x.toFixed(1)} cy={p.y.toFixed(1)} r={3.4} fill="#FFFFFF" stroke={NEUTRAL.stroke} strokeWidth={1.1} />;
       })}
 
-      {/* núcleo — o indivíduo (pequeno) num anel pontilhado do tamanho do boneco */}
+      {/* núcleo — "Você" (o paciente no centro dos três pilares) num anel pontilhado */}
       <g className="b3-node">
         <circle cx={CX} cy={CY} r={CORE_R} fill="#FFFFFF" stroke="#E9E7E0" strokeWidth={0.75} />
         <circle cx={CX} cy={CY} r={CORE_R} fill="none" stroke={NEUTRAL.stroke} strokeWidth={0.9} strokeDasharray="1.5 3" />
-        <circle cx={CX} cy={93} r={2.6} fill="none" stroke={NODE} strokeWidth={1.7} />
-        <path d="M100 95.5 L100 104.5" stroke={NODE} strokeWidth={1.7} strokeLinecap="round" />
-        <path d="M94 100 L106 100" stroke={NODE} strokeWidth={1.7} strokeLinecap="round" />
-        <path d="M100 104.5 L95.5 111" stroke={NODE} strokeWidth={1.7} strokeLinecap="round" />
-        <path d="M100 104.5 L104.5 111" stroke={NODE} strokeWidth={1.7} strokeLinecap="round" />
+        <text x={CX} y={CY} textAnchor="middle" dominantBaseline="central" fontSize={9} fontWeight={700} fill="#5B5952">Você</text>
       </g>
     </svg>
   );

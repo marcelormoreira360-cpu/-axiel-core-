@@ -138,7 +138,7 @@
     "note": "Note",
     "generalNotes": "General notes",
     "greetingTitle": "First, a word for you",
-    "clinicalPictureTitle": "Your clinical picture today",
+    "clinicalPictureTitle": "How your balance looks today",
     "bio3PortraitFallback": "Your snapshot today is shown in the Bio³ Map beside this text. Today, the axis that most asks for your care is {pillar}; the other two are more preserved and already working in your favor.",
     "whatWeFoundTitle": "What the assessment found",
     "connectionTitle": "The connection, and a strength",
