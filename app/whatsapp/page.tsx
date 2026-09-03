@@ -11,6 +11,7 @@ import {
 } from "@/services/whatsapp-conversation-service";
 import { handoffStatus, type HandoffStatus } from "@/lib/whatsapp-handoff";
 import { conversationChannel, type ConversationChannel } from "@/lib/twilio-webhook-utils";
+import { ConversationsList, type ConvRowData } from "./conversations-list";
 
 type Translator = Awaited<ReturnType<typeof getTranslations>>;
 
@@ -24,86 +25,12 @@ function timeAgo(iso: string, t: Translator): string {
   return t("page.timeAgo.days", { count: Math.floor(hrs / 24) });
 }
 
-function ConvRow({
-  conv,
-  status,
-  statusLabels,
-  channelLabels,
-  t,
-}: {
-  conv: WaConversation;
-  status: HandoffStatus;
-  statusLabels: Record<HandoffStatus, string>;
-  channelLabels: Record<ConversationChannel, string>;
-  t: Translator;
-}) {
-  const last = getLastMessage(conv);
-  const msgCount = conv.messages.length;
-  const phoneForUrl = encodeURIComponent(conv.phone);
-
-  return (
-    <Link
-      href={`/whatsapp/${phoneForUrl}`}
-      className="flex items-center gap-[12px] px-[16px] py-[13px] hover:bg-[#FAFAF8] transition group"
-    >
-      {/* Avatar */}
-      <div
-        className={[
-          "w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-medium shrink-0",
-          status === "paused"
-            ? "bg-red-50 text-red-500"
-            : status === "with_team"
-            ? "bg-amber-50 text-amber-600"
-            : "bg-[#E1F5EE] text-[#0F6E56]",
-        ].join(" ")}
-      >
-        {conv.phone.replace(/\D/g, "").slice(-2)}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-[13px] font-medium text-[#0F1A2E] truncate">
-            {formatPhone(conv.phone)}
-          </p>
-          <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#F4F3EF] text-[#A09E98] px-[6px] py-[1px] rounded-full shrink-0">
-            {channelLabels[conversationChannel(conv.phone)]}
-          </span>
-          {status !== "active" && (
-            <span
-              className={[
-                "text-[9px] font-semibold uppercase tracking-wider px-[6px] py-[1px] rounded-full shrink-0",
-                status === "paused" ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-600",
-              ].join(" ")}
-            >
-              {statusLabels[status]}
-            </span>
-          )}
-          {conv.linked_patient_id && (
-            <span className="text-[9px] font-semibold uppercase tracking-wider bg-[#E1F5EE] text-[#0F6E56] px-[6px] py-[1px] rounded-full shrink-0">
-              {t("page.patientBadge")}
-            </span>
-          )}
-        </div>
-        <p className="text-[11px] text-[#A09E98] truncate mt-[1px]">
-          {last
-            ? `${last.role === "user" ? "→" : "←"} ${last.content.replace(/\[MANUAL\]\s?/, "")}`
-            : t("page.noMessages")}
-        </p>
-      </div>
-
-      {/* Meta */}
-      <div className="text-right shrink-0">
-        <p className="text-[10px] text-[#A09E98]">{timeAgo(conv.updated_at, t)}</p>
-        <p className="text-[10px] text-[#D3D1C7] mt-[1px]">{t("page.msgCount", { count: msgCount })}</p>
-      </div>
-
-      {/* Arrow */}
-      <svg className="w-3 h-3 text-[#D3D1C7] group-hover:text-[#A09E98] transition shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="m9 18 6-6-6-6"/>
-      </svg>
-    </Link>
-  );
+/** Rótulo curto quando a última mensagem é só mídia (sem texto). */
+function mediaGlyph(kind: string | undefined): string {
+  if (kind === "image") return "🖼 imagem";
+  if (kind === "audio") return "🎤 áudio";
+  if (kind === "file") return "📎 arquivo";
+  return "";
 }
 
 export default async function WhatsAppMonitorPage() {
@@ -126,7 +53,7 @@ export default async function WhatsAppMonitorPage() {
     serviceError = err instanceof Error ? err.message : t("page.loadError");
   }
 
-  const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://app.axiel.com.br"}/api/whatsapp/webhook`;
+  const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL ?? "https://oxielcore.com"}/api/whatsapp/webhook`;
   const fromNumber = process.env.TWILIO_FROM_NUMBER ?? "-";
 
   const statusLabels: Record<HandoffStatus, string> = {
@@ -149,6 +76,36 @@ export default async function WhatsAppMonitorPage() {
 
   const humanConvs = convs.filter((c) => statusOf(c) !== "active");
   const botConvs = convs.filter((c) => statusOf(c) === "active");
+
+  // Linhas serializáveis para a lista com busca (client component).
+  const rows: ConvRowData[] = convs.map((conv) => {
+    const status = statusOf(conv);
+    const last = getLastMessage(conv);
+    const channel = conversationChannel(conv.phone);
+    const phoneFormatted = formatPhone(conv.phone);
+    let lastText = "";
+    let lastPrefix: "→" | "←" | "" = "";
+    if (last) {
+      lastPrefix = last.role === "user" ? "→" : "←";
+      lastText = last.content.replace(/\[MANUAL\]\s?/, "").trim();
+      if (!lastText && last.media) lastText = mediaGlyph(last.media.kind);
+    }
+    return {
+      id: conv.id,
+      url: `/whatsapp/${encodeURIComponent(conv.phone)}`,
+      phoneFormatted,
+      channelLabel: channelLabels[channel],
+      status,
+      statusLabel: status !== "active" ? statusLabels[status] : null,
+      isPatient: !!conv.linked_patient_id,
+      avatar: conv.phone.replace(/\D/g, "").slice(-2),
+      lastPrefix,
+      lastText,
+      timeAgo: timeAgo(conv.updated_at, t),
+      msgCount: t("page.msgCount", { count: conv.messages.length }),
+      search: `${phoneFormatted} ${conv.phone} ${channelLabels[channel]} ${lastText}`.toLowerCase(),
+    };
+  });
 
   return (
     <Shell>
@@ -243,47 +200,13 @@ export default async function WhatsAppMonitorPage() {
         </div>
       )}
 
-      {/* Conversations list */}
-      <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-[16px] py-[12px] border-b border-black/[.05]">
-          <p className="text-[12px] font-medium text-[#0F1A2E]">
-            {t("page.convCount", { count: convs.length })}
-          </p>
-          <div className="flex items-center gap-2 text-[11px] text-[#A09E98]">
-            <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-[#0F6E56]" />
-              {statusLabels.active} ({botConvs.length})
-            </span>
-            {humanConvs.length > 0 && (
-              <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                {t("handoff.legendHuman")} ({humanConvs.length})
-              </span>
-            )}
-          </div>
-        </div>
-
-        {convs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-[48px] px-[20px] text-center">
-            <div className="w-12 h-12 rounded-full bg-[#F4F3EF] flex items-center justify-center mb-3">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A09E98" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-            </div>
-            <p className="text-[13px] text-[#A09E98]">{t("page.emptyTitle")}</p>
-            <p className="text-[11px] text-[#C5C3BC] mt-1">
-              {t("page.emptyHint")}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-black/[.04]">
-            {convs.map((conv) => (
-              <ConvRow key={conv.id} conv={conv} status={statusOf(conv)} statusLabels={statusLabels} channelLabels={channelLabels} t={t} />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Conversations list (busca + filtros no client) */}
+      <ConversationsList
+        rows={rows}
+        patientBadge={t("page.patientBadge")}
+        activeCount={botConvs.length}
+        humanCount={humanConvs.length}
+      />
     </Shell>
   );
 }

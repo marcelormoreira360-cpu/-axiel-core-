@@ -67,5 +67,32 @@
       "hours": "{count}h ago",
       "days": "{count}d ago"
     }
+  },
+  "composer": {
+    "manualReply": "Manual reply",
+    "placeholder": "Type your message...",
+    "captionPlaceholder": "Caption (optional)…",
+    "send": "Send",
+    "sending": "…",
+    "enterHint": "Enter to send · Shift+Enter for a new line",
+    "sentManually": "Sent manually",
+    "noMessages": "No messages yet.",
+    "attach": "Attach file",
+    "recordAudio": "Record audio",
+    "stopRecording": "Stop recording",
+    "recording": "Recording",
+    "removeAttachment": "Remove attachment",
+    "attachmentReady": "Attachment ready",
+    "mediaOnlyWhatsapp": "Attachments and audio are available on WhatsApp only.",
+    "micUnsupported": "Your browser can't record audio here.",
+    "downloadFile": "Download file",
+    "mediaImageOnlyMeta": "On Instagram and Messenger you can only send images."
+  },
+  "search": {
+    "placeholder": "Search conversation, number, @…",
+    "all": "All",
+    "withTeam": "With the team",
+    "aiActive": "AI active",
+    "noResults": "No conversations found."
   }
 }

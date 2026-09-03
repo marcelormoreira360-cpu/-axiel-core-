@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { ArrowLeft } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
-import { getConversationByPhone, formatPhone } from "@/services/whatsapp-conversation-service";
+import { getConversationByPhone, formatPhone, enrichMessagesWithMedia } from "@/services/whatsapp-conversation-service";
 import { handoffStatus } from "@/lib/whatsapp-handoff";
 import { conversationChannel } from "@/lib/twilio-webhook-utils";
 import { WhatsAppConversationClient } from "./conversation-client";
@@ -18,6 +18,10 @@ export default async function ConversationPage({ params }: Props) {
     getTranslations("whatsapp"),
   ]);
   if (!conv) notFound();
+
+  // Assina as URLs de mídia (imagem/áudio/arquivo) para exibir na conversa.
+  const conversation = { ...conv, messages: await enrichMessagesWithMedia(conv.messages) };
+  const channel = conversationChannel(conv.phone);
 
   const status = handoffStatus({
     aiPaused: conv.ai_paused,
@@ -53,7 +57,7 @@ export default async function ConversationPage({ params }: Props) {
         </div>
       </div>
 
-      <WhatsAppConversationClient conversation={conv} />
+      <WhatsAppConversationClient conversation={conversation} channel={channel} />
     </Shell>
   );
 }

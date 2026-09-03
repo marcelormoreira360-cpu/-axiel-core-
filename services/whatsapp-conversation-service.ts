@@ -1,6 +1,26 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
-export type WaMessage = { role: "user" | "assistant"; content: string };
+export type WaMediaKind = "image" | "audio" | "file";
+
+/**
+ * Anexo de uma mensagem manual (imagem/áudio/arquivo). `path` é o caminho no
+ * bucket privado `patient-docs`; a URL de exibição (`url`) é assinada na hora
+ * de renderizar (curta duração) por `enrichMessagesWithMedia`, nunca é
+ * persistida na conversa.
+ */
+export type WaMedia = {
+  kind: WaMediaKind;
+  path: string;
+  name?: string | null;
+  mime?: string | null;
+  url?: string | null;
+};
+
+export type WaMessage = {
+  role: "user" | "assistant";
+  content: string;
+  media?: WaMedia | null;
+};
 
 export type WaConversation = {
   id: string;
@@ -200,6 +220,41 @@ function coerce(row: WaConversationRow): WaConversation {
 
 export function getLastMessage(conv: WaConversation): WaMessage | null {
   return conv.messages[conv.messages.length - 1] ?? null;
+}
+
+// ── Mídia das mensagens ─────────────────────────────────────────────────────
+// Anexos ficam no bucket privado `patient-docs` (o mesmo do áudio do WhatsApp).
+// A conversa guarda só o `path`; a URL de exibição é assinada na hora (curta).
+
+export const WA_MEDIA_BUCKET = "patient-docs";
+const WA_MEDIA_SIGNED_TTL = 3600; // 1h — folga p/ o operador ver/ouvir/baixar
+
+/**
+ * Devolve uma cópia das mensagens com `media.url` assinada (curta duração) para
+ * exibir imagem/áudio/arquivo na conversa. Mensagens sem mídia passam intactas.
+ * Chamado no server (page da conversa) antes de mandar ao client.
+ */
+export async function enrichMessagesWithMedia(messages: WaMessage[]): Promise<WaMessage[]> {
+  const hasMedia = messages.some((m) => m.media?.path);
+  if (!hasMedia) return messages;
+
+  const supabase = createSupabaseAdminClient();
+  return Promise.all(
+    messages.map(async (m) => {
+      if (!m.media?.path) return m;
+      const { data } = await supabase.storage
+        .from(WA_MEDIA_BUCKET)
+        .createSignedUrl(m.media.path, WA_MEDIA_SIGNED_TTL);
+      return { ...m, media: { ...m.media, url: data?.signedUrl ?? null } };
+    }),
+  );
+}
+
+/** Classifica um MIME em imagem/áudio/arquivo para escolher como renderizar/enviar. */
+export function mediaKindFromMime(mime: string | null | undefined): WaMediaKind {
+  if (mime?.startsWith("image/")) return "image";
+  if (mime?.startsWith("audio/")) return "audio";
+  return "file";
 }
 
 export function formatPhone(phone: string): string {
