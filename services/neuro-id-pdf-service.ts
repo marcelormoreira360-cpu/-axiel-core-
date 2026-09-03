@@ -123,11 +123,14 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   doc.font("Times-Bold").fontSize(10.5).fillColor(INK).text(`${label}`, MARGIN, y, { continued: true });
   doc.font("Times-Italic").fillColor(MUTED).text(`  ${hint} · ${bandWord}${shareTxt}${isPriority ? "  ·  comece aqui (prioridade)" : ""}`);
   const pct = disf ?? 0;
+  const balance = dysfunctionToBalance(dysfunction); // camada profissional vê os dois
   const barY = doc.y + 2;
   const barW = CONTENT_W - 60;
   doc.roundedRect(MARGIN, barY, barW, 8, 4).fill("#EFEDE7");
   if (disf !== null) doc.roundedRect(MARGIN, barY, (barW * pct) / 100, 8, 4).fill(color);
-  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 2, { width: 48, align: "right" });
+  // Preenchimento = DISFUNÇÃO (cor/estado). À direita: disfunção (destaque) + equilíbrio (apoio).
+  doc.font("Times-Bold").fontSize(11).fillColor(textColor).text(disf === null ? "—" : `${disf}%`, MARGIN + barW + 8, barY - 5, { width: 48, align: "right" });
+  doc.font("Times-Roman").fontSize(7).fillColor(MUTED).text(balance === null ? "" : `eq ${balance}%`, MARGIN + barW + 8, barY + 7, { width: 48, align: "right" });
   doc.y = barY + 18;
 }
 
@@ -322,10 +325,17 @@ export async function buildNeuroIdMapPdf(opts: {
   }
 
   const generalDys = round(map.indice_geral);
+  const generalBalance = dysfunctionToBalance(map.indice_geral); // camada profissional vê os dois
   const indexBand = bandForDysfunction(map.indice_geral);
   sectionTitle(doc, "Índice Bio · Grau de Disfunção");
   doc.font("Times-Bold").fontSize(34).fillColor(indexBand ? indexBand.colors.text : "#9ca3af")
     .text(generalDys === null ? "—" : `${generalDys}%`, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+  // Leitura dupla para o profissional: disfunção (clínica) + equilíbrio (o que o paciente vê).
+  doc.font("Times-Roman").fontSize(9.5).fillColor(MUTED)
+    .text(
+      generalDys === null ? "" : `Disfunção ${generalDys}%  ·  Equilíbrio ${generalBalance}% (o número que o paciente vê)`,
+      MARGIN, doc.y + 1, { width: CONTENT_W, align: "center" },
+    );
   if (indexBand) {
     doc.font("Times-Italic").fontSize(11).fillColor(indexBand.colors.text)
       .text(`${labelFor(indexBand.key, "axis")}: ${band(map.indice_geral)}`, MARGIN, doc.y + 2, { width: CONTENT_W, align: "center" });
