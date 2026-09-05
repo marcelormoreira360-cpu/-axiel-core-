@@ -6,6 +6,7 @@ import { installDefaultTemplatesAction, updateTemplateAction } from "./actions";
 import { ComposeModal } from "./compose-modal";
 import { CommunicationTemplateCard } from "@/components/communication-template-card";
 import { CommunicationLogList } from "@/components/communication-log-list";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function CommunicationsPage() {
   const t = await getTranslations("emails.communications");
@@ -77,12 +78,11 @@ export default async function CommunicationsPage() {
             </p>
             {templates.length === 0 && (
               <form action={installDefaultTemplatesAction}>
-                <button
-                  type="submit"
+                <SubmitButton
                   className="text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[7px] px-[10px] py-[5px] transition"
                 >
                   {t("installDefaults")}
-                </button>
+                </SubmitButton>
               </form>
             )}
           </div>
@@ -97,12 +97,11 @@ export default async function CommunicationsPage() {
               </div>
               <p className="text-[13px] text-[#A09E98] mb-[12px]">{t("emptyTemplates")}</p>
               <form action={installDefaultTemplatesAction}>
-                <button
-                  type="submit"
+                <SubmitButton
                   className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#0A5842] rounded-[8px] px-[16px] py-[8px] transition"
                 >
                   {t("installDefaults")}
-                </button>
+                </SubmitButton>
               </form>
             </div>
           ) : (

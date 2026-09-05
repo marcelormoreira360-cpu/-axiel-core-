@@ -8,6 +8,7 @@ import { getClinicCurrency } from "@/services/finance-service";
 import { formatMoney } from "@/lib/finance-utils";
 import { getLocale, getTranslations } from "next-intl/server";
 import { toggleProductActiveAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 
 function avgPriceCents(products: { price_cents: number }[]) {
@@ -155,12 +156,11 @@ export default async function ProductsPage() {
                     name="is_active"
                     value={product.is_active ? "false" : "true"}
                   />
-                  <button
-                    type="submit"
+                  <SubmitButton
                     className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[10px] py-[5px] rounded-lg w-full mt-[2px]"
                   >
                     {product.is_active ? t("deactivate") : t("activate")}
-                  </button>
+                  </SubmitButton>
                 </form>
               </div>
             ))}

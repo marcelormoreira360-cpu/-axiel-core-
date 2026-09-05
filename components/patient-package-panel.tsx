@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, Package, X, StopCircle, Trash2, RefreshCw } from "lucide-react";
 import type { PatientPackage } from "@/services/package-service";
+import { SubmitButton } from "@/components/submit-button";
 import {
   addPackageAction,
   deactivatePackageAction,
@@ -84,22 +85,20 @@ function PackageCard({ pkg, patientId }: { pkg: PatientPackage; patientId: strin
         {pkg.is_active && (
           <div className="flex items-center gap-[4px] shrink-0">
             <form action={deactivatePackageAction.bind(null, pkg.id, patientId)}>
-              <button
-                type="submit"
+              <SubmitButton
                 title={t("endTitle")}
                 className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-amber-500 transition"
               >
                 <StopCircle className="h-3.5 w-3.5" />
-              </button>
+              </SubmitButton>
             </form>
             <form action={deletePackageAction.bind(null, pkg.id, patientId)}>
-              <button
-                type="submit"
+              <SubmitButton
                 title={t("removeTitle")}
                 className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition"
               >
                 <Trash2 className="h-3 w-3" />
-              </button>
+              </SubmitButton>
             </form>
           </div>
         )}
@@ -217,12 +216,11 @@ function AddPackageForm({ patientId, onClose }: { patientId: string; onClose: ()
         </div>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <SubmitButton
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
             {t("save")}
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </div>

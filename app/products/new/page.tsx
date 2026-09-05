@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { createProductAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 const CATEGORIES = [
   "Suplementos",
@@ -140,12 +141,11 @@ export default async function NewProductPage() {
 
           {/* Actions */}
           <div className="flex flex-wrap gap-[10px] pt-[4px]">
-            <button
-              type="submit"
+            <SubmitButton
               className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[18px] py-[9px] rounded-lg"
             >
               {t("save")}
-            </button>
+            </SubmitButton>
             <Link
               href="/products"
               className="flex items-center text-[13px] font-medium text-[#6B6A66] dark:text-[#9E9C97] bg-[#F4F3EF] dark:bg-white/[.06] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[18px] py-[9px] rounded-lg"

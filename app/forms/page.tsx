@@ -16,6 +16,7 @@ import { DeleteTemplateButton } from "@/app/forms/delete-template-button";
 import { ShareFormButton } from "@/app/forms/share-form-button";
 import { ImportTemplatesButton } from "@/app/forms/import-templates-button";
 import { TEMPLATE_CATALOG } from "@/app/forms/forms-catalog";
+import { SubmitButton } from "@/components/submit-button";
 
 export default async function FormsPage() {
   const t = await getTranslations("forms.list");
@@ -87,23 +88,23 @@ export default async function FormsPage() {
           <div className="flex items-center gap-[8px]">
             {!hasQRM && (
               <form action={importQRMAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
+                <SubmitButton className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQRM")}
-                </button>
+                </SubmitButton>
               </form>
             )}
             {!hasQSNA && (
               <form action={importQSNAAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
+                <SubmitButton className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQSNA")}
-                </button>
+                </SubmitButton>
               </form>
             )}
             {!hasQSNAEN && (
               <form action={importQSNAENAction}>
-                <button type="submit" className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
+                <SubmitButton className="flex items-center gap-[5px] text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] dark:hover:bg-[#0F6E56]/30 rounded-[6px] px-[10px] py-[6px] transition">
                   {t("importQSNAEN")}
-                </button>
+                </SubmitButton>
               </form>
             )}
             <ImportTemplatesButton available={availableToImport} actionEntries={actionEntries} />

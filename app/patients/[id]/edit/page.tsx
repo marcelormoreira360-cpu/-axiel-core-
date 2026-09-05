@@ -5,6 +5,7 @@ import { getPatientById, getClinicPatientsForPicker } from "@/services/patient-s
 import { getCurrentClinic } from "@/services/clinic-service";
 import { updatePatientAction, anonymizePatientAction } from "./actions";
 import { AnonymizePatientButton } from "@/components/anonymize-patient-button";
+import { SubmitButton } from "@/components/submit-button";
 import { getTranslations } from "next-intl/server";
 
 export default async function EditPatientPage({ params }: { params: Promise<{ id: string }> }) {
@@ -200,12 +201,11 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
           </div>
 
           <div className="flex gap-[8px] pt-[4px]">
-            <button
-              type="submit"
+            <SubmitButton
               className="text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[20px] py-[9px] transition"
             >
               {t("save")}
-            </button>
+            </SubmitButton>
             <Link
               href={`/patients/${id}`}
               className="text-[13px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] rounded-[8px] px-[20px] py-[9px] transition"

@@ -8,6 +8,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 import { getPatientProducts, getProducts } from "@/services/product-service";
 import type { DbPatientProduct } from "@/services/product-service";
 import { addPatientProductAction, updatePatientProductStatusAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 const STATUS_CLASSES: Record<DbPatientProduct["status"], string> = {
   active: "bg-[#E1F5EE] dark:bg-[#0F6E56]/20 text-[#0F6E56] dark:text-[#9FE1CB]",
@@ -128,34 +129,31 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="id" value={pp.id} />
                       <input type="hidden" name="patient_id" value={id} />
                       <input type="hidden" name="status" value="paused" />
-                      <button
-                        type="submit"
+                      <SubmitButton
                         className="text-[11px] font-medium text-[#92400E] dark:text-[#E8B04B] bg-[#FEF3C7] dark:bg-[#C77D17]/[.15] hover:bg-[#FDE68A] dark:hover:bg-[#C77D17]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         {t("pause")}
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={updatePatientProductStatusAction}>
                       <input type="hidden" name="id" value={pp.id} />
                       <input type="hidden" name="patient_id" value={id} />
                       <input type="hidden" name="status" value="completed" />
-                      <button
-                        type="submit"
+                      <SubmitButton
                         className="text-[11px] font-medium text-[#6B6A66] bg-[#F4F3EF] hover:bg-[#EEECEA] dark:hover:bg-white/[.08] transition px-[10px] py-[5px] rounded-lg"
                       >
                         {t("complete")}
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={updatePatientProductStatusAction}>
                       <input type="hidden" name="id" value={pp.id} />
                       <input type="hidden" name="patient_id" value={id} />
                       <input type="hidden" name="status" value="canceled" />
-                      <button
-                        type="submit"
+                      <SubmitButton
                         className="text-[11px] font-medium text-[#991B1B] dark:text-[#F2B8B5] bg-[#FEE2E2] dark:bg-[#B42318]/[.18] hover:bg-[#FECACA] dark:hover:bg-[#B42318]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         {t("cancel")}
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 )}
@@ -166,23 +164,21 @@ export default async function PatientProductsPage({
                       <input type="hidden" name="id" value={pp.id} />
                       <input type="hidden" name="patient_id" value={id} />
                       <input type="hidden" name="status" value="active" />
-                      <button
-                        type="submit"
+                      <SubmitButton
                         className="text-[11px] font-medium text-[#0F6E56] dark:text-[#9FE1CB] bg-[#E1F5EE] dark:bg-[#0F6E56]/20 hover:bg-[#C3EBD8] dark:hover:bg-[#0F6E56]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         {t("reactivate")}
-                      </button>
+                      </SubmitButton>
                     </form>
                     <form action={updatePatientProductStatusAction}>
                       <input type="hidden" name="id" value={pp.id} />
                       <input type="hidden" name="patient_id" value={id} />
                       <input type="hidden" name="status" value="canceled" />
-                      <button
-                        type="submit"
+                      <SubmitButton
                         className="text-[11px] font-medium text-[#991B1B] dark:text-[#F2B8B5] bg-[#FEE2E2] dark:bg-[#B42318]/[.18] hover:bg-[#FECACA] dark:hover:bg-[#B42318]/30 transition px-[10px] py-[5px] rounded-lg"
                       >
                         {t("cancel")}
-                      </button>
+                      </SubmitButton>
                     </form>
                   </div>
                 )}
@@ -241,12 +237,11 @@ export default async function PatientProductsPage({
               <input name="review_date" type="date" className={inputClass} />
             </label>
 
-            <button
-              type="submit"
+            <SubmitButton
               className="flex items-center justify-center gap-1.5 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] transition px-[14px] py-[8px] rounded-lg"
             >
               {t("addButton")}
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </div>

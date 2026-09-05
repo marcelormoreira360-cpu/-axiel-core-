@@ -4,6 +4,7 @@ import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { createPatientAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 // Full international dial codes — names resolved per-locale via Intl.DisplayNames
 const COUNTRY_CODES = [
@@ -224,12 +225,11 @@ export default async function NewPatientPage({
 
           {/* ── Ações ── */}
           <div className="flex flex-wrap gap-3 pt-1">
-            <button
-              type="submit"
+            <SubmitButton
               className="min-h-[52px] rounded-lg bg-axiel-blue px-7 text-base font-semibold text-white shadow-md hover:opacity-90 transition"
             >
               {t("save")}
-            </button>
+            </SubmitButton>
             <Link
               href="/patients"
               className="inline-flex min-h-[52px] items-center rounded-lg border border-axiel-line bg-white px-7 text-base font-semibold hover:bg-gray-50 dark:hover:bg-white/[.06] transition"

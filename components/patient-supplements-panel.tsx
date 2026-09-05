@@ -7,6 +7,7 @@ import type {
   PatientSupplementRecommendation,
   SupplementCatalogItem,
 } from "@/services/supplement-service";
+import { SubmitButton } from "@/components/submit-button";
 import {
   createSupplementRecommendationAction,
   addSupplementItemAction,
@@ -118,12 +119,11 @@ function AddItemForm({
       <input type="text" name="rationale" placeholder={t("itemRationale")} className={inputCls} />
 
       <div className="flex gap-[8px]">
-        <button
-          type="submit"
+        <SubmitButton
           className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[14px] py-[7px] transition"
         >
           {t("addItem")}
-        </button>
+        </SubmitButton>
         <button type="button" onClick={onClose} aria-label={tCommon("close")} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
           <X className="h-4 w-4" />
         </button>
@@ -367,12 +367,11 @@ export function PatientSupplementsPanel({
             className={`${inputCls} resize-none`}
           />
           <div className="flex gap-[8px]">
-            <button
-              type="submit"
+            <SubmitButton
               className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[14px] py-[7px] transition"
             >
               {t("create")}
-            </button>
+            </SubmitButton>
             <button type="button" onClick={() => setCreating(false)} className="text-[#A09E98] hover:text-[#0F1A2E] dark:hover:text-[#E8E6E2] transition">
               <X className="h-4 w-4" />
             </button>
