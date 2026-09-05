@@ -59,7 +59,8 @@
     "executiveNav": "Executive",
     "receivablesNav": "Receivables",
     "cashflowNav": "Cash Flow",
-    "payablesNav": "Payables"
+    "payablesNav": "Payables",
+    "marginNav": "Margin"
   },
   "methods": {
     "pix": "PIX",
@@ -410,5 +411,31 @@
     "pay": "Pay",
     "paidListTitle": "Recently paid",
     "paidOn": "Paid on"
+  },
+  "margin": {
+    "eyebrow": "Finance",
+    "title": "Margin & Pricing",
+    "subtitle": "Margin by professional and by product — {month}.",
+    "totalMargin": "Total margin",
+    "totalMarginSub": "Services + products this month",
+    "servicesMargin": "Services margin",
+    "productsMargin": "Products margin",
+    "repasse": "Payout",
+    "repasseSub": "Labor cost this month",
+    "marginOf": "{pct}% margin",
+    "byProfessional": "Margin by professional",
+    "byProfessionalHint": "Gross minus professional payout. Your own sessions = full margin.",
+    "byProduct": "Margin by product",
+    "noServices": "No payout recorded this month.",
+    "noProducts": "No products sold (paid) this month.",
+    "sessions": "{count, plural, one {# session} other {# sessions}}",
+    "units": "{count, plural, one {# unit} other {# units}}",
+    "gross": "Gross",
+    "revenue": "Revenue",
+    "cost": "Cost",
+    "noCost": "no cost set",
+    "marginPct": "{pct}% margin",
+    "clinicLink": "Clinic view (Analytics)",
+    "programsNote": "Margin by program/package coming in a future phase."
   }
 }
