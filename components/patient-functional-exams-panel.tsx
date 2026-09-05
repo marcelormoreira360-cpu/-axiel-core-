@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { Activity, Plus, X, Trash2, ChevronDown, Sparkles, Check } from "lucide-react";
 import type { PatientFunctionalExam } from "@/services/functional-exams-service";
 import { EXAM_METRIC_META } from "@/modules/neuro-id/exam-metrics";
-import { addFunctionalExamAction, deleteFunctionalExamAction, reviewExamMetricsAction } from "@/app/patients/[id]/functional-exams/actions";
+import { addFunctionalExamAction, createExamUploadUrlAction, deleteFunctionalExamAction, reviewExamMetricsAction } from "@/app/patients/[id]/functional-exams/actions";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 function typeLabel(t: ReturnType<typeof useTranslations>, exam: PatientFunctionalExam): string {
   if (exam.exam_type === "neurometria") return t("typeNeurometria");
@@ -23,8 +25,58 @@ export function PatientFunctionalExamsPanel({
 }) {
   const t = useTranslations("patientPanels.functionalExams");
   const locale = useLocale();
+  const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [examType, setExamType] = useState<string>("neurometria");
+  const [saving, setSaving] = useState(false);
+  const [working, setWorking] = useState("");
+  const [error, setError] = useState("");
+
+  // Upload do PDF vai DIRETO do navegador pro storage (URL assinada), contornando
+  // o limite de ~4,5 MB de corpo das funções da Vercel. Só o caminho vai pro
+  // server action. Qualquer falha vira aviso inline (nada de crash na página).
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (saving) return;
+    setError("");
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const file = fd.get("exam_file");
+
+    try {
+      setSaving(true);
+      if (file instanceof File && file.size > 0) {
+        if (file.type !== "application/pdf") {
+          setError(t("errPdfOnly"));
+          setSaving(false);
+          return;
+        }
+        setWorking(t("uploading"));
+        const ticket = await createExamUploadUrlAction(patientId, file.name);
+        if (!ticket.ok || !ticket.path || !ticket.token) throw new Error(ticket.error ?? "upload");
+        const supabase = createSupabaseBrowserClient();
+        const { error: upErr } = await supabase.storage
+          .from("patient-docs")
+          .uploadToSignedUrl(ticket.path, ticket.token, file);
+        if (upErr) throw upErr;
+        // Manda só o caminho (sem os bytes) pro server action.
+        fd.delete("exam_file");
+        fd.set("storage_path", ticket.path);
+        fd.set("file_name", file.name);
+        setWorking(t("processing"));
+      }
+      await addFunctionalExamAction(fd);
+      form.reset();
+      setExamType("neurometria");
+      setAdding(false);
+      router.refresh();
+    } catch {
+      setError(t("errGeneric"));
+    } finally {
+      setSaving(false);
+      setWorking("");
+    }
+  }
 
   const inputCls =
     "w-full text-[13px] text-[#0F1A2E] bg-white border border-black/[.10] dark:border-white/[.10] rounded-[8px] px-[10px] py-[8px] outline-none focus:border-[#0F6E56]/50 transition";
@@ -46,7 +98,7 @@ export function PatientFunctionalExamsPanel({
       </div>
 
       {adding && (
-        <form action={addFunctionalExamAction} className="space-y-[8px] mb-[12px] bg-[#FAFAF8] rounded-[10px] p-[12px]">
+        <form onSubmit={handleSubmit} className="space-y-[8px] mb-[12px] bg-[#FAFAF8] rounded-[10px] p-[12px]">
           <input type="hidden" name="patient_id" value={patientId} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-[8px]">
             <div>
@@ -74,12 +126,20 @@ export function PatientFunctionalExamsPanel({
             <input type="file" name="exam_file" accept="application/pdf" className={inputCls + " text-[11px] file:mr-2 file:rounded-md file:border-0 file:bg-[#0F6E56]/10 file:px-2 file:py-1 file:text-[#0F6E56]"} />
             <p className="text-[9px] text-[#A09E98] mt-[3px]">{t("fileHint")}</p>
           </div>
+          {error && (
+            <p className="text-[11px] text-[#B42318] dark:text-[#F2B8B5] bg-[#B42318]/[.06] rounded-[7px] px-[10px] py-[7px]">{error}</p>
+          )}
           <button
             type="submit"
-            className="w-full text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] py-[9px] transition"
+            disabled={saving}
+            className="w-full flex items-center justify-center gap-[6px] text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-70 rounded-[8px] py-[9px] transition"
           >
-            {t("save")}
+            {saving && (
+              <span aria-hidden className="inline-block h-3 w-3 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+            )}
+            {saving ? working || t("processing") : t("save")}
           </button>
+          <p className="text-[9px] text-[#A09E98] text-center">{t("uploadHint")}</p>
         </form>
       )}
 

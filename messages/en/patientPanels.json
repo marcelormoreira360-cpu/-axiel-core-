@@ -316,6 +316,11 @@
     "delete": "Delete",
     "fileLabel": "Attach exam (PDF)",
     "fileHint": "The AI reads the PDF and summarizes the key findings (e.g. most altered emotions) for the report.",
+    "uploading": "Uploading the exam...",
+    "processing": "Processing...",
+    "errPdfOnly": "Attach the exam as a PDF.",
+    "errGeneric": "Couldn't save the exam. Please try again.",
+    "uploadHint": "PDF up to 15 MB. Uploaded directly and securely to storage.",
     "metrics": {
       "title": "Bio³ metrics (from exam)",
       "hint": "The AI extracted these values from the PDF. Review, adjust if needed and confirm to add them to the pyramid.",
