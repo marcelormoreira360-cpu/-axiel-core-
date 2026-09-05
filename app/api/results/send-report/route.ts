@@ -3,6 +3,7 @@ import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicCurrency } from "@/services/finance-service";
+import { getMonthlyClose } from "@/services/fin-monthly-close-service";
 import { getCurrentAuthUser } from "@/services/user-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
@@ -37,8 +38,10 @@ export async function POST() {
     const t = await getServerT(locale, "emails");
     const monthName = firstOfLastMonth.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
-    const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes, paymentsRes] =
+    const [close, sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes] =
       await Promise.all([
+        getMonthlyClose(clinic.id),
+
         supabase
           .from("appointments")
           .select("id", { count: "exact", head: true })
@@ -70,13 +73,6 @@ export async function POST() {
           .select("id", { count: "exact", head: true })
           .eq("clinic_id", clinic.id)
           .eq("status", "active"),
-
-        supabase
-          .from("patient_payments")
-          .select("amount_cents")
-          .eq("clinic_id", clinic.id)
-          .gte("paid_at", startISO)
-          .lt("paid_at", endISO),
       ]);
 
     const sessions = sessionsRes.count ?? 0;
@@ -85,11 +81,8 @@ export async function POST() {
     const recentPatientIds = new Set((recentSessionsRes.data ?? []).map((r) => r.patient_id));
     const totalActive = totalActiveRes.count ?? 0;
     const inactive = Math.max(0, totalActive - recentPatientIds.size);
-    const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
-    const revenueStr =
-      revenueCents > 0
-        ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: __cur })
-        : "—";
+    const fmt = (c: number) => (c / 100).toLocaleString(locale, { style: "currency", currency: __cur });
+    const revenueStr = close.revenueCents > 0 ? fmt(close.revenueCents) : "—";
 
     const html = await render(
       MonthlyReportEmail({
@@ -98,6 +91,8 @@ export async function POST() {
         appUrl: APP_URL,
         metrics: {
           revenue: revenueStr,
+          expense: fmt(close.expenseCents),
+          net: fmt(close.netCents),
           sessions,
           newPatients,
           activePackages,

@@ -17,6 +17,7 @@ import { AsaasChargeButton } from "./asaas-pix-button";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { requireFinanceAccess, getFinanceCaps } from "@/lib/require-finance-access";
 import { PendingPayments } from "./pending-payments";
+import { FinanceMonthlyClosePanel } from "./finance-monthly-close-panel";
 import { FinanceAlertsPanel } from "./finance-alerts-panel";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
@@ -166,6 +167,9 @@ export default async function FinanceiroPage() {
           />
         </div>
       </div>
+
+      {/* ── Fechamento do mês anterior ── */}
+      <FinanceMonthlyClosePanel clinicId={clinic.id} />
 
       {/* ── Alertas (só aparece quando há algo a tratar) ── */}
       <FinanceAlertsPanel clinicId={clinic.id} />

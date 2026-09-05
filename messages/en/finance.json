@@ -510,7 +510,9 @@
     "revenue": "Revenue",
     "expense": "Expense",
     "net": "Net",
-    "receivable": "Receivable"
+    "receivable": "Receivable",
+    "fechamento": "Monthly Close",
+    "openPayable": "Payable (open)"
   },
   "audit": {
     "eyebrow": "Finance",
@@ -572,5 +574,12 @@
     "pendingShort": "{count} pending",
     "utilPct": "{pct}% used",
     "marginNote": "Net margin per program needs per-session cost (not modeled yet). Here: utilization and session liability."
+  },
+  "close": {
+    "title": "{month} close",
+    "revenue": "Revenue",
+    "expense": "Expense",
+    "net": "Net",
+    "exportPdf": "PDF"
   }
 }

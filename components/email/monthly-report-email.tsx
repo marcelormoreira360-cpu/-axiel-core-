@@ -14,6 +14,8 @@ export interface MonthlyReportEmailProps {
   appUrl: string;
   metrics: {
     revenue: string;
+    expense: string;
+    net: string;
     sessions: number;
     newPatients: number;
     activePackages: number;
@@ -25,6 +27,8 @@ export interface MonthlyReportEmailProps {
 
 const ROWS: Array<{ icon: string; labelKey: string; key: keyof MonthlyReportEmailProps["metrics"] }> = [
   { icon: "💰", labelKey: "monthly.rowRevenue",  key: "revenue" },
+  { icon: "💸", labelKey: "monthly.rowExpense",  key: "expense" },
+  { icon: "🧮", labelKey: "monthly.rowNet",      key: "net" },
   { icon: "📅", labelKey: "monthly.rowSessions", key: "sessions" },
   { icon: "👤", labelKey: "monthly.rowNew",      key: "newPatients" },
   { icon: "📦", labelKey: "monthly.rowPackages", key: "activePackages" },

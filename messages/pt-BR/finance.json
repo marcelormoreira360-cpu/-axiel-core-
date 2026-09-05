@@ -510,7 +510,9 @@
     "revenue": "Receita",
     "expense": "Despesa",
     "net": "Resultado",
-    "receivable": "A receber"
+    "receivable": "A receber",
+    "fechamento": "Fechamento Mensal",
+    "openPayable": "A pagar (aberto)"
   },
   "audit": {
     "eyebrow": "Financeiro",
@@ -572,5 +574,12 @@
     "pendingShort": "{count} pendentes",
     "utilPct": "{pct}% uso",
     "marginNote": "Margem líquida por programa exige custo por sessão (não modelado ainda). Aqui: utilização e passivo de sessões."
+  },
+  "close": {
+    "title": "Fechamento de {month}",
+    "revenue": "Receita",
+    "expense": "Despesa",
+    "net": "Resultado",
+    "exportPdf": "PDF"
   }
 }
