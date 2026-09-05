@@ -111,6 +111,14 @@ export async function downloadFunctionalExamFile(path: string): Promise<Buffer> 
   return Buffer.from(await data.arrayBuffer());
 }
 
+/** Apaga um arquivo do storage de exames (best-effort). Usado pelo exame lab, que
+ *  não persiste o arquivo — só o lê para a IA e descarta o temporário. */
+export async function deleteExamStorageFile(path: string): Promise<void> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  await supabase.storage.from("patient-docs").remove([path]);
+}
+
 export async function createPatientFunctionalExam(input: {
   clinic_id: string;
   patient_id: string;

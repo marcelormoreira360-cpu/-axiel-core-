@@ -110,7 +110,10 @@
       "extracting": "Lendo…",
       "extractDone": "{count} marcadores preenchidos. Revise e ajuste antes de salvar.",
       "extractNone": "Nenhum marcador encontrado. Tente uma foto mais nítida ou preencha manual.",
-      "extractPickFile": "Anexe uma foto ou PDF primeiro."
+      "extractPickFile": "Anexe uma foto ou PDF primeiro.",
+      "extractBadType": "Use uma imagem (foto) ou PDF.",
+      "extractTooLarge": "Arquivo muito grande (máx. 15 MB).",
+      "extractError": "Não consegui ler o exame. Tente novamente."
     }
   },
   "prescriptions": {

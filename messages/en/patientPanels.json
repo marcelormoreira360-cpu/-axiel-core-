@@ -110,7 +110,10 @@
       "extracting": "Reading…",
       "extractDone": "{count} markers filled. Review and adjust before saving.",
       "extractNone": "No markers found. Try a clearer photo or fill in manually.",
-      "extractPickFile": "Attach a photo or PDF first."
+      "extractPickFile": "Attach a photo or PDF first.",
+      "extractBadType": "Use an image (photo) or PDF.",
+      "extractTooLarge": "File too large (max 15 MB).",
+      "extractError": "Couldn't read the exam. Please try again."
     }
   },
   "prescriptions": {
