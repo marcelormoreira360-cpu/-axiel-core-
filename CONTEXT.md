@@ -1173,6 +1173,7 @@ const Chart = dynamic(() => import("@/components/chart").then(m => m.Chart), {
 - **Integrações**: Google Calendar (OAuth, conectado em produção), Zoom (token por clínica)
 - **Portal do Paciente**: `/p/[token]` — sessões, documentos, LGPD, link Zoom
 - **LGPD**: `/settings/lgpd` — solicitações de exclusão + `patient_consents`
+- **Atendimento (Inbox)**: `/whatsapp` — conversas multi-canal (WhatsApp/Instagram/Messenger/SMS), busca + filtros na lista, passagem de bastão Clara↔equipe. Resposta manual com **anexo de imagem** (WhatsApp/IG/Messenger) e **áudio/arquivo** (só WhatsApp). Envio roteado por canal em `services/inbox-send-service.ts` (Twilio p/ WhatsApp; `lib/instagram-api` e `lib/messenger-api` p/ Meta). Mídia guardada no bucket privado `patient-docs` (path na conversa, URL assinada só na exibição via `enrichMessagesWithMedia`). GOTCHA: áudio de WhatsApp precisa ser mp4/ogg (webm do Chrome é recusado); WhatsApp 16 MB / Meta 8 MB; regra da janela de 24h vale nos dois.
 
 ---
 

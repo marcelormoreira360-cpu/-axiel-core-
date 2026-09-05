@@ -67,5 +67,32 @@
       "hours": "{count}h atrás",
       "days": "{count}d atrás"
     }
+  },
+  "composer": {
+    "manualReply": "Resposta manual",
+    "placeholder": "Digite sua mensagem...",
+    "captionPlaceholder": "Legenda (opcional)…",
+    "send": "Enviar",
+    "sending": "…",
+    "enterHint": "Enter para enviar · Shift+Enter para nova linha",
+    "sentManually": "Enviado manualmente",
+    "noMessages": "Sem mensagens ainda.",
+    "attach": "Anexar arquivo",
+    "recordAudio": "Gravar áudio",
+    "stopRecording": "Parar gravação",
+    "recording": "Gravando",
+    "removeAttachment": "Remover anexo",
+    "attachmentReady": "Anexo pronto",
+    "mediaOnlyWhatsapp": "Anexos e áudio disponíveis apenas no WhatsApp.",
+    "micUnsupported": "Seu navegador não permite gravar áudio aqui.",
+    "downloadFile": "Baixar arquivo",
+    "mediaImageOnlyMeta": "No Instagram e Messenger só dá para enviar imagem."
+  },
+  "search": {
+    "placeholder": "Buscar conversa, número, @…",
+    "all": "Todas",
+    "withTeam": "Com a equipe",
+    "aiActive": "IA ativa",
+    "noResults": "Nenhuma conversa encontrada."
   }
 }
