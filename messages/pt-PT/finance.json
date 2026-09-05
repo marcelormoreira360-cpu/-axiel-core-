@@ -59,7 +59,8 @@
     "executiveNav": "Painel Executivo",
     "receivablesNav": "A Receber",
     "cashflowNav": "Fluxo de Caixa",
-    "payablesNav": "A Pagar"
+    "payablesNav": "A Pagar",
+    "marginNav": "Margem"
   },
   "methods": {
     "pix": "PIX",
@@ -410,5 +411,31 @@
     "pay": "Pagar",
     "paidListTitle": "Pagas recentes",
     "paidOn": "Pago a"
+  },
+  "margin": {
+    "eyebrow": "Financeiro",
+    "title": "Margem & Preçário",
+    "subtitle": "Margem por profissional e por produto — {month}.",
+    "totalMargin": "Margem total",
+    "totalMarginSub": "Serviços + produtos no mês",
+    "servicesMargin": "Margem de serviços",
+    "productsMargin": "Margem de produtos",
+    "repasse": "Repasse",
+    "repasseSub": "Custo de trabalho no mês",
+    "marginOf": "{pct}% de margem",
+    "byProfessional": "Margem por profissional",
+    "byProfessionalHint": "Bruto menos repasse ao profissional. Atendimento seu = margem cheia.",
+    "byProduct": "Margem por produto",
+    "noServices": "Sem repasse registado neste mês.",
+    "noProducts": "Nenhum produto vendido (pago) neste mês.",
+    "sessions": "{count, plural, one {# sessão} other {# sessões}}",
+    "units": "{count, plural, one {# unidade} other {# unidades}}",
+    "gross": "Bruto",
+    "revenue": "Receita",
+    "cost": "Custo",
+    "noCost": "sem custo definido",
+    "marginPct": "{pct}% margem",
+    "clinicLink": "Visão da clínica (Analytics)",
+    "programsNote": "Margem por programa/pacote chega numa fase futura."
   }
 }
