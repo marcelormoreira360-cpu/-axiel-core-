@@ -55,7 +55,8 @@
     "byMethod": "Por forma de pagamento",
     "noMethodData": "Nenhum dado este mês.",
     "unpaidTitle": "Sessões não pagas",
-    "allPaid": "✓ Todas as sessões foram pagas."
+    "allPaid": "✓ Todas as sessões foram pagas.",
+    "executiveNav": "Painel Executivo"
   },
   "methods": {
     "pix": "PIX",
@@ -308,5 +309,34 @@
     "creating": "Criando…",
     "create": "Criar pedido",
     "errNoProducts": "Adicione ao menos um produto."
+  },
+  "executive": {
+    "eyebrow": "Financeiro",
+    "title": "Painel Executivo",
+    "subtitle": "Visão do mês: receita, despesa, resultado e a receber.",
+    "revenue": "Receita do mês",
+    "expense": "Despesas do mês",
+    "net": "Resultado",
+    "receivable": "A receber",
+    "vsPrev": "vs mês anterior",
+    "expenseSub": "lançamentos manuais",
+    "netPositive": "no azul",
+    "netNegative": "no vermelho",
+    "receivableSub": "agenda futura estimada",
+    "addEntry": "Novo lançamento",
+    "newEntry": "Novo lançamento",
+    "cancel": "Cancelar",
+    "kind": "Tipo",
+    "kindExpense": "Despesa",
+    "kindRevenue": "Receita",
+    "amount": "Valor",
+    "date": "Data",
+    "category": "Categoria",
+    "categoryPlaceholder": "Ex.: Aluguel, Marketing...",
+    "description": "Descrição",
+    "descriptionPlaceholder": "Opcional",
+    "save": "Salvar lançamento",
+    "entriesTitle": "Últimos lançamentos",
+    "empty": "Nenhum lançamento manual ainda. Adicione despesas/receitas que não passam pelo pagamento de paciente."
   }
 }

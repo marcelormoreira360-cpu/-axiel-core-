@@ -55,7 +55,8 @@
     "byMethod": "By payment method",
     "noMethodData": "No data this month.",
     "unpaidTitle": "Unpaid sessions",
-    "allPaid": "✓ All sessions have been paid."
+    "allPaid": "✓ All sessions have been paid.",
+    "executiveNav": "Executive"
   },
   "methods": {
     "pix": "PIX",
@@ -308,5 +309,34 @@
     "creating": "Creating…",
     "create": "Create order",
     "errNoProducts": "Add at least one product."
+  },
+  "executive": {
+    "eyebrow": "Finance",
+    "title": "Executive Dashboard",
+    "subtitle": "This month: revenue, expenses, net result and receivables.",
+    "revenue": "Revenue this month",
+    "expense": "Expenses this month",
+    "net": "Net result",
+    "receivable": "Receivables",
+    "vsPrev": "vs last month",
+    "expenseSub": "manual entries",
+    "netPositive": "in the black",
+    "netNegative": "in the red",
+    "receivableSub": "estimated upcoming schedule",
+    "addEntry": "New entry",
+    "newEntry": "New entry",
+    "cancel": "Cancel",
+    "kind": "Type",
+    "kindExpense": "Expense",
+    "kindRevenue": "Revenue",
+    "amount": "Amount",
+    "date": "Date",
+    "category": "Category",
+    "categoryPlaceholder": "e.g. Rent, Marketing...",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional",
+    "save": "Save entry",
+    "entriesTitle": "Recent entries",
+    "empty": "No manual entries yet. Add expenses/revenue that don't come from patient payments."
   }
 }

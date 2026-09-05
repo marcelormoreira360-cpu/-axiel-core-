@@ -69,6 +69,12 @@ export default async function FinanceiroPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/financeiro/executivo"
+            className="text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-black px-3 py-1.5 rounded-lg transition"
+          >
+            {t("executiveNav")}
+          </Link>
+          <Link
             href="/financeiro/relatorio"
             className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
           >
