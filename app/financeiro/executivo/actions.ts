@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireFinanceAccess } from "@/lib/require-finance-access";
+import { requireFinanceEdit } from "@/lib/require-finance-access";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getClinicCurrency } from "@/services/finance-service";
 import { createFinEntry, deleteFinEntry, type FinKind } from "@/services/fin-ledger-service";
 
 export async function addFinEntryAction(formData: FormData) {
-  await requireFinanceAccess();
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return;
   const profile = await getCurrentUserProfile();
@@ -33,7 +33,7 @@ export async function addFinEntryAction(formData: FormData) {
 }
 
 export async function deleteFinEntryAction(id: string) {
-  await requireFinanceAccess();
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return;
   const profile = await getCurrentUserProfile();

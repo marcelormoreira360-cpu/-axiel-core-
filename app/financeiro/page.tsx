@@ -15,7 +15,7 @@ import { FinanceiroDashboardClient } from "./financeiro-dashboard-client";
 import { ChargeSessionButton } from "./charge-session-button";
 import { AsaasChargeButton } from "./asaas-pix-button";
 import { isAsaasConfigured } from "@/lib/asaas";
-import { requireFinanceAccess } from "@/lib/require-finance-access";
+import { requireFinanceAccess, getFinanceCaps } from "@/lib/require-finance-access";
 import { PendingPayments } from "./pending-payments";
 import { FinanceAlertsPanel } from "./finance-alerts-panel";
 import { FinanceAIPanel } from "./finance-ai-panel";
@@ -41,6 +41,7 @@ export default async function FinanceiroPage() {
   const t = await getTranslations("finance.page");
   const tm = await getTranslations("finance.methods");
   const locale = await getLocale();
+  const caps = await getFinanceCaps();
   const asaasPix = isAsaasConfigured();
   const methodLabel = (m: string) => (KNOWN_METHODS.includes(m) ? tm(m) : m);
 
@@ -111,6 +112,14 @@ export default async function FinanceiroPage() {
           >
             {t("auditNav")}
           </Link>
+          {caps.canApprove && (
+            <Link
+              href="/financeiro/permissoes"
+              className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
+            >
+              {t("permissionsNav")}
+            </Link>
+          )}
           <Link
             href="/financeiro/relatorio"
             className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"

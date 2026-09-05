@@ -49,6 +49,8 @@ export type AppUser = {
   id: string;
   clinic_id: string | null;
   role: AppRole;
+  /** Papel financeiro opcional (ERP Fase 6.2). Ortogonal a role. */
+  finance_role?: "cfo" | "controller" | "billing" | "pricing" | "cpa" | null;
   full_name: string | null;
   email: string | null;
   created_at: string;
