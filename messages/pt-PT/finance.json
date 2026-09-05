@@ -522,5 +522,13 @@
     "action_pay": "pagou",
     "entity_fin_entry": "lançamento",
     "entity_fin_payable": "conta a pagar"
+  },
+  "alerts": {
+    "title": "{count, plural, one {# alerta} other {# alertas}}",
+    "overduePayables": "{count, plural, one {# conta vencida} other {# contas vencidas}} · {amount}",
+    "dueSoonPayables": "{count, plural, one {# conta vence} other {# contas vencem}} em 7 dias · {amount}",
+    "receivableAging": "{amount} a receber vencidos há 90+ dias",
+    "negativeNet": "Resultado do mês negativo: −{amount}",
+    "pastDueSubs": "{count, plural, one {# subscrição em atraso} other {# subscrições em atraso}}"
   }
 }

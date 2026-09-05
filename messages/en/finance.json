@@ -522,5 +522,13 @@
     "action_pay": "paid",
     "entity_fin_entry": "entry",
     "entity_fin_payable": "payable"
+  },
+  "alerts": {
+    "title": "{count, plural, one {# alert} other {# alerts}}",
+    "overduePayables": "{count, plural, one {# overdue bill} other {# overdue bills}} · {amount}",
+    "dueSoonPayables": "{count, plural, one {# bill due} other {# bills due}} within 7 days · {amount}",
+    "receivableAging": "{amount} receivable overdue 90+ days",
+    "negativeNet": "Negative result this month: −{amount}",
+    "pastDueSubs": "{count, plural, one {# past-due subscription} other {# past-due subscriptions}}"
   }
 }
