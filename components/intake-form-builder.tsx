@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { questionTypeOptions } from "@/modules/intake/question-types";
 import type { IntakeQuestionType } from "@/lib/types";
+import { SubmitButton } from "@/components/submit-button";
 
 type DraftQuestion = {
   id: string;
@@ -101,9 +102,9 @@ export function IntakeFormBuilder({ action }: Props) {
         ))}
       </div>
 
-      <button type="submit" className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
+      <SubmitButton className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
         {t("saveForm")}
-      </button>
+      </SubmitButton>
     </form>
   );
 }

@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Plus, CheckCircle2, Circle, Trash2, X, ChevronDown, ChevronUp, ClipboardList } from "lucide-react";
 import type { TreatmentPlan, TreatmentPlanStep } from "@/services/treatment-plan-service";
 import { useFormatMoney } from "@/components/currency-provider";
+import { SubmitButton } from "@/components/submit-button";
 import {
   createTreatmentPlanAction,
   addPlanStepAction,
@@ -139,12 +140,11 @@ function AddStepForm({
           name="due_date"
           className="flex-1 px-[9px] py-[6px] rounded-[7px] border border-black/[.10] dark:border-white/[.10] text-[12px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
         />
-        <button
-          type="submit"
+        <SubmitButton
           className="text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[7px] px-[12px] py-[6px] transition shrink-0"
         >
           {t("stepForm.add")}
-        </button>
+        </SubmitButton>
         <button
           type="button"
           onClick={onClose}
@@ -229,12 +229,11 @@ function CreatePlanForm({
         </div>
 
         <div className="flex justify-end pt-[2px]">
-          <button
-            type="submit"
+          <SubmitButton
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
             {t("create")}
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </div>

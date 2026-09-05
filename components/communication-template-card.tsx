@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { CommunicationTemplate } from "@/services/communication-service";
 import { communicationUseCaseLabels } from "@/modules/communications/templates";
+import { SubmitButton } from "@/components/submit-button";
 
 const CHANNEL_BADGE: Record<string, { label: string; className: string }> = {
   email: { label: "Email",  className: "bg-blue-50 text-blue-600" },
@@ -37,12 +38,11 @@ export async function CommunicationTemplateCard({
           </div>
           <p className="text-[13px] font-medium text-[#0F1A2E]">{template.name}</p>
         </div>
-        <button
-          type="submit"
+        <SubmitButton
           className="shrink-0 text-[11px] font-medium text-[#0F6E56] border border-[#0F6E56]/30 hover:bg-[#E1F5EE] rounded-[7px] px-[10px] py-[5px] transition"
         >
           {t("save")}
-        </button>
+        </SubmitButton>
       </div>
 
       {/* Subject — email only */}

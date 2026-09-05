@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X, Sparkles } from "lucide-react";
 import type { PatientExam } from "@/services/exams-service";
 import { AiButtonSpinner } from "@/components/ai-button-spinner";
+import { SubmitButton } from "@/components/submit-button";
 import { addExamAction, deleteExamAction, extractLabMarkersAction, createLabExamUploadUrlAction } from "@/app/patients/[id]/exams/actions";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { labStatus, LAB_STATUS_COLOR } from "@/lib/lab-status";
@@ -326,12 +327,11 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
         </div>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <SubmitButton
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
             {t("save")}
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </div>

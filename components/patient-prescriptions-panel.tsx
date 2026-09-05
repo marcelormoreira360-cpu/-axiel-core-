@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Plus, Pill, Leaf, X, StopCircle, Printer } from "lucide-react";
 import type { Prescription } from "@/services/exams-service";
+import { SubmitButton } from "@/components/submit-button";
 import {
   addPrescriptionAction,
   deactivatePrescriptionAction,
@@ -44,22 +45,20 @@ function PrescriptionCard({ item, patientId }: { item: Prescription; patientId: 
       {item.is_active && (
         <div className="flex items-center gap-[4px] shrink-0">
           <form action={deactivatePrescriptionAction.bind(null, item.id, patientId)}>
-            <button
-              type="submit"
+            <SubmitButton
               title={t("endTitle")}
               className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-amber-500 transition"
             >
               <StopCircle className="h-3.5 w-3.5" />
-            </button>
+            </SubmitButton>
           </form>
           <form action={deletePrescriptionAction.bind(null, item.id, patientId)}>
-            <button
-              type="submit"
+            <SubmitButton
               title={t("removeTitle")}
               className="w-6 h-6 flex items-center justify-center rounded text-[#D3D1C7] dark:text-white/25 hover:text-red-400 transition"
             >
               <X className="h-3 w-3" />
-            </button>
+            </SubmitButton>
           </form>
         </div>
       )}
@@ -166,12 +165,11 @@ function AddPrescriptionForm({ patientId, onClose }: { patientId: string; onClos
         </div>
 
         <div className="flex justify-end">
-          <button
-            type="submit"
+          <SubmitButton
             className="text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[16px] py-[8px] transition"
           >
             {t("save")}
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </div>

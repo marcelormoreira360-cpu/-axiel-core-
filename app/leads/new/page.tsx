@@ -3,6 +3,7 @@ import { Shell } from "@/components/shell";
 import { Card } from "@/components/card";
 import { SimplePageHeader } from "@/components/simple-page-header";
 import { createLeadAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 import { getTranslations } from "next-intl/server";
 
 export default async function NewLeadPage() {
@@ -40,7 +41,7 @@ export default async function NewLeadPage() {
             <textarea name="notes" rows={4} className="rounded-2xl border border-axiel-line bg-white p-4 text-base outline-none focus:border-black/30 dark:focus:border-white/30" placeholder={t("notesPlaceholder")} />
           </label>
           <div className="flex flex-wrap gap-3 pt-2">
-            <button className="min-h-14 rounded-lg bg-axiel-blue px-7 text-base font-semibold text-white shadow-md" type="submit">{t("save")}</button>
+            <SubmitButton className="min-h-14 rounded-lg bg-axiel-blue px-7 text-base font-semibold text-white shadow-md">{t("save")}</SubmitButton>
             <Link href="/leads" className="inline-flex min-h-14 items-center rounded-lg border border-axiel-line bg-white px-7 text-base font-semibold">{t("cancel")}</Link>
           </div>
         </form>

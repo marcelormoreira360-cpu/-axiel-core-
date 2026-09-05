@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import type { IntakeFormWithQuestions, IntakeResponse } from "@/lib/types";
 import { anatomyMapSrc } from "@/modules/intake/anatomy-maps";
 import { BodyMapField } from "@/components/body-map-input";
+import { SubmitButton } from "@/components/submit-button";
 
 type Props = {
   form: IntakeFormWithQuestions;
@@ -67,9 +68,9 @@ export async function PatientIntakeForm({ form, existingResponses = [], action }
         })}
       </div>
 
-      <button type="submit" className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
+      <SubmitButton className="mt-8 min-h-14 w-full rounded-lg bg-axiel-blue px-6 py-4 text-base font-semibold text-white shadow-md transition hover:-translate-y-0.5">
         {t("save")}
-      </button>
+      </SubmitButton>
     </form>
   );
 }

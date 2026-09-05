@@ -4,6 +4,7 @@ import type { AiInsight } from "@/lib/types";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { Badge, type BadgeStatus } from "@/components/status-badge";
 import { ButtonPrimary, ButtonSecondary } from "@/components/button";
+import { SubmitButton } from "@/components/submit-button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
@@ -113,14 +114,13 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         </form>
 
         <form action={generateAction}>
-          <button
-            type="submit"
+          <SubmitButton
             className="rounded-xl px-4 py-3 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]"
           >
             <span className="inline-flex items-center gap-2">
               <RefreshCw className="h-3.5 w-3.5" /> {t("newDraft")}
             </span>
-          </button>
+          </SubmitButton>
         </form>
 
         <DeleteInsightButton patientId={patientId} insightId={insight.id} />

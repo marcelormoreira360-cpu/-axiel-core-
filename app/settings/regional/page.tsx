@@ -5,6 +5,7 @@ import { BackLink } from "@/components/back-link";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getClinicSettings } from "@/services/clinic-service";
 import { updateRegionalSettingsAction } from "./actions";
+import { SubmitButton } from "@/components/submit-button";
 
 const TIMEZONES = [
   { value: "America/Sao_Paulo",   label: "Brasília (GMT-3)" },
@@ -108,12 +109,11 @@ export default async function RegionalSettingsPage() {
           </div>
 
           <div className="pt-[4px]">
-            <button
-              type="submit"
+            <SubmitButton
               className="text-[13px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[8px] px-[20px] py-[9px] transition"
             >
               {t("regional.save")}
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </div>
