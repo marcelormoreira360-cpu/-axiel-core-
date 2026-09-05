@@ -62,6 +62,7 @@
     "payablesNav": "A Pagar",
     "marginNav": "Margem",
     "recurringNav": "Recorrência",
+    "programsNav": "Programas",
     "auditNav": "Auditoria",
     "permissionsNav": "Permissões"
   },
@@ -551,5 +552,25 @@
     "cap_cpa": "só leitura + exportar.",
     "legendTitle": "O que cada papel pode",
     "managerNote": "Proprietário e gestor já têm acesso completo por padrão."
+  },
+  "programs": {
+    "eyebrow": "Financeiro",
+    "title": "Programas & Pacotes",
+    "subtitle": "Utilização dos pacotes ativos e sessões a entregar (obrigação futura).",
+    "activePackages": "Pacotes ativos",
+    "activeSub": "Em curso",
+    "utilization": "Utilização",
+    "utilizationSub": "{used} de {sold} sessões usadas",
+    "pending": "Sessões pendentes",
+    "pendingSub": "Vendidas, ainda não entregues",
+    "pendingValue": "Valor a entregar",
+    "pendingValueSub": "Estimado pelo preço do catálogo",
+    "byProgram": "Por programa",
+    "empty": "Nenhum pacote ativo.",
+    "packagesCount": "{count, plural, one {# pacote} other {# pacotes}}",
+    "usedOfSold": "{used}/{sold} sessões",
+    "pendingShort": "{count} pendentes",
+    "utilPct": "{pct}% uso",
+    "marginNote": "Margem líquida por programa exige custo por sessão (ainda não modelado). Aqui: utilização e passivo de sessões."
   }
 }

@@ -62,6 +62,7 @@
     "payablesNav": "Payables",
     "marginNav": "Margin",
     "recurringNav": "Recurring",
+    "programsNav": "Programs",
     "auditNav": "Audit",
     "permissionsNav": "Permissions"
   },
@@ -551,5 +552,25 @@
     "cap_cpa": "read-only + export.",
     "legendTitle": "What each role can do",
     "managerNote": "Owner and manager already have full access by default."
+  },
+  "programs": {
+    "eyebrow": "Finance",
+    "title": "Programs & Packages",
+    "subtitle": "Utilization of active packages and sessions still owed (future obligation).",
+    "activePackages": "Active packages",
+    "activeSub": "In progress",
+    "utilization": "Utilization",
+    "utilizationSub": "{used} of {sold} sessions used",
+    "pending": "Pending sessions",
+    "pendingSub": "Sold, not yet delivered",
+    "pendingValue": "Value to deliver",
+    "pendingValueSub": "Estimated at catalog price",
+    "byProgram": "By program",
+    "empty": "No active packages.",
+    "packagesCount": "{count, plural, one {# package} other {# packages}}",
+    "usedOfSold": "{used}/{sold} sessions",
+    "pendingShort": "{count} pending",
+    "utilPct": "{pct}% used",
+    "marginNote": "Net margin per program needs per-session cost (not modeled yet). Here: utilization and session liability."
   }
 }
