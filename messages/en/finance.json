@@ -61,7 +61,8 @@
     "cashflowNav": "Cash Flow",
     "payablesNav": "Payables",
     "marginNav": "Margin",
-    "recurringNav": "Recurring"
+    "recurringNav": "Recurring",
+    "auditNav": "Audit"
   },
   "methods": {
     "pix": "PIX",
@@ -508,5 +509,18 @@
     "expense": "Expense",
     "net": "Net",
     "receivable": "Receivable"
+  },
+  "audit": {
+    "eyebrow": "Finance",
+    "title": "Audit log",
+    "subtitle": "History of finance changes — who, when and what.",
+    "listTitle": "Change log",
+    "empty": "No changes recorded yet.",
+    "system": "System",
+    "action_create": "created",
+    "action_delete": "deleted",
+    "action_pay": "paid",
+    "entity_fin_entry": "entry",
+    "entity_fin_payable": "payable"
   }
 }
