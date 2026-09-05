@@ -17,6 +17,7 @@ import { AsaasChargeButton } from "./asaas-pix-button";
 import { isAsaasConfigured } from "@/lib/asaas";
 import { requireFinanceAccess } from "@/lib/require-finance-access";
 import { PendingPayments } from "./pending-payments";
+import { FinanceAlertsPanel } from "./finance-alerts-panel";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
 import { countPendingFeeDecisions } from "@/services/fee-decision-service";
@@ -150,6 +151,9 @@ export default async function FinanceiroPage() {
           />
         </div>
       </div>
+
+      {/* ── Alertas (só aparece quando há algo a tratar) ── */}
+      <FinanceAlertsPanel clinicId={clinic.id} />
 
       {/* ── KPIs ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-[10px] mb-5">
