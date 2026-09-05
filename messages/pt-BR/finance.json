@@ -56,7 +56,9 @@
     "noMethodData": "Nenhum dado este mês.",
     "unpaidTitle": "Sessões não pagas",
     "allPaid": "✓ Todas as sessões foram pagas.",
-    "executiveNav": "Painel Executivo"
+    "executiveNav": "Painel Executivo",
+    "receivablesNav": "A Receber",
+    "cashflowNav": "Fluxo de Caixa"
   },
   "methods": {
     "pix": "PIX",
@@ -338,5 +340,29 @@
     "save": "Salvar lançamento",
     "entriesTitle": "Últimos lançamentos",
     "empty": "Nenhum lançamento manual ainda. Adicione despesas/receitas que não passam pelo pagamento de paciente."
+  },
+  "receivables": {
+    "eyebrow": "Financeiro",
+    "title": "Contas a Receber",
+    "subtitle": "Sessões já realizadas que ainda não foram pagas.",
+    "total": "Total a receber",
+    "sessionsCount": "{count, plural, one {# sessão} other {# sessões}}",
+    "bucket0": "Até 30 dias",
+    "bucket31": "31–60 dias",
+    "bucket61": "61–90 dias",
+    "bucket90": "90+ dias",
+    "listTitle": "Sessões em aberto",
+    "empty": "Nenhuma sessão em aberto. Tudo pago em dia. 🎉",
+    "daysOverdue": "{days, plural, one {# dia} other {# dias}}"
+  },
+  "cashflow": {
+    "eyebrow": "Financeiro",
+    "title": "Fluxo de Caixa",
+    "subtitle": "Entradas e saídas realizadas nos últimos 6 meses.",
+    "in": "Entradas",
+    "out": "Saídas",
+    "net": "Resultado",
+    "byMonth": "Por mês",
+    "legend": "Verde = entradas (pagamentos + receitas manuais). Vermelho = saídas (repasse pago + despesas manuais)."
   }
 }

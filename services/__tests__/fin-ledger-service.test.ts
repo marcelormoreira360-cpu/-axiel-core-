@@ -38,4 +38,10 @@ describe("computeExecutiveTotals", () => {
     expect(r.expenseCents).toBe(0);
     expect(r.netCents).toBe(100000);
   });
+
+  it("inclui despesa extra (repasse pago) na despesa e no resultado", () => {
+    const r = computeExecutiveTotals(kpis, [{ kind: "expense", amount_cents: 10000 }], "BRL", 30000);
+    expect(r.expenseCents).toBe(40000); // 30000 (repasse) + 10000 (manual)
+    expect(r.netCents).toBe(60000); // 100000 - 40000
+  });
 });

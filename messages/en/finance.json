@@ -56,7 +56,9 @@
     "noMethodData": "No data this month.",
     "unpaidTitle": "Unpaid sessions",
     "allPaid": "✓ All sessions have been paid.",
-    "executiveNav": "Executive"
+    "executiveNav": "Executive",
+    "receivablesNav": "Receivables",
+    "cashflowNav": "Cash Flow"
   },
   "methods": {
     "pix": "PIX",
@@ -338,5 +340,29 @@
     "save": "Save entry",
     "entriesTitle": "Recent entries",
     "empty": "No manual entries yet. Add expenses/revenue that don't come from patient payments."
+  },
+  "receivables": {
+    "eyebrow": "Finance",
+    "title": "Receivables",
+    "subtitle": "Delivered sessions that haven't been paid yet.",
+    "total": "Total receivable",
+    "sessionsCount": "{count, plural, one {# session} other {# sessions}}",
+    "bucket0": "Up to 30 days",
+    "bucket31": "31–60 days",
+    "bucket61": "61–90 days",
+    "bucket90": "90+ days",
+    "listTitle": "Open sessions",
+    "empty": "No open sessions. All paid up. 🎉",
+    "daysOverdue": "{days, plural, one {# day} other {# days}}"
+  },
+  "cashflow": {
+    "eyebrow": "Finance",
+    "title": "Cash Flow",
+    "subtitle": "Realized inflows and outflows over the last 6 months.",
+    "in": "Inflows",
+    "out": "Outflows",
+    "net": "Net",
+    "byMonth": "By month",
+    "legend": "Green = inflows (payments + manual revenue). Red = outflows (paid payouts + manual expenses)."
   }
 }
