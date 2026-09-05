@@ -3,6 +3,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Trash2, TrendingUp, TrendingDown, Wallet, Clock } from "lucide-react";
 import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
+import { FinanceExportButton } from "../finance-export-button";
 import { SubmitButton } from "@/components/submit-button";
 import { requireFinanceAccess } from "@/lib/require-finance-access";
 import { getCurrentClinic } from "@/services/clinic-service";
@@ -41,14 +42,17 @@ export default async function FinanceExecutivePage() {
 
   return (
     <Shell>
-      <div className="flex items-center gap-[10px] mb-[6px]">
-        <BackLink fallbackHref="/financeiro" className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition">
-          ‹
-        </BackLink>
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">{t("eyebrow")}</p>
-          <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+      <div className="flex items-start justify-between gap-3 mb-[6px]">
+        <div className="flex items-center gap-[10px]">
+          <BackLink fallbackHref="/financeiro" className="w-7 h-7 flex items-center justify-center rounded-lg border border-black/[.08] text-[#A09E98] hover:text-[#0F1A2E] hover:bg-[#F4F3EF] transition">
+            ‹
+          </BackLink>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.1em] text-[#A09E98]">{t("eyebrow")}</p>
+            <h1 className="text-[22px] font-semibold tracking-[-0.025em] text-[#0F1A2E]">{t("title")}</h1>
+          </div>
         </div>
+        <FinanceExportButton report="executivo" />
       </div>
       <p className="text-[12px] text-[#A09E98] mb-[18px]">{t("subtitle")}</p>
 
