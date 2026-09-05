@@ -61,7 +61,8 @@
     "cashflowNav": "Fluxo de Caixa",
     "payablesNav": "A Pagar",
     "marginNav": "Margem",
-    "recurringNav": "Recorrência"
+    "recurringNav": "Recorrência",
+    "auditNav": "Auditoria"
   },
   "methods": {
     "pix": "PIX",
@@ -508,5 +509,18 @@
     "expense": "Despesa",
     "net": "Resultado",
     "receivable": "A receber"
+  },
+  "audit": {
+    "eyebrow": "Financeiro",
+    "title": "Auditoria",
+    "subtitle": "Histórico de alterações no financeiro — quem, quando e o quê.",
+    "listTitle": "Registro de alterações",
+    "empty": "Nenhuma alteração registrada ainda.",
+    "system": "Sistema",
+    "action_create": "criou",
+    "action_delete": "excluiu",
+    "action_pay": "pagou",
+    "entity_fin_entry": "lançamento",
+    "entity_fin_payable": "conta a pagar"
   }
 }
