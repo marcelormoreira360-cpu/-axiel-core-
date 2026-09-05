@@ -60,7 +60,8 @@
     "receivablesNav": "Receivables",
     "cashflowNav": "Cash Flow",
     "payablesNav": "Payables",
-    "marginNav": "Margin"
+    "marginNav": "Margin",
+    "recurringNav": "Recurring"
   },
   "methods": {
     "pix": "PIX",
@@ -437,5 +438,34 @@
     "marginPct": "{pct}% margin",
     "clinicLink": "Clinic view (Analytics)",
     "programsNote": "Margin by program/package coming in a future phase."
+  },
+  "recurring": {
+    "eyebrow": "Finance",
+    "title": "Recurring & SaaS",
+    "subtitle": "Recurring revenue from patient subscriptions + exam and supplement attach.",
+    "mrr": "MRR",
+    "mrrSub": "Monthly recurring revenue",
+    "arr": "ARR",
+    "arrSub": "Annual run-rate (MRR × 12)",
+    "active": "Active subscribers",
+    "activeSub": "Active + past due",
+    "trialing": "Trialing",
+    "trialingSub": "In trial period",
+    "pastDue": "{count} past due",
+    "byPlan": "MRR by plan",
+    "noSubs": "No active subscriptions yet.",
+    "subscribers": "{count, plural, one {# subscriber} other {# subscribers}}",
+    "perMonth": "/mo",
+    "attachTitle": "Exams & Supplements",
+    "attachTag": "engagement — not direct revenue",
+    "exams": "Exams this month",
+    "examsSub": "Functional exams recorded",
+    "recsSent": "Recommendations sent",
+    "recsSentSub": "of {total} created this month",
+    "attachRate": "Attach rate",
+    "attachRateSub": "{rec} of {exam} patients with an exam",
+    "productRevenueNote": "Revenue from supplements sold as products is in Margin.",
+    "seeMargin": "See Margin",
+    "examsByTypeLabel": "Exams by type:"
   }
 }
