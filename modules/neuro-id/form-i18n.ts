@@ -248,7 +248,7 @@ const EN_Q: Record<string, QEN> = {
 
   // Bloco G — Para completar o quadro (opcional)
   ev_exames_sangue: { label: "Do you have recent blood tests? You can attach them." },
-  ev_exame_cabelo: { label: "Have you done a hair test (mineral analysis)?" },
+  ev_exame_cabelo: { label: "Have you done a hair mineral test (HTMA)?" },
   ev_autoimune: { label: "Do you have a confirmed autoimmune diagnosis? Which one?" },
   ev_diagnosticos_previos: { label: "Other important diagnoses or surgeries?" },
 
