@@ -62,7 +62,8 @@
     "payablesNav": "Payables",
     "marginNav": "Margin",
     "recurringNav": "Recurring",
-    "auditNav": "Audit"
+    "auditNav": "Audit",
+    "permissionsNav": "Permissions"
   },
   "methods": {
     "pix": "PIX",
@@ -530,5 +531,25 @@
     "receivableAging": "{amount} receivable overdue 90+ days",
     "negativeNet": "Negative result this month: −{amount}",
     "pastDueSubs": "{count, plural, one {# past-due subscription} other {# past-due subscriptions}}"
+  },
+  "permissions": {
+    "eyebrow": "Finance",
+    "title": "Finance permissions",
+    "subtitle": "Set who views, edits and approves finances. Managers have full access.",
+    "listTitle": "Team",
+    "empty": "No members found.",
+    "none": "— No role —",
+    "role_cfo": "CFO",
+    "role_controller": "Controller",
+    "role_billing": "Billing",
+    "role_pricing": "Pricing/BI",
+    "role_cpa": "Accountant (read)",
+    "cap_cfo": "views, edits, exports and approves.",
+    "cap_controller": "views, edits and exports (no approval).",
+    "cap_billing": "views and edits receivables/bills.",
+    "cap_pricing": "views dashboards and exports (no edit).",
+    "cap_cpa": "read-only + export.",
+    "legendTitle": "What each role can do",
+    "managerNote": "Owner and manager already have full access by default."
   }
 }

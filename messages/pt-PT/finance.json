@@ -62,7 +62,8 @@
     "payablesNav": "A Pagar",
     "marginNav": "Margem",
     "recurringNav": "Recorrência",
-    "auditNav": "Auditoria"
+    "auditNav": "Auditoria",
+    "permissionsNav": "Permissões"
   },
   "methods": {
     "pix": "PIX",
@@ -530,5 +531,25 @@
     "receivableAging": "{amount} a receber vencidos há 90+ dias",
     "negativeNet": "Resultado do mês negativo: −{amount}",
     "pastDueSubs": "{count, plural, one {# subscrição em atraso} other {# subscrições em atraso}}"
+  },
+  "permissions": {
+    "eyebrow": "Financeiro",
+    "title": "Permissões financeiras",
+    "subtitle": "Defina quem vê, edita e aprova o financeiro. Gestores têm acesso completo.",
+    "listTitle": "Equipa",
+    "empty": "Nenhum membro encontrado.",
+    "none": "— Sem papel —",
+    "role_cfo": "CFO",
+    "role_controller": "Controller",
+    "role_billing": "Faturação",
+    "role_pricing": "Preços/BI",
+    "role_cpa": "Contabilista (leitura)",
+    "cap_cfo": "vê, edita, exporta e aprova.",
+    "cap_controller": "vê, edita e exporta (não aprova).",
+    "cap_billing": "vê e edita recebíveis/contas.",
+    "cap_pricing": "vê dashboards e exporta (não edita).",
+    "cap_cpa": "só leitura + exportar.",
+    "legendTitle": "O que cada papel pode",
+    "managerNote": "Proprietário e gestor já têm acesso completo por padrão."
   }
 }

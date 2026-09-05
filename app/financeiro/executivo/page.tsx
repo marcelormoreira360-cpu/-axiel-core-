@@ -5,7 +5,7 @@ import { Shell } from "@/components/shell";
 import { BackLink } from "@/components/back-link";
 import { FinanceExportButton } from "../finance-export-button";
 import { SubmitButton } from "@/components/submit-button";
-import { requireFinanceAccess } from "@/lib/require-finance-access";
+import { requireFinanceAccess, getFinanceCaps } from "@/lib/require-finance-access";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getExecutiveSummary, listFinEntries } from "@/services/fin-ledger-service";
 import { formatMoney } from "@/lib/finance-utils";
@@ -23,11 +23,12 @@ export default async function FinanceExecutivePage() {
   const clinic = await getCurrentClinic();
   if (!clinic) redirect("/dashboard");
 
-  const [t, locale, summary, entries] = await Promise.all([
+  const [t, locale, summary, entries, caps] = await Promise.all([
     getTranslations("finance.executive"),
     getLocale(),
     getExecutiveSummary(clinic.id),
     listFinEntries(clinic.id, { limit: 30 }),
+    getFinanceCaps(),
   ]);
 
   const money = (c: number) => formatMoney(c, summary.currency, locale);
@@ -71,9 +72,11 @@ export default async function FinanceExecutivePage() {
       </div>
 
       {/* Add entry */}
-      <div className="mb-[16px]">
-        <AddFinEntryForm />
-      </div>
+      {caps.canEdit && (
+        <div className="mb-[16px]">
+          <AddFinEntryForm />
+        </div>
+      )}
 
       {/* Entries list */}
       <div className="bg-white border border-black/[.07] rounded-[14px] overflow-hidden">
@@ -100,7 +103,7 @@ export default async function FinanceExecutivePage() {
                 <p className={`text-[13px] font-medium shrink-0 ${e.kind === "revenue" ? "text-[#0F6E56]" : "text-[#B42318]"}`}>
                   {e.kind === "revenue" ? "+" : "−"}{money(e.amount_cents)}
                 </p>
-                {e.source === "manual" && (
+                {e.source === "manual" && caps.canEdit && (
                   <form action={deleteFinEntryAction.bind(null, e.id)}>
                     <SubmitButton className="w-6 h-6 flex items-center justify-center rounded-md text-[#A09E98] hover:text-[#B42318] hover:bg-[#B42318]/[.06] disabled:opacity-70 transition shrink-0">
                       <Trash2 className="h-3.5 w-3.5" />

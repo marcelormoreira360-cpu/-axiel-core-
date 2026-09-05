@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireFinanceAccess } from "@/lib/require-finance-access";
+import { requireFinanceEdit } from "@/lib/require-finance-access";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getClinicCurrency } from "@/services/finance-service";
@@ -24,7 +24,7 @@ function parseAmount(v: FormDataEntryValue | null): number {
 }
 
 async function financeContext() {
-  await requireFinanceAccess();
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return null;
   const [profile, currency] = await Promise.all([
