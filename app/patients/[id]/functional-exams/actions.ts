@@ -16,6 +16,19 @@ import { coerceExamMetricsDraft, type ExamInstrument } from "@/modules/neuro-id/
 
 const TYPES: FunctionalExamType[] = ["neurometria", "biorressonancia", "teste_capilar", "outro"];
 
+// A IA que lê o PDF é best-effort: se estourar este tempo, salvamos o exame SEM
+// a síntese em vez de deixar a função da Vercel morrer por timeout (que caía no
+// "Algo deu errado" e ainda deixava o arquivo subido sem registro). Fica abaixo
+// do maxDuration da rota (60s) para sobrar tempo de gravar o exame depois.
+const AI_EXAM_TIMEOUT_MS = 45_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise.catch(() => fallback),
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
 export async function addFunctionalExamAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
   if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
@@ -46,8 +59,8 @@ export async function addFunctionalExamAction(formData: FormData) {
     const patient = await getPatientById(patientId, profile.clinic_id);
     const patientLocale = await resolvePatientLocale(patient?.locale, profile.clinic_id);
     [aiAnalysis, metricsDraft] = await Promise.all([
-      analyzeExamPdf({ pdfBase64, filename: file.name, examType, examTitle: title, locale: patientLocale }),
-      extractExamMetrics({ pdfBase64, filename: file.name, examType }),
+      withTimeout(analyzeExamPdf({ pdfBase64, filename: file.name, examType, examTitle: title, locale: patientLocale }), AI_EXAM_TIMEOUT_MS, null),
+      withTimeout(extractExamMetrics({ pdfBase64, filename: file.name, examType }), AI_EXAM_TIMEOUT_MS, {}),
     ]);
     // Sem resumo manual? usa a síntese da IA (que o terapeuta pode editar depois).
     if (!summary && aiAnalysis) summary = aiAnalysis;

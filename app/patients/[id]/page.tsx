@@ -59,6 +59,11 @@ import { getPatientSectionLayout } from "@/services/clinic-patient-sections-serv
 import { PATIENT_SECTION_ORDER } from "@/lib/patient-sections";
 import type { ReactNode } from "react";
 
+// A ficha do paciente hospeda server actions que leem PDF de exame com IA
+// (addFunctionalExamAction). Sem folga de tempo, a função da Vercel estourava o
+// limite padrão e caía no "Algo deu errado". 60s é o teto do plano atual.
+export const maxDuration = 60;
+
 function initials(name: string) {
   return name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 }
