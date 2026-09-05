@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { Plus, ChevronDown, ChevronUp, Trash2, FlaskConical, X, Sparkles } from "lucide-react";
 import type { PatientExam } from "@/services/exams-service";
 import { AiButtonSpinner } from "@/components/ai-button-spinner";
-import { addExamAction, deleteExamAction, extractLabMarkersAction } from "@/app/patients/[id]/exams/actions";
+import { addExamAction, deleteExamAction, extractLabMarkersAction, createLabExamUploadUrlAction } from "@/app/patients/[id]/exams/actions";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { labStatus, LAB_STATUS_COLOR } from "@/lib/lab-status";
 
 type ResultDraft = {
@@ -116,22 +117,42 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
   async function handleExtract() {
     const file = fileRef.current?.files?.[0];
     if (!file) { setExtractMsg(t("extractPickFile")); return; }
+    const okType = file.type === "application/pdf" || file.type.startsWith("image/");
+    if (!okType) { setExtractMsg(t("extractBadType")); return; }
+    if (file.size > 15 * 1024 * 1024) { setExtractMsg(t("extractTooLarge")); return; }
     setExtracting(true);
     setExtractMsg(null);
-    const fd = new FormData();
-    fd.set("exam_file", file);
-    const res = await extractLabMarkersAction(fd);
-    setExtracting(false);
-    if (res.error) { setExtractMsg(res.error); return; }
-    if (res.markers.length === 0) { setExtractMsg(t("extractNone")); return; }
-    setResults(res.markers.map((m) => ({
-      biomarker: m.biomarker,
-      value: String(m.value),
-      unit: m.unit ?? "",
-      ref_min: m.ref_min == null ? "" : String(m.ref_min),
-      ref_max: m.ref_max == null ? "" : String(m.ref_max),
-    })));
-    setExtractMsg(t("extractDone", { count: res.markers.length }));
+    try {
+      // Upload DIRETO pro storage (contorna o limite de 4,5 MB da Vercel); só o
+      // caminho vai pro action, que baixa, lê com a IA e apaga o temporário.
+      const ticket = await createLabExamUploadUrlAction(patientId, file.name);
+      if (!ticket.ok || !ticket.path || !ticket.token) throw new Error(ticket.error ?? "upload");
+      const supabase = createSupabaseBrowserClient();
+      const { error: upErr } = await supabase.storage
+        .from("patient-docs")
+        .uploadToSignedUrl(ticket.path, ticket.token, file);
+      if (upErr) throw upErr;
+      const fd = new FormData();
+      fd.set("patient_id", patientId);
+      fd.set("storage_path", ticket.path);
+      fd.set("file_type", file.type);
+      fd.set("file_name", file.name);
+      const res = await extractLabMarkersAction(fd);
+      if (res.error) { setExtractMsg(res.error); return; }
+      if (res.markers.length === 0) { setExtractMsg(t("extractNone")); return; }
+      setResults(res.markers.map((m) => ({
+        biomarker: m.biomarker,
+        value: String(m.value),
+        unit: m.unit ?? "",
+        ref_min: m.ref_min == null ? "" : String(m.ref_min),
+        ref_max: m.ref_max == null ? "" : String(m.ref_max),
+      })));
+      setExtractMsg(t("extractDone", { count: res.markers.length }));
+    } catch {
+      setExtractMsg(t("extractError"));
+    } finally {
+      setExtracting(false);
+    }
   }
 
   function addRow() {
@@ -157,6 +178,9 @@ function AddExamForm({ patientId, onClose }: { patientId: string; onClose: () =>
         ref_max: r.ref_max.trim() ? parseFloat(r.ref_max) : null,
       }));
     formData.set("results", JSON.stringify(parsed));
+    // O arquivo é usado só na extração (via storage). Não mandar no save evita
+    // estourar o limite de 4,5 MB de corpo da Vercel numa foto/PDF grande.
+    formData.delete("exam_file");
     await addExamAction(formData);
     onClose();
   }
