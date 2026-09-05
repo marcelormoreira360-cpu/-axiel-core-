@@ -74,6 +74,43 @@ export async function uploadFunctionalExamFile(
   return filePath;
 }
 
+/** Prefixo canônico do arquivo de exame de um paciente (usado para validar o path). */
+export function functionalExamPathPrefix(clinicId: string, patientId: string): string {
+  return `${clinicId}/${patientId}/exams/`;
+}
+
+/**
+ * Cria um "ticket" de upload direto (URL assinada) para o navegador subir o PDF
+ * do exame DIRETO no storage, sem passar pela função da Vercel — que corta o
+ * corpo em ~4,5 MB. Exames Neuro ID costumam ter 5–10 MB. O admin client gera a
+ * URL num path fixo (dono = clínica/paciente); o cliente só pode gravar ali.
+ */
+export async function createFunctionalExamUploadTicket(
+  originalName: string,
+  patientId: string,
+  clinicId: string,
+): Promise<{ path: string; token: string }> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const { randomUUID } = await import("crypto");
+  const supabase = createSupabaseAdminClient();
+  const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200) || "exame.pdf";
+  const path = `${functionalExamPathPrefix(clinicId, patientId)}${randomUUID()}-${safeName}`;
+  const { data, error } = await supabase.storage
+    .from("patient-docs")
+    .createSignedUploadUrl(path);
+  if (error || !data) throw error ?? new Error("Não foi possível preparar o upload.");
+  return { path: data.path, token: data.token };
+}
+
+/** Baixa os bytes de um arquivo de exame do storage (server-side, p/ a IA ler). */
+export async function downloadFunctionalExamFile(path: string): Promise<Buffer> {
+  const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase.storage.from("patient-docs").download(path);
+  if (error || !data) throw error ?? new Error("Arquivo do exame não encontrado.");
+  return Buffer.from(await data.arrayBuffer());
+}
+
 export async function createPatientFunctionalExam(input: {
   clinic_id: string;
   patient_id: string;

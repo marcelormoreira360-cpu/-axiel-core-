@@ -316,6 +316,11 @@
     "delete": "Excluir",
     "fileLabel": "Anexar exame (PDF)",
     "fileHint": "A IA lê o PDF e resume os principais achados (ex.: emoções mais alteradas) para o relatório.",
+    "uploading": "Enviando o exame...",
+    "processing": "Processando...",
+    "errPdfOnly": "Anexe o exame em PDF.",
+    "errGeneric": "Não consegui salvar o exame. Tente novamente.",
+    "uploadHint": "PDF de até 15 MB. Vai direto e seguro para o armazenamento.",
     "metrics": {
       "title": "Métricas Bio³ (do exame)",
       "hint": "A IA extraiu estes valores do PDF. Revise, ajuste se preciso e confirme para entrarem na pirâmide.",
