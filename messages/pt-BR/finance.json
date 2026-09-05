@@ -60,7 +60,8 @@
     "receivablesNav": "A Receber",
     "cashflowNav": "Fluxo de Caixa",
     "payablesNav": "A Pagar",
-    "marginNav": "Margem"
+    "marginNav": "Margem",
+    "recurringNav": "Recorrência"
   },
   "methods": {
     "pix": "PIX",
@@ -437,5 +438,34 @@
     "marginPct": "{pct}% margem",
     "clinicLink": "Visão da clínica (Analytics)",
     "programsNote": "Margem por programa/pacote chega em fase futura."
+  },
+  "recurring": {
+    "eyebrow": "Financeiro",
+    "title": "Recorrência & SaaS",
+    "subtitle": "Receita recorrente de assinaturas de pacientes + attach de exames e suplementos.",
+    "mrr": "MRR",
+    "mrrSub": "Receita recorrente mensal",
+    "arr": "ARR",
+    "arrSub": "Projeção anual (MRR × 12)",
+    "active": "Assinantes ativos",
+    "activeSub": "Ativos + inadimplentes",
+    "trialing": "Em trial",
+    "trialingSub": "Em período de teste",
+    "pastDue": "{count} inadimplente(s)",
+    "byPlan": "MRR por plano",
+    "noSubs": "Nenhuma assinatura ativa ainda.",
+    "subscribers": "{count, plural, one {# assinante} other {# assinantes}}",
+    "perMonth": "/mês",
+    "attachTitle": "Exames & Suplementos",
+    "attachTag": "engajamento — não receita direta",
+    "exams": "Exames no mês",
+    "examsSub": "Exames funcionais registrados",
+    "recsSent": "Recomendações enviadas",
+    "recsSentSub": "de {total} criadas no mês",
+    "attachRate": "Attach rate",
+    "attachRateSub": "{rec} de {exam} pacientes com exame",
+    "productRevenueNote": "Receita de suplemento vendido como produto está na Margem.",
+    "seeMargin": "Ver Margem",
+    "examsByTypeLabel": "Exames por tipo:"
   }
 }

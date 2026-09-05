@@ -99,6 +99,12 @@ export default async function FinanceiroPage() {
             {t("marginNav")}
           </Link>
           <Link
+            href="/financeiro/recorrencia"
+            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
+          >
+            {t("recurringNav")}
+          </Link>
+          <Link
             href="/financeiro/relatorio"
             className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
           >
