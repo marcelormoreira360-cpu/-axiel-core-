@@ -1,6 +1,7 @@
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 import { getClinicCurrency } from "@/services/finance-service";
+import { getMonthlyClose } from "@/services/fin-monthly-close-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 import { MonthlyReportEmail } from "@/components/email/monthly-report-email";
@@ -48,17 +49,28 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
       .maybeSingle();
     if (alreadySent) return "skipped";
 
-    const { data: authUser } = await supabase.auth.admin.getUserById(owners[0].id);
-    const ownerEmail = authUser?.user?.email;
-    if (!ownerEmail) return "skipped";
+    // Destinatários: dono + quem tem papel financeiro de aprovação (CFO).
+    const { data: cfos } = await supabase
+      .from("users")
+      .select("id")
+      .eq("clinic_id", clinic.id)
+      .eq("finance_role", "cfo");
+    const recipientIds = [...new Set([owners[0].id, ...(cfos ?? []).map((u) => u.id as string)])];
+    const emails = await Promise.all(
+      recipientIds.map(async (id) => (await supabase.auth.admin.getUserById(id)).data?.user?.email ?? null),
+    );
+    const recipients = [...new Set(emails.filter((e): e is string => !!e))];
+    if (recipients.length === 0) return "skipped";
 
     const locale = await resolveClinicLocale(clinic.id);
     const __cur = await getClinicCurrency(clinic.id);
     const t = await getServerT(locale, "emails");
     const monthName = firstOfLastMonth.toLocaleDateString(locale, { month: "long", year: "numeric" });
 
-    // Compute metrics in parallel
-    const [sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes, paymentsRes] = await Promise.all([
+    // Compute metrics in parallel (fechamento financeiro + operação)
+    const [close, sessionsRes, newPatientsRes, packagesRes, recentSessionsRes, totalActiveRes] = await Promise.all([
+      getMonthlyClose(clinic.id),
+
       supabase.from("appointments")
         .select("id", { count: "exact", head: true })
         .eq("clinic_id", clinic.id)
@@ -85,12 +97,6 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
         .select("id", { count: "exact", head: true })
         .eq("clinic_id", clinic.id)
         .eq("status", "active"),
-
-      supabase.from("patient_payments")
-        .select("amount_cents")
-        .eq("clinic_id", clinic.id)
-        .gte("paid_at", startISO)
-        .lt("paid_at", endISO),
     ]);
 
     const sessions = sessionsRes.count ?? 0;
@@ -99,10 +105,10 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
     const recentPatientIds = new Set((recentSessionsRes.data ?? []).map((r) => r.patient_id));
     const totalActive = totalActiveRes.count ?? 0;
     const inactive = Math.max(0, totalActive - recentPatientIds.size);
-    const revenueCents = (paymentsRes.data ?? []).reduce((s, p) => s + (p.amount_cents ?? 0), 0);
-    const revenueStr = revenueCents > 0
-      ? (revenueCents / 100).toLocaleString(locale, { style: "currency", currency: __cur })
-      : "—";
+    const fmt = (c: number) => (c / 100).toLocaleString(locale, { style: "currency", currency: __cur });
+    const revenueStr = close.revenueCents > 0 ? fmt(close.revenueCents) : "—";
+    const expenseStr = fmt(close.expenseCents);
+    const netStr = fmt(close.netCents);
 
     const html = await render(
       MonthlyReportEmail({
@@ -111,6 +117,8 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
         appUrl,
         metrics: {
           revenue: revenueStr,
+          expense: expenseStr,
+          net: netStr,
           sessions,
           newPatients,
           activePackages,
@@ -123,7 +131,7 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
 
     await resend.emails.send({
       from: fromAddress,
-      to: ownerEmail,
+      to: recipients,
       subject: t("monthly.subject", { month: monthName, clinic: clinic.name }),
       html,
     });
@@ -132,7 +140,7 @@ export async function sendMonthlyReports(): Promise<{ sent: number; failed: numb
       clinic_id: clinic.id,
       channel: "email",
       use_case: "monthly_report",
-      recipient: ownerEmail,
+      recipient: recipients.join(", "),
       body: t("monthly.subject", { month: monthName, clinic: clinic.name }),
       status: "sent",
       provider: "resend",

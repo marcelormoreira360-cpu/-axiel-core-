@@ -11,12 +11,13 @@ import { getExecutiveSummary, getCashFlow, getReceivables } from "@/services/fin
 import { getPayablesSummary, listPayables } from "@/services/fin-payables-service";
 import { getMarginDashboard } from "@/services/fin-margin-service";
 import { getRecurringDashboard } from "@/services/fin-saas-service";
+import { getMonthlyClose } from "@/services/fin-monthly-close-service";
 
 export const runtime = "nodejs";
 
 type ReportData = { title: string; headers: string[]; rows: (string | number | null)[][]; summary?: string };
 
-const REPORTS = ["executivo", "fluxo-caixa", "receber", "pagar", "margem", "recorrencia"] as const;
+const REPORTS = ["executivo", "fluxo-caixa", "receber", "pagar", "margem", "recorrencia", "fechamento"] as const;
 type ReportKey = (typeof REPORTS)[number];
 
 export async function GET(req: Request, { params }: { params: Promise<{ report: string }> }) {
@@ -148,6 +149,22 @@ async function buildReport(report: ReportKey, clinicId: string, ctx: Ctx): Promi
         headers: [t("plan"), t("subscribers"), t("mrr")],
         rows: r.saas.byPlan.map((p) => [p.plan, p.subscribers, money(p.mrrCents)]),
         summary: `MRR: ${money(r.saas.mrrCents)} · ARR: ${money(r.saas.arrCents)}`,
+      };
+    }
+    case "fechamento": {
+      const c = await getMonthlyClose(clinicId);
+      const monthLabel = new Date(c.year, c.month - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+      return {
+        title: `${t("fechamento")} — ${monthLabel}`,
+        headers: [t("indicator"), t("value")],
+        rows: [
+          [t("revenue"), money(c.revenueCents)],
+          [t("expense"), money(c.expenseCents)],
+          [t("net"), money(c.netCents)],
+          [t("openPayable"), money(c.openPayableCents)],
+          ["MRR", money(c.mrrCents)],
+        ],
+        summary: `${t("net")}: ${money(c.netCents)}`,
       };
     }
   }

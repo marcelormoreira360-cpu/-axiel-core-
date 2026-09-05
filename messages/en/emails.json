@@ -60,6 +60,8 @@
     "heading": "{month} report",
     "intro": "Check {clinic}'s numbers for {month}.",
     "rowRevenue": "💰 Revenue this month",
+    "rowExpense": "Expense",
+    "rowNet": "Net",
     "rowSessions": "📅 Sessions held",
     "rowNew": "👤 New patients this month",
     "rowPackages": "📦 Active packages",

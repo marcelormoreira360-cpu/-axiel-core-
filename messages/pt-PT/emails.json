@@ -60,6 +60,8 @@
     "heading": "Relatório de {month}",
     "intro": "Confira os números de {clinic} em {month}.",
     "rowRevenue": "💰 Receita no mês",
+    "rowExpense": "Despesa",
+    "rowNet": "Resultado",
     "rowSessions": "📅 Sessões realizadas",
     "rowNew": "👤 Novos pacientes no mês",
     "rowPackages": "📦 Pacotes ativos",
