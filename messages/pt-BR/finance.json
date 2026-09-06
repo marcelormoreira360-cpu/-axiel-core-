@@ -64,7 +64,15 @@
     "recurringNav": "Recorrência",
     "programsNav": "Programas",
     "auditNav": "Auditoria",
-    "permissionsNav": "Permissões"
+    "permissionsNav": "Permissões",
+    "group_overview": "Visão geral & caixa",
+    "group_revenue": "Receita & margem",
+    "group_fiscal": "Fiscal & repasse",
+    "group_governance": "Governança",
+    "reportNav": "Relatório",
+    "statusReportNav": "Agendamentos",
+    "nfseNav": "NFS-e",
+    "repasseNav": "Repasse"
   },
   "methods": {
     "pix": "PIX",

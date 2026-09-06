@@ -19,6 +19,7 @@ import { requireFinanceAccess, getFinanceCaps } from "@/lib/require-finance-acce
 import { PendingPayments } from "./pending-payments";
 import { FinanceMonthlyClosePanel } from "./finance-monthly-close-panel";
 import { FinanceAlertsPanel } from "./finance-alerts-panel";
+import { FinanceNavIndex } from "./finance-nav-index";
 import { FinanceAIPanel } from "./finance-ai-panel";
 import { getLatestFinanceInsight } from "@/services/ai-finance-insight-service";
 import { countPendingFeeDecisions } from "@/services/fee-decision-service";
@@ -71,102 +72,14 @@ export default async function FinanceiroPage() {
           <p className="text-[12px] text-[#A09E98] mt-[2px]">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link
-            href="/financeiro/executivo"
-            className="text-[12px] font-medium text-white bg-[#0F1A2E] hover:bg-black px-3 py-1.5 rounded-lg transition"
-          >
-            {t("executiveNav")}
-          </Link>
-          <Link
-            href="/financeiro/receber"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("receivablesNav")}
-          </Link>
-          <Link
-            href="/financeiro/fluxo-caixa"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("cashflowNav")}
-          </Link>
-          <Link
-            href="/financeiro/pagar"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("payablesNav")}
-          </Link>
-          <Link
-            href="/financeiro/margem"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("marginNav")}
-          </Link>
-          <Link
-            href="/financeiro/recorrencia"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("recurringNav")}
-          </Link>
-          <Link
-            href="/financeiro/programas"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("programsNav")}
-          </Link>
-          <Link
-            href="/financeiro/auditoria"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("auditNav")}
-          </Link>
-          {caps.canApprove && (
-            <Link
-              href="/financeiro/permissoes"
-              className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-            >
-              {t("permissionsNav")}
-            </Link>
-          )}
-          <Link
-            href="/financeiro/relatorio"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("report")}
-          </Link>
-          <Link
-            href="/financeiro/relatorio-agendamentos"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("statusReport")}
-          </Link>
-          <Link
-            href="/financeiro/nfse"
-            className="text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("nfse")}
-          </Link>
-          <Link
-            href="/financeiro/taxas"
-            className="relative text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("fees")}
-            {feeDecisionsCount > 0 && (
-              <span className="ml-1.5 text-[10px] font-semibold bg-amber-50 text-amber-600 rounded-full px-1.5 py-0.5">
-                {feeDecisionsCount}
-              </span>
-            )}
-          </Link>
-          <Link
-            href="/financeiro/repasse"
-            className="text-[12px] font-medium text-[#0F6E56] border border-[#0F6E56]/20 bg-[#E1F5EE] hover:bg-[#d0f0e6] px-3 py-1.5 rounded-lg transition"
-          >
-            {t("repasse")}
-          </Link>
           <FinanceiroDashboardClient
             patients={patients.map((p) => ({ id: p.id, full_name: p.full_name }))}
           />
         </div>
       </div>
+
+      {/* ── Índice de dashboards (agrupado por tema) ── */}
+      <FinanceNavIndex caps={caps} feeDecisionsCount={feeDecisionsCount} />
 
       {/* ── Fechamento do mês anterior ── */}
       <FinanceMonthlyClosePanel clinicId={clinic.id} />
