@@ -1,36 +1,43 @@
 "use server";
 
-import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { resolveLocale } from "@/i18n/get-locale";
 import { createPaymentAdmin } from "@/services/finance-service";
-import { getSignedDocumentUrl } from "@/services/patient-document-service";
+import { getSignedDocumentUrl, createDocumentUploadTicket } from "@/services/patient-document-service";
 import { getCurrentClinic } from "@/services/clinic-service";
-import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { requireFinanceEdit, requireFinanceAccess } from "@/lib/require-finance-access";
 import {
   generateFinanceInsight,
   type FinanceAIInsight,
 } from "@/services/ai-finance-insight-service";
 import type { PaymentMethod, PatientPaymentStatus } from "@/lib/types";
 
-const PROOF_BUCKET = "patient-docs";
-
-// Faz upload de um comprovante (imagem/PDF) e devolve o caminho no storage.
-async function uploadProof(file: File, clinicId: string, patientId: string): Promise<string> {
-  const buffer = Buffer.from(await file.arrayBuffer());
-  const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 200);
-  const filePath = `${clinicId}/payment-proofs/${patientId}/${randomUUID()}-${safeName}`;
-  const supabase = createSupabaseAdminClient();
-  const { error } = await supabase.storage
-    .from(PROOF_BUCKET)
-    .upload(filePath, buffer, { contentType: file.type || "application/octet-stream", upsert: false });
-  if (error) throw error;
-  return filePath;
+// Ticket de upload direto navegador→storage do comprovante de pagamento. O arquivo
+// NÃO passa pela função da Vercel (corte de ~4,5 MB): o modal sobe direto e manda
+// só o path pro registerPaymentAction.
+export async function createPaymentProofUploadUrlAction(
+  patientId: string,
+  fileName: string,
+): Promise<{ ok: boolean; path?: string; token?: string; error?: string }> {
+  await requireFinanceEdit();
+  const clinic = await getCurrentClinic();
+  if (!clinic) return { ok: false, error: "Clínica não encontrada." };
+  if (!patientId) return { ok: false, error: "Paciente inválido." };
+  try {
+    const ticket = await createDocumentUploadTicket(
+      `${clinic.id}/payment-proofs/${patientId}/`,
+      fileName,
+    );
+    return { ok: true, path: ticket.path, token: ticket.token };
+  } catch {
+    return { ok: false, error: "Não foi possível preparar o upload." };
+  }
 }
 
 export async function registerPaymentAction(
   formData: FormData,
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -59,14 +66,15 @@ export async function registerPaymentAction(
   }
 
   try {
-    // Comprovante opcional (imagem/PDF)
+    // Comprovante opcional: chega como PATH já no storage (upload direto do modal via
+    // createPaymentProofUploadUrlAction). Valida o prefixo p/ não aceitar path forjado.
     let proofPath: string | null = null;
-    const proof = formData.get("proof");
-    if (proof instanceof File && proof.size > 0) {
-      if (proof.size > 10 * 1024 * 1024) {
-        return { error: "Comprovante muito grande (máx. 10MB)." };
+    const rawProofPath = formData.get("proof_path");
+    if (typeof rawProofPath === "string" && rawProofPath.trim()) {
+      if (!rawProofPath.startsWith(`${clinic.id}/payment-proofs/`)) {
+        return { error: "Comprovante inválido." };
       }
-      proofPath = await uploadProof(proof, clinic.id, patientId);
+      proofPath = rawProofPath;
     }
 
     await createPaymentAdmin({
@@ -125,6 +133,7 @@ export async function generateFinanceInsightAction(): Promise<{
 export async function deletePaymentAction(
   paymentId: string,
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -147,6 +156,7 @@ export async function deletePaymentAction(
 export async function confirmPaymentAction(
   paymentId: string,
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -169,6 +179,7 @@ export async function confirmPaymentAction(
 export async function discardPendingPaymentAction(
   paymentId: string,
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -191,6 +202,7 @@ export async function discardPendingPaymentAction(
 export async function getPaymentProofUrlAction(
   paymentId: string,
 ): Promise<{ url?: string; error?: string }> {
+  await requireFinanceAccess();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 

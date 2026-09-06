@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { requireFinanceEdit } from "@/lib/require-finance-access";
 import { emitNfse, syncNfseStatus, cancelNfse } from "@/services/nfse-service";
 import { validateCpf } from "@/lib/utils";
 import type { NfseInvoice } from "@/services/nfse-service";
@@ -9,6 +10,7 @@ import type { NfseInvoice } from "@/services/nfse-service";
 export async function emitNfseAction(
   formData: FormData
 ): Promise<{ invoice?: NfseInvoice; error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -85,6 +87,7 @@ export async function emitNfseAction(
 export async function syncNfseAction(
   localId: string
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -100,6 +103,7 @@ export async function syncNfseAction(
 export async function cancelNfseAction(
   localId: string
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 

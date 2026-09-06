@@ -99,6 +99,7 @@
     "statusHint": "Use \"Pending\" for Zelle/transfers not yet confirmed — then confirm them in the pending list.",
     "proof": "Proof of payment (optional)",
     "proofHint": "Image or PDF, up to 10MB.",
+    "errProofUpload": "We couldn't upload the receipt. Please try again.",
     "cancel": "Cancel",
     "saving": "Saving...",
     "submit": "Register payment"

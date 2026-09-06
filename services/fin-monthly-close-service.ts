@@ -60,6 +60,7 @@ export async function getMonthlyClose(clinicId: string, nowIso?: string): Promis
       .from("patient_payments")
       .select("amount_cents")
       .eq("clinic_id", clinicId)
+      .eq("status", "paid")          // só confirmados: alinha com o dashboard/KPI (exclui pending/refunded)
       .gte("paid_at", r.startISO)
       .lt("paid_at", r.endISO),
     supabase

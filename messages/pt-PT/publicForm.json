@@ -31,6 +31,7 @@
     "errEmailRequired": "Digite seu e-mail para continuar.",
     "errEmailInvalid": "E-mail inválido.",
     "errNameRequired": "Preencha seu nome completo.",
+    "errUpload": "Não foi possível enviar o ficheiro. Tente novamente.",
     "greeting": "Olá, {name}!",
     "recognized": "Você já está cadastrado ✓",
     "foundDesc": "Identificamos seu cadastro pelo e-mail <hl>{email}</hl>. Clique em continuar para enviar seus arquivos.",
