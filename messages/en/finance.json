@@ -64,7 +64,15 @@
     "recurringNav": "Recurring",
     "programsNav": "Programs",
     "auditNav": "Audit",
-    "permissionsNav": "Permissions"
+    "permissionsNav": "Permissions",
+    "group_overview": "Overview & cash",
+    "group_revenue": "Revenue & margin",
+    "group_fiscal": "Tax & payout",
+    "group_governance": "Governance",
+    "reportNav": "Report",
+    "statusReportNav": "Appointments",
+    "nfseNav": "e-Invoice",
+    "repasseNav": "Payout"
   },
   "methods": {
     "pix": "PIX",
