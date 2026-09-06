@@ -40,6 +40,15 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
       },
     });
 
+    // Documento 3 (Hipersensibilidade) só existe com exame de cabelo REAL. Se o
+    // snapshot não tem exame funcional do tipo teste capilar/hipersensibilidade,
+    // remove o campo — barra a IA de "preencher" o documento sem dado de origem.
+    const hasHairTest = snapshot.functional_exams.some((e) =>
+      /capilar|hipersensib|hair/i.test(`${e.type ?? ""} ${e.title ?? ""}`));
+    if (!hasHairTest && output.relatorio_hipersensibilidade) {
+      delete output.relatorio_hipersensibilidade;
+    }
+
     // Guardrail determinístico sobre o texto ao PACIENTE (formato persuasivo Rota A):
     // se vazar jargão interno (exame/neurometria), número de sessões, travessão, ou
     // faltar âncora positiva, o insight NASCE em needs_changes p/ o gate humano revisar.

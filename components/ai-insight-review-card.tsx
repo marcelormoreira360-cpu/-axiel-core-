@@ -5,11 +5,12 @@ import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { Badge, type BadgeStatus } from "@/components/status-badge";
 import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { SubmitButton } from "@/components/submit-button";
-import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction, resendApprovedInsightAction, sendSupplementToPatientAction } from "@/app/patients/[id]/insights/actions";
+import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction, resendApprovedInsightAction, sendSupplementToPatientAction, sendHypersensitivityToPatientAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
 import { InsightEditor } from "@/components/insight-editor";
 import { SupplementEditor } from "@/components/supplement-editor";
+import { HypersensitivityEditor } from "@/components/hypersensitivity-editor";
 import { getPatientById } from "@/services/patient-service";
 import { resolveSupplementCountry } from "@/services/supplement-service";
 import { NeuroPyramid } from "@/components/neuro-pyramid";
@@ -49,13 +50,23 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   // confirmadas não entram no relatório. Só relevante enquanto não-final.
   const pendingMetrics = !isFinal ? await countExamsPendingMetricsReview(patientId) : 0;
 
-  // Documento 3 (Suplementação): país do paciente decide a saída (BR fórmula / US link).
+  // Documento 2 (Suplementação): país do paciente decide a saída (BR fórmula / US link).
   const patient = await getPatientById(patientId);
   const supplementCountry = resolveSupplementCountry(patient?.country ?? null, patient?.locale ?? null);
   const protocolo = output?.protocolo_suplementacao ?? null;
   const hasSupplement = !!protocolo?.itens?.some((i) => i.nome?.trim());
   const sendSupplementAction = sendSupplementToPatientAction.bind(null, patientId);
   const resendReportAction = resendApprovedInsightAction.bind(null, patientId);
+
+  // Documento 3 (Hipersensibilidade): só existe quando o paciente fez o exame de cabelo.
+  const relatorioHyper = output?.relatorio_hipersensibilidade ?? null;
+  const hasHyper = !!relatorioHyper && (
+    (relatorioHyper.achados_prioritarios?.length ?? 0) > 0 ||
+    (relatorioHyper.retirada_alta?.length ?? 0) > 0 ||
+    (relatorioHyper.padroes?.length ?? 0) > 0 ||
+    (relatorioHyper.fases?.length ?? 0) > 0
+  );
+  const sendHyperAction = sendHypersensitivityToPatientAction.bind(null, patientId);
 
   const insightTitle =
     output?.patterns_and_correlations?.[0]?.title ||
@@ -93,8 +104,10 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
       {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
       <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} />
 
-      {/* Edição manual do Doc 1/Doc 2 antes de aprovar/enviar (só no formato persuasivo, não-final) */}
-      {output && !isFinal && showPyramid ? (
+      {/* Edição manual do Doc 1/Doc 2 (formato persuasivo). Continua disponível
+          mesmo depois de aprovado — igual à Suplementação — para corrigir o texto
+          e reenviar via "Reenviar relatório". Grava em final_output. */}
+      {output && showPyramid ? (
         <InsightEditor patientId={patientId} insightId={insight.id} output={output} />
       ) : null}
 
@@ -143,7 +156,7 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         <DeleteInsightButton patientId={patientId} insightId={insight.id} />
       </div>
 
-      {/* Documento 3 — Suplementação: editar + enviar em separado (país decide fórmula BR / link US) */}
+      {/* Documento 2 — Suplementação: editar + enviar em separado (país decide fórmula BR / link US) */}
       {output ? (
         <div className="space-y-3 rounded-2xl border border-black/[.08] dark:border-white/[.10] p-4">
           <div className="flex items-center justify-between gap-3">
@@ -162,6 +175,19 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
             </form>
           ) : !hasSupplement ? (
             <p className="text-xs text-axiel-text-secondary">{t("supplementEmpty")}</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* Documento 3 — Hipersensibilidade (exame de cabelo): só aparece quando há dados do teste capilar */}
+      {hasHyper ? (
+        <div className="space-y-3 rounded-2xl border border-[#7C5CBF]/30 dark:border-[#7C5CBF]/25 p-4">
+          <p className="text-sm font-semibold text-axiel-text-primary">{t("hyperSection")}</p>
+          <HypersensitivityEditor patientId={patientId} insightId={insight.id} relatorio={relatorioHyper} />
+          {isFinal ? (
+            <form action={sendHyperAction}>
+              <ButtonPrimary type="submit">{t("sendHyper")}</ButtonPrimary>
+            </form>
           ) : null}
         </div>
       ) : null}

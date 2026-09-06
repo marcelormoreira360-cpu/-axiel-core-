@@ -160,14 +160,14 @@ function pdfToBuffer(doc: Doc): Promise<Buffer> {
 /**
  * Gera o PDF do relatório Neuro ID 360 no padrão visual da clínica.
  * Documento 1 = Relatório Funcional Integrado; Documento 2 = Plano Integrativo;
- * Documento 3 = Protocolo de Suplementação (quando houver).
+ * Documento 2 = Protocolo de Suplementação (quando houver).
  */
 export async function buildNeuroId360Pdf(opts: {
   output: AiInsightOutput;
   patientName?: string | null;
   clinic?: ClinicBrand;
   /** Recomendação de suplementos APROVADA (manual). Quando presente, vira o
-   *  Doc 3 e substitui o protocolo gerado pela IA (decisão de produto). */
+   *  Doc 2 e substitui o protocolo gerado pela IA (decisão de produto). */
   approvedSupplement?: PatientSupplementRecommendation | null;
   /** Demografia do cadastro (fonte única) — sobrepõe o que a IA ecoou. */
   demographics?: PatientIdentificacao | null;
@@ -267,7 +267,7 @@ export async function buildNeuroId360Pdf(opts: {
   }
 
   // ── DOCUMENTO 3 — Suplementação ────────────────────────────────────────────
-  // Precedência: se houver recomendação MANUAL APROVADA, ela é o Doc 3 e
+  // Precedência: se houver recomendação MANUAL APROVADA, ela é o Doc 2 e
   // substitui o protocolo gerado pela IA (decisão de produto).
   if (approved && approved.items.length > 0) {
     doc.addPage();

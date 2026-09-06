@@ -7,6 +7,7 @@ import type {
   NeuroMapaIntegrativo,
   NeuroPlanoRegulacao,
   NeuroProtocoloSuplementacao,
+  NeuroRelatorioHipersensibilidade,
   NeuroSecaoItem,
 } from "@/lib/types";
 
@@ -161,6 +162,47 @@ export const aiInsightJsonShape = {
     ],
     observacoes_gerais: ["Observação geral sobre a suplementação (rascunho para validação profissional)."],
   },
+
+  // ── DOCUMENTO 3 — Relatório Integrativo de Hipersensibilidade (SÓ com teste capilar) ──
+  // Preencher APENAS se houver, em input_data.functional_exams, um exame do tipo
+  // "teste_capilar" (ou hipersensibilidade) com dados de reatividade. Se não houver,
+  // OMITA este campo por completo (não invente reatividades). NÃO traz suplemento
+  // próprio — a suplementação fica só no Documento 2. Estrutura = modelo IFWC.
+  relatorio_hipersensibilidade: {
+    introducao: "1 a 2 frases: este relatório reúne, em linguagem simples, o que o exame de cabelo mostrou e o que fazer com isso, junto da avaliação e do acompanhamento.",
+    visao_geral: {
+      importante: "Aviso: a biorressonância é exame complementar e qualitativo — sinaliza itens fora da faixa, mas não os quantifica nem substitui exames laboratoriais ou avaliação médica. Os achados são sinalizações a correlacionar clinicamente.",
+      quadro: "Retrato do caso em 3–5 frases: perfil do paciente (idade/foco) + o que o exame de cabelo ACRESCENTA ao Documento 1 (padrão de reatividade e o que ele pode estar associado).",
+      principais_achados: "Frase começando 'Os principais achados se concentram em:' listando os grupos de maior reatividade e as sinalizações relevantes (metais, aditivos, nutrientes/hormônios fora da faixa).",
+      prioridade_funcional: "Frase 'Prioridade funcional:' — o que reduzir/apoiar (carga inflamatória e química) para apoiar o SNA e a recuperação.",
+    },
+    padroes: [
+      { padrao: "Nome do padrão Neuro ID (ex.: 'Disfunção intestino-cérebro', 'Inflamatório / carga hepática', 'Sensibilidade alimentar cumulativa', 'Carga ambiental / dérmica', 'Eixo tireoidiano-metabólico', 'Predomínio simpático / recuperação autonômica')", interpretacao: "Interpretação funcional prudente ligando os achados do exame ao padrão." },
+    ],
+    achados_prioritarios: [
+      { area: "Área (ex.: 'Alimentos - alta reatividade', 'Alimentos - moderada reatividade', 'Vegan / plant-based', 'Aditivos', 'Metais', 'Nutrientes', 'Microbiota', 'Digestão', 'Hormonal / Tireoide', 'Anti-aging', 'Pele / ambiente', 'Não-alimentar')", achados: "Os achados reais do exame nessa área, nomeados.", prioridade: "A conduta sugerida (ex.: 'eliminar por ~8 semanas', 'evitar ultraprocessados', 'encaminhar para avaliação médica')." },
+    ],
+    retirada_alta: [
+      { grupo: "Grupo (ex.: 'Lácteos e derivados', 'Cereais com glúten e fermentados', 'Bebidas alcoólicas e fermentadas', 'Coco', 'Leguminosas/sementes/oleaginosas', 'Proteínas animais específicas', 'Cogumelos', 'Frutas/condimentos/outros')", itens: "Todos os itens de ALTA reatividade desse grupo, por extenso, separados por vírgula." },
+    ],
+    retirada_moderada: "Itens de reatividade MODERADA a evitar/reduzir na fase inicial (nomeados), sobretudo se somados no mesmo dia.",
+    relacao_sistema_nervoso: "Parágrafo Neuro ID: primeiro regula-se o corpo; como a carga inflamatória/química e a sensibilidade ampla podem manter o SNA em defesa, dialogando com o Documento 2. Linguagem de hipótese funcional a acompanhar.",
+    eixos: [
+      { titulo: "Eixo (ex.: 'Eixo intestino-cérebro', 'Eixo fígado-detoxificação', 'Eixo tireoidiano-SNA')", descricao: "Como esse eixo aparece nos achados e o que fazer." },
+    ],
+    fases: [
+      { titulo: "Fase (ex.: '1. Eliminação estruturada', '2. Detox e modulação intestinal', '3. Substituição inteligente', '4. Reintrodução')", descricao: "Conduta prática e prudente da fase (o que fazer, por quanto tempo, o que observar)." },
+    ],
+    plano_alimentar: ["Orientações práticas do dia a dia (comida de verdade, substituições, evitar ultraprocessados/códigos E), em bullets curtos."],
+    implicacoes_suplementacao: {
+      texto: "As fórmulas, doses e o protocolo completo estão no Documento 2 - Suplementação. Aqui ficam só as implicações do exame de cabelo e os pontos de atenção para essa integração.",
+      apoiar: [{ titulo: "O que apoiar (ex.: 'Microbiota', 'Barreira/mucosa intestinal', 'Colágeno', 'Antocianidinas/polifenóis')", descricao: "Por que o exame sugere apoiar, sem citar marca (detalhe no Documento 2)." }],
+      pontos_atencao: [{ titulo: "Ponto de atenção (ex.: 'Whey/lácteos', 'Não duplicar')", descricao: "O cuidado na correlação com o protocolo atual." }],
+    },
+    monitoramento: ["Reavaliar em 15/30/60 dias (intestino, energia, sono, pele, humor, resposta aos alimentos).", "Reintroduzir os alimentos um a um só após a fase de pausa, observando a resposta."],
+    resumo_executivo: "Parágrafo 'Prioridade das próximas 8 semanas:' — o que retirar e o que apoiar, mantendo o que já funciona, em tom caloroso e de parceria.",
+    observacoes_gerais: ["Aviso: reatividade não é alergia nem diagnóstico; não substitui avaliação médica. A suplementação, quando houver, está no Documento 2."],
+  },
 } satisfies AiInsightOutput;
 
 function coerceMapa(o: any): NeuroMapaIntegrativo | undefined {
@@ -246,6 +288,71 @@ function coerceProtocolo(o: any): NeuroProtocoloSuplementacao | undefined {
   return { itens, observacoes_gerais: list(s.observacoes_gerais) };
 }
 
+/** Tabela genérica de 2 colunas (padrão/interpretação, eixo/descrição, etc.). */
+function coercePairRows(v: unknown, k1: string, k2: string, max = 12): Array<Record<string, string>> {
+  if (!Array.isArray(v)) return [];
+  return v.slice(0, max)
+    .map((r: any) => ({ [k1]: str(r?.[k1]), [k2]: str(r?.[k2]) }))
+    .filter((r) => r[k1].length > 0 || r[k2].length > 0);
+}
+
+function coerceHipersensibilidade(o: any): NeuroRelatorioHipersensibilidade | undefined {
+  const h = o?.relatorio_hipersensibilidade;
+  if (!h || typeof h !== "object") return undefined;
+
+  const vg = h.visao_geral && typeof h.visao_geral === "object" ? h.visao_geral : null;
+  const visao_geral = vg
+    ? {
+        importante: str(vg.importante) || undefined,
+        quadro: str(vg.quadro) || undefined,
+        principais_achados: str(vg.principais_achados) || undefined,
+        prioridade_funcional: str(vg.prioridade_funcional) || undefined,
+      }
+    : undefined;
+
+  const achados_prioritarios = Array.isArray(h.achados_prioritarios)
+    ? h.achados_prioritarios.slice(0, 20).map((r: any) => ({ area: str(r?.area), achados: str(r?.achados), prioridade: str(r?.prioridade) }))
+        .filter((r: { area: string; achados: string }) => r.area.length > 0 || r.achados.length > 0)
+    : [];
+
+  const retirada_alta = Array.isArray(h.retirada_alta)
+    ? h.retirada_alta.slice(0, 30).map((r: any) => ({ grupo: str(r?.grupo), itens: str(r?.itens) }))
+        .filter((r: { grupo: string; itens: string }) => r.grupo.length > 0 || r.itens.length > 0)
+    : [];
+
+  const isup = h.implicacoes_suplementacao && typeof h.implicacoes_suplementacao === "object" ? h.implicacoes_suplementacao : null;
+  const implicacoes_suplementacao = isup
+    ? {
+        texto: str(isup.texto) || undefined,
+        apoiar: coercePairRows(isup.apoiar, "titulo", "descricao", 12) as Array<{ titulo: string; descricao: string }>,
+        pontos_atencao: coercePairRows(isup.pontos_atencao, "titulo", "descricao", 12) as Array<{ titulo: string; descricao: string }>,
+      }
+    : undefined;
+
+  const rel: NeuroRelatorioHipersensibilidade = {
+    introducao: str(h.introducao) || undefined,
+    visao_geral,
+    padroes: coercePairRows(h.padroes, "padrao", "interpretacao", 12) as Array<{ padrao: string; interpretacao: string }>,
+    achados_prioritarios,
+    retirada_alta,
+    retirada_moderada: str(h.retirada_moderada) || undefined,
+    relacao_sistema_nervoso: str(h.relacao_sistema_nervoso) || undefined,
+    eixos: coercePairRows(h.eixos, "titulo", "descricao", 8) as Array<{ titulo: string; descricao: string }>,
+    fases: coercePairRows(h.fases, "titulo", "descricao", 8) as Array<{ titulo: string; descricao: string }>,
+    plano_alimentar: list(h.plano_alimentar, 20),
+    implicacoes_suplementacao,
+    monitoramento: list(h.monitoramento, 12),
+    resumo_executivo: str(h.resumo_executivo) || undefined,
+    observacoes_gerais: list(h.observacoes_gerais),
+  };
+  // Só é documento se houver uma seção SUBSTANTIVA (mesma régua de review-card/delivery,
+  // que decidem se dá para enviar). Evita Doc 3 "preview-only" (só visão geral/resumo)
+  // que aparece mas nunca pode ser enviado.
+  const hasContent = rel.achados_prioritarios.length > 0 || rel.retirada_alta.length > 0
+    || rel.padroes.length > 0 || rel.fases.length > 0;
+  return hasContent ? rel : undefined;
+}
+
 export function coerceAiInsightOutput(value: unknown): AiInsightOutput {
   const object = typeof value === "object" && value !== null ? (value as Record<string, any>) : {};
 
@@ -270,5 +377,6 @@ export function coerceAiInsightOutput(value: unknown): AiInsightOutput {
     mapa_integrativo: coerceMapa(object),
     plano_regulacao: coercePlano(object),
     protocolo_suplementacao: coerceProtocolo(object),
+    relatorio_hipersensibilidade: coerceHipersensibilidade(object),
   };
 }

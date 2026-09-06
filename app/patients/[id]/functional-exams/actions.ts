@@ -104,8 +104,12 @@ export async function addFunctionalExamAction(formData: FormData) {
     // A síntese entra no Relatório Funcional do PACIENTE → idioma do paciente.
     const patient = await getPatientById(patientId, profile.clinic_id);
     const patientLocale = await resolvePatientLocale(patient?.locale, profile.clinic_id);
+    // Teste capilar (FWC): extração COMPLETA (~1.771 itens, saída longa) é bem mais
+    // lenta que as sínteses curtas dos outros exames → timeout maior, senão o
+    // Promise.race devolve null em silêncio e o Documento 3 nasce sem os achados.
+    const analysisTimeout = examType === "teste_capilar" ? 150_000 : AI_EXAM_TIMEOUT_MS;
     [aiAnalysis, metricsDraft] = await Promise.all([
-      withTimeout(analyzeExamPdf({ pdfBase64, filename: pdfName, examType, examTitle: title, locale: patientLocale }), AI_EXAM_TIMEOUT_MS, null),
+      withTimeout(analyzeExamPdf({ pdfBase64, filename: pdfName, examType, examTitle: title, locale: patientLocale }), analysisTimeout, null),
       withTimeout(extractExamMetrics({ pdfBase64, filename: pdfName, examType }), AI_EXAM_TIMEOUT_MS, {}),
     ]);
     // Sem resumo manual? usa a síntese da IA (que o terapeuta pode editar depois).

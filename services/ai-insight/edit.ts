@@ -1,4 +1,4 @@
-import type { AiInsightOutput, NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao } from "@/lib/types";
+import type { AiInsightOutput, NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao, NeuroRelatorioHipersensibilidade } from "@/lib/types";
 import { scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
 import { getAiInsightById, updateAiInsightFinalOutput } from "@/services/ai-insight/insight-repository";
 
@@ -13,8 +13,10 @@ export async function saveAiInsightEdits(input: {
   aiInsightId: string;
   editedMapa?: Partial<NeuroMapaIntegrativo> | null;
   editedPlano?: Partial<NeuroPlanoRegulacao> | null;
-  /** Documento 3 (Suplementação) editado por completo pelo profissional. */
+  /** Documento 2 (Suplementação) editado por completo pelo profissional. */
   editedProtocolo?: NeuroProtocoloSuplementacao | null;
+  /** Documento 3 (Hipersensibilidade) editado por completo pelo profissional. */
+  editedHipersensibilidade?: NeuroRelatorioHipersensibilidade | null;
 }): Promise<{ guardrailNote: string | null }> {
   const insight = await getAiInsightById(input.aiInsightId);
   if (!insight) throw new Error("Insight não encontrado.");
@@ -29,6 +31,7 @@ export async function saveAiInsightEdits(input: {
       ? { ...(base.plano_regulacao ?? {}), ...input.editedPlano }
       : base.plano_regulacao,
     protocolo_suplementacao: input.editedProtocolo ?? base.protocolo_suplementacao,
+    relatorio_hipersensibilidade: input.editedHipersensibilidade ?? base.relatorio_hipersensibilidade,
   };
 
   const scan = scanPatientText(merged);

@@ -183,7 +183,7 @@ export async function getPatientSupplementRecommendations(
   })) as PatientSupplementRecommendation[];
 }
 
-/** Recomendação aprovada mais recente — usada no relatório Neuro ID 360 (Doc 3). */
+/** Recomendação aprovada mais recente — usada no relatório Neuro ID 360 (Doc 2). */
 export async function getApprovedSupplementRecommendation(
   patientId: string,
 ): Promise<PatientSupplementRecommendation | null> {

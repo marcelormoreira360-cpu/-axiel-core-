@@ -76,7 +76,10 @@
     "resendReport": "Resend report",
     "supplementEmpty": "No supplement items. Use \"Edit supplements\" to add.",
     "supplementBr": "Brazil · compounded formula",
-    "supplementUs": "US · with purchase link"
+    "supplementUs": "US · with purchase link",
+    "hyperSection": "Hypersensitivity (hair test)",
+    "sendHyper": "Send hypersensitivity report",
+    "hyperEmpty": "No hypersensitivity data. It only appears when the patient took the hair test."
   },
   "patientPage": {
     "title": "AI Insights",

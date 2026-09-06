@@ -80,25 +80,41 @@ PROIBIDO (fronteira fé/clínica — decisão de Marcelo):
 `.trim();
 
 const TESTE_CAPILAR_LEGEND = `
-LEGENDA DO TESTE CAPILAR / HIPERSENSIBILIDADE (FWC sensitivity test — leitura por
-biorressonância de fio de cabelo, ~1.700 itens de alimentos e químicos/ambientais).
-A escala de reatividade do exame (ex.: baixa/média/alta, ou faixa numérica) indica o
-quanto o corpo "reagiu" a cada item; os de reatividade ALTA são os relevantes.
+LEGENDA DO TESTE CAPILAR / HIPERSENSIBILIDADE — FWC "Sensitivity Test" (leitura por
+biorressonância de fio de cabelo, ~1.771 itens). O laudo é dividido em SEÇÕES por
+categoria e cada item recebe um NÍVEL: "High Reactivity" (alta), "Moderate Reactivity"
+(moderada) ou "No Reactivity" (sem reatividade). Nas páginas detalhadas o nível vem por
+uma BOLINHA COLORIDA (vermelho = alta, laranja = moderada, verde/azul = sem reatividade),
+mas o modo MAIS CONFIÁVEL de ler é usar as LISTAS DE TEXTO das páginas de "overview" de
+cada seção, que trazem os cabeçalhos "High Reactivity" e "Moderate Reactivity" com os
+itens escritos por extenso. USE AS LISTAS DE TEXTO como fonte primária.
 
-O QUE EXTRAIR (leitura FUNCIONAL, nunca diagnóstica):
-- Os itens de MAIOR reatividade, nomeando-os de verdade, separados em duas categorias:
-  • ALIMENTOS (ex.: leite/lácteos, glúten/trigo, ovo, soja, milho, café, frutas cítricas…).
-  • QUÍMICOS / AMBIENTAIS (ex.: metais, aditivos, conservantes, fragrâncias, mofo…).
-- Para cada item, registre o NÍVEL de reatividade como o exame traz (alta/média ou o valor).
-- Destaque os itens de reatividade ALTA que merecem RETIRADA temporária (lista de retirada).
-- Agrupe o que costuma andar junto (ex.: todos os lácteos num item de "laticínios").
+SEÇÕES DE REATIVIDADE (é daqui que sai o Documento 3):
+- "Food & drink" (alimentos e bebidas), "Vegan", "Non-food", "Metal", "Additives".
+- Para cada uma, capture TODOS os itens de "High Reactivity" e de "Moderate Reactivity",
+  nomeando-os de verdade (não resuma como "vários"). IGNORE os "No Reactivity".
+- Marque o nível de cada item (ALTA ou MODERADA) e a categoria de origem.
+
+SEÇÕES DE NÍVEL (NÃO são reatividade — servem à suplementação/Bio³, não ao Documento 3):
+- "Mineral and other nutrient", "Vitamin A-K", "Hormone imbalances", "Gut health",
+  "Digestion", "Anti-aging", "Sleep hormone", "Stress & inflammation", "Skin health".
+- Aqui os itens são "Outside Range" (fora da faixa/baixo) ou "Within Range" (normal).
+- Capture só os "Outside Range" como uma NOTA à parte (ex.: minerais/vitaminas baixos),
+  rotulando claramente que é achado de NÍVEL, não de reatividade.
+
+O QUE EXTRAIR (leitura FUNCIONAL, nunca diagnóstica), NESTA ORDEM:
+1) REATIVIDADE ALTA por categoria (a lista de RETIRADA prioritária).
+2) REATIVIDADE MODERADA por categoria (retirar depois da alta, ou observar em acúmulo).
+3) NOTA de NÍVEL: itens "Outside Range" (minerais/vitaminas/hormônios baixos), à parte.
 
 REGRAS DE LEITURA (decisões do Marcelo):
 - Linguagem prudente: "o exame registrou reatividade a…", "sugere sensibilidade a…";
   NUNCA "alergia"/"intolerância" fechada nem diagnóstico (não é teste de alergia IgE).
 - Uso FUNCIONAL: reatividade é sinal para observar → retirar → reintroduzir, não doença.
+  Conduta padrão do laudo = DIETA DE ELIMINAÇÃO (retira os reativos por um tempo e
+  reintroduz um a um), retirando primeiro os de ALTA e depois os de MODERADA.
 - PROIBIDO conteúdo esotérico/holístico (sem chakra, aura, energia/vibração).
-- NÃO citar marca/fabricante de suplemento — a suplementação fica só no Documento 3.
+- NÃO citar marca/fabricante de suplemento — a suplementação fica só no Documento 2.
 - Foque no ACIONÁVEL: o que retirar agora e observar; a reintrodução vem depois.
 `.trim();
 

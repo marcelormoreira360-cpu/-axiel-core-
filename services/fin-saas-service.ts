@@ -6,7 +6,7 @@ import { getClinicCurrency } from "@/services/finance-service";
 //     (a recorrência que a CLÍNICA fatura dos pacientes — não a assinatura da
 //     clínica ao Core, que é a tabela `subscriptions`, 1 por clínica).
 //   • Exames & Suplementos (#4): NÃO têm receita/custo próprios no schema
-//     (são clínicos — catálogo sem preço, recomendação é fluxo do Doc 3). O
+//     (são clínicos — catálogo sem preço, recomendação é fluxo do Doc 2). O
 //     honesto aqui é VOLUME + ATTACH RATE (funil exame→recomendação). Receita de
 //     suplemento vendido como produto já aparece na Margem (Fase 4).
 

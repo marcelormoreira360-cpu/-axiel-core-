@@ -140,10 +140,41 @@ export async function extractLabMarkers(opts: {
   }
 }
 
+/**
+ * Prompt de extração do TESTE CAPILAR (hipersensibilidade). Diferente dos outros
+ * exames: NÃO é síntese curta de ~120 palavras — precisa capturar TODOS os itens
+ * reativos (alta/moderada) por categoria, pois alimentam o Documento 3 (dieta de
+ * eliminação). A legenda (TESTE_CAPILAR_LEGEND) é anexada pelo chamador.
+ */
+const buildHairTestExtractionSystemPrompt = (locale?: string | null) => `
+Você é o analista de exames funcionais de um Integrative & Functional Wellness Center
+(metodologia Neuro ID). Recebe o PDF do TESTE CAPILAR de hipersensibilidade e produz
+uma EXTRAÇÃO ESTRUTURADA E COMPLETA dos itens reativos, para montar o Documento 3.
+
+IDIOMA: ${languageInstruction(locale)}
+
+Regras:
+- COMPLETUDE acima de tudo: liste TODOS os itens de reatividade ALTA e MODERADA, por
+  extenso e por categoria. NÃO resuma como "vários"/"entre outros"; nomeie cada item.
+- Use as LISTAS DE TEXTO de "High Reactivity" e "Moderate Reactivity" de cada seção como
+  fonte primária (mais confiáveis que as bolinhas coloridas). Ignore "No Reactivity".
+- Estruture a saída EXATAMENTE assim, em texto simples:
+  REATIVIDADE ALTA:
+  - [Categoria]: item, item, item...
+  REATIVIDADE MODERADA:
+  - [Categoria]: item, item, item...
+  NÍVEIS FORA DA FAIXA (não é reatividade — para suplementação/Bio³):
+  - item (seção), item (seção)...
+  Categorias de reatividade: Alimentos & bebidas, Vegano, Não-alimentar, Metal, Aditivos.
+- Linguagem prudente: "o exame registrou reatividade a…"; NUNCA "alergia"/diagnóstico.
+- NUNCA comente grau de evidência científica do exame/método.
+- Baseie-se SOMENTE no PDF. Se não der para ler, diga isso em 1 linha.
+`;
+
 export async function analyzeExamPdf(opts: {
   pdfBase64: string;       // base64 puro (sem prefixo data:)
   filename: string;
-  examType: string;        // 'biorressonancia' | 'neurometria' | 'outro'
+  examType: string;        // 'biorressonancia' | 'neurometria' | 'teste_capilar' | 'outro'
   examTitle?: string | null;
   /** Locale do PACIENTE (resolvePatientLocale) — a síntese entra no relatório dele. */
   locale?: string | null;
@@ -152,15 +183,20 @@ export async function analyzeExamPdf(opts: {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const model = reportModel();
 
+  const isHairTest = opts.examType === "teste_capilar";
   const label = opts.examType === "biorressonancia"
     ? "exame de biorressonância emocional"
     : opts.examType === "neurometria"
       ? "exame de neurometria"
-      : opts.examType === "teste_capilar"
+      : isHairTest
         ? "teste capilar de hipersensibilidade (reatividade alimentar/química)"
         : `exame${opts.examTitle ? ` (${opts.examTitle})` : ""}`;
 
-  const base = buildExamSynthesisSystemPrompt(opts.examType, opts.locale);
+  // Teste capilar: extração completa (não a síntese curta de Doc 1). Demais exames:
+  // síntese concisa (~120 palavras) para o Relatório Funcional Integrado.
+  const base = isHairTest
+    ? buildHairTestExtractionSystemPrompt(opts.locale)
+    : buildExamSynthesisSystemPrompt(opts.examType, opts.locale);
   const legend = examLegendBlock(opts.examType);
   const systemPrompt = legend ? `${base}\n\n${legend}` : base;
 
@@ -180,13 +216,18 @@ export async function analyzeExamPdf(opts: {
                 file_data: `data:application/pdf;base64,${opts.pdfBase64}`,
               },
             } as never,
-            { type: "text", text: `Analise este ${label} e produza a síntese concisa conforme as regras.` },
+            { type: "text", text: isHairTest
+                ? `Analise este ${label} e produza a EXTRAÇÃO ESTRUTURADA E COMPLETA (todos os itens reativos por categoria e nível) conforme as regras.`
+                : `Analise este ${label} e produza a síntese concisa conforme as regras.` },
           ],
         },
       ],
     });
     const text = response.choices[0]?.message?.content?.trim();
-    return text && text.length > 0 ? text.slice(0, 1800) : null;
+    // Teste capilar precisa caber a lista completa (dieta de eliminação); demais exames
+    // são síntese curta para o Doc 1.
+    const cap = isHairTest ? 8000 : 1800;
+    return text && text.length > 0 ? text.slice(0, cap) : null;
   } catch {
     return null;
   }

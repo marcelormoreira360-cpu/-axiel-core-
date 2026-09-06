@@ -34,7 +34,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
   } catch { /* usa defaults */ }
 
-  // Doc 3: recomendação de suplementos aprovada (manual) substitui a da IA.
+  // Doc 2: recomendação de suplementos aprovada (manual) substitui a da IA.
   const approvedSupplement = await getApprovedSupplementRecommendation(id).catch(() => null);
 
   const buffer = await buildNeuroId360Pdf({

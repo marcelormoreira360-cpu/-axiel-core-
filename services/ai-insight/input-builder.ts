@@ -87,7 +87,7 @@ export type AiInsightInputSnapshot = {
     is_partial: boolean;
   } | null;
   /**
-   * Contexto da suplementação (Documento 3). `country` decide a saída:
+   * Contexto da suplementação (Documento 2). `country` decide a saída:
    * BR → fórmula manipulada (ativos + dose + forma, sem marca, sem link);
    * US → suplementos alinhados ao `catalog` de referência da clínica (DFH/Pure
    * Encapsulations etc.), só nome/forma/como tomar, sem marca (o link é do profissional).

@@ -1,11 +1,11 @@
-import type { AiInsightOutput, NeuroProtocoloSuplementacao } from "@/lib/types";
+import type { AiInsightOutput, NeuroProtocoloSuplementacao, NeuroRelatorioHipersensibilidade } from "@/lib/types";
 import { getPatientById } from "@/services/patient-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { needsEmotionalSafeguard } from "@/modules/ai-insights/neuro-enums";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
-import { buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf, buildNeuroIdSupplementPdf } from "@/services/neuro-id-pdf-service";
+import { buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf, buildNeuroIdSupplementPdf, buildNeuroIdHypersensitivityPdf } from "@/services/neuro-id-pdf-service";
 import { getSupplementCatalog, resolveSupplementCountry } from "@/services/supplement-service";
 
 function escHtml(s: string): string {
@@ -18,7 +18,7 @@ function escHtml(s: string): string {
  * renderizador persuasivo do download manual (`buildNeuroIdDoc1Pdf`), de modo
  * que o que chega ao paciente é idêntico ao que o profissional vê na tela.
  *
- * A Suplementação (Documento 3) é enviada por um fluxo próprio, separado, pois
+ * A Suplementação (Documento 2) é enviada por um fluxo próprio, separado, pois
  * cada documento tem seu próprio editar/aprovar/enviar.
  */
 export type InsightDeliveryChannel = "sent" | "skipped_no_contact" | "failed" | "no_report";
@@ -298,6 +298,122 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
       metadata: {
         patient_id: patientId,
         country,
+        email: result.email,
+        whatsapp: result.whatsapp,
+        email_error: result.emailError ?? null,
+        whatsapp_error: result.whatsappError ?? null,
+      },
+    });
+  } catch { /* auditoria não deve quebrar o envio */ }
+
+  return result;
+}
+
+/**
+ * Envia ao PACIENTE (e-mail + WhatsApp, best-effort) o DOCUMENTO 3 — Relatório de
+ * Hipersensibilidade (exame de cabelo) — como um PDF PRÓPRIO, separado. Só existe
+ * quando o insight tem relatorio_hipersensibilidade (paciente fez o teste capilar).
+ * Envio só ocorre por ação explícita do profissional (gate de aprovação humana).
+ */
+export async function sendHypersensitivityToPatient(patientId: string): Promise<InsightDeliveryResult> {
+  const result: InsightDeliveryResult = { email: "no_report", whatsapp: "no_report" };
+
+  const insight = await getLatestFinalAiInsight(patientId);
+  if (!insight) return result;
+  const out = (insight.final_output ?? insight.output) as AiInsightOutput;
+  const relatorio: NeuroRelatorioHipersensibilidade | undefined = out?.relatorio_hipersensibilidade;
+  const hasContent = !!relatorio && (
+    (relatorio.achados_prioritarios?.length ?? 0) > 0 ||
+    (relatorio.retirada_alta?.length ?? 0) > 0 ||
+    (relatorio.padroes?.length ?? 0) > 0 ||
+    (relatorio.fases?.length ?? 0) > 0
+  );
+  if (!relatorio || !hasContent) return result;
+
+  const patient = await getPatientById(patientId);
+  if (!patient) return result;
+
+  const country = resolveSupplementCountry(patient.country, patient.locale);
+  const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
+
+  let pdfBuffer: Buffer | null = null;
+  let pdfSignedUrl: string | null = null;
+  const pdfFilename = `hipersensibilidade-${patientId.slice(0, 8)}.pdf`;
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const admin = createSupabaseAdminClient();
+
+    let clinicBrand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
+    try {
+      const { data: clinic } = await admin
+        .from("clinics")
+        .select("name, logo_url, primary_color, report_tagline")
+        .eq("id", insight.clinic_id)
+        .single();
+      if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
+    } catch { /* sem marca: usa defaults */ }
+
+    pdfBuffer = await buildNeuroIdHypersensitivityPdf({ relatorio, country, patientName: patient.full_name ?? null, clinic: clinicBrand });
+
+    const path = `reports/${patientId}/hipersensibilidade-${insight.id}.pdf`;
+    const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, { contentType: "application/pdf", upsert: true });
+    if (!up.error) {
+      const signed = await admin.storage.from("patient-docs").createSignedUrl(path, 60 * 60 * 24 * 7);
+      pdfSignedUrl = signed.data?.signedUrl ?? null;
+    }
+  } catch {
+    if (!pdfBuffer) return result;
+  }
+
+  const bodyIntro =
+    country === "US"
+      ? `Hi${firstName ? `, ${firstName}` : ""}! Your practitioner approved your hypersensitivity report. The document is attached (PDF).`
+      : `Olá${firstName ? `, ${firstName}` : ""}! Seu profissional aprovou o seu relatório de hipersensibilidade. O documento segue em anexo (PDF).`;
+
+  if (patient.email) {
+    try {
+      const { sendSimpleEmail } = await import("@/services/email-service");
+      await sendSimpleEmail({
+        to: patient.email,
+        subject: country === "US" ? "Your hypersensitivity report" : "Seu relatório de hipersensibilidade",
+        html: `<p>${escHtml(bodyIntro)}</p>`,
+        attachments: pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer }] : undefined,
+      });
+      result.email = "sent";
+    } catch (e) {
+      result.email = "failed";
+      result.emailError = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    result.email = "skipped_no_contact";
+  }
+
+  if (patient.phone) {
+    try {
+      if (pdfSignedUrl) {
+        const { sendWhatsAppMedia } = await import("@/services/whatsapp-service");
+        await sendWhatsAppMedia(patient.phone, bodyIntro, pdfSignedUrl);
+      } else {
+        const { sendWhatsAppText } = await import("@/services/whatsapp-service");
+        await sendWhatsAppText(patient.phone, bodyIntro + (patient.email ? `\n\n📄 ${country === "US" ? "Also sent to your e-mail." : "Também enviado ao seu e-mail."}` : ""));
+      }
+      result.whatsapp = "sent";
+    } catch (e) {
+      result.whatsapp = "failed";
+      result.whatsappError = e instanceof Error ? e.message : String(e);
+    }
+  } else {
+    result.whatsapp = "skipped_no_contact";
+  }
+
+  try {
+    await writeAuditLog({
+      clinicId: insight.clinic_id,
+      action: "ai_insight.hypersensitivity_sent",
+      entityType: "ai_insight",
+      entityId: insight.id,
+      metadata: {
+        patient_id: patientId,
         email: result.email,
         whatsapp: result.whatsapp,
         email_error: result.emailError ?? null,
