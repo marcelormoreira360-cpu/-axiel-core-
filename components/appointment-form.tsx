@@ -35,6 +35,11 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Agendar em série: repete a sessão N vezes num intervalo (ex.: pacote semanal).
+  const [seriesEnabled, setSeriesEnabled] = useState(false);
+  const [seriesCount, setSeriesCount] = useState(4);
+  const [seriesInterval, setSeriesInterval] = useState<"daily" | "weekly" | "biweekly" | "monthly">("weekly");
+
   const SOURCE_KEYS: AppointmentSource[] = [
     "direct", "referral", "instagram", "facebook", "google", "website", "package", "other",
   ];
@@ -68,6 +73,10 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
     formData.set("source", source);
     if (selectedPractitionerId) {
       formData.set("practitioner_id", selectedPractitionerId);
+    }
+    if (seriesEnabled && seriesCount > 1) {
+      formData.set("series_count", String(seriesCount));
+      formData.set("series_interval", seriesInterval);
     }
     setError(null);
     startTransition(async () => {
@@ -335,6 +344,48 @@ export function AppointmentForm({ patients, sessionTypes, action, clinicUsers, d
           placeholder={t("notesPlaceholder")}
           className="w-full resize-none rounded-[8px] border border-black/[.10] px-[10px] py-[8px] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
         />
+      </div>
+
+      {/* Agendar em série (pacote / sessões recorrentes) */}
+      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px]">
+        <label className="flex items-center gap-[8px] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={seriesEnabled}
+            onChange={(e) => setSeriesEnabled(e.target.checked)}
+            className="h-[15px] w-[15px] accent-[#0F6E56]"
+          />
+          <span className="text-[11px] font-medium text-[#6B6A66]">{t("seriesToggle")}</span>
+        </label>
+        <p className="text-[10px] text-[#A09E98] mt-[4px]">{t("seriesHint")}</p>
+        {seriesEnabled && (
+          <div className="grid grid-cols-2 gap-[12px] mt-[10px]">
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("seriesCount")}</label>
+              <input
+                type="number"
+                min={2}
+                max={24}
+                value={seriesCount}
+                onChange={(e) => setSeriesCount(Math.max(2, Math.min(24, Number(e.target.value) || 2)))}
+                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[6px] block">{t("seriesInterval")}</label>
+              <select
+                value={seriesInterval}
+                onChange={(e) => setSeriesInterval(e.target.value as typeof seriesInterval)}
+                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+              >
+                <option value="daily">{t("intervalDaily")}</option>
+                <option value="weekly">{t("intervalWeekly")}</option>
+                <option value="biweekly">{t("intervalBiweekly")}</option>
+                <option value="monthly">{t("intervalMonthly")}</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (

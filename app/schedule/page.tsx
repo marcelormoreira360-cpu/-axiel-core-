@@ -6,7 +6,8 @@ import { Shell } from "@/components/shell";
 import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/modules/patient-journey/snapshot-builder";
 import type { ScheduleSession } from "@/components/session-card";
-import { getAppointments, getAppointmentsByPatients, getAppointmentById, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes } from "@/services/appointment-service";
+import { getAppointments, getAppointmentsByPatients, getAppointmentById, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes, hasAppointmentConflict } from "@/services/appointment-service";
+import { listTimeBlocks, createTimeBlock, softDeleteTimeBlock } from "@/services/time-block-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
 import { getLatestAiInsightsByPatients, getPendingAiInsightReviewCount } from "@/services/ai-insight-service";
@@ -40,6 +41,11 @@ export default async function SchedulePage() {
   // Fuso da clínica: usado no drawer para pré-preencher o reagendamento no
   // wall-clock certo (a conversão final p/ UTC acontece no servidor).
   const clinicTz = clinicId ? await getClinicTimezone(clinicId) : "America/Sao_Paulo";
+
+  // Bloqueios de horário (indisponibilidade) — janela dos últimos 7 dias em diante,
+  // cobre a navegação da agenda. Renderizados na visão Dia.
+  const blocksFromISO = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const timeBlocks = clinicId ? await listTimeBlocks(clinicId, { fromISO: blocksFromISO }) : [];
 
   // Practitioners available for the filter dropdown (owners/admins only)
   const practitionerOptions = practitionerId
@@ -321,6 +327,49 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
+  // Cria um bloqueio de horário (indisponibilidade) no slot escolhido.
+  async function createBlockAction(formData: FormData) {
+    "use server";
+    const t = await getTranslations("schedule.actions");
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) throw new Error(t("noClinic"));
+
+    const startsAt = String(formData.get("starts_at") ?? "");
+    const duration = Number(formData.get("duration_minutes") ?? 60);
+    const title = String(formData.get("title") ?? "").trim() || null;
+    if (!startsAt) throw new Error(t("requiredFields"));
+
+    // Profissional bloqueia só a própria agenda; dono/admin bloqueia a clínica inteira.
+    const actorPractitionerId = isPractitioner(profile.role) ? profile.id : null;
+
+    // Não permitir bloquear em cima de sessão/bloqueio já existente.
+    const conflict = await hasAppointmentConflict({
+      clinic_id: profile.clinic_id,
+      starts_at: startsAt,
+      duration_minutes: duration,
+      practitioner_id: actorPractitionerId,
+    });
+    if (conflict) throw new Error(t("blockConflict"));
+
+    await createTimeBlock({
+      clinic_id: profile.clinic_id,
+      starts_at: startsAt,
+      duration_minutes: duration,
+      title,
+      practitioner_id: actorPractitionerId,
+      created_by: profile.id,
+    });
+    revalidatePath("/schedule");
+  }
+
+  async function deleteBlockAction(id: string) {
+    "use server";
+    const profile = await getCurrentUserProfile();
+    if (!profile?.clinic_id) return;
+    await softDeleteTimeBlock(id, profile.clinic_id);
+    revalidatePath("/schedule");
+  }
+
   async function rescheduleAction(id: string, newStartsAt: string) {
     "use server";
     await updateAppointment(id, { starts_at: newStartsAt });
@@ -459,6 +508,9 @@ export default async function SchedulePage() {
             practitioners={practitionerOptions}
             cancellationWindowHours={cancellationWindowHours}
             clinicTimezone={clinicTz}
+            timeBlocks={timeBlocks}
+            createBlockAction={createBlockAction}
+            deleteBlockAction={deleteBlockAction}
           />
         </>
       )}

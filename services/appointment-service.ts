@@ -7,6 +7,7 @@ import { getClinicTimezone } from "@/services/clinic-service";
 import { isValidTimezone, inferTimezoneFromPhone, inferTimezoneFromCountry, resolvePatientTimezone, formatDualTime, dualTimeLines } from "@/lib/timezone";
 import { normalizePhoneDigits } from "@/lib/phone";
 import { scheduleAutomations } from "@/services/automation-service";
+import { getBlockedIntervals } from "@/services/time-block-service";
 import { detectLanguage } from "@/lib/whatsapp-lang";
 import { DEFAULT_FROM_EMAIL, APP_URL } from "@/lib/constants";
 
@@ -129,15 +130,25 @@ export async function hasAppointmentConflict(opts: {
     .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")');
   if (error) throw error;
 
-  return (data ?? []).some((a) => {
+  const mine = opts.practitioner_id ?? null;
+  const apptConflict = (data ?? []).some((a) => {
     if (opts.exclude_appointment_id && a.id === opts.exclude_appointment_id) return false;
     const aStart = new Date(a.starts_at as string);
     const aEnd = new Date(aStart.getTime() + ((a.duration_minutes as number | null) ?? 60) * 60_000);
     const overlaps = aEnd > start && aStart < end;
     if (!overlaps) return false;
     const aPract = a.practitioner_id as string | null;
-    const mine = opts.practitioner_id ?? null;
     return aPract === null || mine === null || aPract === mine;
+  });
+  if (apptConflict) return true;
+
+  // Bloqueios de horário (indisponibilidade) também ocupam o slot. getBlockedIntervals
+  // já filtra por profissional (bloqueio da clínica inteira, practitioner null, vale p/ todos).
+  const blocks = await getBlockedIntervals(opts.clinic_id, windowStart, end.toISOString(), mine);
+  return blocks.some((b) => {
+    const bStart = new Date(b.starts_at);
+    const bEnd = new Date(bStart.getTime() + (b.duration_minutes ?? 60) * 60_000);
+    return bEnd > start && bStart < end;
   });
 }
 
@@ -989,6 +1000,9 @@ export async function getAvailableSlots(opts: {
 
   if (!sessionType) return { ok: false, error: "Tipo de sessão não encontrado.", code: "SESSION_TYPE_NOT_FOUND" };
 
+  // Bloqueios de horário também tornam slots indisponíveis (mesma janela do dia).
+  const blocks = await getBlockedIntervals(clinic.id, dayStartUTC, dayEndUTC, practitionerId);
+
   // Default hours if not configured
   const opensAt  = wh?.opens_at  ?? "09:00";
   const closesAt = wh?.closes_at ?? "17:00";
@@ -1002,10 +1016,16 @@ export async function getAvailableSlots(opts: {
     opensAt,
     closesAt,
     sessionType.duration_minutes,
-    (booked ?? []).map((a) => ({
-      starts_at: a.starts_at as string,
-      duration_minutes: (a.duration_minutes as number | null) ?? 60,
-    })),
+    [
+      ...(booked ?? []).map((a) => ({
+        starts_at: a.starts_at as string,
+        duration_minutes: (a.duration_minutes as number | null) ?? 60,
+      })),
+      ...blocks.map((b) => ({
+        starts_at: b.starts_at,
+        duration_minutes: b.duration_minutes ?? 60,
+      })),
+    ],
     timezone,
   );
 
