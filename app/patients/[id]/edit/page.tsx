@@ -19,6 +19,12 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
 
   const referrerOptions = clinic?.id ? await getClinicPatientsForPicker(clinic.id, id) : [];
 
+  // País: opções canônicas + preserva um valor atual fora do padrão (ex.: "Brazil").
+  const baseCountries = ["Brasil", "Estados Unidos", "Portugal"];
+  const countryOptions = patient.country && !baseCountries.includes(patient.country)
+    ? [patient.country, ...baseCountries]
+    : baseCountries;
+
   const action = updatePatientAction.bind(null, id);
 
   return (
@@ -72,18 +78,6 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
                 className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
               />
             </div>
-          </div>
-
-          {/* CPF (necessário para cobrança Pix via Asaas) */}
-          <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("cpf")}</label>
-            <input
-              type="text"
-              name="cpf"
-              defaultValue={patient.cpf ?? ""}
-              placeholder={t("cpfPh")}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
-            />
           </div>
 
           {/* Data de nascimento e status */}
@@ -157,19 +151,34 @@ export default async function EditPatientPage({ params }: { params: Promise<{ id
             </div>
           </div>
 
-          {/* Idioma das mensagens ao paciente (e-mail, WhatsApp, push) */}
-          <div>
-            <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("locale")}</label>
-            <select
-              name="locale"
-              defaultValue={patient.locale ?? ""}
-              className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
-            >
-              <option value="">{t("localeAuto")}</option>
-              <option value="pt-BR">{t("localePtBR")}</option>
-              <option value="en">{t("localeEn")}</option>
-              <option value="pt-PT">{t("localePtPT")}</option>
-            </select>
+          {/* País (decide fórmula BR / link US na suplementação) + Idioma das mensagens */}
+          <div className="grid grid-cols-2 gap-[10px]">
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("country")}</label>
+              <select
+                name="country"
+                defaultValue={patient.country ?? ""}
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+              >
+                <option value="">{t("countryNone")}</option>
+                {countryOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] mb-[5px] block">{t("locale")}</label>
+              <select
+                name="locale"
+                defaultValue={patient.locale ?? ""}
+                className="w-full px-[12px] py-[9px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] text-[13px] text-[#0F1A2E] outline-none focus:border-[#0F6E56] transition bg-white"
+              >
+                <option value="">{t("localeAuto")}</option>
+                <option value="pt-BR">{t("localePtBR")}</option>
+                <option value="en">{t("localeEn")}</option>
+                <option value="pt-PT">{t("localePtPT")}</option>
+              </select>
+            </div>
           </div>
 
           {/* Notas */}

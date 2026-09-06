@@ -38,5 +38,7 @@
   "anonymizeTitle": "Anonymize patient data",
   "anonymizeDesc": "Removes name, email, phone and address. The clinical history is kept in anonymized form. This action cannot be undone.",
   "anonymizeBtn": "Anonymize",
-  "anonymizeConfirm": "Are you sure? This will permanently anonymize {name}'s data. This action cannot be undone."
+  "anonymizeConfirm": "Are you sure? This will permanently anonymize {name}'s data. This action cannot be undone.",
+  "country": "Country",
+  "countryNone": "(not set)"
 }
