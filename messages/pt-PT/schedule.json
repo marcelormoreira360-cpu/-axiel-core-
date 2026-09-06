@@ -23,7 +23,8 @@
     "statusUpdateError": "Não foi possível atualizar o estado. Tente novamente.",
     "rescheduleInvalidDate": "Data ou hora inválida.",
     "rescheduleNotFound": "Marcação não encontrada.",
-    "rescheduleError": "Não foi possível reagendar. Tente novamente."
+    "rescheduleError": "Não foi possível reagendar. Tente novamente.",
+    "blockConflict": "Já existe uma sessão ou bloqueio nesse horário."
   },
   "new": {
     "title": "Agendar sessão",
@@ -65,7 +66,15 @@
     "saving": "Salvando…",
     "confirm": "Confirmar sessão",
     "errorRequired": "Preencha os campos obrigatórios.",
-    "errorGeneric": "Não foi possível agendar a sessão. Tente novamente."
+    "errorGeneric": "Não foi possível agendar a sessão. Tente novamente.",
+    "seriesToggle": "Agendar em série",
+    "seriesHint": "Repete esta sessão para o paciente (ex.: pacote de várias sessões).",
+    "seriesCount": "Quantas sessões",
+    "seriesInterval": "Intervalo",
+    "intervalDaily": "Diário",
+    "intervalWeekly": "Semanal",
+    "intervalBiweekly": "Quinzenal",
+    "intervalMonthly": "Mensal"
   },
   "card": {
     "patientFallback": "Paciente",
@@ -153,7 +162,9 @@
       "sun": "Dom"
     },
     "delete": "Excluir",
-    "deleteConfirm": "Excluir este agendamento? Esta ação não pode ser desfeita."
+    "deleteConfirm": "Excluir este agendamento? Esta ação não pode ser desfeita.",
+    "blockedLabel": "Bloqueado",
+    "removeBlock": "Remover bloqueio"
   },
   "modal": {
     "title": "Nova sessão",
@@ -190,7 +201,14 @@
     "done": "Concluído",
     "waMessage": "Olá! Reservei um horário para você. Confirme e complete seu cadastro aqui: {url}",
     "createdToast": "Sessão agendada",
-    "createError": "Não foi possível agendar a sessão. Tente novamente."
+    "createError": "Não foi possível agendar a sessão. Tente novamente.",
+    "kindSession": "Sessão",
+    "kindBlock": "Bloqueio",
+    "blockTitle": "Motivo (opcional)",
+    "blockTitlePlaceholder": "Ex.: almoço, reunião, folga",
+    "blockDuration": "Duração",
+    "createBlock": "Bloquear",
+    "blockCreatedToast": "Horário bloqueado"
   },
   "reminder": {
     "back": "Agenda",

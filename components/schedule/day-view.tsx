@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import type { PatientLite } from "@/services/patient-service";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { X } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
@@ -21,7 +22,7 @@ import {
   getSlotKey,
   getSlotKeyFromStartsAt,
 } from "@/modules/schedule/time-slots";
-import { formatTime } from "@/modules/schedule/date-utils";
+import { formatTime, isSameDay } from "@/modules/schedule/date-utils";
 import {
   HOUR_HEIGHT,
   START_HOUR,
@@ -31,9 +32,13 @@ import {
   BODY_H,
   HOUR_LABELS,
   getNowOffset,
+  apptStyle,
   type ConfirmLinkAction,
   type EmailLinkAction,
 } from "@/components/schedule/grid";
+
+/** Bloqueio de horário renderizado na grade (forma leve p/ o client). */
+export type BlockView = { id: string; starts_at: string; duration_minutes: number; title: string | null };
 import { DraggableDayCard } from "@/components/schedule/draggable-day-card";
 import { DroppableHourCell } from "@/components/schedule/droppable-hour-cell";
 
@@ -53,6 +58,9 @@ export function DayView({
   selectedSlot,
   onReschedule,
   onResizeDuration,
+  timeBlocks = [],
+  blockAction,
+  onDeleteBlock,
 }: {
   sessions: ScheduleSession[];
   navDate: Date;
@@ -67,8 +75,12 @@ export function DayView({
   selectedSlot: TimeSlot | null;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
+  timeBlocks?: BlockView[];
+  blockAction?: (formData: FormData) => Promise<void>;
+  onDeleteBlock?: (id: string) => Promise<void>;
 }) {
   const locale     = useLocale();
+  const t          = useTranslations("schedule.calendar");
   const slots      = useMemo(() => buildDayTimeSlots(), []);
   const scrollRef  = useRef<HTMLDivElement>(null);
 
@@ -86,6 +98,20 @@ export function DayView({
   // Optimistic local state for drag-and-drop
   const [localSessions, setLocalSessions] = useState<ScheduleSession[]>(sessions);
   useEffect(() => { setLocalSessions(sessions); }, [sessions]);
+
+  // Bloqueios do dia (estado local p/ remoção otimista).
+  const [localBlocks, setLocalBlocks] = useState<BlockView[]>(timeBlocks);
+  useEffect(() => { setLocalBlocks(timeBlocks); }, [timeBlocks]);
+  const dayBlocks = useMemo(
+    () => localBlocks.filter((b) => isSameDay(new Date(b.starts_at), navDate)),
+    [localBlocks, navDate],
+  );
+  const handleDeleteBlock = useCallback(async (id: string) => {
+    if (!onDeleteBlock) return;
+    const prev = localBlocks;
+    setLocalBlocks((cur) => cur.filter((x) => x.id !== id));
+    try { await onDeleteBlock(id); } catch { setLocalBlocks(prev); }
+  }, [localBlocks, onDeleteBlock]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
 
@@ -347,6 +373,33 @@ export function DayView({
             );
           })}
 
+          {/* Bloqueios de horário (indisponibilidade) — bandas não-arrastáveis */}
+          {dayBlocks.map((b) => {
+            const { top, height } = apptStyle(b.starts_at, b.duration_minutes);
+            return (
+              <div
+                key={`block-${b.id}`}
+                title={b.title ?? t("blockedLabel")}
+                style={{ position: "absolute", left: 0, right: 0, top, height, zIndex: 4 }}
+                className="rounded-[8px] border border-dashed border-black/[.18] dark:border-white/[.20] bg-[#F0EFEB] dark:bg-white/[.05] flex items-start justify-between px-[8px] py-[4px] overflow-hidden"
+              >
+                <span className="text-[10px] font-medium text-[#6B6A66] dark:text-[#9E9C97] truncate leading-[1.3]">
+                  🔒 {b.title || t("blockedLabel")}
+                </span>
+                {onDeleteBlock && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteBlock(b.id)}
+                    aria-label={t("removeBlock")}
+                    className="shrink-0 text-[#A09E98] hover:text-[#B42318] transition"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
           {/* Draggable session cards */}
           {localSessions.map((s) => (
             <DraggableDayCard
@@ -395,6 +448,7 @@ export function DayView({
           action={createSessionAction}
           confirmLinkAction={confirmLinkAction}
           emailLinkAction={emailLinkAction}
+          blockAction={blockAction}
         />
       )}
     </>

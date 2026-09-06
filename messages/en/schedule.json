@@ -23,7 +23,8 @@
     "statusUpdateError": "Couldn't update the status. Please try again.",
     "rescheduleInvalidDate": "Invalid date or time.",
     "rescheduleNotFound": "Appointment not found.",
-    "rescheduleError": "Couldn't reschedule. Please try again."
+    "rescheduleError": "Couldn't reschedule. Please try again.",
+    "blockConflict": "There's already a session or block at that time."
   },
   "new": {
     "title": "Schedule session",
@@ -65,7 +66,15 @@
     "saving": "Saving…",
     "confirm": "Confirm session",
     "errorRequired": "Please fill in the required fields.",
-    "errorGeneric": "Could not schedule the session. Please try again."
+    "errorGeneric": "Could not schedule the session. Please try again.",
+    "seriesToggle": "Schedule a series",
+    "seriesHint": "Repeats this session for the patient (e.g. a multi-session package).",
+    "seriesCount": "How many sessions",
+    "seriesInterval": "Interval",
+    "intervalDaily": "Daily",
+    "intervalWeekly": "Weekly",
+    "intervalBiweekly": "Every 2 weeks",
+    "intervalMonthly": "Monthly"
   },
   "card": {
     "patientFallback": "Patient",
@@ -153,7 +162,9 @@
       "sun": "Sun"
     },
     "delete": "Delete",
-    "deleteConfirm": "Delete this appointment? This action cannot be undone."
+    "deleteConfirm": "Delete this appointment? This action cannot be undone.",
+    "blockedLabel": "Blocked",
+    "removeBlock": "Remove block"
   },
   "modal": {
     "title": "New session",
@@ -190,7 +201,14 @@
     "done": "Done",
     "waMessage": "Hi! I've reserved a time for you. Confirm and complete your registration here: {url}",
     "createdToast": "Session scheduled",
-    "createError": "Could not schedule the session. Please try again."
+    "createError": "Could not schedule the session. Please try again.",
+    "kindSession": "Session",
+    "kindBlock": "Block",
+    "blockTitle": "Reason (optional)",
+    "blockTitlePlaceholder": "e.g. lunch, meeting, day off",
+    "blockDuration": "Duration",
+    "createBlock": "Block",
+    "blockCreatedToast": "Time blocked"
   },
   "reminder": {
     "back": "Schedule",

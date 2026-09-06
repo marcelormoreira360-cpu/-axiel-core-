@@ -20,6 +20,7 @@ export function CreateSessionModal({
   action,
   confirmLinkAction,
   emailLinkAction,
+  blockAction,
 }: {
   slot: TimeSlot | null;
   patients: PatientLite[];
@@ -28,6 +29,8 @@ export function CreateSessionModal({
   action: (formData: FormData) => Promise<void>;
   confirmLinkAction?: (formData: FormData) => Promise<ConfirmLinkResult>;
   emailLinkAction?: (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
+  /** Cria um bloqueio de horário (indisponibilidade) no slot. Habilita o modo "Bloqueio". */
+  blockAction?: (formData: FormData) => Promise<void>;
 }) {
   const t = useTranslations("schedule.modal");
   const tCommon = useTranslations("common.actions");
@@ -48,6 +51,12 @@ export function CreateSessionModal({
   };
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? DEFAULT_TYPE);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Modo do modal: agendar uma sessão x bloquear o horário (indisponibilidade).
+  const canBlock = !!blockAction;
+  const [kind, setKind] = useState<"session" | "block">("session");
+  const [blockTitle, setBlockTitle] = useState("");
+  const [blockDuration, setBlockDuration] = useState(60);
 
   // Modo: confirmar agora (cria a sessão) x enviar link de confirmação ao paciente
   const canSendLink = !!confirmLinkAction;
@@ -120,8 +129,27 @@ export function CreateSessionModal({
   }
 
   function submit(formData: FormData) {
-    if (!selectedType) return;
     setError(null);
+
+    // Modo bloqueio: não precisa de paciente nem tipo de sessão; só título + duração.
+    if (kind === "block") {
+      if (!blockAction) return;
+      formData.set("duration_minutes", String(blockDuration));
+      formData.set("title", blockTitle.trim());
+      startTransition(async () => {
+        try {
+          await blockAction(formData);
+          toast.success(t("blockCreatedToast"));
+          onClose();
+          router.refresh();
+        } catch {
+          setError(t("createError"));
+        }
+      });
+      return;
+    }
+
+    if (!selectedType) return;
     if (isNewPatient) {
       if (!newName.trim()) return;
       formData.set("new_patient_name", newName.trim());
@@ -160,8 +188,11 @@ export function CreateSessionModal({
     });
   }
 
-  const canSubmit = !!selectedType && !isPending &&
-    (isNewPatient ? newName.trim().length > 0 : !!selectedPatient);
+  const canSubmit = !isPending && (
+    kind === "block"
+      ? true
+      : !!selectedType && (isNewPatient ? newName.trim().length > 0 : !!selectedPatient)
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
@@ -276,6 +307,55 @@ export function CreateSessionModal({
           </button>
         </div>
 
+        {/* Toggle: agendar sessão x bloquear horário */}
+        {canBlock && (
+          <div className="mb-4">
+            <div className="flex rounded-[8px] border border-black/[.08] dark:border-white/[.08] overflow-hidden text-[11px]">
+              <button
+                type="button"
+                onClick={() => setKind("session")}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${kind === "session" ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
+              >
+                {t("kindSession")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setKind("block")}
+                className={`flex-1 px-3 py-[7px] transition font-medium ${kind === "block" ? "bg-[#0F1A2E] dark:bg-white/[.10] text-white" : "text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"}`}
+              >
+                {t("kindBlock")}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {kind === "block" ? (
+          <div className="mb-5 space-y-[10px]">
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-[6px] block">{t("blockTitle")}</label>
+              <input
+                type="text"
+                value={blockTitle}
+                onChange={(e) => setBlockTitle(e.target.value)}
+                placeholder={t("blockTitlePlaceholder")}
+                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] placeholder:text-[#D3D1C7] outline-none focus:border-[#0F6E56] transition"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-medium text-[#6B6A66] dark:text-[#9E9C97] mb-[6px] block">{t("blockDuration")}</label>
+              <select
+                value={blockDuration}
+                onChange={(e) => setBlockDuration(Number(e.target.value))}
+                className="w-full px-[10px] py-[8px] rounded-[8px] border border-black/[.10] dark:border-white/[.10] dark:bg-transparent text-[13px] text-[#0F1A2E] dark:text-[#E8E6E2] outline-none focus:border-[#0F6E56] transition"
+              >
+                {[15, 30, 45, 60, 90, 120, 180, 240, 480].map((m) => (
+                  <option key={m} value={m}>{t("minutes", { count: m })}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+        <>
         {/* Patient section */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-[6px]">
@@ -467,6 +547,8 @@ export function CreateSessionModal({
             )}
           </div>
         )}
+        </>
+        )}
 
         {error && (
           <p className="text-[12px] text-[#B42318] bg-[#FEF3F2] border border-[#FECDCA] rounded-[8px] px-[11px] py-[8px] mb-3">{error}</p>
@@ -486,7 +568,7 @@ export function CreateSessionModal({
             disabled={!canSubmit}
             className="flex-1 text-[12px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] disabled:opacity-40 rounded-[8px] py-[9px] transition"
           >
-            {isPending ? t("saving") : mode === "link" ? t("sendLink") : t("confirm")}
+            {isPending ? t("saving") : kind === "block" ? t("createBlock") : mode === "link" ? t("sendLink") : t("confirm")}
           </button>
         </div>
       </form>

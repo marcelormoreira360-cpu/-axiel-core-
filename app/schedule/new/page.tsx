@@ -86,17 +86,43 @@ export default async function NewAppointmentPage({
 
       if (!patientId) return { error: tf("errorRequired") };
 
-      await createAppointment({
-        clinic_id: profile.clinic_id,
-        patient_id: patientId,
-        starts_at: wallClockToUTC(date, time, await getClinicTimezone(profile.clinic_id)).toISOString(),
-        duration_minutes: duration,
-        session_type_id: sessionTypeId,
-        source,
-        notes,
-        video_url: videoUrl,
-        practitioner_id: practitionerId,
-      });
+      const tz = await getClinicTimezone(profile.clinic_id);
+
+      // Série: repete a sessão N vezes num intervalo (pacote/recorrência). count=1
+      // é o caso normal (uma sessão). A 1ª ocorrência é obrigatória; as demais que
+      // colidirem com sessão/bloqueio são puladas (série parcial), sem abortar tudo.
+      const seriesCount = Math.min(24, Math.max(1, Number(formData.get("series_count") ?? 1)));
+      const seriesInterval = String(formData.get("series_interval") ?? "weekly");
+      const occDate = (i: number): string => {
+        const [y, m, d] = date.split("-").map(Number);
+        const dt = new Date(Date.UTC(y, m - 1, d));
+        if (seriesInterval === "monthly") dt.setUTCMonth(dt.getUTCMonth() + i);
+        else {
+          const step = seriesInterval === "daily" ? 1 : seriesInterval === "biweekly" ? 14 : 7;
+          dt.setUTCDate(dt.getUTCDate() + step * i);
+        }
+        return dt.toISOString().slice(0, 10);
+      };
+
+      for (let i = 0; i < seriesCount; i++) {
+        const startsAt = wallClockToUTC(occDate(i), time, tz).toISOString();
+        try {
+          await createAppointment({
+            clinic_id: profile.clinic_id,
+            patient_id: patientId,
+            starts_at: startsAt,
+            duration_minutes: duration,
+            session_type_id: sessionTypeId,
+            source,
+            notes,
+            video_url: videoUrl,
+            practitioner_id: practitionerId,
+          });
+        } catch (e) {
+          if (i === 0) throw e; // a primeira sessão é obrigatória
+          // ocorrências seguintes que colidem são ignoradas (série parcial)
+        }
+      }
     } catch {
       return { error: tf("errorGeneric") };
     }

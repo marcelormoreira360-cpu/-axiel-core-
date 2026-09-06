@@ -19,7 +19,7 @@ import {
   startOfWeek,
 } from "@/modules/schedule/date-utils";
 import type { Appointment } from "@/lib/types";
-import { DayView } from "@/components/schedule/day-view";
+import { DayView, type BlockView } from "@/components/schedule/day-view";
 import { WeekView } from "@/components/schedule/week-view";
 import { MonthView } from "@/components/schedule/month-view";
 import type { ConfirmLinkAction, EmailLinkAction } from "@/components/schedule/grid";
@@ -47,6 +47,9 @@ export function ScheduleContainer({
   practitioners,
   cancellationWindowHours,
   clinicTimezone,
+  timeBlocks = [],
+  createBlockAction,
+  deleteBlockAction,
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
@@ -67,6 +70,10 @@ export function ScheduleContainer({
   cancellationWindowHours?: number;
   /** Fuso IANA da clínica — pré-preenche o reagendamento no wall-clock certo. */
   clinicTimezone?: string;
+  /** Bloqueios de horário (indisponibilidade) para render na agenda. */
+  timeBlocks?: BlockView[];
+  createBlockAction?: (formData: FormData) => Promise<void>;
+  deleteBlockAction?: (id: string) => Promise<void>;
 }) {
   const t = useTranslations("schedule.calendar");
   const tSnap = useTranslations("patientSnapshot");
@@ -267,6 +274,9 @@ export function ScheduleContainer({
           selectedSlot={selectedSlot}
           onReschedule={rescheduleAction}
           onResizeDuration={resizeDurationAction}
+          timeBlocks={timeBlocks}
+          blockAction={createBlockAction}
+          onDeleteBlock={deleteBlockAction}
         />
       )}
       {view === "semana" && (
