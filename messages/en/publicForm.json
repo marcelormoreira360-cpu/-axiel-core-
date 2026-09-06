@@ -31,6 +31,7 @@
     "errEmailRequired": "Enter your email to continue.",
     "errEmailInvalid": "Invalid email.",
     "errNameRequired": "Please enter your full name.",
+    "errUpload": "We couldn't upload the file. Please try again.",
     "greeting": "Hi, {name}!",
     "recognized": "You're already registered ✓",
     "foundDesc": "We found your record by the email <hl>{email}</hl>. Click continue to send your files.",

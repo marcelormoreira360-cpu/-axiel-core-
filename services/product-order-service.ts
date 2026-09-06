@@ -168,7 +168,7 @@ export async function markProductOrderPaid(
 
   const { data: order } = await supabase
     .from("product_orders")
-    .select("id, payment_status")
+    .select("id, clinic_id, payment_status, total_cents, currency")
     .eq("id", orderId)
     .maybeSingle();
   if (!order || order.payment_status === "paid") return;
@@ -182,6 +182,34 @@ export async function markProductOrderPaid(
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
+
+  // Espelha a receita no razão do ERP (source="order") para que a venda de
+  // produtos/suplementos apareça no Executivo, Fluxo de Caixa e Fechamento Mensal —
+  // que consolidam fin_entries. Idempotente pelo índice único parcial
+  // fin_entries(clinic_id, source, source_id): reentrega de webhook não duplica.
+  if ((order.total_cents ?? 0) > 0) {
+    const { error: mirrorErr } = await supabase.from("fin_entries").insert({
+      clinic_id:     order.clinic_id,
+      kind:          "revenue",
+      amount_cents:  order.total_cents,
+      currency:      order.currency ?? "BRL",
+      entry_date:    new Date().toISOString().slice(0, 10),
+      category:      "Produtos e suplementos",
+      business_unit: "clinica",
+      method:        opts?.stripePaymentIntentId ? "stripe" : null,
+      description:   `Venda de produtos (pedido ${orderId.slice(0, 8)})`,
+      source:        "order",
+      source_id:     orderId,
+    });
+    // 23505 = violação de unicidade (já espelhado): no-op idempotente.
+    if (mirrorErr && mirrorErr.code !== "23505") {
+      const { createLogger } = await import("@/lib/logger");
+      createLogger("product-order-service").error(
+        "markProductOrderPaid: falha ao espelhar receita no razão",
+        { orderId, error: mirrorErr.message },
+      );
+    }
+  }
 
   // Baixa de estoque por item (read-modify-write; volume baixo)
   const { data: items } = await supabase

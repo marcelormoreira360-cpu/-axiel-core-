@@ -99,6 +99,7 @@
     "statusHint": "Use \"Pendente\" para Zelle/transferência ainda não confirmados — depois confirme na lista de pendentes.",
     "proof": "Comprovante (opcional)",
     "proofHint": "Imagem ou PDF, até 10MB.",
+    "errProofUpload": "Não foi possível enviar o comprovante. Tente novamente.",
     "cancel": "Cancelar",
     "saving": "Salvando...",
     "submit": "Registrar pagamento"

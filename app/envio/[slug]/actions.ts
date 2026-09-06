@@ -1,7 +1,13 @@
 "use server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
-import { uploadPatientDocument } from "@/services/patient-document-service";
+import {
+  uploadPatientDocument,
+  createDocumentUploadTicket,
+  downloadPatientDocumentBytes,
+  recordPatientDocumentFromPath,
+  removePatientDocumentFile,
+} from "@/services/patient-document-service";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 
 // ── Validação de upload (rota pública — allowlist + magic bytes) ──────────────
@@ -51,6 +57,14 @@ export async function lookupPatientAction(
   const normalised = email.toLowerCase().trim();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(normalised)) return { found: false };
+  if (!clinicId) return { found: false };
+
+  // Rate limit: rota PÚBLICA sem login que confirma se um e-mail é paciente
+  // (nome + id). Sem teto vira oráculo de enumeração de PHI. 60/clínica/hora
+  // cobre o uso legítimo (paciente digitando o próprio e-mail) e barra varredura.
+  if (!(await checkRateLimitDb(`intake-lookup:${clinicId}`, 60, 60 * 60_000))) {
+    return { found: false };
+  }
 
   const supabase = createSupabaseAdminClient();
 
@@ -66,6 +80,28 @@ export async function lookupPatientAction(
   if (data) return { found: true, name: data.full_name, patientId: data.id };
   return { found: false };
 }
+
+// Ticket de upload direto navegador→storage para o intake público. O arquivo NÃO
+// passa pela função da Vercel (que corta corpo >4,5 MB); só os metadados (paths)
+// voltam no submit. Fica numa área de staging da clínica até o submit registrar.
+export async function createIntakeUploadUrlAction(
+  clinicId: string,
+  fileName: string,
+): Promise<{ ok: boolean; path?: string; token?: string; error?: string }> {
+  if (!clinicId) return { ok: false, error: "Clínica inválida." };
+  // Teto generoso p/ rota pública (20 arquivos × vários pacientes): barra abuso.
+  if (!(await checkRateLimitDb(`intake-upload:${clinicId}`, 300, 60 * 60_000))) {
+    return { ok: false, error: "Muitas solicitações. Tente novamente em alguns minutos." };
+  }
+  try {
+    const ticket = await createDocumentUploadTicket(`${clinicId}/intake-staging/`, fileName);
+    return { ok: true, path: ticket.path, token: ticket.token };
+  } catch {
+    return { ok: false, error: "Não foi possível preparar o upload." };
+  }
+}
+
+type StagedIntakeFile = { path: string; name: string; type: string; size: number };
 
 export async function submitIntakeAction(
   formData: FormData,
@@ -103,8 +139,18 @@ export async function submitIntakeAction(
   let patientId: string;
 
   if (prePatientId) {
-    // Patient was already identified in the lookup step — skip find-or-create
-    patientId = prePatientId;
+    // Patient was already identified in the lookup step — skip find-or-create.
+    // SEGURANÇA (write IDOR): o patient_id vem do corpo (cliente). É obrigatório
+    // confirmar que ele pertence a ESTA clínica antes de anexar documentos, senão
+    // um id de outra clínica permitiria envenenar o prontuário alheio.
+    const { data: owned } = await supabase
+      .from("patients")
+      .select("id")
+      .eq("id", prePatientId)
+      .eq("clinic_id", clinicId)
+      .maybeSingle();
+    if (!owned) return { error: "Paciente não encontrado. Recomece o envio." };
+    patientId = owned.id;
   } else {
     // New patient flow: name + email required
     if (!name || !email) return { error: "Nome e e-mail são obrigatórios." };
@@ -164,40 +210,62 @@ export async function submitIntakeAction(
     }
   }
 
-  // Upload files
-  const files = formData.getAll("files") as File[];
-  const validFiles = files.filter((f) => f.size > 0);
+  // Arquivos: chegam como PATHS já no storage (upload direto navegador→storage via
+  // createIntakeUploadUrlAction), não como bytes — a Vercel corta corpo >4,5 MB.
+  // Os metadados vêm em JSON no campo files_meta.
+  let staged: StagedIntakeFile[] = [];
+  const metaRaw = formData.get("files_meta");
+  if (typeof metaRaw === "string" && metaRaw.trim()) {
+    try {
+      const parsed = JSON.parse(metaRaw);
+      if (Array.isArray(parsed)) staged = parsed as StagedIntakeFile[];
+    } catch { staged = []; }
+  }
 
-  if (validFiles.length === 0 && !notes) {
+  if (staged.length === 0 && !notes) {
     return { error: "Envie ao menos um arquivo ou escreva uma observação." };
   }
 
   // Server-side file count limit (prevents zip-bomb style abuse)
-  if (validFiles.length > 20) {
+  if (staged.length > 20) {
     return { error: "Máximo de 20 arquivos por envio." };
   }
 
-  for (const file of validFiles) {
-    if (file.size > 15 * 1024 * 1024) {
-      return { error: `O arquivo "${file.name}" excede o limite de 15 MB.` };
+  const expectedPrefix = `${clinicId}/intake-staging/`;
+  for (const f of staged) {
+    // Path precisa apontar para a área de staging DESTA clínica (barra referência
+    // a arquivo de outra clínica vinda de um cliente forjado).
+    if (!f || typeof f.path !== "string" || !f.path.startsWith(expectedPrefix)) {
+      return { error: "Arquivo inválido. Recomece o envio." };
     }
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    if (!isAllowedUpload(file.type, buffer)) {
-      return { error: `Tipo de arquivo não permitido: "${file.name}". Envie PDF, imagem (JPG/PNG/WEBP/HEIC) ou texto.` };
+    const fileName = (typeof f.name === "string" && f.name) ? f.name : "arquivo";
+    let buffer: Buffer;
+    try {
+      buffer = await downloadPatientDocumentBytes(f.path);
+    } catch {
+      return { error: `Não foi possível processar "${fileName}". Tente novamente.` };
+    }
+    // Valida tamanho e magic bytes com os bytes REAIS (não confia no meta do cliente).
+    if (buffer.length > 15 * 1024 * 1024) {
+      await removePatientDocumentFile(f.path).catch(() => {});
+      return { error: `O arquivo "${fileName}" excede o limite de 15 MB.` };
+    }
+    const mime = (typeof f.type === "string" && f.type) ? f.type : "application/octet-stream";
+    if (!isAllowedUpload(mime, buffer)) {
+      await removePatientDocumentFile(f.path).catch(() => {});
+      return { error: `Tipo de arquivo não permitido: "${fileName}". Envie PDF, imagem (JPG/PNG/WEBP/HEIC) ou texto.` };
     }
     try {
-      await uploadPatientDocument(
-        buffer, file.name, file.type || "application/octet-stream",
-        file.size, patientId, clinicId, "intake", notes,
+      await recordPatientDocumentFromPath(
+        f.path, fileName, mime, buffer.length, patientId, clinicId, "intake", notes,
       );
     } catch {
-      return { error: `Erro ao enviar "${file.name}". Tente novamente.` };
+      return { error: `Erro ao enviar "${fileName}". Tente novamente.` };
     }
   }
 
   // If only notes (no files), save as text file
-  if (validFiles.length === 0 && notes) {
+  if (staged.length === 0 && notes) {
     const buf = Buffer.from(notes, "utf-8");
     await uploadPatientDocument(
       buf, "observacoes.txt", "text/plain",

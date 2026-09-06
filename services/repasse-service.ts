@@ -67,11 +67,16 @@ export async function upsertRepasseRule(
   if (error) throw error;
 }
 
-export async function deleteRepasseRule(id: string): Promise<void> {
+export async function deleteRepasseRule(clinicId: string, id: string): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.from("repasse_rules").delete().eq("id", id);
+  // Escopo por clinic_id: barra IDOR cross-tenant (mesmo com admin client no futuro).
+  const { error } = await supabase
+    .from("repasse_rules")
+    .delete()
+    .eq("id", id)
+    .eq("clinic_id", clinicId);
   if (error) throw error;
 }
 
@@ -99,16 +104,19 @@ export async function getRepasseHistory(clinicId: string): Promise<RepasseEntry[
 }
 
 export async function markRepasseAsPaid(
+  clinicId: string,
   ledgerId: string,
   notes?: string,
 ): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
   const supabase = await createSupabaseServerClient();
+  // Escopo por clinic_id: barra IDOR cross-tenant no razão de repasse.
   const { error } = await supabase
     .from("repasse_ledger")
     .update({ status: "paid", paid_at: new Date().toISOString(), notes: notes ?? null })
-    .eq("id", ledgerId);
+    .eq("id", ledgerId)
+    .eq("clinic_id", clinicId);
   if (error) throw error;
 }
 

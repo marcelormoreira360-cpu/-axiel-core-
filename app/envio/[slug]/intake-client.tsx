@@ -3,7 +3,8 @@
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { submitIntakeAction, lookupPatientAction } from "./actions";
+import { submitIntakeAction, lookupPatientAction, createIntakeUploadUrlAction } from "./actions";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 interface Props {
   clinicId: string;
@@ -132,26 +133,46 @@ export function IntakeClient({ clinicId, clinicName, logoUrl, primaryColor }: Pr
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    const fd = new FormData();
-    fd.set("clinic_id", clinicId);
-    fd.set("notes", notes);
-    files.forEach(({ file }) => fd.append("files", file));
-
-    if (patientId) {
-      // Returning patient — pass the resolved id
-      fd.set("patient_id", patientId);
-    } else {
-      // New patient — pass name/email/phone + demografia for server-side create
-      fd.set("name", name);
-      fd.set("email", email);
-      fd.set("phone", phone);
-      if (dob) fd.set("date_of_birth", dob);
-      if (sex) fd.set("sex", sex);
-      if (weightKg) fd.set("weight_kg", weightKg);
-      if (heightCm) fd.set("height_cm", heightCm);
-    }
 
     startTransition(async () => {
+      // Upload direto navegador→storage (arquivos >4,5 MB não passam por Server Action
+      // na Vercel). Cada arquivo: pega um ticket, sobe pela URL assinada, guarda o path.
+      const metas: { path: string; name: string; type: string; size: number }[] = [];
+      if (files.length > 0) {
+        const supabase = createSupabaseBrowserClient();
+        for (const { file } of files) {
+          const ticket = await createIntakeUploadUrlAction(clinicId, file.name);
+          if (!ticket.ok || !ticket.path || !ticket.token) {
+            setError(ticket.error ?? t("errUpload"));
+            return;
+          }
+          const { error: upErr } = await supabase.storage
+            .from("patient-docs")
+            .uploadToSignedUrl(ticket.path, ticket.token, file);
+          if (upErr) { setError(t("errUpload")); return; }
+          metas.push({ path: ticket.path, name: file.name, type: file.type || "application/octet-stream", size: file.size });
+        }
+      }
+
+      const fd = new FormData();
+      fd.set("clinic_id", clinicId);
+      fd.set("notes", notes);
+      fd.set("files_meta", JSON.stringify(metas));
+
+      if (patientId) {
+        // Returning patient — pass the resolved id
+        fd.set("patient_id", patientId);
+      } else {
+        // New patient — pass name/email/phone + demografia for server-side create
+        fd.set("name", name);
+        fd.set("email", email);
+        fd.set("phone", phone);
+        if (dob) fd.set("date_of_birth", dob);
+        if (sex) fd.set("sex", sex);
+        if (weightKg) fd.set("weight_kg", weightKg);
+        if (heightCm) fd.set("height_cm", heightCm);
+      }
+
       const result = await submitIntakeAction(fd);
       if (result.error) { setError(result.error); return; }
       setStep(3);

@@ -141,6 +141,65 @@ export async function hasAppointmentConflict(opts: {
   });
 }
 
+// Mensagem canônica de conflito — usada no check pré-insert E na re-checagem
+// pós-insert; callers (booking público → 409 SLOT_TAKEN) dependem dela.
+const CONFLICT_MESSAGE = "Conflito de horário: já existe uma sessão nesse período.";
+
+/**
+ * Mitiga a CORRIDA de double-booking. O check pré-insert (`hasAppointmentConflict`)
+ * é read-then-write sem lock: dois bookings simultâneos passam ambos e inserem.
+ * Depois do insert, reconsulta os agendamentos ativos que sobrepõem (mesma
+ * semântica: respeita `allow_double_booking` e trata practitioner nulo como recurso
+ * único) e, se existir um conflitante ESTRITAMENTE mais antigo (created_at, desempate
+ * por id), este agendamento é o "perdedor" da corrida → é apagado e lançamos conflito.
+ * Desempate determinístico garante que exatamente UM dos dois recua. Reduz muito a
+ * janela de corrida (não a elimina por completo — o fim definitivo seria um RPC com
+ * advisory lock).
+ */
+async function resolveBookingRace(
+  appt: { id: string; clinic_id: string; starts_at: string; duration_minutes: number | null; practitioner_id?: string | null; created_at: string },
+): Promise<void> {
+  const supabase = createSupabaseAdminClient();
+  const { data: clinic } = await supabase
+    .from("clinics")
+    .select("allow_double_booking")
+    .eq("id", appt.clinic_id)
+    .maybeSingle();
+  if (clinic?.allow_double_booking) return;
+
+  const start = new Date(appt.starts_at);
+  const end = new Date(start.getTime() + (appt.duration_minutes ?? 60) * 60_000);
+  const windowStart = new Date(start.getTime() - 8 * 60 * 60_000).toISOString();
+
+  const { data } = await supabase
+    .from("appointments")
+    .select("id, starts_at, duration_minutes, practitioner_id, created_at")
+    .eq("clinic_id", appt.clinic_id)
+    .gte("starts_at", windowStart)
+    .lt("starts_at", end.toISOString())
+    .not("status", "in", '("cancelled","cancelled_notice","late_cancel","no_show")');
+
+  const mine = appt.practitioner_id ?? null;
+  const loses = (data ?? []).some((a) => {
+    if (a.id === appt.id) return false;
+    const aStart = new Date(a.starts_at as string);
+    const aEnd = new Date(aStart.getTime() + ((a.duration_minutes as number | null) ?? 60) * 60_000);
+    const overlaps = aEnd > start && aStart < end;
+    if (!overlaps) return false;
+    const aPract = a.practitioner_id as string | null;
+    const samePractitioner = aPract === null || mine === null || aPract === mine;
+    if (!samePractitioner) return false;
+    // Desempate: o mais antigo vence; empate de created_at resolve por id.
+    const aCreated = a.created_at as string;
+    return aCreated < appt.created_at || (aCreated === appt.created_at && (a.id as string) < appt.id);
+  });
+
+  if (loses) {
+    await supabase.from("appointments").delete().eq("id", appt.id);
+    throw new Error(CONFLICT_MESSAGE);
+  }
+}
+
 export async function createAppointment(input: {
   clinic_id: string;
   patient_id: string;
@@ -179,7 +238,7 @@ export async function createAppointment(input: {
   } = await supabase.auth.getUser();
 
   if (!skipConflictCheck && await hasAppointmentConflict(apptInput)) {
-    throw new Error("Conflito de horário: já existe uma sessão nesse período.");
+    throw new Error(CONFLICT_MESSAGE);
   }
 
   const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)";
@@ -203,6 +262,19 @@ export async function createAppointment(input: {
     throw error;
   }
   const appt = data as Appointment;
+
+  // Fecha a corrida de double-booking: se dois bookings simultâneos passaram ambos
+  // no check pré-insert, o mais novo recua aqui (apaga a própria linha e lança).
+  if (!skipConflictCheck) {
+    await resolveBookingRace({
+      id: appt.id,
+      clinic_id: appt.clinic_id,
+      starts_at: appt.starts_at,
+      duration_minutes: appt.duration_minutes ?? null,
+      practitioner_id: (appt as { practitioner_id?: string | null }).practitioner_id ?? null,
+      created_at: appt.created_at,
+    });
+  }
 
   // Sessão presencial "agora": grava o agendamento, mas não dispara nada ao paciente.
   if (!skipSideEffects) {

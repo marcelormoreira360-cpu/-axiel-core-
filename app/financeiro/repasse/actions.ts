@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentClinic } from "@/services/clinic-service";
+import { requireFinanceEdit } from "@/lib/require-finance-access";
 import {
   upsertRepasseRule,
   deleteRepasseRule,
@@ -10,6 +11,7 @@ import {
 } from "@/services/repasse-service";
 
 export async function saveRepasseRuleAction(formData: FormData): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -31,8 +33,12 @@ export async function saveRepasseRuleAction(formData: FormData): Promise<{ error
 }
 
 export async function deleteRepasseRuleAction(ruleId: string): Promise<{ error?: string }> {
+  await requireFinanceEdit();
+  const clinic = await getCurrentClinic();
+  if (!clinic) return { error: "Clínica não encontrada." };
+
   try {
-    await deleteRepasseRule(ruleId);
+    await deleteRepasseRule(clinic.id, ruleId);
     revalidatePath("/financeiro/repasse");
     return {};
   } catch (e) {
@@ -41,6 +47,7 @@ export async function deleteRepasseRuleAction(ruleId: string): Promise<{ error?:
 }
 
 export async function calculateRepasseAction(periodMonth: string): Promise<{ error?: string }> {
+  await requireFinanceEdit();
   const clinic = await getCurrentClinic();
   if (!clinic) return { error: "Clínica não encontrada." };
 
@@ -57,8 +64,12 @@ export async function markRepassePaidAction(
   ledgerId: string,
   notes?: string,
 ): Promise<{ error?: string }> {
+  await requireFinanceEdit();
+  const clinic = await getCurrentClinic();
+  if (!clinic) return { error: "Clínica não encontrada." };
+
   try {
-    await markRepasseAsPaid(ledgerId, notes);
+    await markRepasseAsPaid(clinic.id, ledgerId, notes);
     revalidatePath("/financeiro/repasse");
     return {};
   } catch (e) {

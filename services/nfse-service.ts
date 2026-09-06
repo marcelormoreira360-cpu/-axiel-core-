@@ -205,13 +205,13 @@ export async function syncNfseStatus(
   const cfg = config ?? (await getNfseConfig(clinicId));
   if (!cfg) throw new Error("Configuração NFSe não encontrada.");
 
-  // Get external ID if not provided
+  // Get external ID if not provided (escopo por clinic_id: barra IDOR cross-tenant).
   if (!externalId) {
-    const { data } = await supabase.from("nfse_invoices").select("nfse_external_id").eq("id", localId).single();
+    const { data } = await supabase.from("nfse_invoices").select("nfse_external_id").eq("id", localId).eq("clinic_id", clinicId).single();
     externalId = (data?.nfse_external_id as string | null) ?? undefined;
   }
   if (!externalId) {
-    const { data } = await supabase.from("nfse_invoices").select("*").eq("id", localId).single();
+    const { data } = await supabase.from("nfse_invoices").select("*").eq("id", localId).eq("clinic_id", clinicId).single();
     return data as NfseInvoice;
   }
 
@@ -221,7 +221,7 @@ export async function syncNfseStatus(
   );
 
   if (!res.ok) {
-    const { data } = await supabase.from("nfse_invoices").select("*").eq("id", localId).single();
+    const { data } = await supabase.from("nfse_invoices").select("*").eq("id", localId).eq("clinic_id", clinicId).single();
     return data as NfseInvoice;
   }
 
@@ -251,6 +251,7 @@ export async function syncNfseStatus(
     .from("nfse_invoices")
     .update(updates)
     .eq("id", localId)
+    .eq("clinic_id", clinicId)
     .select()
     .single();
 
@@ -264,7 +265,8 @@ export async function cancelNfse(clinicId: string, localId: string): Promise<voi
   const cfg = await getNfseConfig(clinicId);
   if (!cfg) throw new Error("Configuração NFSe não encontrada.");
 
-  const { data } = await supabase.from("nfse_invoices").select("nfse_external_id").eq("id", localId).single();
+  // Escopo por clinic_id: barra IDOR cross-tenant no cancelamento.
+  const { data } = await supabase.from("nfse_invoices").select("nfse_external_id").eq("id", localId).eq("clinic_id", clinicId).single();
   const externalId = data?.nfse_external_id as string | null;
   if (!externalId) throw new Error("Nota ainda não foi emitida.");
 
@@ -281,5 +283,5 @@ export async function cancelNfse(clinicId: string, localId: string): Promise<voi
   await supabase.from("nfse_invoices").update({
     status:       "cancelled",
     cancelled_at: new Date().toISOString(),
-  }).eq("id", localId);
+  }).eq("id", localId).eq("clinic_id", clinicId);
 }

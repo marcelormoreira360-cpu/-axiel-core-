@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { registerPaymentAction } from "./actions";
+import { registerPaymentAction, createPaymentProofUploadUrlAction } from "./actions";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const METHOD_KEYS = ["pix", "boleto", "credit_card", "debit_card", "cash", "transfer", "insurance", "other"] as const;
 
@@ -37,6 +38,22 @@ export function RegisterPaymentModal({
     setError(null);
     const formData = new FormData(e.currentTarget);
     startTransition(async () => {
+      // Comprovante: sobe DIRETO navegador→storage (arquivo >4,5 MB não passa por
+      // Server Action na Vercel); manda só o path.
+      const proof = formData.get("proof");
+      formData.delete("proof");
+      if (proof instanceof File && proof.size > 0) {
+        const pid = (formData.get("patient_id") as string) || "";
+        if (!pid) { setError(t("selectPatient")); return; }
+        const ticket = await createPaymentProofUploadUrlAction(pid, proof.name);
+        if (!ticket.ok || !ticket.path || !ticket.token) { setError(ticket.error ?? t("errProofUpload")); return; }
+        const supabase = createSupabaseBrowserClient();
+        const { error: upErr } = await supabase.storage
+          .from("patient-docs")
+          .uploadToSignedUrl(ticket.path, ticket.token, proof);
+        if (upErr) { setError(t("errProofUpload")); return; }
+        formData.set("proof_path", ticket.path);
+      }
       const result = await registerPaymentAction(formData);
       if (result.error) { setError(result.error); return; }
       onSuccess();
