@@ -774,11 +774,10 @@ export async function buildNeuroIdSupplementPdf(opts: {
     doc.moveDown(0.3);
     doc.font("Times-Bold").fontSize(11.5).fillColor(INK).text(it.nome.trim(), MARGIN, doc.y, { width: CONTENT_W });
     doc.moveDown(0.1);
+    // Documento ao paciente: só nome + forma + dose + como tomar (sem "Objetivo"/"Obs.").
     line(s.lForm, it.forma);
     line(s.lDose, it.dose_sugerida);
     line(s.lHow, it.como_tomar);
-    line(s.lGoal, it.objetivo);
-    line(s.lNote, it.observacao);
 
     // Link de compra só nos EUA, e só quando houver link (do profissional/catálogo).
     if (opts.country === "US" && it.buy_url?.trim()) {
