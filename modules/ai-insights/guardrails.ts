@@ -142,16 +142,24 @@ natural das seções acima, no MESMO documento contínuo (NÃO é um documento s
   de sessões, "protocolo" ou "exame".
 - proximo_passo: o primeiro passo concreto do cuidado, em convite ("vamos começar por...").
 - formato_atendimento: "remoto", "presencial" ou "hibrido", conforme os dados.
-- suplementacao_stage: quando houver suplementação, aponte que ela vem no Documento 3 ("ponteiro_doc3"); se
+- suplementacao_stage: quando houver suplementação, aponte que ela vem no documento de Suplementação, o Documento 2 ("ponteiro_doc3", token mantido por compatibilidade); se
   faltar dado de segurança (medicação em uso, gestação, condições), use "pendente_dados_seguranca"; senão "nao_iniciada".
 - observacao: aviso de que não substitui avaliação médica/exames/condutas prescritas.
 
-DOCUMENTO 3 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
+DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
 - BASE OBRIGATÓRIA: sugira SOMENTE a partir dos dados reais do paciente (avaliação do terapeuta, questionários,
   exames, Mapa Bio³, achados dos relatórios). Correlacione cada item a um achado; nunca sugira genérico "de prateleira".
   Se os dados forem escassos, sugira poucos itens (ou nenhum) e diga em observacoes_gerais que faltam dados.
 - SEGURANÇA: respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as medicações em uso
   (prescriptions); sinalize possíveis interações em "observacao"; deixe claro que são opções para o profissional validar.
+- CAMADA 2 — EXAME DE CABELO (quando houver teste_capilar em functional_exams): a suplementação é o LUGAR ÚNICO do que o
+  paciente toma; incorpore aqui os achados do exame de cabelo além da neurometria/bioemocional (Camada 1):
+  • os itens "fora da faixa"/baixos do exame (ex.: colágeno, antocianidinas/polifenóis, minerais/vitaminas abaixo da faixa,
+    cepas de microbiota fora da faixa → probiótico) viram candidatos a suplemento, cada um ligado ao achado.
+  • EVITE sugerir suplementos cujo INGREDIENTE aparece em ALTA reatividade no exame (ex.: se whey/lácteos reativos, NÃO
+    sugira proteína de whey; se própolis reativo, evite fórmulas com própolis) — registre o cuidado em "observacao".
+  • NÃO duplique o que já está no protocolo/plano atual do paciente; o Documento 3 aponta essa integração, mas o suplemento
+    em si fica SÓ aqui (Documento 2).
 - itens: lista de { nome, objetivo, dose_sugerida, forma, como_tomar, observacao }.
   • nome: só o nome do suplemento/ativo (ex.: "Magnésio glicinato", "Ômega-3 EPA/DHA"). Preencha forma (cápsula/pó/
     sublingual/etc.), dose_sugerida e como_tomar (quando/como tomar, ex.: "1x ao dia à noite, com alimento").
@@ -166,6 +174,44 @@ DOCUMENTO 3 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
     input_data.supplement_context.catalog (marcas de confiança da clínica). Use os nomes/formas desse catálogo como
     referência quando fizer sentido clínico, MAS na saída escreva apenas o nome genérico + forma + como tomar (sem marca).
     Não invente link nem marca.
+
+DOCUMENTO 3 — "relatorio_hipersensibilidade" = RELATÓRIO INTEGRATIVO DE HIPERSENSIBILIDADE / TESTE CAPILAR
+(documento SEPARADO; rascunho que EXIGE aprovação humana). Estrutura RICA, no padrão do modelo IFWC:
+- CONDIÇÃO OBRIGATÓRIA: só preencha se, em input_data.functional_exams, houver um exame "teste_capilar"
+  (ou hipersensibilidade/biorressonância de reatividade) COM dados no summary. Senão, OMITA o campo por completo.
+- BASE: use SOMENTE o que aparece no exame (o summary do teste_capilar traz REATIVIDADE ALTA e MODERADA por
+  categoria, e NÍVEIS "fora da faixa"). Nomeie os itens de verdade — não resuma como "vários".
+- introducao: 1–2 frases dizendo que o relatório reúne, em linguagem simples, o que o exame mostrou e o que fazer.
+- visao_geral: { importante (aviso de que biorressonância é complementar/qualitativa, não quantifica nem
+  diagnostica), quadro (retrato do caso ligando ao Documento 1), principais_achados ("Os principais achados se
+  concentram em: ..."), prioridade_funcional ("Prioridade funcional: ...") }.
+- padroes: tabela de { padrao, interpretacao } — padrões Neuro ID (ex.: intestino-cérebro, inflamatório/carga
+  hepática, sensibilidade cumulativa, carga ambiental/dérmica, eixo tireoidiano, predomínio simpático).
+- achados_prioritarios: tabela de { area, achados, prioridade } cobrindo Alimentos alta/moderada, Vegan, Aditivos,
+  Metais, Nutrientes, Microbiota, Digestão, Hormonal/Tireoide, Anti-aging, Pele/ambiente, Não-alimentar
+  (só as áreas com achado). Em "achados" nomeie os itens; em "prioridade" a conduta.
+- retirada_alta: tabela de { grupo, itens } — a LISTA OPERACIONAL de retirada de ALTA reatividade, agrupada
+  (Lácteos, Cereais com glúten, Bebidas alcoólicas/fermentadas, Coco, Leguminosas/sementes, Proteínas animais,
+  Cogumelos, Frutas/condimentos...). Em "itens" liste TODOS por extenso.
+- retirada_moderada: os itens de reatividade MODERADA a evitar/reduzir na fase inicial (nomeados).
+- relacao_sistema_nervoso: parágrafo Neuro ID (primeiro regula o corpo; como a carga mantém o SNA em defesa).
+- eixos: { titulo, descricao } (intestino-cérebro, fígado-detox, tireoidiano-SNA).
+- fases: DIETA DE ELIMINAÇÃO em fases { titulo, descricao }: "1. Eliminação estruturada", "2. Detox e modulação
+  intestinal", "3. Substituição inteligente", "4. Reintrodução".
+- plano_alimentar: bullets práticos (comida de verdade, substituições, evitar ultraprocessados/códigos E).
+- implicacoes_suplementacao: { texto (as fórmulas ficam no Documento 2), apoiar[{titulo,descricao}] (o que o exame
+  sugere apoiar), pontos_atencao[{titulo,descricao}] (ex.: whey/lácteos; não duplicar itens do protocolo) }.
+  NUNCA cite marca; o detalhe de suplemento fica só no Documento 2.
+- monitoramento: bullets (reavaliar 15/30/60 dias; reintroduzir um a um após a pausa).
+- resumo_executivo: parágrafo "Prioridade das próximas 8 semanas: ..." caloroso e de parceria.
+- observacoes_gerais: aviso final (reatividade não é alergia/diagnóstico; não substitui avaliação médica).
+- Os NÍVEIS "fora da faixa" (minerais/vitaminas/hormônios baixos) entram em achados_prioritarios e em
+  implicacoes_suplementacao.apoiar, MAS o suplemento em si fica só no Documento 2.
+- observacoes_gerais: aviso de que reatividade NÃO é alergia nem diagnóstico e não substitui avaliação médica.
+- LINGUAGEM PRUDENTE (obrigatória): "o exame registrou reatividade a…", "sugere sensibilidade a…"; NUNCA "alergia",
+  "intolerância" fechada ou diagnóstico. Uso FUNCIONAL: sinal para observar → retirar → reintroduzir, não doença.
+- REGRA DE OURO: este documento NÃO carrega suplemento próprio. Toda suplementação fica no Documento 2. Se um achado
+  do cabelo pedir suplemento, ele entra no Documento 2, não aqui.
 
 Preencha também: structured_summary (overview curto e acessível ao paciente; current_status),
 patterns_and_correlations, practitioner_review_points e data_limitations.

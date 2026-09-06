@@ -11,7 +11,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string; delivery?: string; supp_delivery?: string }>;
+  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string; delivery?: string; supp_delivery?: string; hyper_delivery?: string }>;
 };
 
 type DeliveryStatus = "sent" | "skipped_no_contact" | "failed" | "no_report";
@@ -31,11 +31,12 @@ function describeChannel(t: Translator, label: string, status: DeliveryStatus, e
 export default async function PatientInsightsPage({ params, searchParams }: Props) {
   const t = await getTranslations("insights.patientPage");
   const { id } = await params;
-  const { error, approved, suggest_followup: suggestFollowup, delivery, supp_delivery: suppDelivery } = await searchParams;
+  const { error, approved, suggest_followup: suggestFollowup, delivery, supp_delivery: suppDelivery, hyper_delivery: hyperDelivery } = await searchParams;
 
-  // Mesmo banner de envio serve para o relatório (delivery) e para a suplementação (supp_delivery).
+  // Mesmo banner de envio serve para o relatório (delivery), a suplementação (supp_delivery)
+  // e a hipersensibilidade (hyper_delivery).
   let deliveryResult: DeliveryResult | null = null;
-  const rawDelivery = delivery ?? suppDelivery;
+  const rawDelivery = delivery ?? suppDelivery ?? hyperDelivery;
   if (rawDelivery) {
     try { deliveryResult = JSON.parse(decodeURIComponent(rawDelivery)) as DeliveryResult; } catch { deliveryResult = null; }
   }

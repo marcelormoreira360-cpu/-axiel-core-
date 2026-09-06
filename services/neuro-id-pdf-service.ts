@@ -7,7 +7,7 @@
  */
 
 import PDFDocument from "pdfkit";
-import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao } from "@/lib/types";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao, NeuroRelatorioHipersensibilidade } from "@/lib/types";
 import { hasPersuasiveDoc2, bio3ProseHasPercent } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, dysfunctionToBalance, labelFor } from "@/modules/neuro-id/bands";
@@ -73,22 +73,25 @@ function drawHeader(doc: Doc, logo: Buffer | null) {
 }
 function drawFooter(doc: Doc, brand: ClinicBrand) {
   const tagline = (brand.tagline ?? "").trim();
-  const y = 760;
   doc.save();
-  doc.moveTo(MARGIN, y).lineTo(PAGE_W - MARGIN, y).lineWidth(0.6).strokeColor("#D9D6E4").stroke();
+  // Faixa de rodapé com o MESMO gradiente do topo + o lema em branco centralizado
+  // (espelha o papel timbrado do Neuro ID). Só desenha o lema se a clínica tiver
+  // tagline configurada (report_tagline) — multi-tenant: outras clínicas põem o seu.
+  const bandH = 22;
+  const bandY = 792 - 30; // faixa no rodapé, com ~8pt de folga até a borda
+  const grad = doc.linearGradient(MARGIN, 0, PAGE_W - MARGIN, 0);
+  grad.stop(0, GRAD[0]).stop(0.5, GRAD[1]).stop(1, GRAD[2]);
+  doc.roundedRect(MARGIN, bandY, CONTENT_W, bandH, 6).fill(grad);
   if (tagline) {
-    // Escrever na área de rodapé (abaixo da margem inferior) sem disparar uma
-    // nova página: zera margins.bottom durante o text() e restaura em seguida.
-    // Sem isto, o texto fluido em y>margem força addPage → páginas em branco e a
-    // tagline "vaza" para o topo da página seguinte, sobrepondo o título.
+    // Escrever sobre a faixa (abaixo da margem inferior) sem disparar nova página:
+    // zera margins.bottom durante o text() e restaura em seguida. Sem isto, texto
+    // em y>margem força addPage → páginas em branco e o lema vaza para a próxima.
     const prevBottom = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
     try {
-      doc.font("Helvetica").fontSize(8.5).fillColor("#8C86A6")
-        .text(tagline.toUpperCase(), MARGIN, y + 10, { width: CONTENT_W, align: "center", characterSpacing: 1.4, lineBreak: false });
+      doc.font("Helvetica").fontSize(8).fillColor("#ffffff")
+        .text(tagline.toUpperCase(), MARGIN, bandY + 7, { width: CONTENT_W, align: "center", characterSpacing: 1.6, lineBreak: false });
     } finally {
-      // Restaura sempre: margem em 0 vazaria para as páginas seguintes (via
-      // pageAdded) e quebraria a paginação de relatórios longos.
       doc.page.margins.bottom = prevBottom;
     }
   }
@@ -807,6 +810,285 @@ export async function buildNeuroIdSupplementPdf(opts: {
       doc.moveDown(0.15);
     }
   }
+
+  return pdfToBuffer(doc);
+}
+
+// ── DOCUMENTO 3 — Relatório de Hipersensibilidade (exame de cabelo; documento próprio) ──
+// Só existe quando o paciente fez o teste capilar. NÃO carrega suplemento (aponta p/ Doc 2).
+// Linguagem prudente: reatividade ≠ alergia/diagnóstico.
+const TEAL = "#0F6E56";
+const HYPER_STRINGS = {
+  BR: {
+    title: "Relatório Integrativo de Hipersensibilidade",
+    subtitle: "Análise funcional baseada no exame de cabelo (biorressonância) e protocolo Neuro ID",
+    draft: "Rascunho — exige aprovação do profissional antes de qualquer uso.",
+    important: "Importante",
+    s1: "1. Visão geral do caso",
+    mainFindings: "Principais achados",
+    priority: "Prioridade funcional",
+    s2: "2. Padrões identificados",
+    colPattern: "Padrão Neuro ID", colInterp: "Interpretação funcional",
+    s3: "3. Resultados principais do exame",
+    s31: "3.1 Achados prioritários",
+    colArea: "Área", colFindings: "Achados", colPriority: "Prioridade",
+    s32: "3.2 Lista operacional de retirada",
+    removalHigh: "Retirar — alta prioridade",
+    removalModerate: "Evitar/reduzir na fase inicial — reatividade moderada",
+    s4: "4. Relação com o sistema nervoso e identidade corporal",
+    s5: "5. Estratégia terapêutica em fases",
+    colPhase: "Fase", colConduct: "Conduta",
+    s6: "6. Plano alimentar prático",
+    s7: "7. Implicações para a suplementação",
+    support: "O que o exame sugere apoiar (detalhado no Documento 2)",
+    attention: "Pontos de atenção",
+    s8: "8. Monitoramento e reavaliação",
+    s9: "9. Resumo executivo para o paciente",
+    annex: "Anexo — Diário simplificado de reintrodução",
+    colDate: "Data", colFood: "Alimento testado", colQty: "Quantidade", colSymptoms: "Sintomas 0–72h", colAction: "Conduta",
+    pointer: "A suplementação, quando houver, está no Documento 2 (Protocolo de Suplementação).",
+    footer: "Relatório educativo e integrativo — não substitui diagnóstico ou acompanhamento médico.",
+  },
+  US: {
+    title: "Integrative Hypersensitivity Report",
+    subtitle: "Functional analysis based on the hair test (bioresonance) and Neuro ID protocol",
+    draft: "Draft — requires professional approval before any use.",
+    important: "Important",
+    s1: "1. Case overview",
+    mainFindings: "Main findings",
+    priority: "Functional priority",
+    s2: "2. Identified patterns",
+    colPattern: "Neuro ID pattern", colInterp: "Functional interpretation",
+    s3: "3. Main test results",
+    s31: "3.1 Priority findings",
+    colArea: "Area", colFindings: "Findings", colPriority: "Priority",
+    s32: "3.2 Operational removal list",
+    removalHigh: "Remove — high priority",
+    removalModerate: "Avoid/reduce in the initial phase — moderate reactivity",
+    s4: "4. Relationship with the nervous system and body identity",
+    s5: "5. Phased therapeutic strategy",
+    colPhase: "Phase", colConduct: "Approach",
+    s6: "6. Practical meal plan",
+    s7: "7. Implications for supplementation",
+    support: "What the test suggests supporting (detailed in Document 2)",
+    attention: "Points of attention",
+    s8: "8. Monitoring and reassessment",
+    s9: "9. Executive summary for the patient",
+    annex: "Appendix — Simplified reintroduction diary",
+    colDate: "Date", colFood: "Food tested", colQty: "Amount", colSymptoms: "Symptoms 0–72h", colAction: "Action",
+    pointer: "Supplementation, when applicable, is in Document 2 (Supplement Protocol).",
+    footer: "Educational and integrative report — does not replace diagnosis or medical care.",
+  },
+} as const;
+
+export async function buildNeuroIdHypersensitivityPdf(opts: {
+  relatorio: NeuroRelatorioHipersensibilidade;
+  country: "BR" | "US";
+  patientName?: string | null;
+  clinic?: ClinicBrand;
+}): Promise<Buffer> {
+  const s = HYPER_STRINGS[opts.country];
+  const r = opts.relatorio;
+  const brand = opts.clinic ?? {};
+  const logo = await fetchLogo(brand.logoUrl);
+
+  const doc = new PDFDocument({
+    margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
+    size: "LETTER",
+    info: { Title: s.title, Author: brand.name ?? "AXIEL Core" },
+  });
+  let decorating = false;
+  const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
+  decorate();
+  doc.on("pageAdded", () => { decorate(); resetBody(doc); });
+  resetBody(doc);
+
+  // PDFKit quebra texto automaticamente na margem inferior (altura da página − BOTTOM).
+  // A tabela é desenhada célula a célula, então precisa mover a linha inteira ANTES de
+  // cruzar essa margem — senão o PDFKit pagina no meio da célula. Deixa uma folga.
+  const PAGE_BOTTOM = 792 - BOTTOM - 8;
+  const PAD = 6;
+
+  // Tabela com cabeçalho teal, células com quebra de linha e quebra de página
+  // (re-desenha o cabeçalho no topo de cada página). widths somam CONTENT_W.
+  const drawTable = (headers: string[], rows: string[][], widths: number[]) => {
+    const hasHeader = headers.some((h) => h.trim().length > 0);
+    const drawHeaderRow = () => {
+      if (!hasHeader) return;
+      const h = 20;
+      const top = doc.y;
+      let x = MARGIN;
+      doc.rect(MARGIN, top, CONTENT_W, h).fill(TEAL);
+      headers.forEach((head, i) => {
+        doc.font("Helvetica-Bold").fontSize(8.5).fillColor("#ffffff").text(head, x + PAD, top + PAD, { width: widths[i] - PAD * 2 });
+        x += widths[i];
+      });
+      doc.y = top + h;
+    };
+    ensureSpace(doc, 60);
+    drawHeaderRow();
+    let zebra = false;
+    for (const row of rows) {
+      const heights = row.map((cell, i) => doc.font("Helvetica").fontSize(8.5).heightOfString(cell || "", { width: widths[i] - PAD * 2, lineGap: 1 }));
+      const rowH = Math.max(16, ...heights) + PAD * 2;
+      if (doc.y + rowH > PAGE_BOTTOM) { doc.addPage(); drawHeaderRow(); zebra = false; }
+      const top = doc.y; // topo FIXO da linha — todas as células alinham por ele
+      if (zebra) doc.rect(MARGIN, top, CONTENT_W, rowH).fill("#F4F2EE");
+      doc.rect(MARGIN, top, CONTENT_W, rowH).strokeColor("#E2DFD8").lineWidth(0.5).stroke();
+      let x = MARGIN;
+      row.forEach((cell, i) => {
+        doc.font("Helvetica").fontSize(8.5).fillColor(INK).text(cell || "", x + PAD, top + PAD, { width: widths[i] - PAD * 2, lineGap: 1 });
+        x += widths[i];
+      });
+      doc.y = top + rowH;
+      zebra = !zebra;
+    }
+    doc.moveDown(0.5);
+    doc.x = MARGIN;
+  };
+
+  const numberedTitle = (title: string) => {
+    ensureSpace(doc, 60); doc.moveDown(0.4);
+    doc.font("Helvetica-Bold").fontSize(13).fillColor(TEAL).text(title, MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.3);
+  };
+  const subTitle = (title: string) => {
+    ensureSpace(doc, 40); doc.moveDown(0.2);
+    doc.font("Helvetica-Bold").fontSize(10.5).fillColor(TEAL).text(title, MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.2);
+  };
+  const boldLabel = (label: string, value?: string | null) => {
+    if (!value?.trim()) return;
+    ensureSpace(doc, 30);
+    doc.font("Times-Bold").fontSize(10).fillColor(INK).text(`${label}: `, MARGIN, doc.y, { continued: true });
+    doc.font("Times-Roman").fillColor(MUTED).text(value.trim(), { width: CONTENT_W, align: "justify", lineGap: 2 });
+    doc.moveDown(0.2);
+  };
+  const bullets = (items: string[]) => {
+    for (const it of items) {
+      if (!it?.trim()) continue;
+      ensureSpace(doc, 24);
+      doc.font("Times-Roman").fontSize(10).fillColor(MUTED).text(`•  ${it.trim()}`, MARGIN, doc.y, { width: CONTENT_W, lineGap: 2 });
+      doc.moveDown(0.1);
+    }
+  };
+
+  docTitle(doc, s.title, s.subtitle);
+
+  // Tabela de identificação (Paciente / Exame / Plano...)
+  const idRows: string[][] = [];
+  if (opts.patientName) idRows.push(["Paciente", opts.patientName]);
+  idRows.push(["Documento", "3 — Relatório de Hipersensibilidade (módulo do exame de cabelo)"]);
+  if (idRows.length) drawTable(["", ""], idRows, [150, CONTENT_W - 150]);
+
+  doc.font("Times-Italic").fontSize(9.5).fillColor("#5B3FA0").text(s.draft, MARGIN, doc.y, { width: CONTENT_W });
+  doc.moveDown(0.4);
+
+  if (r.introducao) paragraph(doc, r.introducao);
+
+  // 1. Visão geral
+  if (r.visao_geral) {
+    numberedTitle(s.s1);
+    boldLabel(s.important, r.visao_geral.importante);
+    paragraph(doc, r.visao_geral.quadro);
+    boldLabel(s.mainFindings, r.visao_geral.principais_achados);
+    boldLabel(s.priority, r.visao_geral.prioridade_funcional);
+  }
+
+  // 2. Padrões identificados (tabela)
+  if (r.padroes.length) {
+    numberedTitle(s.s2);
+    drawTable([s.colPattern, s.colInterp], r.padroes.map((p) => [p.padrao, p.interpretacao]), [170, CONTENT_W - 170]);
+  }
+
+  // 3. Resultados principais
+  if (r.achados_prioritarios.length || r.retirada_alta.length || r.retirada_moderada) {
+    numberedTitle(s.s3);
+    if (r.achados_prioritarios.length) {
+      subTitle(s.s31);
+      drawTable([s.colArea, s.colFindings, s.colPriority],
+        r.achados_prioritarios.map((a) => [a.area, a.achados, a.prioridade]),
+        [110, CONTENT_W - 110 - 120, 120]);
+    }
+    if (r.retirada_alta.length || r.retirada_moderada) {
+      subTitle(s.s32);
+      if (r.retirada_alta.length) {
+        doc.font("Helvetica-Bold").fontSize(9.5).fillColor(INK).text(s.removalHigh, MARGIN, doc.y, { width: CONTENT_W });
+        doc.moveDown(0.2);
+        for (const g of r.retirada_alta) {
+          if (!g.grupo?.trim() && !g.itens?.trim()) continue;
+          ensureSpace(doc, 28);
+          doc.font("Times-Bold").fontSize(10).fillColor(INK).text(`${g.grupo}: `, MARGIN, doc.y, { continued: true });
+          doc.font("Times-Roman").fillColor(MUTED).text(g.itens, { width: CONTENT_W, align: "justify", lineGap: 2 });
+          doc.moveDown(0.15);
+        }
+      }
+      boldLabel(s.removalModerate, r.retirada_moderada);
+    }
+  }
+
+  // 4. Relação com o sistema nervoso
+  if (r.relacao_sistema_nervoso || r.eixos.length) {
+    numberedTitle(s.s4);
+    paragraph(doc, r.relacao_sistema_nervoso);
+    for (const e of r.eixos) {
+      if (!e.titulo?.trim() && !e.descricao?.trim()) continue;
+      ensureSpace(doc, 28);
+      doc.font("Times-Bold").fontSize(10).fillColor(INK).text(`•  ${e.titulo}: `, MARGIN, doc.y, { continued: true });
+      doc.font("Times-Roman").fillColor(MUTED).text(e.descricao, { width: CONTENT_W, align: "justify", lineGap: 2 });
+      doc.moveDown(0.1);
+    }
+  }
+
+  // 5. Estratégia em fases (tabela)
+  if (r.fases.length) {
+    numberedTitle(s.s5);
+    drawTable([s.colPhase, s.colConduct], r.fases.map((f) => [f.titulo, f.descricao]), [150, CONTENT_W - 150]);
+  }
+
+  // 6. Plano alimentar prático
+  if (r.plano_alimentar.length) {
+    numberedTitle(s.s6);
+    bullets(r.plano_alimentar);
+  }
+
+  // 7. Implicações para a suplementação
+  if (r.implicacoes_suplementacao) {
+    numberedTitle(s.s7);
+    paragraph(doc, r.implicacoes_suplementacao.texto);
+    if (r.implicacoes_suplementacao.apoiar.length) {
+      subTitle(s.support);
+      for (const a of r.implicacoes_suplementacao.apoiar) boldLabel(a.titulo, a.descricao);
+    }
+    if (r.implicacoes_suplementacao.pontos_atencao.length) {
+      subTitle(s.attention);
+      for (const a of r.implicacoes_suplementacao.pontos_atencao) boldLabel(a.titulo, a.descricao);
+    }
+  }
+
+  // 8. Monitoramento
+  if (r.monitoramento.length) {
+    numberedTitle(s.s8);
+    bullets(r.monitoramento);
+  }
+
+  // 9. Resumo executivo
+  if (r.resumo_executivo) {
+    numberedTitle(s.s9);
+    paragraph(doc, r.resumo_executivo);
+  }
+
+  if (r.observacoes_gerais?.length) bullets(r.observacoes_gerais);
+
+  doc.moveDown(0.2);
+  doc.font("Times-Italic").fontSize(8.5).fillColor("#6B6A66").text(s.pointer, MARGIN, doc.y, { width: CONTENT_W });
+
+  // Anexo — Diário de reintrodução (tabela em branco para preencher)
+  doc.addPage();
+  numberedTitle(s.annex);
+  drawTable([s.colDate, s.colFood, s.colQty, s.colSymptoms, s.colAction],
+    Array.from({ length: 10 }, () => ["", "", "", "", ""]),
+    [70, 150, 80, 120, CONTENT_W - 70 - 150 - 80 - 120]);
 
   return pdfToBuffer(doc);
 }

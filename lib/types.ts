@@ -446,6 +446,59 @@ export type NeuroProtocoloSuplementacao = {
   observacoes_gerais: string[];
 };
 
+/**
+ * Documento 3 — Relatório Integrativo de Hipersensibilidade (exame de cabelo /
+ * biorressonância). SÓ existe quando o paciente fez o teste capilar. NÃO carrega
+ * suplemento próprio (regra de ouro: suplemento fica só no Documento 2); aponta
+ * para lá quando preciso. Fluxo funcional: observar → retirar → reintroduzir.
+ * Nunca "alergia"/diagnóstico. Estrutura espelha o modelo IFWC (caso Braz Cardoso).
+ */
+export type NeuroRelatorioHipersensibilidade = {
+  /** Abertura curta: o que o relatório reúne, em linguagem simples. */
+  introducao?: string;
+  /** 1. Visão geral do caso. */
+  visao_geral?: {
+    /** Aviso de que a biorressonância é complementar/qualitativa (não quantifica, não diagnostica). */
+    importante?: string;
+    /** Retrato do caso (perfil do paciente + o que o exame acrescenta). */
+    quadro?: string;
+    /** "Os principais achados se concentram em: ..." */
+    principais_achados?: string;
+    /** Prioridade funcional (o que o plano quer reduzir/apoiar). */
+    prioridade_funcional?: string;
+  };
+  /** 2. Padrões identificados (tabela Padrão Neuro ID | Interpretação funcional). */
+  padroes: Array<{ padrao: string; interpretacao: string }>;
+  /** 3.1 Achados prioritários (tabela Área | Achados | Prioridade). */
+  achados_prioritarios: Array<{ area: string; achados: string; prioridade: string }>;
+  /** 3.2 Lista operacional de retirada — ALTA prioridade, agrupada (grupo | itens). */
+  retirada_alta: Array<{ grupo: string; itens: string }>;
+  /** 3.2 Itens de reatividade MODERADA a evitar/reduzir na fase inicial. */
+  retirada_moderada?: string;
+  /** 4. Relação com o sistema nervoso e identidade corporal (texto). */
+  relacao_sistema_nervoso?: string;
+  /** 4. Eixos (intestino-cérebro, fígado-detox, tireoidiano-SNA...). */
+  eixos: Array<{ titulo: string; descricao: string }>;
+  /** 5. Estratégia terapêutica em fases (tabela Fase | Conduta). */
+  fases: Array<{ titulo: string; descricao: string }>;
+  /** 6. Plano alimentar prático (bullets). */
+  plano_alimentar: string[];
+  /** 7. Implicações para a suplementação (o detalhe fica no Documento 2). */
+  implicacoes_suplementacao?: {
+    texto?: string;
+    /** O que o exame sugere apoiar (detalhado no Documento 2). */
+    apoiar: Array<{ titulo: string; descricao: string }>;
+    /** Pontos de atenção na correlação com o protocolo atual. */
+    pontos_atencao: Array<{ titulo: string; descricao: string }>;
+  };
+  /** 8. Monitoramento e reavaliação (bullets). */
+  monitoramento: string[];
+  /** 9. Resumo executivo para o paciente. */
+  resumo_executivo?: string;
+  /** Observações gerais / aviso (não substitui avaliação médica). */
+  observacoes_gerais: string[];
+};
+
 export type AiInsightOutput = {
   label: "AI-generated insights (not medical advice)";
   structured_summary: {
@@ -465,6 +518,8 @@ export type AiInsightOutput = {
   mapa_integrativo?: NeuroMapaIntegrativo;
   plano_regulacao?: NeuroPlanoRegulacao;
   protocolo_suplementacao?: NeuroProtocoloSuplementacao;
+  /** Documento 3 — só quando há teste capilar/hipersensibilidade. */
+  relatorio_hipersensibilidade?: NeuroRelatorioHipersensibilidade;
 };
 
 export type AiInsightReviewStatus = "pending_review" | "needs_changes" | "final" | "archived";

@@ -16,7 +16,7 @@ function emptyItem(): Item {
 }
 
 /**
- * Editor MANUAL do Documento 3 (Suplementação) na mesa de revisão. O profissional
+ * Editor MANUAL do Documento 2 (Suplementação) na mesa de revisão. O profissional
  * ajusta itens (nome, forma, dose, como tomar) e — nos EUA — cola o link de compra.
  * Salva em final_output (sem enviar). O campo de link só aparece quando country="US".
  */

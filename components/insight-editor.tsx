@@ -20,8 +20,8 @@ function Field({ label, value, onChange, rows = 2 }: { label: string; value: str
 
 /**
  * Editor MANUAL do Doc 1 / Doc 2 na mesa de revisão. O revisor ajusta o texto à
- * mão antes de aprovar/enviar; salva em final_output (sem aprovar). Só aparece
- * enquanto o insight NÃO está finalizado.
+ * mão; salva em final_output (sem aprovar). Fica disponível antes E depois de
+ * aprovado — quando já final, corrige-se aqui e reenvia-se via "Reenviar relatório".
  */
 export function InsightEditor({ patientId, insightId, output }: { patientId: string; insightId: string; output: AiInsightOutput }) {
   const t = useTranslations("neuroId.documents360");

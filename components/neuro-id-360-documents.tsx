@@ -190,13 +190,14 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
+  const hyper = output.relatorio_hipersensibilidade;
   // Link ÚNICO da loja (EUA): derivado de qualquer buy_url dos itens (tira o "/products/<slug>").
   const supStoreUrl = (() => {
     const u = sup?.itens?.find((it) => it.buy_url?.trim())?.buy_url?.trim();
     return u ? u.split("/products/")[0] : null;
   })();
 
-  if (!mapa && !plano && !sup) return null;
+  if (!mapa && !plano && !sup && !hyper) return null;
 
   // Anel Bio³ em EQUILÍBRIO para o preview da seção 2 (espelha o PDF do paciente).
   // Cor/estado saem da disfunção crua (dentro do Bio3Ring); número exibido = equilíbrio.
@@ -392,7 +393,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
         <details className="group rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
             <span>
-              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-0.5">{t("doc3Label")}</span>
+              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-0.5">{fused ? t("doc2SupplementLabel") : t("doc3Label")}</span>
               <span className="block text-[15px] font-semibold text-[#0F1A2E]">{t("doc3Title")}</span>
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
@@ -416,6 +417,130 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
             </p>
           )}
           <Section title={t("generalNotes")} items={sup.observacoes_gerais} />
+          </div>
+        </details>
+      )}
+
+      {hyper && (
+        <details className="group rounded-2xl border border-[#7C5CBF]/30 bg-[#F7F4FC]">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
+            <span>
+              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#5B3FA0] mb-0.5">{t("doc3HyperLabel")}</span>
+              <span className="block text-[15px] font-semibold text-[#0F1A2E]">{t("doc3HyperTitle")}</span>
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
+          </summary>
+          <div className="px-5 pb-5">
+            <BodyP text={hyper.introducao} />
+            {/* 1. Visão geral */}
+            {hyper.visao_geral && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.overview")}</p>
+                <Paragraph title={t("hyper.important")} text={hyper.visao_geral.importante} />
+                <BodyP text={hyper.visao_geral.quadro} />
+                <BodyP text={hyper.visao_geral.principais_achados} />
+                <BodyP text={hyper.visao_geral.prioridade_funcional} />
+              </div>
+            )}
+            {/* 2. Padrões */}
+            {(hyper.padroes?.length ?? 0) > 0 && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.patterns")}</p>
+                <div className="space-y-1.5">
+                  {hyper.padroes.map((r, i) => (
+                    <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+                      <span className="font-semibold">{r.padrao}</span>
+                      {r.interpretacao ? <span className="text-[#4b5563]"> — {r.interpretacao}</span> : null}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 3.1 Achados prioritários */}
+            {(hyper.achados_prioritarios?.length ?? 0) > 0 && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.priorityFindings")}</p>
+                <div className="space-y-1.5">
+                  {hyper.achados_prioritarios.map((r, i) => (
+                    <div key={i} className="rounded-lg bg-white border border-black/[.06] px-3 py-2">
+                      <p className="text-[13px] font-semibold text-[#0F1A2E]">{r.area}</p>
+                      {r.achados ? <p className="text-[12px] leading-5 text-[#4b5563]">{r.achados}</p> : null}
+                      {r.prioridade ? <p className="text-[11px] text-[#5B3FA0] mt-0.5">{r.prioridade}</p> : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 3.2 Retirada alta (agrupada) */}
+            {(hyper.retirada_alta?.length ?? 0) > 0 && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.removalHigh")}</p>
+                <div className="space-y-1.5">
+                  {hyper.retirada_alta.map((r, i) => (
+                    <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+                      <span className="font-semibold">{r.grupo}: </span>
+                      <span className="text-[#4b5563]">{r.itens}</span>
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            <Paragraph title={t("hyper.removalModerate")} text={hyper.retirada_moderada} />
+            {/* 4. Relação com o sistema nervoso + eixos */}
+            <Paragraph title={t("hyper.nervousRelation")} text={hyper.relacao_sistema_nervoso} />
+            {(hyper.eixos?.length ?? 0) > 0 && (
+              <div className="mb-3 space-y-1.5">
+                {hyper.eixos.map((r, i) => (
+                  <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+                    <span className="font-semibold">{r.titulo}</span>
+                    {r.descricao ? <span className="text-[#4b5563]"> — {r.descricao}</span> : null}
+                  </p>
+                ))}
+              </div>
+            )}
+            {/* 5. Fases */}
+            {(hyper.fases?.length ?? 0) > 0 && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.phases")}</p>
+                <div className="space-y-2">
+                  {hyper.fases.map((f, i) => (
+                    <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+                      <span className="font-semibold">{f.titulo}</span>
+                      {f.descricao ? <span className="text-[#4b5563]"> — {f.descricao}</span> : null}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* 6. Plano alimentar */}
+            <Section title={t("hyper.mealPlan")} items={hyper.plano_alimentar} />
+            {/* 7. Implicações para a suplementação */}
+            {hyper.implicacoes_suplementacao && (
+              <div className="mb-3">
+                <p className={SUBHEAD_CLASS}>{t("hyper.supplementImplications")}</p>
+                <BodyP text={hyper.implicacoes_suplementacao.texto} />
+                {(hyper.implicacoes_suplementacao.apoiar?.length ?? 0) > 0 && (
+                  <div className="space-y-1 mb-2">
+                    {hyper.implicacoes_suplementacao.apoiar.map((r, i) => (
+                      <p key={i} className="text-[12px] leading-5 text-[#0F1A2E]"><span className="font-semibold">{r.titulo}</span>{r.descricao ? <span className="text-[#4b5563]"> — {r.descricao}</span> : null}</p>
+                    ))}
+                  </div>
+                )}
+                {(hyper.implicacoes_suplementacao.pontos_atencao?.length ?? 0) > 0 && (
+                  <div className="space-y-1">
+                    {hyper.implicacoes_suplementacao.pontos_atencao.map((r, i) => (
+                      <p key={i} className="text-[12px] leading-5 text-[#0F1A2E]"><span className="font-semibold">{r.titulo}</span>{r.descricao ? <span className="text-[#4b5563]"> — {r.descricao}</span> : null}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* 8. Monitoramento */}
+            <Section title={t("hyper.monitoring")} items={hyper.monitoramento} />
+            {/* 9. Resumo executivo */}
+            <Paragraph title={t("hyper.executiveSummary")} text={hyper.resumo_executivo} />
+            <Section title={t("generalNotes")} items={hyper.observacoes_gerais} />
+            <p className="mt-2 text-[11px] leading-4 text-[#8A8880]">{t("hyper.pointer")}</p>
           </div>
         </details>
       )}

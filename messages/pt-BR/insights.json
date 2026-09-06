@@ -76,7 +76,10 @@
     "resendReport": "Reenviar relatório",
     "supplementEmpty": "Sem itens de suplementação. Use \"Editar suplementação\" para adicionar.",
     "supplementBr": "Brasil · fórmula manipulada",
-    "supplementUs": "EUA · com link de compra"
+    "supplementUs": "EUA · com link de compra",
+    "hyperSection": "Hipersensibilidade (exame de cabelo)",
+    "sendHyper": "Enviar relatório de hipersensibilidade",
+    "hyperEmpty": "Sem dados de hipersensibilidade. Só aparece quando o paciente fez o exame de cabelo."
   },
   "patientPage": {
     "title": "AI Insights",

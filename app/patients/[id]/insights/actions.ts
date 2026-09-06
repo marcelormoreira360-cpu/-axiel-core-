@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, saveAiInsightEdits, sendApprovedInsightToPatient, sendSupplementToPatient } from "@/services/ai-insight-service";
-import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao } from "@/lib/types";
+import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, saveAiInsightEdits, sendApprovedInsightToPatient, sendSupplementToPatient, sendHypersensitivityToPatient } from "@/services/ai-insight-service";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao, NeuroRelatorioHipersensibilidade } from "@/lib/types";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -110,7 +110,7 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
 }
 
 /**
- * Salva a edição MANUAL do Documento 3 (Suplementação) sem enviar. O protocolo
+ * Salva a edição MANUAL do Documento 2 (Suplementação) sem enviar. O protocolo
  * editado vai para final_output; o envio da suplementação usa final_output.
  */
 export async function saveSupplementEditsAction(
@@ -129,7 +129,40 @@ export async function saveSupplementEditsAction(
   }
 }
 
-/** Envia SÓ a Suplementação (Documento 3) ao paciente, como PDF próprio e separado. */
+/**
+ * Salva a edição MANUAL do Documento 3 (Hipersensibilidade) sem enviar. O relatório
+ * editado vai para final_output; o envio usa final_output.
+ */
+export async function saveHypersensitivityEditsAction(
+  patientId: string,
+  aiInsightId: string,
+  relatorio: NeuroRelatorioHipersensibilidade,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await saveAiInsightEdits({ aiInsightId, editedHipersensibilidade: relatorio });
+    revalidatePath(`/patients/${patientId}/insights`);
+    revalidatePath(`/patients/${patientId}`);
+    revalidatePath(`/patients/${patientId}/reports/clinical-insight`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: describeError(error) };
+  }
+}
+
+/** Envia SÓ o Relatório de Hipersensibilidade (Documento 3) ao paciente, como PDF próprio e separado. */
+export async function sendHypersensitivityToPatientAction(patientId: string) {
+  let delivery = "";
+  try {
+    const r = await sendHypersensitivityToPatient(patientId);
+    delivery = `&hyper_delivery=${encodeURIComponent(JSON.stringify(r))}`;
+  } catch (error) {
+    delivery = `&hyper_delivery=${encodeURIComponent(JSON.stringify({ email: "failed", whatsapp: "failed", emailError: describeError(error) }))}`;
+  }
+  revalidatePath(`/patients/${patientId}/insights`);
+  redirect(`/patients/${patientId}/insights?hyper_sent=1${delivery}`);
+}
+
+/** Envia SÓ a Suplementação (Documento 2) ao paciente, como PDF próprio e separado. */
 export async function sendSupplementToPatientAction(patientId: string) {
   let delivery = "";
   try {
