@@ -203,10 +203,16 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
 
   // EUA: casa cada item sem link com o catálogo da clínica (por nome) para puxar o
   // buy_url do profissional. Brasil: fórmula manipulada, sem link.
+  // storeUrl = link ÚNICO da loja (o paciente clica um só link); derivado de
+  // qualquer buy_url do catálogo, tirando o "/products/<slug>".
   let enriched: NeuroProtocoloSuplementacao = protocolo;
+  let storeUrl: string | null = null;
   if (country === "US") {
     const catalog = await getSupplementCatalog(patient.clinic_id, { activeOnly: true }).catch(() => []);
-    const byName = new Map(catalog.filter((c) => c.country === "US" && c.buy_url).map((c) => [norm(c.name), c.buy_url as string]));
+    const withUrl = catalog.filter((c) => c.country === "US" && c.buy_url);
+    const byName = new Map(withUrl.map((c) => [norm(c.name), c.buy_url as string]));
+    const anyUrl = withUrl[0]?.buy_url ?? undefined;
+    storeUrl = anyUrl ? anyUrl.split("/products/")[0] : null;
     enriched = {
       ...protocolo,
       itens: protocolo.itens.map((it) => ({ ...it, buy_url: it.buy_url?.trim() || byName.get(norm(it.nome)) || undefined })),
@@ -230,7 +236,7 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
       if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
     } catch { /* sem marca: usa defaults */ }
 
-    pdfBuffer = await buildNeuroIdSupplementPdf({ protocolo: enriched, country, patientName: patient.full_name ?? null, clinic: clinicBrand });
+    pdfBuffer = await buildNeuroIdSupplementPdf({ protocolo: enriched, country, patientName: patient.full_name ?? null, clinic: clinicBrand, storeUrl });
 
     const path = `reports/${patientId}/suplementacao-${insight.id}.pdf`;
     const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, { contentType: "application/pdf", upsert: true });
