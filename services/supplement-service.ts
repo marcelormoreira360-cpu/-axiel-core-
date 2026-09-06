@@ -75,6 +75,26 @@ function sortItems(items: SupplementRecommendationItem[]): SupplementRecommendat
   return [...items].sort((a, b) => a.sort_order - b.sort_order);
 }
 
+/**
+ * Decide o país da suplementação a partir do país do paciente (patients.country),
+ * com o idioma (patients.locale) como reserva. BR → fórmula manipulada; US →
+ * suplementos de referência (ex.: DFH/Pure Encapsulations) com link do profissional.
+ * Default = BR (fórmula) quando nada indicar EUA.
+ */
+export function resolveSupplementCountry(country: string | null | undefined, locale?: string | null): SupplementCountry {
+  const c = (country ?? "").trim().toLowerCase();
+  if (/\b(us|usa|eua)\b/.test(c) || c.includes("united states") || c.includes("estados unidos")) return "US";
+  if (c.includes("bra") || c === "br") return "BR";
+  // Reserva pelo idioma: inglês → EUA; qualquer português → Brasil.
+  if ((locale ?? "").toLowerCase().startsWith("en")) return "US";
+  return "BR";
+}
+
+/** Tipo de saída da suplementação por país: EUA = link; Brasil = fórmula manipulada. */
+export function supplementOutputType(country: SupplementCountry): SupplementOutputType {
+  return country === "US" ? "us_link" : "br_formula";
+}
+
 // ── Catálogo ─────────────────────────────────────────────────────────────────
 export async function getSupplementCatalog(
   clinicId: string,

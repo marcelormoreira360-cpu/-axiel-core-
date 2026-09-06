@@ -8,6 +8,7 @@ import { getPatientExams, getPatientPrescriptions } from "@/services/exams-servi
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { getClinicAssessmentFields, assessmentReportPairs, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
+import { getSupplementCatalog, resolveSupplementCountry, supplementOutputType } from "@/services/supplement-service";
 import { EXAM_METRIC_META } from "@/modules/neuro-id/exam-metrics";
 import { normalizeInsightText } from "@/modules/ai-insights/guardrails";
 
@@ -85,6 +86,17 @@ export type AiInsightInputSnapshot = {
     priority_pillar: string | null;
     is_partial: boolean;
   } | null;
+  /**
+   * Contexto da suplementação (Documento 3). `country` decide a saída:
+   * BR → fórmula manipulada (ativos + dose + forma, sem marca, sem link);
+   * US → suplementos alinhados ao `catalog` de referência da clínica (DFH/Pure
+   * Encapsulations etc.), só nome/forma/como tomar, sem marca (o link é do profissional).
+   */
+  supplement_context: {
+    country: "BR" | "US";
+    output_type: "br_formula" | "us_link";
+    catalog: Array<{ name: string; form: string | null; default_dosage: string | null; notes: string | null; source: string }>;
+  };
 };
 
 export async function buildAiInsightInput(patientId: string): Promise<AiInsightInputSnapshot | null> {
@@ -105,6 +117,11 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   ]);
   const neuroIdMap = await getLatestNeuroIdMap(patientId).catch(() => null);
   const clinicFields = await getClinicAssessmentFields(patient.clinic_id, { activeOnly: true }).catch(() => []);
+
+  // Suplementação por país: BR = fórmula manipulada; US = catálogo de referência
+  // da clínica (DFH/Pure Encapsulations). Só o do país do paciente entra como referência.
+  const supplementCountry = resolveSupplementCountry(patient.country, patient.locale);
+  const supplementCatalog = await getSupplementCatalog(patient.clinic_id, { activeOnly: true }).catch(() => []);
 
   // Biorressonância com origem própria: a síntese mais recente do exame do tipo
   // "biorressonancia" (o slot bioemocional do Doc 1 nunca some no bloco genérico).
@@ -219,5 +236,12 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
         }
       : null,
     bioemocional_source,
+    supplement_context: {
+      country: supplementCountry,
+      output_type: supplementOutputType(supplementCountry),
+      catalog: supplementCatalog
+        .filter((c) => c.country === supplementCountry)
+        .map((c) => ({ name: c.name, form: c.form, default_dosage: c.default_dosage, notes: c.notes, source: c.source })),
+    },
   };
 }

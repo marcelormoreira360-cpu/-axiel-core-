@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, saveAiInsightEdits, sendApprovedInsightToPatient } from "@/services/ai-insight-service";
-import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
+import { approveAiInsightAsFinal, archiveAiInsight, generateAndSaveAiInsight, requestAiInsightChanges, saveAiInsightEdits, sendApprovedInsightToPatient, sendSupplementToPatient } from "@/services/ai-insight-service";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao } from "@/lib/types";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getBillingContext } from "@/services/billing-service";
 import { canUseFeature } from "@/modules/billing/feature-access";
@@ -107,6 +107,39 @@ export async function approveAiInsightAction(patientId: string, aiInsightId: str
   }
 
   redirect(`/patients/${patientId}/insights?approved=1&suggest_followup=1${delivery}`);
+}
+
+/**
+ * Salva a edição MANUAL do Documento 3 (Suplementação) sem enviar. O protocolo
+ * editado vai para final_output; o envio da suplementação usa final_output.
+ */
+export async function saveSupplementEditsAction(
+  patientId: string,
+  aiInsightId: string,
+  protocolo: NeuroProtocoloSuplementacao,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    await saveAiInsightEdits({ aiInsightId, editedProtocolo: protocolo });
+    revalidatePath(`/patients/${patientId}/insights`);
+    revalidatePath(`/patients/${patientId}`);
+    revalidatePath(`/patients/${patientId}/reports/clinical-insight`);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: describeError(error) };
+  }
+}
+
+/** Envia SÓ a Suplementação (Documento 3) ao paciente, como PDF próprio e separado. */
+export async function sendSupplementToPatientAction(patientId: string) {
+  let delivery = "";
+  try {
+    const r = await sendSupplementToPatient(patientId);
+    delivery = `&supp_delivery=${encodeURIComponent(JSON.stringify(r))}`;
+  } catch (error) {
+    delivery = `&supp_delivery=${encodeURIComponent(JSON.stringify({ email: "failed", whatsapp: "failed", emailError: describeError(error) }))}`;
+  }
+  revalidatePath(`/patients/${patientId}/insights`);
+  redirect(`/patients/${patientId}/insights?supp_sent=1${delivery}`);
 }
 
 export async function resendApprovedInsightAction(patientId: string) {

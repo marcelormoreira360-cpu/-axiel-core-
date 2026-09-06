@@ -142,7 +142,40 @@
     "bio3PortraitFallback": "O seu retrato de hoje aparece no Mapa Bio³ ao lado. Hoje, o eixo que mais pede o seu cuidado é o {pillar}; os outros dois estão mais preservados e já trabalham a seu favor.",
     "whatWeFoundTitle": "O que a avaliação encontrou",
     "connectionTitle": "A conexão, e um ponto de força",
-    "nextStepsTitle": "Os próximos passos"
+    "nextStepsTitle": "Os próximos passos",
+    "editor": {
+      "editButton": "Editar textos",
+      "saved": "Alterações salvas.",
+      "guardrailWarn": "Ajuste de segurança aplicado: {note}",
+      "title": "Editar Documento 1 e 2",
+      "hint": "Ajuste o texto à mão antes de aprovar e enviar. As alterações são salvas como rascunho.",
+      "opening": "Abertura calorosa",
+      "bio3": "Leitura Bio³",
+      "detail": "Detalhe",
+      "themes": "Temas emocionais (um por linha)",
+      "synthesis": "Síntese",
+      "saving": "Salvando..."
+    },
+    "supplementEditor": {
+      "editButton": "Editar suplementação",
+      "saved": "Suplementação salva.",
+      "saving": "Salvando...",
+      "title": "Editar suplementação",
+      "hintUs": "Ajuste os itens e cole o link de compra de cada suplemento. Salva como rascunho; o envio é separado.",
+      "hintBr": "Ajuste os ativos da fórmula manipulada (nome, forma, dose, como tomar). Salva como rascunho; o envio é separado.",
+      "empty": "Nenhum item ainda. Adicione o primeiro abaixo.",
+      "removeItem": "Remover item",
+      "addItem": "Adicionar item",
+      "fieldName": "Nome do suplemento/ativo",
+      "fieldForm": "Forma (cápsula, pó...)",
+      "fieldDose": "Dose sugerida",
+      "fieldHow": "Como/quando tomar",
+      "fieldGoal": "Objetivo",
+      "fieldNote": "Observação",
+      "fieldBuyUrl": "Link de compra (EUA)",
+      "buyUrlHint": "O paciente verá um aviso de que o link é apenas uma sugestão.",
+      "generalNotes": "Observações gerais (uma por linha)"
+    }
   },
   "pyramidAria": "Pirâmide Bio³ — peso de cada eixo no total, cor por gravidade",
   "scaleAria": "Pontuação 0 a 10"

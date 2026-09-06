@@ -30,5 +30,5 @@ export type { AiValidationEvent } from "@/services/ai-insight/insight-repository
 
 export { generateAndSaveAiInsight } from "@/services/ai-insight/workflow";
 
-export { sendApprovedInsightToPatient } from "@/services/ai-insight/delivery";
+export { sendApprovedInsightToPatient, sendSupplementToPatient } from "@/services/ai-insight/delivery";
 export type { InsightDeliveryChannel, InsightDeliveryResult } from "@/services/ai-insight/delivery";

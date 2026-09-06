@@ -7,7 +7,7 @@
  */
 
 import PDFDocument from "pdfkit";
-import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao } from "@/lib/types";
+import type { NeuroMapaIntegrativo, NeuroPlanoRegulacao, NeuroProtocoloSuplementacao } from "@/lib/types";
 import { hasPersuasiveDoc2, bio3ProseHasPercent } from "@/modules/ai-insights/patient-text-guardrails";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { bandForDysfunction, dysfunctionToBalance, labelFor } from "@/modules/neuro-id/bands";
@@ -697,6 +697,108 @@ export async function buildNeuroIdDoc1Pdf(opts: {
     ensureSpace(doc, 70);
     doc.moveDown(0.5);
     doc.font("Times-Bold").fontSize(9.5).fillColor("#8A3216").text(DOC1_SAFEGUARD, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+  }
+
+  return pdfToBuffer(doc);
+}
+
+// ── DOCUMENTO 3 — Protocolo de Suplementação (documento próprio, envio separado) ──
+// Bilíngue por país do paciente: BR = FÓRMULA MANIPULADA (ativos + dose + forma, sem
+// marca, sem link, para farmácia de manipulação); US = suplementos (nome/forma/como
+// tomar, sem marca) com o link de compra do profissional + aviso de que o link é
+// apenas uma sugestão. O link nunca é gerado pela IA (vem do editor/catálogo).
+const SUPP_STRINGS = {
+  BR: {
+    title: "Protocolo de Suplementação",
+    subtitle: "Fórmula para manipulação",
+    draft: "Rascunho — exige aprovação do profissional antes de qualquer uso.",
+    intro: "Fórmula sugerida para manipulação. Leve esta orientação à sua farmácia de manipulação de confiança; o profissional pode ajustá-la.",
+    lForm: "Forma", lDose: "Dose sugerida", lHow: "Como tomar", lGoal: "Objetivo", lNote: "Obs.",
+    general: "Observações gerais",
+  },
+  US: {
+    title: "Supplement Protocol",
+    subtitle: "Suggestions for professional validation",
+    draft: "Draft — requires professional approval before any use.",
+    intro: "",
+    lForm: "Form", lDose: "Suggested dose", lHow: "How to take", lGoal: "Goal", lNote: "Note",
+    general: "General notes",
+    buyLabel: "Suggested purchase",
+    disclaimer:
+      "This link is only a purchase suggestion, as it is a brand we trust. You are free to buy wherever you prefer, paying attention to the quality and dose of each supplement.",
+  },
+} as const;
+
+export async function buildNeuroIdSupplementPdf(opts: {
+  protocolo: NeuroProtocoloSuplementacao;
+  country: "BR" | "US";
+  patientName?: string | null;
+  clinic?: ClinicBrand;
+}): Promise<Buffer> {
+  const s = SUPP_STRINGS[opts.country];
+  const brand = opts.clinic ?? {};
+  const logo = await fetchLogo(brand.logoUrl);
+
+  const doc = new PDFDocument({
+    margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
+    size: "LETTER",
+    info: { Title: s.title, Author: brand.name ?? "AXIEL Core" },
+  });
+  let decorating = false;
+  const decorate = () => { if (decorating) return; decorating = true; try { drawHeader(doc, logo); drawFooter(doc, brand); } finally { decorating = false; } };
+  decorate();
+  doc.on("pageAdded", () => { decorate(); resetBody(doc); });
+  resetBody(doc);
+
+  docTitle(doc, s.title, s.subtitle);
+
+  if (opts.patientName) {
+    doc.font("Times-Italic").fontSize(10).fillColor(MUTED).text(opts.patientName, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
+    doc.moveDown(0.4);
+  }
+
+  doc.font("Times-Italic").fontSize(9.5).fillColor("#8A5A14").text(s.draft, MARGIN, doc.y, { width: CONTENT_W });
+  doc.moveDown(0.5);
+  if (s.intro) paragraph(doc, s.intro);
+
+  const line = (label: string, value?: string | null) => {
+    if (!value?.trim()) return;
+    ensureSpace(doc, 24);
+    doc.font("Times-Bold").fontSize(10).fillColor(INK).text(`${label}: `, MARGIN, doc.y, { continued: true });
+    doc.font("Times-Roman").fillColor(MUTED).text(value.trim());
+  };
+
+  for (const it of opts.protocolo.itens) {
+    if (!it.nome?.trim()) continue;
+    ensureSpace(doc, 70);
+    doc.moveDown(0.3);
+    doc.font("Times-Bold").fontSize(11.5).fillColor(INK).text(it.nome.trim(), MARGIN, doc.y, { width: CONTENT_W });
+    doc.moveDown(0.1);
+    line(s.lForm, it.forma);
+    line(s.lDose, it.dose_sugerida);
+    line(s.lHow, it.como_tomar);
+    line(s.lGoal, it.objetivo);
+    line(s.lNote, it.observacao);
+
+    // Link de compra só nos EUA, e só quando houver link (do profissional/catálogo).
+    if (opts.country === "US" && it.buy_url?.trim()) {
+      const us = SUPP_STRINGS.US;
+      doc.moveDown(0.15);
+      doc.font("Times-Italic").fontSize(8.5).fillColor("#6B6A66").text(us.disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
+      doc.moveDown(0.1);
+      doc.font("Times-Bold").fontSize(9.5).fillColor(INK).text(`${us.buyLabel}: `, MARGIN, doc.y, { continued: true });
+      doc.font("Times-Roman").fillColor("#2f5fae").text(it.buy_url.trim(), { link: it.buy_url.trim(), underline: true });
+    }
+  }
+
+  if (opts.protocolo.observacoes_gerais?.length) {
+    sectionTitle(doc, s.general);
+    for (const o of opts.protocolo.observacoes_gerais) {
+      if (!o?.trim()) continue;
+      ensureSpace(doc, 24);
+      doc.font("Times-Roman").fontSize(10).fillColor(MUTED).text(`• ${o.trim()}`, MARGIN, doc.y, { width: CONTENT_W, lineGap: 2 });
+      doc.moveDown(0.15);
+    }
   }
 
   return pdfToBuffer(doc);

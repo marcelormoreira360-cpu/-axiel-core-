@@ -435,6 +435,12 @@ export type NeuroProtocoloSuplementacao = {
     nome: string;
     objetivo: string;
     dose_sugerida: string;
+    /** Forma do suplemento (ex.: cápsula, pó, sublingual, "fórmula manipulada"). */
+    forma?: string;
+    /** Como/quando tomar (ex.: "1x ao dia pela manhã, com alimento"). */
+    como_tomar?: string;
+    /** Link de compra (EUA). Preenchido pelo profissional; nunca pela IA. Vazio no Brasil. */
+    buy_url?: string;
     observacao: string;
   }>;
   observacoes_gerais: string[];

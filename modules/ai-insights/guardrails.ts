@@ -146,11 +146,26 @@ natural das seções acima, no MESMO documento contínuo (NÃO é um documento s
   faltar dado de segurança (medicação em uso, gestação, condições), use "pendente_dados_seguranca"; senão "nao_iniciada".
 - observacao: aviso de que não substitui avaliação médica/exames/condutas prescritas.
 
-DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
-- itens: lista de { nome, objetivo, dose_sugerida, observacao }; observacoes_gerais.
-- Só sugira com base nos dados; respeite histórico (ex.: renal) e medicações em uso; deixe claro que são opções para o profissional validar.
-- MARCA: no campo "nome" cite apenas o nome/forma do suplemento (ex.: "Magnésio glicinato", "Ômega-3 EPA/DHA"),
-  NUNCA o fabricante/marca (ex.: não escreva "Designs for Health", "DFH", "Pure Encapsulations" etc.).
+DOCUMENTO 3 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
+- BASE OBRIGATÓRIA: sugira SOMENTE a partir dos dados reais do paciente (avaliação do terapeuta, questionários,
+  exames, Mapa Bio³, achados dos relatórios). Correlacione cada item a um achado; nunca sugira genérico "de prateleira".
+  Se os dados forem escassos, sugira poucos itens (ou nenhum) e diga em observacoes_gerais que faltam dados.
+- SEGURANÇA: respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as medicações em uso
+  (prescriptions); sinalize possíveis interações em "observacao"; deixe claro que são opções para o profissional validar.
+- itens: lista de { nome, objetivo, dose_sugerida, forma, como_tomar, observacao }.
+  • nome: só o nome do suplemento/ativo (ex.: "Magnésio glicinato", "Ômega-3 EPA/DHA"). Preencha forma (cápsula/pó/
+    sublingual/etc.), dose_sugerida e como_tomar (quando/como tomar, ex.: "1x ao dia à noite, com alimento").
+- MARCA — NUNCA cite fabricante/marca (não escreva "Designs for Health", "DFH", "Pure Encapsulations", "Fullscript"
+  etc.). Só o nome genérico do suplemento/ativo, a forma e como tomar. O link de compra é adicionado pelo profissional,
+  não por você.
+- PAÍS (input_data.supplement_context) decide a SAÍDA:
+  • Se country = "BR" (output_type "br_formula"): monte uma FÓRMULA MANIPULADA — os ativos com dose e a forma como
+    "fórmula manipulada" (para a farmácia de manipulação preparar). SEM link, SEM marca. Em observacoes_gerais registre
+    que é uma fórmula para manipulação, a ser avaliada/ajustada pelo profissional e preparada em farmácia de manipulação.
+  • Se country = "US" (output_type "us_link"): sugira suplementos ALINHADOS ao catálogo de referência da clínica em
+    input_data.supplement_context.catalog (marcas de confiança da clínica). Use os nomes/formas desse catálogo como
+    referência quando fizer sentido clínico, MAS na saída escreva apenas o nome genérico + forma + como tomar (sem marca).
+    Não invente link nem marca.
 
 Preencha também: structured_summary (overview curto e acessível ao paciente; current_status),
 patterns_and_correlations, practitioner_review_points e data_limitations.

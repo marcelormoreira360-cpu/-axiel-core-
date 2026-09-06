@@ -70,7 +70,13 @@
     "patterns": "Padrões",
     "approvedAt": "Aprovado: {date}",
     "changes": "Alterações: {changes}",
-    "pendingMetricsWarn": "{count, plural, one {# exame com métricas não confirmadas} other {# exames com métricas não confirmadas}}. Confirme no painel de exames funcionais para incluir os números no relatório."
+    "pendingMetricsWarn": "{count, plural, one {# exame com métricas não confirmadas} other {# exames com métricas não confirmadas}}. Confirme no painel de exames funcionais para incluir os números no relatório.",
+    "supplementSection": "Suplementação",
+    "sendSupplement": "Enviar suplementação ao paciente",
+    "resendReport": "Reenviar relatório",
+    "supplementEmpty": "Sem itens de suplementação. Use \"Editar suplementação\" para adicionar.",
+    "supplementBr": "Brasil · fórmula manipulada",
+    "supplementUs": "EUA · com link de compra"
   },
   "patientPage": {
     "title": "AI Insights",
