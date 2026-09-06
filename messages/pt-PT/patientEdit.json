@@ -38,5 +38,7 @@
   "anonymizeTitle": "Anonimizar dados do paciente",
   "anonymizeDesc": "Remove nome, e-mail, telefone e endereço. O histórico clínico é mantido de forma anonimizada. Esta ação não pode ser desfeita.",
   "anonymizeBtn": "Anonimizar",
-  "anonymizeConfirm": "Tem certeza? Isso anonimizará permanentemente os dados de {name} (LGPD). Esta ação não pode ser desfeita."
+  "anonymizeConfirm": "Tem certeza? Isso anonimizará permanentemente os dados de {name} (LGPD). Esta ação não pode ser desfeita.",
+  "country": "País",
+  "countryNone": "(não informado)"
 }

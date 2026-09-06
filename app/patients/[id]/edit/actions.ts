@@ -8,7 +8,6 @@ export async function updatePatientAction(patientId: string, formData: FormData)
   const full_name = String(formData.get("full_name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim() || null;
   const phone = String(formData.get("phone") ?? "").trim() || null;
-  const cpf = String(formData.get("cpf") ?? "").replace(/\D/g, "") || null;
   const date_of_birth = String(formData.get("date_of_birth") ?? "").trim() || null;
   const notes = String(formData.get("notes") ?? "").trim() || null;
   const status = String(formData.get("status") ?? "active") as "active" | "inactive" | "archived";
@@ -17,6 +16,7 @@ export async function updatePatientAction(patientId: string, formData: FormData)
   const localeRaw = String(formData.get("locale") ?? "").trim();
   const locale = localeRaw === "pt-BR" || localeRaw === "en" || localeRaw === "pt-PT" ? localeRaw : null;
   const city = String(formData.get("city") ?? "").trim() || null;
+  const country = String(formData.get("country") ?? "").trim() || null;
   const weightRaw = String(formData.get("weight_kg") ?? "").trim().replace(",", ".");
   const heightRaw = String(formData.get("height_cm") ?? "").trim().replace(",", ".");
   const weight_kg = weightRaw && Number.isFinite(Number(weightRaw)) ? Number(weightRaw) : null;
@@ -24,7 +24,8 @@ export async function updatePatientAction(patientId: string, formData: FormData)
 
   if (!full_name) return;
 
-  await updatePatient(patientId, { full_name, email, phone, cpf, locale, date_of_birth, sex, weight_kg, height_cm, city, notes, status, referred_by_patient_id });
+  // CPF não é editado aqui (campo removido do formulário); o valor salvo é preservado.
+  await updatePatient(patientId, { full_name, email, phone, locale, date_of_birth, sex, weight_kg, height_cm, city, country, notes, status, referred_by_patient_id });
 
   revalidatePath(`/patients/${patientId}`);
   redirect(`/patients/${patientId}`);
