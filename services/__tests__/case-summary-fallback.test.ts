@@ -21,6 +21,7 @@ function snap(partial: {
     lab_exams: [], functional_exams: partial.exams ?? [], prescriptions: partial.prescriptions ?? [],
     neuro_id: partial.neuro ?? null,
     bioemocional_source: null,
+    supplement_context: { country: "BR", output_type: "br_formula", catalog: [] },
   };
 }
 

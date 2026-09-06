@@ -5,10 +5,13 @@ import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
 import { Badge, type BadgeStatus } from "@/components/status-badge";
 import { ButtonPrimary, ButtonSecondary } from "@/components/button";
 import { SubmitButton } from "@/components/submit-button";
-import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction } from "@/app/patients/[id]/insights/actions";
+import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction, resendApprovedInsightAction, sendSupplementToPatientAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
 import { InsightEditor } from "@/components/insight-editor";
+import { SupplementEditor } from "@/components/supplement-editor";
+import { getPatientById } from "@/services/patient-service";
+import { resolveSupplementCountry } from "@/services/supplement-service";
 import { NeuroPyramid } from "@/components/neuro-pyramid";
 import { pyramidDataFromMap } from "@/modules/neuro-id/pyramid";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
@@ -45,6 +48,14 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   // Aviso de degradação silenciosa: exames com métricas extraídas mas NÃO
   // confirmadas não entram no relatório. Só relevante enquanto não-final.
   const pendingMetrics = !isFinal ? await countExamsPendingMetricsReview(patientId) : 0;
+
+  // Documento 3 (Suplementação): país do paciente decide a saída (BR fórmula / US link).
+  const patient = await getPatientById(patientId);
+  const supplementCountry = resolveSupplementCountry(patient?.country ?? null, patient?.locale ?? null);
+  const protocolo = output?.protocolo_suplementacao ?? null;
+  const hasSupplement = !!protocolo?.itens?.some((i) => i.nome?.trim());
+  const sendSupplementAction = sendSupplementToPatientAction.bind(null, patientId);
+  const resendReportAction = resendApprovedInsightAction.bind(null, patientId);
 
   const insightTitle =
     output?.patterns_and_correlations?.[0]?.title ||
@@ -113,6 +124,12 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
           </ButtonSecondary>
         </form>
 
+        {isFinal ? (
+          <form action={resendReportAction}>
+            <ButtonSecondary type="submit">{t("resendReport")}</ButtonSecondary>
+          </form>
+        ) : null}
+
         <form action={generateAction}>
           <SubmitButton
             className="rounded-xl px-4 py-3 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]"
@@ -125,6 +142,29 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
 
         <DeleteInsightButton patientId={patientId} insightId={insight.id} />
       </div>
+
+      {/* Documento 3 — Suplementação: editar + enviar em separado (país decide fórmula BR / link US) */}
+      {output ? (
+        <div className="space-y-3 rounded-2xl border border-black/[.08] dark:border-white/[.10] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-axiel-text-primary">{t("supplementSection")}</p>
+            <span className="rounded-full bg-gray-100 dark:bg-white/[.08] px-2 py-[2px] text-[11px] font-medium text-axiel-text-secondary">
+              {supplementCountry === "US" ? t("supplementUs") : t("supplementBr")}
+            </span>
+          </div>
+          <SupplementEditor patientId={patientId} insightId={insight.id} protocolo={protocolo} country={supplementCountry} />
+          {/* O envio usa o insight FINAL mais recente (sendSupplementToPatient →
+              getLatestFinalAiInsight). Só mostra o botão quando este insight é final,
+              para não expor um botão que não envia nada num rascunho. */}
+          {isFinal && hasSupplement ? (
+            <form action={sendSupplementAction}>
+              <ButtonPrimary type="submit">{t("sendSupplement")}</ButtonPrimary>
+            </form>
+          ) : !hasSupplement ? (
+            <p className="text-xs text-axiel-text-secondary">{t("supplementEmpty")}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       <p className="rounded-xl bg-yellow-50 dark:bg-yellow-500/10 px-4 py-3 text-xs font-medium text-yellow-800 dark:text-yellow-300">{AI_INSIGHT_LABEL}</p>
 

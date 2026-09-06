@@ -145,9 +145,19 @@ export const aiInsightJsonShape = {
   },
 
   // ── DOCUMENTO 3 — Protocolo de Suplementação (rascunho; exige aprovação humana) ──
+  // País decide a saída (input_data.supplement_context): BR = fórmula manipulada
+  // (ativo + dose + forma "manipulada", sem marca, sem link); US = suplemento
+  // alinhado ao catálogo de referência (só nome/forma/como tomar, sem marca).
   protocolo_suplementacao: {
     itens: [
-      { nome: "Nome do suplemento", objetivo: "Objetivo da sugestão", dose_sugerida: "Dose sugerida (rascunho)", observacao: "Observação para o profissional validar" },
+      {
+        nome: "Nome do suplemento/ativo (sem marca)",
+        objetivo: "Objetivo da sugestão",
+        dose_sugerida: "Dose sugerida (rascunho)",
+        forma: "Forma (ex.: cápsula, pó, sublingual, fórmula manipulada)",
+        como_tomar: "Como/quando tomar (ex.: 1x ao dia pela manhã, com alimento)",
+        observacao: "Observação para o profissional validar",
+      },
     ],
     observacoes_gerais: ["Observação geral sobre a suplementação (rascunho para validação profissional)."],
   },
@@ -226,6 +236,10 @@ function coerceProtocolo(o: any): NeuroProtocoloSuplementacao | undefined {
         nome: str(it?.nome),
         objetivo: str(it?.objetivo),
         dose_sugerida: str(it?.dose_sugerida),
+        forma: str(it?.forma) || undefined,
+        como_tomar: str(it?.como_tomar) || undefined,
+        // buy_url é preenchido pelo profissional (editor/catálogo), NUNCA pela IA.
+        // Por isso não copiamos it.buy_url da saída do modelo.
         observacao: str(it?.observacao),
       })).filter((it: { nome: string }) => it.nome.length > 0)
     : [];

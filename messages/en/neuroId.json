@@ -142,7 +142,40 @@
     "bio3PortraitFallback": "Your snapshot today is shown in the Bio³ Map beside this text. Today, the axis that most asks for your care is {pillar}; the other two are more preserved and already working in your favor.",
     "whatWeFoundTitle": "What the assessment found",
     "connectionTitle": "The connection, and a strength",
-    "nextStepsTitle": "Your next steps"
+    "nextStepsTitle": "Your next steps",
+    "editor": {
+      "editButton": "Edit text",
+      "saved": "Changes saved.",
+      "guardrailWarn": "Safety adjustment applied: {note}",
+      "title": "Edit Document 1 and 2",
+      "hint": "Adjust the text by hand before approving and sending. Changes are saved as a draft.",
+      "opening": "Warm opening",
+      "bio3": "Bio³ reading",
+      "detail": "Detail",
+      "themes": "Emotional themes (one per line)",
+      "synthesis": "Synthesis",
+      "saving": "Saving..."
+    },
+    "supplementEditor": {
+      "editButton": "Edit supplements",
+      "saved": "Supplements saved.",
+      "saving": "Saving...",
+      "title": "Edit supplements",
+      "hintUs": "Adjust the items and paste each supplement purchase link. Saved as a draft; sending is separate.",
+      "hintBr": "Adjust the compounded formula actives (name, form, dose, how to take). Saved as a draft; sending is separate.",
+      "empty": "No items yet. Add the first one below.",
+      "removeItem": "Remove item",
+      "addItem": "Add item",
+      "fieldName": "Supplement/active name",
+      "fieldForm": "Form (capsule, powder...)",
+      "fieldDose": "Suggested dose",
+      "fieldHow": "How/when to take",
+      "fieldGoal": "Goal",
+      "fieldNote": "Note",
+      "fieldBuyUrl": "Purchase link (US)",
+      "buyUrlHint": "The patient will see a note that the link is only a suggestion.",
+      "generalNotes": "General notes (one per line)"
+    }
   },
   "pyramidAria": "Bio³ pyramid — weight of each axis in the total, color by severity",
   "scaleAria": "Score 0 to 10"

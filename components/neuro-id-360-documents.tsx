@@ -398,9 +398,12 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
               {sup.itens.map((it, i) => (
                 <div key={i} className="rounded-xl bg-white border border-black/[.06] px-3 py-2">
                   <p className="text-[13px] font-semibold text-[#0F1A2E]">{it.nome}</p>
+                  {it.forma && <p className="text-[12px] text-[#6B6A66]">{t("supplementEditor.fieldForm")}: {it.forma}</p>}
                   {it.dose_sugerida && <p className="text-[12px] text-[#6B6A66]">{t("suggestedDose")}: {it.dose_sugerida}</p>}
+                  {it.como_tomar && <p className="text-[12px] text-[#6B6A66]">{t("supplementEditor.fieldHow")}: {it.como_tomar}</p>}
                   {it.objetivo && <p className="text-[12px] text-[#6B6A66]">{t("objective")}: {it.objetivo}</p>}
                   {it.observacao && <p className="text-[12px] text-[#6B6A66]">{t("note")}: {it.observacao}</p>}
+                  {it.buy_url && <p className="text-[12px] text-[#2f5fae] break-all">{t("supplementEditor.fieldBuyUrl")}: {it.buy_url}</p>}
                 </div>
               ))}
             </div>

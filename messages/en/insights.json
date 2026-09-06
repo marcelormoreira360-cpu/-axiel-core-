@@ -70,7 +70,13 @@
     "patterns": "Patterns",
     "approvedAt": "Approved: {date}",
     "changes": "Changes: {changes}",
-    "pendingMetricsWarn": "{count, plural, one {# exam with unconfirmed metrics} other {# exams with unconfirmed metrics}}. Confirm them in the functional exams panel to include the numbers in the report."
+    "pendingMetricsWarn": "{count, plural, one {# exam with unconfirmed metrics} other {# exams with unconfirmed metrics}}. Confirm them in the functional exams panel to include the numbers in the report.",
+    "supplementSection": "Supplements",
+    "sendSupplement": "Send supplements to patient",
+    "resendReport": "Resend report",
+    "supplementEmpty": "No supplement items. Use \"Edit supplements\" to add.",
+    "supplementBr": "Brazil · compounded formula",
+    "supplementUs": "US · with purchase link"
   },
   "patientPage": {
     "title": "AI Insights",

@@ -11,7 +11,7 @@ import { getCurrentClinic } from "@/services/clinic-service";
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string; delivery?: string }>;
+  searchParams: Promise<{ error?: string; generated?: string; approved?: string; suggest_followup?: string; delivery?: string; supp_delivery?: string }>;
 };
 
 type DeliveryStatus = "sent" | "skipped_no_contact" | "failed" | "no_report";
@@ -31,11 +31,13 @@ function describeChannel(t: Translator, label: string, status: DeliveryStatus, e
 export default async function PatientInsightsPage({ params, searchParams }: Props) {
   const t = await getTranslations("insights.patientPage");
   const { id } = await params;
-  const { error, approved, suggest_followup: suggestFollowup, delivery } = await searchParams;
+  const { error, approved, suggest_followup: suggestFollowup, delivery, supp_delivery: suppDelivery } = await searchParams;
 
+  // Mesmo banner de envio serve para o relatório (delivery) e para a suplementação (supp_delivery).
   let deliveryResult: DeliveryResult | null = null;
-  if (delivery) {
-    try { deliveryResult = JSON.parse(decodeURIComponent(delivery)) as DeliveryResult; } catch { deliveryResult = null; }
+  const rawDelivery = delivery ?? suppDelivery;
+  if (rawDelivery) {
+    try { deliveryResult = JSON.parse(decodeURIComponent(rawDelivery)) as DeliveryResult; } catch { deliveryResult = null; }
   }
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id); // A-06
