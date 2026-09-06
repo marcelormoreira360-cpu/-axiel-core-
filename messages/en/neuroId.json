@@ -174,7 +174,8 @@
       "fieldNote": "Note",
       "fieldBuyUrl": "Purchase link (US)",
       "buyUrlHint": "The patient will see a note that the link is only a suggestion.",
-      "generalNotes": "General notes (one per line)"
+      "generalNotes": "General notes (one per line)",
+      "storeLink": "Store (single link)"
     }
   },
   "pyramidAria": "Bio³ pyramid — weight of each axis in the total, color by severity",

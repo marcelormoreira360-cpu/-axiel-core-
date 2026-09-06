@@ -174,7 +174,8 @@
       "fieldNote": "Observação",
       "fieldBuyUrl": "Link de compra (EUA)",
       "buyUrlHint": "O paciente verá um aviso de que o link é apenas uma sugestão.",
-      "generalNotes": "Observações gerais (uma por linha)"
+      "generalNotes": "Observações gerais (uma por linha)",
+      "storeLink": "Loja (link único)"
     }
   },
   "pyramidAria": "Pirâmide Bio³ — peso de cada eixo no total, cor por gravidade",

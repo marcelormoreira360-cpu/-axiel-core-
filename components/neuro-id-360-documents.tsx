@@ -190,6 +190,11 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
   const mapa = output.mapa_integrativo;
   const plano = output.plano_regulacao;
   const sup = output.protocolo_suplementacao;
+  // Link ÚNICO da loja (EUA): derivado de qualquer buy_url dos itens (tira o "/products/<slug>").
+  const supStoreUrl = (() => {
+    const u = sup?.itens?.find((it) => it.buy_url?.trim())?.buy_url?.trim();
+    return u ? u.split("/products/")[0] : null;
+  })();
 
   if (!mapa && !plano && !sup) return null;
 
@@ -401,12 +406,14 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
                   {it.forma && <p className="text-[12px] text-[#6B6A66]">{t("supplementEditor.fieldForm")}: {it.forma}</p>}
                   {it.dose_sugerida && <p className="text-[12px] text-[#6B6A66]">{t("suggestedDose")}: {it.dose_sugerida}</p>}
                   {it.como_tomar && <p className="text-[12px] text-[#6B6A66]">{t("supplementEditor.fieldHow")}: {it.como_tomar}</p>}
-                  {it.objetivo && <p className="text-[12px] text-[#6B6A66]">{t("objective")}: {it.objetivo}</p>}
-                  {it.observacao && <p className="text-[12px] text-[#6B6A66]">{t("note")}: {it.observacao}</p>}
-                  {it.buy_url && <p className="text-[12px] text-[#2f5fae] break-all">{t("supplementEditor.fieldBuyUrl")}: {it.buy_url}</p>}
                 </div>
               ))}
             </div>
+          )}
+          {supStoreUrl && (
+            <p className="text-[12px] text-[#6B6A66] mb-3">
+              {t("supplementEditor.storeLink")}: <span className="text-[#2f5fae] break-all">{supStoreUrl}</span>
+            </p>
           )}
           <Section title={t("generalNotes")} items={sup.observacoes_gerais} />
           </div>

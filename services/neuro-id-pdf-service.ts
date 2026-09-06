@@ -723,9 +723,9 @@ const SUPP_STRINGS = {
     intro: "",
     lForm: "Form", lDose: "Suggested dose", lHow: "How to take", lGoal: "Goal", lNote: "Note",
     general: "General notes",
-    buyLabel: "Suggested purchase",
+    storeLabel: "Where to buy",
     disclaimer:
-      "This link is only a purchase suggestion, as it is a brand we trust. You are free to buy wherever you prefer, paying attention to the quality and dose of each supplement.",
+      "The supplements above can be found in our online store (one link, same trusted brand). This is only a purchase suggestion: you are free to buy wherever you prefer, paying attention to the quality and dose of each supplement.",
   },
 } as const;
 
@@ -734,6 +734,8 @@ export async function buildNeuroIdSupplementPdf(opts: {
   country: "BR" | "US";
   patientName?: string | null;
   clinic?: ClinicBrand;
+  /** EUA: link ÚNICO da loja/dispensário (o paciente clica um só link). */
+  storeUrl?: string | null;
 }): Promise<Buffer> {
   const s = SUPP_STRINGS[opts.country];
   const brand = opts.clinic ?? {};
@@ -770,24 +772,29 @@ export async function buildNeuroIdSupplementPdf(opts: {
 
   for (const it of opts.protocolo.itens) {
     if (!it.nome?.trim()) continue;
-    ensureSpace(doc, 70);
+    ensureSpace(doc, 60);
     doc.moveDown(0.3);
     doc.font("Times-Bold").fontSize(11.5).fillColor(INK).text(it.nome.trim(), MARGIN, doc.y, { width: CONTENT_W });
     doc.moveDown(0.1);
+    // Documento ao paciente: só nome + forma + dose + como tomar (sem "Objetivo"/"Obs.").
     line(s.lForm, it.forma);
     line(s.lDose, it.dose_sugerida);
     line(s.lHow, it.como_tomar);
-    line(s.lGoal, it.objetivo);
-    line(s.lNote, it.observacao);
+  }
 
-    // Link de compra só nos EUA, e só quando houver link (do profissional/catálogo).
-    if (opts.country === "US" && it.buy_url?.trim()) {
-      const us = SUPP_STRINGS.US;
-      doc.moveDown(0.15);
+  // EUA: UM único link da loja no fim (todos os suplementos no mesmo dispensário),
+  // com o aviso uma vez só. storeUrl vem do chamador; fallback: deriva do buy_url de
+  // um item (tira o "/products/<slug>"). Sem link → não mostra a seção de compra.
+  if (opts.country === "US") {
+    const us = SUPP_STRINGS.US;
+    const fromItem = opts.protocolo.itens.find((it) => it.buy_url?.trim())?.buy_url?.trim();
+    const store = (opts.storeUrl?.trim() || (fromItem ? fromItem.split("/products/")[0] : "")).trim();
+    if (store) {
+      doc.moveDown(0.5);
       doc.font("Times-Italic").fontSize(8.5).fillColor("#6B6A66").text(us.disclaimer, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
-      doc.moveDown(0.1);
-      doc.font("Times-Bold").fontSize(9.5).fillColor(INK).text(`${us.buyLabel}: `, MARGIN, doc.y, { continued: true });
-      doc.font("Times-Roman").fillColor("#2f5fae").text(it.buy_url.trim(), { link: it.buy_url.trim(), underline: true });
+      doc.moveDown(0.2);
+      doc.font("Times-Bold").fontSize(10).fillColor(INK).text(`${us.storeLabel}: `, MARGIN, doc.y, { continued: true });
+      doc.font("Times-Roman").fillColor("#2f5fae").text(store, { link: store, underline: true });
     }
   }
 
