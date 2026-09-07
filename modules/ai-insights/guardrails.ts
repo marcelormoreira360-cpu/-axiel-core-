@@ -157,9 +157,12 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
   • input_data.lab_exams — marcadores laboratoriais fora da faixa. input_data.functional_exams do tipo teste_capilar (Camada 2).
   • avaliação/anamnese/questionários (assessment_extra) e queixas; prescriptions (o que já toma → não duplicar/interagir).
   • input_data.documents — DOCUMENTOS anexados do paciente já resumidos (ex.: exames/laudos em PDF, histórico). Use como fonte.
-- COBERTURA POR EIXO com MÚLTIPLAS FÓRMULAS: para CADA prioridade funcional identificada, crie uma fórmula SEPARADA
-  "ponto de partida" a validar. NÃO concentre tudo numa fórmula única — um quadro com bons dados costuma render de
-  2 a 4 fórmulas (às vezes mais), cada uma nomeada por função. Prefira dividir a amontoar.
+- COBERTURA COMPLETA (o que importa): cubra TODOS os eixos que os dados do paciente sustentam — não pare num eixo só
+  quando há mais achados relevantes. A "fórmula fraca" a evitar é a que ignora eixos, não a que tem poucas fórmulas.
+- NÚMERO DE FÓRMULAS = LÓGICA DE FORMULAÇÃO, não uma meta: agrupe numa MESMA fórmula os ativos COMPATÍVEIS entre si e
+  que cabem em dose/volume de uma cápsula/sachê; SEPARE em fórmulas diferentes só quando houver incompatibilidade,
+  quantidade/volume que não cabe, ou interação. Pode ser UMA fórmula (se tudo for compatível e couber) ou VÁRIAS —
+  NUNCA force múltiplas fórmulas nem amontoe ativos que não devem ficar juntos. Respeite os princípios de manipulação.
   Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina,
   adaptógenos como ashwagandha/rhodiola), regulação emocional/HPA e neurotransmissores (conforme achados),
   fígado/detoxificação (NAC, silimarina, colina — relevante p/ nicotina/álcool/maconha e carga química),
@@ -196,9 +199,11 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
     - "intro": 1–2 frases calorosas ligando o plano à avaliação e ao exame do paciente.
     - "cuidados": um item por tema a cuidar (ex.: intestino, fígado, pele/cabelo, energia/treino), CADA UM ligado a um
       achado REAL do paciente (exame/avaliação/Mapa Bio³) e ao porquê — em linguagem calorosa e personalizada.
-    - "formulas": gere VÁRIAS fórmulas (tipicamente 2–4+ num quadro claro), uma por FUNÇÃO/eixo — NÃO amontoe tudo numa
-      só. Agrupe apenas ativos COMPATÍVEIS entre si (ver SEGURANÇA E INTERAÇÕES); ativos incompatíveis vão em fórmulas
-      separadas. Nomeie por função (ex.: "Fórmula 1 · Suporte ao sistema nervoso", "Fórmula 2 · Suporte hepático/detox").
+    - "formulas": cubra os eixos que os dados sustentam; o NÚMERO de fórmulas segue a COMPATIBILIDADE de formulação
+      (ver SEGURANÇA E INTERAÇÕES): agrupe numa mesma fórmula os ativos compatíveis que cabem em dose/volume, e separe
+      em fórmulas diferentes só os incompatíveis / que não cabem / com interação. Pode ser 1 fórmula (se tudo couber e
+      for compatível) ou várias — nunca force múltiplas nem amontoe indevidamente. Nomeie por função (ex.: "Fórmula 1 ·
+      Suporte ao sistema nervoso", "Fórmula 2 · Suporte hepático/detox").
       Cada fórmula tem "composicao" (cada ativo com QUANTIDADE exata: mg/g/mcg/UFC), "excipiente"
       (ex.: "Excipiente q.s.p. 1 cápsula gastrorresistente" / "q.s.p. sachê"), "posologia" (como/quando tomar) e "duracao".
     - "proximos_passos": reavaliação em 15/30/60 dias, em tom de parceria.

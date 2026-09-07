@@ -165,15 +165,31 @@ export const aiInsightJsonShape = {
     // BRASIL (fórmula manipulada) — formato rico, específico do caso:
     intro: "1–2 frases calorosas: este é o plano de suplementação, montado a partir da avaliação e do exame; cuidar primeiro do que o corpo pede.",
     cuidados: [
-      { titulo: "Tema do cuidado (ex.: 'Seu intestino', 'Apoio ao fígado', 'Pele, cabelo e articulações')", texto: "Ligue o achado REAL do paciente (exame/avaliação) ao porquê, em linguagem calorosa e específica — nada genérico." },
+      { titulo: "Tema 1 (ex.: 'Seu sistema nervoso e sono')", texto: "Ligue o achado REAL do paciente (exame/avaliação) ao porquê, em linguagem calorosa e específica — nada genérico." },
+      { titulo: "Tema 2 (ex.: 'Apoio ao fígado')", texto: "Outro eixo que os dados do paciente sustentam, também ligado a um achado real." },
+      { titulo: "Tema 3 (ex.: 'Circulação / energia'; inclua quantos temas os dados sustentarem)", texto: "Mais um eixo, se houver achado que o justifique." },
     ],
     formulas: [
       {
-        nome: "Fórmula N · Nome funcional (ex.: 'Fórmula 1 · Probiótico (equilíbrio intestinal)')",
-        composicao: [{ ativo: "Ativo (ex.: Magnésio glicinato)", quantidade: "Quantidade exata (ex.: 200 mg / 10 bilhões UFC / 3 a 5 g)" }],
+        nome: "Fórmula 1 · <função> (ex.: 'Suporte ao sistema nervoso')",
+        composicao: [
+          { ativo: "Ativo A (ex.: Magnésio glicinato)", quantidade: "Quantidade exata (ex.: 200 mg)" },
+          { ativo: "Ativo B (ex.: L-teanina)", quantidade: "ex.: 100 mg" },
+          { ativo: "Ativo C conforme o achado (ex.: Glicina/Taurina/adaptógeno)", quantidade: "quantidade" },
+        ],
         excipiente: "Excipiente q.s.p. 1 cápsula/sachê (a forma manipulada).",
-        posologia: "Como e quando tomar (ex.: '1 cápsula ao dia à noite, longe de bebidas quentes').",
-        duracao: "Duração (ex.: '60 dias').",
+        posologia: "Como e quando tomar (ex.: '1 cápsula ao dia à noite').",
+        duracao: "ex.: 60 dias",
+      },
+      {
+        nome: "Fórmula 2 · <outra função> (ex.: 'Suporte hepático / detox')",
+        composicao: [
+          { ativo: "Ativo (ex.: N-acetilcisteína)", quantidade: "ex.: 600 mg" },
+          { ativo: "Ativo (ex.: Silimarina)", quantidade: "ex.: 200 mg" },
+        ],
+        excipiente: "Excipiente q.s.p. cápsula.",
+        posologia: "ex.: 1 cápsula ao dia após o almoço.",
+        duracao: "ex.: 8 semanas",
       },
     ],
     proximos_passos: "Reavaliar em 15/30/60 dias; começar com calma e avisar se algo não cair bem.",
