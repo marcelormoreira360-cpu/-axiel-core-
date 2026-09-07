@@ -8,7 +8,7 @@ import { completeAiRequest, createAiRequest, saveAiInsight } from "@/services/ai
 import { scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
 
 export async function generateAndSaveAiInsight(patientId: string): Promise<AiInsight> {
-  const snapshot = await buildAiInsightInput(patientId);
+  const snapshot = await buildAiInsightInput(patientId, { includeDocuments: true });
   if (!snapshot) throw new Error("Patient not found.");
 
   const model = reportModel();

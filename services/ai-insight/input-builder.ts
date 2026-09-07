@@ -9,6 +9,8 @@ import { getPatientFunctionalExams } from "@/services/functional-exams-service";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { getClinicAssessmentFields, assessmentReportPairs, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
 import { getSupplementCatalog, resolveSupplementCountry, supplementOutputType } from "@/services/supplement-service";
+import { getPatientDocuments, downloadPatientDocumentBytes } from "@/services/patient-document-service";
+import { summarizeClinicalDocument } from "@/services/exam-ai-service";
 import { EXAM_METRIC_META } from "@/modules/neuro-id/exam-metrics";
 import { normalizeInsightText } from "@/modules/ai-insights/guardrails";
 
@@ -97,9 +99,14 @@ export type AiInsightInputSnapshot = {
     output_type: "br_formula" | "us_link";
     catalog: Array<{ name: string; form: string | null; default_dosage: string | null; notes: string | null; source: string }>;
   };
+  /** Documentos anexados (seção "Documentos") resumidos pela IA — só quando includeDocuments. */
+  documents: Array<{ name: string; summary: string }>;
 };
 
-export async function buildAiInsightInput(patientId: string): Promise<AiInsightInputSnapshot | null> {
+export async function buildAiInsightInput(
+  patientId: string,
+  opts?: { includeDocuments?: boolean },
+): Promise<AiInsightInputSnapshot | null> {
   const patient = await getPatientById(patientId);
   if (!patient) return null;
 
@@ -117,6 +124,33 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
   ]);
   const neuroIdMap = await getLatestNeuroIdMap(patientId).catch(() => null);
   const clinicFields = await getClinicAssessmentFields(patient.clinic_id, { activeOnly: true }).catch(() => []);
+
+  // Documentos anexados (seção "Documentos"): best-effort. Só na geração principal
+  // (opts.includeDocuments) para não pesar as demais chamadas. Extrai um resumo clínico
+  // de até 5 PDFs/imagens, em paralelo, com timeout; qualquer falha vira lista vazia.
+  const documents: Array<{ name: string; summary: string }> = [];
+  if (opts?.includeDocuments) {
+    try {
+      const docs = (await getPatientDocuments(patientId).catch(() => []))
+        .filter((d) => d.file_type === "pdf" || d.file_type === "image")
+        .slice(0, 5);
+      const withTimeout = <T>(p: Promise<T>, ms: number, fb: T): Promise<T> =>
+        Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fb), ms))]);
+      const summaries = await Promise.all(docs.map(async (d) => {
+        try {
+          const bytes = await downloadPatientDocumentBytes(d.file_path);
+          if (!bytes || bytes.length === 0 || bytes.length > 15 * 1024 * 1024) return null;
+          const mimeType = d.file_type === "pdf" ? "application/pdf" : "image/jpeg";
+          const summary = await withTimeout(
+            summarizeClinicalDocument({ fileBase64: bytes.toString("base64"), mimeType, filename: d.file_name, locale: patient.locale }),
+            60_000, null,
+          );
+          return summary?.trim() ? { name: d.file_name, summary: summary.trim() } : null;
+        } catch { return null; }
+      }));
+      for (const s of summaries) if (s) documents.push(s);
+    } catch { /* documentos são fonte opcional: nunca quebram a geração */ }
+  }
 
   // Suplementação por país: BR = fórmula manipulada; US = catálogo de referência
   // da clínica (DFH/Pure Encapsulations). Só o do país do paciente entra como referência.
@@ -243,5 +277,6 @@ export async function buildAiInsightInput(patientId: string): Promise<AiInsightI
         .filter((c) => c.country === supplementCountry)
         .map((c) => ({ name: c.name, form: c.form, default_dosage: c.default_dosage, notes: c.notes, source: c.source })),
     },
+    documents,
   };
 }
