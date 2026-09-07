@@ -45,24 +45,10 @@ export async function createLead(input: Pick<Lead, "clinic_id" | "full_name" | "
 
   if (error) throw error;
 
-  // Jornada (Frente C): topo de funil. Cobre o caminho da equipe; leads de outros
-  // canais (formulário público, bot, Meta) entram no Passo 3 (o backfill da
-  // migration 158 já captura todo o histórico de leads). Best-effort.
-  if (data?.id) {
-    const { emitJourneyEvent } = await import("@/services/journey-events-service");
-    await emitJourneyEvent({
-      clinicId: input.clinic_id,
-      leadId: data.id as string,
-      eventType: "lead_created",
-      occurredAt: (data.created_at as string) ?? null,
-      actorType: user?.id ? "staff" : "system",
-      recordedByUser: user?.id ?? null,
-      refTable: "leads",
-      refId: data.id as string,
-      dedupKey: `core:lead:${data.id}:lead_created`,
-      payload: { source: input.source ?? null },
-    });
-  }
+  // Jornada (Frente C): o evento lead_created é gravado por TRIGGER no banco
+  // (migration 159, trg_lead_created_journey), que captura leads de TODOS os
+  // canais de forma uniforme (equipe, formulário público, bot, Meta, Hotmart).
+  // Por isso NÃO emitimos aqui — evita fonte dupla; o trigger é o ponto único.
 
   return data as Lead;
 }
