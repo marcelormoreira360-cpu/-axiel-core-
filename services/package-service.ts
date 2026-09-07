@@ -43,7 +43,28 @@ export async function createPatientPackage(data: {
 }): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
-  await supabase.from("patient_packages").insert(data);
+  const { data: inserted } = await supabase
+    .from("patient_packages")
+    .insert(data)
+    .select("id")
+    .single();
+
+  // Jornada (Frente C): contratar pacote = início do plano (T1 da métrica).
+  // Best-effort, não interfere na criação do pacote.
+  if (inserted?.id) {
+    const { emitJourneyEvent } = await import("@/services/journey-events-service");
+    await emitJourneyEvent({
+      clinicId: data.clinic_id,
+      patientId: data.patient_id,
+      eventType: "plan_started",
+      occurredAt: data.start_date,
+      actorType: "staff",
+      refTable: "patient_packages",
+      refId: inserted.id,
+      dedupKey: `core:pkg:${inserted.id}:plan_started`,
+      payload: { package_name: data.name },
+    });
+  }
 }
 
 export async function deactivatePatientPackage(id: string, clinicId: string): Promise<void> {

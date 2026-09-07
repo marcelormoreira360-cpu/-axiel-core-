@@ -125,6 +125,25 @@ export async function createTreatmentPlan(input: {
     .single();
 
   if (error) throw error;
+
+  // Jornada (Frente C): criar o plano (status active, started_at hoje) = início
+  // do plano (T1 da métrica). Best-effort, não interfere na criação do plano.
+  if (data?.id) {
+    const { emitJourneyEvent } = await import("@/services/journey-events-service");
+    await emitJourneyEvent({
+      clinicId: input.clinic_id,
+      patientId: input.patient_id,
+      eventType: "plan_started",
+      occurredAt: (data.started_at as string) ?? null,
+      actorType: "staff",
+      recordedByUser: input.created_by ?? null,
+      refTable: "treatment_plans",
+      refId: data.id as string,
+      dedupKey: `core:tp:${data.id}:plan_started`,
+      payload: { title: input.title },
+    });
+  }
+
   return { ...data, steps: [] } as TreatmentPlan;
 }
 

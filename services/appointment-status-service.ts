@@ -65,6 +65,7 @@ type ApptRow = {
   patient_id: string;
   starts_at: string;
   status: string | null;
+  session_type_id: string | null;
   google_event_id: string | null;
   zoom_meeting_id: string | null;
   session_types?: { name?: string | null } | { name?: string | null }[] | null;
@@ -90,7 +91,7 @@ export async function changeAppointmentStatus(input: {
 
   const { data: appt, error: readErr } = await supabase
     .from("appointments")
-    .select("id, clinic_id, patient_id, starts_at, status, google_event_id, zoom_meeting_id, session_types(name)")
+    .select("id, clinic_id, patient_id, starts_at, status, session_type_id, google_event_id, zoom_meeting_id, session_types(name)")
     .eq("id", appointmentId)
     .is("deleted_at", null)
     .maybeSingle();
@@ -150,6 +151,12 @@ export async function changeAppointmentStatus(input: {
   // Hooks da Fase 2 (só registram o evento; nenhuma cobrança). Fire-and-forget.
   dispatchLifecycleEvents(row, toStatus).catch((e) =>
     log.error("Falha ao despachar lifecycle events", e as Error, { appointmentId, toStatus }),
+  );
+
+  // Jornada do paciente (Frente C): marca datada de conclusão de sessão e, se o
+  // tipo for de avaliação, o T0 da métrica. Best-effort, não afeta a transição.
+  dispatchJourneyEvents(row, toStatus, actor).catch((e) =>
+    log.error("Falha ao despachar journey events", e as Error, { appointmentId, toStatus }),
   );
 
   // Side-effects de cancelamento (limpar Zoom/Google + avisar lista de espera).
@@ -226,6 +233,63 @@ export async function changeAppointmentStatusForStaff(input: {
   }
 
   return changeAppointmentStatus({ appointmentId, toStatus: requested as AppointmentStatus, actor });
+}
+
+// ── Jornada do paciente (Frente C): marcos datados a partir do status ──────────
+
+async function dispatchJourneyEvents(
+  row: ApptRow,
+  toStatus: AppointmentStatus,
+  actor: AppointmentActor,
+): Promise<void> {
+  // Só a conclusão da consulta gera marco de jornada por enquanto.
+  if (toStatus !== "completed" || !row.patient_id) return;
+
+  const supabase = createSupabaseAdminClient();
+  const { emitJourneyEvent } = await import("@/services/journey-events-service");
+  const st = Array.isArray(row.session_types) ? row.session_types[0] : row.session_types;
+  const occurredAt = new Date().toISOString();
+  const recordedByUser = actor.type === "staff" ? actor.userId ?? null : null;
+
+  // Sessão concluída (timeline). dedup_key idempotente pelo appointment.
+  await emitJourneyEvent({
+    clinicId: row.clinic_id,
+    patientId: row.patient_id,
+    eventType: "session_completed",
+    occurredAt,
+    actorType: actor.type,
+    recordedByUser,
+    refTable: "appointments",
+    refId: row.id,
+    dedupKey: `core:appt:${row.id}:session_completed`,
+    payload: { session_type: st?.name ?? null },
+  });
+
+  // T0 da métrica: só se o tipo de sessão está marcado como avaliação. A leitura
+  // de is_evaluation é feita AQUI (não no select do caminho quente de status),
+  // para que, se a migration 158 ainda não tiver rodado, a mudança de status não
+  // quebre — no máximo este marco best-effort não é gravado.
+  if (!row.session_type_id) return;
+  const { data: stFlag } = await supabase
+    .from("session_types")
+    .select("is_evaluation")
+    .eq("id", row.session_type_id)
+    .maybeSingle();
+
+  if (stFlag?.is_evaluation) {
+    await emitJourneyEvent({
+      clinicId: row.clinic_id,
+      patientId: row.patient_id,
+      eventType: "assessment_completed",
+      occurredAt,
+      actorType: actor.type,
+      recordedByUser,
+      refTable: "appointments",
+      refId: row.id,
+      dedupKey: `core:appt:${row.id}:assessment_completed`,
+      payload: { session_type: st?.name ?? null },
+    });
+  }
 }
 
 // ── Hooks da Fase 2 (outbox append-only; sem lógica de cobrança) ────────────────
