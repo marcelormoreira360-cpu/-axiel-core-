@@ -157,16 +157,24 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
   • input_data.lab_exams — marcadores laboratoriais fora da faixa. input_data.functional_exams do tipo teste_capilar (Camada 2).
   • avaliação/anamnese/questionários (assessment_extra) e queixas; prescriptions (o que já toma → não duplicar/interagir).
   • input_data.documents — DOCUMENTOS anexados do paciente já resumidos (ex.: exames/laudos em PDF, histórico). Use como fonte.
-- COBERTURA POR EIXO: para CADA prioridade funcional identificada, proponha uma fórmula "ponto de partida" a validar.
+- COBERTURA POR EIXO com MÚLTIPLAS FÓRMULAS: para CADA prioridade funcional identificada, crie uma fórmula SEPARADA
+  "ponto de partida" a validar. NÃO concentre tudo numa fórmula única — um quadro com bons dados costuma render de
+  2 a 4 fórmulas (às vezes mais), cada uma nomeada por função. Prefira dividir a amontoar.
   Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina,
-  adaptógenos), regulação emocional/HPA e neurotransmissores (conforme achados), energia/mitocôndria, intestino/microbiota,
-  fígado/detoxificação (relevante p/ nicotina/álcool/maconha e carga química), antioxidante/anti-inflamatório, reposição de
-  nutrientes baixos. Escolha só os eixos que os dados do paciente sustentam — nunca um "kit" padrão igual para todos.
+  adaptógenos como ashwagandha/rhodiola), regulação emocional/HPA e neurotransmissores (conforme achados),
+  fígado/detoxificação (NAC, silimarina, colina — relevante p/ nicotina/álcool/maconha e carga química),
+  circulação/vasodilatação e temperatura (quando houver vasoconstrição/mãos frias), energia/mitocôndria,
+  intestino/microbiota, antioxidante/anti-inflamatório (ômega-3), reposição de nutrientes baixos. Cada ativo ligado a um
+  achado REAL (do exame/avaliação). Escolha só os eixos que os dados sustentam — nunca um "kit" padrão igual para todos.
 - BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a poucos itens (ou nenhum) quando os dados forem
   REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames, cadastrar o
   que o paciente já toma) para o protocolo ficar mais preciso.
-- SEGURANÇA: respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as medicações em uso
-  (prescriptions); sinalize possíveis interações em "observacao"; deixe claro que são opções para o profissional validar.
+- SEGURANÇA E INTERAÇÕES (crucial): respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as
+  medicações/hormônios em uso (prescriptions — ex.: testosterona, antidepressivos). Verifique INTERAÇÕES em duas frentes:
+  (a) entre os ativos que você sugere e as medicações/suplementos do paciente; (b) COMPATIBILIDADE de manipulação entre os
+  ativos de UMA MESMA fórmula (ex.: minerais que competem na absorção, lipossolúvel × hidrossolúvel, dose/volume que não cabe
+  numa cápsula) — quando incompatíveis, SEPARE em fórmulas diferentes. Sinalize cada cautela em "observacao"/"observacoes_gerais";
+  deixe claro que são pontos de partida para o profissional validar.
 - CAMADA 2 — EXAME DE CABELO (quando houver teste_capilar em functional_exams): a suplementação é o LUGAR ÚNICO do que o
   paciente toma; incorpore aqui os achados do exame de cabelo além da neurometria/bioemocional (Camada 1):
   • os itens "fora da faixa"/baixos do exame (ex.: colágeno, antocianidinas/polifenóis, minerais/vitaminas abaixo da faixa,
@@ -188,8 +196,10 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
     - "intro": 1–2 frases calorosas ligando o plano à avaliação e ao exame do paciente.
     - "cuidados": um item por tema a cuidar (ex.: intestino, fígado, pele/cabelo, energia/treino), CADA UM ligado a um
       achado REAL do paciente (exame/avaliação/Mapa Bio³) e ao porquê — em linguagem calorosa e personalizada.
-    - "formulas": agrupe os ativos COMPATÍVEIS em fórmulas nomeadas por função (ex.: "Fórmula 1 · Probiótico (equilíbrio
-      intestinal)"). Cada fórmula tem "composicao" (cada ativo com QUANTIDADE exata: mg/g/mcg/UFC), "excipiente"
+    - "formulas": gere VÁRIAS fórmulas (tipicamente 2–4+ num quadro claro), uma por FUNÇÃO/eixo — NÃO amontoe tudo numa
+      só. Agrupe apenas ativos COMPATÍVEIS entre si (ver SEGURANÇA E INTERAÇÕES); ativos incompatíveis vão em fórmulas
+      separadas. Nomeie por função (ex.: "Fórmula 1 · Suporte ao sistema nervoso", "Fórmula 2 · Suporte hepático/detox").
+      Cada fórmula tem "composicao" (cada ativo com QUANTIDADE exata: mg/g/mcg/UFC), "excipiente"
       (ex.: "Excipiente q.s.p. 1 cápsula gastrorresistente" / "q.s.p. sachê"), "posologia" (como/quando tomar) e "duracao".
     - "proximos_passos": reavaliação em 15/30/60 dias, em tom de parceria.
     - "observacoes_gerais": registre que é fórmula para manipulação, a ser avaliada/ajustada pelo profissional.
