@@ -147,9 +147,23 @@ natural das seções acima, no MESMO documento contínuo (NÃO é um documento s
 - observacao: aviso de que não substitui avaliação médica/exames/condutas prescritas.
 
 DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
-- BASE OBRIGATÓRIA: sugira SOMENTE a partir dos dados reais do paciente (avaliação do terapeuta, questionários,
-  exames, Mapa Bio³, achados dos relatórios). Correlacione cada item a um achado; nunca sugira genérico "de prateleira".
-  Se os dados forem escassos, sugira poucos itens (ou nenhum) e diga em observacoes_gerais que faltam dados.
+- PENSE COMO ESPECIALISTA em medicina integrativa e suplementação: leia TODO o quadro do paciente e monte um protocolo
+  COMPLETO e organizado por EIXO/SISTEMA — não pare em 1–2 itens quando os dados sustentam mais. Cada ativo ligado a um achado.
+- USE OS EXAMES E OS DADOS DO CORE como base (não invente; correlacione cada sugestão a um achado real):
+  • input_data.functional_exams — NEUROMETRIA (sistema nervoso autônomo/SNA: HRV, regulação simpático-parassimpática,
+    adaptação, recuperação, temperatura/hemodinâmica). Use tanto o "summary" quanto os "metrics" quando houver.
+  • input_data.bioemocional_source — BIORRESSONÂNCIA / bioemocional (temas emocionais predominantes: ansiedade, sono, humor).
+  • input_data.neuro_id — Mapa Bio³ (eixos Biomecânico/Biofuncional/Bioemocional e o eixo prioritário "comece aqui").
+  • input_data.lab_exams — marcadores laboratoriais fora da faixa. input_data.functional_exams do tipo teste_capilar (Camada 2).
+  • avaliação/anamnese/questionários (assessment_extra) e queixas; prescriptions (o que já toma → não duplicar/interagir).
+- COBERTURA POR EIXO: para CADA prioridade funcional identificada, proponha uma fórmula "ponto de partida" a validar.
+  Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina,
+  adaptógenos), regulação emocional/HPA e neurotransmissores (conforme achados), energia/mitocôndria, intestino/microbiota,
+  fígado/detoxificação (relevante p/ nicotina/álcool/maconha e carga química), antioxidante/anti-inflamatório, reposição de
+  nutrientes baixos. Escolha só os eixos que os dados do paciente sustentam — nunca um "kit" padrão igual para todos.
+- BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a poucos itens (ou nenhum) quando os dados forem
+  REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames, cadastrar o
+  que o paciente já toma) para o protocolo ficar mais preciso.
 - SEGURANÇA: respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as medicações em uso
   (prescriptions); sinalize possíveis interações em "observacao"; deixe claro que são opções para o profissional validar.
 - CAMADA 2 — EXAME DE CABELO (quando houver teste_capilar em functional_exams): a suplementação é o LUGAR ÚNICO do que o
