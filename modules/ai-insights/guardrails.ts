@@ -156,6 +156,7 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
   • input_data.neuro_id — Mapa Bio³ (eixos Biomecânico/Biofuncional/Bioemocional e o eixo prioritário "comece aqui").
   • input_data.lab_exams — marcadores laboratoriais fora da faixa. input_data.functional_exams do tipo teste_capilar (Camada 2).
   • avaliação/anamnese/questionários (assessment_extra) e queixas; prescriptions (o que já toma → não duplicar/interagir).
+  • input_data.documents — DOCUMENTOS anexados do paciente já resumidos (ex.: exames/laudos em PDF, histórico). Use como fonte.
 - COBERTURA POR EIXO: para CADA prioridade funcional identificada, proponha uma fórmula "ponto de partida" a validar.
   Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina,
   adaptógenos), regulação emocional/HPA e neurotransmissores (conforme achados), energia/mitocôndria, intestino/microbiota,

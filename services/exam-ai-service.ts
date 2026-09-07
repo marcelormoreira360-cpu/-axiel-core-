@@ -141,6 +141,57 @@ export async function extractLabMarkers(opts: {
 }
 
 /**
+ * Resumo clínico CONCISO de um DOCUMENTO anexado do paciente (seção "Documentos"):
+ * PDF/imagem (exame, laudo, histórico, receita...) → síntese dos achados relevantes para a
+ * suplementação/relatório. Retorna null se não houver conteúdo clínico útil ou não der para ler.
+ * É best-effort e barato: entra no insight como mais uma fonte (input_data.documents).
+ */
+export async function summarizeClinicalDocument(opts: {
+  fileBase64: string;
+  mimeType: string;
+  filename: string;
+  locale?: string | null;
+}): Promise<string | null> {
+  if (!process.env.OPENAI_API_KEY) return null;
+  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const model = reportModel();
+
+  const isPdf = opts.mimeType === "application/pdf";
+  const isImage = opts.mimeType.startsWith("image/");
+  if (!isPdf && !isImage) return null;
+  const filePart = isPdf
+    ? { type: "file", file: { filename: opts.filename || "documento.pdf", file_data: `data:application/pdf;base64,${opts.fileBase64}` } }
+    : { type: "image_url", image_url: { url: `data:${opts.mimeType};base64,${opts.fileBase64}` } };
+
+  const system = `Você é o analista clínico de um Integrative & Functional Wellness Center (método Neuro ID).
+Recebe um DOCUMENTO anexado do paciente e produz uma SÍNTESE CONCISA (máx. ~100 palavras) dos achados
+CLINICAMENTE RELEVANTES (exames/laudos, marcadores fora da faixa, histórico, medicações, alergias).
+IDIOMA: ${languageInstruction(opts.locale)}
+Regras:
+- Só o que estiver no documento; nunca invente. Linguagem prudente ("o documento registra/sugere").
+- NUNCA comente grau de evidência científica do método.
+- Se o documento NÃO tiver conteúdo clínico útil (ex.: consentimento, recibo, foto sem dado), responda exatamente: SEM_CONTEUDO_CLINICO.
+- Saída em texto simples curto (pode usar bullets), sem repetir cabeçalho do documento.`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model,
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: [filePart as never, { type: "text", text: "Resuma os achados clínicos relevantes deste documento conforme as regras." }] },
+      ],
+    });
+    const text = response.choices[0]?.message?.content?.trim();
+    if (!text || text.length === 0) return null;
+    if (text.toUpperCase().includes("SEM_CONTEUDO_CLINICO")) return null;
+    return text.slice(0, 1200);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Prompt de extração do TESTE CAPILAR (hipersensibilidade). Diferente dos outros
  * exames: NÃO é síntese curta de ~120 palavras — precisa capturar TODOS os itens
  * reativos (alta/moderada) por categoria, pois alimentam o Documento 3 (dieta de
