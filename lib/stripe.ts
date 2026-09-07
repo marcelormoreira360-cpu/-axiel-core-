@@ -31,9 +31,11 @@ const stripePriceBRL = {
   enterprise:   process.env.STRIPE_PRICE_ENTERPRISE_BRL   ?? process.env.STRIPE_PRICE_ENTERPRISE,
 } as const;
 
-// USD: só as envs novas. Enquanto não forem setadas, o resolver cai de volta em
-// BRL (fallback seguro) — ou seja, o código já está pronto, mas nada muda em
-// produção até o Marcelo criar os Price IDs em USD e setar as envs na Vercel.
+// USD: só as envs novas. Enquanto não forem setadas, o resolver LANÇA erro para
+// uma clínica USD (ver resolveStripePrice) — de propósito: cobrar um cliente dos
+// EUA em Reais silenciosamente é pior do que falhar o checkout com mensagem clara.
+// O código já está pronto; para vender em USD basta criar os Price IDs em USD e
+// setar STRIPE_PRICE_<PLANO>_USD na Vercel.
 const stripePriceUSD = {
   starter:      process.env.STRIPE_PRICE_STARTER_USD,
   professional: process.env.STRIPE_PRICE_PROFESSIONAL_USD,
@@ -55,17 +57,17 @@ export function normalizeBillingCurrency(input?: string | null): BillingCurrency
 
 export type ResolvedStripePrice = {
   priceId: string;
-  /** Moeda EFETIVAMENTE cobrada (pode diferir da pedida se houve fallback). */
+  /** Moeda EFETIVAMENTE cobrada. Sempre igual à moeda pedida (sem fallback de moeda). */
   currency: BillingCurrency;
   /** Moeda que foi pedida (a da clínica). */
   requestedCurrency: BillingCurrency;
-  /** true quando pediram USD mas não havia Price em USD e caímos em BRL. */
-  fellBackToBRL: boolean;
 };
 
-// Resolve o Price ID pelo plano + moeda da clínica, com fallback seguro:
-// se pedirem USD e a env em USD não existir, volta para o Price em BRL
-// (nunca quebra o checkout) e sinaliza fellBackToBRL para o chamador logar.
+// Resolve o Price ID pelo plano + moeda da clínica. Regra: a moeda cobrada é
+// SEMPRE a moeda pedida — não há fallback de moeda. Se pedirem USD e o Price em
+// USD não estiver configurado, LANÇA erro claro em vez de cobrar em BRL: cobrar
+// um cliente USD em Reais sem avisar é pior do que o checkout falhar com uma
+// mensagem que o operador entende (basta setar STRIPE_PRICE_<PLANO>_USD).
 export function resolveStripePrice(planCode: string, currency: string = "BRL"): ResolvedStripePrice {
   const plan = planCode as StripePlanCode;
   const requestedCurrency = normalizeBillingCurrency(currency);
@@ -73,20 +75,20 @@ export function resolveStripePrice(planCode: string, currency: string = "BRL"): 
   const usd = stripePriceUSD[plan];
 
   if (requestedCurrency === "USD") {
-    if (usd) {
-      return { priceId: usd, currency: "USD", requestedCurrency, fellBackToBRL: false };
+    if (!usd) {
+      throw new Error(
+        `Missing Stripe price ID (USD) for plan: ${planCode}. ` +
+          `Set STRIPE_PRICE_${plan.toUpperCase()}_USD to sell this plan in USD. ` +
+          `Currency fallback to BRL is disabled on purpose (never charge a USD clinic in BRL).`,
+      );
     }
-    if (brl) {
-      // Pediram USD mas ainda não há Price em USD configurado → segue em BRL.
-      return { priceId: brl, currency: "BRL", requestedCurrency, fellBackToBRL: true };
-    }
-    throw new Error(`Missing Stripe price ID for plan: ${planCode} (USD e BRL ausentes)`);
+    return { priceId: usd, currency: "USD", requestedCurrency };
   }
 
   if (!brl) {
     throw new Error(`Missing Stripe price ID for plan: ${planCode}`);
   }
-  return { priceId: brl, currency: "BRL", requestedCurrency, fellBackToBRL: false };
+  return { priceId: brl, currency: "BRL", requestedCurrency };
 }
 
 // Back-compat: assinatura antiga (só planCode) continua funcionando em BRL.
