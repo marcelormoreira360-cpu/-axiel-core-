@@ -389,7 +389,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
         </details>
       )}
 
-      {sup && (sup.itens.length > 0 || sup.observacoes_gerais.length > 0) && (
+      {sup && ((sup.itens?.length ?? 0) > 0 || (sup.formulas?.length ?? 0) > 0 || (sup.cuidados?.length ?? 0) > 0 || sup.observacoes_gerais.length > 0) && (
         <details className="group rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
             <span>
@@ -399,7 +399,44 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
             <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
           </summary>
           <div className="px-5 pb-5">
-          {sup.itens.length > 0 && (
+          {/* Brasil: cuidados + fórmulas manipuladas (formato rico) */}
+          {sup.intro && <BodyP text={sup.intro} />}
+          {(sup.cuidados?.length ?? 0) > 0 && (
+            <div className="mb-3">
+              <p className={SUBHEAD_CLASS}>{t("supplementEditor.cuidadosTitle")}</p>
+              <div className="space-y-2">
+                {sup.cuidados!.map((c, i) => (
+                  <p key={i} className="text-[13px] leading-5 text-[#0F1A2E] text-justify">
+                    <span className="font-semibold">{c.titulo}</span>
+                    {c.texto ? <span className="text-[#4b5563]"> — {c.texto}</span> : null}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+          {(sup.formulas?.length ?? 0) > 0 && (
+            <div className="mb-3">
+              <p className={SUBHEAD_CLASS}>{t("supplementEditor.formulasTitle")}</p>
+              <div className="space-y-2">
+                {sup.formulas!.map((f, i) => (
+                  <div key={i} className="rounded-xl bg-white border border-[#0F6E56]/20 px-3 py-2">
+                    <p className="text-[13px] font-semibold text-[#0F6E56]">{f.nome}</p>
+                    {(f.composicao?.length ?? 0) > 0 && (
+                      <ul className="mt-1 space-y-0.5">
+                        {f.composicao.map((c, j) => (
+                          <li key={j} className="text-[12px] text-[#4b5563]">• {c.ativo}{c.quantidade ? ` — ${c.quantidade}` : ""}</li>
+                        ))}
+                        {f.excipiente ? <li className="text-[12px] text-[#4b5563]">• {f.excipiente}</li> : null}
+                      </ul>
+                    )}
+                    {f.posologia && <p className="text-[12px] text-[#6B6A66] mt-1"><span className="font-semibold">{t("supplementEditor.fieldPosologia")}:</span> {f.posologia}{f.duracao ? ` · ${f.duracao}` : ""}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* EUA / legado: lista de itens */}
+          {(sup.itens?.length ?? 0) > 0 && (
             <div className="space-y-2 mb-3">
               {sup.itens.map((it, i) => (
                 <div key={i} className="rounded-xl bg-white border border-black/[.06] px-3 py-2">
@@ -417,6 +454,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
             </p>
           )}
           <Section title={t("generalNotes")} items={sup.observacoes_gerais} />
+          {sup.proximos_passos && <BodyP text={sup.proximos_passos} />}
           </div>
         </details>
       )}

@@ -430,6 +430,20 @@ export type NeuroPlanoRegulacao = {
 };
 
 /** Neuro ID 360 — Documento 3: protocolo de suplementação (rascunho; exige aprovação humana). */
+/** Uma fórmula manipulada (Brasil): ativos com quantidade + excipiente + posologia. */
+export type NeuroFormulaManipulada = {
+  /** Nome da fórmula (ex.: "Fórmula 1 · Probiótico (equilíbrio intestinal)"). */
+  nome: string;
+  /** Composição: cada ativo com a quantidade (ex.: "Magnésio glicinato" / "200 mg"). */
+  composicao: Array<{ ativo: string; quantidade: string }>;
+  /** Excipiente/veículo (ex.: "Excipiente q.s.p. 1 cápsula gastrorresistente"). */
+  excipiente?: string;
+  /** Posologia (como/quando tomar). */
+  posologia?: string;
+  /** Duração (ex.: "60 dias", "8 semanas"). */
+  duracao?: string;
+};
+
 export type NeuroProtocoloSuplementacao = {
   itens: Array<{
     nome: string;
@@ -444,6 +458,17 @@ export type NeuroProtocoloSuplementacao = {
     observacao: string;
   }>;
   observacoes_gerais: string[];
+  // ── Brasil (fórmula manipulada) — formato rico do "Plano de Suplementação" ──
+  // Opcionais: quando o país é BR a IA preenche cuidados + formulas (receita pronta
+  // para a farmácia de manipulação); os EUA seguem usando itens + link.
+  /** Abertura calorosa do plano de suplementação. */
+  intro?: string;
+  /** "O que vamos cuidar, e por quê": cada tema (intestino, fígado, pele...) ligado a um achado. */
+  cuidados?: Array<{ titulo: string; texto: string }>;
+  /** Fórmulas manipuladas agrupadas, prontas para levar à farmácia. */
+  formulas?: NeuroFormulaManipulada[];
+  /** Próximos passos (reavaliação 15/30/60 dias). */
+  proximos_passos?: string;
 };
 
 /**

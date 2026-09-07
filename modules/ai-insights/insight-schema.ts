@@ -145,22 +145,39 @@ export const aiInsightJsonShape = {
     observacao: "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.",
   },
 
-  // ── DOCUMENTO 3 — Protocolo de Suplementação (rascunho; exige aprovação humana) ──
-  // País decide a saída (input_data.supplement_context): BR = fórmula manipulada
-  // (ativo + dose + forma "manipulada", sem marca, sem link); US = suplemento
-  // alinhado ao catálogo de referência (só nome/forma/como tomar, sem marca).
+  // ── DOCUMENTO 2 — Protocolo de Suplementação (rascunho; exige aprovação humana) ──
+  // País decide a saída (input_data.supplement_context):
+  //  • BR (br_formula): preencha intro + cuidados + FORMULAS (fórmulas manipuladas
+  //    agrupadas, prontas para a farmácia) + proximos_passos. itens pode ficar vazio.
+  //  • US (us_link): preencha itens (nome/forma/como tomar, sem marca); cuidados/formulas vazios.
   protocolo_suplementacao: {
+    // EUA: lista de suplementos (o link é do profissional).
     itens: [
       {
         nome: "Nome do suplemento/ativo (sem marca)",
         objetivo: "Objetivo da sugestão",
         dose_sugerida: "Dose sugerida (rascunho)",
-        forma: "Forma (ex.: cápsula, pó, sublingual, fórmula manipulada)",
+        forma: "Forma (ex.: cápsula, pó, sublingual)",
         como_tomar: "Como/quando tomar (ex.: 1x ao dia pela manhã, com alimento)",
         observacao: "Observação para o profissional validar",
       },
     ],
-    observacoes_gerais: ["Observação geral sobre a suplementação (rascunho para validação profissional)."],
+    // BRASIL (fórmula manipulada) — formato rico, específico do caso:
+    intro: "1–2 frases calorosas: este é o plano de suplementação, montado a partir da avaliação e do exame; cuidar primeiro do que o corpo pede.",
+    cuidados: [
+      { titulo: "Tema do cuidado (ex.: 'Seu intestino', 'Apoio ao fígado', 'Pele, cabelo e articulações')", texto: "Ligue o achado REAL do paciente (exame/avaliação) ao porquê, em linguagem calorosa e específica — nada genérico." },
+    ],
+    formulas: [
+      {
+        nome: "Fórmula N · Nome funcional (ex.: 'Fórmula 1 · Probiótico (equilíbrio intestinal)')",
+        composicao: [{ ativo: "Ativo (ex.: Magnésio glicinato)", quantidade: "Quantidade exata (ex.: 200 mg / 10 bilhões UFC / 3 a 5 g)" }],
+        excipiente: "Excipiente q.s.p. 1 cápsula/sachê (a forma manipulada).",
+        posologia: "Como e quando tomar (ex.: '1 cápsula ao dia à noite, longe de bebidas quentes').",
+        duracao: "Duração (ex.: '60 dias').",
+      },
+    ],
+    proximos_passos: "Reavaliar em 15/30/60 dias; começar com calma e avisar se algo não cair bem.",
+    observacoes_gerais: ["Fórmula para manipulação — a ser avaliada/ajustada pelo profissional e preparada em farmácia de manipulação."],
   },
 
   // ── DOCUMENTO 3 — Relatório Integrativo de Hipersensibilidade (SÓ com teste capilar) ──
@@ -285,7 +302,31 @@ function coerceProtocolo(o: any): NeuroProtocoloSuplementacao | undefined {
         observacao: str(it?.observacao),
       })).filter((it: { nome: string }) => it.nome.length > 0)
     : [];
-  return { itens, observacoes_gerais: list(s.observacoes_gerais) };
+  // Brasil (fórmula manipulada): cuidados + fórmulas agrupadas.
+  const cuidados = Array.isArray(s.cuidados)
+    ? s.cuidados.slice(0, 12).map((c: any) => ({ titulo: str(c?.titulo), texto: str(c?.texto) }))
+        .filter((c: { titulo: string; texto: string }) => c.titulo.length > 0 || c.texto.length > 0)
+    : undefined;
+  const formulas = Array.isArray(s.formulas)
+    ? s.formulas.slice(0, 15).map((f: any) => ({
+        nome: str(f?.nome),
+        composicao: Array.isArray(f?.composicao)
+          ? f.composicao.slice(0, 30).map((c: any) => ({ ativo: str(c?.ativo), quantidade: str(c?.quantidade) }))
+              .filter((c: { ativo: string }) => c.ativo.length > 0)
+          : [],
+        excipiente: str(f?.excipiente) || undefined,
+        posologia: str(f?.posologia) || undefined,
+        duracao: str(f?.duracao) || undefined,
+      })).filter((f: { nome: string; composicao: unknown[] }) => f.nome.length > 0 || f.composicao.length > 0)
+    : undefined;
+  return {
+    itens,
+    observacoes_gerais: list(s.observacoes_gerais),
+    intro: str(s.intro) || undefined,
+    cuidados: cuidados && cuidados.length > 0 ? cuidados : undefined,
+    formulas: formulas && formulas.length > 0 ? formulas : undefined,
+    proximos_passos: str(s.proximos_passos) || undefined,
+  };
 }
 
 /** Tabela genérica de 2 colunas (padrão/interpretação, eixo/descrição, etc.). */

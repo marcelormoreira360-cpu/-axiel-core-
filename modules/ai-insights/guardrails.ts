@@ -167,11 +167,21 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
   etc.). Só o nome genérico do suplemento/ativo, a forma e como tomar. O link de compra é adicionado pelo profissional,
   não por você.
 - PAÍS (input_data.supplement_context) decide a SAÍDA:
-  • Se country = "BR" (output_type "br_formula"): monte uma FÓRMULA MANIPULADA — os ativos com dose e a forma como
-    "fórmula manipulada" (para a farmácia de manipulação preparar). SEM link, SEM marca. Em observacoes_gerais registre
-    que é uma fórmula para manipulação, a ser avaliada/ajustada pelo profissional e preparada em farmácia de manipulação.
-  • Se country = "US" (output_type "us_link"): sugira suplementos ALINHADOS ao catálogo de referência da clínica em
-    input_data.supplement_context.catalog (marcas de confiança da clínica). Use os nomes/formas desse catálogo como
+  • Se country = "BR" (output_type "br_formula"): NÃO devolva uma lista solta de ativos. Monte o PLANO DE SUPLEMENTAÇÃO
+    no formato de FÓRMULAS MANIPULADAS agrupadas, ESPECÍFICO DO CASO (nunca "de prateleira" nem genérico):
+    - "itens" fica VAZIO (é o formato dos EUA).
+    - "intro": 1–2 frases calorosas ligando o plano à avaliação e ao exame do paciente.
+    - "cuidados": um item por tema a cuidar (ex.: intestino, fígado, pele/cabelo, energia/treino), CADA UM ligado a um
+      achado REAL do paciente (exame/avaliação/Mapa Bio³) e ao porquê — em linguagem calorosa e personalizada.
+    - "formulas": agrupe os ativos COMPATÍVEIS em fórmulas nomeadas por função (ex.: "Fórmula 1 · Probiótico (equilíbrio
+      intestinal)"). Cada fórmula tem "composicao" (cada ativo com QUANTIDADE exata: mg/g/mcg/UFC), "excipiente"
+      (ex.: "Excipiente q.s.p. 1 cápsula gastrorresistente" / "q.s.p. sachê"), "posologia" (como/quando tomar) e "duracao".
+    - "proximos_passos": reavaliação em 15/30/60 dias, em tom de parceria.
+    - "observacoes_gerais": registre que é fórmula para manipulação, a ser avaliada/ajustada pelo profissional.
+    SEM link, SEM marca. Se os dados do Core forem escassos, faça POUCAS fórmulas (ou nenhuma) e diga em
+    observacoes_gerais o que falta (ex.: confirmar métricas dos exames), em vez de inventar uma fórmula genérica.
+  • Se country = "US" (output_type "us_link"): use "itens" (deixe cuidados/formulas vazios). Sugira suplementos ALINHADOS
+    ao catálogo de referência da clínica em input_data.supplement_context.catalog. Use os nomes/formas desse catálogo como
     referência quando fizer sentido clínico, MAS na saída escreva apenas o nome genérico + forma + como tomar (sem marca).
     Não invente link nem marca.
 
