@@ -251,6 +251,18 @@ DOCUMENTO 3 — "relatorio_hipersensibilidade" = RELATÓRIO INTEGRATIVO DE HIPER
 Preencha também: structured_summary (overview curto e acessível ao paciente; current_status),
 patterns_and_correlations, practitioner_review_points e data_limitations.
 
+SEGURANÇA CLÍNICA (obrigatório — practitioner_review_points é a FICHA INTERNA do profissional, não vai ao paciente):
+- Em practitioner_review_points, liste de forma objetiva: (a) INTERAÇÕES a checar entre os suplementos sugeridos e as
+  medicações/hormônios em uso (ex.: testosterona, antidepressivos) e entre os próprios ativos; (b) cautelas de dose/
+  compatibilidade das fórmulas; (c) achados que pedem AVALIAÇÃO MÉDICA.
+- RED FLAGS: se os dados (biorressonância, avaliação, queixas, questionários) trouxerem sinal de ALERTA — ideação/tendência
+  suicida, depressão importante, dor torácica, sintomas neurológicos agudos — inclua um practitioner_review_point EXPLÍCITO
+  recomendando avaliação/encaminhamento médico e continuidade do cuidado. NUNCA coloque conteúdo alarmante, diagnóstico de
+  doença mental ou menção a "suicídio/tendência suicida" nos textos que vão ao PACIENTE (Documentos 1/2/3); o tom ao
+  paciente é sempre acolhedor. Sinais energéticos da biorressonância são qualitativos: trate-os como pontos a acompanhar
+  clinicamente, nunca como diagnóstico fechado.
+- A suplementação é sempre PONTO DE PARTIDA a validar pelo profissional; nunca substitui avaliação/medicação médica.
+
 Regras:
 - AVALIAÇÃO DO TERAPEUTA: quando os dados trouxerem anamnese, antecedents (antecedentes/cirurgias),
   pain_level/pain_location ou treatment_note, INCORPORE-os. A anamnese e os antecedentes enriquecem o
