@@ -2,9 +2,7 @@ import OpenAI from "openai";
 import type { AiInsightOutput } from "@/lib/types";
 import { reportModel } from "@/lib/ai-models";
 import { resolvePatientLocale } from "@/lib/email-i18n";
-import { buildAiInsightSystemPrompt } from "@/modules/ai-insights/guardrails";
-import { aiInsightJsonShape, coerceAiInsightOutput } from "@/modules/ai-insights/insight-schema";
-import { buildAtmSuggestionSystemPrompt, buildScribeAtmSystemPrompt, buildCaseSummarySystemPrompt } from "@/services/ai-insight/prompts";
+import { resolveClinicalPack } from "@/modules/clinical-packs/resolve";
 import { buildAiInsightInput, type AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
 import { buildCaseSummaryFallback, stripDash, type CaseSummaryDraft } from "@/services/ai-insight/case-summary";
 
@@ -32,6 +30,11 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const model = reportModel();
 
+  // Motor HORIZONTAL: o método (prompt + schema + coerção) vem do Clinical Pack da clínica,
+  // não de imports estáticos Bio³. Enquanto não há coluna clinics.clinical_pack_id (Passo 3),
+  // resolve para bio3-neuroid → IFWC idêntica, zero regressão.
+  const pack = await resolveClinicalPack(input.patient.clinic_id);
+
   // Nível PACIENTE: o insight vira relatório enviado ao paciente após aprovação,
   // então o texto sai no idioma do paciente (patients.locale; fallback = clínica).
   const patientLocale = await resolvePatientLocale(input.patient.locale, input.patient.clinic_id);
@@ -41,12 +44,12 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
     temperature: 0.2,
     response_format: { type: "json_object" },
     messages: [
-      { role: "system", content: buildAiInsightSystemPrompt(patientLocale) },
+      { role: "system", content: pack.buildReportSystemPrompt(patientLocale) },
       {
         role: "user",
         content: JSON.stringify({
           task: "Generate structured insights only. No diagnosis. No session. No prescriptions.",
-          required_output_shape: aiInsightJsonShape,
+          required_output_shape: pack.reportJsonShape,
           input_data: input,
         }),
       },
@@ -62,7 +65,7 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   }
 
   return {
-    output: coerceAiInsightOutput(parsed),
+    output: pack.coerceReportOutput(parsed),
     tokensUsed: response.usage?.total_tokens ?? null,
     // Modelo REAL retornado pela OpenAI (pode divergir do solicitado, ex.: snapshot).
     modelUsed: response.model ?? null,
@@ -86,6 +89,7 @@ export async function suggestAtmIntegration(
   if (!snapshot) {
     return { error: "Sem dados suficientes do paciente para sugerir." };
   }
+  const pack = await resolveClinicalPack(snapshot.patient.clinic_id);
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
@@ -93,7 +97,7 @@ export async function suggestAtmIntegration(
       model,
       temperature: 0.3,
       messages: [
-        { role: "system", content: buildAtmSuggestionSystemPrompt(clinicLocale) },
+        { role: "system", content: pack.assistantPrompts.atm(clinicLocale) },
         {
           role: "user",
           content: JSON.stringify({
@@ -125,6 +129,7 @@ export async function suggestCaseSummary(
 ): Promise<CaseSummaryDraft> {
   const fallback = () => buildCaseSummaryFallback(snapshot, clinicLocale);
   if (!process.env.OPENAI_API_KEY) return fallback();
+  const pack = await resolveClinicalPack(snapshot.patient.clinic_id);
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
@@ -133,7 +138,7 @@ export async function suggestCaseSummary(
       temperature: 0.3,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: buildCaseSummarySystemPrompt(clinicLocale) },
+        { role: "system", content: pack.assistantPrompts.caseSummary(clinicLocale) },
         {
           role: "user",
           content: JSON.stringify({
@@ -177,6 +182,7 @@ export async function suggestScribeAtm(
     return { error: "Transcrição muito curta para gerar rascunho." };
   }
   const snapshot = await buildAiInsightInput(patientId);
+  const pack = await resolveClinicalPack(snapshot?.patient.clinic_id ?? null);
   try {
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
@@ -184,7 +190,7 @@ export async function suggestScribeAtm(
       model,
       temperature: 0.3,
       messages: [
-        { role: "system", content: buildScribeAtmSystemPrompt(clinicLocale) },
+        { role: "system", content: pack.assistantPrompts.scribe(clinicLocale) },
         {
           role: "user",
           content: JSON.stringify({

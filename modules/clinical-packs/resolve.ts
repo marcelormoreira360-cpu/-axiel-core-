@@ -1,0 +1,42 @@
+import { DEFAULT_CLINICAL_PACK_ID, getPack } from "@/modules/clinical-packs/registry";
+import type { ClinicalPack } from "@/modules/clinical-packs/types";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+
+/**
+ * Resolve o clinical_pack_id de uma clínica.
+ *
+ * PASSO 3 (atual): lê clinics.clinical_pack_id (migration 156) via admin client, filtrando
+ * pelo id da clínica explicitamente (padrão já usado no Core). Se a leitura falhar por
+ * qualquer motivo (sem clínica identificada, env ausente em testes, erro de rede, linha
+ * inexistente ou coluna vazia), cai no DEFAULT_CLINICAL_PACK_ID (bio3-neuroid) para que a
+ * IFWC — hoje a única clínica em produção — NUNCA quebre.
+ *
+ * Observação de segurança: o admin client (service_role) contorna RLS de propósito aqui,
+ * por isso o filtro por id é obrigatório e explícito; a função nunca lança.
+ */
+export async function resolveClinicalPackId(clinicId?: string | null): Promise<string> {
+  // Sem clínica identificada → fallback seguro imediato.
+  if (!clinicId) return DEFAULT_CLINICAL_PACK_ID;
+
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data, error } = await supabase
+      .from("clinics")
+      .select("clinical_pack_id")
+      .eq("id", clinicId)
+      .maybeSingle();
+
+    if (error) return DEFAULT_CLINICAL_PACK_ID;
+
+    const packId = (data?.clinical_pack_id ?? "").trim();
+    return packId || DEFAULT_CLINICAL_PACK_ID;
+  } catch {
+    // Env de Supabase ausente (ex.: suíte de testes) ou falha de rede → fallback seguro.
+    return DEFAULT_CLINICAL_PACK_ID;
+  }
+}
+
+/** Conveniência: resolve e já devolve o objeto do pack da clínica. */
+export async function resolveClinicalPack(clinicId?: string | null): Promise<ClinicalPack> {
+  return getPack(await resolveClinicalPackId(clinicId));
+}
