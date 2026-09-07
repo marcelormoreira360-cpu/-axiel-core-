@@ -54,7 +54,8 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   const patient = await getPatientById(patientId);
   const supplementCountry = resolveSupplementCountry(patient?.country ?? null, patient?.locale ?? null);
   const protocolo = output?.protocolo_suplementacao ?? null;
-  const hasSupplement = !!protocolo?.itens?.some((i) => i.nome?.trim());
+  const hasSupplement = !!protocolo?.itens?.some((i) => i.nome?.trim())
+    || !!protocolo?.formulas?.some((f) => f.nome?.trim() || (f.composicao?.length ?? 0) > 0);
   const sendSupplementAction = sendSupplementToPatientAction.bind(null, patientId);
   const resendReportAction = resendApprovedInsightAction.bind(null, patientId);
 

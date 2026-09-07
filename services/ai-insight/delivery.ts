@@ -193,7 +193,9 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
   if (!insight) return result;
   const out = (insight.final_output ?? insight.output) as AiInsightOutput;
   const protocolo = out?.protocolo_suplementacao;
-  if (!protocolo || !protocolo.itens?.some((it) => it.nome?.trim())) return result;
+  const hasItens = !!protocolo?.itens?.some((it) => it.nome?.trim());
+  const hasFormulas = !!protocolo?.formulas?.some((f) => f.nome?.trim() || f.composicao?.length);
+  if (!protocolo || (!hasItens && !hasFormulas)) return result;
 
   const patient = await getPatientById(patientId);
   if (!patient) return result;

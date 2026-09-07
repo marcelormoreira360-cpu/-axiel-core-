@@ -743,6 +743,8 @@ export async function buildNeuroIdSupplementPdf(opts: {
   const s = SUPP_STRINGS[opts.country];
   const brand = opts.clinic ?? {};
   const logo = await fetchLogo(brand.logoUrl);
+  // Brasil com fórmulas manipuladas → "Plano de Suplementação" rico (cuidados + fórmulas).
+  const brRich = opts.country === "BR" && !!opts.protocolo.formulas?.length;
 
   const doc = new PDFDocument({
     margins: { top: TOP, bottom: BOTTOM, left: MARGIN, right: MARGIN },
@@ -755,7 +757,7 @@ export async function buildNeuroIdSupplementPdf(opts: {
   doc.on("pageAdded", () => { decorate(); resetBody(doc); });
   resetBody(doc);
 
-  docTitle(doc, s.title, s.subtitle);
+  docTitle(doc, brRich ? "Seu Plano de Suplementação" : s.title, brRich ? "Cuidado integrativo, feito para você · Neuro ID" : s.subtitle);
 
   if (opts.patientName) {
     doc.font("Times-Italic").fontSize(10).fillColor(MUTED).text(opts.patientName, MARGIN, doc.y, { width: CONTENT_W, align: "center" });
@@ -764,6 +766,78 @@ export async function buildNeuroIdSupplementPdf(opts: {
 
   doc.font("Times-Italic").fontSize(9.5).fillColor("#8A5A14").text(s.draft, MARGIN, doc.y, { width: CONTENT_W });
   doc.moveDown(0.5);
+
+  // ── BRASIL: Plano de Suplementação rico (fórmulas manipuladas) ──
+  if (brRich) {
+    const p = opts.protocolo;
+    const tealTitle = (title: string) => {
+      // Quebra pela margem inferior REAL (~692) para o título não colar no rodapé nem
+      // se soltar do próximo parágrafo. moveDown antes; se estourar, vira a página.
+      doc.moveDown(0.4);
+      if (doc.y > 792 - BOTTOM - 40) doc.addPage();
+      doc.font("Helvetica-Bold").fontSize(13).fillColor(TEAL).text(title, MARGIN, doc.y, { width: CONTENT_W });
+      doc.moveDown(0.3);
+    };
+    if (p.intro) paragraph(doc, p.intro);
+    if (p.cuidados?.length) {
+      tealTitle("O que vamos cuidar, e por quê");
+      for (const c of p.cuidados) {
+        if (!c.titulo?.trim() && !c.texto?.trim()) continue;
+        ensureSpace(doc, 40);
+        if (c.titulo?.trim()) doc.font("Helvetica-Bold").fontSize(10.5).fillColor(TEAL).text(c.titulo.trim(), MARGIN, doc.y, { width: CONTENT_W });
+        if (c.texto?.trim()) { doc.moveDown(0.1); doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED).text(c.texto.trim(), MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 }); }
+        doc.moveDown(0.3);
+      }
+    }
+    tealTitle("Suas fórmulas, para levar à farmácia");
+    doc.font("Times-Italic").fontSize(9.5).fillColor(MUTED).text("Esta é a sua receita de manipulação: pontos de partida a ajustar pelo profissional conforme os exames e a sua tolerância.", MARGIN, doc.y, { width: CONTENT_W, lineGap: 2 });
+    doc.moveDown(0.4);
+    for (const f of p.formulas ?? []) {
+      if (!f.nome?.trim() && !f.composicao?.length) continue;
+      const estH = 48 + (f.composicao?.length ?? 0) * 14 + (f.posologia ? 24 : 0);
+      ensureSpace(doc, Math.min(estH, 200));
+      const top = doc.y;
+      doc.font("Helvetica-Bold").fontSize(10.5).fillColor(TEAL).text(f.nome?.trim() || "Fórmula", MARGIN + 10, top + 8, { width: CONTENT_W - 20 });
+      doc.moveDown(0.2);
+      if (f.composicao?.length) {
+        doc.font("Times-Bold").fontSize(9.5).fillColor(INK).text("Composição:", MARGIN + 10, doc.y, { width: CONTENT_W - 20 });
+        for (const c of f.composicao) {
+          if (!c.ativo?.trim()) continue;
+          ensureSpace(doc, 16);
+          const q = c.quantidade?.trim() ? ` — ${c.quantidade.trim()}` : "";
+          doc.font("Times-Roman").fontSize(9.5).fillColor(MUTED).text(`•  ${c.ativo.trim()}${q}`, MARGIN + 16, doc.y, { width: CONTENT_W - 32, lineGap: 1 });
+        }
+        if (f.excipiente?.trim()) doc.font("Times-Roman").fontSize(9.5).fillColor(MUTED).text(`•  ${f.excipiente.trim()}`, MARGIN + 16, doc.y, { width: CONTENT_W - 32, lineGap: 1 });
+      }
+      if (f.posologia?.trim()) {
+        ensureSpace(doc, 20);
+        doc.font("Times-Bold").fontSize(9.5).fillColor(INK).text("Posologia: ", MARGIN + 10, doc.y, { continued: true });
+        doc.font("Times-Roman").fillColor(MUTED).text(f.posologia.trim() + (f.duracao?.trim() ? `  Duração: ${f.duracao.trim()}.` : ""), { width: CONTENT_W - 20 });
+      } else if (f.duracao?.trim()) {
+        doc.font("Times-Bold").fontSize(9.5).fillColor(INK).text("Duração: ", MARGIN + 10, doc.y, { continued: true });
+        doc.font("Times-Roman").fillColor(MUTED).text(f.duracao.trim(), { width: CONTENT_W - 20 });
+      }
+      // moldura da fórmula
+      doc.rect(MARGIN, top, CONTENT_W, doc.y - top + 8).strokeColor("#CFE3DC").lineWidth(0.8).stroke();
+      doc.y = top + (doc.y - top) + 8;
+      doc.moveDown(0.6);
+    }
+    if (opts.protocolo.observacoes_gerais?.length) {
+      tealTitle("Cuidando de você com segurança");
+      for (const o of opts.protocolo.observacoes_gerais) {
+        if (!o?.trim()) continue;
+        ensureSpace(doc, 24);
+        doc.font("Times-Roman").fontSize(10).fillColor(MUTED).text(`•  ${o.trim()}`, MARGIN, doc.y, { width: CONTENT_W, lineGap: 2 });
+        doc.moveDown(0.1);
+      }
+    }
+    if (opts.protocolo.proximos_passos?.trim()) {
+      tealTitle("Seus próximos passos");
+      paragraph(doc, opts.protocolo.proximos_passos);
+    }
+    return pdfToBuffer(doc);
+  }
+
   if (s.intro) paragraph(doc, s.intro);
 
   const line = (label: string, value?: string | null) => {
