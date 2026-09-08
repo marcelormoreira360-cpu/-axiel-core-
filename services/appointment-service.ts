@@ -310,8 +310,12 @@ export async function createAppointment(input: {
       ? (appt as { session_types?: Array<{ is_evaluation?: boolean | null; name?: string | null }> }).session_types?.[0]
       : (appt as { session_types?: { is_evaluation?: boolean | null; name?: string | null } }).session_types;
     if (stJoined?.is_evaluation) {
-      import("@/services/journey-events-service").then(({ emitJourneyEvent }) =>
-        emitJourneyEvent({
+      // Awaited (como o log de auditoria acima) para não se perder no runtime
+      // serverless, onde o event loop congela após o return e um .then() solto
+      // pode nunca rodar — perdendo o marco assessment_scheduled do funil.
+      try {
+        const { emitJourneyEvent } = await import("@/services/journey-events-service");
+        await emitJourneyEvent({
           clinicId: appt.clinic_id,
           patientId: appt.patient_id,
           eventType: "assessment_scheduled",
@@ -327,8 +331,8 @@ export async function createAppointment(input: {
           // Payload sem PHI: só id do tipo de sessão + horário (metadados neutros).
           // O nome do serviço é resolvível via ref_table/ref_id por quem tem permissão.
           payload: { session_type_id: appt.session_type_id ?? null, starts_at: appt.starts_at },
-        }).catch(() => {}),
-      ).catch(() => {});
+        });
+      } catch { /* jornada é best-effort, nunca quebra a criação do agendamento */ }
     }
   }
 

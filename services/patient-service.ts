@@ -1,4 +1,5 @@
 import type { Patient } from "@/lib/types";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export async function getPatients(
   clinicId?: string,
@@ -345,6 +346,23 @@ export async function getPatientReferralInfo(
 // ── LGPD: anonimização de dados do paciente ───────────────────────────────────
 // Ao invés de apagar o prontuário (útil para histórico clínico),
 // substituímos todos os PII por valores genéricos e desativamos o paciente.
+
+/** Campos de PII zerados na anonimização (fonte única p/ o caminho manual e o de sistema). */
+export const ANONYMIZED_PATIENT_FIELDS = {
+  full_name:     "Paciente Anonimizado",
+  email:         null,
+  phone:         null,
+  date_of_birth: null,
+  address_line:  null,
+  neighborhood:  null,
+  city:          null,
+  state:         null,
+  zip_code:      null,
+  country:       null,
+  notes:         null,
+  status:        "inactive",
+} as const;
+
 export async function anonymizePatient(patientId: string): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -366,21 +384,7 @@ export async function anonymizePatient(patientId: string): Promise<void> {
 
   const { data, error } = await supabase
     .from("patients")
-    .update({
-      full_name:     "Paciente Anonimizado",
-      email:         null,
-      phone:         null,
-      date_of_birth: null,
-      address_line:  null,
-      neighborhood:  null,
-      city:          null,
-      state:         null,
-      zip_code:      null,
-      country:       null,
-      notes:         null,
-      status:        "inactive",
-      updated_at:    new Date().toISOString(),
-    })
+    .update({ ...ANONYMIZED_PATIENT_FIELDS, updated_at: new Date().toISOString() })
     .eq("id", patientId)
     .eq("clinic_id", profile.clinic_id)
     .select("id");
@@ -401,4 +405,40 @@ export async function anonymizePatient(patientId: string): Promise<void> {
       metadata: { reason: "lgpd_anonymize" },
     });
   }
+}
+
+/**
+ * Anonimização por SISTEMA (job de retenção, sem usuário autenticado). Usa admin client,
+ * escopado por clinic_id, e grava o log de auditoria direto (contexto de cron, sem sessão).
+ * Só age em pacientes ainda não anonimizados e não soft-deleted. Retorna true se anonimizou.
+ */
+export async function anonymizePatientAsSystem(
+  patientId: string,
+  clinicId: string,
+  reason: string,
+): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("patients")
+    .update({ ...ANONYMIZED_PATIENT_FIELDS, updated_at: new Date().toISOString() })
+    .eq("id", patientId)
+    .eq("clinic_id", clinicId)
+    .neq("full_name", ANONYMIZED_PATIENT_FIELDS.full_name) // idempotente: não re-anonimiza
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) throw error;
+  const rows = (data as { id: string }[] | null) ?? [];
+  if (rows.length === 0) return false;
+
+  // Auditoria (system): grava direto em audit_logs (sem RPC/sessão de usuário).
+  await supabase.from("audit_logs").insert({
+    clinic_id: clinicId,
+    user_id: null,
+    action: "patient.archived",
+    entity_type: "patient",
+    entity_id: patientId,
+    metadata: { reason },
+  });
+  return true;
 }
