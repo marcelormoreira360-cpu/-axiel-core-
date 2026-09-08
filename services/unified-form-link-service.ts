@@ -185,7 +185,11 @@ export async function submitUnifiedFormViaToken(
     if (!(await checkRateLimitDb(`unified-form:${lookup.tokenHash}`, 5, 15 * 60_000))) {
       return { ok: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
     }
-    const res = await saveUnifiedFormResult(lookup.patientId, lookup.clinicId, rows);
+    const templateId = await ensureUnifiedTemplate(lookup.clinicId);
+    const res = await saveUnifiedFormResult(lookup.patientId, lookup.clinicId, rows, {
+      rawAnswers: answers,
+      templateId,
+    });
     await supabase
       .from("assessment_invitations")
       .update({ completed_at: new Date().toISOString() })

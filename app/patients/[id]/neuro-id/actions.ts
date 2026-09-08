@@ -13,6 +13,7 @@ import { sendPushToPatient } from "@/services/push-service";
 import { getServerT, resolveClinicLocale } from "@/lib/email-i18n";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { saveUnifiedFormResult } from "@/services/unified-form-bio3-service";
+import { ensureUnifiedTemplate } from "@/services/unified-form-link-service";
 
 export async function createNeuroIdAssessmentAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -63,7 +64,11 @@ export async function submitUnifiedFormAction(
     .filter(([, v]) => typeof v === "number")
     .map(([code, v]) => ({ code, value: v as number }));
 
-  const res = await saveUnifiedFormResult(patientId, profile.clinic_id, rows);
+  const templateId = await ensureUnifiedTemplate(profile.clinic_id);
+  const res = await saveUnifiedFormResult(patientId, profile.clinic_id, rows, {
+    rawAnswers: answers,
+    templateId,
+  });
   revalidatePath(`/patients/${patientId}`);
   return { assessmentId: res.assessmentId, crisis: res.safety.crisis, cardioresp: res.safety.cardioresp };
 }
