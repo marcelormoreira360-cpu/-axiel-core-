@@ -1049,6 +1049,27 @@ as $$
   );
 $$;
 
+-- Leitura de DOCUMENTO CLINICO (SOAP, insights de IA, exames funcionais): exige papel
+-- clinico. Recepcao (front_desk) fica de fora. Nao restringe a tabela patients (necessaria
+-- para agendar/contatar). Aplicada as policies de SELECT desses documentos na migration 161.
+create or replace function public.can_read_clinical_data(target_clinic_id uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select coalesce(
+    public.is_platform_staff()
+    or (
+      public.can_access_clinic(target_clinic_id)
+      and public.current_membership_role(target_clinic_id) in
+        ('clinic_owner', 'clinic_manager', 'practitioner', 'read_only_staff')
+    ),
+    false
+  );
+$$;
+
 create or replace function public.can_manage_clinic(target_clinic_id uuid)
 returns boolean
 language sql
@@ -1299,7 +1320,7 @@ end $$;
 
 create policy "Clinic users can view active ai_insights"
 on public.ai_insights for select to authenticated
-using (public.can_access_clinic(clinic_id) and deleted_at is null);
+using (public.can_read_clinical_data(clinic_id) and deleted_at is null);
 
 create policy "Clinic users can create ai_insights"
 on public.ai_insights for insert to authenticated
