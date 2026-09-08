@@ -5,11 +5,15 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 /**
  * Resolve o clinical_pack_id de uma clínica.
  *
- * PASSO 3 (atual): lê clinics.clinical_pack_id (migration 156) via admin client, filtrando
- * pelo id da clínica explicitamente (padrão já usado no Core). Se a leitura falhar por
- * qualquer motivo (sem clínica identificada, env ausente em testes, erro de rede, linha
- * inexistente ou coluna vazia), cai no DEFAULT_CLINICAL_PACK_ID (bio3-neuroid) para que a
- * IFWC — hoje a única clínica em produção — NUNCA quebre.
+ * Lê clinics.clinical_pack_id (migration 156) via admin client, filtrando pelo id da clínica
+ * explicitamente (padrão já usado no Core). Cada clínica em produção tem um binding EXPLÍCITO
+ * (IFWC/Axiel = "bio3-neuroid"; demais = "generic"), então o caminho normal devolve sempre o
+ * pack correto do banco. Se a leitura falhar por qualquer motivo (sem clínica identificada,
+ * env ausente em testes, erro de rede, linha inexistente ou coluna vazia), cai no
+ * DEFAULT_CLINICAL_PACK_ID, que é o pack NEUTRO "generic": degrada para o lado seguro e nunca
+ * entrega o método proprietário a quem não tem binding para ele. A IFWC não é afetada no uso
+ * normal (sua leitura retorna "bio3-neuroid"); só um erro transitório a levaria ao generic, e
+ * nesse caso a própria geração já tende a falhar por falta dos dados do paciente no banco.
  *
  * Observação de segurança: o admin client (service_role) contorna RLS de propósito aqui,
  * por isso o filtro por id é obrigatório e explícito; a função nunca lança.

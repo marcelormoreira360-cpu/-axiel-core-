@@ -16,6 +16,7 @@ export const auditEvents = {
   userInvited: "user.invited",
   userRoleChanged: "user.role_changed",
   subscriptionUpdated: "subscription.updated",
+  breakGlassGranted: "break_glass.granted",
 } as const;
 
 export type AuditEvent = (typeof auditEvents)[keyof typeof auditEvents];

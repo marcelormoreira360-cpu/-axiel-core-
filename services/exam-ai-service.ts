@@ -105,6 +105,7 @@ export async function extractLabMarkers(opts: {
 
   try {
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0,
       response_format: { type: "json_object" },
@@ -175,6 +176,7 @@ Regras:
 
   try {
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.2,
       messages: [
@@ -253,6 +255,7 @@ export async function analyzeExamPdf(opts: {
 
   try {
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.2,
       messages: [
@@ -310,6 +313,7 @@ export async function extractExamMetrics(opts: {
 
   try {
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0,
       response_format: { type: "json_object" },

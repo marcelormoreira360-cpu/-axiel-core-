@@ -252,7 +252,7 @@ export async function createAppointment(input: {
     throw new Error(CONFLICT_MESSAGE);
   }
 
-  const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)";
+  const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents, is_evaluation)";
   const { data, error } = await supabase
     .from("appointments")
     .insert({ ...apptInput, created_by: user?.id ?? null })
@@ -285,6 +285,55 @@ export async function createAppointment(input: {
       practitioner_id: (appt as { practitioner_id?: string | null }).practitioner_id ?? null,
       created_at: appt.created_at,
     });
+  }
+
+  // Auditoria (#8): criação de agendamento (as transições de status já vão para
+  // appointment_status_events; aqui registramos só a criação). Awaited (como os demais
+  // logs de auditoria) para não se perder em runtime serverless. Best-effort, sem PHI.
+  {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: appt.clinic_id,
+      action: "appointment.created",
+      entityType: "appointment",
+      entityId: appt.id,
+      metadata: { session_type_id: appt.session_type_id ?? null, starts_at: appt.starts_at },
+    });
+  }
+
+  // Jornada (Frente C): agendar uma AVALIAÇÃO = marco assessment_scheduled do funil
+  // de aquisição. Gatilho = tipo de sessão marcado is_evaluation (mesma fonte usada
+  // para assessment_completed). Roda mesmo com skipSideEffects (é registro de marco,
+  // não comunicação ao paciente). Best-effort, deduplicado pelo appointment.
+  {
+    const stJoined = Array.isArray((appt as { session_types?: unknown }).session_types)
+      ? (appt as { session_types?: Array<{ is_evaluation?: boolean | null; name?: string | null }> }).session_types?.[0]
+      : (appt as { session_types?: { is_evaluation?: boolean | null; name?: string | null } }).session_types;
+    if (stJoined?.is_evaluation) {
+      // Awaited (como o log de auditoria acima) para não se perder no runtime
+      // serverless, onde o event loop congela após o return e um .then() solto
+      // pode nunca rodar — perdendo o marco assessment_scheduled do funil.
+      try {
+        const { emitJourneyEvent } = await import("@/services/journey-events-service");
+        await emitJourneyEvent({
+          clinicId: appt.clinic_id,
+          patientId: appt.patient_id,
+          eventType: "assessment_scheduled",
+          occurredAt: appt.created_at,
+          // Deriva o ator: agendamento pela equipe (usuário autenticado) = "staff";
+          // sem usuário (booking público/paciente, webhook) = "system". Alinha com o
+          // padrão dos demais emissores; não rotula tudo como "staff".
+          actorType: user?.id ? "staff" : "system",
+          recordedByUser: user?.id ?? null,
+          refTable: "appointments",
+          refId: appt.id,
+          dedupKey: `core:appt:${appt.id}:assessment_scheduled`,
+          // Payload sem PHI: só id do tipo de sessão + horário (metadados neutros).
+          // O nome do serviço é resolvível via ref_table/ref_id por quem tem permissão.
+          payload: { session_type_id: appt.session_type_id ?? null, starts_at: appt.starts_at },
+        });
+      } catch { /* jornada é best-effort, nunca quebra a criação do agendamento */ }
+    }
   }
 
   // Sessão presencial "agora": grava o agendamento, mas não dispara nada ao paciente.

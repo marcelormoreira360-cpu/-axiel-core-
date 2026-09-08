@@ -1,4 +1,5 @@
 import type { Patient } from "@/lib/types";
+import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
 export async function getPatients(
   clinicId?: string,
@@ -127,6 +128,15 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
     .single();
 
   if (error) throw error;
+
+  // Auditoria (#8): cria paciente. Best-effort, nunca quebra a operação; sem PHI.
+  const { writeAuditLog } = await import("@/services/audit-service");
+  await writeAuditLog({
+    clinicId: input.clinic_id,
+    action: "patient.created",
+    entityType: "patient",
+    entityId: (data as Patient).id,
+  });
   return data as Patient;
 }
 
@@ -228,13 +238,29 @@ export async function updatePatient(
 
   if (!profile?.clinic_id) throw new Error("Usuário sem clínica associada.");
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("patients")
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq("id", patientId)
-    .eq("clinic_id", profile.clinic_id); // ← scope: only own clinic
+    .eq("clinic_id", profile.clinic_id) // ← scope: only own clinic
+    .select("id");
 
   if (error) throw error;
+
+  // Auditoria (#8): edição de prontuário. Guarda só os NOMES dos campos alterados
+  // (sem valores, para não vazar PHI no log). Best-effort. Só registra se a linha
+  // realmente foi alterada — um id de outra clínica casa 0 linhas (sem erro) e não
+  // deve gerar um registro falso de edição.
+  if (updated && updated.length > 0) {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: profile.clinic_id,
+      action: "patient.updated",
+      entityType: "patient",
+      entityId: patientId,
+      metadata: { fields: Object.keys(input) },
+    });
+  }
 }
 
 export async function getPatientById(
@@ -320,6 +346,23 @@ export async function getPatientReferralInfo(
 // ── LGPD: anonimização de dados do paciente ───────────────────────────────────
 // Ao invés de apagar o prontuário (útil para histórico clínico),
 // substituímos todos os PII por valores genéricos e desativamos o paciente.
+
+/** Campos de PII zerados na anonimização (fonte única p/ o caminho manual e o de sistema). */
+export const ANONYMIZED_PATIENT_FIELDS = {
+  full_name:     "Paciente Anonimizado",
+  email:         null,
+  phone:         null,
+  date_of_birth: null,
+  address_line:  null,
+  neighborhood:  null,
+  city:          null,
+  state:         null,
+  zip_code:      null,
+  country:       null,
+  notes:         null,
+  status:        "inactive",
+} as const;
+
 export async function anonymizePatient(patientId: string): Promise<void> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -339,25 +382,63 @@ export async function anonymizePatient(patientId: string): Promise<void> {
     throw new Error("Permissão insuficiente para anonimizar paciente.");
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("patients")
-    .update({
-      full_name:     "Paciente Anonimizado",
-      email:         null,
-      phone:         null,
-      date_of_birth: null,
-      address_line:  null,
-      neighborhood:  null,
-      city:          null,
-      state:         null,
-      zip_code:      null,
-      country:       null,
-      notes:         null,
-      status:        "inactive",
-      updated_at:    new Date().toISOString(),
-    })
+    .update({ ...ANONYMIZED_PATIENT_FIELDS, updated_at: new Date().toISOString() })
     .eq("id", patientId)
-    .eq("clinic_id", profile.clinic_id);
+    .eq("clinic_id", profile.clinic_id)
+    .select("id");
 
   if (error) throw error;
+
+  // Auditoria (#8): anonimização/arquivamento de paciente (ação sensível). Best-effort.
+  // Só registra quando a linha foi de fato anonimizada (id de outra clínica casa 0
+  // linhas, sem erro) — evita registro falso de uma ação sensível que não ocorreu.
+  const anonymized = data as { id: string }[] | null;
+  if (anonymized && anonymized.length > 0) {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: profile.clinic_id,
+      action: "patient.archived",
+      entityType: "patient",
+      entityId: patientId,
+      metadata: { reason: "lgpd_anonymize" },
+    });
+  }
+}
+
+/**
+ * Anonimização por SISTEMA (job de retenção, sem usuário autenticado). Usa admin client,
+ * escopado por clinic_id, e grava o log de auditoria direto (contexto de cron, sem sessão).
+ * Só age em pacientes ainda não anonimizados e não soft-deleted. Retorna true se anonimizou.
+ */
+export async function anonymizePatientAsSystem(
+  patientId: string,
+  clinicId: string,
+  reason: string,
+): Promise<boolean> {
+  const supabase = createSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from("patients")
+    .update({ ...ANONYMIZED_PATIENT_FIELDS, updated_at: new Date().toISOString() })
+    .eq("id", patientId)
+    .eq("clinic_id", clinicId)
+    .neq("full_name", ANONYMIZED_PATIENT_FIELDS.full_name) // idempotente: não re-anonimiza
+    .is("deleted_at", null)
+    .select("id");
+
+  if (error) throw error;
+  const rows = (data as { id: string }[] | null) ?? [];
+  if (rows.length === 0) return false;
+
+  // Auditoria (system): grava direto em audit_logs (sem RPC/sessão de usuário).
+  await supabase.from("audit_logs").insert({
+    clinic_id: clinicId,
+    user_id: null,
+    action: "patient.archived",
+    entity_type: "patient",
+    entity_id: patientId,
+    metadata: { reason },
+  });
+  return true;
 }

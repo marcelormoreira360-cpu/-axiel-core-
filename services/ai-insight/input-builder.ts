@@ -18,7 +18,12 @@ export type AiInsightInputSnapshot = {
   patient: {
     id: string;
     clinic_id: string;
-    full_name: string;
+    /**
+     * Minimização de PHI: só o PRIMEIRO nome vai para a IA (mantém a personalização
+     * calorosa do relatório "pelo nome" sem enviar o sobrenome, que é o identificador).
+     * O nome completo no relatório final vem do CADASTRO, não deste campo.
+     */
+    first_name: string;
     /** Idioma preferido do paciente (patients.locale); null = herda o da clínica. */
     locale: string | null;
     status: string;
@@ -27,8 +32,11 @@ export type AiInsightInputSnapshot = {
     sex: string | null;
     weight_kg: number | null;
     height_cm: number | null;
-    city: string | null;
-    /** País do paciente (patients.country). Determina a linha de crise por país (Doc 1/Doc 2). */
+    /**
+     * País do paciente (patients.country). Determina a linha de crise por país (Doc 1/Doc 2).
+     * Minimização de PHI: cidade/endereço NÃO são enviados à IA (não têm valor clínico e são
+     * identificadores geográficos); ficam só no cadastro.
+     */
     country: string | null;
     anamnese: string | null;
     antecedents: string | null;
@@ -184,7 +192,8 @@ export async function buildAiInsightInput(
     patient: {
       id: patient.id,
       clinic_id: patient.clinic_id,
-      full_name: patient.full_name,
+      // Minimização de PHI: só o primeiro nome vai para a IA (sem sobrenome).
+      first_name: (patient.full_name ?? "").trim().split(/\s+/)[0] || "",
       locale: patient.locale ?? null,
       status: patient.status,
       notes: normalizeInsightText(patient.notes),
@@ -192,7 +201,7 @@ export async function buildAiInsightInput(
       sex: patient.sex,
       weight_kg: patient.weight_kg,
       height_cm: patient.height_cm,
-      city: patient.city,
+      // Minimização de PHI: cidade/endereço NÃO vão para a IA; só o país (linha de crise).
       country: patient.country,
       // Seção "Avaliação" — escrita do terapeuta entra no relatório.
       anamnese: adText("anamnese", patient.anamnese),

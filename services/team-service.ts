@@ -53,13 +53,28 @@ export async function getTeamMembers(clinicId: string): Promise<TeamMember[]> {
 export async function updateMemberRole(userId: string, role: AppRole, callerClinicId: string): Promise<void> {
   const supabase = createSupabaseAdminClient();
   // B-03: scope update to callerClinicId to prevent IDOR across clinics
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("users")
     .update({ role, updated_at: new Date().toISOString() })
     .eq("id", userId)
-    .eq("clinic_id", callerClinicId); // ← only affect users in same clinic
+    .eq("clinic_id", callerClinicId) // ← only affect users in same clinic
+    .select("id");
 
   if (error) throw error;
+
+  // Auditoria (#8): mudança de papel (sensível a segurança). Best-effort. Só
+  // registra quando o papel foi de fato alterado — um userId de outra clínica casa
+  // 0 linhas (sem erro) e não deve gerar um registro falso de mudança de papel.
+  if (updated && updated.length > 0) {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: callerClinicId,
+      action: "user.role_changed",
+      entityType: "user",
+      entityId: userId,
+      metadata: { new_role: role },
+    });
+  }
 }
 
 export async function removeTeamMember(userId: string, callerClinicId: string): Promise<void> {

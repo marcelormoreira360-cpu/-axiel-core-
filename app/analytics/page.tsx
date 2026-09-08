@@ -80,7 +80,10 @@ export default async function AnalyticsPage() {
         })
       : null,
   ]);
-  const conversionPct = conversion && conversion.rate !== null ? Math.round(conversion.rate * 100) : 0;
+  // Taxa exibida: a MADURA (só desfechos conhecidos); enquanto não há coorte madura,
+  // cai para a PROVISÓRIA. Ver computeConversion em services/journey-events-service.
+  const conversionRate = conversion ? conversion.matureRate ?? conversion.provisionalRate : null;
+  const conversionPct = conversionRate !== null ? Math.round(conversionRate * 100) : 0;
 
   const { data: profile } = user
     ? await supabase.from("users").select("full_name, role").eq("id", user.id).maybeSingle()
@@ -111,7 +114,7 @@ export default async function AnalyticsPage() {
                 {t("journeySection")}
               </h2>
 
-              {conversion && conversion.denominator === 0 ? (
+              {conversion && conversion.cohort === 0 ? (
                 <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-6 text-center">
                   <p className="text-sm text-black/50 dark:text-white/40">{t("conversionEmptyTitle")}</p>
                   <p className="text-xs text-black/30 dark:text-white/20 mt-1">{t("conversionEmptyDesc")}</p>
@@ -128,14 +131,14 @@ export default async function AnalyticsPage() {
                   {/* Avaliações concluídas (denominador) */}
                   <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionDenominator")}</p>
-                    <p className="text-2xl font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">{conversion.denominator}</p>
+                    <p className="text-2xl font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">{conversion.cohort}</p>
                     <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("conversionPeriod")}</p>
                   </div>
 
                   {/* Iniciaram o plano (numerador) */}
                   <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionConverted")}</p>
-                    <p className="text-2xl font-bold text-[#0F6E56] dark:text-[#9FE1CB]">{conversion.numerator}</p>
+                    <p className="text-2xl font-bold text-[#0F6E56] dark:text-[#9FE1CB]">{conversion.converted}</p>
                     <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("conversionWindow")}</p>
                   </div>
 

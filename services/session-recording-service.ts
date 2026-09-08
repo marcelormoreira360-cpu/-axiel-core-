@@ -69,6 +69,16 @@ export async function upsertSessionRecord(input: {
     .single();
 
   if (error) throw error;
+
+  // Auditoria (#8): gravação de nota clínica (SOAP). Best-effort, sem conteúdo clínico.
+  const { writeAuditLog } = await import("@/services/audit-service");
+  await writeAuditLog({
+    clinicId: input.clinic_id,
+    action: "session_record.saved",
+    entityType: "session_record",
+    entityId: (data as SessionRecord).id,
+    metadata: { appointment_id: input.appointment_id, soap_mode: input.soap_mode ?? false },
+  });
   return data as SessionRecord;
 }
 

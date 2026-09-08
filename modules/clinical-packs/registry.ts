@@ -13,14 +13,18 @@ const PACKS: Record<string, ClinicalPack> = {
 };
 
 /**
- * Pack padrão de FALLBACK no código.
+ * Pack padrão de FALLBACK no código: NEUTRO ("generic"), nunca o método proprietário.
  *
- * IMPORTANTE (Passo 2): enquanto a coluna clinics.clinical_pack_id não existir (ela chega no
- * Passo 3, migration em rascunho), o default é "bio3-neuroid" para garantir ZERO regressão da
- * IFWC, que é a única clínica em produção hoje. No Passo 3, o binding passa a vir do banco
- * (default de coluna "generic"; IFWC recebe backfill para "bio3-neuroid").
+ * Regra comercial: uma clínica só recebe um método específico (ex.: "bio3-neuroid") por BINDING
+ * EXPLÍCITO no banco (clinics.clinical_pack_id, migration 156, default de coluna "generic";
+ * IFWC recebe backfill para "bio3-neuroid"). Se o binding estiver ausente, vazio ou a leitura
+ * falhar, o motor cai no pack horizontal "generic", que não diagnostica/prescreve/promete —
+ * ou seja, degrada para o lado seguro, e o método da IFWC jamais "vaza" para outra clínica.
+ *
+ * A IFWC não é afetada no uso normal: sua leitura retorna "bio3-neuroid" do banco. O fallback
+ * só entra em cenários sem clínica identificada ou de erro transitório de leitura.
  */
-export const DEFAULT_CLINICAL_PACK_ID = "bio3-neuroid";
+export const DEFAULT_CLINICAL_PACK_ID = "generic";
 
 /** Ids de packs disponíveis (para validação/UI futura). */
 export function listPackIds(): string[] {
@@ -29,7 +33,8 @@ export function listPackIds(): string[] {
 
 /**
  * Resolve o objeto do pack pelo id. Se o id for desconhecido ou vazio, cai no pack padrão
- * (nunca lança), para que o motor de IA jamais quebre por causa de um binding inválido.
+ * NEUTRO ("generic"; nunca lança), para que o motor de IA jamais quebre por causa de um
+ * binding inválido e um id desconhecido nunca resolva no método proprietário.
  */
 export function getPack(packId?: string | null): ClinicalPack {
   const id = (packId ?? "").trim();

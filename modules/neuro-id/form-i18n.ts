@@ -269,6 +269,24 @@ const DISCLAIMER_EN =
  * pt-BR / pt-PT: retorna o template original (optionLabels ausente => exibe o canônico).
  * en: aplica o overlay; `options` continua canônico e `optionLabels` traz a exibição.
  */
+/**
+ * Chave OPCIONAL de desligamento do BLOCO F (pilar emocional / saúde mental — inclui o item
+ * de ideação suicida be_crisis_gosto_vida). Por decisão de Marcelo, o Bloco F CONTINUA sendo
+ * coletado normalmente: NÃO há mudança na captação do questionário nem nas pontuações. Este
+ * gate é apenas um kill-switch para uso futuro (ex.: se o compliance exigir suspender a
+ * coleta rapidamente): default LIGADO (serve o Bloco F); só desliga se
+ * NEURO_ID_BLOCO_F_ENABLED for definido explicitamente como "false". O template canônico
+ * (UNIFIED_FORM) e o scoring permanecem intactos em qualquer caso.
+ */
+export function isBlocoFEnabled(): boolean {
+  return process.env.NEURO_ID_BLOCO_F_ENABLED !== "false";
+}
+
+function gateBlocoF(blocks: LocalizedBlock[]): LocalizedBlock[] {
+  if (isBlocoFEnabled()) return blocks;
+  return blocks.filter((b) => b.pillar !== "emocional");
+}
+
 export function localizeForm(locale: FormLocale): LocalizedForm {
   const chrome = formChrome(locale);
   if (locale !== "en") {
@@ -276,10 +294,10 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
       name: UNIFIED_FORM.name,
       recall: UNIFIED_FORM.recall,
       disclaimer: UNIFIED_FORM.disclaimer,
-      blocks: UNIFIED_FORM.blocks as LocalizedBlock[],
+      blocks: gateBlocoF(UNIFIED_FORM.blocks as LocalizedBlock[]),
     };
   }
-  const blocks: LocalizedBlock[] = UNIFIED_FORM.blocks.map((b) => {
+  const blocks: LocalizedBlock[] = gateBlocoF(UNIFIED_FORM.blocks.map((b) => {
     const bt = EN_BLOCK[b.key];
     return {
       ...b,
@@ -297,6 +315,6 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
         };
       }),
     };
-  });
+  }));
   return { name: CHROME_EN.headerTitle, recall: chrome.greetingAnon, disclaimer: DISCLAIMER_EN, blocks };
 }

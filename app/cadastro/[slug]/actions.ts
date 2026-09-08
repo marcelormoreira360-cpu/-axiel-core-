@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
+import { consentPolicyVersion } from "@/modules/consent/consent-versions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UF_RE = /^[A-Za-zÀ-ÿ\s]{2,40}$/;
@@ -146,6 +147,7 @@ export async function submitSelfRegistrationAction(
       ip_address: ip,
       user_agent: ua,
       source: "onboarding",
+      policy_version: consentPolicyVersion("data_processing"),
     },
     {
       clinic_id: clinicId,
@@ -155,6 +157,7 @@ export async function submitSelfRegistrationAction(
       ip_address: ip,
       user_agent: ua,
       source: "onboarding",
+      policy_version: consentPolicyVersion("analytics_anonymized"),
     },
   ];
   // Opt-in por canal (ver services/channel-consent-service): grava só o que foi

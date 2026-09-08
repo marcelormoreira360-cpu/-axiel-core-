@@ -174,6 +174,24 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
     });
   } catch { /* auditoria não deve quebrar o envio */ }
 
+  // Jornada (Frente C): se o relatório chegou ao paciente (e-mail OU WhatsApp),
+  // registra report_delivered. Dedup pelo insight → reenvios não duplicam o marco.
+  if (result.email === "sent" || result.whatsapp === "sent") {
+    try {
+      const { emitJourneyEvent } = await import("@/services/journey-events-service");
+      await emitJourneyEvent({
+        clinicId: insight.clinic_id,
+        patientId,
+        eventType: "report_delivered",
+        actorType: "staff",
+        refTable: "ai_insights",
+        refId: insight.id,
+        dedupKey: `core:ai_insight:${insight.id}:report_delivered`,
+        payload: { email: result.email, whatsapp: result.whatsapp },
+      });
+    } catch { /* jornada é best-effort, nunca quebra o envio */ }
+  }
+
   return result;
 }
 

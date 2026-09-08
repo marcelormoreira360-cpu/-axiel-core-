@@ -13,6 +13,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { consentPolicyVersion } from "@/modules/consent/consent-versions";
 
 export const MESSAGING_CHANNELS = [
   "email",
@@ -77,6 +78,7 @@ export async function recordChannelConsent(
     ip_address: input.ip ?? null,
     user_agent: input.userAgent ?? null,
     source: input.source ?? "manual",
+    policy_version: consentPolicyVersion("channel"),
     notes: input.notes ?? null,
   });
   if (error) throw error;

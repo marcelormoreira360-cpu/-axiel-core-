@@ -140,7 +140,7 @@ export async function createTreatmentPlan(input: {
       refTable: "treatment_plans",
       refId: data.id as string,
       dedupKey: `core:tp:${data.id}:plan_started`,
-      payload: { title: input.title },
+      payload: {}, // sem PHI: título livre do plano fica fora do log; detalhe via ref_table/ref_id
     });
   }
 
@@ -154,12 +154,30 @@ export async function updateTreatmentPlanStatus(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("treatment_plans")
     .update({ status, updated_at: new Date().toISOString() })
-    .eq("id", planId);
+    .eq("id", planId)
+    .select("clinic_id, patient_id")
+    .maybeSingle();
 
   if (error) throw error;
+
+  // Jornada (Frente C): cancelar um plano = interrupção do tratamento (interrupted).
+  // Só "cancelled" (paused é pausa temporária, não interrupção do funil). Best-effort.
+  if (status === "cancelled" && data?.clinic_id && data?.patient_id) {
+    const { emitJourneyEvent } = await import("@/services/journey-events-service");
+    await emitJourneyEvent({
+      clinicId: data.clinic_id as string,
+      patientId: data.patient_id as string,
+      eventType: "interrupted",
+      actorType: "staff",
+      refTable: "treatment_plans",
+      refId: planId,
+      dedupKey: `core:tp:${planId}:interrupted`,
+      payload: { reason: "plan_cancelled" }, // sem PHI: só o motivo (código fixo)
+    });
+  }
 }
 
 export async function addTreatmentPlanStep(input: {

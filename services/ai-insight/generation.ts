@@ -31,8 +31,9 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const model = reportModel();
 
   // Motor HORIZONTAL: o método (prompt + schema + coerção) vem do Clinical Pack da clínica,
-  // não de imports estáticos Bio³. Enquanto não há coluna clinics.clinical_pack_id (Passo 3),
-  // resolve para bio3-neuroid → IFWC idêntica, zero regressão.
+  // não de imports estáticos Bio³. O binding vem de clinics.clinical_pack_id (migration 156):
+  // a IFWC resolve para bio3-neuroid pelo backfill no banco. Se a leitura falhar, o resolvedor
+  // degrada para o pack NEUTRO "generic" (DEFAULT_CLINICAL_PACK_ID), nunca para o método proprietário.
   const pack = await resolveClinicalPack(input.patient.clinic_id);
 
   // Nível PACIENTE: o insight vira relatório enviado ao paciente após aprovação,
@@ -40,6 +41,7 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const patientLocale = await resolvePatientLocale(input.patient.locale, input.patient.clinic_id);
 
   const response = await client.chat.completions.create({
+    store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
     model,
     temperature: 0.2,
     response_format: { type: "json_object" },
@@ -94,6 +96,7 @@ export async function suggestAtmIntegration(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       messages: [
@@ -134,6 +137,7 @@ export async function suggestCaseSummary(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       response_format: { type: "json_object" },
@@ -187,6 +191,7 @@ export async function suggestScribeAtm(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       messages: [

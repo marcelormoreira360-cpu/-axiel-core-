@@ -247,7 +247,6 @@ async function dispatchJourneyEvents(
 
   const supabase = createSupabaseAdminClient();
   const { emitJourneyEvent } = await import("@/services/journey-events-service");
-  const st = Array.isArray(row.session_types) ? row.session_types[0] : row.session_types;
   const occurredAt = new Date().toISOString();
   const recordedByUser = actor.type === "staff" ? actor.userId ?? null : null;
 
@@ -262,7 +261,7 @@ async function dispatchJourneyEvents(
     refTable: "appointments",
     refId: row.id,
     dedupKey: `core:appt:${row.id}:session_completed`,
-    payload: { session_type: st?.name ?? null },
+    payload: { session_type_id: row.session_type_id ?? null }, // sem PHI: id neutro, não o nome livre
   });
 
   // T0 da métrica: só se o tipo de sessão está marcado como avaliação. A leitura
@@ -287,7 +286,7 @@ async function dispatchJourneyEvents(
       refTable: "appointments",
       refId: row.id,
       dedupKey: `core:appt:${row.id}:assessment_completed`,
-      payload: { session_type: st?.name ?? null },
+      payload: { session_type_id: row.session_type_id ?? null }, // sem PHI: id neutro, não o nome livre
     });
   }
 }
