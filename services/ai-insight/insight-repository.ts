@@ -126,10 +126,10 @@ export async function getAiInsightById(id: string): Promise<AiInsight | null> {
  * (approveAiInsightAsFinal) usa `final_output ?? output`, então o texto editado
  * pelo humano é preservado no envio.
  *
- * Um insight `pending_review`/`needs_changes` é editado no lugar. Um insight já
- * `final` (aprovado/enviado) NÃO fica travado: ao salvar uma edição, ele é
- * REABERTO para `needs_changes` — assim o revisor pode corrigir e reenviar,
- * em vez de receber "não editável". A reabertura fica no log de auditoria.
+ * A edição é permitida em QUALQUER status e NÃO altera o status: um insight já
+ * `final` (aprovado) continua `final` após corrigir o texto — o reenvio ao
+ * paciente é uma decisão MANUAL do terapeuta (botão "Reenviar relatório"),
+ * nunca automático ao salvar. Assim o botão de reenvio permanece disponível.
  */
 export async function updateAiInsightFinalOutput(input: {
   id: string;
@@ -141,28 +141,22 @@ export async function updateAiInsightFinalOutput(input: {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Status atual: se estava FINAL, a edição reabre para revisão (needs_changes).
-  const { data: current, error: readErr } = await supabase
+  const { data, error } = await supabase
     .from("ai_insights")
-    .select("id, clinic_id, patient_id, review_status")
+    .update({ final_output: input.final_output })
     .eq("id", input.id)
+    .select("id, clinic_id, patient_id")
     .maybeSingle();
-  if (readErr) throw readErr;
-  if (!current) throw new Error("Insight não encontrado.");
 
-  const reopened = current.review_status === "final";
-  const patch: Record<string, unknown> = { final_output: input.final_output };
-  if (reopened) patch.review_status = "needs_changes";
-
-  const { error } = await supabase.from("ai_insights").update(patch).eq("id", input.id);
   if (error) throw error;
+  if (!data) throw new Error("Insight não encontrado.");
 
   await writeAuditLog({
-    clinicId: current.clinic_id,
+    clinicId: data.clinic_id,
     action: "ai_insight.edited",
     entityType: "ai_insight",
-    entityId: current.id,
-    metadata: { patient_id: current.patient_id, edited_by: user?.id ?? null, reopened_from_final: reopened },
+    entityId: data.id,
+    metadata: { patient_id: data.patient_id, edited_by: user?.id ?? null },
   });
 }
 
