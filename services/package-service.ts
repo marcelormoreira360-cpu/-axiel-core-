@@ -62,7 +62,7 @@ export async function createPatientPackage(data: {
       refTable: "patient_packages",
       refId: inserted.id,
       dedupKey: `core:pkg:${inserted.id}:plan_started`,
-      payload: { package_name: data.name },
+      payload: {}, // sem PHI: nome livre do pacote fica fora do log; detalhe via ref_table/ref_id
     });
   }
 }
@@ -95,7 +95,7 @@ export async function deactivatePatientPackage(id: string, clinicId: string): Pr
       refTable: "patient_packages",
       refId: id,
       dedupKey: `core:pkg:${id}:interrupted`,
-      payload: { package_name: (pkg as { name?: string | null }).name ?? null, reason: "package_deactivated" },
+      payload: { reason: "package_deactivated" }, // sem PHI: só o motivo (código fixo)
     });
   }
 }
@@ -164,7 +164,7 @@ export async function checkAndAutoRenewPackages(
           refTable: "patient_packages",
           refId: renewedPkg.id as string,
           dedupKey: `core:pkg:${renewedPkg.id}:renewed`,
-          payload: { package_name: pkg.name, previous_package_id: pkg.id },
+          payload: { previous_package_id: pkg.id }, // sem PHI: só a referência ao pacote anterior
         });
       }
     }

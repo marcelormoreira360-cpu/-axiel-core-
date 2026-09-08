@@ -307,7 +307,9 @@ export async function createAppointment(input: {
           refTable: "appointments",
           refId: appt.id,
           dedupKey: `core:appt:${appt.id}:assessment_scheduled`,
-          payload: { session_type: stJoined.name ?? null, starts_at: appt.starts_at },
+          // Payload sem PHI: só id do tipo de sessão + horário (metadados neutros).
+          // O nome do serviço é resolvível via ref_table/ref_id por quem tem permissão.
+          payload: { session_type_id: appt.session_type_id ?? null, starts_at: appt.starts_at },
         }).catch(() => {}),
       ).catch(() => {});
     }

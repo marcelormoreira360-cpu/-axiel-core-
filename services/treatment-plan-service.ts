@@ -140,7 +140,7 @@ export async function createTreatmentPlan(input: {
       refTable: "treatment_plans",
       refId: data.id as string,
       dedupKey: `core:tp:${data.id}:plan_started`,
-      payload: { title: input.title },
+      payload: {}, // sem PHI: título livre do plano fica fora do log; detalhe via ref_table/ref_id
     });
   }
 
@@ -175,7 +175,7 @@ export async function updateTreatmentPlanStatus(
       refTable: "treatment_plans",
       refId: planId,
       dedupKey: `core:tp:${planId}:interrupted`,
-      payload: { title: (data as { title?: string | null }).title ?? null, reason: "plan_cancelled" },
+      payload: { reason: "plan_cancelled" }, // sem PHI: só o motivo (código fixo)
     });
   }
 }
