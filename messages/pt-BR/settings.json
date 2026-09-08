@@ -379,6 +379,8 @@
     "durationUnit": "min",
     "toggleOnline": "Online",
     "toggleRecord": "Gravar",
+    "toggleEvaluation": "Avaliação inicial",
+    "toggleEvaluationHelp": "Marque se este serviço é a avaliação inicial do paciente. Alimenta a métrica de conversão (avaliação → início do plano).",
     "toggleActive": "Ativo",
     "cancelEdit": "Cancelar edição",
     "edit": "Editar",

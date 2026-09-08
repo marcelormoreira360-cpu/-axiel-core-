@@ -34,7 +34,7 @@ export async function createSessionType(input: {
 
 export async function updateSessionType(
   id: string,
-  fields: Partial<Pick<SessionType, "name" | "duration_minutes" | "price_cents" | "is_active" | "is_online" | "is_recorded">>,
+  fields: Partial<Pick<SessionType, "name" | "duration_minutes" | "price_cents" | "is_active" | "is_online" | "is_recorded" | "is_evaluation">>,
 ): Promise<SessionType> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 

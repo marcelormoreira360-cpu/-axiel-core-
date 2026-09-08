@@ -613,6 +613,8 @@ export type SessionType = {
   is_active: boolean;
   is_online: boolean;
   is_recorded: boolean;
+  /** Marca este serviço como AVALIAÇÃO INICIAL (T0 da métrica de conversão avaliação→plano). */
+  is_evaluation: boolean;
   created_at: string;
   updated_at: string;
 };

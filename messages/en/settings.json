@@ -379,6 +379,8 @@
     "durationUnit": "min",
     "toggleOnline": "Online",
     "toggleRecord": "Record",
+    "toggleEvaluation": "Initial assessment",
+    "toggleEvaluationHelp": "Mark if this service is the patient's initial assessment. Powers the conversion metric (assessment → plan start).",
     "toggleActive": "Active",
     "cancelEdit": "Cancel editing",
     "edit": "Edit",
