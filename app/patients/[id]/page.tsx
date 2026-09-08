@@ -23,6 +23,7 @@ import { PatientSupplementsPanel } from "@/components/patient-supplements-panel"
 import { getSupplementCatalog, getPatientSupplementRecommendations } from "@/services/supplement-service";
 import { PatientNeuroIdPanel } from "@/components/patient-neuro-id-panel";
 import { getLatestNeuroIdMap, getNeuroIdAttentionPoints, getAssessmentRawValues } from "@/services/neuro-id-service";
+import { clinicUsesNeuroId } from "@/modules/clinical-packs";
 import { getEvolutionDigest } from "@/services/evolution-service";
 import { liveIdentificacaoPt } from "@/lib/patient-demographics";
 import { PatientTreatmentPlanPanel } from "@/components/patient-treatment-plan-panel";
@@ -95,6 +96,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   const clinic = await getCurrentClinic();
   const patient = await getPatientById(id, clinic?.id ?? undefined);
   if (!patient) notFound();
+
+  // Isolamento mínimo do Bio³ (piloto): clínica sem o método Neuro ID não enxerga os
+  // módulos Bio³ (mapa/pirâmide/anel) como se fossem parte do produto dela.
+  const usesNeuroId = await clinicUsesNeuroId(clinic?.id ?? null);
 
   const t = await getTranslations("patientProfile");
   const tRet = await getTranslations("feeDecisions");
@@ -271,9 +276,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         )}
       </div>
     ) : null,
-    mapa_bio3: (
+    mapa_bio3: usesNeuroId ? (
       <PatientNeuroIdPanel map={neuroIdMap} patientId={id} hasReport={!!neuroIdMap} attentionPoints={attentionPoints} assessmentId={neuroIdMap?.assessment_id ?? null} initialValues={neuroEdit.values} initialAutoCodes={neuroEdit.autoCodes} patientEmail={patient.email ?? null} />
-    ),
+    ) : null,
     resumo_rapido: (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-0 bg-white border border-black/[.07] rounded-[12px] overflow-hidden">
 

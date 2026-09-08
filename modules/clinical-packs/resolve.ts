@@ -44,3 +44,13 @@ export async function resolveClinicalPackId(clinicId?: string | null): Promise<s
 export async function resolveClinicalPack(clinicId?: string | null): Promise<ClinicalPack> {
   return getPack(await resolveClinicalPackId(clinicId));
 }
+
+/**
+ * A clínica usa o método Neuro ID/Bio³? Fonte única para o ISOLAMENTO DE UI: gate dos
+ * módulos Bio³ (mapa, pirâmide, anel, relatórios/suplementação Neuro ID, formulário Neuro ID)
+ * na interface. Clínica sem binding (ou com pack generic) devolve false — não vê Bio³.
+ */
+export async function clinicUsesNeuroId(clinicId?: string | null): Promise<boolean> {
+  const pack = await resolveClinicalPack(clinicId);
+  return pack.capabilities?.neuroId === true;
+}

@@ -1,3 +1,6 @@
+import { redirect } from "next/navigation";
+import { getCurrentClinic } from "@/services/clinic-service";
+import { clinicUsesNeuroId } from "@/modules/clinical-packs";
 import UnifiedFormClient from "./unified-form-client";
 
 /**
@@ -7,6 +10,11 @@ import UnifiedFormClient from "./unified-form-client";
  */
 export default async function UnifiedFormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+
+  // Isolamento Bio³: clínica sem o método Neuro ID não acessa o formulário Neuro ID.
+  const clinic = await getCurrentClinic();
+  if (!(await clinicUsesNeuroId(clinic?.id ?? null))) redirect(`/patients/${id}`);
+
   return (
     <div className="p-2">
       <h1 className="mb-1 px-2 text-xl font-semibold">Formulário Neuro ID — Perfil de 30 Dias</h1>
