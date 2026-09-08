@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { checkRateLimitDb } from "@/lib/webhook-guard";
 import { confirmAppointmentByToken, cancelAppointmentByToken } from "@/services/appointment-service";
+import { consentPolicyVersion } from "@/modules/consent/consent-versions";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -105,8 +106,8 @@ export async function confirmAppointmentAction(
   const ua = h.get("user-agent");
   const supabase = createSupabaseAdminClient();
   await supabase.from("patient_consents").insert([
-    { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "data_processing", granted: true, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding" },
-    { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "analytics_anonymized", granted: consentAnalytics, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding" },
+    { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "data_processing", granted: true, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding", policy_version: consentPolicyVersion("data_processing") },
+    { clinic_id: result.clinicId, patient_id: result.patientId, consent_type: "analytics_anonymized", granted: consentAnalytics, ip_address: ip, user_agent: ua ? ua.slice(0, 300) : null, source: "onboarding", policy_version: consentPolicyVersion("analytics_anonymized") },
   ]);
 
   // Prova do aceite da política de no-show (canal confirm_link). Mesma tabela append-only,

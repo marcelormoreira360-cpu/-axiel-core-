@@ -1,6 +1,7 @@
 "use server";
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
+import { consentPolicyVersion } from "@/modules/consent/consent-versions";
 import crypto from "node:crypto";
 
 function hashToken(token: string) {
@@ -168,6 +169,7 @@ export async function recordConsentAction(
     consent_type: consentType,
     granted,
     source:       "portal",
+    policy_version: consentPolicyVersion(consentType),
   });
 
   if (error) return { ok: false, error: "Erro ao registrar consentimento." };

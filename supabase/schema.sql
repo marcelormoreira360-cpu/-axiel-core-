@@ -1050,8 +1050,10 @@ as $$
 $$;
 
 -- Leitura de DOCUMENTO CLINICO (SOAP, insights de IA, exames funcionais): exige papel
--- clinico. Recepcao (front_desk) fica de fora. Nao restringe a tabela patients (necessaria
--- para agendar/contatar). Aplicada as policies de SELECT desses documentos na migration 161.
+-- clinico como MEMBRO da clinica (owner/manager/practitioner/read_only_staff). Recepcao
+-- (front_desk) fica de fora, e o "platform staff" NAO tem acesso amplo por padrao (migration
+-- 162). Nao restringe a tabela patients (necessaria para agendar/contatar). Aplicada as
+-- policies de SELECT desses documentos na migration 161.
 create or replace function public.can_read_clinical_data(target_clinic_id uuid)
 returns boolean
 language sql
@@ -1060,10 +1062,17 @@ set search_path = public
 stable
 as $$
   select coalesce(
-    public.is_platform_staff()
+    exists (
+      select 1
+      from public.clinic_users cu
+      where cu.user_id = auth.uid()
+        and cu.clinic_id = target_clinic_id
+        and cu.status = 'active'
+        and cu.role::text in ('clinic_owner', 'clinic_manager', 'practitioner', 'read_only_staff')
+    )
     or (
-      public.can_access_clinic(target_clinic_id)
-      and public.current_membership_role(target_clinic_id) in
+      public.current_user_clinic_id() = target_clinic_id
+      and public.current_membership_role(target_clinic_id)::text in
         ('clinic_owner', 'clinic_manager', 'practitioner', 'read_only_staff')
     ),
     false

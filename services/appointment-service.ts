@@ -302,7 +302,10 @@ export async function createAppointment(input: {
           patientId: appt.patient_id,
           eventType: "assessment_scheduled",
           occurredAt: appt.created_at,
-          actorType: "staff",
+          // Deriva o ator: agendamento pela equipe (usuário autenticado) = "staff";
+          // sem usuário (booking público/paciente, webhook) = "system". Alinha com o
+          // padrão dos demais emissores; não rotula tudo como "staff".
+          actorType: user?.id ? "staff" : "system",
           recordedByUser: user?.id ?? null,
           refTable: "appointments",
           refId: appt.id,

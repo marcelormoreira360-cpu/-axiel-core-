@@ -158,7 +158,7 @@ export async function updateTreatmentPlanStatus(
     .from("treatment_plans")
     .update({ status, updated_at: new Date().toISOString() })
     .eq("id", planId)
-    .select("clinic_id, patient_id, title")
+    .select("clinic_id, patient_id")
     .maybeSingle();
 
   if (error) throw error;
