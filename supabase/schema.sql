@@ -1049,11 +1049,40 @@ as $$
   );
 $$;
 
+-- Break-glass (migration 163): acesso de emergencia do suporte da plataforma, temporario
+-- e registrado. Definido ANTES de can_read_clinical_data porque a funcao referencia a tabela.
+create table if not exists public.break_glass_grants (
+  id          uuid primary key default gen_random_uuid(),
+  clinic_id   uuid not null references public.clinics(id) on delete cascade,
+  user_id     uuid not null,
+  reason      text not null,
+  granted_at  timestamptz not null default now(),
+  expires_at  timestamptz not null,
+  created_at  timestamptz not null default now()
+);
+create index if not exists break_glass_grants_lookup_idx
+  on public.break_glass_grants (user_id, clinic_id, expires_at);
+alter table public.break_glass_grants enable row level security;
+create policy "Platform staff can create break-glass grants"
+  on public.break_glass_grants for insert to authenticated
+  with check (
+    public.is_platform_staff()
+    and user_id = auth.uid()
+    -- O teto temporal (TEMPORARIO) e uma invariante de seguranca: precisa valer na
+    -- fronteira (RLS), nao so no codigo do servico, senao um insert direto via PostgREST
+    -- criaria acesso clinico ~permanente. Espelha MAX_DURATION_MINUTES (4h) do servico.
+    and expires_at > now()
+    and expires_at <= now() + interval '4 hours'
+  );
+create policy "View break-glass grants"
+  on public.break_glass_grants for select to authenticated
+  using (public.can_access_clinic(clinic_id));
+
 -- Leitura de DOCUMENTO CLINICO (SOAP, insights de IA, exames funcionais): exige papel
 -- clinico como MEMBRO da clinica (owner/manager/practitioner/read_only_staff). Recepcao
 -- (front_desk) fica de fora, e o "platform staff" NAO tem acesso amplo por padrao (migration
--- 162). Nao restringe a tabela patients (necessaria para agendar/contatar). Aplicada as
--- policies de SELECT desses documentos na migration 161.
+-- 162) — so via break-glass ativo (migration 163). Nao restringe a tabela patients
+-- (necessaria para agendar/contatar). Aplicada as policies de SELECT na migration 161.
 create or replace function public.can_read_clinical_data(target_clinic_id uuid)
 returns boolean
 language sql
@@ -1074,6 +1103,13 @@ as $$
       public.current_user_clinic_id() = target_clinic_id
       and public.current_membership_role(target_clinic_id)::text in
         ('clinic_owner', 'clinic_manager', 'practitioner', 'read_only_staff')
+    )
+    or exists (
+      select 1
+      from public.break_glass_grants g
+      where g.user_id = auth.uid()
+        and g.clinic_id = target_clinic_id
+        and now() < g.expires_at
     ),
     false
   );
