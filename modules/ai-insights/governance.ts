@@ -9,7 +9,7 @@ export const aiGovernanceRules = [
   "Use patient-friendly language.",
   `Show patterns and correlations only.`,
   `Generated outputs start as pending review, not final.`,
-  "Require optional human validation before marking an AI output as final.",
+  "Require human validation before marking an AI output as final.",
   "Track who approved, when approval happened, and any changes made.",
 ] as const;
 

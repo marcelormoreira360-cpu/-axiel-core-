@@ -21,24 +21,27 @@ describe("clinical-packs — registry", () => {
     expect(getPack("").id).toBe(DEFAULT_CLINICAL_PACK_ID);
   });
 
-  it("o default de fallback é bio3-neuroid (zero regressão IFWC no Passo 2)", () => {
-    expect(DEFAULT_CLINICAL_PACK_ID).toBe("bio3-neuroid");
+  it("o default de fallback é o pack NEUTRO 'generic' (nunca o método proprietário)", () => {
+    expect(DEFAULT_CLINICAL_PACK_ID).toBe("generic");
   });
 });
 
-describe("clinical-packs — resolução por clínica (Passo 3, fallback sem banco)", () => {
+describe("clinical-packs — resolução por clínica (fallback sem banco)", () => {
   // No ambiente de teste não há env de Supabase, então a leitura de clinics.clinical_pack_id
-  // (migration 156) cai no fallback seguro. Isso prova que a IFWC nunca quebra se a leitura
-  // do banco falhar por qualquer motivo (env ausente, rede, linha/coluna vazia).
-  it("resolveClinicalPackId cai no default quando não consegue ler o banco", async () => {
+  // (migration 156) cai no fallback seguro. Isso prova que o motor nunca quebra se a leitura
+  // do banco falhar por qualquer motivo (env ausente, rede, linha/coluna vazia) e que, na
+  // dúvida, ele degrada para o pack NEUTRO 'generic' — nunca para o método proprietário.
+  it("resolveClinicalPackId cai no default neutro quando não consegue ler o banco", async () => {
     expect(await resolveClinicalPackId("qualquer-clinic-id")).toBe(DEFAULT_CLINICAL_PACK_ID);
     expect(await resolveClinicalPackId(null)).toBe(DEFAULT_CLINICAL_PACK_ID);
     expect(await resolveClinicalPackId(undefined)).toBe(DEFAULT_CLINICAL_PACK_ID);
   });
 
-  it("resolveClinicalPack devolve o objeto bio3-neuroid no fallback", async () => {
+  it("resolveClinicalPack devolve o pack NEUTRO 'generic' no fallback (sem banco)", async () => {
+    // Sem env de Supabase a leitura falha e cai no neutro. Em produção, a IFWC recebe
+    // 'bio3-neuroid' pelo binding explícito no banco, não por este fallback.
     const pack = await resolveClinicalPack("clinic-ifwc");
-    expect(pack.id).toBe("bio3-neuroid");
+    expect(pack.id).toBe("generic");
   });
 });
 

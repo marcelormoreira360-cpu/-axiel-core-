@@ -36,6 +36,10 @@ create table if not exists public.clinics (
   name text not null,
   slug text not null unique,
   status text not null default 'active' check (status in ('active', 'inactive')),
+  -- Clinical Pack ativo da clínica (método clínico do motor de IA). Ex.: generic, bio3-neuroid.
+  -- Binding por tenant (migration 156); a definição do pack mora no código em modules/clinical-packs.
+  -- Default NEUTRO 'generic'; a IFWC recebe backfill explícito para 'bio3-neuroid' na migration 156.
+  clinical_pack_id text not null default 'generic',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -1850,7 +1854,7 @@ begin
     null,
     coalesce(new.review_status, 'pending_review'),
     new.created_by,
-    'AI output created and waiting for optional human validation before final use.',
+    'AI output created and waiting for human validation before final use.',
     null,
     new.output
   );

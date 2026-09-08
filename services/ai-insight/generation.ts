@@ -31,8 +31,9 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const model = reportModel();
 
   // Motor HORIZONTAL: o método (prompt + schema + coerção) vem do Clinical Pack da clínica,
-  // não de imports estáticos Bio³. Enquanto não há coluna clinics.clinical_pack_id (Passo 3),
-  // resolve para bio3-neuroid → IFWC idêntica, zero regressão.
+  // não de imports estáticos Bio³. O binding vem de clinics.clinical_pack_id (migration 156):
+  // a IFWC resolve para bio3-neuroid pelo backfill no banco. Se a leitura falhar, o resolvedor
+  // degrada para o pack NEUTRO "generic" (DEFAULT_CLINICAL_PACK_ID), nunca para o método proprietário.
   const pack = await resolveClinicalPack(input.patient.clinic_id);
 
   // Nível PACIENTE: o insight vira relatório enviado ao paciente após aprovação,
