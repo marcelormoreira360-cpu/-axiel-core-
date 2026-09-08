@@ -252,7 +252,7 @@ export async function createAppointment(input: {
     throw new Error(CONFLICT_MESSAGE);
   }
 
-  const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents)";
+  const selectCols = "*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes, price_cents, is_evaluation)";
   const { data, error } = await supabase
     .from("appointments")
     .insert({ ...apptInput, created_by: user?.id ?? null })
@@ -285,6 +285,32 @@ export async function createAppointment(input: {
       practitioner_id: (appt as { practitioner_id?: string | null }).practitioner_id ?? null,
       created_at: appt.created_at,
     });
+  }
+
+  // Jornada (Frente C): agendar uma AVALIAÇÃO = marco assessment_scheduled do funil
+  // de aquisição. Gatilho = tipo de sessão marcado is_evaluation (mesma fonte usada
+  // para assessment_completed). Roda mesmo com skipSideEffects (é registro de marco,
+  // não comunicação ao paciente). Best-effort, deduplicado pelo appointment.
+  {
+    const stJoined = Array.isArray((appt as { session_types?: unknown }).session_types)
+      ? (appt as { session_types?: Array<{ is_evaluation?: boolean | null; name?: string | null }> }).session_types?.[0]
+      : (appt as { session_types?: { is_evaluation?: boolean | null; name?: string | null } }).session_types;
+    if (stJoined?.is_evaluation) {
+      import("@/services/journey-events-service").then(({ emitJourneyEvent }) =>
+        emitJourneyEvent({
+          clinicId: appt.clinic_id,
+          patientId: appt.patient_id,
+          eventType: "assessment_scheduled",
+          occurredAt: appt.created_at,
+          actorType: "staff",
+          recordedByUser: user?.id ?? null,
+          refTable: "appointments",
+          refId: appt.id,
+          dedupKey: `core:appt:${appt.id}:assessment_scheduled`,
+          payload: { session_type: stJoined.name ?? null, starts_at: appt.starts_at },
+        }).catch(() => {}),
+      ).catch(() => {});
+    }
   }
 
   // Sessão presencial "agora": grava o agendamento, mas não dispara nada ao paciente.

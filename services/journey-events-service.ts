@@ -98,28 +98,51 @@ export async function emitJourneyEvent(input: EmitJourneyEventInput): Promise<bo
 }
 
 // ── Métrica: conversão avaliação -> início do plano em até N dias ───────────────
+//
+// Coorte de janela (não é uma taxa "instantânea"). Distinguimos três estados por
+// paciente para não subestimar a conversão enquanto ainda há janelas abertas:
+//   - convertido: plan_started em [T0, T0 + janela];
+//   - aberto (stillOpen): sem conversão E a janela ainda não fechou (agora < T0+janela);
+//   - perda madura (maturedLost): sem conversão E a janela já fechou.
+//
+// Expomos DUAS taxas, nomeadas explicitamente (correção metodológica):
+//   - matureRate = convertidos / (convertidos + perdas maduras): a taxa "de verdade",
+//     que só considera casos cujo desfecho já é conhecido. É a que serve de prova.
+//   - provisionalRate = convertidos / coorte total: subestima enquanto há janelas
+//     abertas (pacientes que ainda podem converter contam no denominador). Só para
+//     acompanhamento em tempo real, nunca como número final.
+//
+// LIMITAÇÃO CONHECIDA (paciente ≠ episódio): o T0 é a PRIMEIRA avaliação do paciente
+// no período. Isso mede bem a aquisição inicial, mas não separa reavaliação, retorno,
+// novo problema ou segundo episódio terapêutico. Quando existir um journey_episode_id,
+// a âncora deve passar a ser por episódio, não por paciente. Enquanto não existir,
+// tratamos como métrica de aquisição inicial e assumimos essa limitação.
 
 export type ConversionResult = {
-  /** Pacientes com assessment_completed no período (com T0). */
-  denominator: number;
-  /** Desses, os que iniciaram o plano (plan_started) dentro da janela após o T0. */
-  numerator: number;
-  /** numerator / denominator, ou null quando não há denominador. */
-  rate: number | null;
   windowDays: number;
-  /** Janela ABERTA: T0 dentro do período mas ainda dentro dos N dias (pode converter). */
+  /** Coorte total: pacientes com assessment_completed no período (com T0). */
+  cohort: number;
+  /** Converteram: plan_started em [T0, T0 + janela]. */
+  converted: number;
+  /** Janela ainda ABERTA e sem conversão (agora < T0+janela): ainda pode converter. */
   stillOpen: number;
+  /** Janela FECHADA sem conversão: perda madura (desfecho já conhecido). */
+  maturedLost: number;
+  /** Base madura = converted + maturedLost (= cohort - stillOpen). */
+  maturedCohort: number;
+  /** TAXA MADURA (usar como prova): converted / maturedCohort; null se base madura 0. */
+  matureRate: number | null;
+  /** Taxa PROVISÓRIA (converted / cohort): subestima com janelas abertas; null se coorte 0. */
+  provisionalRate: number | null;
 };
 
 type PatientAnchor = { patientId: string; firstAssessmentAt: number; firstPlanAt: number | null };
 
 /**
  * Cálculo PURO da conversão a partir dos eventos por paciente. Separado da query
- * para ser testável sem banco. Regras:
- *  - T0 do paciente = PRIMEIRO assessment_completed.
- *  - converte se existe QUALQUER plan_started com occurred_at em [T0, T0 + janela].
- *  - "stillOpen" = T0 sem plan_started dentro da janela E a janela ainda não fechou
- *    (agora < T0 + janela): ainda pode converter, não conta como perda.
+ * para ser testável sem banco. `firstPlanAt` já vem filtrado pela query como o
+ * PRIMEIRO plan_started em/após o T0 (ver getAssessmentToPlanConversion, correção B);
+ * o guard `>= firstAssessmentAt` aqui é defensivo.
  */
 export function computeConversion(
   anchors: PatientAnchor[],
@@ -127,27 +150,37 @@ export function computeConversion(
   now: number = Date.now(),
 ): ConversionResult {
   const windowMs = windowDays * 24 * 60 * 60 * 1000;
-  let denominator = 0;
-  let numerator = 0;
+  let cohort = 0;
+  let converted = 0;
   let stillOpen = 0;
+  let maturedLost = 0;
 
   for (const a of anchors) {
-    denominator += 1;
+    cohort += 1;
     const deadline = a.firstAssessmentAt + windowMs;
-    const converted = a.firstPlanAt !== null && a.firstPlanAt <= deadline && a.firstPlanAt >= a.firstAssessmentAt;
-    if (converted) {
-      numerator += 1;
-    } else if (a.firstPlanAt === null && now < deadline) {
+    const hasPlanInWindow =
+      a.firstPlanAt !== null && a.firstPlanAt >= a.firstAssessmentAt && a.firstPlanAt <= deadline;
+    if (hasPlanInWindow) {
+      converted += 1;
+    } else if (now < deadline) {
+      // Sem conversão dentro da janela, mas a janela ainda está aberta: pode converter.
       stillOpen += 1;
+    } else {
+      // Sem conversão e janela fechada: perda madura.
+      maturedLost += 1;
     }
   }
 
+  const maturedCohort = converted + maturedLost; // = cohort - stillOpen
   return {
-    denominator,
-    numerator,
-    rate: denominator > 0 ? numerator / denominator : null,
     windowDays,
+    cohort,
+    converted,
     stillOpen,
+    maturedLost,
+    maturedCohort,
+    matureRate: maturedCohort > 0 ? converted / maturedCohort : null,
+    provisionalRate: cohort > 0 ? converted / cohort : null,
   };
 }
 
@@ -182,10 +215,12 @@ export async function getAssessmentToPlanConversion(
   }
 
   if (firstAssessment.size === 0) {
-    return { denominator: 0, numerator: 0, rate: null, windowDays, stillOpen: 0 };
+    return computeConversion([], windowDays);
   }
 
-  // plan_started desses pacientes (primeiro de cada).
+  // plan_started desses pacientes. Correção B: por paciente, pegamos o PRIMEIRO
+  // plan_started EM/APÓS o T0 daquela avaliação, ignorando planos anteriores (um
+  // episódio antigo) que esconderiam uma conversão posterior válida.
   const patientIds = [...firstAssessment.keys()];
   const { data: plans } = await supabase
     .from("patient_journey_events")
@@ -198,7 +233,11 @@ export async function getAssessmentToPlanConversion(
   const firstPlan = new Map<string, number>();
   for (const r of plans ?? []) {
     const pid = r.patient_id as string;
-    if (!firstPlan.has(pid)) firstPlan.set(pid, new Date(r.occurred_at as string).getTime());
+    const t0 = firstAssessment.get(pid);
+    if (t0 === undefined) continue;
+    const planAt = new Date(r.occurred_at as string).getTime();
+    if (planAt < t0) continue; // ignora plano anterior ao T0 (episódio antigo)
+    if (!firstPlan.has(pid)) firstPlan.set(pid, planAt);
   }
 
   const anchors: PatientAnchor[] = [...firstAssessment.entries()].map(([patientId, firstAssessmentAt]) => ({
