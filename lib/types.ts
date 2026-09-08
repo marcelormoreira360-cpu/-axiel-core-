@@ -809,6 +809,8 @@ export type AssessmentResponse = {
   section_scores: Record<string, { title: string; score: number; max: number }> | null;
   notes: string | null;
   created_at: string;
+  /** Snapshot das respostas cruas por código (formulário unificado Neuro ID). NULL nos questionários normais. */
+  raw_answers?: Record<string, unknown> | null;
   assessment_templates?: { name: string; scoring_config?: ScoringConfig | null } | null;
 };
 

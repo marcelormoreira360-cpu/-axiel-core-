@@ -9,6 +9,7 @@ import {
   getAssessmentAnswers,
 } from "@/services/assessment-service";
 import { bandForDysfunction } from "@/modules/neuro-id/bands";
+import { UnifiedResponseDetail } from "@/components/unified-response-detail";
 
 type Props = {
   params: Promise<{ id: string; responseId: string }>;
@@ -31,6 +32,12 @@ export default async function ViewResponsePage({ params }: Props) {
   const pct = response.score_percentage ?? 0;
   const totalBand = bandForDysfunction(pct); // semáforo por severidade (maior % = pior)
   const sectionScores = response.section_scores ?? {};
+  // Formulário unificado Neuro ID: renderizado por código (sem assessment_questions).
+  // Detecta pelo snapshot cru e usa a exibição dedicada.
+  const unified =
+    !!response.raw_answers &&
+    typeof response.raw_answers === "object" &&
+    Object.keys(response.raw_answers).length > 0;
 
   const filledDate = new Date(response.filled_at).toLocaleDateString(locale, {
     day: "numeric",
@@ -77,36 +84,43 @@ export default async function ViewResponsePage({ params }: Props) {
       </div>
 
       {/* Section summary */}
-      <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] mb-[18px]">
-        <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("sectionScore")}</p>
-        <div className="space-y-[6px]">
-          {template.assessment_sections.map((section) => {
-            const ss = sectionScores[section.id];
-            if (!ss) return null;
-            const sPct = ss.max > 0 ? Math.round((ss.score / ss.max) * 100) : 0;
-            const sBand = bandForDysfunction(sPct);
-            return (
-              <div key={section.id} className="flex items-center gap-[10px]">
-                <p className="text-[12px] text-[#0F1A2E] w-[140px] shrink-0 truncate">
-                  {ss.title}
-                </p>
-                <div className="flex-1 h-[4px] bg-[#F4F3EF] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{ width: `${sPct}%`, background: sBand?.colors.stroke ?? "#0F6E56" }}
-                  />
+      {(template.assessment_sections.length > 0 || unified) && (
+        <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] mb-[18px]">
+          <p className="text-[11px] font-medium text-[#6B6A66] mb-[10px]">{t("sectionScore")}</p>
+          <div className="space-y-[6px]">
+            {(unified
+              ? Object.values(sectionScores)
+              : template.assessment_sections.map((section) => sectionScores[section.id]).filter(Boolean)
+            ).map((ss, i) => {
+              if (!ss) return null;
+              const sPct = ss.max > 0 ? Math.round((ss.score / ss.max) * 100) : 0;
+              const sBand = bandForDysfunction(sPct);
+              return (
+                <div key={i} className="flex items-center gap-[10px]">
+                  <p className="text-[12px] text-[#0F1A2E] w-[140px] shrink-0 truncate">
+                    {ss.title}
+                  </p>
+                  <div className="flex-1 h-[4px] bg-[#F4F3EF] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${sPct}%`, background: sBand?.colors.stroke ?? "#0F6E56" }}
+                    />
+                  </div>
+                  <div className="flex items-baseline gap-[3px] shrink-0">
+                    <span className="text-[12px] font-medium" style={{ color: sBand?.colors.text ?? "#0F1A2E" }}>{ss.score}</span>
+                    <span className="text-[10px] text-[#A09E98]">/{ss.max}</span>
+                  </div>
                 </div>
-                <div className="flex items-baseline gap-[3px] shrink-0">
-                  <span className="text-[12px] font-medium" style={{ color: sBand?.colors.text ?? "#0F1A2E" }}>{ss.score}</span>
-                  <span className="text-[10px] text-[#A09E98]">/{ss.max}</span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Full answers */}
+      {unified ? (
+        <UnifiedResponseDetail rawAnswers={response.raw_answers as Record<string, unknown>} />
+      ) : (
       <div className="space-y-[12px]">
         {template.assessment_sections.map((section) => (
           <div
@@ -152,6 +166,7 @@ export default async function ViewResponsePage({ params }: Props) {
           </div>
         ))}
       </div>
+      )}
 
       {response.notes && (
         <div className="bg-white border border-black/[.07] rounded-[12px] px-[16px] py-[14px] mt-[18px]">
