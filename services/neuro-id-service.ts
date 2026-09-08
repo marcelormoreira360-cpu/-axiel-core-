@@ -247,6 +247,15 @@ export async function getAssessmentRawValues(
     // Métricas de exame (origem `exam:`) são re-fundidas pelo motor, não editáveis no form.
     if (raw.startsWith("exam:")) continue;
     if (raw.startsWith("auto:")) { autoCodes.push(r.item_code); raw = raw.slice("auto:".length); }
+    // Formulário unificado grava `unified:<0-10>`. Trata como derivado de questionário
+    // (autoCode) e reabre já preenchido no editor — o terapeuta só completa o exame
+    // físico. Arredonda a 1 casa (passo do campo numérico de sintoma).
+    else if (raw.startsWith("unified:")) {
+      autoCodes.push(r.item_code);
+      raw = raw.slice("unified:".length);
+      const n = Number(raw);
+      if (Number.isFinite(n)) raw = String(Math.round(n * 10) / 10);
+    }
     if (raw.trim() !== "") values[r.item_code] = raw;
   }
   return { values, autoCodes };
