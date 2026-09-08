@@ -550,7 +550,9 @@ export async function buildNeuroIdDoc1Pdf(opts: {
 
   const id = mapa.identificacao;
   const idParts = [
-    id?.paciente ?? opts.patientName ?? null,
+    // Nome completo vem do CADASTRO (opts.patientName), não do eco da IA — a IA recebe só
+    // o primeiro nome (minimização de PHI), então o cadastro é a fonte do nome exibido.
+    opts.patientName ?? id?.paciente ?? null,
     id?.idade ? `Idade: ${id.idade}` : null,
     id?.data_avaliacoes ? `Data: ${id.data_avaliacoes}` : null,
   ].filter(Boolean) as string[];

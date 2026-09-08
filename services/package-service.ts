@@ -77,7 +77,7 @@ export async function deactivatePatientPackage(id: string, clinicId: string): Pr
     .eq("id", id)
     .eq("clinic_id", clinicId)
     .eq("is_active", true) // só desativa (e emite interrupted) o que estava ATIVO
-    .select("patient_id, name")
+    .select("patient_id")
     .maybeSingle();
 
   // Jornada (Frente C): desativar manualmente um pacote ATIVO = interrupção do plano

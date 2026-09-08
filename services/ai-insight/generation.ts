@@ -41,6 +41,7 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const patientLocale = await resolvePatientLocale(input.patient.locale, input.patient.clinic_id);
 
   const response = await client.chat.completions.create({
+    store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
     model,
     temperature: 0.2,
     response_format: { type: "json_object" },
@@ -95,6 +96,7 @@ export async function suggestAtmIntegration(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       messages: [
@@ -135,6 +137,7 @@ export async function suggestCaseSummary(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = reportModel();
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       response_format: { type: "json_object" },
@@ -188,6 +191,7 @@ export async function suggestScribeAtm(
     const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
     const model = process.env.OPENAI_MODEL ?? "gpt-4.1-mini";
     const response = await client.chat.completions.create({
+      store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
       model,
       temperature: 0.3,
       messages: [

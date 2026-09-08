@@ -269,6 +269,25 @@ const DISCLAIMER_EN =
  * pt-BR / pt-PT: retorna o template original (optionLabels ausente => exibe o canônico).
  * en: aplica o overlay; `options` continua canônico e `optionLabels` traz a exibição.
  */
+/**
+ * Trava técnica do BLOCO F (pilar emocional / saúde mental — inclui o item de ideação
+ * suicida be_crisis_gosto_vida). Decisão de compliance (28/08): o Bloco F NÃO pode ser
+ * COLETADO em produção até estarem cumpridos (1) BAA do Supabase, (2) consentimento de
+ * saúde mental / menor validado por advogado, (3) protocolo de crise humano e (4) parecer
+ * sobre escopo LMT-FL. Fail-closed: por padrão o pilar emocional é REMOVIDO do formulário
+ * servido ao paciente; habilite explicitamente com NEURO_ID_BLOCO_F_ENABLED="true" apenas
+ * no ambiente onde essas condições já foram atendidas. A trava é de COLETA (formulário
+ * servido); o template canônico (UNIFIED_FORM) permanece intacto.
+ */
+export function isBlocoFEnabled(): boolean {
+  return process.env.NEURO_ID_BLOCO_F_ENABLED === "true";
+}
+
+function gateBlocoF(blocks: LocalizedBlock[]): LocalizedBlock[] {
+  if (isBlocoFEnabled()) return blocks;
+  return blocks.filter((b) => b.pillar !== "emocional");
+}
+
 export function localizeForm(locale: FormLocale): LocalizedForm {
   const chrome = formChrome(locale);
   if (locale !== "en") {
@@ -276,10 +295,10 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
       name: UNIFIED_FORM.name,
       recall: UNIFIED_FORM.recall,
       disclaimer: UNIFIED_FORM.disclaimer,
-      blocks: UNIFIED_FORM.blocks as LocalizedBlock[],
+      blocks: gateBlocoF(UNIFIED_FORM.blocks as LocalizedBlock[]),
     };
   }
-  const blocks: LocalizedBlock[] = UNIFIED_FORM.blocks.map((b) => {
+  const blocks: LocalizedBlock[] = gateBlocoF(UNIFIED_FORM.blocks.map((b) => {
     const bt = EN_BLOCK[b.key];
     return {
       ...b,
@@ -297,6 +316,6 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
         };
       }),
     };
-  });
+  }));
   return { name: CHROME_EN.headerTitle, recall: chrome.greetingAnon, disclaimer: DISCLAIMER_EN, blocks };
 }

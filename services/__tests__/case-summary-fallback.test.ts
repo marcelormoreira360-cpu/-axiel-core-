@@ -12,8 +12,8 @@ function snap(partial: {
 }): AiInsightInputSnapshot {
   return {
     patient: {
-      id: "p1", clinic_id: "c1", full_name: "Teste", locale: null, status: "active",
-      notes: null, age: null, sex: null, weight_kg: null, height_cm: null, city: null, country: null,
+      id: "p1", clinic_id: "c1", first_name: "Teste", locale: null, status: "active",
+      notes: null, age: null, sex: null, weight_kg: null, height_cm: null, country: null,
       anamnese: partial.anamnese ?? null, antecedents: null, pain_level: null,
       pain_location: null, treatment_note: null, assessment_extra: partial.extra ?? [],
     },
