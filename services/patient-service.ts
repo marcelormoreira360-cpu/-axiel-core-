@@ -127,6 +127,15 @@ export async function createPatient(input: Pick<Patient, "clinic_id" | "full_nam
     .single();
 
   if (error) throw error;
+
+  // Auditoria (#8): cria paciente. Best-effort, nunca quebra a operação; sem PHI.
+  const { writeAuditLog } = await import("@/services/audit-service");
+  await writeAuditLog({
+    clinicId: input.clinic_id,
+    action: "patient.created",
+    entityType: "patient",
+    entityId: (data as Patient).id,
+  });
   return data as Patient;
 }
 
@@ -228,13 +237,29 @@ export async function updatePatient(
 
   if (!profile?.clinic_id) throw new Error("Usuário sem clínica associada.");
 
-  const { error } = await supabase
+  const { data: updated, error } = await supabase
     .from("patients")
     .update({ ...input, updated_at: new Date().toISOString() })
     .eq("id", patientId)
-    .eq("clinic_id", profile.clinic_id); // ← scope: only own clinic
+    .eq("clinic_id", profile.clinic_id) // ← scope: only own clinic
+    .select("id");
 
   if (error) throw error;
+
+  // Auditoria (#8): edição de prontuário. Guarda só os NOMES dos campos alterados
+  // (sem valores, para não vazar PHI no log). Best-effort. Só registra se a linha
+  // realmente foi alterada — um id de outra clínica casa 0 linhas (sem erro) e não
+  // deve gerar um registro falso de edição.
+  if (updated && updated.length > 0) {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: profile.clinic_id,
+      action: "patient.updated",
+      entityType: "patient",
+      entityId: patientId,
+      metadata: { fields: Object.keys(input) },
+    });
+  }
 }
 
 export async function getPatientById(
@@ -339,7 +364,7 @@ export async function anonymizePatient(patientId: string): Promise<void> {
     throw new Error("Permissão insuficiente para anonimizar paciente.");
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("patients")
     .update({
       full_name:     "Paciente Anonimizado",
@@ -357,7 +382,23 @@ export async function anonymizePatient(patientId: string): Promise<void> {
       updated_at:    new Date().toISOString(),
     })
     .eq("id", patientId)
-    .eq("clinic_id", profile.clinic_id);
+    .eq("clinic_id", profile.clinic_id)
+    .select("id");
 
   if (error) throw error;
+
+  // Auditoria (#8): anonimização/arquivamento de paciente (ação sensível). Best-effort.
+  // Só registra quando a linha foi de fato anonimizada (id de outra clínica casa 0
+  // linhas, sem erro) — evita registro falso de uma ação sensível que não ocorreu.
+  const anonymized = data as { id: string }[] | null;
+  if (anonymized && anonymized.length > 0) {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: profile.clinic_id,
+      action: "patient.archived",
+      entityType: "patient",
+      entityId: patientId,
+      metadata: { reason: "lgpd_anonymize" },
+    });
+  }
 }

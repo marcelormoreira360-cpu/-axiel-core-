@@ -287,6 +287,20 @@ export async function createAppointment(input: {
     });
   }
 
+  // Auditoria (#8): criação de agendamento (as transições de status já vão para
+  // appointment_status_events; aqui registramos só a criação). Awaited (como os demais
+  // logs de auditoria) para não se perder em runtime serverless. Best-effort, sem PHI.
+  {
+    const { writeAuditLog } = await import("@/services/audit-service");
+    await writeAuditLog({
+      clinicId: appt.clinic_id,
+      action: "appointment.created",
+      entityType: "appointment",
+      entityId: appt.id,
+      metadata: { session_type_id: appt.session_type_id ?? null, starts_at: appt.starts_at },
+    });
+  }
+
   // Jornada (Frente C): agendar uma AVALIAÇÃO = marco assessment_scheduled do funil
   // de aquisição. Gatilho = tipo de sessão marcado is_evaluation (mesma fonte usada
   // para assessment_completed). Roda mesmo com skipSideEffects (é registro de marco,

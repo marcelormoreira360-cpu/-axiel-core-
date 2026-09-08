@@ -182,6 +182,16 @@ export async function savePatientIntakeResponses(input: {
     .select("*");
 
   if (error) throw error;
+
+  // Auditoria (#8): envio de intake. Best-effort; sem as respostas (PHI), só a contagem.
+  const { writeAuditLog } = await import("@/services/audit-service");
+  await writeAuditLog({
+    clinicId: input.clinic_id,
+    action: "intake.submitted",
+    entityType: "patient",
+    entityId: input.patient_id,
+    metadata: { form_id: input.form_id, count: rows.length },
+  });
   return data as IntakeResponse[];
 }
 
