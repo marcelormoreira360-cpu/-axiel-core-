@@ -185,14 +185,20 @@ export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promi
     .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status, clinic_id)")
     .eq("patient_id", patientId)
     .order("computed_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(5);
   if (error) throw error;
-  if (!data) return null;
-  const a = (data as { patient_assessments?: { status?: string; clinic_id?: string } | { status?: string; clinic_id?: string }[] | null }).patient_assessments;
+  const rows = (data ?? []) as Array<Record<string, unknown>>;
+  if (rows.length === 0) return null;
+  // Uma avaliação VAZIA (todos os pilares nulos — ex.: reavaliação aberta e salva
+  // sem preencher) não pode encobrir um mapa real mais antigo. Pega a mais recente
+  // COM dados; se todas estiverem vazias, cai na mais recente mesmo.
+  const hasData = (r: Record<string, unknown>) =>
+    r.fisico_pct != null || r.bioquimico_pct != null || r.emocional_pct != null;
+  const data0 = rows.find(hasData) ?? rows[0];
+  const a = (data0 as { patient_assessments?: { status?: string; clinic_id?: string } | { status?: string; clinic_id?: string }[] | null }).patient_assessments;
   const assessment = Array.isArray(a) ? a[0] : a;
   return {
-    ...(data as unknown as NeuroIdMap),
+    ...(data0 as unknown as NeuroIdMap),
     status: assessment?.status ?? null,
     clinic_id: assessment?.clinic_id ?? null,
   };
@@ -281,6 +287,15 @@ export async function createNeuroIdAssessment(input: {
   // Medicação (carga) entra como item normal; a edição do terapeuta (input.values,
   // vinda do "Rever / editar") tem prioridade sobre o valor sugerido.
   const values = { ...medValues, ...input.values };
+  // Não cria avaliação VAZIA (reavaliação aberta e salva sem nada) — isso gerava
+  // avaliações sem dados que encobriam o mapa real. Precisa de ao menos 1 valor
+  // preenchido OU métrica de exame confirmada.
+  const hasAnyValue =
+    Object.keys(examValues).length > 0 ||
+    Object.values(values).some((v) => v != null && String(v).trim() !== "");
+  if (!hasAnyValue) {
+    throw new Error("Preencha ao menos um item antes de salvar a avaliação.");
+  }
   // Fusão: métricas de exame CONFIRMADAS entram na média ponderada por pilar.
   const result = computeNeuroId(items, values, examValues);
 
