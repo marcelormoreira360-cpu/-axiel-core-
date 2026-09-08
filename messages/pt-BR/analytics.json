@@ -47,5 +47,15 @@
   "daysM": "{count} m",
   "daysD": "{count}d",
   "chartAverage": "Média:",
-  "chartEmpty": "Sem avaliações ainda"
+  "chartEmpty": "Sem avaliações ainda",
+  "journeySection": "Jornada & Conversão",
+  "conversionRate": "Conversão avaliação para plano",
+  "conversionWindow": "em até 45 dias",
+  "conversionDenominator": "Avaliações concluídas",
+  "conversionPeriod": "Últimos 6 meses",
+  "conversionConverted": "Iniciaram o plano",
+  "conversionStillOpen": "Ainda na janela",
+  "conversionStillOpenNote": "Ainda podem converter",
+  "conversionEmptyTitle": "Sem avaliações no período",
+  "conversionEmptyDesc": "Marque o tipo de sessão de avaliação em Configurações, Tipos de sessão, para medir a conversão."
 }

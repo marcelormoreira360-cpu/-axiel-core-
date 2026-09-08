@@ -5,6 +5,7 @@ import { Shell } from "@/components/shell";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { getNpsKPIs, getOccupancyKPIs, getAlertsKPIs } from "@/modules/analytics/analytics-kpis";
+import { getAssessmentToPlanConversion } from "@/services/journey-events-service";
 import dynamicImport from "next/dynamic";
 const NpsTrendChart = dynamicImport(
   () => import("@/components/analytics/nps-trend-chart").then((m) => m.NpsTrendChart),
@@ -36,6 +37,13 @@ function scoreColor(score: number): string {
   return "#DC2626";
 }
 
+// Cor da taxa de conversão (avaliação → plano). Limiares provisórios, ajustáveis.
+function conversionColor(pct: number): string {
+  if (pct >= 50) return "#0F6E56";
+  if (pct >= 25) return "#D97706";
+  return "#DC2626";
+}
+
 function formatDate(iso: string, locale: string): string {
   return new Date(iso).toLocaleDateString(locale, { day: "numeric", month: "short" });
 }
@@ -57,11 +65,22 @@ export default async function AnalyticsPage() {
 
   const clinic = await getCurrentClinic();
 
-  const [nps, occupancy, alerts] = await Promise.all([
+  // Janela da métrica de conversão: avaliações concluídas nos últimos 180 dias.
+  const conversionTo = new Date();
+  const conversionFrom = new Date(conversionTo.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+  const [nps, occupancy, alerts, conversion] = await Promise.all([
     clinic ? getNpsKPIs(clinic.id) : null,
     clinic ? getOccupancyKPIs(clinic.id) : null,
     clinic ? getAlertsKPIs(clinic.id) : null,
+    clinic
+      ? getAssessmentToPlanConversion(clinic.id, {
+          from: conversionFrom.toISOString(),
+          to: conversionTo.toISOString(),
+        })
+      : null,
   ]);
+  const conversionPct = conversion && conversion.rate !== null ? Math.round(conversion.rate * 100) : 0;
 
   const { data: profile } = user
     ? await supabase.from("users").select("full_name, role").eq("id", user.id).maybeSingle()
@@ -83,6 +102,52 @@ export default async function AnalyticsPage() {
           <p className="text-sm text-black/40 dark:text-white/40">{t("noClinic")}</p>
         ) : (
           <>
+
+            {/* ═══════════════════════════════════════════════════════════
+                SECTION 0 — Jornada & Conversão (avaliação → plano em 45d)
+            ═══════════════════════════════════════════════════════════ */}
+            <section className="space-y-4">
+              <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-black/40 dark:text-white/30">
+                {t("journeySection")}
+              </h2>
+
+              {conversion && conversion.denominator === 0 ? (
+                <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-6 text-center">
+                  <p className="text-sm text-black/50 dark:text-white/40">{t("conversionEmptyTitle")}</p>
+                  <p className="text-xs text-black/30 dark:text-white/20 mt-1">{t("conversionEmptyDesc")}</p>
+                </div>
+              ) : conversion ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {/* Taxa de conversão */}
+                  <div className="col-span-2 md:col-span-1 bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionRate")}</p>
+                    <p className="text-3xl font-bold" style={{ color: conversionColor(conversionPct) }}>{conversionPct}%</p>
+                    <p className="text-[11px] text-black/30 dark:text-white/20 mt-2">{t("conversionWindow")}</p>
+                  </div>
+
+                  {/* Avaliações concluídas (denominador) */}
+                  <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionDenominator")}</p>
+                    <p className="text-2xl font-bold text-[#0F1A2E] dark:text-[#E8E6E2]">{conversion.denominator}</p>
+                    <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("conversionPeriod")}</p>
+                  </div>
+
+                  {/* Iniciaram o plano (numerador) */}
+                  <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionConverted")}</p>
+                    <p className="text-2xl font-bold text-[#0F6E56] dark:text-[#9FE1CB]">{conversion.numerator}</p>
+                    <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("conversionWindow")}</p>
+                  </div>
+
+                  {/* Ainda na janela */}
+                  <div className="bg-white dark:bg-[#1C2333] rounded-2xl border border-black/[.07] dark:border-white/[.07] p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-black/40 dark:text-white/30 mb-1">{t("conversionStillOpen")}</p>
+                    <p className="text-2xl font-bold text-[#D97706]">{conversion.stillOpen}</p>
+                    <p className="text-[11px] text-black/30 dark:text-white/20 mt-1">{t("conversionStillOpenNote")}</p>
+                  </div>
+                </div>
+              ) : null}
+            </section>
 
             {/* ═══════════════════════════════════════════════════════════
                 SECTION 1 — NPS & Satisfação

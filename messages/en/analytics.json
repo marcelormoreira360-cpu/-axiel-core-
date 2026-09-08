@@ -47,5 +47,15 @@
   "daysM": "{count}mo",
   "daysD": "{count}d",
   "chartAverage": "Average:",
-  "chartEmpty": "No ratings yet"
+  "chartEmpty": "No ratings yet",
+  "journeySection": "Journey & Conversion",
+  "conversionRate": "Assessment to plan conversion",
+  "conversionWindow": "within 45 days",
+  "conversionDenominator": "Assessments completed",
+  "conversionPeriod": "Last 6 months",
+  "conversionConverted": "Started a plan",
+  "conversionStillOpen": "Still within window",
+  "conversionStillOpenNote": "May still convert",
+  "conversionEmptyTitle": "No assessments in the period",
+  "conversionEmptyDesc": "Mark your evaluation session type in Settings, Session types, to start measuring conversion."
 }
