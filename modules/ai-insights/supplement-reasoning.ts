@@ -6,7 +6,7 @@
 // será carimbada em cada suplementação regenerada pela fila de regeneração em
 // massa (Fase 2, ainda não implementada). Ao mudar as regras abaixo, incremente
 // a versão para que a fila consiga distinguir protocolos pré e pós-mudança.
-export const SUPPLEMENT_REASONING_VERSION = "2026-09-suplementacao-10-filtros";
+export const SUPPLEMENT_REASONING_VERSION = "2026-09-suplementacao-10-filtros-v2";
 
 // Bloco de instruções injetado no topo do DOCUMENTO 2 (protocolo_suplementacao)
 // do prompt de guarda-corpos. É o "cérebro clínico" que rege TODA a suplementação.
@@ -36,10 +36,13 @@ a leitura integrada e a segurança; os produtos vêm por último.
    associado / sugere / merece avaliação". Não troque uma certeza indevida por outra (não afirme que um
    ativo "é ineficaz" nem que "com certeza resolve").
 6. CAUTELA PELO PERFIL DE SEGURANÇA, não por mecanismo inventado. Em quadro ansioso / simpático dominante,
-   tenha CAUTELA com adaptógenos ativadores e precursores: rhodiola pode causar insônia/agitação; tirosina
-   pode ser desnecessária ou inadequada; ashwagandha deve ser ADIADA quando há incerteza tireoidiana (a
-   avaliar por exame convencional), alteração hepática, ou interação com sedativo/anti-hipertensivo. NÃO
-   afirme que "aumentam o simpático"; justifique pela cautela e pelo efeito adverso conhecido.
+   é PROIBIDO colocar adaptógenos ativadores (rhodiola, ashwagandha e afins) ou precursores catecolaminérgicos
+   (tirosina) nas FÓRMULAS ou nos ITENS iniciais. Não basta "incluir com ressalva": eles NÃO entram no plano
+   de saída. Se fizerem sentido no futuro, cite-os APENAS em observacoes_gerais como "passo a avaliar com o
+   profissional mais adiante", nunca como fórmula/item agora. Motivos (cautela, não mecanismo): rhodiola pode
+   causar insônia/agitação; tirosina pode ser desnecessária ou inadequada; ashwagandha exige antes descartar
+   incerteza tireoidiana (exame convencional), alteração hepática e interação com sedativo/anti-hipertensivo.
+   NÃO afirme que "aumentam o simpático"; justifique pela cautela e pelo efeito adverso conhecido.
 7. PRECURSORES SEROTONINÉRGICOS (triptofano, 5-HTP) são item de GATE: só sugira se as medicações em uso
    estiverem confirmadas SEM serotoninérgicos (ISRS, IRSN, IMAO, triptanos, tramadol, lítio) e sem sinal
    de instabilidade ou ideação. Caso contrário, deixe em "observacao" como "a confirmar com o profissional
