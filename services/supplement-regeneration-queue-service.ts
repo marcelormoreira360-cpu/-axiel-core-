@@ -60,6 +60,28 @@ export async function getEligiblePatientIdsForRegeneration(
 }
 
 /**
+ * Só a CONTAGEM de elegíveis (para o panorama/overview), sem transferir a lista
+ * inteira de UUIDs. A lista completa só é buscada no caminho de enfileiramento.
+ */
+export async function getEligiblePatientCountForRegeneration(
+  clinicId: string,
+  configVersion: string,
+): Promise<number> {
+  const pack = await resolveClinicalPack(clinicId);
+  if (!pack.producesSupplementation) return 0;
+
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase.rpc(
+    "eligible_supplement_regeneration_patients",
+    { p_clinic: clinicId, p_version: configVersion },
+    { count: "exact", head: true },
+  );
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
  * Enfileira jobs de regeneração para os pacientes dados, pulando quem já tem job
  * aberto (pending/processing). Não regenera nada aqui; só cria a fila.
  */
@@ -161,11 +183,12 @@ export async function processNextRegenerationBatch(input: {
     .eq("status", "processing")
     .lt("updated_at", staleCutoff);
   for (const job of (stale ?? []) as Array<{ id: string; attempts: number; max_attempts: number }>) {
-    const next = job.attempts >= job.max_attempts ? "failed" : "pending";
+    const next = resolveJobStatusAfterFailure(job.attempts, job.max_attempts);
     await supabase
       .from("supplement_regeneration_jobs")
       .update({ status: next, updated_at: new Date().toISOString() })
-      .eq("id", job.id);
+      .eq("id", job.id)
+      .eq("status", "processing"); // não sobrescreve uma finalização concorrente (done/failed)
   }
 
   const { data: jobs } = await supabase
@@ -193,6 +216,10 @@ export async function processNextRegenerationBatch(input: {
     claimed++;
 
     try {
+      // Semântica "pelo menos uma vez": se a função morrer entre salvar o rascunho
+      // e marcar o job como done, o reclaim (após 15 min) reprocessa e pode gerar
+      // um 2º rascunho pendente para o mesmo paciente. Não é perigoso (nada é
+      // enviado; o gestor revisa e o rascunho mais novo prevalece), mas é sabido.
       const insight: AiInsight = await regenerateSupplementForPatient(job.patient_id);
       // config_version = versão REALMENTE produzida (não a capturada no enqueue),
       // caso a constante tenha mudado entre enfileirar e processar.

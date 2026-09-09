@@ -4,6 +4,7 @@ import { getCurrentUserProfile } from "@/services/user-service";
 import { SUPPLEMENT_REASONING_VERSION } from "@/modules/ai-insights/supplement-reasoning";
 import {
   getEligiblePatientIdsForRegeneration,
+  getEligiblePatientCountForRegeneration,
   enqueueSupplementRegeneration,
   getRegenerationQueueSummary,
   processNextRegenerationBatch,
@@ -15,10 +16,10 @@ function isManagerRole(role: string | null | undefined): boolean {
 }
 
 // Teto por invocação: cada job é uma geração de relatório completa (dezenas de
-// segundos); poucos por clique para não estourar o timeout da função serverless.
-// A tela (Fase 3) chama em laço até zerar o pending.
-const MAX_BATCH = 5;
-const DEFAULT_BATCH = 3;
+// segundos). Poucos por clique para caber no maxDuration da rota (60s). A tela
+// chama em laço (novo request, novo orçamento de tempo) até zerar o pending.
+const MAX_BATCH = 3;
+const DEFAULT_BATCH = 2;
 
 export type RegenerationOverview = {
   configVersion: string;
@@ -33,13 +34,13 @@ export async function getRegenerationOverviewAction(): Promise<
   if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
   if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
 
-  const [eligible, summary] = await Promise.all([
-    getEligiblePatientIdsForRegeneration(profile.clinic_id, SUPPLEMENT_REASONING_VERSION),
+  const [eligibleCount, summary] = await Promise.all([
+    getEligiblePatientCountForRegeneration(profile.clinic_id, SUPPLEMENT_REASONING_VERSION),
     getRegenerationQueueSummary(profile.clinic_id),
   ]);
   return {
     ok: true,
-    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount: eligible.length, summary },
+    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount, summary },
   };
 }
 

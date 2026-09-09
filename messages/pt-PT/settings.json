@@ -199,6 +199,10 @@
       "patientSections": {
         "title": "Seções da ficha",
         "text": "Ordene e mostre/oculte as seções da ficha do paciente."
+      },
+      "supplementRegeneration": {
+        "title": "Atualizar suplementação",
+        "text": "Regenerar a suplementação em massa com o raciocínio atual."
       }
     }
   },
@@ -870,5 +874,28 @@
       "medicamentos": "Medicamentos e suplementos",
       "documentos": "Documentos"
     }
+  },
+  "regeneration": {
+    "title": "Atualizar suplementação em massa",
+    "subtitle": "Regenerar a suplementação dos pacientes elegíveis com o raciocínio clínico atual, e depois revisar e enviar.",
+    "configVersion": "Versão do raciocínio",
+    "eligibleLabel": "Pacientes a atualizar",
+    "eligibleHint": "Só pacientes com dados clínicos cuja suplementação não está na versão atual.",
+    "queueTitle": "Fila",
+    "pending": "Na fila",
+    "processing": "Processando",
+    "done": "Concluídos",
+    "failed": "Falharam",
+    "enqueue": "Enfileirar elegíveis",
+    "enqueuing": "Enfileirando…",
+    "enqueued": "{enqueued} enfileirados, {skipped} já na fila.",
+    "process": "Processar próximo lote",
+    "processingBatch": "Processando…",
+    "processAll": "Processar tudo em ondas",
+    "processed": "{done} atualizados, {failed} falharam.",
+    "refresh": "Atualizar",
+    "nothingEligible": "Nada a atualizar por enquanto.",
+    "reviewHint": "Cada atualização vira um rascunho pendente de revisão. Revise e envie na ficha de cada paciente.",
+    "error": "Algo deu errado."
   }
 }

@@ -199,6 +199,10 @@
       "patientSections": {
         "title": "Chart sections",
         "text": "Reorder and show/hide the patient chart sections."
+      },
+      "supplementRegeneration": {
+        "title": "Update supplementation",
+        "text": "Regenerate supplementation in bulk with the current reasoning."
       }
     }
   },
@@ -870,5 +874,28 @@
       "medicamentos": "Medications & supplements",
       "documentos": "Documents"
     }
+  },
+  "regeneration": {
+    "title": "Update supplementation in bulk",
+    "subtitle": "Regenerate supplementation for eligible patients with the current clinical reasoning, then review and send.",
+    "configVersion": "Reasoning version",
+    "eligibleLabel": "Patients to update",
+    "eligibleHint": "Only patients with clinical data whose supplementation is not on the current version.",
+    "queueTitle": "Queue",
+    "pending": "Pending",
+    "processing": "Processing",
+    "done": "Done",
+    "failed": "Failed",
+    "enqueue": "Queue eligible patients",
+    "enqueuing": "Queuing…",
+    "enqueued": "{enqueued} queued, {skipped} already in queue.",
+    "process": "Process next batch",
+    "processingBatch": "Processing…",
+    "processAll": "Process all in waves",
+    "processed": "{done} updated, {failed} failed.",
+    "refresh": "Refresh",
+    "nothingEligible": "Nothing to update right now.",
+    "reviewHint": "Each update becomes a draft pending review. Review and send on each patient's page.",
+    "error": "Something went wrong."
   }
 }
