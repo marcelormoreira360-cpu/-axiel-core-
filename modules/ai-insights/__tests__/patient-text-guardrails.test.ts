@@ -85,6 +85,54 @@ describe("scanPatientText — guardrail de texto ao paciente (Rota A)", () => {
     expect(scan.violations).toContainEqual({ kind: "travessao", field: "mapa.conexao_aha" });
   });
 
+  it("travessão na SUPLEMENTAÇÃO (Documento 2) também é pego", () => {
+    const comTravessao = coerceAiInsightOutput({
+      mapa_integrativo: { abertura_calorosa: "Olá.", ancora_positiva: "Preservado." },
+      protocolo_suplementacao: { itens: [], observacoes_gerais: ["Fórmula para manipulação — a ser avaliada."] },
+    });
+    expect(scanPatientText(comTravessao).violations).toContainEqual({
+      kind: "travessao",
+      field: "suplementacao.observacoes_gerais",
+    });
+
+    const limpo = coerceAiInsightOutput({
+      mapa_integrativo: { abertura_calorosa: "Olá.", ancora_positiva: "Preservado." },
+      protocolo_suplementacao: { itens: [], observacoes_gerais: ["Fórmula para manipulação, a ser avaliada."] },
+    });
+    expect(scanPatientText(limpo).violations.some((v) => v.kind === "travessao")).toBe(false);
+  });
+
+  it("travessão na composição da fórmula (BR) é pego", () => {
+    const out = coerceAiInsightOutput({
+      mapa_integrativo: { abertura_calorosa: "Olá.", ancora_positiva: "Preservado." },
+      protocolo_suplementacao: {
+        itens: [],
+        observacoes_gerais: [],
+        formulas: [{ nome: "Fórmula 1", composicao: [{ ativo: "Magnésio — quelato", quantidade: "200 mg" }] }],
+      },
+    });
+    expect(scanPatientText(out).violations).toContainEqual({
+      kind: "travessao",
+      field: "suplementacao.formula.composicao.ativo",
+    });
+  });
+
+  it("travessão no Documento 3 (hipersensibilidade) é pego", () => {
+    // Constrói o output direto (a coerção descarta um Doc 3 esparso); aqui o alvo
+    // do teste é o scanPatientText, não a coerção.
+    const out = {
+      relatorio_hipersensibilidade: {
+        resumo_executivo: "Prioridade das próximas semanas — cuidar do intestino.",
+        padroes: [], achados_prioritarios: [], retirada_alta: [], eixos: [], fases: [],
+        plano_alimentar: [], monitoramento: [], observacoes_gerais: [],
+      },
+    } as unknown as Parameters<typeof scanPatientText>[0];
+    expect(scanPatientText(out).violations).toContainEqual({
+      kind: "travessao",
+      field: "hipersens.resumo_executivo",
+    });
+  });
+
   it("âncora positiva ausente vira violação — só quando há conteúdo persuasivo", () => {
     const semAncora = coerceAiInsightOutput({
       mapa_integrativo: { abertura_calorosa: "Olá.", conexao_aha: "algo importante." },
