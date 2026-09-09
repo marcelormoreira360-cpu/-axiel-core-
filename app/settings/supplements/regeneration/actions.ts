@@ -9,7 +9,9 @@ import {
   getRegenerationQueueSummary,
   processNextRegenerationBatch,
   getSendableSupplementCount,
+  getFailedSendCount,
   bulkSendApprovedSupplements,
+  retryFailedSends,
   type RegenerationQueueSummary,
 } from "@/services/supplement-regeneration-queue-service";
 
@@ -27,6 +29,7 @@ export type RegenerationOverview = {
   configVersion: string;
   eligibleCount: number;
   sendableCount: number;
+  failedSendCount: number;
   summary: RegenerationQueueSummary;
 };
 
@@ -37,14 +40,15 @@ export async function getRegenerationOverviewAction(): Promise<
   if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
   if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
 
-  const [eligibleCount, sendableCount, summary] = await Promise.all([
+  const [eligibleCount, sendableCount, failedSendCount, summary] = await Promise.all([
     getEligiblePatientCountForRegeneration(profile.clinic_id, SUPPLEMENT_REASONING_VERSION),
     getSendableSupplementCount(profile.clinic_id),
+    getFailedSendCount(profile.clinic_id),
     getRegenerationQueueSummary(profile.clinic_id),
   ]);
   return {
     ok: true,
-    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount, sendableCount, summary },
+    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount, sendableCount, failedSendCount, summary },
   };
 }
 
@@ -92,5 +96,16 @@ export async function bulkSendApprovedAction(
 
   const safeLimit = Math.min(Math.max(1, limit ?? MAX_SEND_BATCH), MAX_SEND_BATCH);
   const result = await bulkSendApprovedSupplements({ clinicId: profile.clinic_id, limit: safeLimit });
+  return { ok: true, ...result };
+}
+
+export async function retryFailedSendsAction(): Promise<
+  { ok: true; reset: number } | { ok: false; error: string }
+> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
+  if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
+
+  const result = await retryFailedSends(profile.clinic_id);
   return { ok: true, ...result };
 }

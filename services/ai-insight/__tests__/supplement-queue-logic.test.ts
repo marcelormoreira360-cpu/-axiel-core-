@@ -4,6 +4,7 @@ import {
   currentSupplementVersion,
   resolveJobStatusAfterFailure,
   isSupplementSent,
+  shouldNudgeRegeneration,
 } from "@/services/ai-insight/supplement-queue-logic";
 
 const VER = "2026-09-suplementacao-10-filtros";
@@ -47,5 +48,16 @@ describe("isSupplementSent", () => {
   it("false se nenhum canal enviou", () => {
     expect(isSupplementSent("skipped_no_contact", "no_report")).toBe(false);
     expect(isSupplementSent("failed", "failed")).toBe(false);
+  });
+});
+
+describe("shouldNudgeRegeneration", () => {
+  it("true se há qualquer trabalho (atualizar, fila ou enviar)", () => {
+    expect(shouldNudgeRegeneration(3, 0, 0)).toBe(true);
+    expect(shouldNudgeRegeneration(0, 2, 0)).toBe(true);
+    expect(shouldNudgeRegeneration(0, 0, 1)).toBe(true);
+  });
+  it("false quando não há nada a fazer", () => {
+    expect(shouldNudgeRegeneration(0, 0, 0)).toBe(false);
   });
 });

@@ -30,3 +30,11 @@ export function resolveJobStatusAfterFailure(attempts: number, maxAttempts: numb
 export function isSupplementSent(emailStatus: string, whatsappStatus: string): boolean {
   return emailStatus === "sent" || whatsappStatus === "sent";
 }
+
+/**
+ * Há trabalho de suplementação esperando pelo gestor (Fase 2b, cron de notificação):
+ * pacientes a atualizar, jobs na fila, ou aprovados prontos para enviar.
+ */
+export function shouldNudgeRegeneration(eligible: number, pending: number, sendable: number): boolean {
+  return eligible + pending + sendable > 0;
+}

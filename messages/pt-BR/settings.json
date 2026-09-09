@@ -901,6 +901,11 @@
     "sendableHint": "Rascunhos que você já aprovou e que ainda não foram enviados.",
     "send": "Enviar aprovados",
     "sending": "Enviando…",
-    "sent": "{sent} enviados, {failed} falharam."
+    "sent": "{sent} enviados, {failed} falharam.",
+    "sendFailedLabel": "Falharam ao enviar",
+    "sendFailedHint": "Aprovados que não foram entregues (sem contato ou erro no envio).",
+    "retry": "Retentar envios",
+    "retrying": "Reenfileirando…",
+    "retried": "{reset} reenfileirados para envio."
   }
 }
