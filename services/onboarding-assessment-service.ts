@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { getClinicTimezone } from "@/services/clinic-service";
+import { UNIFIED_FORM } from "@/modules/neuro-id/unified-form-template";
 import type { TemplateWithStructure } from "@/lib/types";
 
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
@@ -213,7 +214,12 @@ export async function sendAssessmentsToPatient(input: {
       });
       if (error) continue;
     }
-    links.push({ name: tpl.name as string, url: `${baseUrl}/f/${token}`, token });
+    // O formulário unificado (Perfil de 30 Dias) NÃO tem perguntas gravadas no
+    // banco — a rota /f/[token] o abriria VAZIO. Roteia para /neuro-id/[token]
+    // (mesma tabela assessment_invitations), que renderiza o form unificado e
+    // grava o Bio³ direto nos campos. Demais questionários seguem em /f/[token].
+    const path = tpl.name === UNIFIED_FORM.name ? "neuro-id" : "f";
+    links.push({ name: tpl.name as string, url: `${baseUrl}/${path}/${token}`, token });
   }
 
   if (links.length === 0) return { sent: 0, links: [] };
