@@ -79,7 +79,11 @@
     "supplementUs": "US · with purchase link",
     "hyperSection": "Hypersensitivity (hair test)",
     "sendHyper": "Send hypersensitivity report",
-    "hyperEmpty": "No hypersensitivity data. It only appears when the patient took the hair test."
+    "hyperEmpty": "No hypersensitivity data. It only appears when the patient took the hair test.",
+    "downloadReport": "Open report PDF",
+    "downloadSupplement": "Open supplements PDF",
+    "downloadHyper": "Open hypersensitivity PDF",
+    "downloadHint": "Opens the PDF to view, print, or hand over (patient without WhatsApp/email)."
   },
   "patientPage": {
     "title": "AI Insights",

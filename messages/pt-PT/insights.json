@@ -79,7 +79,11 @@
     "supplementUs": "EUA · com link de compra",
     "hyperSection": "Hipersensibilidade (exame de cabelo)",
     "sendHyper": "Enviar relatório de hipersensibilidade",
-    "hyperEmpty": "Sem dados de hipersensibilidade. Só aparece quando o paciente fez o exame de cabelo."
+    "hyperEmpty": "Sem dados de hipersensibilidade. Só aparece quando o paciente fez o exame de cabelo.",
+    "downloadReport": "Abrir relatório em PDF",
+    "downloadSupplement": "Abrir suplementação em PDF",
+    "downloadHyper": "Abrir hipersensibilidade em PDF",
+    "downloadHint": "Abre o PDF para ver, imprimir ou entregar em mão (paciente sem WhatsApp/e-mail)."
   },
   "patientPage": {
     "title": "AI Insights",

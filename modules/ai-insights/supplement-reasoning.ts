@@ -6,7 +6,7 @@
 // será carimbada em cada suplementação regenerada pela fila de regeneração em
 // massa (Fase 2, ainda não implementada). Ao mudar as regras abaixo, incremente
 // a versão para que a fila consiga distinguir protocolos pré e pós-mudança.
-export const SUPPLEMENT_REASONING_VERSION = "2026-09-suplementacao-10-filtros-v2";
+export const SUPPLEMENT_REASONING_VERSION = "2026-09-suplementacao-10-filtros-v3-antitemplate";
 
 // Bloco de instruções injetado no topo do DOCUMENTO 2 (protocolo_suplementacao)
 // do prompt de guarda-corpos. É o "cérebro clínico" que rege TODA a suplementação.

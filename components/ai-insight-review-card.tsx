@@ -1,4 +1,4 @@
-import { ChevronDown, RefreshCw, AlertTriangle } from "lucide-react";
+import { ChevronDown, RefreshCw, AlertTriangle, FileDown } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { AiInsight } from "@/lib/types";
 import { AI_INSIGHT_LABEL } from "@/modules/ai-insights/guardrails";
@@ -37,6 +37,10 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   const generateAction = generateAiInsightAction.bind(null, patientId);
   const isFinal = insight.review_status === "final";
   const output = insightOutput(insight);
+  // Estilo dos links "abrir PDF" (ver/imprimir/entregar em mão). O gerador é o MESMO do
+  // envio ao paciente, então o PDF baixado é idêntico ao que o paciente receberia.
+  const pdfLinkClass = "inline-flex items-center gap-2 rounded-xl border border-black/[.08] dark:border-white/[.10] px-4 py-2.5 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]";
+  const pdfHref = (docType: string) => `/api/patients/${patientId}/neuro-id/pdf?doc=${docType}&insight=${insight.id}`;
 
   // Prévia da pirâmide Bio³ na própria mesa de revisão: quando o Doc 1 é o
   // persuasivo, mostra o mesmo gráfico que vai no PDF final (texto + pirâmide),
@@ -105,6 +109,17 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
       {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
       <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} />
 
+      {/* Abrir o Relatório (Doc 1 + Doc 2) em PDF — casa com o que aparece acima; serve para
+          imprimir/entregar em mão a pacientes sem WhatsApp/e-mail. Só quando há Doc 1 persuasivo. */}
+      {showPyramid ? (
+        <div className="space-y-1">
+          <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
+            <FileDown className="h-3.5 w-3.5" /> {t("downloadReport")}
+          </a>
+          <p className="text-[11px] text-axiel-text-secondary">{t("downloadHint")}</p>
+        </div>
+      ) : null}
+
       {/* Edição manual do Doc 1/Doc 2 (formato persuasivo). Continua disponível
           mesmo depois de aprovado — igual à Suplementação — para corrigir o texto
           e reenviar via "Reenviar relatório". Grava em final_output. */}
@@ -170,6 +185,11 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
           {/* O envio usa o insight FINAL mais recente (sendSupplementToPatient →
               getLatestFinalAiInsight). Só mostra o botão quando este insight é final,
               para não expor um botão que não envia nada num rascunho. */}
+          {hasSupplement ? (
+            <a href={pdfHref("supplement")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
+              <FileDown className="h-3.5 w-3.5" /> {t("downloadSupplement")}
+            </a>
+          ) : null}
           {isFinal && hasSupplement ? (
             <form action={sendSupplementAction}>
               <ButtonPrimary type="submit">{t("sendSupplement")}</ButtonPrimary>
@@ -185,6 +205,9 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         <div className="space-y-3 rounded-2xl border border-[#7C5CBF]/30 dark:border-[#7C5CBF]/25 p-4">
           <p className="text-sm font-semibold text-axiel-text-primary">{t("hyperSection")}</p>
           <HypersensitivityEditor patientId={patientId} insightId={insight.id} relatorio={relatorioHyper} />
+          <a href={pdfHref("hypersensitivity")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
+            <FileDown className="h-3.5 w-3.5" /> {t("downloadHyper")}
+          </a>
           {isFinal ? (
             <form action={sendHyperAction}>
               <ButtonPrimary type="submit">{t("sendHyper")}</ButtonPrimary>
