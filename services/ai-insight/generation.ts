@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { AiInsightOutput } from "@/lib/types";
-import { reportModel } from "@/lib/ai-models";
+import { reportModel, deepReportModel, isReasoningModel, reasoningEffort } from "@/lib/ai-models";
 import { resolvePatientLocale } from "@/lib/email-i18n";
 import { resolveClinicalPack } from "@/modules/clinical-packs/resolve";
 import { buildAiInsightInput, type AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
@@ -29,7 +29,10 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   }
 
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = reportModel();
+  // ENTREGÁVEL clínico (Doc 1 + suplementação): modelo mais forte / de raciocínio,
+  // para analisar caso a caso em vez de convergir nos ativos "de livro-texto".
+  const model = deepReportModel();
+  const reasoning = isReasoningModel(model);
 
   // Motor HORIZONTAL: o método (prompt + schema + coerção) vem do Clinical Pack da clínica,
   // não de imports estáticos Bio³. O binding vem de clinics.clinical_pack_id (migration 156):
@@ -44,7 +47,9 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
   const response = await client.chat.completions.create({
     store: false, // PHI: nao reter a conversa no provedor (defesa em profundidade; BAA e o controle primario)
     model,
-    temperature: 0.2,
+    // Modelos de raciocínio (série "o") rejeitam `temperature` e usam `reasoning_effort`;
+    // os demais mantêm a temperatura baixa de sempre (saída clínica estável).
+    ...(reasoning ? { reasoning_effort: reasoningEffort() } : { temperature: 0.2 }),
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: pack.buildReportSystemPrompt(patientLocale) },
