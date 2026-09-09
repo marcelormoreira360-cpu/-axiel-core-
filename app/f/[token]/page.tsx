@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { getInvitationByToken } from "@/services/assessment-invitation-service";
 import { PublicAssessmentForm } from "@/components/public-assessment-form";
 import { PublicCaptureForm } from "@/components/public-capture-form";
+import { UNIFIED_FORM } from "@/modules/neuro-id/unified-form-template";
 import enPublic from "@/messages/en/publicForm.json";
 import ptPublic from "@/messages/pt-BR/publicForm.json";
 
@@ -48,6 +50,14 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
         </div>
       </div>
     );
+  }
+
+  // Rede de segurança: o formulário unificado (Perfil de 30 Dias) não tem perguntas
+  // gravadas no banco, então /f/[token] o abriria vazio. Qualquer link /f/ que aponte
+  // para ele (ex.: envio em lote de onboarding/reavaliação) é redirecionado para a rota
+  // rica /neuro-id/[token], que renderiza o form e grava o Bio³ nos campos.
+  if ((data.template as { name?: string }).name === UNIFIED_FORM.name) {
+    redirect(`/neuro-id/${token}`);
   }
 
   // IDIOMA FIXO PELO FORMULÁRIO: cada link/QR abre no idioma do próprio template
