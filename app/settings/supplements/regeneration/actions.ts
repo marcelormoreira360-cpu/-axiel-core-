@@ -8,6 +8,10 @@ import {
   enqueueSupplementRegeneration,
   getRegenerationQueueSummary,
   processNextRegenerationBatch,
+  getSendableSupplementCount,
+  getFailedSendCount,
+  bulkSendApprovedSupplements,
+  retryFailedSends,
   type RegenerationQueueSummary,
 } from "@/services/supplement-regeneration-queue-service";
 
@@ -24,6 +28,8 @@ const DEFAULT_BATCH = 2;
 export type RegenerationOverview = {
   configVersion: string;
   eligibleCount: number;
+  sendableCount: number;
+  failedSendCount: number;
   summary: RegenerationQueueSummary;
 };
 
@@ -34,13 +40,15 @@ export async function getRegenerationOverviewAction(): Promise<
   if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
   if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
 
-  const [eligibleCount, summary] = await Promise.all([
+  const [eligibleCount, sendableCount, failedSendCount, summary] = await Promise.all([
     getEligiblePatientCountForRegeneration(profile.clinic_id, SUPPLEMENT_REASONING_VERSION),
+    getSendableSupplementCount(profile.clinic_id),
+    getFailedSendCount(profile.clinic_id),
     getRegenerationQueueSummary(profile.clinic_id),
   ]);
   return {
     ok: true,
-    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount, summary },
+    data: { configVersion: SUPPLEMENT_REASONING_VERSION, eligibleCount, sendableCount, failedSendCount, summary },
   };
 }
 
@@ -72,5 +80,32 @@ export async function processRegenerationBatchAction(
 
   const safeLimit = Math.min(Math.max(1, limit ?? DEFAULT_BATCH), MAX_BATCH);
   const result = await processNextRegenerationBatch({ clinicId: profile.clinic_id, limit: safeLimit });
+  return { ok: true, ...result };
+}
+
+// Envio em lote é mais leve que a geração (sem LLM), mas ainda faz PDF + e-mail +
+// WhatsApp por paciente; teto por invocação para caber no tempo da função.
+const MAX_SEND_BATCH = 10;
+
+export async function bulkSendApprovedAction(
+  limit?: number,
+): Promise<{ ok: true; sent: number; failed: number } | { ok: false; error: string }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
+  if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
+
+  const safeLimit = Math.min(Math.max(1, limit ?? MAX_SEND_BATCH), MAX_SEND_BATCH);
+  const result = await bulkSendApprovedSupplements({ clinicId: profile.clinic_id, limit: safeLimit });
+  return { ok: true, ...result };
+}
+
+export async function retryFailedSendsAction(): Promise<
+  { ok: true; reset: number } | { ok: false; error: string }
+> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) return { ok: false, error: "Não autorizado." };
+  if (!isManagerRole(profile.role)) return { ok: false, error: "Sem permissão." };
+
+  const result = await retryFailedSends(profile.clinic_id);
   return { ok: true, ...result };
 }

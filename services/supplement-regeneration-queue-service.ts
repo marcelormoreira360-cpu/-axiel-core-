@@ -2,9 +2,11 @@ import type { AiInsight } from "@/lib/types";
 import { createLogger } from "@/lib/logger";
 import { resolveClinicalPack } from "@/modules/clinical-packs/resolve";
 import { regenerateSupplementForPatient } from "@/services/ai-insight/supplement-regeneration";
+import { sendSupplementToPatient } from "@/services/ai-insight/delivery";
 import {
   resolveJobStatusAfterFailure,
   currentSupplementVersion,
+  isSupplementSent,
 } from "@/services/ai-insight/supplement-queue-logic";
 
 const log = createLogger("supplement-regeneration-queue");
@@ -251,4 +253,149 @@ export async function processNextRegenerationBatch(input: {
   }
 
   return { claimed, done, failed };
+}
+
+// ── FASE 4: envio em lote dos aprovados ──────────────────────────────────────
+// "Pronto para enviar" = job 'done' cujo rascunho o gestor já APROVOU
+// (ai_insights.review_status = 'final') e que ainda não foi enviado (sent_at null).
+// Respeita o gate humano: só envia o que já passou pela aprovação por paciente.
+
+const SENDABLE_SELECT = "id, patient_id, ai_insights!inner(review_status)";
+
+export async function getSendableSupplementCount(clinicId: string): Promise<number> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("supplement_regeneration_jobs")
+    .select(SENDABLE_SELECT, { count: "exact", head: true })
+    .eq("clinic_id", clinicId)
+    .eq("status", "done")
+    .is("sent_at", null)
+    .eq("ai_insights.review_status", "final");
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Jobs que TENTARAM enviar e não entregaram (sent_at marcado + send_error). Como o
+ * envio reserva antes de tentar, uma falha (transitória do provedor OU sem contato)
+ * sai de "prontos"; esta contagem a torna VISÍVEL para o gestor poder re-tentar.
+ */
+export async function getFailedSendCount(clinicId: string): Promise<number> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("supplement_regeneration_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("clinic_id", clinicId)
+    .eq("status", "done")
+    .not("sent_at", "is", null)
+    .not("send_error", "is", null);
+  if (error) throw error;
+  return count ?? 0;
+}
+
+/**
+ * Re-tentativa em lote dos envios que falharam: limpa sent_at/send_error para eles
+ * voltarem a "prontos para enviar". Ação explícita do gestor (ex.: depois de
+ * corrigir contato ou de uma indisponibilidade do provedor). Não envia aqui.
+ */
+export async function retryFailedSends(clinicId: string): Promise<{ reset: number }> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("supplement_regeneration_jobs")
+    .update({ sent_at: null, send_error: null, updated_at: new Date().toISOString() })
+    .eq("clinic_id", clinicId)
+    .eq("status", "done")
+    .not("sent_at", "is", null)
+    .not("send_error", "is", null)
+    .select("id");
+  if (error) throw error;
+  return { reset: data?.length ?? 0 };
+}
+
+// Teto por invocação (envio faz PDF + e-mail + WhatsApp por paciente). Igual ao
+// MAX_SEND_BATCH da action; a tela chama em laço até esgotar.
+const SEND_BATCH_LIMIT = 10;
+
+/**
+ * Envia em LOTE a suplementação dos jobs prontos (aprovados e não enviados), no
+ * contexto do gestor autenticado.
+ *
+ * Semântica EXATAMENTE-UMA-VEZ por job: RESERVA (marca sent_at) ANTES de enviar.
+ * Isso (a) impede reenvio em laço de casos não entregáveis (sem contato / sem Doc
+ * 2), que antes ficavam "prontos" para sempre; e (b) impede envio duplo de dois
+ * lotes concorrentes (só quem reserva de fato envia). Agrupa por paciente para
+ * enviar UMA vez por paciente mesmo que ele tenha vários jobs done. Se o envio não
+ * entregar por nenhum canal, registra send_error (o job já saiu de "prontos").
+ */
+export async function bulkSendApprovedSupplements(input: {
+  clinicId: string;
+  limit?: number;
+}): Promise<{ sent: number; failed: number }> {
+  const limit = input.limit ?? SEND_BATCH_LIMIT;
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+
+  const { data: candidates, error: candidatesError } = await supabase
+    .from("supplement_regeneration_jobs")
+    .select(SENDABLE_SELECT)
+    .eq("clinic_id", input.clinicId)
+    .eq("status", "done")
+    .is("sent_at", null)
+    .eq("ai_insights.review_status", "final")
+    .order("created_at", { ascending: true })
+    .limit(limit);
+  if (candidatesError) throw candidatesError; // não trate falha de DB como "nada a enviar"
+
+  // Um paciente pode ter mais de um job done aprovado; envia UMA vez e marca todos
+  // os jobs candidatos dele nesta leva.
+  const byPatient = new Map<string, string[]>();
+  for (const j of (candidates ?? []) as Array<{ id: string; patient_id: string }>) {
+    const ids = byPatient.get(j.patient_id) ?? [];
+    ids.push(j.id);
+    byPatient.set(j.patient_id, ids);
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const [patientId, jobIds] of byPatient) {
+    // Reserva atômica: marca sent_at ANTES de enviar. Quem reservar de fato (linhas
+    // afetadas > 0) é dono do envio; um lote concorrente que não reservar pula.
+    const nowIso = new Date().toISOString();
+    const { data: claimed, error: claimError } = await supabase
+      .from("supplement_regeneration_jobs")
+      .update({ sent_at: nowIso, updated_at: nowIso })
+      .in("id", jobIds)
+      .is("sent_at", null)
+      .select("id");
+    if (claimError) throw claimError;
+    if (!claimed || claimed.length === 0) continue; // outro lote reservou
+
+    try {
+      const res = await sendSupplementToPatient(patientId);
+      if (isSupplementSent(res.email, res.whatsapp)) {
+        sent++;
+      } else {
+        const err = `email=${res.email} whatsapp=${res.whatsapp}`;
+        await supabase
+          .from("supplement_regeneration_jobs")
+          .update({ send_error: err, updated_at: new Date().toISOString() })
+          .in("id", jobIds);
+        failed++;
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await supabase
+        .from("supplement_regeneration_jobs")
+        .update({ send_error: msg, updated_at: new Date().toISOString() })
+        .in("id", jobIds);
+      failed++;
+      log.error("envio de suplemento em lote falhou", e, { patient: patientId });
+    }
+  }
+
+  return { sent, failed };
 }

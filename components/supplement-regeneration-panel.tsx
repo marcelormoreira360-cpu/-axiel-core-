@@ -6,10 +6,12 @@ import {
   getRegenerationOverviewAction,
   enqueueEligibleRegenerationAction,
   processRegenerationBatchAction,
+  bulkSendApprovedAction,
+  retryFailedSendsAction,
   type RegenerationOverview,
 } from "@/app/settings/supplements/regeneration/actions";
 
-type Busy = null | "load" | "enqueue" | "process" | "processAll";
+type Busy = null | "load" | "enqueue" | "process" | "processAll" | "send" | "retry";
 
 export function SupplementRegenerationPanel() {
   const t = useTranslations("settings.regeneration");
@@ -84,8 +86,51 @@ export function SupplementRegenerationPanel() {
     }
   };
 
+  // Envia em ondas os aprovados prontos até esgotar.
+  const sendApproved = async () => {
+    setBusy("send");
+    setMessage(null);
+    let totalSent = 0;
+    let totalFailed = 0;
+    try {
+      for (let i = 0; i < 500; i++) {
+        const res = await bulkSendApprovedAction();
+        if (!res.ok) {
+          setMessage(res.error);
+          break;
+        }
+        totalSent += res.sent;
+        totalFailed += res.failed;
+        setMessage(t("sent", { sent: totalSent, failed: totalFailed }));
+        if (res.sent + res.failed === 0) break; // nada mais pronto
+      }
+      await load();
+    } catch {
+      setMessage(t("error"));
+      await load().catch(() => {});
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const retryFailed = async () => {
+    setBusy("retry");
+    setMessage(null);
+    try {
+      const res = await retryFailedSendsAction();
+      setMessage(res.ok ? t("retried", { reset: res.reset }) : res.error);
+      await load();
+    } catch {
+      setMessage(t("error"));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const s = overview?.summary;
   const eligible = overview?.eligibleCount ?? 0;
+  const sendable = overview?.sendableCount ?? 0;
+  const sendFailed = overview?.failedSendCount ?? 0;
   const pending = s?.pending ?? 0;
   const anyBusy = busy !== null;
 
@@ -158,7 +203,38 @@ export function SupplementRegenerationPanel() {
         </div>
       </div>
 
-      {eligible === 0 && pending === 0 && busy === null && (
+      <div className="border-t border-black/5 pt-5">
+        <div className="text-sm font-medium text-[#0F1A2E]">{t("sendableLabel")}</div>
+        <div className="text-3xl font-semibold text-[#0F6E56] mt-1">{sendable}</div>
+        <div className="text-[12px] text-black/45 mt-1">{t("sendableHint")}</div>
+        <button
+          type="button"
+          onClick={sendApproved}
+          disabled={anyBusy || sendable === 0}
+          className={`${btn} mt-3 bg-[#0F6E56] text-white hover:bg-[#0F6E56]/90`}
+        >
+          {busy === "send" ? t("sending") : t("send")}
+        </button>
+      </div>
+
+      {sendFailed > 0 && (
+        <div className="rounded-lg bg-[#B4441E]/[.06] px-3 py-3">
+          <div className="text-sm font-medium text-[#B4441E]">
+            {t("sendFailedLabel")}: {sendFailed}
+          </div>
+          <div className="text-[12px] text-black/50 mt-1">{t("sendFailedHint")}</div>
+          <button
+            type="button"
+            onClick={retryFailed}
+            disabled={anyBusy}
+            className={`${btn} mt-2 border border-[#B4441E]/40 text-[#B4441E] hover:bg-[#B4441E]/5`}
+          >
+            {busy === "retry" ? t("retrying") : t("retry")}
+          </button>
+        </div>
+      )}
+
+      {eligible === 0 && pending === 0 && sendable === 0 && sendFailed === 0 && busy === null && (
         <p className="text-[13px] text-black/45">{t("nothingEligible")}</p>
       )}
       {message && <p className="text-[13px] text-[#0F1A2E] bg-[#0F6E56]/[.06] rounded-lg px-3 py-2">{message}</p>}

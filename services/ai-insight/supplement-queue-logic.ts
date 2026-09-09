@@ -22,3 +22,19 @@ export function currentSupplementVersion(insight: AiInsight | null): string | nu
 export function resolveJobStatusAfterFailure(attempts: number, maxAttempts: number): "pending" | "failed" {
   return attempts >= maxAttempts ? "failed" : "pending";
 }
+
+/**
+ * O envio (Fase 4) só conta como feito se PELO MENOS um canal (e-mail ou WhatsApp)
+ * realmente enviou. "skipped_no_contact"/"no_report"/"failed" não marcam enviado.
+ */
+export function isSupplementSent(emailStatus: string, whatsappStatus: string): boolean {
+  return emailStatus === "sent" || whatsappStatus === "sent";
+}
+
+/**
+ * Há trabalho de suplementação esperando pelo gestor (Fase 2b, cron de notificação):
+ * pacientes a atualizar, jobs na fila, ou aprovados prontos para enviar.
+ */
+export function shouldNudgeRegeneration(eligible: number, pending: number, sendable: number): boolean {
+  return eligible + pending + sendable > 0;
+}
