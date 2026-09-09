@@ -1,0 +1,39 @@
+import { describe, it, expect } from "vitest";
+import type { AiInsight, AiInsightOutput } from "@/lib/types";
+import {
+  currentSupplementVersion,
+  resolveJobStatusAfterFailure,
+} from "@/services/ai-insight/supplement-queue-logic";
+
+const VER = "2026-09-suplementacao-10-filtros";
+
+const out = (v: string | null): AiInsightOutput =>
+  ({ supplement_reasoning_version: v } as unknown as AiInsightOutput);
+
+const insight = (over: Partial<AiInsight>): AiInsight => ({ ...over } as AiInsight);
+
+describe("currentSupplementVersion", () => {
+  it("null quando não há insight", () => {
+    expect(currentSupplementVersion(null)).toBeNull();
+  });
+  it("usa final_output com precedência sobre output", () => {
+    expect(currentSupplementVersion(insight({ final_output: out(VER), output: out("antiga") }))).toBe(VER);
+  });
+  it("cai para output quando não há final_output", () => {
+    expect(currentSupplementVersion(insight({ final_output: null, output: out("antiga") }))).toBe("antiga");
+  });
+  it("null quando o output não tem carimbo", () => {
+    expect(currentSupplementVersion(insight({ final_output: null, output: out(null) }))).toBeNull();
+  });
+});
+
+describe("resolveJobStatusAfterFailure", () => {
+  it("volta para pending enquanto houver tentativa", () => {
+    expect(resolveJobStatusAfterFailure(1, 3)).toBe("pending");
+    expect(resolveJobStatusAfterFailure(2, 3)).toBe("pending");
+  });
+  it("vira failed ao esgotar max_attempts", () => {
+    expect(resolveJobStatusAfterFailure(3, 3)).toBe("failed");
+    expect(resolveJobStatusAfterFailure(4, 3)).toBe("failed");
+  });
+});

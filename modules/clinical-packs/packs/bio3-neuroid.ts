@@ -21,6 +21,7 @@ export const bio3NeuroIdPack: ClinicalPack = {
   buildReportSystemPrompt: buildAiInsightSystemPrompt,
   reportJsonShape: aiInsightJsonShape as unknown as Record<string, unknown>,
   coerceReportOutput: coerceAiInsightOutput,
+  producesSupplementation: true, // Doc 2 (protocolo_suplementacao) faz parte do pack Neuro ID.
   assistantPrompts: {
     atm: buildAtmSuggestionSystemPrompt,
     scribe: buildScribeAtmSystemPrompt,
