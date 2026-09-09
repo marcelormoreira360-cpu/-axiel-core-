@@ -177,14 +177,23 @@ ${supplementReasoningFilters}
   que cabem em dose/volume de uma cápsula/sachê; SEPARE em fórmulas diferentes só quando houver incompatibilidade,
   quantidade/volume que não cabe, ou interação. Pode ser UMA fórmula (se tudo for compatível e couber) ou VÁRIAS —
   NUNCA force múltiplas fórmulas nem amontoe ativos que não devem ficar juntos. Respeite os princípios de manipulação.
-  Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina;
-  adaptógenos como ashwagandha/rhodiola SÓ com a cautela do filtro de segurança para adaptógenos ativadores em quadro
-  ansioso/simpático), regulação emocional/HPA e neurotransmissores (conforme achados; precursores serotoninérgicos
-  como triptofano/5-HTP seguem o filtro de gate de precursores serotoninérgicos),
-  fígado/detoxificação (NAC, silimarina, colina — relevante p/ nicotina/álcool/maconha e carga química),
-  circulação/vasodilatação e temperatura (quando houver vasoconstrição/mãos frias), energia/mitocôndria,
-  intestino/microbiota, antioxidante/anti-inflamatório (ômega-3), reposição de nutrientes baixos. Cada ativo ligado a um
-  achado REAL (do exame/avaliação). Escolha só os eixos que os dados sustentam — nunca um "kit" padrão igual para todos.
+  Eixos POSSÍVEIS (cubra SÓ os que os DADOS DESTE paciente sustentam, começando pelo prioritário — NUNCA um "kit" igual
+  para todos): sistema nervoso/SNA e sono; regulação emocional/HPA e neurotransmissores; fígado/detoxificação;
+  circulação/vasodilatação e temperatura; energia/mitocôndria; intestino/microbiota; antioxidante/anti-inflamatório;
+  reposição de nutrientes baixos. NÃO listo ativos de propósito: ESCOLHA o ativo a partir do achado REAL e específico
+  deste caso (você conhece a farmacopeia integrativa), cada ativo amarrado a um dado citável, sem cair num ativo "de praxe".
+  Respeite os filtros de segurança (adaptógenos ativadores em quadro ansioso/simpático; precursores serotoninérgicos
+  triptofano/5-HTP). Cada ativo ligado a um achado REAL (do exame/avaliação) — nunca um "kit" padrão igual para todos.
+- NÃO INVENTE ACHADO NEM EXPOSIÇÃO (regra dura): só afirme "exposição a metais/toxinas", "sobrecarga hepática", "disbiose",
+  "carga química" etc. se houver DADO que sustente (exame laboratorial alterado, teste capilar, ou relato de álcool/tabaco/
+  químicos na avaliação/anamnese). Uma referência EMOCIONAL/energética a um órgão na biorressonância/bioemocional (ex.:
+  "raiva/frustração — fígado", "medo — rim", "tristeza — pulmão") é TEMA EMOCIONAL, NÃO é disfunção daquele órgão e NÃO
+  justifica suporte hepático/detox/renal. Sem achado hepático REAL, NÃO inclua fórmula de fígado/detox e NÃO escreva a
+  justificativa de detox — é o erro mais comum e sair com "NAC + Silimarina" sem base é ERRO.
+- DEIXE O EIXO DOMINANTE MANDAR: se o quadro é claramente de um eixo (ex.: emocional/SNA — priority_pillar "emocional" +
+  ansiedade/estresse altos), o plano reflete ISSO (regulação do SNA/emocional, ancorado nos temas emocionais e nos dados
+  autonômicos REAIS deste paciente), sem acrescentar uma segunda fórmula "detox/hepática" de praxe só para ter duas
+  fórmulas. Poucos ativos certos, amarrados aos achados deste caso, valem mais que duas fórmulas genéricas.
 - BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a COBERTURA de eixos (ou deixe o plano vazio) quando
   os dados forem REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames,
   cadastrar o que o paciente já toma) para o protocolo ficar mais preciso. Começar enxuto pelo eixo prioritário (Filtros
