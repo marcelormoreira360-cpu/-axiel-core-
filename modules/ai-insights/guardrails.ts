@@ -185,15 +185,20 @@ ${supplementReasoningFilters}
   Respeite os filtros de segurança (adaptógenos ativadores em quadro ansioso/simpático; precursores serotoninérgicos
   triptofano/5-HTP). Cada ativo ligado a um achado REAL (do exame/avaliação) — nunca um "kit" padrão igual para todos.
 - NÃO INVENTE ACHADO NEM EXPOSIÇÃO (regra dura): só afirme "exposição a metais/toxinas", "sobrecarga hepática", "disbiose",
-  "carga química" etc. se houver DADO que sustente (exame laboratorial alterado, teste capilar, ou relato de álcool/tabaco/
-  químicos na avaliação/anamnese). Uma referência EMOCIONAL/energética a um órgão na biorressonância/bioemocional (ex.:
-  "raiva/frustração — fígado", "medo — rim", "tristeza — pulmão") é TEMA EMOCIONAL, NÃO é disfunção daquele órgão e NÃO
-  justifica suporte hepático/detox/renal. Sem achado hepático REAL, NÃO inclua fórmula de fígado/detox e NÃO escreva a
-  justificativa de detox — é o erro mais comum e sair com "NAC + Silimarina" sem base é ERRO.
-- DEIXE O EIXO DOMINANTE MANDAR: se o quadro é claramente de um eixo (ex.: emocional/SNA — priority_pillar "emocional" +
-  ansiedade/estresse altos), o plano reflete ISSO (regulação do SNA/emocional, ancorado nos temas emocionais e nos dados
-  autonômicos REAIS deste paciente), sem acrescentar uma segunda fórmula "detox/hepática" de praxe só para ter duas
-  fórmulas. Poucos ativos certos, amarrados aos achados deste caso, valem mais que duas fórmulas genéricas.
+  "carga química" etc. se houver DADO que sustente. CONTAM como base real: exame laboratorial alterado, teste capilar, OU
+  relato de TABAGISMO / ÁLCOOL / exposição ocupacional a químicos na avaliação/anamnese/queixa — quando existe, o suporte
+  hepático/detox É indicado e DEVE entrar (fórmula + texto). NÃO contam: uma referência EMOCIONAL/energética a um órgão na
+  biorressonância/bioemocional (ex.: "raiva/frustração — fígado", "medo — rim", "tristeza — pulmão") é TEMA EMOCIONAL, NÃO
+  é disfunção do órgão e sozinha NÃO justifica suporte hepático/detox/renal. Sem NENHUMA base real, NÃO inclua fórmula de
+  fígado/detox e NÃO escreva a justificativa — sair com "NAC + Silimarina" só por hábito é ERRO.
+- COBRE OS EIXOS QUE TÊM ACHADO, sem inventar nem suprimir: inclua CADA eixo com base real neste paciente (inclusive os
+  secundários — ex.: tabagismo/álcool/exposição documentada → fígado/detox ENTRA, faseado se não for o prioritário) e NÃO
+  inclua eixo SEM achado só para ter mais fórmulas. Não é "o eixo dominante manda e o resto some": é "cada eixo com achado
+  real entra; eixo sem achado fica de fora". Priorize e faseie (comece pelo prioritário), mas NÃO derrube um eixo que tem
+  base real (isso empobrece o plano).
+- CONSISTÊNCIA TEXTO×FÓRMULA (obrigatória): os temas de "cuidados" ("O que vamos cuidar, e por quê") e as fórmulas/itens
+  têm que BATER. Todo tema citado precisa de fórmula/ação correspondente, e toda fórmula precisa do seu tema. NUNCA escreva
+  um tema (ex.: "Apoio ao fígado") sem a fórmula que o executa, nem uma fórmula sem o tema que a explica.
 - BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a COBERTURA de eixos (ou deixe o plano vazio) quando
   os dados forem REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames,
   cadastrar o que o paciente já toma) para o protocolo ficar mais preciso. Começar enxuto pelo eixo prioritário (Filtros
