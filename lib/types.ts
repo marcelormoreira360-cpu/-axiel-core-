@@ -545,6 +545,12 @@ export type AiInsightOutput = {
   protocolo_suplementacao?: NeuroProtocoloSuplementacao;
   /** Documento 3 — só quando há teste capilar/hipersensibilidade. */
   relatorio_hipersensibilidade?: NeuroRelatorioHipersensibilidade;
+  /**
+   * Versão da config do raciocínio de suplementação (Protocolo dos 10 Filtros)
+   * que gerou o protocolo_suplementacao. Carimbada na geração/regeneração para a
+   * fila de regeneração em massa distinguir protocolos pré e pós-mudança.
+   */
+  supplement_reasoning_version?: string | null;
 };
 
 export type AiInsightReviewStatus = "pending_review" | "needs_changes" | "final" | "archived";
