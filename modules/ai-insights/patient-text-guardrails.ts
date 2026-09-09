@@ -120,6 +120,77 @@ function patientFacingFields(output: AiInsightOutput): Array<{ field: string; te
   return out;
 }
 
+/**
+ * Texto da SUPLEMENTAÇÃO (protocolo_suplementacao) que o paciente lê no PDF do
+ * Documento 2/3. Varrido à parte de patientFacingFields para NÃO contar como
+ * "conteúdo persuasivo" do Doc 1 (não deve exigir âncora positiva), mas ainda
+ * assim pegar travessão que escape para o material do paciente.
+ */
+function supplementPatientText(output: AiInsightOutput): Array<{ field: string; text: string }> {
+  const s = output.protocolo_suplementacao;
+  const out: Array<{ field: string; text: string }> = [];
+  if (!s) return out;
+  const push = (field: string, text: string | undefined | null) => {
+    if (text && text.trim()) out.push({ field, text });
+  };
+  push("suplementacao.intro", s.intro);
+  push("suplementacao.proximos_passos", s.proximos_passos);
+  (s.observacoes_gerais ?? []).forEach((t) => push("suplementacao.observacoes_gerais", t));
+  (s.cuidados ?? []).forEach((c) => {
+    push("suplementacao.cuidados.titulo", c.titulo);
+    push("suplementacao.cuidados.texto", c.texto);
+  });
+  (s.formulas ?? []).forEach((f) => {
+    push("suplementacao.formula.nome", f.nome);
+    push("suplementacao.formula.posologia", f.posologia);
+    push("suplementacao.formula.duracao", f.duracao);
+    push("suplementacao.formula.excipiente", f.excipiente);
+    (f.composicao ?? []).forEach((c) => {
+      push("suplementacao.formula.composicao.ativo", c.ativo);
+      push("suplementacao.formula.composicao.quantidade", c.quantidade);
+    });
+  });
+  (s.itens ?? []).forEach((it) => {
+    push("suplementacao.item.nome", it.nome);
+    push("suplementacao.item.objetivo", it.objetivo);
+    push("suplementacao.item.dose_sugerida", it.dose_sugerida);
+    push("suplementacao.item.forma", it.forma);
+    push("suplementacao.item.como_tomar", it.como_tomar);
+    push("suplementacao.item.observacao", it.observacao);
+  });
+  return out;
+}
+
+/**
+ * Texto do Documento 3 (relatorio_hipersensibilidade) que o paciente lê no PDF.
+ * Varre APENAS travessão: este documento cita "biorressonância" de propósito no
+ * aviso obrigatório (é complementar/qualitativa), então NÃO roda o léxico de
+ * termos internos aqui (daria falso positivo no disclaimer do modelo).
+ */
+function hypersensitivityPatientText(output: AiInsightOutput): Array<{ field: string; text: string }> {
+  const d = output.relatorio_hipersensibilidade;
+  const out: Array<{ field: string; text: string }> = [];
+  if (!d) return out;
+  const push = (field: string, text: string | undefined | null) => {
+    if (text && text.trim()) out.push({ field, text });
+  };
+  push("hipersens.introducao", d.introducao);
+  push("hipersens.visao_geral.quadro", d.visao_geral?.quadro);
+  push("hipersens.visao_geral.principais_achados", d.visao_geral?.principais_achados);
+  push("hipersens.visao_geral.prioridade_funcional", d.visao_geral?.prioridade_funcional);
+  (d.padroes ?? []).forEach((p) => push("hipersens.padroes.interpretacao", p.interpretacao));
+  (d.achados_prioritarios ?? []).forEach((a) => push("hipersens.achados_prioritarios.prioridade", a.prioridade));
+  push("hipersens.relacao_sistema_nervoso", d.relacao_sistema_nervoso);
+  (d.eixos ?? []).forEach((e) => push("hipersens.eixos.descricao", e.descricao));
+  (d.fases ?? []).forEach((f) => push("hipersens.fases.descricao", f.descricao));
+  (d.plano_alimentar ?? []).forEach((t) => push("hipersens.plano_alimentar", t));
+  push("hipersens.implicacoes.texto", d.implicacoes_suplementacao?.texto);
+  (d.monitoramento ?? []).forEach((t) => push("hipersens.monitoramento", t));
+  push("hipersens.resumo_executivo", d.resumo_executivo);
+  (d.observacoes_gerais ?? []).forEach((t) => push("hipersens.observacoes_gerais", t));
+  return out;
+}
+
 export type PatientTextScan = {
   ok: boolean;
   violations: PatientTextViolation[];
@@ -141,6 +212,24 @@ export function scanPatientText(output: AiInsightOutput): PatientTextScan {
     for (const term of NAO_AO_PACIENTE_TERMS) {
       if (wordRegex(term).test(text)) violations.push({ kind: "termo_interno", term, field });
     }
+    if (NUM_SESSOES_RE.test(text)) violations.push({ kind: "numero_sessoes", field });
+    if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });
+  }
+
+  // Suplementação (Documento 2 ao paciente): checks COMPLETOS (termo interno,
+  // número de sessões, travessão). Escapava por não passar pelo scan persuasivo.
+  // Não conta como conteúdo persuasivo (não exige âncora).
+  for (const { field, text } of supplementPatientText(output)) {
+    for (const term of NAO_AO_PACIENTE_TERMS) {
+      if (wordRegex(term).test(text)) violations.push({ kind: "termo_interno", term, field });
+    }
+    if (NUM_SESSOES_RE.test(text)) violations.push({ kind: "numero_sessoes", field });
+    if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });
+  }
+
+  // Documento 3 (hipersensibilidade): só TRAVESSÃO (cita "biorressonância" de
+  // propósito no aviso obrigatório, então não roda o léxico de termos internos).
+  for (const { field, text } of hypersensitivityPatientText(output)) {
     if (NUM_SESSOES_RE.test(text)) violations.push({ kind: "numero_sessoes", field });
     if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });
   }
