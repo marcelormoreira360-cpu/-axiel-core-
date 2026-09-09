@@ -5,7 +5,7 @@ import { getPatientById } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { patientIdentificacao } from "@/lib/patient-demographics";
 import { needsEmotionalSafeguard } from "@/modules/ai-insights/neuro-enums";
-import { getAiInsightById, getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
+import { getAiInsightById, getLatestAiInsight } from "@/services/ai-insight/insight-repository";
 import { renderPatientReportPdf, renderSupplementPdf, renderHypersensitivityPdf } from "@/services/ai-insight/pdf-download";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -27,11 +27,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const view = url.searchParams.get("view") === "clinical" ? "clinical" : "patient";
   const docParam = url.searchParams.get("doc") ?? "report";
   const doc: DocType = (DOC_TYPES as readonly string[]).includes(docParam) ? (docParam as DocType) : "report";
-  // insight=<id> renderiza EXATAMENTE aquele card (rascunho ou final) — é o que os botões
-  // do card de revisão usam, para o profissional imprimir o que está vendo. SEM insight
-  // (ex.: "Ver PDF" do painel Bio³), usa o último APROVADO (final): o botão "oficial" nunca
-  // imprime rascunho não aprovado; se não houver final mas houver Mapa Bio³, cai no relatório
-  // por scores (comportamento anterior preservado).
+  // insight=<id> renderiza EXATAMENTE aquele card. SEM insight (ex.: "Ver PDF" do painel Bio³)
+  // usa o insight MAIS RECENTE (mesmo que a tela mostra no topo), para que TODOS os botões de
+  // "abrir relatório em PDF" gerem o MESMO documento — casando com o que se vê. Enquanto não
+  // aprovado, é o rascunho; depois de aprovar, o próprio final vira o mais recente. Se não houver
+  // nenhum insight mas houver Mapa Bio³, cai no relatório por scores (comportamento anterior).
   const insightIdParam = url.searchParams.get("insight");
 
   const clinic = await getCurrentClinic();
@@ -56,7 +56,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   // ── Documentos do paciente (Doc 1+2 / Suplementação / Hipersensibilidade) ───
-  let insight = insightIdParam ? await getAiInsightById(insightIdParam) : await getLatestFinalAiInsight(id);
+  let insight = insightIdParam ? await getAiInsightById(insightIdParam) : await getLatestAiInsight(id);
   // Escopo de tenant/paciente quando veio um insight explícito por id.
   if (insightIdParam && insight && (insight.patient_id !== id || insight.clinic_id !== clinic.id)) insight = null;
 
