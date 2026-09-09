@@ -28,6 +28,13 @@ export interface ClinicalPack {
   /** Coerção/saneamento da saída bruta do modelo para o tipo AiInsightOutput. */
   coerceReportOutput: (parsed: unknown) => AiInsightOutput;
 
+  /**
+   * Se o pack gera suplementação (Documento 2). Packs sem suplementação (ex.:
+   * "generic") NÃO entram na fila de regeneração de suplementação, senão os jobs
+   * falhariam para sempre (regeneração exige um Documento 2). Default: false.
+   */
+  producesSupplementation?: boolean;
+
   /** Prompts de APOIO ao profissional (rascunhos internos, nunca vão direto ao paciente). */
   assistantPrompts: {
     /** Rascunho do campo "Integração clínica (ATM)" a partir dos dados do paciente. */
