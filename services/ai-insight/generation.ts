@@ -5,6 +5,7 @@ import { resolvePatientLocale } from "@/lib/email-i18n";
 import { resolveClinicalPack } from "@/modules/clinical-packs/resolve";
 import { buildAiInsightInput, type AiInsightInputSnapshot } from "@/services/ai-insight/input-builder";
 import { buildCaseSummaryFallback, stripDash, type CaseSummaryDraft } from "@/services/ai-insight/case-summary";
+import { SUPPLEMENT_REASONING_VERSION } from "@/modules/ai-insights/supplement-reasoning";
 
 export function buildAiFallbackOutput(reason: string): AiInsightOutput {
   return {
@@ -66,8 +67,17 @@ export async function generateAiInsightOutput(input: AiInsightInputSnapshot): Pr
     parsed = {};
   }
 
+  const output = pack.coerceReportOutput(parsed);
+  // Carimba a versão do Protocolo dos 10 Filtros SÓ quando o pack realmente gerou
+  // suplementação (Documento 2). Packs sem suplementação (ex.: "generic") não
+  // recebem o carimbo, senão a fila de regeneração em massa (Fase 2) trataria
+  // relatórios sem Doc 2 como "já atualizados".
+  if (output.protocolo_suplementacao) {
+    output.supplement_reasoning_version = SUPPLEMENT_REASONING_VERSION;
+  }
+
   return {
-    output: pack.coerceReportOutput(parsed),
+    output,
     tokensUsed: response.usage?.total_tokens ?? null,
     // Modelo REAL retornado pela OpenAI (pode divergir do solicitado, ex.: snapshot).
     modelUsed: response.model ?? null,

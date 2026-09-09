@@ -435,5 +435,9 @@ export function coerceAiInsightOutput(value: unknown): AiInsightOutput {
     plano_regulacao: coercePlano(object),
     protocolo_suplementacao: coerceProtocolo(object),
     relatorio_hipersensibilidade: coerceHipersensibilidade(object),
+    // Preserva o carimbo de versão do raciocínio de suplementação (se já existir
+    // no objeto), para não perdê-lo em re-coerções (ex.: edição do insight).
+    supplement_reasoning_version:
+      typeof object.supplement_reasoning_version === "string" ? object.supplement_reasoning_version : null,
   };
 }

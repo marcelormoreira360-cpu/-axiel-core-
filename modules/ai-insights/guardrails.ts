@@ -1,5 +1,6 @@
 import { aiInsightLabel } from "@/modules/ui/terminology";
 import { languageInstruction } from "@/lib/ai-language";
+import { supplementReasoningFilters } from "@/modules/ai-insights/supplement-reasoning";
 
 export const AI_INSIGHT_LABEL = aiInsightLabel();
 
@@ -147,8 +148,10 @@ natural das seções acima, no MESMO documento contínuo (NÃO é um documento s
 - observacao: aviso de que não substitui avaliação médica/exames/condutas prescritas.
 
 DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
+${supplementReasoningFilters}
 - PENSE COMO ESPECIALISTA em medicina integrativa e suplementação: leia TODO o quadro do paciente e monte um protocolo
-  COMPLETO e organizado por EIXO/SISTEMA — não pare em 1–2 itens quando os dados sustentam mais. Cada ativo ligado a um achado.
+  organizado por EIXO/SISTEMA e FASEADO (ver Protocolo dos 10 Filtros acima): cubra os eixos que os dados sustentam ao
+  longo do plano, começando enxuto pelo eixo prioritário. Cada ativo ligado a um achado.
 - USE OS EXAMES E OS DADOS DO CORE como base (não invente; correlacione cada sugestão a um achado real):
   • input_data.functional_exams — NEUROMETRIA (sistema nervoso autônomo/SNA: HRV, regulação simpático-parassimpática,
     adaptação, recuperação, temperatura/hemodinâmica). Use tanto o "summary" quanto os "metrics" quando houver.
@@ -157,21 +160,26 @@ DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do r
   • input_data.lab_exams — marcadores laboratoriais fora da faixa. input_data.functional_exams do tipo teste_capilar (Camada 2).
   • avaliação/anamnese/questionários (assessment_extra) e queixas; prescriptions (o que já toma → não duplicar/interagir).
   • input_data.documents — DOCUMENTOS anexados do paciente já resumidos (ex.: exames/laudos em PDF, histórico). Use como fonte.
-- COBERTURA COMPLETA (o que importa): cubra TODOS os eixos que os dados do paciente sustentam — não pare num eixo só
-  quando há mais achados relevantes. A "fórmula fraca" a evitar é a que ignora eixos, não a que tem poucas fórmulas.
+- COBERTURA FASEADA (reconciliada com o Protocolo dos 10 Filtros acima): identifique TODOS os eixos que os dados do
+  paciente sustentam, mas cubra-os de forma PRIORIZADA e ESCALONADA — comece pelo eixo prioritário (núcleo enxuto) e
+  deixe os demais eixos como próximas etapas do plano, sem empilhar todos os ativos de saída. "Fórmula fraca" é a que
+  ignora um eixo relevante do plano como um todo, não a que começa enxuta.
 - NÚMERO DE FÓRMULAS = LÓGICA DE FORMULAÇÃO, não uma meta: agrupe numa MESMA fórmula os ativos COMPATÍVEIS entre si e
   que cabem em dose/volume de uma cápsula/sachê; SEPARE em fórmulas diferentes só quando houver incompatibilidade,
   quantidade/volume que não cabe, ou interação. Pode ser UMA fórmula (se tudo for compatível e couber) ou VÁRIAS —
   NUNCA force múltiplas fórmulas nem amontoe ativos que não devem ficar juntos. Respeite os princípios de manipulação.
-  Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina,
-  adaptógenos como ashwagandha/rhodiola), regulação emocional/HPA e neurotransmissores (conforme achados),
+  Ex. de eixos a cobrir quando os dados apontarem: sistema nervoso/SNA e sono (magnésio, L-teanina, glicina, taurina;
+  adaptógenos como ashwagandha/rhodiola SÓ com a cautela do filtro de segurança para adaptógenos ativadores em quadro
+  ansioso/simpático), regulação emocional/HPA e neurotransmissores (conforme achados; precursores serotoninérgicos
+  como triptofano/5-HTP seguem o filtro de gate de precursores serotoninérgicos),
   fígado/detoxificação (NAC, silimarina, colina — relevante p/ nicotina/álcool/maconha e carga química),
   circulação/vasodilatação e temperatura (quando houver vasoconstrição/mãos frias), energia/mitocôndria,
   intestino/microbiota, antioxidante/anti-inflamatório (ômega-3), reposição de nutrientes baixos. Cada ativo ligado a um
   achado REAL (do exame/avaliação). Escolha só os eixos que os dados sustentam — nunca um "kit" padrão igual para todos.
-- BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a poucos itens (ou nenhum) quando os dados forem
-  REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames, cadastrar o
-  que o paciente já toma) para o protocolo ficar mais preciso.
+- BASE OBRIGATÓRIA: nunca sugira genérico "de prateleira". Só reduza a COBERTURA de eixos (ou deixe o plano vazio) quando
+  os dados forem REALMENTE ausentes; nesse caso diga em observacoes_gerais o que falta (ex.: confirmar métricas dos exames,
+  cadastrar o que o paciente já toma) para o protocolo ficar mais preciso. Começar enxuto pelo eixo prioritário (Filtros
+  acima) NÃO é "reduzir por falta de dados"; é o faseamento correto mesmo com dados ricos.
 - SEGURANÇA E INTERAÇÕES (crucial): respeite histórico (renal/hepático/cardíaco, gestação/amamentação, câncer) e as
   medicações/hormônios em uso (prescriptions — ex.: testosterona, antidepressivos). Verifique INTERAÇÕES em duas frentes:
   (a) entre os ativos que você sugere e as medicações/suplementos do paciente; (b) COMPATIBILIDADE de manipulação entre os
