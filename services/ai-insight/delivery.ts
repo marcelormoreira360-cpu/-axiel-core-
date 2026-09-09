@@ -1,12 +1,9 @@
-import type { AiInsightOutput, NeuroProtocoloSuplementacao, NeuroRelatorioHipersensibilidade } from "@/lib/types";
+import type { AiInsightOutput, NeuroRelatorioHipersensibilidade } from "@/lib/types";
 import { getPatientById } from "@/services/patient-service";
 import { writeAuditLog } from "@/services/audit-service";
 import { getLatestFinalAiInsight } from "@/services/ai-insight/insight-repository";
-import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
-import { needsEmotionalSafeguard } from "@/modules/ai-insights/neuro-enums";
-import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
-import { buildNeuroIdDoc1Pdf, buildNeuroIdPatientReportPdf, buildNeuroIdSupplementPdf, buildNeuroIdHypersensitivityPdf } from "@/services/neuro-id-pdf-service";
-import { getSupplementCatalog, resolveSupplementCountry } from "@/services/supplement-service";
+import { renderPatientReportPdf, renderSupplementPdf, renderHypersensitivityPdf } from "@/services/ai-insight/pdf-download";
+import { resolveSupplementCountry } from "@/services/supplement-service";
 
 function escHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -46,50 +43,22 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
   // ── Gera o PDF do RELATÓRIO DO PACIENTE (Doc 1 + Doc 2 fundidos) ───────────
   // Mesma lógica da rota "Ver PDF" e do botão "Enviar ao paciente" do Mapa Bio³:
   // Doc 1 aprovado no formato persuasivo → relatório completo; senão → por scores.
-  const map = await getLatestNeuroIdMap(patientId);
-  const mapa = out.mapa_integrativo ?? null;
-  const showSafeguard = needsEmotionalSafeguard(map?.emocional_pct ?? null);
-
-  let pdfBuffer: Buffer | null = null;
+  // PDF do relatório (Doc 1 + Doc 2 fundidos) pela FONTE ÚNICA compartilhada com o
+  // download manual (services/ai-insight/pdf-download.ts): o que o paciente recebe é
+  // idêntico ao que o profissional baixa/vê.
+  let rendered;
+  try {
+    rendered = await renderPatientReportPdf(insight, patient);
+  } catch {
+    return result; // falha ao construir o PDF: degrada para no_report (não derruba a ação/cron)
+  }
+  if (!rendered) return result; // sem Doc 1 persuasivo e sem Mapa Bio³: nada a enviar
+  const pdfBuffer: Buffer = rendered.buffer;
+  const pdfFilename = rendered.filename;
   let pdfSignedUrl: string | null = null;
-  const pdfFilename = `relatorio-neuro-id-${patientId.slice(0, 8)}.pdf`;
   try {
     const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
     const admin = createSupabaseAdminClient();
-
-    // Marca da clínica para o PDF (logo, cor, rodapé configurável).
-    let clinicBrand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
-    try {
-      const { data: clinic } = await admin
-        .from("clinics")
-        .select("name, logo_url, primary_color, report_tagline")
-        .eq("id", insight.clinic_id)
-        .single();
-      if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
-    } catch { /* sem marca: usa defaults */ }
-
-    if (mapa && hasPersuasiveDoc1(mapa)) {
-      pdfBuffer = await buildNeuroIdDoc1Pdf({
-        mapa,
-        bio3: map ?? null,
-        plano: out.plano_regulacao ?? null,
-        patientName: patient.full_name ?? null,
-        clinic: clinicBrand,
-        showSafeguard,
-      });
-    } else if (map) {
-      pdfBuffer = await buildNeuroIdPatientReportPdf({
-        map,
-        patientName: patient.full_name ?? null,
-        clinic: clinicBrand,
-        showSafeguard,
-        vars: { q1: patient.chief_complaint ?? null, q2: null, sintoma: patient.chief_complaint ?? null },
-      });
-    } else {
-      // Sem Doc 1 persuasivo e sem Mapa Bio³: não há relatório do paciente a enviar.
-      return result;
-    }
-
     // Upload no bucket privado + URL assinada (o Twilio busca a mídia ao enviar).
     const path = `reports/${patientId}/neuro-id-${insight.id}.pdf`;
     const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, {
@@ -101,8 +70,7 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
       pdfSignedUrl = signed.data?.signedUrl ?? null;
     }
   } catch {
-    // Falha ao gerar/subir o PDF: sem relatório para enviar.
-    if (!pdfBuffer) return result;
+    // Upload/Storage falhou: segue com o anexo por e-mail; WhatsApp cai no fallback de texto.
   }
 
   // E-mail — o PDF é o entregável; o corpo é uma mensagem curta.
@@ -117,7 +85,7 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
         to: patient.email,
         subject: "Seu relatório de acompanhamento",
         html,
-        attachments: pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer }] : undefined,
+        attachments: [{ filename: pdfFilename, content: pdfBuffer }],
       });
       result.email = "sent";
     } catch (e) {
@@ -195,7 +163,6 @@ export async function sendApprovedInsightToPatient(patientId: string): Promise<I
   return result;
 }
 
-const norm = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 /**
  * Envia ao PACIENTE (e-mail + WhatsApp, best-effort) o DOCUMENTO 3 — Protocolo de
@@ -221,43 +188,21 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
   const country = resolveSupplementCountry(patient.country, patient.locale);
   const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
 
-  // EUA: casa cada item sem link com o catálogo da clínica (por nome) para puxar o
-  // buy_url do profissional. Brasil: fórmula manipulada, sem link.
-  // storeUrl = link ÚNICO da loja (o paciente clica um só link); derivado de
-  // qualquer buy_url do catálogo, tirando o "/products/<slug>".
-  let enriched: NeuroProtocoloSuplementacao = protocolo;
-  let storeUrl: string | null = null;
-  if (country === "US") {
-    const catalog = await getSupplementCatalog(patient.clinic_id, { activeOnly: true }).catch(() => []);
-    const withUrl = catalog.filter((c) => c.country === "US" && c.buy_url);
-    const byName = new Map(withUrl.map((c) => [norm(c.name), c.buy_url as string]));
-    const anyUrl = withUrl[0]?.buy_url ?? undefined;
-    storeUrl = anyUrl ? anyUrl.split("/products/")[0] : null;
-    enriched = {
-      ...protocolo,
-      itens: protocolo.itens.map((it) => ({ ...it, buy_url: it.buy_url?.trim() || byName.get(norm(it.nome)) || undefined })),
-    };
+  // PDF da Suplementação pela FONTE ÚNICA (pdf-download.ts): enriquecimento US
+  // (catálogo/link ÚNICO da loja) e marca idênticos ao download manual do profissional.
+  let rendered;
+  try {
+    rendered = await renderSupplementPdf(insight, patient);
+  } catch {
+    return result; // falha ao construir o PDF: degrada para no_report (não derruba a ação/cron)
   }
-
-  let pdfBuffer: Buffer | null = null;
+  if (!rendered) return result;
+  const pdfBuffer: Buffer = rendered.buffer;
+  const pdfFilename = rendered.filename;
   let pdfSignedUrl: string | null = null;
-  const pdfFilename = `suplementacao-${patientId.slice(0, 8)}.pdf`;
   try {
     const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
     const admin = createSupabaseAdminClient();
-
-    let clinicBrand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
-    try {
-      const { data: clinic } = await admin
-        .from("clinics")
-        .select("name, logo_url, primary_color, report_tagline")
-        .eq("id", insight.clinic_id)
-        .single();
-      if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
-    } catch { /* sem marca: usa defaults */ }
-
-    pdfBuffer = await buildNeuroIdSupplementPdf({ protocolo: enriched, country, patientName: patient.full_name ?? null, clinic: clinicBrand, storeUrl });
-
     const path = `reports/${patientId}/suplementacao-${insight.id}.pdf`;
     const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, { contentType: "application/pdf", upsert: true });
     if (!up.error) {
@@ -265,7 +210,7 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
       pdfSignedUrl = signed.data?.signedUrl ?? null;
     }
   } catch {
-    if (!pdfBuffer) return result;
+    // Upload/Storage falhou: segue com anexo por e-mail; WhatsApp cai no fallback de texto.
   }
 
   const bodyIntro =
@@ -280,7 +225,7 @@ export async function sendSupplementToPatient(patientId: string): Promise<Insigh
         to: patient.email,
         subject: country === "US" ? "Your supplement suggestions" : "Sua suplementação",
         html: `<p>${escHtml(bodyIntro)}</p>`,
-        attachments: pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer }] : undefined,
+        attachments: [{ filename: pdfFilename, content: pdfBuffer }],
       });
       result.email = "sent";
     } catch (e) {
@@ -356,25 +301,20 @@ export async function sendHypersensitivityToPatient(patientId: string): Promise<
   const country = resolveSupplementCountry(patient.country, patient.locale);
   const firstName = (patient.full_name ?? "").trim().split(/\s+/)[0] || "";
 
-  let pdfBuffer: Buffer | null = null;
+  // PDF de Hipersensibilidade pela FONTE ÚNICA (pdf-download.ts): idêntico ao download manual.
+  let rendered;
+  try {
+    rendered = await renderHypersensitivityPdf(insight, patient);
+  } catch {
+    return result; // falha ao construir o PDF: degrada para no_report (não derruba a ação/cron)
+  }
+  if (!rendered) return result;
+  const pdfBuffer: Buffer = rendered.buffer;
+  const pdfFilename = rendered.filename;
   let pdfSignedUrl: string | null = null;
-  const pdfFilename = `hipersensibilidade-${patientId.slice(0, 8)}.pdf`;
   try {
     const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
     const admin = createSupabaseAdminClient();
-
-    let clinicBrand: { name?: string | null; logoUrl?: string | null; primaryColor?: string | null; tagline?: string | null } = {};
-    try {
-      const { data: clinic } = await admin
-        .from("clinics")
-        .select("name, logo_url, primary_color, report_tagline")
-        .eq("id", insight.clinic_id)
-        .single();
-      if (clinic) clinicBrand = { name: clinic.name, logoUrl: clinic.logo_url, primaryColor: clinic.primary_color, tagline: clinic.report_tagline };
-    } catch { /* sem marca: usa defaults */ }
-
-    pdfBuffer = await buildNeuroIdHypersensitivityPdf({ relatorio, country, patientName: patient.full_name ?? null, clinic: clinicBrand });
-
     const path = `reports/${patientId}/hipersensibilidade-${insight.id}.pdf`;
     const up = await admin.storage.from("patient-docs").upload(path, pdfBuffer, { contentType: "application/pdf", upsert: true });
     if (!up.error) {
@@ -382,7 +322,7 @@ export async function sendHypersensitivityToPatient(patientId: string): Promise<
       pdfSignedUrl = signed.data?.signedUrl ?? null;
     }
   } catch {
-    if (!pdfBuffer) return result;
+    // Upload/Storage falhou: segue com anexo por e-mail; WhatsApp cai no fallback de texto.
   }
 
   const bodyIntro =
@@ -397,7 +337,7 @@ export async function sendHypersensitivityToPatient(patientId: string): Promise<
         to: patient.email,
         subject: country === "US" ? "Your hypersensitivity report" : "Seu relatório de hipersensibilidade",
         html: `<p>${escHtml(bodyIntro)}</p>`,
-        attachments: pdfBuffer ? [{ filename: pdfFilename, content: pdfBuffer }] : undefined,
+        attachments: [{ filename: pdfFilename, content: pdfBuffer }],
       });
       result.email = "sent";
     } catch (e) {

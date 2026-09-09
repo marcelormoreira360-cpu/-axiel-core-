@@ -149,6 +149,15 @@ natural das seções acima, no MESMO documento contínuo (NÃO é um documento s
 
 DOCUMENTO 2 — "protocolo_suplementacao" = SUPLEMENTOS (DOCUMENTO SEPARADO do relatório; rascunho que EXIGE aprovação humana explícita):
 ${supplementReasoningFilters}
+- PROIBIDO COPIAR EXEMPLO (regra dura, prevalece sobre tudo abaixo): os ativos, doses e NOMES DE FÓRMULA que aparecem
+  como "ex.:" neste prompt e no required_output_shape são apenas ILUSTRAÇÃO DE FORMATO. NUNCA os reproduza como se fossem
+  a recomendação. Em especial, NÃO devolva por padrão "Fórmula 1 · Suporte ao sistema nervoso (Magnésio glicinato +
+  L-teanina)" nem "Fórmula 2 · Suporte hepático / detox (N-acetilcisteína + Silimarina)": esse par é o exemplo do schema
+  e sair igual para pacientes diferentes é ERRO. Antes de escrever cada fórmula, cada ativo e cada título, aponte QUAL
+  achado REAL deste paciente (exame/avaliação/Mapa Bio³/queixa, citável) o sustenta. Se você não consegue nomear o achado,
+  o ativo NÃO entra. Dois pacientes com quadros diferentes DEVEM receber suplementações diferentes; se o seu rascunho
+  ficaria igual ao de outro paciente, reveja: ou faltou ler os dados deste caso, ou os dados não sustentam suplemento (então
+  reduza a cobertura e diga em observacoes_gerais o que falta, em vez de preencher com o exemplo).
 - PENSE COMO ESPECIALISTA em medicina integrativa e suplementação: leia TODO o quadro do paciente e monte um protocolo
   organizado por EIXO/SISTEMA e FASEADO (ver Protocolo dos 10 Filtros acima): cubra os eixos que os dados sustentam ao
   longo do plano, começando enxuto pelo eixo prioritário. Cada ativo ligado a um achado.

@@ -175,16 +175,45 @@ function hypersensitivityPatientText(output: AiInsightOutput): Array<{ field: st
     if (text && text.trim()) out.push({ field, text });
   };
   push("hipersens.introducao", d.introducao);
+  // O "importante" cita biorressonância de propósito (por isso este documento não
+  // roda o léxico de termos internos), mas ainda pode escapar um travessão.
+  push("hipersens.visao_geral.importante", d.visao_geral?.importante);
   push("hipersens.visao_geral.quadro", d.visao_geral?.quadro);
   push("hipersens.visao_geral.principais_achados", d.visao_geral?.principais_achados);
   push("hipersens.visao_geral.prioridade_funcional", d.visao_geral?.prioridade_funcional);
-  (d.padroes ?? []).forEach((p) => push("hipersens.padroes.interpretacao", p.interpretacao));
-  (d.achados_prioritarios ?? []).forEach((a) => push("hipersens.achados_prioritarios.prioridade", a.prioridade));
+  (d.padroes ?? []).forEach((p) => {
+    push("hipersens.padroes.padrao", p.padrao);
+    push("hipersens.padroes.interpretacao", p.interpretacao);
+  });
+  (d.achados_prioritarios ?? []).forEach((a) => {
+    push("hipersens.achados_prioritarios.area", a.area);
+    push("hipersens.achados_prioritarios.achados", a.achados);
+    push("hipersens.achados_prioritarios.prioridade", a.prioridade);
+  });
+  (d.retirada_alta ?? []).forEach((r) => {
+    push("hipersens.retirada_alta.grupo", r.grupo);
+    push("hipersens.retirada_alta.itens", r.itens);
+  });
+  push("hipersens.retirada_moderada", d.retirada_moderada);
   push("hipersens.relacao_sistema_nervoso", d.relacao_sistema_nervoso);
-  (d.eixos ?? []).forEach((e) => push("hipersens.eixos.descricao", e.descricao));
-  (d.fases ?? []).forEach((f) => push("hipersens.fases.descricao", f.descricao));
+  (d.eixos ?? []).forEach((e) => {
+    push("hipersens.eixos.titulo", e.titulo);
+    push("hipersens.eixos.descricao", e.descricao);
+  });
+  (d.fases ?? []).forEach((f) => {
+    push("hipersens.fases.titulo", f.titulo);
+    push("hipersens.fases.descricao", f.descricao);
+  });
   (d.plano_alimentar ?? []).forEach((t) => push("hipersens.plano_alimentar", t));
   push("hipersens.implicacoes.texto", d.implicacoes_suplementacao?.texto);
+  (d.implicacoes_suplementacao?.apoiar ?? []).forEach((a) => {
+    push("hipersens.implicacoes.apoiar.titulo", a.titulo);
+    push("hipersens.implicacoes.apoiar.descricao", a.descricao);
+  });
+  (d.implicacoes_suplementacao?.pontos_atencao ?? []).forEach((p) => {
+    push("hipersens.implicacoes.pontos_atencao.titulo", p.titulo);
+    push("hipersens.implicacoes.pontos_atencao.descricao", p.descricao);
+  });
   (d.monitoramento ?? []).forEach((t) => push("hipersens.monitoramento", t));
   push("hipersens.resumo_executivo", d.resumo_executivo);
   (d.observacoes_gerais ?? []).forEach((t) => push("hipersens.observacoes_gerais", t));
@@ -227,8 +256,9 @@ export function scanPatientText(output: AiInsightOutput): PatientTextScan {
     if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });
   }
 
-  // Documento 3 (hipersensibilidade): só TRAVESSÃO (cita "biorressonância" de
-  // propósito no aviso obrigatório, então não roda o léxico de termos internos).
+  // Documento 3 (hipersensibilidade): TRAVESSÃO + número de sessões. NÃO roda o
+  // léxico de termos internos (cita "biorressonância" de propósito no aviso
+  // obrigatório, que daria falso positivo).
   for (const { field, text } of hypersensitivityPatientText(output)) {
     if (NUM_SESSOES_RE.test(text)) violations.push({ kind: "numero_sessoes", field });
     if (text.includes(EM_DASH)) violations.push({ kind: "travessao", field });

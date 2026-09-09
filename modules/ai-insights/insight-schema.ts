@@ -169,27 +169,19 @@ export const aiInsightJsonShape = {
       { titulo: "Tema 2 (ex.: 'Apoio ao fígado')", texto: "Outro eixo que os dados do paciente sustentam, também ligado a um achado real." },
       { titulo: "Tema 3 (ex.: 'Circulação / energia'; inclua quantos temas os dados sustentarem)", texto: "Mais um eixo, se houver achado que o justifique." },
     ],
+    // FORMATO APENAS — os rótulos abaixo são PLACEHOLDERS entre <...>. NUNCA os copie.
+    // O número de fórmulas, a função, os ativos, as doses e a duração saem SEMPRE dos
+    // achados REAIS deste paciente (exame/avaliação/Mapa Bio³). Não devolva nomes de
+    // ativo de exemplo (ver a regra "PROIBIDO COPIAR EXEMPLO" no prompt).
     formulas: [
       {
-        nome: "Fórmula 1 · <função> (ex.: 'Suporte ao sistema nervoso')",
+        nome: "Fórmula N · <função derivada de um achado REAL deste paciente>",
         composicao: [
-          { ativo: "Ativo A (ex.: Magnésio glicinato)", quantidade: "Quantidade exata (ex.: 200 mg)" },
-          { ativo: "Ativo B (ex.: L-teanina)", quantidade: "ex.: 100 mg" },
-          { ativo: "Ativo C conforme o achado (ex.: Glicina/Taurina/adaptógeno)", quantidade: "quantidade" },
+          { ativo: "<ativo sustentado por um achado REAL deste paciente, sem marca>", quantidade: "<dose exata: mg/g/mcg/UFC>" },
         ],
         excipiente: "Excipiente q.s.p. 1 cápsula/sachê (a forma manipulada).",
-        posologia: "Como e quando tomar (ex.: '1 cápsula ao dia à noite').",
-        duracao: "ex.: 60 dias",
-      },
-      {
-        nome: "Fórmula 2 · <outra função> (ex.: 'Suporte hepático / detox')",
-        composicao: [
-          { ativo: "Ativo (ex.: N-acetilcisteína)", quantidade: "ex.: 600 mg" },
-          { ativo: "Ativo (ex.: Silimarina)", quantidade: "ex.: 200 mg" },
-        ],
-        excipiente: "Excipiente q.s.p. cápsula.",
-        posologia: "ex.: 1 cápsula ao dia após o almoço.",
-        duracao: "ex.: 8 semanas",
+        posologia: "<como e quando tomar, conforme o caso>",
+        duracao: "<duração conforme o caso>",
       },
     ],
     proximos_passos: "Reavaliar em 15/30/60 dias; começar com calma e avisar se algo não cair bem.",
