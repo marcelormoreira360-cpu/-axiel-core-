@@ -896,6 +896,11 @@
     "refresh": "Atualizar",
     "nothingEligible": "Nada a atualizar por enquanto.",
     "reviewHint": "Cada atualização vira um rascunho pendente de revisão. Revise e envie na ficha de cada paciente.",
-    "error": "Algo deu errado."
+    "error": "Algo deu errado.",
+    "sendableLabel": "Aprovados prontos para enviar",
+    "sendableHint": "Rascunhos que você já aprovou e que ainda não foram enviados.",
+    "send": "Enviar aprovados",
+    "sending": "Enviando…",
+    "sent": "{sent} enviados, {failed} falharam."
   }
 }
