@@ -115,6 +115,7 @@ export function PatientFunctionalExamsPanel({
               <input type="date" name="exam_date" defaultValue={new Date().toISOString().slice(0, 10)} className={inputCls} />
             </div>
           </div>
+          <p className="text-[9px] text-[#A09E98] leading-snug">{t("typeMetricsHint")}</p>
           {examType === "outro" && (
             <div>
               <label className="text-[10px] font-medium text-[#6B6A66] mb-[4px] block">{t("titleLabel")}</label>
@@ -163,6 +164,11 @@ export function PatientFunctionalExamsPanel({
               </summary>
               {exam.summary && (
                 <p className="text-[11px] text-[#6B6A66] mt-[10px] whitespace-pre-wrap leading-relaxed">{exam.summary}</p>
+              )}
+              {/* Exame "Outro": não gera métricas para o círculo Bio³ (só neurometria/biorressonância).
+                  Explica por que não aparece o gate de confirmação nem entra número no círculo. */}
+              {exam.exam_type === "outro" && (
+                <p className="text-[10px] text-[#B7791F] dark:text-[#E8B04B] bg-[#B7791F]/[.06] rounded-[7px] px-[10px] py-[7px] mt-[8px] leading-snug">{t("outroNoMetrics")}</p>
               )}
               <MetricsGate exam={exam} patientId={patientId} t={t} locale={locale} />
               <form action={deleteFunctionalExamAction.bind(null, exam.id, patientId)} className="mt-[8px]">

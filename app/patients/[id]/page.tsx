@@ -229,16 +229,26 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // container (gap), por isso os nós não carregam margem vertical própria.
   // Carga de medicação já confirmada (uma leitura, reusada nos dois painéis).
   const medLoad = readMedicationLoad(patient.assessment_data as Record<string, unknown> | null);
+  // Medicamentos e suplementos foram consolidados DENTRO da seção "avaliacao". Se a clínica
+  // ocultar a Avaliação no layout, a lista cai de volta na seção "medicamentos" (fallback),
+  // para nunca sumir. Quando a Avaliação está visível, "medicamentos" fica null (sem duplicar).
+  const avaliacaoVisible = sectionLayout.find((s) => s.key === "avaliacao")?.visible ?? true;
 
   const sections: Record<string, ReactNode> = {
     avaliacao: (
-      <PatientAssessmentPanel
-        patientId={patient.id}
-        fields={assessmentFields}
-        values={patient.assessment_data}
-        canConfigure={canSeeFinance}
-        initialMedLoad={medLoad ? { medications: medLoad.medications, supplements: medLoad.supplements, count: medLoad.count } : null}
-      />
+      // Avaliação + Medicamentos e suplementos no MESMO lugar (consolidado). A lista abaixo
+      // é alimentada pelo botão "Adicionar à lista" do bloco Medicação (carga), que puxa o
+      // que o paciente informou no QRM. A seção separada "medicamentos" fica desativada.
+      <div>
+        <PatientAssessmentPanel
+          patientId={patient.id}
+          fields={assessmentFields}
+          values={patient.assessment_data}
+          canConfigure={canSeeFinance}
+          initialMedLoad={medLoad ? { medications: medLoad.medications, supplements: medLoad.supplements, count: medLoad.count } : null}
+        />
+        <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
+      </div>
     ),
     resumo: (
       <PatientDirectionPanel
@@ -582,7 +592,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <PatientFunctionalExamsPanel exams={functionalExams} patientId={id} />
       </div>
     ),
-    medicamentos: <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />,
+    // Consolidado dentro da seção "avaliacao" (acima). Só renderiza aqui como fallback
+    // quando a Avaliação está oculta no layout da clínica (senão duplicaria a lista).
+    medicamentos: avaliacaoVisible ? null : <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />,
     documentos: <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />,
   };
 

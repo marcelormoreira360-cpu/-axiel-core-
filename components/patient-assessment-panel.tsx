@@ -2,9 +2,11 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill, Pencil } from "lucide-react";
+import { Check, AlertCircle, ClipboardList, Settings2, Download, Sparkles, Pill, Pencil, Plus } from "lucide-react";
 import { saveAssessmentAction, importQuestionnaireFindingsAction, suggestAtmIntegrationAction, suggestMedicationLoadAction, confirmMedicationLoadAction, type AssessmentState } from "@/app/patients/[id]/assessment/actions";
+import { addPrescriptionsFromExtractionAction } from "@/app/patients/[id]/prescriptions/actions";
 import { stripPreviousFindings } from "@/modules/neuro-id/findings";
 import { AiButtonSpinner } from "@/components/ai-button-spinner";
 import { groupForField, type AssessmentGroup } from "@/lib/assessment-groups";
@@ -52,6 +54,7 @@ function groupRuns(fields: ClinicAssessmentField[]): { group: AssessmentGroup; f
 
 export function PatientAssessmentPanel({ patientId, fields, values, canConfigure, initialMedLoad }: Props) {
   const t = useTranslations("patientAssessment");
+  const router = useRouter();
 
   // Recolhe quando já há conteúdo salvo (mostra resumo compacto); abre o formulário
   // direto quando vazio/novo. Não conta as chaves reservadas (__medicacao_*).
@@ -95,6 +98,11 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   // Semeia com a carga já confirmada: os chips persistem após reload (não some para
   // só o botão "Extrair"). Re-extrair segue disponível.
   const [medData, setMedData] = useState<MedLoad | null>(initialMedLoad ?? null);
+  // "Adicionar à lista": leva os itens informados no QRM para a lista de Medicamentos
+  // e suplementos (mesma seção Avaliação, logo abaixo). Dedup no servidor.
+  const [medAdding, setMedAdding] = useState(false);
+  // tom: "ok" (adicionou, verde) · "none" (nada novo, neutro) · "err" (falha, vermelho).
+  const [medAdd, setMedAdd] = useState<{ msg: string; tone: "ok" | "none" | "err" } | null>(null);
 
   // Anexa um bloco de achados deduplicando (remove um bloco anterior pelos cabeçalhos).
   function mergeFindings(prev: string, block: string): string {
@@ -226,6 +234,31 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
     setMedMsg(t("medSaved"));
   }
 
+  async function handleAddToList() {
+    if (!medData) return;
+    setMedAdding(true);
+    setMedAdd(null);
+    try {
+      const res = await addPrescriptionsFromExtractionAction(patientId, {
+        medications: medData.medications,
+        supplements: medData.supplements,
+        note: t("medSourceNote"),
+      });
+      if (res.added > 0) {
+        setMedAdd({ msg: t("medAdded"), tone: "ok" });
+        router.refresh(); // a lista de Medicamentos e suplementos (logo abaixo) reflete na hora
+      } else {
+        // Tudo já estava na lista (dedup no servidor): confirma sem falso "adicionado".
+        setMedAdd({ msg: t("medAddNone"), tone: "none" });
+      }
+    } catch {
+      setMedAdd({ msg: t("medAddError"), tone: "err" });
+      router.refresh(); // revela itens eventualmente criados antes do erro (falha parcial)
+    } finally {
+      setMedAdding(false);
+    }
+  }
+
   function medChips(items: string[], cls: string) {
     return items.length ? items.map((x, i) => (
       <span key={i} className={`text-[10px] px-[7px] py-[2px] rounded-full ${cls}`}>{x}</span>
@@ -274,7 +307,16 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
                 className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] disabled:opacity-50 transition">
                 <Sparkles className="h-3 w-3" /> {t("medReextract")}
               </button>
+              {(medData.medications.length > 0 || medData.supplements.length > 0) && (
+                <button type="button" disabled={medAdding} onClick={handleAddToList}
+                  className="inline-flex items-center gap-1 min-h-[44px] sm:min-h-0 text-[11px] text-[#6B6A66] hover:text-[#0F6E56] dark:hover:text-[#9FE1CB] disabled:opacity-50 transition">
+                  {medAdding ? <AiButtonSpinner /> : <Plus className="h-3 w-3" />} {medAdding ? t("medAdding") : t("medAddToList")}
+                </button>
+              )}
               {medMsg && <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{medMsg}</span>}
+              {medAdd && (
+                <span className={`text-[10px] ${medAdd.tone === "err" ? "text-[#B42318] dark:text-[#F2B8B5]" : medAdd.tone === "none" ? "text-[#A09E98]" : "text-[#0F6E56] dark:text-[#9FE1CB]"}`}>{medAdd.msg}</span>
+              )}
             </div>
           </div>
         )}

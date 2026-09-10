@@ -59,5 +59,11 @@
   "medScoreNote": "0 sem carga · 1-2 verde · 3-4 amarelo · 5+ vermelho. Revise e confirme; suplementos não pontuam.",
   "medConfirm": "Confirmar e pontuar",
   "medReextract": "Reextrair",
-  "medSaved": "Medicação guardada e Mapa Bio³ atualizado."
+  "medSaved": "Medicação guardada e Mapa Bio³ atualizado.",
+  "medAddToList": "Adicionar à lista de medicamentos",
+  "medAdding": "A adicionar…",
+  "medAdded": "Adicionado à lista de medicamentos e suplementos.",
+  "medAddNone": "Nada de novo para adicionar (já estava na lista).",
+  "medAddError": "Não foi possível adicionar à lista. Tente novamente.",
+  "medSourceNote": "Informado pelo paciente (QRM)"
 }

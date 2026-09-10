@@ -59,5 +59,11 @@
   "medScoreNote": "0 none · 1-2 green · 3-4 yellow · 5+ red. Review and confirm; supplements don't score.",
   "medConfirm": "Confirm and score",
   "medReextract": "Re-extract",
-  "medSaved": "Medication saved and Bio³ Map updated."
+  "medSaved": "Medication saved and Bio³ Map updated.",
+  "medAddToList": "Add to medication list",
+  "medAdding": "Adding…",
+  "medAdded": "Added to the medications and supplements list.",
+  "medAddNone": "Nothing new to add (already on the list).",
+  "medAddError": "Couldn't add to the list. Please try again.",
+  "medSourceNote": "Reported by patient (QRM)"
 }
