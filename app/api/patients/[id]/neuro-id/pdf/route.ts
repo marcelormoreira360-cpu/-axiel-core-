@@ -107,6 +107,10 @@ function pdfResponse(buffer: Buffer, filename: string): Response {
       "Content-Type": "application/pdf",
       // inline: abre no visualizador do navegador (ver/imprimir/salvar) em vez de baixar direto.
       "Content-Disposition": `inline; filename="${filename}"`,
+      // no-store: o relatório é gerado por request a partir do insight editável. Sem isso
+      // o Safari cacheia o PDF inline na MESMA URL e, depois de o terapeuta editar
+      // (ex.: "próximos passos"), reabrir mostrava a versão ANTIGA. Força PDF fresco.
+      "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });
 }

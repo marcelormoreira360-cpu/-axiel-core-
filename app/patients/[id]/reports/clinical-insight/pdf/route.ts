@@ -50,6 +50,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="relatorio-neuro-id-360-${safeName}.pdf"`,
+      // Gerado por request a partir do insight editável: nunca servir versão cacheada.
+      "Cache-Control": "no-store, no-cache, must-revalidate",
     },
   });
 }
