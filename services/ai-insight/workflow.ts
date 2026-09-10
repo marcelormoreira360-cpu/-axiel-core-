@@ -5,7 +5,7 @@ import { writeAuditLog } from "@/services/audit-service";
 import { buildAiInsightInput } from "@/services/ai-insight/input-builder";
 import { buildAiFallbackOutput, generateAiInsightOutput } from "@/services/ai-insight/generation";
 import { completeAiRequest, createAiRequest, saveAiInsight } from "@/services/ai-insight/insight-repository";
-import { scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
+import { hasPersuasiveDoc1, scanPatientText, summarizeViolations } from "@/modules/ai-insights/patient-text-guardrails";
 
 export async function generateAndSaveAiInsight(patientId: string): Promise<AiInsight> {
   const snapshot = await buildAiInsightInput(patientId, { includeDocuments: true });
@@ -24,7 +24,24 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
   });
 
   try {
-    const { output, tokensUsed, modelUsed } = await generateAiInsightOutput(snapshot);
+    let { output, tokensUsed, modelUsed } = await generateAiInsightOutput(snapshot);
+
+    // O Documento 1 (mapa_integrativo + plano_regulacao) É o relatório que vai ao
+    // paciente. O modelo de raciocínio às vezes devolve só o structured_summary
+    // legado, sem o Doc 1 persuasivo, e o insight nasce "sem relatório" (o card
+    // fica só com o resumo, e o PDF cai no fallback por scores). Antes de aceitar,
+    // tenta gerar UMA vez mais; se a segunda também não trouxer o Doc 1, o insight
+    // é sinalizado abaixo (needs_changes) com nota, nunca salvo em silêncio.
+    if (!hasPersuasiveDoc1(output.mapa_integrativo)) {
+      const retry = await generateAiInsightOutput(snapshot);
+      if (hasPersuasiveDoc1(retry.output.mapa_integrativo)) {
+        output = retry.output;
+        tokensUsed = retry.tokensUsed;
+        modelUsed = retry.modelUsed;
+      }
+    }
+    const doc1Missing = !hasPersuasiveDoc1(output.mapa_integrativo);
+
     await completeAiRequest({
       id: aiRequest.id,
       status: "completed",
@@ -54,7 +71,10 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
     // faltar âncora positiva, o insight NASCE em needs_changes p/ o gate humano revisar.
     // Nunca reescreve escondido; só sinaliza. Campos antigos (educativos) não são varridos.
     const scan = scanPatientText(output);
-    const guardrailNote = scan.ok ? null : summarizeViolations(scan.violations);
+    const notes: string[] = [];
+    if (doc1Missing) notes.push("Documento 1 (relatório ao paciente) não foi gerado; clique em \"Novo rascunho\" para gerar de novo.");
+    if (!scan.ok) notes.push(summarizeViolations(scan.violations));
+    const guardrailNote = notes.length ? notes.join(" · ") : null;
 
     return saveAiInsight({
       clinic_id: snapshot.patient.clinic_id,
@@ -62,7 +82,9 @@ export async function generateAndSaveAiInsight(patientId: string): Promise<AiIns
       ai_request_id: aiRequest.id,
       input_snapshot: snapshot,
       output,
-      review_status: scan.ok ? "pending_review" : "needs_changes",
+      // Doc 1 ausente também barra o "pending_review": o insight sem relatório
+      // precisa de atenção do terapeuta (regenerar) antes de qualquer envio.
+      review_status: scan.ok && !doc1Missing ? "pending_review" : "needs_changes",
       guardrail_note: guardrailNote,
     });
   } catch (error) {
