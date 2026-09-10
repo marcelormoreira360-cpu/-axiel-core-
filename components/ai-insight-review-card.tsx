@@ -105,20 +105,48 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   );
   const sendHyperAction = sendHypersensitivityToPatientAction.bind(null, patientId);
 
-  const insightTitle =
-    output?.patterns_and_correlations?.[0]?.title ||
-    output?.structured_summary?.current_status ||
-    t("titleFallback");
-  const shortSummary = output?.structured_summary?.overview || t("summaryFallback");
+  // Ações do Relatório (Doc 1): abrir PDF + editar textos, renderizadas DENTRO do
+  // retângulo do Documento 1 (via NeuroId360Documents). Só quando há Doc 1 persuasivo.
+  const reportActions = hasReport ? (
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-black/[.06] dark:border-white/[.08] pt-4">
+      <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass} title={t("downloadHint")}>
+        <FileDown className="h-3.5 w-3.5" /> {t("downloadReport")}
+      </a>
+      {output ? <InsightEditor patientId={patientId} insightId={insight.id} output={output} className="basis-full" /> : null}
+    </div>
+  ) : null;
+
+  // Ações da Suplementação (Doc 2): editar + PDF + enviar, DENTRO do retângulo do
+  // Documento 2 (Suplementação). País decide fórmula BR / link US.
+  const supplementActions = output ? (
+    <div className="mt-4 space-y-3 border-t border-[#D9A441]/30 pt-4">
+      <div className="flex items-center justify-end">
+        <span className="rounded-full bg-white/70 dark:bg-white/[.08] px-2 py-[2px] text-[11px] font-medium text-axiel-text-secondary">
+          {supplementCountry === "US" ? t("supplementUs") : t("supplementBr")}
+        </span>
+      </div>
+      <SupplementEditor patientId={patientId} insightId={insight.id} protocolo={protocolo} country={supplementCountry} />
+      {hasSupplement ? (
+        <a href={pdfHref("supplement")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
+          <FileDown className="h-3.5 w-3.5" /> {t("downloadSupplement")}
+        </a>
+      ) : null}
+      {isFinal && hasSupplement ? (
+        <form action={sendSupplementAction}>
+          <ButtonPrimary type="submit">{t("sendSupplement")}</ButtonPrimary>
+        </form>
+      ) : !hasSupplement ? (
+        <p className="text-xs text-axiel-text-secondary">{t("supplementEmpty")}</p>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <article className="bg-white rounded-2xl p-6 shadow-sm space-y-4 transition hover:shadow-md">
-      <div className="flex items-center justify-between gap-4">
-        <h3 className="font-semibold text-axiel-text-primary">{insightTitle}</h3>
+      {/* Só o status: título e resumo saíram (já aparecem acima, no topo da lista de insights). */}
+      <div className="flex items-center justify-end">
         <Badge status={simplifiedStatus(insight.review_status)} />
       </div>
-
-      <p className="line-clamp-3 text-sm leading-6 text-axiel-text-secondary">{shortSummary}</p>
 
       {/* Aviso: métricas de exame extraídas mas não confirmadas não entram no relatório */}
       {pendingMetrics > 0 ? (
@@ -140,22 +168,9 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         </div>
       ) : null}
 
-      {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
-      <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} />
-
-      {/* Ações do relatório numa única linha compacta, colada aos documentos: abrir o Relatório
-          (Doc 1 + Doc 2) em PDF (imprimir/entregar em mão a quem não tem WhatsApp/e-mail) e editar
-          os textos à mão. Só quando há Doc 1 persuasivo; o editor abre em largura total abaixo. */}
-      {hasReport ? (
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass} title={t("downloadHint")}>
-            <FileDown className="h-3.5 w-3.5" /> {t("downloadReport")}
-          </a>
-          {output ? (
-            <InsightEditor patientId={patientId} insightId={insight.id} output={output} className="basis-full" />
-          ) : null}
-        </div>
-      ) : null}
+      {/* Neuro ID 360 — os 3 documentos. As ações de Editar/PDF vão DENTRO dos retângulos:
+          reportActions no Doc 1 (relatório) e supplementActions no Doc 2 (suplementação). */}
+      <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} reportActions={reportActions} supplementActions={supplementActions} />
 
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">
@@ -201,34 +216,6 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
 
         <DeleteInsightButton patientId={patientId} insightId={insight.id} />
       </div>
-
-      {/* Documento 2 — Suplementação: editar + enviar em separado (país decide fórmula BR / link US) */}
-      {output ? (
-        <div className="space-y-3 rounded-2xl border border-black/[.08] dark:border-white/[.10] p-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-axiel-text-primary">{t("supplementSection")}</p>
-            <span className="rounded-full bg-gray-100 dark:bg-white/[.08] px-2 py-[2px] text-[11px] font-medium text-axiel-text-secondary">
-              {supplementCountry === "US" ? t("supplementUs") : t("supplementBr")}
-            </span>
-          </div>
-          <SupplementEditor patientId={patientId} insightId={insight.id} protocolo={protocolo} country={supplementCountry} />
-          {/* O envio usa o insight FINAL mais recente (sendSupplementToPatient →
-              getLatestFinalAiInsight). Só mostra o botão quando este insight é final,
-              para não expor um botão que não envia nada num rascunho. */}
-          {hasSupplement ? (
-            <a href={pdfHref("supplement")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
-              <FileDown className="h-3.5 w-3.5" /> {t("downloadSupplement")}
-            </a>
-          ) : null}
-          {isFinal && hasSupplement ? (
-            <form action={sendSupplementAction}>
-              <ButtonPrimary type="submit">{t("sendSupplement")}</ButtonPrimary>
-            </form>
-          ) : !hasSupplement ? (
-            <p className="text-xs text-axiel-text-secondary">{t("supplementEmpty")}</p>
-          ) : null}
-        </div>
-      ) : null}
 
       {/* Documento 3 — Hipersensibilidade (exame de cabelo): só aparece quando há dados do teste capilar */}
       {hasHyper ? (

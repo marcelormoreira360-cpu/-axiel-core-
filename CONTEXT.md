@@ -3,7 +3,10 @@
 > Leia este arquivo no início de cada sessão antes de explorar o código.
 > Atualizado em: 10/09/2026 (47)
 
-## 🟢 Ficha do paciente: círculo Bio³ + consolidação de medicamentos (10/09/2026, branch/PR, gates verdes)
+## 🟢 Ficha do paciente: círculo Bio³ + consolidação de medicamentos (10/09/2026, PR #196 MERGEADO+NO AR)
+
+> **Follow-up (mesmo dia, 2º PR):** ajustes no card de revisão do insight (`components/ai-insight-review-card.tsx`) a pedido do Marcelo, olhando a versão no ar. (a) Removido o título + resumo do TOPO do card (duplicavam o conteúdo que já aparece acima na lista de insights); sobra só o badge de status. (b) As ações Editar/PDF saíram da linha solta e foram para DENTRO dos retângulos: `NeuroId360Documents` ganhou 2 slots (`reportActions`, `supplementActions`) renderizados no rodapé do `<details>` do Doc 1 (relatório: Abrir PDF + Editar textos) e do Doc 2/Suplementação (badge país + editar suplementação + PDF + enviar). O retângulo da Suplementação agora renderiza mesmo VAZIO quando há `supplementActions` (`hasSupContent || supplementActions`), para o editor ficar acessível para preencher. Gates: tsc 0 · i18n 53/0/0 · vitest 725/725 · eslint 0.
+
 
 > 4 pontos reportados pelo Marcelo na tela de validação/ficha. Gates: tsc 0 · i18n 53/0/0 · vitest 725/725 · eslint 0. Sem migração.
 >

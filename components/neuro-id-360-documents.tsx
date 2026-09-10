@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroLeituraBioemocional, NeuroSecaoItem } from "@/lib/types";
@@ -192,7 +193,7 @@ function Identificacao({ id, live, fallbackName }: { id?: NeuroIdentificacao; li
  * Renderiza os documentos do Neuro ID 360 no padrão dos relatórios oficiais.
  * Componente apenas de apresentação (server-compatible). Faz fallback p/ campos antigos.
  */
-export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao; bio3Map?: Bio3MapNumbers | null }) {
+export function NeuroId360Documents({ output, patientName, liveId, bio3Map, reportActions, supplementActions }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao; bio3Map?: Bio3MapNumbers | null; reportActions?: ReactNode; supplementActions?: ReactNode }) {
   const t = useTranslations("neuroId.documents360");
   const tn = useTranslations("neuroId");
   const mapa = output.mapa_integrativo;
@@ -247,6 +248,10 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
   // FECHO ("próximos passos") do MESMO relatório, não um documento separado. O
   // card do plano só aparece à parte no formato legado.
   const fused = !!mapa && hasPersuasiveDoc1(mapa) && !!plano && hasPersuasiveDoc2(plano);
+
+  // Suplementação tem conteúdo de fato? Decide se o retângulo do Doc 2 renderiza por si;
+  // com supplementActions (contexto editável) o retângulo aparece mesmo vazio, para poder editar.
+  const hasSupContent = !!sup && (((sup.itens?.length ?? 0) > 0) || ((sup.formulas?.length ?? 0) > 0) || ((sup.cuidados?.length ?? 0) > 0) || ((sup.observacoes_gerais?.length ?? 0) > 0));
 
   return (
     <div className="space-y-3">
@@ -337,6 +342,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
               {mapa.fase_jornada && <Paragraph title={t("journeyPhase")} text={mapa.fase_jornada} />}
             </>
           )}
+          {reportActions}
           </div>
         </details>
       )}
@@ -397,7 +403,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
         </details>
       )}
 
-      {sup && ((sup.itens?.length ?? 0) > 0 || (sup.formulas?.length ?? 0) > 0 || (sup.cuidados?.length ?? 0) > 0 || sup.observacoes_gerais.length > 0) && (
+      {(hasSupContent || supplementActions) && (
         <details className="group rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
             <span>
@@ -407,6 +413,8 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
             <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
           </summary>
           <div className="px-5 pb-5">
+          {hasSupContent && sup && (
+          <>
           {/* Brasil: cuidados + fórmulas manipuladas (formato rico) */}
           {sup.intro && <BodyP text={sup.intro} />}
           {(sup.cuidados?.length ?? 0) > 0 && (
@@ -463,6 +471,9 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map }: { 
           )}
           <Section title={t("generalNotes")} items={sup.observacoes_gerais} />
           {sup.proximos_passos && <BodyP text={sup.proximos_passos} />}
+          </>
+          )}
+          {supplementActions}
           </div>
         </details>
       )}
