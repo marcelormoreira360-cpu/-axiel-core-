@@ -124,6 +124,21 @@ function paragraph(doc: Doc, text?: string | null) {
   doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED).text(clean, MARGIN, doc.y, { width: CONTENT_W, align, lineGap: 3 });
   doc.moveDown(0.4);
 }
+// Desenha um título de seção + parágrafo mantendo-os JUNTOS na mesma página.
+// Mede a altura do corpo e reserva espaço para o título + o começo do texto antes
+// de deixar o sectionTitle quebrar a página; senão o título ("PRÓXIMO PASSO") ficava
+// órfão no rodapé de uma página com a lista sozinha na página seguinte (parecia que
+// o título "sumia"). Lista longa ainda flui naturalmente depois das primeiras linhas.
+function sectionWithBody(doc: Doc, title: string, text?: string | null) {
+  const clean = (text ?? "").replace(/\r\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
+  if (!clean) return;
+  doc.font("Times-Roman").fontSize(10.5);
+  const bodyH = doc.heightOfString(clean, { width: CONTENT_W, align: clean.includes("\n") ? "left" : "justify", lineGap: 3 });
+  // título (~30) + corpo, limitado a ~170 (mantém título + ~7 linhas juntos).
+  ensureSpace(doc, Math.min(bodyH + 44, 170));
+  sectionTitle(doc, title);
+  paragraph(doc, clean);
+}
 function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: number | null, isPriority: boolean, share: number | null) {
   ensureSpace(doc, 50);
   const bd = bandForDysfunction(dysfunction);
@@ -699,8 +714,8 @@ export async function buildNeuroIdDoc1Pdf(opts: {
       pilar(DOC2_LABELS.pillarEmotional, tp.emocional);
       pilar(DOC2_LABELS.pillarLifestyle, tp.estilo_de_vida);
     }
-    if (plano.como_caminhar_juntos?.trim()) { sectionTitle(doc, DOC2_LABELS.howWeWalk); paragraph(doc, plano.como_caminhar_juntos); }
-    if (plano.proximo_passo?.trim()) { sectionTitle(doc, DOC2_LABELS.nextStep); paragraph(doc, plano.proximo_passo); }
+    if (plano.como_caminhar_juntos?.trim()) { sectionWithBody(doc, DOC2_LABELS.howWeWalk, plano.como_caminhar_juntos); }
+    if (plano.proximo_passo?.trim()) { sectionWithBody(doc, DOC2_LABELS.nextStep, plano.proximo_passo); }
     const disc2 = plano.observacao?.trim() || "Este plano não substitui avaliação médica, exames laboratoriais ou condutas já prescritas.";
     doc.moveDown(0.5);
     doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text(disc2, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 2 });
