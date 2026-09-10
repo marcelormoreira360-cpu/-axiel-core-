@@ -1,7 +1,15 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 03/09/2026 (45)
+> Atualizado em: 09/09/2026 (46)
+
+## 🟢 Relatório: "próximos passos" multi-linha + garantia do Doc 1 (09/09/2026, PR #195 merge 256bd37, NO AR)
+
+> Dois bugs de USO REAL do relatório Neuro ID, reportados pelo Marcelo. Mergeado na main e deployado (Vercel axiel-core-6ikl success; oxielcore.com 200). Gates: tsc 0 · vitest 725/725 · CI verde.
+>
+> 1. **"Próximos passos" não apareciam.** O campo `plano_regulacao.proximo_passo` (e afins) é texto livre e o terapeuta digita uma LISTA com quebras de linha, às vezes com linhas em branco no início (`\n\n\n\n`). No PDF (`buildNeuroIdDoc1Pdf`) as linhas vazias orfanavam o título "PRÓXIMO PASSO" no rodapé de uma página e empurravam a lista para a página seguinte (embaixo do logo) → parecia SEÇÃO VAZIA. No HTML os `\n` colapsavam numa linha corrida. **Fix só de render, sem tocar no dado:** `paragraph()` em `services/neuro-id-pdf-service.ts` e `services/insight-pdf-service.ts` normaliza espaço em branco (colapsa `\n{2,}`, faz `.trim()`) e alinha lista à esquerda (justify só em prosa de linha única); `BodyP`/`Paragraph` em `components/neuro-id-360-documents.tsx` ganharam `whitespace-pre-line` + trim. Vale para TODOS os pacientes com esse padrão (Ratibi, Amelia, Thiago, Clovis, Gilmar, Matheus…), sem migração. Reabrir/reenviar o relatório já mostra a lista.
+> 2. **Insight às vezes sem Documento 1.** O modelo de raciocínio `o4-mini` (deep report, ver seção do PR #194) por vezes devolve só o `structured_summary` legado, sem `mapa_integrativo`/`plano_regulacao` → `coerceMapa` retorna undefined → insight salvo EM SILÊNCIO sem relatório (o card fica só com o resumo; o PDF cai no fallback por scores). Intermitente: a maioria dos pacientes recebe o Doc 1 normal. **Fix em `services/ai-insight/workflow.ts`:** após gerar, se `!hasPersuasiveDoc1(output.mapa_integrativo)` → tenta gerar UMA vez mais; se ainda faltar, o insight nasce em `needs_changes` com nota ("Documento 1 não foi gerado; clique em Novo rascunho"), nunca mais em silêncio. Insights JÁ salvos sem Doc 1 (ex.: Lucimar) precisam de "Novo rascunho" manual (o fix só vale para gerações novas).
+
 
 ## 🟢 Bio³ EQUILÍBRIO — follow-ups pós-deploy (03/09/2026, direto na main, TODOS NO AR)
 
