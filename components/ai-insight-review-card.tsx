@@ -25,6 +25,19 @@ function insightOutput(insight: AiInsight) {
   return insight.final_output ?? insight.output;
 }
 
+/**
+ * Versão de conteúdo do insight (hash determinístico do output). Vai como `&v=` no
+ * link do PDF: quando o terapeuta edita o relatório, o output muda, o hash muda e a
+ * URL do PDF muda, então o navegador NUNCA serve a versão anterior em cache (o Safari
+ * cacheia PDF inline por URL). Combina com o Cache-Control: no-store da rota.
+ */
+function contentVersion(insight: AiInsight): string {
+  const s = JSON.stringify(insight.final_output ?? insight.output ?? {});
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+
 function simplifiedStatus(status: AiInsight["review_status"]): BadgeStatus {
   return status === "final" ? "final" : "review";
 }
@@ -40,7 +53,8 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   // Estilo dos links "abrir PDF" (ver/imprimir/entregar em mão). O gerador é o MESMO do
   // envio ao paciente, então o PDF baixado é idêntico ao que o paciente receberia.
   const pdfLinkClass = "inline-flex items-center gap-2 rounded-xl border border-black/[.08] dark:border-white/[.10] px-4 py-2.5 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]";
-  const pdfHref = (docType: string) => `/api/patients/${patientId}/neuro-id/pdf?doc=${docType}&insight=${insight.id}`;
+  const pdfVersion = contentVersion(insight);
+  const pdfHref = (docType: string) => `/api/patients/${patientId}/neuro-id/pdf?doc=${docType}&insight=${insight.id}&v=${pdfVersion}`;
 
   // Prévia da pirâmide Bio³ na própria mesa de revisão: quando o Doc 1 é o
   // persuasivo, mostra o mesmo gráfico que vai no PDF final (texto + pirâmide),
