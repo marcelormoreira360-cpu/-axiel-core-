@@ -229,6 +229,10 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
   // container (gap), por isso os nós não carregam margem vertical própria.
   // Carga de medicação já confirmada (uma leitura, reusada nos dois painéis).
   const medLoad = readMedicationLoad(patient.assessment_data as Record<string, unknown> | null);
+  // Medicamentos e suplementos foram consolidados DENTRO da seção "avaliacao". Se a clínica
+  // ocultar a Avaliação no layout, a lista cai de volta na seção "medicamentos" (fallback),
+  // para nunca sumir. Quando a Avaliação está visível, "medicamentos" fica null (sem duplicar).
+  const avaliacaoVisible = sectionLayout.find((s) => s.key === "avaliacao")?.visible ?? true;
 
   const sections: Record<string, ReactNode> = {
     avaliacao: (
@@ -588,9 +592,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <PatientFunctionalExamsPanel exams={functionalExams} patientId={id} />
       </div>
     ),
-    // Consolidado dentro da seção "avaliacao" (acima). Mantido como null para não
-    // renderizar em duplicidade caso a clínica ainda tenha a seção no layout salvo.
-    medicamentos: null,
+    // Consolidado dentro da seção "avaliacao" (acima). Só renderiza aqui como fallback
+    // quando a Avaliação está oculta no layout da clínica (senão duplicaria a lista).
+    medicamentos: avaliacaoVisible ? null : <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />,
     documentos: <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />,
   };
 

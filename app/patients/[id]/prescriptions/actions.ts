@@ -58,23 +58,26 @@ export async function addPrescriptionsFromExtractionAction(
 
   const note = input.note?.trim() || null;
   let added = 0;
-  for (const it of items) {
-    const name = it.name.trim();
-    if (!name) continue;
-    const key = norm(name);
-    if (activeNames.has(key)) continue; // não duplica o que já está ativo na lista
-    activeNames.add(key);
-    await createPrescription({
-      patient_id: patientId,
-      clinic_id: profile.clinic_id,
-      type: it.type,
-      name,
-      notes: note,
-    });
-    added += 1;
+  try {
+    for (const it of items) {
+      const name = it.name.trim();
+      if (!name) continue;
+      const key = norm(name);
+      if (activeNames.has(key)) continue; // não duplica o que já está ativo na lista
+      activeNames.add(key);
+      await createPrescription({
+        patient_id: patientId,
+        clinic_id: profile.clinic_id,
+        type: it.type,
+        name,
+        notes: note,
+      });
+      added += 1;
+    }
+  } finally {
+    // Revalida mesmo em falha parcial: linhas já criadas antes do erro aparecem na ficha.
+    if (added > 0) revalidatePath(`/patients/${patientId}`);
   }
-
-  if (added > 0) revalidatePath(`/patients/${patientId}`);
   return { added };
 }
 

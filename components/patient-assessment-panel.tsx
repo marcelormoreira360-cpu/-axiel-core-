@@ -101,7 +101,8 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   // "Adicionar à lista": leva os itens informados no QRM para a lista de Medicamentos
   // e suplementos (mesma seção Avaliação, logo abaixo). Dedup no servidor.
   const [medAdding, setMedAdding] = useState(false);
-  const [medAddMsg, setMedAddMsg] = useState<string | null>(null);
+  // tom: "ok" (adicionou, verde) · "none" (nada novo, neutro) · "err" (falha, vermelho).
+  const [medAdd, setMedAdd] = useState<{ msg: string; tone: "ok" | "none" | "err" } | null>(null);
 
   // Anexa um bloco de achados deduplicando (remove um bloco anterior pelos cabeçalhos).
   function mergeFindings(prev: string, block: string): string {
@@ -236,17 +237,23 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
   async function handleAddToList() {
     if (!medData) return;
     setMedAdding(true);
-    setMedAddMsg(null);
+    setMedAdd(null);
     try {
-      await addPrescriptionsFromExtractionAction(patientId, {
+      const res = await addPrescriptionsFromExtractionAction(patientId, {
         medications: medData.medications,
         supplements: medData.supplements,
         note: t("medSourceNote"),
       });
-      setMedAddMsg(t("medAdded"));
-      router.refresh(); // a lista de Medicamentos e suplementos (logo abaixo) reflete na hora
+      if (res.added > 0) {
+        setMedAdd({ msg: t("medAdded"), tone: "ok" });
+        router.refresh(); // a lista de Medicamentos e suplementos (logo abaixo) reflete na hora
+      } else {
+        // Tudo já estava na lista (dedup no servidor): confirma sem falso "adicionado".
+        setMedAdd({ msg: t("medAddNone"), tone: "none" });
+      }
     } catch {
-      setMedAddMsg(t("medAddError"));
+      setMedAdd({ msg: t("medAddError"), tone: "err" });
+      router.refresh(); // revela itens eventualmente criados antes do erro (falha parcial)
     } finally {
       setMedAdding(false);
     }
@@ -307,7 +314,9 @@ export function PatientAssessmentPanel({ patientId, fields, values, canConfigure
                 </button>
               )}
               {medMsg && <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{medMsg}</span>}
-              {medAddMsg && <span className="text-[10px] text-[#0F6E56] dark:text-[#9FE1CB]">{medAddMsg}</span>}
+              {medAdd && (
+                <span className={`text-[10px] ${medAdd.tone === "err" ? "text-[#B42318] dark:text-[#F2B8B5]" : medAdd.tone === "none" ? "text-[#A09E98]" : "text-[#0F6E56] dark:text-[#9FE1CB]"}`}>{medAdd.msg}</span>
+              )}
             </div>
           </div>
         )}

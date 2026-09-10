@@ -63,6 +63,7 @@
   "medAddToList": "Adicionar à lista de medicamentos",
   "medAdding": "Adicionando…",
   "medAdded": "Adicionado à lista de medicamentos e suplementos.",
+  "medAddNone": "Nada novo para adicionar (já estava na lista).",
   "medAddError": "Não foi possível adicionar à lista. Tente novamente.",
   "medSourceNote": "Informado pelo paciente (QRM)"
 }

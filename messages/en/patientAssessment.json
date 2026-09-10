@@ -63,6 +63,7 @@
   "medAddToList": "Add to medication list",
   "medAdding": "Adding…",
   "medAdded": "Added to the medications and supplements list.",
+  "medAddNone": "Nothing new to add (already on the list).",
   "medAddError": "Couldn't add to the list. Please try again.",
   "medSourceNote": "Reported by patient (QRM)"
 }
