@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
 import { useTranslations } from "next-intl";
 import type { AiInsightOutput, NeuroIdentificacao, NeuroLeituraBioemocional, NeuroSecaoItem } from "@/lib/types";
@@ -7,6 +6,19 @@ import { hasPersuasiveDoc1, hasPersuasiveDoc2, bio3ProseHasPercent } from "@/mod
 import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
 import { dysfunctionToBalance } from "@/modules/neuro-id/bands";
 import type { NeuroPillar } from "@/modules/neuro-id/catalog";
+import { NeuroDocRectangle } from "@/components/neuro-doc-rectangle";
+
+/** Dados das ações da mesa de revisão que entram na BARRA dos retângulos (Doc 1 e Doc 2). */
+export type NeuroReview = {
+  patientId: string;
+  insightId: string;
+  reportPdfHref: string;
+  supplementPdfHref: string;
+  country: "BR" | "US";
+  isFinal: boolean;
+  hasSupplement: boolean;
+  sendSupplementAction: (formData: FormData) => void | Promise<void>;
+};
 
 /** Mapa numérico Bio³ (em DISFUNÇÃO) para desenhar o Anel de equilíbrio no preview. */
 export type Bio3MapNumbers = {
@@ -193,7 +205,7 @@ function Identificacao({ id, live, fallbackName }: { id?: NeuroIdentificacao; li
  * Renderiza os documentos do Neuro ID 360 no padrão dos relatórios oficiais.
  * Componente apenas de apresentação (server-compatible). Faz fallback p/ campos antigos.
  */
-export function NeuroId360Documents({ output, patientName, liveId, bio3Map, reportActions, supplementActions }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao; bio3Map?: Bio3MapNumbers | null; reportActions?: ReactNode; supplementActions?: ReactNode }) {
+export function NeuroId360Documents({ output, patientName, liveId, bio3Map, review }: { output: AiInsightOutput; patientName?: string | null; liveId?: PatientIdentificacao; bio3Map?: Bio3MapNumbers | null; review: NeuroReview }) {
   const t = useTranslations("neuroId.documents360");
   const tn = useTranslations("neuroId");
   const mapa = output.mapa_integrativo;
@@ -256,15 +268,17 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map, repo
   return (
     <div className="space-y-3">
       {mapa && (
-        <details className="group rounded-2xl border border-black/[.08] bg-white">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
-            <span>
-              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-0.5">{t("doc1Label")}</span>
-              <span className="block text-[15px] font-semibold text-[#0F1A2E]">{t("doc1Title")}</span>
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
-          </summary>
-          <div className="px-5 pb-5">
+        <NeuroDocRectangle
+          variant="report"
+          label={t("doc1Label")}
+          title={t("doc1Title")}
+          wrapperClass="rounded-2xl border border-black/[.08] dark:border-white/[.12] bg-white"
+          labelClass="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#0F6E56] mb-0.5"
+          pdfHref={review.reportPdfHref}
+          patientId={review.patientId}
+          insightId={review.insightId}
+          output={output}
+        >
           <Identificacao id={mapa.identificacao} live={liveId} fallbackName={patientName} />
           {hasPersuasiveDoc1(mapa) ? (
             <>
@@ -342,9 +356,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map, repo
               {mapa.fase_jornada && <Paragraph title={t("journeyPhase")} text={mapa.fase_jornada} />}
             </>
           )}
-          {reportActions}
-          </div>
-        </details>
+        </NeuroDocRectangle>
       )}
 
       {plano && !fused && (
@@ -403,16 +415,22 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map, repo
         </details>
       )}
 
-      {(hasSupContent || supplementActions) && (
-        <details className="group rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5">
-            <span>
-              <span className="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-0.5">{fused ? t("doc2SupplementLabel") : t("doc3Label")}</span>
-              <span className="block text-[15px] font-semibold text-[#0F1A2E]">{t("doc3Title")}</span>
-            </span>
-            <ChevronDown className="h-4 w-4 shrink-0 text-[#A09E98] transition group-open:rotate-180" />
-          </summary>
-          <div className="px-5 pb-5">
+      {(hasSupContent || !!review) && (
+        <NeuroDocRectangle
+          variant="supplement"
+          label={fused ? t("doc2SupplementLabel") : t("doc3Label")}
+          title={t("doc3Title")}
+          wrapperClass="rounded-2xl border border-[#D9A441]/40 bg-[#FDF8EE]"
+          labelClass="block text-[10px] font-semibold tracking-[.10em] uppercase text-[#8A5A06] mb-0.5"
+          pdfHref={review.supplementPdfHref}
+          patientId={review.patientId}
+          insightId={review.insightId}
+          protocolo={sup}
+          country={review.country}
+          isFinal={review.isFinal}
+          hasSupplement={review.hasSupplement}
+          sendAction={review.sendSupplementAction}
+        >
           {hasSupContent && sup && (
           <>
           {/* Brasil: cuidados + fórmulas manipuladas (formato rico) */}
@@ -473,9 +491,7 @@ export function NeuroId360Documents({ output, patientName, liveId, bio3Map, repo
           {sup.proximos_passos && <BodyP text={sup.proximos_passos} />}
           </>
           )}
-          {supplementActions}
-          </div>
-        </details>
+        </NeuroDocRectangle>
       )}
 
       {hyper && (

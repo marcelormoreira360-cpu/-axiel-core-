@@ -8,14 +8,9 @@ import { SubmitButton } from "@/components/submit-button";
 import { approveAiInsightAction, generateAiInsightAction, requestAiInsightChangesAction, resendApprovedInsightAction, sendSupplementToPatientAction, sendHypersensitivityToPatientAction } from "@/app/patients/[id]/insights/actions";
 import { VoiceDictation } from "@/components/voice-dictation";
 import { NeuroId360Documents } from "@/components/neuro-id-360-documents";
-import { InsightEditor } from "@/components/insight-editor";
-import { SupplementEditor } from "@/components/supplement-editor";
 import { HypersensitivityEditor } from "@/components/hypersensitivity-editor";
 import { getPatientById } from "@/services/patient-service";
 import { resolveSupplementCountry } from "@/services/supplement-service";
-import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
-import { dysfunctionToBalance } from "@/modules/neuro-id/bands";
-import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { countExamsPendingMetricsReview } from "@/services/functional-exams-service";
@@ -51,36 +46,15 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   const generateAction = generateAiInsightAction.bind(null, patientId);
   const isFinal = insight.review_status === "final";
   const output = insightOutput(insight);
-  // Estilo dos links "abrir PDF" (ver/imprimir/entregar em mão). O gerador é o MESMO do
-  // envio ao paciente, então o PDF baixado é idêntico ao que o paciente receberia.
-  const pdfLinkClass = "inline-flex items-center gap-2 rounded-xl border border-black/[.08] dark:border-white/[.10] px-4 py-2.5 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]";
   const pdfVersion = contentVersion(insight);
   const pdfHref = (docType: string) => `/api/patients/${patientId}/neuro-id/pdf?doc=${docType}&insight=${insight.id}&v=${pdfVersion}`;
+  // Estilo do link "abrir PDF" (usado no Doc 3 — Hipersensibilidade; Doc 1/Doc 2 têm o PDF na barra do retângulo).
+  const pdfLinkClass = "inline-flex items-center gap-2 rounded-xl border border-black/[.08] dark:border-white/[.10] px-4 py-2.5 text-xs font-medium text-axiel-text-secondary transition hover:bg-gray-50 dark:hover:bg-white/[.06] hover:text-axiel-text-primary dark:hover:text-[#E8E6E2]";
 
-  // Prévia do Anel Bio³ na própria mesa de revisão: quando o Doc 1 é o persuasivo,
-  // mostra o MESMO gráfico do painel e do PDF do paciente (o app migrou da pirâmide
-  // para o círculo), para o revisor ver o entregável completo sem abrir o PDF.
+  // Mapa Bio³ (equilíbrio) do paciente: alimenta o Anel DENTRO do Doc 1 (NeuroId360Documents).
+  // O app migrou da pirâmide para o círculo; o Anel só aparece ao expandir o Doc 1.
   const hasReport = hasPersuasiveDoc1(output?.mapa_integrativo);
   const neuroMap = hasReport ? await getLatestNeuroIdMap(patientId) : null;
-  const tNeuro = await getTranslations("neuroId");
-
-  // Anel de equilíbrio (mesma convenção do NeuroId360Documents / drawBio3RingPanel):
-  // três fatias iguais, cor/estado da disfunção crua, número exibido = equilíbrio,
-  // prioridade destacada pela borda mais grossa (priority_pillar único).
-  const RING_ICON = { fisico: "person", bioquimico: "atom", emocional: "brain" } as const;
-  let ringData: Bio3RingDatum[] | null = null;
-  let ringGeneralBalance: number | null = null;
-  let ringAria = "";
-  if (neuroMap) {
-    const dys: Record<NeuroPillar, number | null> = {
-      fisico: neuroMap.fisico_pct, bioquimico: neuroMap.bioquimico_pct, emocional: neuroMap.emocional_pct,
-    };
-    ringData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
-      dys: dys[p], balance: dysfunctionToBalance(dys[p]), isPriority: neuroMap.priority_pillar === p, label: tNeuro(`pillar.${p}`), icon: RING_ICON[p],
-    }));
-    ringGeneralBalance = dysfunctionToBalance(neuroMap.indice_geral);
-    ringAria = `${tNeuro("title")}: ${ringData.map((d) => `${d.label} ${d.balance === null ? "—" : `${d.balance}%`}`).join(", ")}.`;
-  }
 
   // Aviso de degradação silenciosa: exames com métricas extraídas mas NÃO
   // confirmadas não entram no relatório. Só relevante enquanto não-final.
@@ -105,41 +79,18 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   );
   const sendHyperAction = sendHypersensitivityToPatientAction.bind(null, patientId);
 
-  // Ações do Relatório (Doc 1): abrir PDF + editar textos, renderizadas DENTRO do
-  // retângulo do Documento 1 (via NeuroId360Documents). Só quando há Doc 1 persuasivo.
-  const reportActions = hasReport ? (
-    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-black/[.06] dark:border-white/[.08] pt-4">
-      <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass} title={t("downloadHint")}>
-        <FileDown className="h-3.5 w-3.5" /> {t("downloadReport")}
-      </a>
-      {output ? <InsightEditor patientId={patientId} insightId={insight.id} output={output} className="basis-full" /> : null}
-    </div>
-  ) : null;
-
-  // Ações da Suplementação (Doc 2): editar + PDF + enviar, DENTRO do retângulo do
-  // Documento 2 (Suplementação). País decide fórmula BR / link US.
-  const supplementActions = output ? (
-    <div className="mt-4 space-y-3 border-t border-[#D9A441]/30 pt-4">
-      <div className="flex items-center justify-end">
-        <span className="rounded-full bg-white/70 dark:bg-white/[.08] px-2 py-[2px] text-[11px] font-medium text-axiel-text-secondary">
-          {supplementCountry === "US" ? t("supplementUs") : t("supplementBr")}
-        </span>
-      </div>
-      <SupplementEditor patientId={patientId} insightId={insight.id} protocolo={protocolo} country={supplementCountry} />
-      {hasSupplement ? (
-        <a href={pdfHref("supplement")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
-          <FileDown className="h-3.5 w-3.5" /> {t("downloadSupplement")}
-        </a>
-      ) : null}
-      {isFinal && hasSupplement ? (
-        <form action={sendSupplementAction}>
-          <ButtonPrimary type="submit">{t("sendSupplement")}</ButtonPrimary>
-        </form>
-      ) : !hasSupplement ? (
-        <p className="text-xs text-axiel-text-secondary">{t("supplementEmpty")}</p>
-      ) : null}
-    </div>
-  ) : null;
+  // Ações que vão para DENTRO dos retângulos (barra do Doc 1 e do Doc 2, via
+  // NeuroDocRectangle): PDF, editor, país e envio da suplementação.
+  const review = {
+    patientId,
+    insightId: insight.id,
+    reportPdfHref: pdfHref("report"),
+    supplementPdfHref: pdfHref("supplement"),
+    country: supplementCountry,
+    isFinal,
+    hasSupplement,
+    sendSupplementAction,
+  };
 
   return (
     <article className="bg-white rounded-2xl p-6 shadow-sm space-y-4 transition hover:shadow-md">
@@ -156,21 +107,9 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         </p>
       ) : null}
 
-      {/* Prévia do Anel Bio³ (mesmo gráfico do painel e do PDF do paciente) na mesa de revisão */}
-      {ringData ? (
-        <div className="flex items-center gap-4 rounded-2xl bg-gray-50 dark:bg-white/[.05] px-4 py-3">
-          <div className="w-[132px] shrink-0">
-            <Bio3Ring data={ringData} ariaLabel={ringAria} className="w-full h-auto" />
-          </div>
-          <p className="text-xs leading-5 text-axiel-text-secondary">
-            <span className="font-semibold text-axiel-text-primary">{ringGeneralBalance === null ? "—" : `${ringGeneralBalance}%`}</span>{" · "}{tNeuro("indexCaption")}
-          </p>
-        </div>
-      ) : null}
-
-      {/* Neuro ID 360 — os 3 documentos. As ações de Editar/PDF vão DENTRO dos retângulos:
-          reportActions no Doc 1 (relatório) e supplementActions no Doc 2 (suplementação). */}
-      <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} reportActions={reportActions} supplementActions={supplementActions} />
+      {/* Neuro ID 360 — os documentos. Editar/PDF ficam na BARRA de cada retângulo (Doc 1 e
+          Doc 2), sem precisar expandir; o Anel Bio³ aparece dentro do Doc 1 ao expandir. */}
+      <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} review={review} />
 
       <div className="flex flex-wrap gap-3">
         <form action={approveAction} className="space-y-2">
