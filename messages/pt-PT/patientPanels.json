@@ -324,12 +324,14 @@
     "errPdfOnly": "Anexe o exame em PDF.",
     "errGeneric": "Não consegui guardar o exame. Tente novamente.",
     "uploadHint": "PDF até 15 MB. Vai direto e em segurança para o armazenamento.",
+    "typeMetricsHint": "Só Neurometria e Biorressonância geram números para o círculo Bio³. Os restantes entram apenas como texto no relatório.",
+    "outroNoMetrics": "Este exame entra apenas como texto no relatório; não gera números para o círculo Bio³. Para contabilizar no círculo, registe-o como Neurometria ou Biorressonância.",
     "metrics": {
       "title": "Métricas Bio³ (do exame)",
-      "hint": "A IA extraiu estes valores do PDF. Revise, ajuste se preciso e confirme para entrarem na pirâmide.",
+      "hint": "A IA extraiu estes valores do PDF. Revise, ajuste se preciso e confirme para entrarem no círculo Bio³.",
       "pending": "Revisar",
       "reviewed": "No mapa",
-      "confirm": "Confirmar para a pirâmide",
+      "confirm": "Confirmar para o círculo Bio³",
       "update": "Atualizar métricas",
       "reviewedOn": "Confirmado em {date}"
     }

@@ -13,8 +13,9 @@ import { SupplementEditor } from "@/components/supplement-editor";
 import { HypersensitivityEditor } from "@/components/hypersensitivity-editor";
 import { getPatientById } from "@/services/patient-service";
 import { resolveSupplementCountry } from "@/services/supplement-service";
-import { NeuroPyramid } from "@/components/neuro-pyramid";
-import { pyramidDataFromMap } from "@/modules/neuro-id/pyramid";
+import { Bio3Ring, type Bio3RingDatum } from "@/components/bio3-ring";
+import { dysfunctionToBalance } from "@/modules/neuro-id/bands";
+import type { NeuroPillar } from "@/modules/neuro-id/catalog";
 import { hasPersuasiveDoc1 } from "@/modules/ai-insights/patient-text-guardrails";
 import { getLatestNeuroIdMap } from "@/services/neuro-id-service";
 import { countExamsPendingMetricsReview } from "@/services/functional-exams-service";
@@ -56,13 +57,30 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
   const pdfVersion = contentVersion(insight);
   const pdfHref = (docType: string) => `/api/patients/${patientId}/neuro-id/pdf?doc=${docType}&insight=${insight.id}&v=${pdfVersion}`;
 
-  // Prévia da pirâmide Bio³ na própria mesa de revisão: quando o Doc 1 é o
-  // persuasivo, mostra o mesmo gráfico que vai no PDF final (texto + pirâmide),
-  // para o revisor ver o entregável completo sem abrir o PDF.
-  const showPyramid = hasPersuasiveDoc1(output?.mapa_integrativo);
-  const neuroMap = showPyramid ? await getLatestNeuroIdMap(patientId) : null;
-  const pyramidData = neuroMap ? pyramidDataFromMap(neuroMap) : null;
+  // Prévia do Anel Bio³ na própria mesa de revisão: quando o Doc 1 é o persuasivo,
+  // mostra o MESMO gráfico do painel e do PDF do paciente (o app migrou da pirâmide
+  // para o círculo), para o revisor ver o entregável completo sem abrir o PDF.
+  const hasReport = hasPersuasiveDoc1(output?.mapa_integrativo);
+  const neuroMap = hasReport ? await getLatestNeuroIdMap(patientId) : null;
   const tNeuro = await getTranslations("neuroId");
+
+  // Anel de equilíbrio (mesma convenção do NeuroId360Documents / drawBio3RingPanel):
+  // três fatias iguais, cor/estado da disfunção crua, número exibido = equilíbrio,
+  // prioridade destacada pela borda mais grossa (priority_pillar único).
+  const RING_ICON = { fisico: "person", bioquimico: "atom", emocional: "brain" } as const;
+  let ringData: Bio3RingDatum[] | null = null;
+  let ringGeneralBalance: number | null = null;
+  let ringAria = "";
+  if (neuroMap) {
+    const dys: Record<NeuroPillar, number | null> = {
+      fisico: neuroMap.fisico_pct, bioquimico: neuroMap.bioquimico_pct, emocional: neuroMap.emocional_pct,
+    };
+    ringData = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
+      dys: dys[p], balance: dysfunctionToBalance(dys[p]), isPriority: neuroMap.priority_pillar === p, label: tNeuro(`pillar.${p}`), icon: RING_ICON[p],
+    }));
+    ringGeneralBalance = dysfunctionToBalance(neuroMap.indice_geral);
+    ringAria = `${tNeuro("title")}: ${ringData.map((d) => `${d.label} ${d.balance === null ? "—" : `${d.balance}%`}`).join(", ")}.`;
+  }
 
   // Aviso de degradação silenciosa: exames com métricas extraídas mas NÃO
   // confirmadas não entram no relatório. Só relevante enquanto não-final.
@@ -110,12 +128,14 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
         </p>
       ) : null}
 
-      {/* Prévia da pirâmide Bio³ (mesmo gráfico do PDF final) na mesa de revisão */}
-      {pyramidData ? (
+      {/* Prévia do Anel Bio³ (mesmo gráfico do painel e do PDF do paciente) na mesa de revisão */}
+      {ringData ? (
         <div className="flex items-center gap-4 rounded-2xl bg-gray-50 dark:bg-white/[.05] px-4 py-3">
-          <NeuroPyramid data={pyramidData} className="w-[120px] h-auto shrink-0" />
+          <div className="w-[132px] shrink-0">
+            <Bio3Ring data={ringData} ariaLabel={ringAria} className="w-full h-auto" />
+          </div>
           <p className="text-xs leading-5 text-axiel-text-secondary">
-            {tNeuro("pyramidShareCaption")}
+            <span className="font-semibold text-axiel-text-primary">{ringGeneralBalance === null ? "—" : `${ringGeneralBalance}%`}</span>{" · "}{tNeuro("indexCaption")}
           </p>
         </div>
       ) : null}
@@ -123,22 +143,18 @@ export async function AiInsightReviewCard({ patientId, insight, liveId }: { pati
       {/* Neuro ID 360 — os 3 documentos (recolhidos; demografia ao vivo do cadastro) */}
       <NeuroId360Documents output={output} liveId={liveId} bio3Map={neuroMap} />
 
-      {/* Abrir o Relatório (Doc 1 + Doc 2) em PDF — casa com o que aparece acima; serve para
-          imprimir/entregar em mão a pacientes sem WhatsApp/e-mail. Só quando há Doc 1 persuasivo. */}
-      {showPyramid ? (
-        <div className="space-y-1">
-          <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass}>
+      {/* Ações do relatório numa única linha compacta, colada aos documentos: abrir o Relatório
+          (Doc 1 + Doc 2) em PDF (imprimir/entregar em mão a quem não tem WhatsApp/e-mail) e editar
+          os textos à mão. Só quando há Doc 1 persuasivo; o editor abre em largura total abaixo. */}
+      {hasReport ? (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <a href={pdfHref("report")} target="_blank" rel="noopener noreferrer" className={pdfLinkClass} title={t("downloadHint")}>
             <FileDown className="h-3.5 w-3.5" /> {t("downloadReport")}
           </a>
-          <p className="text-[11px] text-axiel-text-secondary">{t("downloadHint")}</p>
+          {output ? (
+            <InsightEditor patientId={patientId} insightId={insight.id} output={output} className="basis-full" />
+          ) : null}
         </div>
-      ) : null}
-
-      {/* Edição manual do Doc 1/Doc 2 (formato persuasivo). Continua disponível
-          mesmo depois de aprovado — igual à Suplementação — para corrigir o texto
-          e reenviar via "Reenviar relatório". Grava em final_output. */}
-      {output && showPyramid ? (
-        <InsightEditor patientId={patientId} insightId={insight.id} output={output} />
       ) : null}
 
       <div className="flex flex-wrap gap-3">

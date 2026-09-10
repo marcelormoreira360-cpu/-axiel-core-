@@ -1,7 +1,17 @@
 # AXIEL Core — Contexto do Projeto
 
 > Leia este arquivo no início de cada sessão antes de explorar o código.
-> Atualizado em: 09/09/2026 (46)
+> Atualizado em: 10/09/2026 (47)
+
+## 🟢 Ficha do paciente: círculo Bio³ + consolidação de medicamentos (10/09/2026, branch/PR, gates verdes)
+
+> 4 pontos reportados pelo Marcelo na tela de validação/ficha. Gates: tsc 0 · i18n 53/0/0 · vitest 725/725 · eslint 0. Sem migração.
+>
+> 1. **Última pirâmide virou círculo.** O card de revisão do insight (`components/ai-insight-review-card.tsx`) era o ÚNICO lugar em tela que ainda desenhava a `NeuroPyramid`; trocado pelo `Bio3Ring` (mesmo do painel e do PDF do paciente), com % de equilíbrio geral e `indexCaption`. No PDF interno "Mapa Bio³" (`services/neuro-id-pdf-service.ts`) o `drawPyramid` virou `drawBio3Ring`; funções mortas `drawPyramid`/`drawStar` removidas. Textos das "Métricas Bio³" que diziam "pirâmide" atualizados para "círculo Bio³" (3 locales). `modules/neuro-id/pyramid.ts` e `components/neuro-pyramid.tsx` ficaram sem uso em app (só o teste), mantidos.
+> 2. **Exames que não contam no círculo.** Aviso na tela de exames funcionais (`components/patient-functional-exams-panel.tsx`): dica sob o seletor de tipo + nota nos exames "Outro". Só `neurometria`/`biorressonancia` geram métricas (`extractExamMetrics` em `services/exam-ai-service.ts:305`); os "Neuromet 2/3" do Thiago estavam como "Outro". Chaves `functionalExams.typeMetricsHint` e `.outroNoMetrics`.
+> 3. **Card de relatório compacto.** "Abrir PDF" + "Editar textos" na MESMA linha, colados aos documentos; dica virou tooltip. `InsightEditor` ganhou prop `className` (aplicada ao painel aberto: `basis-full` para expandir em largura total).
+> 4. **Medicamentos consolidados na Avaliação.** A lista `PatientPrescriptionsPanel` passou para DENTRO da seção `avaliacao` (`app/patients/[id]/page.tsx`); a seção `medicamentos` do registro virou `null` (evita duplicidade; `/settings/secoes` ainda lista o toggle inerte, follow-up: esconder). Nova action `addPrescriptionsFromExtractionAction` (`app/patients/[id]/prescriptions/actions.ts`) cria prescrições a partir do que a IA extraiu do QRM (dedup por nome vs. ativos, nota de procedência). Botão "Adicionar à lista" no bloco Medicação (carga) do painel de Avaliação; `router.refresh()` reflete na hora. Chaves `medAddToList/medAdding/medAdded/medAddError/medSourceNote`. Ressalva: a visibilidade da lista de medicamentos agora segue a seção Avaliação.
+
 
 ## 🟢 Relatório: "próximos passos" multi-linha + garantia do Doc 1 (09/09/2026, PR #195 merge 256bd37, NO AR)
 

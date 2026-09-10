@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentUserProfile } from "@/services/user-service";
-import { createPrescription, deactivatePrescription, deletePrescription } from "@/services/exams-service";
+import { createPrescription, deactivatePrescription, deletePrescription, getPatientPrescriptions } from "@/services/exams-service";
 
 export async function addPrescriptionAction(formData: FormData) {
   const profile = await getCurrentUserProfile();
@@ -30,6 +30,52 @@ export async function addPrescriptionAction(formData: FormData) {
   });
 
   revalidatePath(`/patients/${patientId}`);
+}
+
+/**
+ * Puxa para a lista de Medicamentos e suplementos os itens que o paciente informou
+ * no QRM (já separados pela IA em remédios × suplementos no bloco "Medicação (carga)"
+ * da Avaliação). Deduplica pelo nome contra o que já está ATIVO, para clicar de novo
+ * não duplicar. `note` (opcional) marca a procedência ("Informado pelo paciente (QRM)"),
+ * vindo do cliente para respeitar o idioma. Retorna quantos itens foram criados.
+ */
+export async function addPrescriptionsFromExtractionAction(
+  patientId: string,
+  input: { medications?: string[]; supplements?: string[]; note?: string },
+): Promise<{ added: number }> {
+  const profile = await getCurrentUserProfile();
+  if (!profile?.clinic_id) throw new Error("Clínica obrigatória");
+  if (!patientId) return { added: 0 };
+
+  const norm = (s: string) => s.trim().toLowerCase();
+  const existing = await getPatientPrescriptions(patientId);
+  const activeNames = new Set(existing.filter((p) => p.is_active).map((p) => norm(p.name)));
+
+  const items: { type: "medication" | "supplement"; name: string }[] = [
+    ...(input.medications ?? []).map((name) => ({ type: "medication" as const, name })),
+    ...(input.supplements ?? []).map((name) => ({ type: "supplement" as const, name })),
+  ];
+
+  const note = input.note?.trim() || null;
+  let added = 0;
+  for (const it of items) {
+    const name = it.name.trim();
+    if (!name) continue;
+    const key = norm(name);
+    if (activeNames.has(key)) continue; // não duplica o que já está ativo na lista
+    activeNames.add(key);
+    await createPrescription({
+      patient_id: patientId,
+      clinic_id: profile.clinic_id,
+      type: it.type,
+      name,
+      notes: note,
+    });
+    added += 1;
+  }
+
+  if (added > 0) revalidatePath(`/patients/${patientId}`);
+  return { added };
 }
 
 export async function deactivatePrescriptionAction(id: string, patientId: string) {

@@ -162,53 +162,6 @@ function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: numb
   doc.y = barY + 18;
 }
 
-// Estrela vetorial de 5 pontas (marcador de prioridade). As fontes padrão
-// (WinAnsi) NÃO têm o glifo ★ — desenhar como vetor evita o caractere quebrado.
-function drawStar(doc: Doc, cx: number, cy: number, r: number, color: string) {
-  const pts: [number, number][] = [];
-  for (let i = 0; i < 5; i++) {
-    const outer = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-    const inner = outer + Math.PI / 5;
-    pts.push([cx + r * Math.cos(outer), cy + r * Math.sin(outer)]);
-    pts.push([cx + r * 0.42 * Math.cos(inner), cy + r * 0.42 * Math.sin(inner)]);
-  }
-  doc.save();
-  doc.polygon(...pts).fill(color);
-  doc.restore();
-}
-
-// Pirâmide Bio³: 3 faixas coloridas pela banda de DISFUNÇÃO.
-// Ordem fixa [ápice, meio, base] = [Biomecânico, Biofuncional, Bioemocional].
-function drawPyramid(doc: Doc, bands: { dysfunction: number | null; isPriority: boolean }[]) {
-  ensureSpace(doc, 150);
-  const cx = PAGE_W / 2;
-  const y0 = doc.y + 6;
-  const H = 120, half = 84;
-  const yA = y0, yB = y0 + 40, yC = y0 + 80, yBase = y0 + 120;
-  const xAt = (y: number) => (half * (y - y0)) / H;
-  const polys: [number, number][][] = [
-    [[cx, yA], [cx + xAt(yB), yB], [cx - xAt(yB), yB]],
-    [[cx - xAt(yB), yB], [cx + xAt(yB), yB], [cx + xAt(yC), yC], [cx - xAt(yC), yC]],
-    [[cx - xAt(yC), yC], [cx + xAt(yC), yC], [cx + xAt(yBase), yBase], [cx - xAt(yBase), yBase]],
-  ];
-  const centersY = [y0 + 30, y0 + 60, y0 + 100];
-  doc.lineWidth(2);
-  bands.forEach((b, i) => {
-    const bd = bandForDysfunction(b.dysfunction);
-    const disf = round(b.dysfunction);
-    const fill = bd ? bd.colors.fill : "#E9E7E0";
-    const txt = bd ? bd.colors.text : "#9ca3af";
-    doc.polygon(...polys[i]).fillAndStroke(fill, "#ffffff");
-    doc.font("Helvetica-Bold").fontSize(13).fillColor(txt)
-      .text(disf === null ? "—" : `${disf}%`, cx - 30, centersY[i] - 7, { width: 60, align: "center" });
-    if (b.isPriority) {
-      drawStar(doc, cx, centersY[i] - 15, 5.5, txt);
-    }
-  });
-  doc.lineWidth(1);
-  doc.y = yBase + 12;
-}
-
 // Anel Bio³ Circular (equilíbrio) desenhado no pdfkit — espelha o componente da tela.
 // Três fatias iguais (nome + % de EQUILÍBRIO), borda arredondada por estado, nós nas
 // junções, boneco no centro. Cor pela banda da DISFUNÇÃO crua; número exibido = equilíbrio.
@@ -334,11 +287,14 @@ export async function buildNeuroIdMapPdf(opts: {
   }
 
   sectionTitle(doc, "Os 3 Eixos (Bio³)");
-  drawPyramid(doc, [
-    { dysfunction: dysByPillar.fisico, isPriority: map.priority_pillar === "fisico" },
-    { dysfunction: dysByPillar.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
-    { dysfunction: dysByPillar.emocional, isPriority: map.priority_pillar === "emocional" },
+  ensureSpace(doc, 170);
+  const ringCy = doc.y + 64;
+  drawBio3Ring(doc, PAGE_W / 2, ringCy, [
+    { dys: dysByPillar.fisico, balance: dysfunctionToBalance(dysByPillar.fisico), label: PILLAR_LABEL.fisico, isPriority: map.priority_pillar === "fisico" },
+    { dys: dysByPillar.bioquimico, balance: dysfunctionToBalance(dysByPillar.bioquimico), label: PILLAR_LABEL.bioquimico, isPriority: map.priority_pillar === "bioquimico" },
+    { dys: dysByPillar.emocional, balance: dysfunctionToBalance(dysByPillar.emocional), label: PILLAR_LABEL.emocional, isPriority: map.priority_pillar === "emocional" },
   ]);
+  doc.y = ringCy + 66;
   for (const p of PILLARS) dysfunctionBar(doc, PILLAR_LABEL[p], PILLAR_HINT[p], dysByPillar[p], map.priority_pillar === p, contrib[p]);
   doc.moveDown(0.2);
   doc.font("Times-Italic").fontSize(8.5).fillColor("#9ca3af").text("Legenda: 0–30 em função (Solto) · 31–69 disfunção crônica (Tenso) · 70–100 grande disfunção (Bloqueado)", MARGIN, doc.y, { width: CONTENT_W });

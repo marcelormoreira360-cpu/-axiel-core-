@@ -232,13 +232,19 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
 
   const sections: Record<string, ReactNode> = {
     avaliacao: (
-      <PatientAssessmentPanel
-        patientId={patient.id}
-        fields={assessmentFields}
-        values={patient.assessment_data}
-        canConfigure={canSeeFinance}
-        initialMedLoad={medLoad ? { medications: medLoad.medications, supplements: medLoad.supplements, count: medLoad.count } : null}
-      />
+      // Avaliação + Medicamentos e suplementos no MESMO lugar (consolidado). A lista abaixo
+      // é alimentada pelo botão "Adicionar à lista" do bloco Medicação (carga), que puxa o
+      // que o paciente informou no QRM. A seção separada "medicamentos" fica desativada.
+      <div>
+        <PatientAssessmentPanel
+          patientId={patient.id}
+          fields={assessmentFields}
+          values={patient.assessment_data}
+          canConfigure={canSeeFinance}
+          initialMedLoad={medLoad ? { medications: medLoad.medications, supplements: medLoad.supplements, count: medLoad.count } : null}
+        />
+        <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />
+      </div>
     ),
     resumo: (
       <PatientDirectionPanel
@@ -582,7 +588,9 @@ export default async function PatientProfilePage({ params }: { params: Promise<{
         <PatientFunctionalExamsPanel exams={functionalExams} patientId={id} />
       </div>
     ),
-    medicamentos: <PatientPrescriptionsPanel prescriptions={prescriptions} patientId={id} />,
+    // Consolidado dentro da seção "avaliacao" (acima). Mantido como null para não
+    // renderizar em duplicidade caso a clínica ainda tenha a seção no layout salvo.
+    medicamentos: null,
     documentos: <PatientDocumentsPanel documents={documents} patientId={id} intakeUrl={intakeUrl} />,
   };
 

@@ -23,7 +23,7 @@ function Field({ label, value, onChange, rows = 2 }: { label: string; value: str
  * mão; salva em final_output (sem aprovar). Fica disponível antes E depois de
  * aprovado — quando já final, corrige-se aqui e reenvia-se via "Reenviar relatório".
  */
-export function InsightEditor({ patientId, insightId, output }: { patientId: string; insightId: string; output: AiInsightOutput }) {
+export function InsightEditor({ patientId, insightId, output, className }: { patientId: string; insightId: string; output: AiInsightOutput; className?: string }) {
   const t = useTranslations("neuroId.documents360");
   const tc = useTranslations("common.actions");
   const [open, setOpen] = useState(false);
@@ -115,7 +115,7 @@ export function InsightEditor({ patientId, insightId, output }: { patientId: str
   }
 
   return (
-    <div className="space-y-4 rounded-2xl border border-black/[.10] dark:border-white/[.12] p-4">
+    <div className={`space-y-4 rounded-2xl border border-black/[.10] dark:border-white/[.12] p-4 ${className ?? ""}`}>
       <div className="flex items-center justify-between">
         <p className="text-sm font-semibold text-axiel-text-primary">{t("editor.title")}</p>
         <button type="button" onClick={() => setOpen(false)} className="text-axiel-text-secondary hover:text-axiel-text-primary" aria-label={tc("cancel")}>
