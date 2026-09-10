@@ -110,8 +110,18 @@ function sectionTitle(doc: Doc, title: string) {
   doc.moveDown(0.35);
 }
 function paragraph(doc: Doc, text?: string | null) {
-  if (!text) return;
-  doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED).text(text, MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 3 });
+  // Normaliza o espaço em branco antes de desenhar. O terapeuta às vezes digita
+  // listas (ex.: "próximos passos" um por linha) e cola quebras de linha extras
+  // no início; sem tratar, essas linhas vazias orfanavam o título da seção no
+  // rodapé de uma página e empurravam o conteúdo real para a página seguinte
+  // (o relatório parecia "sem próximo passo"). Remove linhas vazias no início/fim
+  // e colapsa sequências de linhas em branco, preservando as quebras simples.
+  const clean = (text ?? "").replace(/\r\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
+  if (!clean) return;
+  // Multi-linha (lista) fica melhor alinhado à esquerda; justificar estica linhas
+  // curtas ("Fazer Detox") de forma estranha. Prosa de linha única segue justificada.
+  const align = clean.includes("\n") ? "left" : "justify";
+  doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED).text(clean, MARGIN, doc.y, { width: CONTENT_W, align, lineGap: 3 });
   doc.moveDown(0.4);
 }
 function dysfunctionBar(doc: Doc, label: string, hint: string, dysfunction: number | null, isPriority: boolean, share: number | null) {

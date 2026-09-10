@@ -93,9 +93,14 @@ function sectionTitle(doc: Doc, title: string) {
 }
 
 function paragraph(doc: Doc, text?: string | null) {
-  if (!text || !text.trim()) return;
+  // Remove linhas em branco no início/fim e colapsa sequências (o terapeuta às
+  // vezes cola listas com quebras extras). Multi-linha (lista) alinha à esquerda;
+  // prosa de linha única segue justificada.
+  const clean = (text ?? "").replace(/\r\n/g, "\n").replace(/\n{2,}/g, "\n").trim();
+  if (!clean) return;
+  const align = clean.includes("\n") ? "left" : "justify";
   doc.font("Times-Roman").fontSize(10.5).fillColor(MUTED)
-    .text(text.trim(), MARGIN, doc.y, { width: CONTENT_W, align: "justify", lineGap: 3 });
+    .text(clean, MARGIN, doc.y, { width: CONTENT_W, align, lineGap: 3 });
   doc.moveDown(0.4);
 }
 

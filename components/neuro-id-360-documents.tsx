@@ -35,11 +35,16 @@ function Section({ title, items }: { title: string; items?: string[] }) {
 }
 
 function Paragraph({ title, text }: { title: string; text?: string | null }) {
-  if (!text || !text.trim()) return null;
+  const clean = text?.trim();
+  if (!clean) return null;
+  // whitespace-pre-line preserva as quebras de linha que o terapeuta digita (ex.:
+  // lista de "próximos passos"); sem isso, os \n colapsavam numa linha corrida.
+  // Multi-linha alinha à esquerda; prosa de linha única segue justificada.
+  const align = clean.includes("\n") ? "text-left" : "text-justify";
   return (
     <div className="mb-3">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6B6A66] mb-1">{title}</p>
-      <p className="text-[13px] leading-5 text-[#0F1A2E] text-justify">{text}</p>
+      <p className={`text-[13px] leading-5 text-[#0F1A2E] whitespace-pre-line ${align}`}>{clean}</p>
     </div>
   );
 }
@@ -78,8 +83,11 @@ function SectionHead({ n, title }: { n: string; title: string }) {
 
 /** Parágrafo do corpo, justificado, sem rótulo (fluxo contínuo do relatório). */
 function BodyP({ text }: { text?: string | null }) {
-  if (!text || !text.trim()) return null;
-  return <p className="mb-2 text-[13px] leading-6 text-[#0F1A2E] text-justify">{text}</p>;
+  const clean = text?.trim();
+  if (!clean) return null;
+  // Preserva quebras de linha (listas do terapeuta); multi-linha alinha à esquerda.
+  const align = clean.includes("\n") ? "text-left" : "text-justify";
+  return <p className={`mb-2 text-[13px] leading-6 text-[#0F1A2E] whitespace-pre-line ${align}`}>{clean}</p>;
 }
 
 /** Documento 1 na Rota A persuasiva: leituras achado→significado (sem travessão). */
