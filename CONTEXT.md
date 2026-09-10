@@ -3,7 +3,10 @@
 > Leia este arquivo no início de cada sessão antes de explorar o código.
 > Atualizado em: 10/09/2026 (47)
 
-## 🟢 Ficha do paciente: círculo Bio³ + consolidação de medicamentos (10/09/2026, branch/PR, gates verdes)
+## 🟢 Ficha do paciente: círculo Bio³ + consolidação de medicamentos (10/09/2026, PR #196 MERGEADO+NO AR)
+
+> **Follow-up (mesmo dia, PR #197):** redesenho do card de revisão do insight (`components/ai-insight-review-card.tsx`) a pedido do Marcelo, olhando a versão no ar. (a) TOPO limpo: removidos título, resumo E a prévia do círculo Bio³ (tudo já aparece acima na lista de insights; o Anel continua DENTRO do Doc 1 ao expandir). Sobra só o badge de status. (b) Editar/PDF foram para a BARRA de cada retângulo, à esquerda do ícone de expandir, SEM precisar expandir o documento. Novo componente cliente `components/neuro-doc-rectangle.tsx` (`NeuroDocRectangle`, variantes `report`/`supplement`): barra com Editar + PDF + chevron; editor abre em painel próprio (estado `editing`) independente do preview (`openPreview`). `InsightEditor` e `SupplementEditor` ganharam modo CONTROLADO (`open`/`onOpenChange`) — em modo controlado renderizam só o painel (sem gatilho embutido), o "X" fecha via `onOpenChange`. `NeuroId360Documents` passou de `reportActions/supplementActions` para um objeto `review` (patientId, insightId, hrefs de PDF, país, isFinal, hasSupplement, sendSupplementAction) e renderiza os retângulos via `NeuroDocRectangle` (Doc 1 e Suplementação); plano legado e hipersensibilidade seguem `<details>` nativo. O retângulo de Suplementação aparece mesmo VAZIO (para poder preencher). `NeuroId360Documents` é usado só no card, então sem impacto em telas read-only. Gates: tsc 0 · i18n 53/0/0 · vitest 725/725 · eslint 0 · `next build` ok.
+
 
 > 4 pontos reportados pelo Marcelo na tela de validação/ficha. Gates: tsc 0 · i18n 53/0/0 · vitest 725/725 · eslint 0. Sem migração.
 >

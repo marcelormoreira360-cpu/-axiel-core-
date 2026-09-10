@@ -23,10 +23,16 @@ function Field({ label, value, onChange, rows = 2 }: { label: string; value: str
  * mão; salva em final_output (sem aprovar). Fica disponível antes E depois de
  * aprovado — quando já final, corrige-se aqui e reenvia-se via "Reenviar relatório".
  */
-export function InsightEditor({ patientId, insightId, output, className }: { patientId: string; insightId: string; output: AiInsightOutput; className?: string }) {
+export function InsightEditor({ patientId, insightId, output, className, open: openProp, onOpenChange }: { patientId: string; insightId: string; output: AiInsightOutput; className?: string; open?: boolean; onOpenChange?: (v: boolean) => void }) {
   const t = useTranslations("neuroId.documents360");
   const tc = useTranslations("common.actions");
-  const [open, setOpen] = useState(false);
+  // Modo controlado (open/onOpenChange): o pai comanda a abertura e provê o botão de
+  // Editar; aqui o editor renderiza SÓ o painel (nada no estado fechado). Sem essas
+  // props, mantém o comportamento próprio (botão-gatilho embutido).
+  const [openState, setOpenState] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : openState;
+  const setOpen = (v: boolean) => { if (isControlled) onOpenChange?.(v); else setOpenState(v); };
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [warn, setWarn] = useState<string | null>(null);
@@ -91,6 +97,7 @@ export function InsightEditor({ patientId, insightId, output, className }: { pat
   }
 
   if (!open) {
+    if (isControlled) return null; // pai provê o gatilho (barra do retângulo)
     return (
       <div className="space-y-2">
         <button

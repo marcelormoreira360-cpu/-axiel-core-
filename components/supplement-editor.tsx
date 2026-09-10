@@ -32,15 +32,24 @@ export function SupplementEditor({
   insightId,
   protocolo,
   country,
+  open: openProp,
+  onOpenChange,
 }: {
   patientId: string;
   insightId: string;
   protocolo: NeuroProtocoloSuplementacao | null | undefined;
   country: "BR" | "US";
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
 }) {
   const t = useTranslations("neuroId.documents360.supplementEditor");
   const tc = useTranslations("common.actions");
-  const [open, setOpen] = useState(false);
+  // Modo controlado (open/onOpenChange): o pai comanda a abertura e provê o gatilho;
+  // sem essas props, mantém o botão-gatilho embutido.
+  const [openState, setOpenState] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : openState;
+  const setOpen = (v: boolean) => { if (isControlled) onOpenChange?.(v); else setOpenState(v); };
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -116,6 +125,7 @@ export function SupplementEditor({
   }
 
   if (!open) {
+    if (isControlled) return null; // pai provê o gatilho (barra do retângulo)
     return (
       <div className="space-y-2">
         <button
