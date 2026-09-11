@@ -554,6 +554,10 @@ export async function POST(req: NextRequest) {
             : false;
           const activeHistory = isTimedOut ? [] : history;
           const activeStepDb = isTimedOut ? null : currentStepDb;
+          // F1 (achado #1): o booking_state também expira no reset de 72h — senão
+          // um horário oferecido dias atrás (já vencido) seria "escolhido" quando o
+          // paciente voltasse. Nulo no timeout; a limpeza é persistida no fim.
+          const activeBookingState: BookingState | null = isTimedOut ? null : bookingState;
           if (isTimedOut && convId) {
             log.info("conversation timed out — resetting step", { phone: fromPhone.slice(-4) });
           }
@@ -597,7 +601,10 @@ export async function POST(req: NextRequest) {
           // an NPS follow-up message in the last 48h for this clinic. If so, save
           // their score and optionally follow up with a Google Review link (≥ 4).
           const npsDigit = incomingText.trim();
-          if (/^[1-5]$/.test(npsDigit)) {
+          // Achado #4: se estamos aguardando a ESCOLHA de horário, um "1".."3" é a
+          // escolha do slot, não uma nota de NPS. Não deixa o NPS interceptar.
+          const awaitingSlotChoice = config.booking_enabled === true && !!activeBookingState?.offered?.length;
+          if (/^[1-5]$/.test(npsDigit) && !awaitingSlotChoice) {
             const npsScore = parseInt(npsDigit, 10);
             const cutoff = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
 
@@ -696,19 +703,19 @@ export async function POST(req: NextRequest) {
           // ─── F1 — escolha de horário (agendamento real) ──────────────────
           // Só quando a clínica habilitou o agendamento E já oferecemos horários
           // no turno anterior (booking_state.offered). Este turno é a ESCOLHA.
-          if (config.booking_enabled === true && bookingState?.offered && bookingState.offered.length > 0) {
-            const offered = bookingState.offered;
+          if (config.booking_enabled === true && activeBookingState?.offered && activeBookingState.offered.length > 0) {
+            const offered = activeBookingState.offered;
+            const bookLocale = lang === "en" ? "en" : "pt-BR";
             const idx = parseSlotChoice(incomingText, offered.length);
 
             if (idx >= 0 && offered[idx]) {
               const chosen = offered[idx];
-              const bookLocale = lang === "en" ? "en" : "pt-BR";
               const result = await bookEvaluationSlot({
                 clinicId: effectiveClinicId,
-                slug: bookingState.slug ?? config.clinic_slug ?? "",
-                sessionTypeId: bookingState.sessionTypeId ?? "",
+                slug: activeBookingState.slug ?? config.clinic_slug ?? "",
+                sessionTypeId: activeBookingState.sessionTypeId ?? "",
                 iso: chosen.iso,
-                fullName: (bookingState.name ?? contactName ?? "").trim(),
+                fullName: (activeBookingState.name ?? contactName ?? "").trim(),
                 phone: fromPhone,
                 locale: bookLocale,
               });
@@ -730,7 +737,41 @@ export async function POST(req: NextRequest) {
                 continue;
               }
 
-              // Booking falhou: cai no comportamento atual (link) e limpa o estado.
+              // Falhou (horário venceu / foi tomado): tenta RE-OFERECER horários frescos.
+              const reoffer = await offerEvaluationSlots({
+                clinicId: effectiveClinicId,
+                preference: activeBookingState.preference ?? null,
+                locale: bookLocale,
+              });
+              if (reoffer.ok && reoffer.slots.length > 0) {
+                const nums = reoffer.slots.map((_, i) => i + 1);
+                const numHint = lang === "en"
+                  ? (nums.length === 1 ? "Reply 1." : `Reply ${nums.slice(0, -1).join(", ")} or ${nums[nums.length - 1]}.`)
+                  : (nums.length === 1 ? "Responda 1." : `Responda ${nums.slice(0, -1).join(", ")} ou ${nums[nums.length - 1]}.`);
+                const reReply =
+                  (lang === "en"
+                    ? "That time is no longer available. Here are the next open times:"
+                    : "Esse horário não está mais disponível. Aqui estão os próximos horários livres:") +
+                  `\n\n${formatSlotOptions(reoffer.slots, lang)}\n\n` +
+                  (lang === "en" ? `Which one works best? ${numHint}` : `Qual prefere? ${numHint}`);
+                const updated = [
+                  ...activeHistory,
+                  { role: "user" as const, content: incomingText },
+                  { role: "assistant" as const, content: reReply },
+                ];
+                await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, 7, {
+                  preference: activeBookingState.preference ?? null,
+                  offered: reoffer.slots,
+                  sessionTypeId: reoffer.sessionTypeId,
+                  slug: reoffer.slug,
+                  name: activeBookingState.name,
+                });
+                await sendMetaReply(fromPhone, reReply, phoneNumberId);
+                log.info("clara re-offered slots after booking failure", { phone: fromPhone.slice(-4), code: result.code });
+                continue;
+              }
+
+              // Sem horários para re-oferecer: cai no comportamento atual (link) e limpa o estado.
               const linkReply = buildFixedReply(7, incomingText, config, lang);
               const updated = [
                 ...activeHistory,
@@ -753,7 +794,7 @@ export async function POST(req: NextRequest) {
               { role: "user" as const, content: incomingText },
               { role: "assistant" as const, content: askAgain },
             ];
-            await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, currentStep, bookingState);
+            await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, currentStep, activeBookingState);
             await sendMetaReply(fromPhone, askAgain, phoneNumberId);
             continue;
           }
@@ -762,7 +803,10 @@ export async function POST(req: NextRequest) {
           let reply = "";
           let nextStep = currentStep;
           // F1: undefined = não mexe no booking_state; objeto = grava; null = limpa.
-          let bookingStateToSave: BookingState | null | undefined = undefined;
+          // No reset de 72h com estado antigo, limpa (achado #1) — senão o offered
+          // velho voltaria a valer na próxima mensagem (já não estaria mais timed out).
+          let bookingStateToSave: BookingState | null | undefined =
+            (isTimedOut && bookingState) ? null : undefined;
 
           if (currentStep === 1) {
             // Fixed welcome template — no OpenAI
@@ -790,14 +834,14 @@ export async function POST(req: NextRequest) {
             nextStep = 7;
             if (config.booking_enabled === true) {
               const preference = parsePeriodPreference(incomingText);
-              bookingStateToSave = { ...(bookingState ?? {}), preference };
+              bookingStateToSave = { ...(activeBookingState ?? {}), preference };
             }
           } else if (currentStep === 7) {
             // Paciente informou o nome. F1: se a clínica agenda de verdade, oferece
             // horários reais; senão, comportamento atual (link + lead já criado).
             if (config.booking_enabled === true) {
               const name = incomingText.trim();
-              const pref = bookingState?.preference ?? null;
+              const pref = activeBookingState?.preference ?? null;
               const offer = await offerEvaluationSlots({
                 clinicId: effectiveClinicId,
                 preference: pref,

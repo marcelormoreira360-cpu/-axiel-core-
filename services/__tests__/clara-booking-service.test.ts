@@ -18,6 +18,13 @@ describe("parseSlotChoice", () => {
     expect(parseSlotChoice("opção 3", 3)).toBe(2);
   });
 
+  it("NÃO trata dígito como escolha quando há contexto de hora/período (achado #2)", () => {
+    expect(parseSlotChoice("quero as 2 da tarde", 3)).toBe(-1);
+    expect(parseSlotChoice("pode ser às 3?", 3)).toBe(-1);
+    expect(parseSlotChoice("as 2 da manhã", 3)).toBe(-1);
+    expect(parseSlotChoice("14:00", 3)).toBe(-1);
+  });
+
   it("reconhece ordinais em português", () => {
     expect(parseSlotChoice("o primeiro", 3)).toBe(0);
     expect(parseSlotChoice("segunda opção", 3)).toBe(1);
@@ -65,6 +72,11 @@ describe("parsePeriodPreference", () => {
     expect(parsePeriodPreference("tanto faz")).toBeNull();
     expect(parsePeriodPreference("manhã ou tarde")).toBeNull();
     expect(parsePeriodPreference("")).toBeNull();
+  });
+
+  it("não confunde 'amanhã' com manhã (achado #7)", () => {
+    expect(parsePeriodPreference("pode ser amanhã")).toBeNull();
+    expect(parsePeriodPreference("amanhã de tarde")).toBe("afternoon");
   });
 });
 

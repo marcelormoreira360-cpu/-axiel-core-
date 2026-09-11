@@ -106,8 +106,11 @@ async function fetchClinicSlug(clinicId: string): Promise<string | null> {
 }
 
 /**
- * Tipo de sessão da Avaliação Inicial da clínica: prefere is_evaluation=true e
- * is_active; se não houver, cai no 1º tipo ativo bookável. null se nada servir.
+ * Tipo de sessão da Avaliação Inicial da clínica: is_evaluation=true e is_active.
+ * Achado #5 do review: NÃO cai mais no "1º tipo ativo" — sem uma Avaliação
+ * marcada, retorna null (o chamador oferece o link em vez de agendar um serviço
+ * qualquer rotulado como "Avaliação Inicial"). Se houver mais de uma, pega a mais
+ * antiga (comportamento estável).
  */
 export async function getEvaluationSessionType(clinicId: string): Promise<EvaluationSessionType | null> {
   try {
@@ -123,29 +126,11 @@ export async function getEvaluationSessionType(clinicId: string): Promise<Evalua
       .limit(1)
       .maybeSingle();
 
-    if (evalType) {
-      return {
-        id: evalType.id as string,
-        name: (evalType.name as string) ?? "Avaliação Inicial",
-        duration_minutes: (evalType.duration_minutes as number | null) ?? 60,
-      };
-    }
-
-    // Fallback: 1º tipo ativo (bookável) da clínica.
-    const { data: firstActive } = await supabase
-      .from("session_types")
-      .select("id, name, duration_minutes")
-      .eq("clinic_id", clinicId)
-      .eq("is_active", true)
-      .order("created_at", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-
-    if (!firstActive) return null;
+    if (!evalType) return null;
     return {
-      id: firstActive.id as string,
-      name: (firstActive.name as string) ?? "Avaliação Inicial",
-      duration_minutes: (firstActive.duration_minutes as number | null) ?? 60,
+      id: evalType.id as string,
+      name: (evalType.name as string) ?? "Avaliação Inicial",
+      duration_minutes: (evalType.duration_minutes as number | null) ?? 60,
     };
   } catch (e) {
     log.error("getEvaluationSessionType failed", e, { clinic_id: clinicId });
@@ -172,13 +157,20 @@ export async function offerEvaluationSlots(opts: {
     ]);
     if (!slug || !evalType) return { ok: false };
 
+    // Achado #8: busca os ~7 dias em PARALELO (cada getAvailableSlots faz ~5-6
+    // queries; em série era latência alta e risco de reenvio do webhook Meta).
+    // Promise.all preserva a ordem (dia 0, 1, 2...), então a coleta continua
+    // pegando os horários mais próximos primeiro.
+    const dayResults = await Promise.all(
+      Array.from({ length: LOOKAHEAD_DAYS }, (_, offset) =>
+        getAvailableSlots({ slug, date: dateStringOffset(offset), sessionTypeId: evalType.id }),
+      ),
+    );
+
     const collected: OfferedSlot[] = [];
-
-    for (let offset = 0; offset < LOOKAHEAD_DAYS && collected.length < MAX_SLOTS; offset++) {
-      const date = dateStringOffset(offset);
-      const res = await getAvailableSlots({ slug, date, sessionTypeId: evalType.id });
+    for (const res of dayResults) {
+      if (collected.length >= MAX_SLOTS) break;
       if (!res.ok || res.slots.length === 0) continue;
-
       for (const slot of res.slots) {
         if (collected.length >= MAX_SLOTS) break;
         const hour = hourFromLocalTime(slot.time);
@@ -214,6 +206,13 @@ export async function bookEvaluationSlot(opts: {
   locale?: string | null;
 }): Promise<Awaited<ReturnType<typeof createPublicBooking>>> {
   try {
+    // Trava (achado #1 — BLOQUEADOR): nunca agendar um horário que já passou.
+    // booking_state.offered pode conter horários velhos (paciente responde dias
+    // depois). Slot já ocupado por outro é barrado pelo hasAppointmentConflict
+    // dentro de createPublicBooking; o passado, não — por isso o guard aqui.
+    if (new Date(opts.iso).getTime() <= Date.now()) {
+      return { ok: false, error: "slot_in_past", code: "SLOT_PAST", status: 409 };
+    }
     return await createPublicBooking({
       slug: opts.slug,
       session_type_id: opts.sessionTypeId,
