@@ -7,6 +7,7 @@ import { BackLink } from "@/components/back-link";
 import { getAssessmentTemplates, getTemplateWithStructure } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { ensureUnifiedTemplate, isUnifiedTemplate } from "@/services/unified-form-link-service";
+import { clinicUsesNeuroId } from "@/modules/clinical-packs";
 import { AssessmentFillForm } from "@/components/assessment-fill-form";
 import { submitFormAction } from "./actions";
 
@@ -22,8 +23,9 @@ export default async function FillFormPage({ params, searchParams }: Props) {
 
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
-  // Garante o formulário unificado Neuro ID na lista (idempotente).
-  if (clinicId) await ensureUnifiedTemplate(clinicId);
+  // Garante o formulário unificado Neuro ID na lista — SÓ para clínica que usa o método
+  // (isolamento Bio³: clínica horizontal não recebe o formulário Neuro ID na lista dela).
+  if (clinicId && (await clinicUsesNeuroId(clinicId))) await ensureUnifiedTemplate(clinicId);
 
   // O unificado tem UX própria: o preenchimento in-app abre a tela rica dedicada,
   // não o renderizador genérico (que não tem as perguntas no banco).

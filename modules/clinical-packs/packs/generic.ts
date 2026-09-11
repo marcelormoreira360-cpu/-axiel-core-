@@ -118,6 +118,7 @@ REGRAS INEGOCIÁVEIS (segurança e ciência):
 
 export const genericPack: ClinicalPack = {
   id: "generic",
+  capabilities: { neuroId: false }, // clínica horizontal: sem UI Bio³/Neuro ID
   buildReportSystemPrompt: buildGenericReportSystemPrompt,
   reportJsonShape: genericReportJsonShape,
   coerceReportOutput: coerceGenericReportOutput,

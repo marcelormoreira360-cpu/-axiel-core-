@@ -18,6 +18,7 @@ import type { ClinicalPack } from "@/modules/clinical-packs/types";
  */
 export const bio3NeuroIdPack: ClinicalPack = {
   id: "bio3-neuroid",
+  capabilities: { neuroId: true },
   buildReportSystemPrompt: buildAiInsightSystemPrompt,
   reportJsonShape: aiInsightJsonShape as unknown as Record<string, unknown>,
   coerceReportOutput: coerceAiInsightOutput,

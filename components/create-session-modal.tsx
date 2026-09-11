@@ -46,7 +46,7 @@ export function CreateSessionModal({
   // If no session types are configured, fall back to a default 60-min slot
   const DEFAULT_TYPE: SessionType = {
     id: "", clinic_id: "", name: t("defaultType"), duration_minutes: 60,
-    price_cents: 0, is_active: true, is_online: false, is_recorded: false,
+    price_cents: 0, is_active: true, is_online: false, is_recorded: false, is_evaluation: false,
     created_at: "", updated_at: "",
   };
   const [selectedType, setSelectedType] = useState<SessionType | null>(sessionTypes[0] ?? DEFAULT_TYPE);

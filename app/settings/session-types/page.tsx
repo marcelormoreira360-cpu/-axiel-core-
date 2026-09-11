@@ -92,6 +92,18 @@ async function toggleRecordingAction(id: string, isRecorded: boolean): Promise<{
   }
 }
 
+async function toggleEvaluationAction(id: string, isEvaluation: boolean): Promise<{ error?: string }> {
+  "use server";
+  const t = await getTranslations("settings");
+  try {
+    await updateSessionType(id, { is_evaluation: isEvaluation });
+    revalidatePath("/settings/session-types");
+    return {};
+  } catch (e) {
+    return { error: describeSessionTypeError(e, "", t) };
+  }
+}
+
 async function toggleActiveAction(id: string, isActive: boolean): Promise<{ error?: string }> {
   "use server";
   const t = await getTranslations("settings");
@@ -166,6 +178,7 @@ export default async function SessionTypesPage() {
         createAction={createAction}
         toggleOnlineAction={toggleOnlineAction}
         toggleRecordingAction={toggleRecordingAction}
+        toggleEvaluationAction={toggleEvaluationAction}
         toggleActiveAction={toggleActiveAction}
         editAction={editAction}
         deleteAction={deleteAction}

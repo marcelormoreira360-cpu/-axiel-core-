@@ -19,6 +19,14 @@ export interface ClinicalPack {
   /** Identificador estável do pack (ex.: "bio3-neuroid", "generic"). Casa com clinics.clinical_pack_id (Passo 3). */
   id: string;
 
+  /**
+   * Capacidades de UI/PRODUTO do pack — controla o que a clínica ENXERGA, não só o motor de
+   * IA. `neuroId=true` habilita a interface Bio³/Neuro ID (mapa, pirâmide, anel, relatórios e
+   * suplementação Neuro ID, formulário Neuro ID). Ausente/false = clínica horizontal, que não
+   * deve ver esses módulos como se fossem parte do produto dela (isolamento mínimo do piloto).
+   */
+  capabilities?: { neuroId?: boolean };
+
   /** Prompt de sistema do RELATÓRIO que vai ao paciente após aprovação humana. */
   buildReportSystemPrompt: PackPromptBuilder;
 

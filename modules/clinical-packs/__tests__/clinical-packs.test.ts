@@ -60,6 +60,19 @@ describe("clinical-packs — bio3-neuroid é wrapper fino (byte-a-byte)", () => 
   });
 });
 
+describe("clinical-packs — capability de UI neuroId (isolamento Bio³)", () => {
+  it("bio3-neuroid habilita a UI Neuro ID; generic NÃO", () => {
+    expect(bio3NeuroIdPack.capabilities?.neuroId).toBe(true);
+    expect(genericPack.capabilities?.neuroId).toBe(false);
+  });
+  it("via getPack: só o pack bio3 expõe neuroId=true", () => {
+    expect(getPack("bio3-neuroid").capabilities?.neuroId).toBe(true);
+    expect(getPack("generic").capabilities?.neuroId).toBe(false);
+    // id desconhecido cai no default NEUTRO (generic) → sem Neuro ID.
+    expect(getPack("nao-existe").capabilities?.neuroId).toBe(false);
+  });
+});
+
 describe("clinical-packs — generic é horizontal e mínimo", () => {
   it("não emite campos do Neuro ID (mapa/plano/suplementação/hipersensibilidade)", () => {
     const out = genericPack.coerceReportOutput({

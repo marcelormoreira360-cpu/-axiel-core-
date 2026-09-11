@@ -6,6 +6,7 @@ import { getAssessmentTemplates } from "@/services/assessment-service";
 import { getCurrentUserProfile } from "@/services/user-service";
 import { getPatients } from "@/services/patient-service";
 import { ensureUnifiedTemplate } from "@/services/unified-form-link-service";
+import { clinicUsesNeuroId } from "@/modules/clinical-packs";
 import { FileText, Plus, Pencil, ClipboardList, ArrowLeft } from "lucide-react";
 import {
   importQSNAAction, importQSNAENAction, importQRMAction, deleteTemplateAction,
@@ -24,8 +25,10 @@ export default async function FormsPage() {
   const tSettings = await getTranslations("settings");
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
-  // Garante o formulário unificado Neuro ID na seção Formulários (idempotente).
-  if (clinicId) await ensureUnifiedTemplate(clinicId);
+  // Garante o formulário unificado Neuro ID na seção Formulários — SÓ para clínica que usa o
+  // método (isolamento Bio³: clínica horizontal não recebe o formulário Neuro ID na lista dela,
+  // igual ao gate de app/patients/[id]/forms/new).
+  if (clinicId && (await clinicUsesNeuroId(clinicId))) await ensureUnifiedTemplate(clinicId);
   const [templates, patients] = await Promise.all([
     getAssessmentTemplates(clinicId),
     getPatients(clinicId),
