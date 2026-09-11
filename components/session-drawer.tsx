@@ -57,7 +57,7 @@ export function SessionDrawer({
   onClose: () => void;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
   /** Reagendar (inteligente): move se futuro; cria novo se passado/no-show/cancelado. */
-  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string) => Promise<{ error?: string; created?: boolean }>;
+  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string, notify?: boolean) => Promise<{ error?: string; created?: boolean }>;
   /** Janela (horas) da clínica p/ classificar cancelamento (com aviso × tardio). */
   cancellationWindowHours?: number;
   /** Fuso IANA da clínica — pré-preenche a nova data/hora no wall-clock certo. */
@@ -78,6 +78,7 @@ export function SessionDrawer({
   const [rDate, setRDate] = useState("");
   const [rTime, setRTime] = useState("");
   const [rCreatesNew, setRCreatesNew] = useState(false);
+  const [rNotify, setRNotify] = useState(true);
   const [isRescheduling, startReschedule] = useTransition();
 
   if (!session) return null;
@@ -142,13 +143,14 @@ export function SessionDrawer({
     // Hora "24" à meia-noite em alguns runtimes → normaliza para "00".
     const hh = g("hour") === "24" ? "00" : g("hour");
     setRTime(`${hh}:${g("minute")}`);
+    setRNotify(true);
     setShowReschedule(true);
   }
 
   function submitReschedule() {
     if (!rescheduleSmartAction || !session || !rDate || !rTime) return;
     startReschedule(async () => {
-      const res = await rescheduleSmartAction(session.id, rDate, rTime);
+      const res = await rescheduleSmartAction(session.id, rDate, rTime, rNotify);
       if (res?.error) { toast.error(res.error); return; }
       toast.success(res?.created ? t("toast.rescheduleCreated") : t("toast.rescheduleMoved"));
       setShowReschedule(false);
@@ -325,6 +327,13 @@ export function SessionDrawer({
                     />
                   </div>
                 </div>
+                <label className="flex items-center gap-[7px] cursor-pointer select-none pt-[1px]">
+                  <input
+                    type="checkbox" checked={rNotify} onChange={(e) => setRNotify(e.target.checked)}
+                    className="h-[14px] w-[14px] rounded-[3px] accent-[#0F6E56]"
+                  />
+                  <span className="text-[11px] text-[#6B6A66] dark:text-[#9E9C97]">{t("rescheduleNotify")}</span>
+                </label>
                 <div className="flex gap-[6px] pt-[2px]">
                   <button
                     type="button" onClick={() => setShowReschedule(false)} disabled={isRescheduling}

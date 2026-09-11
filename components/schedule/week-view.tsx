@@ -50,6 +50,7 @@ export function WeekView({
   emailLinkAction,
   onDelete,
   onReschedule,
+  onRescheduleRequest,
   onResizeDuration,
   onOpenAppointment,
 }: {
@@ -63,6 +64,9 @@ export function WeekView({
   emailLinkAction?: EmailLinkAction;
   onDelete?: (id: string) => Promise<void>;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  /** Se presente, em vez de persistir direto, pede confirmação ao container
+   *  (diálogo com "Notificar paciente"). `revert` desfaz o movimento otimista. */
+  onRescheduleRequest?: (id: string, newStartsAt: string, revert: () => void) => void;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
   /** Clique limpo no bloco abre o drawer da sessão (em vez de navegar ao perfil). */
   onOpenAppointment?: (appt: Appointment) => void;
@@ -109,7 +113,7 @@ export function WeekView({
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
-    if (!over || !onReschedule) return;
+    if (!over || (!onReschedule && !onRescheduleRequest)) return;
 
     // overId format: "YYYY-MM-DDTHH:mm:ss.sssZ__HH__MM"
     const parts = String(over.id).split("__");
@@ -132,20 +136,25 @@ export function WeekView({
     if (newStart.getTime() === orig.getTime()) return;
 
     const newStartsAt = newStart.toISOString();
+    const origStartsAt = appt.starts_at;
 
     // Optimistic update
     setLocalAppts((prev) =>
       prev.map((a) => a.id === apptId ? { ...a, starts_at: newStartsAt } : a)
     );
 
-    // Persist
-    onReschedule(apptId, newStartsAt).catch(() => {
-      // Revert on error
+    const revert = () =>
       setLocalAppts((prev) =>
-        prev.map((a) => a.id === apptId ? { ...a, starts_at: appt.starts_at } : a)
+        prev.map((a) => a.id === apptId ? { ...a, starts_at: origStartsAt } : a)
       );
-    });
-  }, [localAppts, onReschedule]);
+
+    // Prefer o fluxo com confirmação (diálogo "Notificar paciente"); senão persiste.
+    if (onRescheduleRequest) {
+      onRescheduleRequest(apptId, newStartsAt, revert);
+      return;
+    }
+    onReschedule?.(apptId, newStartsAt).catch(revert);
+  }, [localAppts, onReschedule, onRescheduleRequest]);
 
   const activeAppt = activeId ? localAppts.find((a) => a.id === activeId) : null;
 

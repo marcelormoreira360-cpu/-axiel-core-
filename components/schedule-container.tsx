@@ -62,9 +62,9 @@ export function ScheduleContainer({
   /** Enriquece um agendamento leve (visão Semana) para o ScheduleSession do drawer. */
   enrichSessionAction?: (appointmentId: string) => Promise<ScheduleSession | null>;
   deleteSessionAction?: (id: string) => Promise<void>;
-  rescheduleAction?: (id: string, newStartsAt: string) => Promise<void>;
+  rescheduleAction?: (id: string, newStartsAt: string, notify?: boolean) => Promise<void>;
   /** Reagendamento inteligente (move futuro / cria novo se passado/no-show). */
-  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string) => Promise<{ error?: string; created?: boolean }>;
+  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string, notify?: boolean) => Promise<{ error?: string; created?: boolean }>;
   resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
   practitioners?: { id: string; name: string }[];
   cancellationWindowHours?: number;
@@ -85,6 +85,43 @@ export function ScheduleContainer({
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [, startEnrich] = useTransition();
   const [filterPractitionerId, setFilterPractitionerId] = useState<string>("all");
+
+  // Confirmação pós-arrasto (padrão Vagaro): o card move na hora (otimista) e um
+  // diálogo pergunta se confirma o novo horário e se notifica o paciente. "Desfazer"
+  // reverte o card; "Confirmar" persiste com a escolha de notificação.
+  const [pendingMove, setPendingMove] = useState<
+    { id: string; newStartsAt: string; label: string; revert: () => void } | null
+  >(null);
+  const [notifyOnMove, setNotifyOnMove] = useState(true);
+  const [isConfirmingMove, startConfirmMove] = useTransition();
+
+  function requestReschedule(id: string, newStartsAt: string, revert: () => void) {
+    const label = new Date(newStartsAt).toLocaleString(locale, {
+      weekday: "short", day: "numeric", month: "short",
+      hour: "2-digit", minute: "2-digit",
+      timeZone: clinicTimezone,
+    });
+    setNotifyOnMove(true);
+    setPendingMove({ id, newStartsAt, label, revert });
+  }
+
+  function undoPendingMove() {
+    pendingMove?.revert();
+    setPendingMove(null);
+  }
+
+  function confirmPendingMove() {
+    if (!pendingMove || !rescheduleAction) { setPendingMove(null); return; }
+    const { id, newStartsAt, revert } = pendingMove;
+    startConfirmMove(async () => {
+      try {
+        await rescheduleAction(id, newStartsAt, notifyOnMove);
+      } catch {
+        revert();
+      }
+      setPendingMove(null);
+    });
+  }
 
   // Abre o drawer a partir de um agendamento leve (visão Semana): mostra na hora o
   // que já temos (nome, status, ações) e enriquece sob demanda (sessões anteriores,
@@ -273,6 +310,7 @@ export function ScheduleContainer({
           setSelectedSlot={setSelectedSlot}
           selectedSlot={selectedSlot}
           onReschedule={rescheduleAction}
+          onRescheduleRequest={requestReschedule}
           onResizeDuration={resizeDurationAction}
           timeBlocks={timeBlocks}
           blockAction={createBlockAction}
@@ -293,6 +331,7 @@ export function ScheduleContainer({
           emailLinkAction={emailConfirmationLinkAction}
           onDelete={deleteSessionAction}
           onReschedule={rescheduleAction}
+          onRescheduleRequest={requestReschedule}
           onResizeDuration={resizeDurationAction}
           onOpenAppointment={openAppointment}
         />
@@ -316,6 +355,39 @@ export function ScheduleContainer({
         clinicTimezone={clinicTimezone}
         enriching={drawerLoading}
       />
+
+      {/* Confirmação de reagendamento (arrastar-e-soltar) com opção de notificar. */}
+      {pendingMove && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-[420px] rounded-[14px] bg-white dark:bg-[#111827] p-6 shadow-xl">
+            <h2 className="text-lg font-semibold text-[#0F1A2E] dark:text-[#E8E6E2]">{t("moveTitle")}</h2>
+            <p className="mt-2 text-sm text-black/60 dark:text-white/60">
+              {t("moveBody", { time: pendingMove.label })}
+            </p>
+            <label className="mt-5 flex items-center gap-[8px] cursor-pointer select-none">
+              <input
+                type="checkbox" checked={notifyOnMove} onChange={(e) => setNotifyOnMove(e.target.checked)}
+                className="h-[15px] w-[15px] rounded-[3px] accent-[#0F6E56]"
+              />
+              <span className="text-sm text-[#0F1A2E] dark:text-[#E8E6E2]">{t("notifyCustomer")}</span>
+            </label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button" onClick={undoPendingMove} disabled={isConfirmingMove}
+                className="rounded-[8px] border border-black/[.12] dark:border-white/[.14] px-4 py-2 text-sm font-medium text-[#6B6A66] dark:text-[#9E9C97] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition disabled:opacity-50"
+              >
+                {t("moveUndo")}
+              </button>
+              <button
+                type="button" onClick={confirmPendingMove} disabled={isConfirmingMove}
+                className="rounded-[8px] bg-[#0F6E56] px-4 py-2 text-sm font-medium text-white hover:bg-[#085041] transition disabled:opacity-50"
+              >
+                {isConfirmingMove ? "…" : t("moveConfirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

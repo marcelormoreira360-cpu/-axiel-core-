@@ -370,9 +370,9 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
-  async function rescheduleAction(id: string, newStartsAt: string) {
+  async function rescheduleAction(id: string, newStartsAt: string, notify: boolean = true) {
     "use server";
-    await updateAppointment(id, { starts_at: newStartsAt });
+    await updateAppointment(id, { starts_at: newStartsAt }, { notifyPatient: notify });
     revalidatePath("/schedule");
   }
 
@@ -385,6 +385,7 @@ export default async function SchedulePage() {
     id: string,
     dateStr: string,
     timeStr: string,
+    notify: boolean = true,
   ): Promise<{ error?: string; created?: boolean }> {
     "use server";
     const ts = await getTranslations("schedule.actions");
@@ -421,7 +422,7 @@ export default async function SchedulePage() {
       }
 
       // Sessão futura e ativa → move em lugar.
-      await updateAppointment(id, { starts_at: startsAtISO });
+      await updateAppointment(id, { starts_at: startsAtISO }, { notifyPatient: notify });
       revalidatePath("/schedule");
       return { created: false };
     } catch (e) {

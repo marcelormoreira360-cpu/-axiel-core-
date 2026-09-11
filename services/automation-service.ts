@@ -652,7 +652,7 @@ export async function checkLowPackageNotifications(): Promise<{ notified: number
 }
 
 // Called immediately after appointment creation — confirms the booking via WhatsApp + email.
-export async function sendAppointmentConfirmation(params: {
+type AppointmentMessageParams = {
   clinicId: string;
   patientId: string;
   appointmentId: string;
@@ -663,7 +663,30 @@ export async function sendAppointmentConfirmation(params: {
   clinicName: string;
   startsAt: string;
   durationMinutes: number;
-}): Promise<void> {
+};
+
+/**
+ * Confirmação de agendamento ao paciente (WhatsApp via Twilio + e-mail via Resend),
+ * bilíngue e com fuso duplo (paciente + clínica). Disparada quando o agendamento é
+ * criado com side-effects (ver appointment-service).
+ */
+export async function sendAppointmentConfirmation(params: AppointmentMessageParams): Promise<void> {
+  return sendAppointmentMessage(params, "confirmation");
+}
+
+/**
+ * Aviso automático de REAGENDAMENTO ao paciente (WhatsApp + e-mail), mesmo padrão da
+ * confirmação, com a cópia de "sessão reagendada". Disparado por updateAppointment
+ * quando o horário de uma sessão futura e ativa muda.
+ */
+export async function sendAppointmentReschedule(params: AppointmentMessageParams): Promise<void> {
+  return sendAppointmentMessage(params, "reschedule");
+}
+
+async function sendAppointmentMessage(
+  params: AppointmentMessageParams,
+  kind: "confirmation" | "reschedule",
+): Promise<void> {
   const { clinicId, patientId, appointmentId, patientName, patientPhone, patientEmail, patientLocale, clinicName, startsAt, durationMinutes } = params;
 
   // A-05: never send real messages to the onboarding demo patient
@@ -688,20 +711,33 @@ export async function sendAppointmentConfirmation(params: {
     fallback: tz,
   });
   const { dateStr, timeStr } = dualTimeLines({ iso: startsAt, patientTz, clinicTz: tz, locale: fmtLocale });
-  const useCase = "appointment_confirmation" as const;
+  const isReschedule = kind === "reschedule";
+  const useCase = isReschedule ? "appointment_rescheduled" : "appointment_confirmation";
 
   if (patientPhone) {
-    const body = enMsg
-      ? `Hi, ${first}! ✅\n\n` +
-        `Your session is confirmed:\n` +
-        `📅 *${dateStr}* at *${timeStr}*\n` +
-        `⏱ ${durationMinutes} minutes\n\n` +
-        `If anything comes up, contact the clinic. See you there! 🌿`
-      : `Olá, ${first}! ✅\n\n` +
-        `Sua sessão foi confirmada:\n` +
-        `📅 *${dateStr}* às *${timeStr}*\n` +
-        `⏱ ${durationMinutes} minutos\n\n` +
-        `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`;
+    const body = isReschedule
+      ? (enMsg
+          ? `Hi, ${first}! 🔄\n\n` +
+            `Your session has been rescheduled:\n` +
+            `📅 *${dateStr}* at *${timeStr}*\n` +
+            `⏱ ${durationMinutes} minutes\n\n` +
+            `If anything comes up, contact the clinic. See you there! 🌿`
+          : `Olá, ${first}! 🔄\n\n` +
+            `Sua sessão foi reagendada:\n` +
+            `📅 *${dateStr}* às *${timeStr}*\n` +
+            `⏱ ${durationMinutes} minutos\n\n` +
+            `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`)
+      : (enMsg
+          ? `Hi, ${first}! ✅\n\n` +
+            `Your session is confirmed:\n` +
+            `📅 *${dateStr}* at *${timeStr}*\n` +
+            `⏱ ${durationMinutes} minutes\n\n` +
+            `If anything comes up, contact the clinic. See you there! 🌿`
+          : `Olá, ${first}! ✅\n\n` +
+            `Sua sessão foi confirmada:\n` +
+            `📅 *${dateStr}* às *${timeStr}*\n` +
+            `⏱ ${durationMinutes} minutos\n\n` +
+            `Em caso de imprevisto, entre em contato com a clínica. Até lá! 🌿`);
 
     try {
       await sendWhatsAppText(patientPhone, body);
@@ -726,12 +762,14 @@ export async function sendAppointmentConfirmation(params: {
     const locale = msgLocale;
     const t = await getServerT(locale, "emails");
     const { dateStr: dateStrEmail, timeStr: timeStrEmail } = dualTimeLines({ iso: startsAt, patientTz, clinicTz: tz, locale });
-    const subject = t("apptConfirm.subject", { date: dateStrEmail, time: timeStrEmail });
+    const subject = t(isReschedule ? "apptReschedule.subject" : "apptConfirm.subject", { date: dateStrEmail, time: timeStrEmail });
     const { data: clinicRow } = await supabase.from("clinics").select("whatsapp_number").eq("id", clinicId).maybeSingle();
     const whatsappUrl = clinicRow?.whatsapp_number
       ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
       : null;
-    const bodyText = `Sessão confirmada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`;
+    const bodyText = isReschedule
+      ? `Sessão reagendada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`
+      : `Sessão confirmada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`;
 
     try {
       await resend.emails.send({
@@ -747,6 +785,7 @@ export async function sendAppointmentConfirmation(params: {
           whatsappUrl,
           t,
           locale,
+          variant: kind,
         }),
       });
       await supabase.from("communication_logs").insert({

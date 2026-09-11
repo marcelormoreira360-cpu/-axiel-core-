@@ -139,7 +139,8 @@
     "rescheduleDate": "Date",
     "rescheduleTime": "Time",
     "rescheduleConfirm": "Confirm",
-    "rescheduleCancel": "Back"
+    "rescheduleCancel": "Back",
+    "rescheduleNotify": "Notify patient"
   },
   "calendar": {
     "today": "Today",
@@ -164,7 +165,12 @@
     "delete": "Delete",
     "deleteConfirm": "Delete this appointment? This action cannot be undone.",
     "blockedLabel": "Blocked",
-    "removeBlock": "Remove block"
+    "removeBlock": "Remove block",
+    "moveTitle": "Reschedule session",
+    "moveBody": "New time: {time}. Confirm the change?",
+    "notifyCustomer": "Notify patient",
+    "moveConfirm": "Confirm",
+    "moveUndo": "Undo"
   },
   "modal": {
     "title": "New session",

@@ -801,20 +801,61 @@ export async function updateAppointment(
     status?: string;
     video_url?: string | null;
     practitioner_id?: string | null;
-  }
+  },
+  opts: {
+    /**
+     * Avisar o paciente por WhatsApp/e-mail quando o horário muda? Padrão true.
+     * Passe false para reagendar em silêncio (checkbox "Notificar paciente"
+     * desmarcado na agenda). As automações (D-1, NPS...) são recriadas no horário
+     * novo de qualquer forma — o gate só vale para o aviso imediato de reagendamento.
+     */
+    notifyPatient?: boolean;
+  } = {},
 ): Promise<Appointment> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
+
+  // Horário anterior: capturado ANTES do update só quando o caller está movendo a
+  // sessão (updates.starts_at presente), para detectar mudança real e avisar o
+  // paciente. Sem isso não dá para distinguir um reagendamento de um update de
+  // status/nota que por acaso reenvia o mesmo starts_at.
+  let previousStartsAt: string | null = null;
+  if (updates.starts_at) {
+    const { data: prev } = await supabase
+      .from("appointments")
+      .select("starts_at")
+      .eq("id", appointmentId)
+      .maybeSingle();
+    previousStartsAt = (prev?.starts_at as string | null) ?? null;
+  }
 
   const { data, error } = await supabase
     .from("appointments")
     .update(updates)
     .eq("id", appointmentId)
-    .select("*, patients(id, full_name, email, phone, status), session_types(id, name, duration_minutes)")
+    .select("*, patients(id, full_name, email, phone, status, locale), session_types(id, name, duration_minutes)")
     .single();
 
   if (error) throw error;
   const appt = data as Appointment;
+
+  // ── Aviso automático de REAGENDAMENTO ao paciente ───────────────────────────
+  // Dispara quando o horário de uma sessão FUTURA e ATIVA muda de fato. Não vale
+  // para cancelar/concluir/falta (status terminal) nem para mudança de nota/status
+  // sem alteração de horário. Também recria as automações (D-1, NPS, D+3, D+30) no
+  // horário NOVO — senão o lembrete D-1 continuaria marcado no horário antigo.
+  const TERMINAL_FOR_NOTICE = ["completed", "no_show", "cancelled", "cancelled_notice", "late_cancel", "checked_in"];
+  const timeChanged = !!updates.starts_at && !!previousStartsAt && updates.starts_at !== previousStartsAt;
+  const isActive = !TERMINAL_FOR_NOTICE.includes((appt.status as string) ?? "");
+  const isFuture = new Date(appt.starts_at).getTime() > Date.now();
+  if (timeChanged && isActive && isFuture) {
+    // Aviso imediato só se o usuário não desmarcou "Notificar paciente".
+    if (opts.notifyPatient !== false) {
+      sendRescheduleSideEffect(appt).catch(() => {});
+    }
+    // Automações (D-1 etc.) sempre migram para o horário novo, notificando ou não.
+    scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {});
+  }
 
   // Sync time changes to Google Calendar (non-blocking)
   if ((updates.starts_at || updates.duration_minutes) && appt.google_event_id) {
@@ -946,6 +987,27 @@ async function sendConfirmationSideEffect(appt: Appointment) {
   const sessionType = Array.isArray(appt.session_types) ? appt.session_types[0] : appt.session_types;
   if (!patient?.full_name) return;
   await sendAppointmentConfirmation({
+    clinicId: appt.clinic_id,
+    patientId: appt.patient_id,
+    appointmentId: appt.id,
+    patientName: patient.full_name,
+    patientPhone: patient.phone ?? null,
+    patientEmail: patient.email ?? null,
+    patientLocale: (patient as { locale?: string | null }).locale ?? null,
+    clinicName: clinic?.name ?? "nossa clínica",
+    startsAt: appt.starts_at,
+    durationMinutes: appt.duration_minutes,
+  });
+}
+
+/** Aviso ao paciente de que o horário da sessão mudou (WhatsApp + e-mail). */
+async function sendRescheduleSideEffect(appt: Appointment) {
+  const { sendAppointmentReschedule } = await import("@/services/automation-service");
+  const { data: clinic } = await createSupabaseAdminClient()
+    .from("clinics").select("name").eq("id", appt.clinic_id).single();
+  const patient = Array.isArray(appt.patients) ? appt.patients[0] : appt.patients;
+  if (!patient?.full_name) return;
+  await sendAppointmentReschedule({
     clinicId: appt.clinic_id,
     patientId: appt.patient_id,
     appointmentId: appt.id,

@@ -40,6 +40,16 @@
     "rescheduleNoWhats": " Contact the clinic directly.",
     "seeYou": "See you then! 🌿"
   },
+  "apptReschedule": {
+    "subject": "Session rescheduled — {date} at {time}",
+    "preview": "Your session was rescheduled — {date} at {time}",
+    "heading": "Session rescheduled",
+    "subtitle": "Hi, {name}. The time of your session has been updated.",
+    "rescheduleQ": "Need to reschedule again or have a question?",
+    "rescheduleWhats": " Get in touch via the <a>clinic's WhatsApp</a>.",
+    "rescheduleNoWhats": " Contact the clinic directly.",
+    "seeYou": "See you then! 🌿"
+  },
   "apptReminder": {
     "subject": "Reminder: your session is tomorrow — {time}",
     "fallbackDate": "scheduled date",

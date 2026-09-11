@@ -139,7 +139,8 @@
     "rescheduleDate": "Data",
     "rescheduleTime": "Hora",
     "rescheduleConfirm": "Confirmar",
-    "rescheduleCancel": "Voltar"
+    "rescheduleCancel": "Voltar",
+    "rescheduleNotify": "Notificar paciente"
   },
   "calendar": {
     "today": "Hoje",
@@ -164,7 +165,12 @@
     "delete": "Excluir",
     "deleteConfirm": "Excluir este agendamento? Esta ação não pode ser desfeita.",
     "blockedLabel": "Bloqueado",
-    "removeBlock": "Remover bloqueio"
+    "removeBlock": "Remover bloqueio",
+    "moveTitle": "Reagendar sessão",
+    "moveBody": "Novo horário: {time}. Deseja confirmar?",
+    "notifyCustomer": "Notificar paciente",
+    "moveConfirm": "Confirmar",
+    "moveUndo": "Desfazer"
   },
   "modal": {
     "title": "Nova sessão",

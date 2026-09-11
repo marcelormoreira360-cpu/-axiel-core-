@@ -40,6 +40,16 @@
     "rescheduleNoWhats": " Entre em contato diretamente com a clínica.",
     "seeYou": "Até lá! 🌿"
   },
+  "apptReschedule": {
+    "subject": "Sessão reagendada — {date} às {time}",
+    "preview": "Sua sessão foi reagendada — {date} às {time}",
+    "heading": "Sessão reagendada",
+    "subtitle": "Olá, {name}. O horário da sua sessão foi atualizado.",
+    "rescheduleQ": "Precisa reagendar de novo ou tem alguma dúvida?",
+    "rescheduleWhats": " Entre em contato pelo <a>WhatsApp da clínica</a>.",
+    "rescheduleNoWhats": " Entre em contato diretamente com a clínica.",
+    "seeYou": "Até lá! 🌿"
+  },
   "apptReminder": {
     "subject": "Lembrete: sua sessão é amanhã — {time}",
     "fallbackDate": "data agendada",

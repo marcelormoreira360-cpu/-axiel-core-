@@ -57,6 +57,7 @@ export function DayView({
   setSelectedSlot,
   selectedSlot,
   onReschedule,
+  onRescheduleRequest,
   onResizeDuration,
   timeBlocks = [],
   blockAction,
@@ -74,6 +75,9 @@ export function DayView({
   setSelectedSlot: (s: TimeSlot | null) => void;
   selectedSlot: TimeSlot | null;
   onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  /** Se presente, pede confirmação ao container (diálogo "Notificar paciente")
+   *  em vez de persistir direto; `revert` desfaz o movimento otimista. */
+  onRescheduleRequest?: (id: string, newStartsAt: string, revert: () => void) => void;
   onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
   timeBlocks?: BlockView[];
   blockAction?: (formData: FormData) => Promise<void>;
@@ -146,7 +150,7 @@ export function DayView({
   const handleDragEnd = useCallback((e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
-    if (!over || !onReschedule) return;
+    if (!over || (!onReschedule && !onRescheduleRequest)) return;
 
     // overId format: "day__HH__MM"
     const parts = String(over.id).split("__");
@@ -166,19 +170,25 @@ export function DayView({
     if (newStart.getTime() === orig.getTime()) return;
 
     const newStartsAt = newStart.toISOString();
+    const origStartsAt = s.starts_at;
 
     // Optimistic update
     setLocalSessions((prev) =>
       prev.map((x) => x.id === sessionId ? { ...x, starts_at: newStartsAt } : x)
     );
 
-    // Persist
-    onReschedule(sessionId, newStartsAt).catch(() => {
+    const revert = () =>
       setLocalSessions((prev) =>
-        prev.map((x) => x.id === sessionId ? { ...x, starts_at: s.starts_at } : x)
+        prev.map((x) => x.id === sessionId ? { ...x, starts_at: origStartsAt } : x)
       );
-    });
-  }, [localSessions, navDate, onReschedule]);
+
+    // Prefer o fluxo com confirmação (diálogo "Notificar paciente"); senão persiste.
+    if (onRescheduleRequest) {
+      onRescheduleRequest(sessionId, newStartsAt, revert);
+      return;
+    }
+    onReschedule?.(sessionId, newStartsAt).catch(revert);
+  }, [localSessions, navDate, onReschedule, onRescheduleRequest]);
 
   const activeSession = activeId ? localSessions.find((x) => x.id === activeId) : null;
 
