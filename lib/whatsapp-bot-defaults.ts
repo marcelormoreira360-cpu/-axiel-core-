@@ -21,6 +21,9 @@ export type WhatsAppBotConfigFields = {
   language: string;
   custom_instructions: string;
   is_active: boolean;
+  // F1 — capability por clínica: quando true, a Clara oferece horários reais da
+  // Avaliação Inicial e agenda de verdade pelo WhatsApp (senão, link + lead).
+  booking_enabled?: boolean;
 };
 
 export const IFWC_DEFAULT_CONFIG: WhatsAppBotConfigFields = {
@@ -71,6 +74,7 @@ export const IFWC_DEFAULT_CONFIG: WhatsAppBotConfigFields = {
   language: "pt-BR",
   custom_instructions: "",
   is_active: true,
+  booking_enabled: false,
 };
 
 export function buildSystemPrompt(config: WhatsAppBotConfigFields, currentStep = 1): string {

@@ -14,6 +14,13 @@ import { canUseFeature } from "@/modules/billing/feature-access";
 import { effectivePlanSlug } from "@/modules/billing/plan-config";
 import { shouldSilenceAi } from "@/lib/whatsapp-handoff";
 import { isDuplicateMetaMessage } from "@/lib/meta-dedup";
+import {
+  offerEvaluationSlots,
+  bookEvaluationSlot,
+  formatSlotOptions,
+  parseSlotChoice,
+  parsePeriodPreference,
+} from "@/services/clara-booking-service";
 
 const log = createLogger("whatsapp");
 import {
@@ -58,6 +65,17 @@ type MetaWebhookBody = {
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
+// F1 — estado do mini-fluxo de agendamento da Clara, persistido em
+// whatsapp_conversations.booking_state (jsonb). `offered` presente e não-vazio
+// significa que o próximo turno é a ESCOLHA do horário pelo paciente.
+type BookingState = {
+  preference?: "morning" | "afternoon" | null;
+  offered?: Array<{ iso: string; label: string }>;
+  sessionTypeId?: string;
+  slug?: string;
+  name?: string;
+};
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 // stepFromHistory, buildFixedReply, isPriceQuestion, buildPriceObjectionReply,
 // detectCity, buildPricingBlock, CITY_ALIASES — imported from @/lib/whatsapp-bot-helpers
@@ -74,11 +92,12 @@ async function getHistory(
   currentStepDb: number | null;
   clinicId: string | null;
   updatedAt: string | null;
+  bookingState: BookingState | null;
 }> {
   try {
     const { data, error } = await supabase
       .from("whatsapp_conversations")
-      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, current_step, clinic_id, updated_at")
+      .select("id, messages, bot_disabled, ai_paused, last_human_message_at, current_step, clinic_id, updated_at, booking_state")
       .eq("phone", phone)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -93,6 +112,7 @@ async function getHistory(
     const currentStepDb = (data as unknown as { current_step?: number } | null)?.current_step ?? null;
     const clinicId = (data as unknown as { clinic_id?: string | null } | null)?.clinic_id ?? null;
     const updatedAt = (data as unknown as { updated_at?: string } | null)?.updated_at ?? null;
+    const bookingState = (data as unknown as { booking_state?: BookingState | null } | null)?.booking_state ?? null;
     log.debug("getHistory", { id: data?.id ?? "null", msgs: msgs.length, bot_disabled: botDisabled, ai_paused: aiPaused, phone: phone.slice(-4) });
     return {
       id: data?.id ?? null,
@@ -103,10 +123,11 @@ async function getHistory(
       currentStepDb,
       clinicId,
       updatedAt,
+      bookingState,
     };
   } catch (e) {
     log.error("getHistory exception", e, { phone: phone.slice(-4) });
-    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, currentStepDb: null, clinicId: null, updatedAt: null };
+    return { id: null, messages: [], botDisabled: false, aiPaused: false, lastHumanMessageAt: null, currentStepDb: null, clinicId: null, updatedAt: null, bookingState: null };
   }
 }
 
@@ -116,7 +137,10 @@ async function saveHistory(
   id: string | null,
   messages: ChatMessage[],
   clinicId?: string | null,
-  currentStep?: number
+  currentStep?: number,
+  // F1: undefined = não mexe; null = limpa o estado; objeto = grava. Permite
+  // encerrar o mini-fluxo de agendamento sem apagar o resto da conversa.
+  bookingState?: BookingState | null
 ) {
   const payload: Record<string, unknown> = {
     phone,
@@ -125,6 +149,7 @@ async function saveHistory(
   };
   // BUG-03: persist current_step so stepFromHistory() never miscounts on truncated history
   if (currentStep !== undefined) payload.current_step = currentStep;
+  if (bookingState !== undefined) payload.booking_state = bookingState;
   try {
     if (id) {
       // Row exists — UPDATE by ID
@@ -517,6 +542,7 @@ export async function POST(req: NextRequest) {
             currentStepDb,
             clinicId: convClinicId,
             updatedAt: convUpdatedAt,
+            bookingState,
           } = await getHistory(supabase, fromPhone);
 
           const effectiveClinicId = convClinicId ?? clinicId;
@@ -667,9 +693,76 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          // ─── F1 — escolha de horário (agendamento real) ──────────────────
+          // Só quando a clínica habilitou o agendamento E já oferecemos horários
+          // no turno anterior (booking_state.offered). Este turno é a ESCOLHA.
+          if (config.booking_enabled === true && bookingState?.offered && bookingState.offered.length > 0) {
+            const offered = bookingState.offered;
+            const idx = parseSlotChoice(incomingText, offered.length);
+
+            if (idx >= 0 && offered[idx]) {
+              const chosen = offered[idx];
+              const bookLocale = lang === "en" ? "en" : "pt-BR";
+              const result = await bookEvaluationSlot({
+                clinicId: effectiveClinicId,
+                slug: bookingState.slug ?? config.clinic_slug ?? "",
+                sessionTypeId: bookingState.sessionTypeId ?? "",
+                iso: chosen.iso,
+                fullName: (bookingState.name ?? contactName ?? "").trim(),
+                phone: fromPhone,
+                locale: bookLocale,
+              });
+
+              if (result.ok) {
+                const confirmReply =
+                  lang === "en"
+                    ? `All set! Your Initial Evaluation is booked for ${chosen.label} ✅ We'll be in touch if anything changes. See you soon 😊`
+                    : `Pronto! Sua Avaliação Inicial está marcada para ${chosen.label} ✅ Qualquer novidade a gente avisa. Até breve 😊`;
+                const updated = [
+                  ...activeHistory,
+                  { role: "user" as const, content: incomingText },
+                  { role: "assistant" as const, content: confirmReply },
+                ];
+                // Limpa o booking_state (null) e encerra no passo 8.
+                await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, 8, null);
+                await sendMetaReply(fromPhone, confirmReply, phoneNumberId);
+                log.info("clara booked evaluation via whatsapp", { phone: fromPhone.slice(-4), appointment_id: result.appointment_id });
+                continue;
+              }
+
+              // Booking falhou: cai no comportamento atual (link) e limpa o estado.
+              const linkReply = buildFixedReply(7, incomingText, config, lang);
+              const updated = [
+                ...activeHistory,
+                { role: "user" as const, content: incomingText },
+                { role: "assistant" as const, content: linkReply },
+              ];
+              await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, 8, null);
+              await sendMetaReply(fromPhone, linkReply, phoneNumberId);
+              log.warn("clara booking failed — fell back to link", { phone: fromPhone.slice(-4), code: result.code });
+              continue;
+            }
+
+            // Não reconheceu a escolha: pede de novo e MANTÉM o booking_state.
+            const askAgain =
+              lang === "en"
+                ? `Sorry, I didn't catch that. Please reply with the number of the time you prefer (${offered.map((_, i) => i + 1).join(", ")}) 😊`
+                : `Desculpe, não entendi. Responda com o número do horário que prefere (${offered.map((_, i) => i + 1).join(", ")}) 😊`;
+            const updated = [
+              ...activeHistory,
+              { role: "user" as const, content: incomingText },
+              { role: "assistant" as const, content: askAgain },
+            ];
+            await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId, currentStep, bookingState);
+            await sendMetaReply(fromPhone, askAgain, phoneNumberId);
+            continue;
+          }
+
           // ─── Step dispatch ───────────────────────────────────────────────
           let reply = "";
           let nextStep = currentStep;
+          // F1: undefined = não mexe no booking_state; objeto = grava; null = limpa.
+          let bookingStateToSave: BookingState | null | undefined = undefined;
 
           if (currentStep === 1) {
             // Fixed welcome template — no OpenAI
@@ -692,13 +785,55 @@ export async function POST(req: NextRequest) {
             reply = buildFixedReply(5, incomingText, config, lang);
             nextStep = 6;
           } else if (currentStep === 6) {
-            // Fixed: ask name
+            // Fixed: ask name. F1: captura a preferência de período informada agora.
             reply = buildFixedReply(6, incomingText, config, lang);
             nextStep = 7;
+            if (config.booking_enabled === true) {
+              const preference = parsePeriodPreference(incomingText);
+              bookingStateToSave = { ...(bookingState ?? {}), preference };
+            }
           } else if (currentStep === 7) {
-            // Fixed: confirm + scheduling link
-            reply = buildFixedReply(7, incomingText, config, lang);
-            nextStep = 8;
+            // Paciente informou o nome. F1: se a clínica agenda de verdade, oferece
+            // horários reais; senão, comportamento atual (link + lead já criado).
+            if (config.booking_enabled === true) {
+              const name = incomingText.trim();
+              const pref = bookingState?.preference ?? null;
+              const offer = await offerEvaluationSlots({
+                clinicId: effectiveClinicId,
+                preference: pref,
+                locale: lang === "en" ? "en" : "pt-BR",
+              });
+              if (offer.ok && offer.slots.length > 0) {
+                const intro =
+                  lang === "en"
+                    ? `Great, ${name}! Here are the next available times for your Initial Evaluation:`
+                    : `Ótimo, ${name}! Aqui estão os próximos horários disponíveis para sua Avaliação Inicial:`;
+                const nums = offer.slots.map((_, i) => i + 1);
+                const numHint = lang === "en"
+                  ? (nums.length === 1 ? "Reply 1." : `Reply ${nums.slice(0, -1).join(", ")} or ${nums[nums.length - 1]}.`)
+                  : (nums.length === 1 ? "Responda 1." : `Responda ${nums.slice(0, -1).join(", ")} ou ${nums[nums.length - 1]}.`);
+                const pick = lang === "en" ? `Which one works best? ${numHint}` : `Qual prefere? ${numHint}`;
+                reply = `${intro}\n\n${formatSlotOptions(offer.slots, lang)}\n\n${pick}`;
+                // Fica no passo 7 aguardando a escolha; grava os horários oferecidos.
+                nextStep = 7;
+                bookingStateToSave = {
+                  preference: pref,
+                  offered: offer.slots,
+                  sessionTypeId: offer.sessionTypeId,
+                  slug: offer.slug,
+                  name,
+                };
+              } else {
+                // Sem horários: comportamento atual (link) e limpa o estado.
+                reply = buildFixedReply(7, incomingText, config, lang);
+                nextStep = 8;
+                bookingStateToSave = null;
+              }
+            } else {
+              // Fixed: confirm + scheduling link
+              reply = buildFixedReply(7, incomingText, config, lang);
+              nextStep = 8;
+            }
           } else {
             // Step 8+: terminal — already confirmed, short reply
             reply = buildFixedReply(8, incomingText, config, lang);
@@ -722,7 +857,8 @@ export async function POST(req: NextRequest) {
             { role: "assistant" as const, content: finalReply },
           ];
           // Save history + persist current_step so truncation never causes step regression
-          await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId, nextStep);
+          // F1: bookingStateToSave (undefined = não mexe, objeto = grava, null = limpa)
+          await saveHistory(supabase, fromPhone, convId, updatedHistory, effectiveClinicId, nextStep, bookingStateToSave);
 
           // BUG-05: auto-create lead AFTER saveHistory to avoid race condition on first message.
           // Fire-and-forget (non-blocking) but log failures for observability.

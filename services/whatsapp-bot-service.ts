@@ -66,7 +66,14 @@ export async function getWhatsAppBotConfigByMetaPhoneId(metaPhoneNumberId: strin
     .maybeSingle();
   if (!data) return null;
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+  // F1: normaliza booking_enabled (select("*") já traz a coluna; default false
+  // se a migration ainda não rodou no ambiente).
+  return {
+    ...data,
+    locations: (data.locations as PricingLocation[]) ?? [],
+    clinic_slug: clinicSlug,
+    booking_enabled: (data as { booking_enabled?: boolean }).booking_enabled ?? false,
+  };
 }
 
 // SEC-01 (Instagram): lookup by Meta Instagram account id — used by the Instagram
