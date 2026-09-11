@@ -56,3 +56,33 @@ describe("detectMetaLanguage (camada Meta PT/EN/ES)", () => {
     expect(metaLang(history, "yes")).toBe("en");
   });
 });
+
+// Canal Facebook: idioma padrão = inglês (sem sinal claro cai em EN, não PT).
+const fbLang = (
+  history: Array<{ role: string; content: string }>,
+  current: string,
+) => detectMetaLanguage(detectLanguage(history, current), history, current, inject, "en");
+
+describe("detectMetaLanguage — padrão do canal Facebook (en)", () => {
+  it("mensagem ambígua/curta sem sinal cai em INGLÊS (não português)", () => {
+    expect(fbLang([], "hi")).toBe("en");
+    expect(fbLang([], "👋")).toBe("en");
+    expect(fbLang([], "ok")).toBe("en");
+    expect(fbLang([], "?")).toBe("en");
+  });
+
+  it("português EXPLÍCITO ainda é respeitado", () => {
+    expect(fbLang([], "Olá, tenho dor no ombro")).toBe("pt");
+    expect(fbLang([{ role: "user", content: "Bom dia, quero agendar" }], "sim")).toBe("pt");
+  });
+
+  it("inglês e espanhol continuam detectados normalmente", () => {
+    expect(fbLang([], "Hello, I'd like more information")).toBe("en");
+    expect(fbLang([], "Hola, necesito información sobre el dolor")).toBe("es");
+  });
+
+  it("espanhol FRACO (1 marcador) sem sinal de PT prefere ES ao inglês padrão", () => {
+    expect(fbLang([], "precio?")).toBe("es");
+    expect(fbLang([], "cuánto?")).toBe("es");
+  });
+});

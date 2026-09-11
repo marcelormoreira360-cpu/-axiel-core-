@@ -53,6 +53,23 @@ describe("isUnsubscribeRequest (descadastro / pare de me mandar)", () => {
     expect(isUnsubscribeRequest("me tira da lista por favor")).toBe(true);
   });
 
+  it("detecta bloqueio / assédio (casos reais do Messenger — Joshua Rogers)", () => {
+    expect(isUnsubscribeRequest("Block me. You crazy")).toBe(true);
+    expect(isUnsubscribeRequest("Block me now")).toBe(true);
+    expect(isUnsubscribeRequest("Stop harrassing me!!!")).toBe(true);
+    expect(isUnsubscribeRequest("Stop harassing me")).toBe(true);
+    expect(isUnsubscribeRequest("Stop messaging then!")).toBe(true);
+    expect(isUnsubscribeRequest("go away")).toBe(true);
+  });
+
+  it("detecta bloqueio em português", () => {
+    expect(isUnsubscribeRequest("me bloqueia agora")).toBe(true);
+    expect(isUnsubscribeRequest("pare de me perturbar")).toBe(true);
+    expect(isUnsubscribeRequest("me deixa em paz")).toBe(true);
+    expect(isUnsubscribeRequest("bloquear")).toBe(true);
+    expect(isUnsubscribeRequest("Bloqueia!")).toBe(true);
+  });
+
   it("NÃO dispara em conversa clínica que contém 'parar'/'stop'/'cancelar' no meio", () => {
     expect(isUnsubscribeRequest("quero parar de sentir dor")).toBe(false);
     expect(isUnsubscribeRequest("preciso cancelar meu horário de amanhã")).toBe(false);
@@ -60,5 +77,15 @@ describe("isUnsubscribeRequest (descadastro / pare de me mandar)", () => {
     expect(isUnsubscribeRequest("I want to stop feeling this pain")).toBe(false);
     expect(isUnsubscribeRequest("Just scrolling")).toBe(false);
     expect(isUnsubscribeRequest("Hello, I'd like more information")).toBe(false);
+    // "bloquear"/"block" só valem como mensagem inteira: pedido clínico segue passando.
+    expect(isUnsubscribeRequest("quero bloquear meu horário na agenda")).toBe(false);
+    expect(isUnsubscribeRequest("my knee is bothering me a lot")).toBe(false);
+    // "harassment"/"harassing me" soltos NÃO descadastram (paciente de saúde mental
+    // descrevendo assédio). Só o comando "stop harassing" conta.
+    expect(isUnsubscribeRequest("I've been dealing with harassment at work")).toBe(false);
+    expect(isUnsubscribeRequest("my boss keeps harassing me and it causes anxiety")).toBe(false);
+    // idiomas hostis só como mensagem inteira: dentro de queixa clínica não disparam.
+    expect(isUnsubscribeRequest("I just want the pain to go away")).toBe(false);
+    expect(isUnsubscribeRequest("essa dor não vai embora")).toBe(false);
   });
 });

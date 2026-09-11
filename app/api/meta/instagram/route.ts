@@ -35,6 +35,15 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 
 const IFWC_CLINIC_ID = "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
 
+// Contas de Instagram DESATIVADAS: a Clara NÃO responde por elas em hipótese
+// nenhuma. Tem precedência sobre config do banco E sobre META_IG_EXTRA_ACCOUNTS,
+// então desliga a conta mesmo que o env var ainda a mapeie. A conta pessoal do
+// Marcelo (@marcelomoreira360, 17841400592744534) foi desligada a pedido dele.
+const DISABLED_IG_ACCOUNTS = new Set<string>([
+  ...(process.env.META_IG_DISABLED_ACCOUNTS?.split(",").map((s) => s.trim()).filter(Boolean) ?? []),
+  "17841400592744534",
+]);
+
 // Contas de Instagram EXTRAS (ex.: conta pessoal do profissional) que atendem
 // pela mesma clínica, mas não têm linha própria em whatsapp_bot_configs (a coluna
 // clinic_id é única, então não cabe uma 2ª config para a mesma clínica). Mapeia
@@ -51,8 +60,9 @@ function extraIgAccounts(): Record<string, string> {
     }
     return map;
   }
-  // Default: conta pessoal de Instagram do Marcelo (@marcelomoreira360) → IFWC.
-  return { "17841400592744534": IFWC_CLINIC_ID };
+  // Sem env var: nenhuma conta EXTRA por padrão. (A conta pessoal do Marcelo,
+  // @marcelomoreira360, foi desligada — ver DISABLED_IG_ACCOUNTS.)
+  return {};
 }
 
 // A Meta pode assinar os webhooks do Instagram com o app secret do INSTAGRAM
@@ -262,6 +272,10 @@ export async function POST(req: NextRequest) {
       // configured, skip the entry silently (never leak another clinic's data).
       const igAccountId: string = entry.id ?? "";
       if (!igAccountId) continue;
+
+      // Conta desligada (ex.: IG pessoal do Marcelo): não responde nada. Precede
+      // a resolução de clínica, o banco e o META_IG_EXTRA_ACCOUNTS.
+      if (DISABLED_IG_ACCOUNTS.has(igAccountId)) continue;
 
       const dbConfig = await getWhatsAppBotConfigByInstagramId(igAccountId).catch(() => null);
       let clinicId: string;

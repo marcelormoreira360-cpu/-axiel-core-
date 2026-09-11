@@ -24,6 +24,12 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseAdminClient>;
 const IFWC_CLINIC_ID =
   process.env.META_BOT_CLINIC_ID ?? "98e98ef3-a056-40bd-989b-0ab69d0c4bff";
 
+// Idioma PADRÃO do canal Facebook quando o lead NÃO dá sinal claro de idioma:
+// inglês (público do FB majoritariamente EN/ES). Português e espanhol continuam
+// sendo detectados e respondidos no idioma do lead; só o desempate "sem sinal"
+// vai para o inglês. Instagram/WhatsApp seguem com o padrão português.
+const FB_DEFAULT_LANG = "en" as const;
+
 // Id do app Meta (OXIEL Core). Echoes com este app_id são as mensagens que o
 // próprio bot enviou pela Graph API; echoes de outro app (ou sem app_id) são
 // um HUMANO respondendo pela caixa de entrada do Messenger/Business Suite.
@@ -331,7 +337,7 @@ export async function POST(req: NextRequest) {
         // descadastro no idioma do LEAD, cala o bot e não puxa o funil de venda.
         // Precede o opt-out humano porque "stop" é pedido de PARAR, não de falar.
         if (isUnsubscribeRequest(messageText)) {
-          const unsubLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
+          const unsubLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t), FB_DEFAULT_LANG);
           const unsubLocale = metaLangToLocale(unsubLang, await resolveClinicLocale(effectiveClinicId));
           const tUnsub = await getServerT(unsubLocale, "whatsapp");
           const goodbye = tUnsub("autoReply.unsubscribed");
@@ -354,7 +360,7 @@ export async function POST(req: NextRequest) {
         if (isOptOutRequest(messageText)) {
           // Responde no idioma do LEAD (detectado da mensagem), não no da clínica:
           // quem escreve em inglês recebe o opt-out em inglês.
-          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
+          const optOutLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t), FB_DEFAULT_LANG);
           const replyLocale = metaLangToLocale(optOutLang, await resolveClinicLocale(effectiveClinicId));
           const tReply = await getServerT(replyLocale, "whatsapp");
           const handover = tReply("autoReply.handover");
@@ -393,7 +399,7 @@ export async function POST(req: NextRequest) {
         // Idioma DETERMINÍSTICO por código (PT/EN base + passe de ES), como no
         // Meta WhatsApp: não confiar só no LLM. Mapeia p/ o campo `language` do
         // config para que o langNote E os templates saiam no idioma certo.
-        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t));
+        const metaLang = detectMetaLanguage(detectLanguage(history, messageText), history, messageText, (t) => detectLanguage([], t), FB_DEFAULT_LANG);
         const langConfig = { ...promptConfig, language: metaLangToConfigLanguage(metaLang, promptConfig.language) };
         const systemPrompt = buildSystemPrompt(langConfig, step) + META_LANG_RULE + META_BEHAVIOR_RULE + META_EMERGENCY_RULE +
           (effectiveClinicId === IFWC_CLINIC_ID ? DAYANE_REFERRAL_RULE : "");
