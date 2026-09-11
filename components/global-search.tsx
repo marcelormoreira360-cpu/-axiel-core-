@@ -97,6 +97,9 @@ export function GlobalSearch() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Id da requisição mais recente: respostas que chegam fora de ordem (rede lenta)
+  // são descartadas, então a lista nunca mostra o resultado de uma query antiga.
+  const reqIdRef = useRef(0);
 
   /* Cmd+K and custom event */
   useEffect(() => {
@@ -131,20 +134,24 @@ export function GlobalSearch() {
   /* Debounced search */
   const search = useCallback((q: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (q.length < 2) { setResults(null); setLoading(false); return; }
+    // Invalida qualquer requisição em voo: se o usuário apagou até <2 chars enquanto
+    // uma busca anterior ainda estava na rede, sua resposta não pode repopular a lista.
+    if (q.trim().length < 2) { reqIdRef.current++; setResults(null); setLoading(false); return; }
     setLoading(true);
+    const reqId = ++reqIdRef.current;
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
         const data: SearchResults = await res.json();
+        if (reqId !== reqIdRef.current) return; // resposta obsoleta: ignora
         setResults(data);
         setActiveIdx(0);
       } catch {
-        setResults(null);
+        if (reqId === reqIdRef.current) setResults(null);
       } finally {
-        setLoading(false);
+        if (reqId === reqIdRef.current) setLoading(false);
       }
-    }, 250);
+    }, 200);
   }, []);
 
   function handleInput(e: React.ChangeEvent<HTMLInputElement>) {
