@@ -35,23 +35,46 @@ export function isOptOutRequest(text: string): boolean {
 //   2) palavras isoladas ambíguas — só valem se forem a MENSAGEM INTEIRA (curta).
 
 // Frases fortes (multi-palavra): opt-out mesmo no meio de outra frase.
+// Incluem pedidos hostis a anúncio ("block me", "stop harassing"), que NUNCA são
+// mensagens clínicas legítimas — logo entram como frase forte, sem risco de falso
+// positivo em conversa de paciente.
 const UNSUB_STRONG = [
   "unsubscribe", "stop texting", "stop messaging", "stop sending", "stop contacting",
   "don't text me", "dont text me", "do not text me", "don't message me", "dont message me",
   "don't contact me", "dont contact me", "do not contact me", "stop texting me",
   "remove me", "take me off", "leave me alone", "not interested", "no longer interested",
-  "quit messaging", "stop the messages", "stop these messages",
+  "quit messaging", "quit texting", "stop reaching out", "stop the messages", "stop these messages",
+  // Bloqueio / assédio (respostas hostis a anúncio — nunca clínicas). "harassing"
+  // SÓ com "stop" na frente (comando de parar): "harassment"/"harassing me" soltos
+  // colidiriam com paciente de saúde mental descrevendo assédio ("dealing with
+  // harassment at work", "my boss keeps harassing me").
+  "block me", "block this", "please block", "just block",
+  "stop harassing", "stop harrassing", "stop bothering",
+  "stop spamming", "stop the spam", "stop spam",
   "pare de me mandar", "para de me mandar", "parem de me mandar", "nao me mande", "nao me mandem",
   "nao quero receber", "nao quero mais receber", "me tira da lista", "me tire da lista",
   "me remova", "descadastr", "sair da lista",
+  // Bloqueio / "me deixa em paz" em português:
+  "me bloqueia", "me bloqueie", "me deixa em paz",
+  "deixe me em paz", "deixa eu em paz", "para de me perturbar", "pare de me perturbar",
+  "para de me incomodar", "pare de me incomodar", "chega de mensagem",
 ];
 
 // Palavras/curtas ambíguas: SÓ contam se forem a mensagem inteira (curta e
 // isolada). NÃO inclui "cancel"/"cancelar" — num bot clínico um "cancelar" solto
 // normalmente é cancelamento de HORÁRIO, não descadastro.
 const UNSUB_STANDALONE = [
-  "stop", "unsubscribe", "remove",
-  "para", "pare", "parar", "sair", "chega",
+  "stop", "unsubscribe", "remove", "block", "blocked", "spam",
+  "para", "pare", "parar", "sair", "chega", "bloquear", "bloqueia", "bloqueie",
+];
+
+// Frases curtas de MÚLTIPLAS palavras que só valem como MENSAGEM INTEIRA. São
+// idiomas hostis ("go away", "vai embora") cujo sentido literal ("sumir/ir
+// embora") colide com queixa clínica — "I want the pain to go away", "essa dor
+// não vai embora", "não me esquece". Como substring disparariam falso positivo e
+// calariam o bot num lead real; como mensagem inteira são inequívocos.
+const UNSUB_STANDALONE_PHRASES = [
+  "go away", "get lost", "vai embora", "me esquece",
 ];
 
 /**
@@ -74,5 +97,8 @@ export function isUnsubscribeRequest(text: string): boolean {
     .replace(/\b(please|por favor|pf|now|agora|it|me)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return UNSUB_STANDALONE.includes(stripped);
+  if (UNSUB_STANDALONE.includes(stripped)) return true;
+  // Frases hostis de 2+ palavras: só quando são a mensagem inteira (tolerando
+  // "please"/"now"). Fora disso ("...the pain to go away") não disparam.
+  return UNSUB_STANDALONE_PHRASES.includes(t) || UNSUB_STANDALONE_PHRASES.includes(stripped);
 }

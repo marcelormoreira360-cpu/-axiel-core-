@@ -212,6 +212,23 @@ function countEsMarkers(text: string): number {
   return ES_MARKERS.reduce((n, w) => (lower.includes(w) ? n + 1 : n), 0);
 }
 
+// Marcadores claros de PORTUGUÊS (saudação, queixa, intenção) que praticamente
+// não aparecem em EN/ES. Usados só para distinguir "PT de verdade" do DEFAULT do
+// detector quando um canal pede outro idioma padrão (ex.: Facebook = inglês).
+const PT_MARKERS = [
+  " olá", " ola ", " oi ", "bom dia", "boa tarde", "boa noite", "tudo bem",
+  " você", " voce", " não ", " nao ", " sim ", " obrigado", " obrigada",
+  " quero", " preciso", " tenho", " estou", " sinto", " gostaria",
+  " dor ", " ombro", " coluna", " joelho", " cabeça", " costas",
+  " agendar", " marcar", " ajuda", " também", " então",
+];
+
+// Conta marcadores claros de português num texto (com bordas de espaço).
+function countPtMarkers(text: string): number {
+  const lower = ` ${(text || "").toLowerCase()} `;
+  return PT_MARKERS.reduce((n, w) => (lower.includes(w) ? n + 1 : n), 0);
+}
+
 // Detecta o idioma da conversa Meta (PT/EN/ES) combinando o detector base
 // (PT/EN) com um passe leve de espanhol. `detectPtEn` recebe a mesma assinatura
 // de detectLanguage(history, text), injetado pelo handler para não criar
@@ -223,19 +240,35 @@ export function detectMetaLanguage(
   // Detector PT/EN injetado (mesma assinatura de detectLanguage) para reavaliar a
   // MENSAGEM ATUAL isolada. Opcional por retrocompat; sem ele, só a 1ª msg conta.
   detectPtEnFor?: (text: string) => "pt" | "en",
+  // Idioma PADRÃO do canal quando NÃO há sinal claro de idioma. O detector base
+  // devolve "pt" tanto quando o PT vence quanto quando não há sinal nenhum; este
+  // parâmetro decide o desempate no caso "sem sinal". Facebook usa "en" (público
+  // majoritariamente EN/ES); Instagram/WhatsApp mantêm "pt". Default "pt" preserva
+  // o comportamento antigo de todos os chamadores que não passam nada.
+  defaultLang: MetaLang = "pt",
 ): MetaLang {
   const firstUserMsg = history.find((m) => m.role === "user")?.content ?? currentMessage;
   // 2+ marcadores de ES = espanhol com segurança (evita falso positivo em PT, que
   // raramente compartilha " para "/" años"). Basta a 1ª OU a mensagem atual trazer.
   if (countEsMarkers(firstUserMsg) >= 2 || countEsMarkers(currentMessage) >= 2) return "es";
-  // PT/EN: parte do sinal da 1ª mensagem. Se ficou "pt" (que é também o DEFAULT
-  // quando não há sinal) mas a mensagem ATUAL é claramente inglês, acompanha o
-  // inglês. detectLanguage nunca devolve "en" por default, logo "en" na atual é
-  // sinal real. Corrige o lead que abre ambíguo ("Hello,") e some no português.
-  if (detectPtEn === "pt" && detectPtEnFor && detectPtEnFor(currentMessage) === "en") {
-    return "en";
+  // EN explícito (o detector base só devolve "en" quando há sinal real, nunca por
+  // default) → inglês.
+  if (detectPtEn === "en") return "en";
+  // Base "pt" mas a mensagem ATUAL é claramente inglês → acompanha o inglês.
+  // Corrige o lead que abre ambíguo ("Hello,") e some no português.
+  if (detectPtEnFor && detectPtEnFor(currentMessage) === "en") return "en";
+  // Aqui a base é "pt", que pode ser PT DE VERDADE ou apenas o DEFAULT do detector
+  // (sem sinal). Se há marcador EXPLÍCITO de português, é PT de verdade.
+  if (countPtMarkers(firstUserMsg) > 0 || countPtMarkers(currentMessage) > 0) return "pt";
+  // Sem sinal de PT. Se o canal pede outro idioma padrão (ex.: Facebook = inglês):
+  if (defaultLang !== "pt") {
+    // Espanhol FRACO (1 só marcador, abaixo do teto de 2) sem nenhum sinal de PT →
+    // prefere espanhol ao padrão inglês. No Facebook o 2º idioma típico é o
+    // espanhol, então "precio?"/"cuánto?" merece resposta em ES, não em EN.
+    if (countEsMarkers(firstUserMsg) >= 1 || countEsMarkers(currentMessage) >= 1) return "es";
+    return defaultLang;
   }
-  return detectPtEn;
+  return "pt";
 }
 
 // Mapeia o idioma detectado para o campo `language` do WhatsAppBotConfigFields.
