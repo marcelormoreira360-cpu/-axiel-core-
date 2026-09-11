@@ -767,9 +767,9 @@ async function sendAppointmentMessage(
     const whatsappUrl = clinicRow?.whatsapp_number
       ? `https://wa.me/${(clinicRow.whatsapp_number as string).replace(/\D/g, "")}`
       : null;
-    const bodyText = isReschedule
-      ? `Sessão reagendada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`
-      : `Sessão confirmada: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`;
+    const bodyText = enMsg
+      ? `${isReschedule ? "Session rescheduled" : "Session confirmed"}: ${dateStr} at ${timeStr} (${durationMinutes} min) at ${clinicName}`
+      : `${isReschedule ? "Sessão reagendada" : "Sessão confirmada"}: ${dateStr} às ${timeStr} (${durationMinutes} min) em ${clinicName}`;
 
     try {
       await resend.emails.send({

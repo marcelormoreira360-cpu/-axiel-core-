@@ -845,16 +845,26 @@ export async function updateAppointment(
   // sem alteração de horário. Também recria as automações (D-1, NPS, D+3, D+30) no
   // horário NOVO — senão o lembrete D-1 continuaria marcado no horário antigo.
   const TERMINAL_FOR_NOTICE = ["completed", "no_show", "cancelled", "cancelled_notice", "late_cancel", "checked_in"];
-  const timeChanged = !!updates.starts_at && !!previousStartsAt && updates.starts_at !== previousStartsAt;
+  // Compara por INSTANTE, não por string: o novo starts_at chega como ISO com "Z"
+  // (toISOString) e o anterior vem do Postgres como "...+00:00" — strings diferentes
+  // para o MESMO horário. Sem isso, confirmar o drawer sem mudar nada (ele pré-preenche
+  // o horário atual) dispararia um aviso falso de reagendamento.
+  const timeChanged =
+    !!updates.starts_at && !!previousStartsAt &&
+    new Date(updates.starts_at).getTime() !== new Date(previousStartsAt).getTime();
   const isActive = !TERMINAL_FOR_NOTICE.includes((appt.status as string) ?? "");
   const isFuture = new Date(appt.starts_at).getTime() > Date.now();
   if (timeChanged && isActive && isFuture) {
-    // Aviso imediato só se o usuário não desmarcou "Notificar paciente".
-    if (opts.notifyPatient !== false) {
-      sendRescheduleSideEffect(appt).catch(() => {});
-    }
-    // Automações (D-1 etc.) sempre migram para o horário novo, notificando ou não.
-    scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }).catch(() => {});
+    // AGUARDA (não fire-and-forget): em serverless a função pode congelar após o
+    // return e matar envios não aguardados — e este aviso é visível ao paciente.
+    // allSettled roda os dois em paralelo; um erro não derruba o outro nem o
+    // reagendamento (a sessão já foi movida no banco). Aviso imediato só se o
+    // usuário não desmarcou "Notificar paciente"; as automações (D-1 etc.) sempre
+    // migram para o horário novo, notificando ou não.
+    await Promise.allSettled([
+      opts.notifyPatient !== false ? sendRescheduleSideEffect(appt) : Promise.resolve(),
+      scheduleAutomations({ id: appt.id, clinic_id: appt.clinic_id, patient_id: appt.patient_id, starts_at: appt.starts_at }),
+    ]);
   }
 
   // Sync time changes to Google Calendar (non-blocking)

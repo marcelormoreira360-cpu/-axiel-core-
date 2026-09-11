@@ -96,6 +96,9 @@ export function ScheduleContainer({
   const [isConfirmingMove, startConfirmMove] = useTransition();
 
   function requestReschedule(id: string, newStartsAt: string, revert: () => void) {
+    // Se já havia um movimento aguardando confirmação, reverte o anterior antes de
+    // abrir o novo — senão o primeiro card fica movido na tela sem persistir.
+    pendingMove?.revert();
     const label = new Date(newStartsAt).toLocaleString(locale, {
       weekday: "short", day: "numeric", month: "short",
       hour: "2-digit", minute: "2-digit",
@@ -111,7 +114,7 @@ export function ScheduleContainer({
   }
 
   function confirmPendingMove() {
-    if (!pendingMove || !rescheduleAction) { setPendingMove(null); return; }
+    if (!pendingMove || !rescheduleAction) { pendingMove?.revert(); setPendingMove(null); return; }
     const { id, newStartsAt, revert } = pendingMove;
     startConfirmMove(async () => {
       try {
