@@ -848,10 +848,17 @@ export async function POST(req: NextRequest) {
                 locale: lang === "en" ? "en" : "pt-BR",
               });
               if (offer.ok && offer.slots.length > 0) {
+                // F2: cita o investimento REAL da Avaliação (do banco), pra o valor
+                // falado bater com o que é agendado. Sem preço → não cita valor.
+                const priceLine = offer.priceLabel
+                  ? (lang === "en"
+                      ? ` The Initial Evaluation is ${offer.priceLabel}.`
+                      : ` A Avaliação Inicial tem investimento de ${offer.priceLabel}.`)
+                  : "";
                 const intro =
                   lang === "en"
-                    ? `Great, ${name}! Here are the next available times for your Initial Evaluation:`
-                    : `Ótimo, ${name}! Aqui estão os próximos horários disponíveis para sua Avaliação Inicial:`;
+                    ? `Great, ${name}!${priceLine} Here are the next available times:`
+                    : `Ótimo, ${name}!${priceLine} Aqui estão os próximos horários disponíveis:`;
                 const nums = offer.slots.map((_, i) => i + 1);
                 const numHint = lang === "en"
                   ? (nums.length === 1 ? "Reply 1." : `Reply ${nums.slice(0, -1).join(", ")} or ${nums[nums.length - 1]}.`)

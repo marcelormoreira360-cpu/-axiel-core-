@@ -15,6 +15,7 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { createLogger } from "@/lib/logger";
+import { formatMoney } from "@/lib/finance-utils";
 import { getAvailableSlots, createPublicBooking } from "@/services/appointment-service";
 import {
   parseSlotChoice,
@@ -36,10 +37,21 @@ export type EvaluationSessionType = {
   id: string;
   name: string;
   duration_minutes: number;
+  price_cents: number;
 };
 
 type OfferEvaluationSlotsResult =
-  | { ok: true; slug: string; sessionTypeId: string; slots: OfferedSlot[] }
+  | {
+      ok: true;
+      slug: string;
+      sessionTypeId: string;
+      sessionName: string;
+      // F2: investimento REAL do serviço, vindo do banco (session_types.price_cents
+      // + moeda da clínica). null quando o serviço é sem preço (0). Fonte da verdade
+      // = banco; a tabela por cidade da config continua sendo só vitrine.
+      priceLabel: string | null;
+      slots: OfferedSlot[];
+    }
   | { ok: false };
 
 // Quantos dias à frente varremos procurando horários, e o teto de opções.
@@ -105,6 +117,24 @@ async function fetchClinicSlug(clinicId: string): Promise<string | null> {
   }
 }
 
+// Moeda voltada ao PACIENTE (clinic_settings.default_currency; IFWC = USD).
+// Admin client (webhook sem sessão). Não confundir com billing_currency, que é a
+// moeda da assinatura SaaS da clínica com a Oxiel.
+async function fetchClinicCurrency(clinicId: string): Promise<string> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("clinic_settings")
+      .select("default_currency")
+      .eq("clinic_id", clinicId)
+      .maybeSingle();
+    return ((data as { default_currency?: string } | null)?.default_currency) || "BRL";
+  } catch (e) {
+    log.error("fetchClinicCurrency failed", e, { clinic_id: clinicId });
+    return "BRL";
+  }
+}
+
 /**
  * Tipo de sessão da Avaliação Inicial da clínica: is_evaluation=true e is_active.
  * Achado #5 do review: NÃO cai mais no "1º tipo ativo" — sem uma Avaliação
@@ -118,7 +148,7 @@ export async function getEvaluationSessionType(clinicId: string): Promise<Evalua
 
     const { data: evalType } = await supabase
       .from("session_types")
-      .select("id, name, duration_minutes")
+      .select("id, name, duration_minutes, price_cents")
       .eq("clinic_id", clinicId)
       .eq("is_evaluation", true)
       .eq("is_active", true)
@@ -131,6 +161,7 @@ export async function getEvaluationSessionType(clinicId: string): Promise<Evalua
       id: evalType.id as string,
       name: (evalType.name as string) ?? "Avaliação Inicial",
       duration_minutes: (evalType.duration_minutes as number | null) ?? 60,
+      price_cents: (evalType.price_cents as number | null) ?? 0,
     };
   } catch (e) {
     log.error("getEvaluationSessionType failed", e, { clinic_id: clinicId });
@@ -151,11 +182,17 @@ export async function offerEvaluationSlots(opts: {
   const { clinicId } = opts;
   const preference = opts.preference ?? null;
   try {
-    const [slug, evalType] = await Promise.all([
+    const [slug, evalType, currency] = await Promise.all([
       fetchClinicSlug(clinicId),
       getEvaluationSessionType(clinicId),
+      fetchClinicCurrency(clinicId),
     ]);
     if (!slug || !evalType) return { ok: false };
+
+    // F2: investimento real do serviço (do banco), formatado na moeda da clínica e
+    // nos separadores do idioma do paciente. Sem preço (0) → não cita valor.
+    const priceLabel =
+      evalType.price_cents > 0 ? formatMoney(evalType.price_cents, currency, localeTag(opts.locale)) : null;
 
     // Achado #8: busca os ~7 dias em PARALELO (cada getAvailableSlots faz ~5-6
     // queries; em série era latência alta e risco de reenvio do webhook Meta).
@@ -184,7 +221,14 @@ export async function offerEvaluationSlots(opts: {
     }
 
     if (collected.length === 0) return { ok: false };
-    return { ok: true, slug, sessionTypeId: evalType.id, slots: collected };
+    return {
+      ok: true,
+      slug,
+      sessionTypeId: evalType.id,
+      sessionName: evalType.name,
+      priceLabel,
+      slots: collected,
+    };
   } catch (e) {
     log.error("offerEvaluationSlots failed", e, { clinic_id: clinicId });
     return { ok: false };
