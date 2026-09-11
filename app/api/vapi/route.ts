@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { getAvailableSlots, createPublicBooking } from "@/services/appointment-service";
+import { resolveEvaluationForSlug } from "@/services/clara-booking-service";
 import { wallClockToUTC } from "@/lib/booking-utils";
 import { createLogger } from "@/lib/logger";
 
@@ -9,9 +10,13 @@ const log = createLogger("vapi");
 
 export const runtime = "nodejs";
 
-// Clínica e tipo de sessão fixos do canal de voz (Clara agenda para a IFWC).
+// Clínica do canal de voz (Clara agenda para a IFWC).
 const SLUG = "ifwc";
-const SESSION_TYPE_ID = "7faeebdf-ceed-4b51-8919-f951bc2f98d3";
+// F3: o tipo de sessão da Avaliação é resolvido DINAMICAMENTE pelo mesmo serviço do
+// texto (resolveEvaluationForSlug → session_types is_evaluation), unificando voz e
+// texto no MESMO serviço e preço. Este id cravado é só FALLBACK se a resolução
+// falhar, para a voz nunca quebrar.
+const FALLBACK_SESSION_TYPE_ID = "7faeebdf-ceed-4b51-8919-f951bc2f98d3";
 
 // Comparação de segredo em tempo constante (evita timing attack); igual tamanho
 // não é garantido, então caímos para o retorno false quando os buffers diferem.
@@ -105,7 +110,9 @@ async function handleCheckAvailability(args: Record<string, unknown>): Promise<s
     return "I need the date in YYYY-MM-DD format (for example 2026-07-21). Which day would you like to check?";
   }
 
-  const result = await getAvailableSlots({ slug: SLUG, date, sessionTypeId: SESSION_TYPE_ID });
+  const evalInfo = await resolveEvaluationForSlug(SLUG, "en");
+  const sessionTypeId = evalInfo.ok ? evalInfo.sessionTypeId : FALLBACK_SESSION_TYPE_ID;
+  const result = await getAvailableSlots({ slug: SLUG, date, sessionTypeId });
   if (!result.ok) {
     return "I couldn't check the schedule right now. Please try again in a moment.";
   }
@@ -153,7 +160,10 @@ async function handleBookAppointment(args: Record<string, unknown>): Promise<str
   // no passado, fora do expediente ou em dia fechado (o site nunca oferece esses,
   // mas a voz poderia pedir), reusa o MESMO timezone que gerou os slots (sem
   // divergência de fuso) e evita um segundo lookup de clínica.
-  const avail = await getAvailableSlots({ slug: SLUG, date, sessionTypeId: SESSION_TYPE_ID });
+  const evalInfo = await resolveEvaluationForSlug(SLUG, "en");
+  const sessionTypeId = evalInfo.ok ? evalInfo.sessionTypeId : FALLBACK_SESSION_TYPE_ID;
+
+  const avail = await getAvailableSlots({ slug: SLUG, date, sessionTypeId });
   if (!avail.ok) {
     return "I couldn't reach the schedule right now. Please try again in a moment.";
   }
@@ -170,7 +180,7 @@ async function handleBookAppointment(args: Record<string, unknown>): Promise<str
 
   const result = await createPublicBooking({
     slug: SLUG,
-    session_type_id: SESSION_TYPE_ID,
+    session_type_id: sessionTypeId,
     starts_at: startsAt,
     full_name: fullName,
     phone,
@@ -189,7 +199,11 @@ async function handleBookAppointment(args: Record<string, unknown>): Promise<str
     return "I'm sorry, I couldn't complete the booking right now. Please try again in a moment.";
   }
 
-  return `You're booked for ${speakDateTime(startsAt, avail.timezone)}. You'll get a confirmation by message. See you then!`;
+  // F3: cita o investimento REAL da Avaliação (mesma fonte da verdade do texto/F2).
+  const priceSuffix = evalInfo.ok && evalInfo.priceLabel
+    ? ` The investment for the Initial Evaluation is ${evalInfo.priceLabel}.`
+    : "";
+  return `You're booked for ${speakDateTime(startsAt, avail.timezone)}.${priceSuffix} You'll get a confirmation by message. See you then!`;
 }
 
 async function runTool(call: ToolCall): Promise<string> {

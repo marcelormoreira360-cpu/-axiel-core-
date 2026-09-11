@@ -170,6 +170,53 @@ export async function getEvaluationSessionType(clinicId: string): Promise<Evalua
 }
 
 /**
+ * F3 — resolve a Avaliação Inicial + investimento de uma clínica pelo SLUG (o canal
+ * de VOZ/Vapi só conhece o slug). Mesma fonte da verdade do texto: session_types
+ * (is_evaluation) + moeda da clínica. Devolve { ok:false } se a clínica/serviço não
+ * servir (o chamador mantém o comportamento atual). Unifica voz e texto no MESMO
+ * serviço e no MESMO preço, em vez de um id de sessão cravado no /api/vapi.
+ */
+export async function resolveEvaluationForSlug(
+  slug: string,
+  locale?: string | null,
+): Promise<
+  | { ok: true; clinicId: string; sessionTypeId: string; sessionName: string; priceCents: number; priceLabel: string | null }
+  | { ok: false }
+> {
+  try {
+    const supabase = createSupabaseAdminClient();
+    const { data: clinic } = await supabase
+      .from("clinics")
+      .select("id")
+      .eq("slug", slug)
+      .eq("status", "active")
+      .maybeSingle();
+    const clinicId = (clinic as { id?: string } | null)?.id;
+    if (!clinicId) return { ok: false };
+
+    const [evalType, currency] = await Promise.all([
+      getEvaluationSessionType(clinicId),
+      fetchClinicCurrency(clinicId),
+    ]);
+    if (!evalType) return { ok: false };
+
+    const priceLabel =
+      evalType.price_cents > 0 ? formatMoney(evalType.price_cents, currency, localeTag(locale)) : null;
+    return {
+      ok: true,
+      clinicId,
+      sessionTypeId: evalType.id,
+      sessionName: evalType.name,
+      priceCents: evalType.price_cents,
+      priceLabel,
+    };
+  } catch (e) {
+    log.error("resolveEvaluationForSlug failed", e, { slug });
+    return { ok: false };
+  }
+}
+
+/**
  * Oferece até 3 horários reais da Avaliação Inicial nos próximos ~7 dias,
  * filtrados pela preferência de período. Devolve { ok:false } em qualquer falha
  * ou quando não há horário (o chamador cai no comportamento atual).
