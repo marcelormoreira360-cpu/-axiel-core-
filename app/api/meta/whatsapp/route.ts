@@ -21,6 +21,7 @@ import {
   parseSlotChoice,
   parsePeriodPreference,
 } from "@/services/clara-booking-service";
+import { detectHandoffRequest } from "@/lib/clara-handoff-helpers";
 
 const log = createLogger("whatsapp");
 import {
@@ -596,6 +597,44 @@ export async function POST(req: NextRequest) {
             continue;
           }
 
+          // ─── Handoff humano: pedido de pessoa / desconto / reembolso ─────
+          // O playbook manda passar para a equipe nesses casos; aqui isso VIRA
+          // REAL: avisa o paciente, PAUSA a Clara (ai_paused, até a equipe devolver
+          // pela UI do Core) e NOTIFICA a equipe por push. Vale para qualquer clínica.
+          const handoffReason = detectHandoffRequest(incomingText);
+          if (handoffReason) {
+            const ack = lang === "en"
+              ? "Of course, I'll pass you to a team member. Someone will get back to you shortly 😊"
+              : "Claro, vou te passar para uma pessoa da equipe. Em breve alguém fala com você 😊";
+            const updated = [
+              ...activeHistory,
+              { role: "user" as const, content: incomingText },
+              { role: "assistant" as const, content: ack },
+            ];
+            await saveHistory(supabase, fromPhone, convId, updated, effectiveClinicId);
+            const { error: pauseErr } = await supabase
+              .from("whatsapp_conversations")
+              .update({ ai_paused: true })
+              .eq("phone", fromPhone);
+            if (pauseErr) log.error("handoff pause failed", { message: pauseErr.message });
+            if (effectiveClinicId) {
+              const reasonLabel =
+                handoffReason === "human" ? "pediu atendente"
+                : handoffReason === "billing" ? "cobrança/reembolso"
+                : "desconto";
+              import("@/services/push-service").then(({ sendPushToClinic }) =>
+                sendPushToClinic(effectiveClinicId, {
+                  title: "Atendimento humano solicitado",
+                  body: `${contactName || fromPhone.slice(-4)} · ${reasonLabel} (WhatsApp)`,
+                  url: "/inbox",
+                }).catch(() => {})
+              ).catch(() => {});
+            }
+            await sendMetaReply(fromPhone, ack, phoneNumberId);
+            log.info("clara handoff to human", { phone: fromPhone.slice(-4), reason: handoffReason });
+            continue;
+          }
+
           // ─── NPS response detection ──────────────────────────────────────
           // If the patient replies with a digit 1-5, check whether they received
           // an NPS follow-up message in the last 48h for this clinic. If so, save
@@ -721,10 +760,13 @@ export async function POST(req: NextRequest) {
               });
 
               if (result.ok) {
+                // Aviso do intake: o agendamento já dispara os questionários do Core
+                // (sendOnboardingAssessments). Fraseado condicional ("se for sua
+                // primeira vez") para não prometer formulário a quem já respondeu.
                 const confirmReply =
                   lang === "en"
-                    ? `All set! Your Initial Evaluation is booked for ${chosen.label} ✅ We'll be in touch if anything changes. See you soon 😊`
-                    : `Pronto! Sua Avaliação Inicial está marcada para ${chosen.label} ✅ Qualquer novidade a gente avisa. Até breve 😊`;
+                    ? `All set! Your Initial Evaluation is booked for ${chosen.label} ✅ If it's your first visit, I've also sent you a quick form to fill out beforehand 📋 We'll be in touch if anything changes. See you soon 😊`
+                    : `Pronto! Sua Avaliação Inicial está marcada para ${chosen.label} ✅ Se for sua primeira vez, também te enviei um formulário rápido para preencher antes 📋 Qualquer novidade a gente avisa. Até breve 😊`;
                 const updated = [
                   ...activeHistory,
                   { role: "user" as const, content: incomingText },
