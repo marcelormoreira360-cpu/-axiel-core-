@@ -179,7 +179,7 @@ export type Appointment = {
   duration_minutes: number;
   notes: string | null;
   video_url: string | null;
-  status: "pending" | "scheduled" | "confirmed" | "checked_in" | "completed" | "cancelled" | "cancelled_notice" | "late_cancel" | "no_show" | null;
+  status: "pending" | "scheduled" | "confirmed" | "checked_in" | "in_progress" | "completed" | "cancelled" | "cancelled_notice" | "late_cancel" | "no_show" | null;
   checked_in_at?: string | null;
   completed_at?: string | null;
   cancelled_at?: string | null;
@@ -625,6 +625,10 @@ export type SessionType = {
   is_active: boolean;
   is_online: boolean;
   is_recorded: boolean;
+  /** Categoria da agenda (cor/ícone). Null = sem categoria (card cinza). */
+  category_id: string | null;
+  /** Cor hex opcional que sobrescreve a cor da categoria neste tipo. */
+  color_override: string | null;
   created_at: string;
   updated_at: string;
 };

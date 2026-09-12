@@ -203,6 +203,10 @@
       "supplementRegeneration": {
         "title": "Update supplementation",
         "text": "Regenerate supplementation in bulk with the current reasoning."
+      },
+      "scheduleCategories": {
+        "title": "Schedule categories",
+        "text": "Colors and icons that color the schedule cards by category."
       }
     }
   },
@@ -907,5 +911,54 @@
     "retry": "Retry failed sends",
     "retrying": "Re-queuing…",
     "retried": "{reset} re-queued to send."
+  },
+  "scheduleCategories": {
+    "title": "Schedule categories",
+    "subtitle": "Set the colors and icons that color the schedule cards by category.",
+    "listLabel": "Current categories",
+    "drag": "Drag to reorder",
+    "dragHint": "Drag by the handle to change the order of the categories.",
+    "empty": "No categories yet.",
+    "addLabel": "Add category",
+    "name": "Category name",
+    "namePlaceholder": "e.g. Consultation, Exam, Therapy…",
+    "icon": "Icon",
+    "iconNone": "No icon",
+    "color": "Color",
+    "colorHex": "Color (hex)",
+    "add": "Add",
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this category? The session types linked to it will have no category (gray color).",
+    "inactive": "Inactive",
+    "assignLabel": "Category for each session type",
+    "assignHint": "Choose the category for each type. You can set a custom color for a specific type.",
+    "assignCategory": "Category",
+    "noCategory": "No category",
+    "noSessionTypes": "No session types yet.",
+    "customColor": "Custom color",
+    "editColor": "Edit color",
+    "useCategoryColor": "Use the category color",
+    "icons": {
+      "stethoscope": "Stethoscope",
+      "heartbeat": "Heartbeat",
+      "heart-pulse": "Heart pulse",
+      "activity": "Activity",
+      "microscope": "Microscope",
+      "flask": "Flask",
+      "test-pipe": "Test tube",
+      "package": "Package",
+      "clipboard-list": "Clipboard",
+      "file-text": "Document",
+      "briefcase": "Briefcase",
+      "calendar": "Calendar",
+      "user": "Person",
+      "brain": "Brain",
+      "settings": "Gear"
+    }
   }
 }

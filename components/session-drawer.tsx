@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { X, User, FileText, CalendarDays, CalendarClock, Video, Check, LogIn, CheckCheck, UserX, Ban } from "lucide-react";
+import { X, User, FileText, CalendarDays, CalendarClock, Video, Check, LogIn, Play, CheckCheck, UserX, Ban } from "lucide-react";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
 import {
@@ -24,6 +24,7 @@ const ACTION_META: Record<
 > = {
   confirm:  { actionKey: "actionConfirm",  Icon: Check,     cls: "border-[#2D8CFF]/30 text-[#2563EB] hover:bg-[#EFF6FF]" },
   check_in: { actionKey: "actionCheckIn",  Icon: LogIn,     cls: "border-[#2A7BC1]/30 text-[#2A7BC1] hover:bg-[#EAF3FB]" },
+  start:    { actionKey: "actionStart",    Icon: Play,      cls: "border-[#2A7BC1]/30 text-[#2A7BC1] hover:bg-[#EAF3FB]" },
   complete: { actionKey: "actionComplete", Icon: CheckCheck, cls: "border-[#0F6E56]/30 text-[#0F6E56] hover:bg-[#E1F5EE]" },
   no_show:  { actionKey: "actionNoShow",   Icon: UserX,     cls: "border-amber-200 text-amber-600 hover:bg-amber-50" },
   cancel:   { actionKey: "actionCancel",   Icon: Ban,       cls: "border-red-200 text-red-500 hover:bg-red-50" },
@@ -38,6 +39,7 @@ const STATUS_BADGE_CLS: Record<string, string> = {
   late_cancel: "bg-red-100 text-red-600",
   no_show:   "bg-amber-50 text-amber-600",
   checked_in: "bg-[#EAF3FB] text-[#2A7BC1]",
+  in_progress: "bg-[#EAF3FB] text-[#2A7BC1]",
 };
 
 function initials(name: string) {

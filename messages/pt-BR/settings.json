@@ -203,6 +203,10 @@
       "supplementRegeneration": {
         "title": "Atualizar suplementação",
         "text": "Regenerar a suplementação em massa com o raciocínio atual."
+      },
+      "scheduleCategories": {
+        "title": "Categorias da agenda",
+        "text": "Cores e ícones que colorem os cards da agenda por categoria."
       }
     }
   },
@@ -907,5 +911,54 @@
     "retry": "Retentar envios",
     "retrying": "Reenfileirando…",
     "retried": "{reset} reenfileirados para envio."
+  },
+  "scheduleCategories": {
+    "title": "Categorias da agenda",
+    "subtitle": "Defina as cores e os ícones que colorem os cards da agenda por categoria.",
+    "listLabel": "Categorias atuais",
+    "drag": "Arraste para reordenar",
+    "dragHint": "Arraste pela alça para mudar a ordem das categorias.",
+    "empty": "Nenhuma categoria ainda.",
+    "addLabel": "Adicionar categoria",
+    "name": "Nome da categoria",
+    "namePlaceholder": "Ex: Consulta, Exame, Terapia…",
+    "icon": "Ícone",
+    "iconNone": "Sem ícone",
+    "color": "Cor",
+    "colorHex": "Cor (hex)",
+    "add": "Adicionar",
+    "save": "Salvar",
+    "saving": "Salvando…",
+    "saved": "Salvo",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "deleteConfirm": "Excluir esta categoria? Os tipos de sessão ligados a ela ficam sem categoria (cor cinza).",
+    "inactive": "Inativo",
+    "assignLabel": "Categoria de cada tipo de sessão",
+    "assignHint": "Escolha a categoria de cada tipo. Você pode definir uma cor própria para um tipo específico.",
+    "assignCategory": "Categoria",
+    "noCategory": "Sem categoria",
+    "noSessionTypes": "Nenhum tipo de sessão cadastrado.",
+    "customColor": "Cor própria",
+    "editColor": "Editar cor",
+    "useCategoryColor": "Usar a cor da categoria",
+    "icons": {
+      "stethoscope": "Estetoscópio",
+      "heartbeat": "Batimento cardíaco",
+      "heart-pulse": "Pulso cardíaco",
+      "activity": "Atividade",
+      "microscope": "Microscópio",
+      "flask": "Frasco",
+      "test-pipe": "Tubo de ensaio",
+      "package": "Pacote",
+      "clipboard-list": "Prancheta",
+      "file-text": "Documento",
+      "briefcase": "Maleta",
+      "calendar": "Calendário",
+      "user": "Pessoa",
+      "brain": "Cérebro",
+      "settings": "Engrenagem"
+    }
   }
 }

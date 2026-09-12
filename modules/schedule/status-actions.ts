@@ -9,6 +9,7 @@ export type AppointmentStatus =
   | "scheduled"
   | "confirmed"
   | "checked_in"
+  | "in_progress"
   | "completed"
   | "no_show"
   | "cancelled_notice"
@@ -19,8 +20,8 @@ export type ActorType = "staff" | "patient" | "system";
 
 export const CANCEL_TARGETS: AppointmentStatus[] = ["cancelled_notice", "late_cancel"];
 
-/** Status que consomem sessão do pacote (espelha o trigger da migration 141). */
-export const SESSION_CONSUMING_STATUSES: AppointmentStatus[] = ["confirmed", "checked_in", "completed"];
+/** Status que consomem sessão do pacote (espelha o trigger das migrations 141/172). */
+export const SESSION_CONSUMING_STATUSES: AppointmentStatus[] = ["confirmed", "checked_in", "in_progress", "completed"];
 
 /** Estados terminais: não aceitam mais transição no fluxo normal. */
 export const TERMINAL_STATUSES: AppointmentStatus[] = ["cancelled_notice", "late_cancel", "cancelled"];
@@ -51,8 +52,12 @@ const TRANSITIONS: Record<string, TransitionRule[]> = {
     { to: "no_show", actors: ["staff", "system"] },
   ],
   checked_in: [
+    { to: "in_progress", actors: ["staff"] }, // iniciar atendimento
     { to: "completed", actors: ["staff"] },
     { to: "confirmed", actors: ["staff"] }, // desfazer check-in (correção)
+  ],
+  in_progress: [
+    { to: "completed", actors: ["staff"] },
   ],
   completed: [
     { to: "confirmed", actors: ["staff"] }, // correção rara (afeta receita) — gatear no UI a dono/gestor
@@ -94,7 +99,7 @@ export function classifyCancellationByWindow(
 // não expõe correções que afetam receita (desfazer check-in, reabrir concluído) no
 // menu rápido — essas ficam para um fluxo gateado a dono/gestor.
 
-export type StaffQuickAction = "confirm" | "check_in" | "complete" | "no_show" | "cancel";
+export type StaffQuickAction = "confirm" | "check_in" | "start" | "complete" | "no_show" | "cancel";
 
 /** Ações sensíveis: exigem diálogo de confirmação antes de aplicar (dado de paciente real). */
 export const SENSITIVE_STAFF_ACTIONS: StaffQuickAction[] = ["no_show", "cancel"];
@@ -121,6 +126,9 @@ export function getStaffQuickActions(currentStatus: string | null): StaffQuickAc
   if (isTransitionAllowed(from, "checked_in", "staff")) {
     actions.push("check_in");
   }
+  if (isTransitionAllowed(from, "in_progress", "staff")) {
+    actions.push("start");
+  }
   if (isTransitionAllowed(from, "completed", "staff") || from === "scheduled" || from === "confirmed") {
     actions.push("complete");
   }
@@ -140,6 +148,8 @@ export function staffActionToRequested(action: StaffQuickAction): string {
       return "confirmed";
     case "check_in":
       return "checked_in";
+    case "start":
+      return "in_progress";
     case "complete":
       return "completed";
     case "no_show":

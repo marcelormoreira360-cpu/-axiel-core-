@@ -14,6 +14,7 @@ const PERSONALIZE_ITEMS: { href: string; key: string }[] = [
   { href: "/settings/secoes", key: "patientSections" },
   { href: "/forms", key: "forms" },
   { href: "/settings/session-types", key: "sessionTypes" },
+  { href: "/settings/categorias-agenda", key: "scheduleCategories" },
   { href: "/settings/clinical-tests", key: "clinicalTests" },
   { href: "/settings/supplements", key: "supplements" },
   { href: "/settings/supplements/regeneration", key: "supplementRegeneration" },

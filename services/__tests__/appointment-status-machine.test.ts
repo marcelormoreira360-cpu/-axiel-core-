@@ -105,8 +105,15 @@ describe("ações rápidas da equipe no drawer (getStaffQuickActions)", () => {
     expect(getStaffQuickActions("confirmed")).toEqual(["check_in", "complete", "no_show", "cancel"]);
   });
 
-  it("checked_in: só concluir (não expõe correções que afetam receita)", () => {
-    expect(getStaffQuickActions("checked_in")).toEqual(["complete"]);
+  it("checked_in: iniciar atendimento ou concluir (sem correções que afetam receita)", () => {
+    expect(getStaffQuickActions("checked_in")).toEqual(["start", "complete"]);
+  });
+
+  it("in_progress: concluir (segue em frente; desfazer início é correção gateada)", () => {
+    expect(getStaffQuickActions("in_progress")).toEqual(["complete"]);
+    expect(isTransitionAllowed("checked_in", "in_progress", "staff")).toBe(true);
+    expect(isTransitionAllowed("in_progress", "completed", "staff")).toBe(true);
+    expect(isTransitionAllowed("in_progress", "completed", "patient")).toBe(false);
   });
 
   it("completed: nenhuma ação rápida (reabrir é gateado a dono/gestor)", () => {
@@ -130,6 +137,7 @@ describe("ações rápidas da equipe no drawer (getStaffQuickActions)", () => {
   it("traduz cada ação rápida para o 'requested' que o wrapper da equipe espera", () => {
     expect(staffActionToRequested("confirm")).toBe("confirmed");
     expect(staffActionToRequested("check_in")).toBe("checked_in");
+    expect(staffActionToRequested("start")).toBe("in_progress");
     expect(staffActionToRequested("complete")).toBe("completed");
     expect(staffActionToRequested("no_show")).toBe("no_show");
     // 'cancel' vira 'cancelled'; a janela decide notice × late no servidor.
@@ -138,8 +146,8 @@ describe("ações rápidas da equipe no drawer (getStaffQuickActions)", () => {
 });
 
 describe("consumo de sessão do pacote", () => {
-  it("só confirmed/checked_in/completed consomem", () => {
-    expect(SESSION_CONSUMING_STATUSES).toEqual(["confirmed", "checked_in", "completed"]);
+  it("confirmed/checked_in/in_progress/completed consomem", () => {
+    expect(SESSION_CONSUMING_STATUSES).toEqual(["confirmed", "checked_in", "in_progress", "completed"]);
     for (const s of ["pending", "scheduled", "no_show", "late_cancel", "cancelled_notice", "cancelled"]) {
       expect(SESSION_CONSUMING_STATUSES).not.toContain(s);
     }

@@ -105,7 +105,8 @@
       "no_show": "Falta registada.",
       "cancel": "Marcação cancelada.",
       "rescheduleMoved": "Marcação reagendada.",
-      "rescheduleCreated": "Nova marcação criada."
+      "rescheduleCreated": "Nova marcação criada.",
+      "start": "Atendimento iniciado."
     },
     "confirm": {
       "dismiss": "Voltar",
@@ -140,7 +141,8 @@
     "rescheduleTime": "Hora",
     "rescheduleConfirm": "Confirmar",
     "rescheduleCancel": "Voltar",
-    "rescheduleNotify": "Notificar paciente"
+    "rescheduleNotify": "Notificar paciente",
+    "actionStart": "Iniciar"
   },
   "calendar": {
     "today": "Hoje",
@@ -242,7 +244,8 @@
       "checked_in": "Chegou",
       "completed": "Concluído",
       "cancelled": "Cancelado",
-      "no_show": "Falta"
+      "no_show": "Falta",
+      "in_progress": "Em atendimento"
     },
     "payment": {
       "paid": "Pago",

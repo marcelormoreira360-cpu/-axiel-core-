@@ -105,7 +105,8 @@
       "no_show": "No-show recorded.",
       "cancel": "Appointment cancelled.",
       "rescheduleMoved": "Appointment rescheduled.",
-      "rescheduleCreated": "New appointment created."
+      "rescheduleCreated": "New appointment created.",
+      "start": "Session started."
     },
     "confirm": {
       "dismiss": "Back",
@@ -140,7 +141,8 @@
     "rescheduleTime": "Time",
     "rescheduleConfirm": "Confirm",
     "rescheduleCancel": "Back",
-    "rescheduleNotify": "Notify patient"
+    "rescheduleNotify": "Notify patient",
+    "actionStart": "Start"
   },
   "calendar": {
     "today": "Today",
@@ -242,7 +244,8 @@
       "checked_in": "Checked in",
       "completed": "Completed",
       "cancelled": "Cancelled",
-      "no_show": "No show"
+      "no_show": "No show",
+      "in_progress": "In progress"
     },
     "payment": {
       "paid": "Paid",

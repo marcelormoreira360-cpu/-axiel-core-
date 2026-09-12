@@ -61,6 +61,7 @@ const STATUS_META: Record<
   scheduled:        { Icon: Clock,         tone: "neutral", labelKey: "scheduled" },
   confirmed:        { Icon: Check,         tone: "green",   labelKey: "confirmed" },
   checked_in:       { Icon: UserCheck,     tone: "green",   labelKey: "checked_in" },
+  in_progress:      { Icon: Activity,      tone: "blue",    labelKey: "in_progress" },
   completed:        { Icon: CircleCheck,   tone: "green",   labelKey: "completed" },
   cancelled:        { Icon: X,             tone: "red",     labelKey: "cancelled" },
   cancelled_notice: { Icon: X,             tone: "red",     labelKey: "cancelled" },
