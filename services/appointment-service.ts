@@ -815,18 +815,33 @@ export async function updateAppointment(
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
   const supabase = await createSupabaseServerClient();
 
-  // Horário anterior: capturado ANTES do update só quando o caller está movendo a
-  // sessão (updates.starts_at presente), para detectar mudança real e avisar o
-  // paciente. Sem isso não dá para distinguir um reagendamento de um update de
-  // status/nota que por acaso reenvia o mesmo starts_at.
+  // Estado anterior: capturado ANTES do update quando o caller mexe no HORÁRIO ou na
+  // DURAÇÃO (reagendar/editar/redimensionar), para (a) detectar mudança real de
+  // horário e avisar o paciente e (b) validar conflito de agenda antes de aplicar.
   let previousStartsAt: string | null = null;
-  if (updates.starts_at) {
+  if (updates.starts_at || updates.duration_minutes) {
     const { data: prev } = await supabase
       .from("appointments")
-      .select("starts_at")
+      .select("starts_at, duration_minutes, practitioner_id, clinic_id, status")
       .eq("id", appointmentId)
       .maybeSingle();
     previousStartsAt = (prev?.starts_at as string | null) ?? null;
+
+    // Validação de conflito (o caminho de edição/arrastar não tinha): impede mover
+    // ou alongar uma sessão por cima de outra. Exclui a própria sessão do teste.
+    // Pula quando o mesmo update está marcando a sessão como terminal (cancelar/falta).
+    const finalStatus = updates.status ?? ((prev?.status as string | null) ?? "");
+    const terminalUpdate = ["cancelled", "cancelled_notice", "late_cancel", "no_show"].includes(finalStatus);
+    if (prev && !terminalUpdate) {
+      const conflict = await hasAppointmentConflict({
+        clinic_id: prev.clinic_id as string,
+        starts_at: (updates.starts_at ?? prev.starts_at) as string,
+        duration_minutes: (updates.duration_minutes ?? prev.duration_minutes) as number,
+        practitioner_id: (updates.practitioner_id ?? (prev.practitioner_id as string | null)) ?? null,
+        exclude_appointment_id: appointmentId,
+      });
+      if (conflict) throw new Error("Conflito de horário: já existe uma sessão nesse período.");
+    }
   }
 
   const { data, error } = await supabase

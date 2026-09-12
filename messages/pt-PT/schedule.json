@@ -142,7 +142,10 @@
     "rescheduleConfirm": "Confirmar",
     "rescheduleCancel": "Voltar",
     "rescheduleNotify": "Notificar paciente",
-    "actionStart": "Iniciar"
+    "actionStart": "Iniciar",
+    "editSession": "Editar sessão",
+    "rescheduleDuration": "Duração",
+    "rescheduleDurationCustom": "Duração personalizada (min)"
   },
   "calendar": {
     "today": "Hoje",

@@ -59,7 +59,7 @@ export function SessionDrawer({
   onClose: () => void;
   updateStatusAction?: (id: string, status: string) => Promise<{ error?: string }>;
   /** Reagendar (inteligente): move se futuro; cria novo se passado/no-show/cancelado. */
-  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string, notify?: boolean) => Promise<{ error?: string; created?: boolean }>;
+  rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string, notify?: boolean, durationMinutes?: number) => Promise<{ error?: string; created?: boolean }>;
   /** Janela (horas) da clínica p/ classificar cancelamento (com aviso × tardio). */
   cancellationWindowHours?: number;
   /** Fuso IANA da clínica — pré-preenche a nova data/hora no wall-clock certo. */
@@ -81,6 +81,7 @@ export function SessionDrawer({
   const [rTime, setRTime] = useState("");
   const [rCreatesNew, setRCreatesNew] = useState(false);
   const [rNotify, setRNotify] = useState(true);
+  const [rDuration, setRDuration] = useState(60);
   const [isRescheduling, startReschedule] = useTransition();
 
   if (!session) return null;
@@ -146,13 +147,14 @@ export function SessionDrawer({
     const hh = g("hour") === "24" ? "00" : g("hour");
     setRTime(`${hh}:${g("minute")}`);
     setRNotify(true);
+    setRDuration(session.duration_minutes ?? 60);
     setShowReschedule(true);
   }
 
   function submitReschedule() {
-    if (!rescheduleSmartAction || !session || !rDate || !rTime) return;
+    if (!rescheduleSmartAction || !session || !rDate || !rTime || !rDuration || rDuration < 1) return;
     startReschedule(async () => {
-      const res = await rescheduleSmartAction(session.id, rDate, rTime, rNotify);
+      const res = await rescheduleSmartAction(session.id, rDate, rTime, rNotify, rDuration);
       if (res?.error) { toast.error(res.error); return; }
       toast.success(res?.created ? t("toast.rescheduleCreated") : t("toast.rescheduleMoved"));
       setShowReschedule(false);
@@ -309,7 +311,7 @@ export function SessionDrawer({
           {rescheduleSmartAction && (
             showReschedule ? (
               <div className="border border-black/[.10] dark:border-white/[.10] rounded-[8px] p-[12px] space-y-[8px]">
-                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("reschedule")}</p>
+                <p className="text-[10px] font-medium tracking-[.08em] uppercase text-[#A09E98]">{t("editSession")}</p>
                 <p className="text-[11px] text-[#A09E98] leading-relaxed">
                   {rCreatesNew ? t("rescheduleNewHint") : t("rescheduleMoveHint")}
                 </p>
@@ -329,6 +331,32 @@ export function SessionDrawer({
                     />
                   </div>
                 </div>
+                <div>
+                  <label className="block text-[10px] text-[#6B6A66] dark:text-[#9E9C97] mb-[3px]">{t("rescheduleDuration")}</label>
+                  <div className="flex flex-wrap items-center gap-[6px]">
+                    {[15, 30, 45, 60, 90].map((m) => (
+                      <button
+                        key={m} type="button" onClick={() => setRDuration(m)}
+                        className={`text-[11px] font-medium rounded-[7px] px-[9px] py-[6px] border transition ${
+                          rDuration === m
+                            ? "bg-[#0F6E56] text-white border-[#0F6E56]"
+                            : "text-[#6B6A66] dark:text-[#9E9C97] border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06]"
+                        }`}
+                      >
+                        {t("minutes", { count: m })}
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-[4px]">
+                      <input
+                        type="number" min={5} max={480} step={5} value={rDuration}
+                        onChange={(e) => setRDuration(Math.max(1, Math.floor(Number(e.target.value) || 0)))}
+                        aria-label={t("rescheduleDurationCustom")}
+                        className="w-[56px] min-w-0 appearance-none text-[12px] text-[#0F1A2E] dark:text-[#E8E6E2] bg-white dark:bg-[#0E1117] border border-black/[.10] dark:border-white/[.10] rounded-[7px] px-[8px] py-[6px] outline-none focus:border-[#0F6E56]/50"
+                      />
+                      <span className="text-[10px] text-[#A09E98]">min</span>
+                    </div>
+                  </div>
+                </div>
                 <label className="flex items-center gap-[7px] cursor-pointer select-none pt-[1px]">
                   <input
                     type="checkbox" checked={rNotify} onChange={(e) => setRNotify(e.target.checked)}
@@ -344,7 +372,7 @@ export function SessionDrawer({
                     {t("rescheduleCancel")}
                   </button>
                   <button
-                    type="button" onClick={submitReschedule} disabled={isRescheduling || !rDate || !rTime}
+                    type="button" onClick={submitReschedule} disabled={isRescheduling || !rDate || !rTime || !rDuration}
                     className="flex-1 text-[11px] font-medium text-white bg-[#0F6E56] hover:bg-[#085041] rounded-[7px] py-[7px] transition disabled:opacity-50"
                   >
                     {isRescheduling ? "…" : t("rescheduleConfirm")}
@@ -357,7 +385,7 @@ export function SessionDrawer({
                 className="flex items-center justify-center gap-[6px] w-full text-[12px] font-medium text-[#6B6A66] dark:text-[#9E9C97] border border-black/[.10] dark:border-white/[.10] hover:bg-[#F4F3EF] dark:hover:bg-white/[.06] transition px-[14px] py-[10px] rounded-[8px]"
               >
                 <CalendarClock className="h-3.5 w-3.5" />
-                {t("reschedule")}
+                {t("editSession")}
               </button>
             )
           )}

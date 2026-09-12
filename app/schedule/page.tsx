@@ -401,6 +401,7 @@ export default async function SchedulePage() {
     dateStr: string,
     timeStr: string,
     notify: boolean = true,
+    durationMinutes?: number,
   ): Promise<{ error?: string; created?: boolean }> {
     "use server";
     const ts = await getTranslations("schedule.actions");
@@ -413,6 +414,13 @@ export default async function SchedulePage() {
       const appt = await getAppointmentById(id);
       if (!appt || appt.clinic_id !== prof.clinic_id) return { error: ts("rescheduleNotFound") };
 
+      // Duração: usa a informada (edição no drawer) ou mantém a atual. Sanitiza:
+      // inteiro positivo, teto de 8h, senão cai na duração vigente.
+      const dur =
+        durationMinutes && durationMinutes > 0 && durationMinutes <= 480
+          ? Math.floor(durationMinutes)
+          : appt.duration_minutes;
+
       const tz = await getClinicTimezone(prof.clinic_id);
       const startsAtISO = wallClockToUTC(dateStr, timeStr, tz).toISOString();
 
@@ -422,12 +430,12 @@ export default async function SchedulePage() {
       );
 
       if (isPast || isTerminal) {
-        // Cria um NOVO agendamento (mesmo paciente/tipo/duração/profissional).
+        // Cria um NOVO agendamento (mesmo paciente/tipo/profissional; duração editável).
         await createAppointment({
           clinic_id: appt.clinic_id,
           patient_id: appt.patient_id,
           starts_at: startsAtISO,
-          duration_minutes: appt.duration_minutes,
+          duration_minutes: dur,
           session_type_id: appt.session_type_id ?? null,
           practitioner_id: appt.practitioner_id ?? null,
           source: "direct",
@@ -436,8 +444,8 @@ export default async function SchedulePage() {
         return { created: true };
       }
 
-      // Sessão futura e ativa → move em lugar.
-      await updateAppointment(id, { starts_at: startsAtISO }, { notifyPatient: notify });
+      // Sessão futura e ativa → move/edita em lugar (horário + duração).
+      await updateAppointment(id, { starts_at: startsAtISO, duration_minutes: dur }, { notifyPatient: notify });
       revalidatePath("/schedule");
       return { created: false };
     } catch (e) {
