@@ -228,5 +228,27 @@
     "emailHelper": "Ideal para detalhes completos.",
     "smsTitle": "Lembrete por SMS",
     "smsHelper": "Rápido e direto."
+  },
+  "badges": {
+    "legendTitle": "Legenda das cores e selos",
+    "categoriesTitle": "Categorias",
+    "statusTitle": "Estado",
+    "paymentTitle": "Pagamento",
+    "online": "Online",
+    "status": {
+      "pending": "Aguardando",
+      "scheduled": "Agendado",
+      "confirmed": "Confirmado",
+      "checked_in": "Chegou",
+      "completed": "Concluído",
+      "cancelled": "Cancelado",
+      "no_show": "Falta"
+    },
+    "payment": {
+      "paid": "Pago",
+      "partial": "Parcial",
+      "refunded": "Reembolsado",
+      "pending": "Pendente"
+    }
   }
 }

@@ -5,6 +5,8 @@ import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 import type { PatientJourneySnapshot as PatientSnapshotData } from "@/modules/patient-journey/snapshot-builder";
 import { Video } from "lucide-react";
+import { CardBadges } from "@/components/schedule/appointment-visuals-ui";
+import { DEFAULT_CATEGORY_COLOR } from "@/modules/schedule/appointment-visuals";
 
 export type ScheduleSession = Appointment & {
   latestInsightStatus: "review" | "final";
@@ -29,14 +31,18 @@ export function SessionCard({
   const sessionCount = session.previousSessions.length + 1;
   const hasFinalInsight = session.latestInsightStatus === "final";
   const isAwaiting = session.status === "pending";
+  const visual = session.visual ?? null;
+  const categoryColor = visual?.categoryColor ?? DEFAULT_CATEGORY_COLOR;
 
   return (
     <button type="button" onClick={() => onOpen(session)} className="block w-full text-left group">
-      <div className={[
-        "border rounded-[10px] px-[13px] py-[11px] transition border-l-[3px]",
+      <div
+        style={{ borderLeftColor: categoryColor, borderLeftWidth: 4 }}
+        className={[
+        "border rounded-[10px] px-[13px] py-[11px] transition",
         isAwaiting
-          ? "bg-[#FDF8EE] border-black/[.08] border-l-[#D9A441] hover:bg-[#FBF1DC]"
-          : "bg-white border-black/[.08] border-l-[#0F6E56]/0 hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6]",
+          ? "bg-[#FDF8EE] border-black/[.08] hover:bg-[#FBF1DC]"
+          : "bg-white border-black/[.08] hover:border-[#0F6E56]/30 hover:bg-[#F0FAF6]",
       ].join(" ")}>
         <div className="flex items-center gap-[10px]">
           {/* Avatar */}
@@ -55,6 +61,9 @@ export function SessionCard({
             </div>
             <p className="text-[11px] text-[#A09E98] mt-[1px]">{t("meta", { time: formatTime(session.starts_at, locale), minutes: session.duration_minutes })}</p>
           </div>
+
+          {/* Selos de estado + pagamento + online (cores/selos da agenda) */}
+          {visual && <CardBadges visual={visual} size={12} />}
 
           {/* Status / insight badge */}
           {isAwaiting ? (

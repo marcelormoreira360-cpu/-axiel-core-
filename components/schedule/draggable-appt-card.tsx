@@ -7,6 +7,8 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Appointment } from "@/lib/types";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { HOUR_HEIGHT, apptStyle } from "@/components/schedule/grid";
+import { CardBadges } from "@/components/schedule/appointment-visuals-ui";
+import { DEFAULT_CATEGORY_COLOR } from "@/modules/schedule/appointment-visuals";
 
 // ─── Draggable + resizable appointment card (week view) ──────────────────────
 
@@ -41,6 +43,8 @@ export function DraggableApptCard({
   const isResizing = resizeDuration !== null;
   const isPending = appt.status === "pending";
   const accent = isPending ? "#8A5A06" : "#0F6E56";
+  const visual = appt.visual ?? null;
+  const categoryColor = visual?.categoryColor ?? DEFAULT_CATEGORY_COLOR;
 
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.stopPropagation(); // prevent dnd-kit from activating drag
@@ -98,7 +102,7 @@ export function DraggableApptCard({
         background: isPending ? (isActive ? "#F6E3BC" : "#FAEEDA") : (isActive ? "#C3EBDB" : "#E1F5EE"),
         border: `1px solid ${isPending ? (isActive || isResizing ? "rgba(217,164,65,0.6)" : "rgba(217,164,65,0.4)") : (isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)")}`,
         borderRadius: 6,
-        padding: "4px 6px",
+        padding: "4px 6px 4px 9px",
         overflow: "hidden",
         display: "block",
         textDecoration: "none",
@@ -110,6 +114,14 @@ export function DraggableApptCard({
       {...listeners}
       {...attributes}
     >
+      {/* Faixa lateral = cor da CATEGORIA do tipo de sessão. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+          background: categoryColor, borderRadius: "6px 0 0 6px",
+        }}
+      />
       {onDelete && (
         <div
           role="button"
@@ -129,9 +141,16 @@ export function DraggableApptCard({
           }}
         >×</div>
       )}
-      <p style={{ fontSize: 10, fontWeight: 700, color: accent, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
-        {formatTime(appt.starts_at, locale)}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, paddingRight: onDelete ? 16 : 0 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: accent, lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+          {formatTime(appt.starts_at, locale)}
+        </p>
+        {visual && (
+          <span style={{ marginLeft: "auto", display: "inline-flex" }}>
+            <CardBadges visual={visual} size={11} />
+          </span>
+        )}
+      </div>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
         {name}
       </p>

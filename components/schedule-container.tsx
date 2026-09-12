@@ -23,6 +23,9 @@ import { DayView, type BlockView } from "@/components/schedule/day-view";
 import { WeekView } from "@/components/schedule/week-view";
 import { MonthView } from "@/components/schedule/month-view";
 import type { ConfirmLinkAction, EmailLinkAction } from "@/components/schedule/grid";
+import { ScheduleLegend } from "@/components/schedule/appointment-visuals-ui";
+
+type LegendCategory = { id: string; name: string; color: string; icon: string | null };
 
 type View = "dia" | "semana" | "mes";
 
@@ -50,9 +53,11 @@ export function ScheduleContainer({
   timeBlocks = [],
   createBlockAction,
   deleteBlockAction,
+  legendCategories = [],
 }: {
   sessions: ScheduleSession[];
   allAppointments: Appointment[];
+  legendCategories?: LegendCategory[];
   patients: PatientLite[];
   sessionTypes: SessionType[];
   createSessionAction: (formData: FormData) => Promise<void>;
@@ -348,6 +353,9 @@ export function ScheduleContainer({
           onDayClick={onDayClick}
         />
       )}
+
+      {/* Legenda das cores (categorias) e selos (estado/pagamento). */}
+      <ScheduleLegend categories={legendCategories} />
 
       <SessionDrawer
         session={selectedSession}

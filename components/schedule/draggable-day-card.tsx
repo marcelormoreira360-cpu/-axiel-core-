@@ -7,6 +7,8 @@ import { CSS } from "@dnd-kit/utilities";
 import type { ScheduleSession } from "@/components/session-card";
 import { formatTime } from "@/modules/schedule/date-utils";
 import { HOUR_HEIGHT, apptStyle } from "@/components/schedule/grid";
+import { CardBadges } from "@/components/schedule/appointment-visuals-ui";
+import { DEFAULT_CATEGORY_COLOR } from "@/modules/schedule/appointment-visuals";
 
 // ─── Draggable session card (day view) ───────────────────────────────────────
 
@@ -38,6 +40,8 @@ export function DraggableDayCard({
   const name      = session.patients?.full_name ?? "Paciente";
   const sessionTypeName = session.session_types?.name ?? null;
   const isResizing = resizeDuration !== null;
+  const visual = session.visual ?? null;
+  const categoryColor = visual?.categoryColor ?? DEFAULT_CATEGORY_COLOR;
 
   function handleResizePointerDown(e: React.PointerEvent<HTMLDivElement>) {
     e.stopPropagation();
@@ -83,7 +87,7 @@ export function DraggableDayCard({
         background: isActive ? "#C3EBDB" : "#E1F5EE",
         border: `1px solid ${isActive || isResizing ? "rgba(15,110,86,0.5)" : "rgba(15,110,86,0.25)"}`,
         borderRadius: 6,
-        padding: "4px 6px",
+        padding: "4px 6px 4px 9px",
         overflow: "hidden",
         display: "block",
         textAlign: "left",
@@ -95,6 +99,14 @@ export function DraggableDayCard({
       {...listeners}
       {...attributes}
     >
+      {/* Faixa lateral = cor da CATEGORIA do tipo de sessão. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute", left: 0, top: 0, bottom: 0, width: 4,
+          background: categoryColor, borderRadius: "6px 0 0 6px",
+        }}
+      />
       {onDelete && (
         <div
           role="button"
@@ -114,9 +126,16 @@ export function DraggableDayCard({
           }}
         >×</div>
       )}
-      <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
-        {formatTime(session.starts_at, locale)}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 3, paddingRight: onDelete ? 16 : 0 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: "#0F6E56", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: 0 }}>
+          {formatTime(session.starts_at, locale)}
+        </p>
+        {visual && (
+          <span style={{ marginLeft: "auto", display: "inline-flex" }}>
+            <CardBadges visual={visual} size={11} />
+          </span>
+        )}
+      </div>
       <p style={{ fontSize: 11, fontWeight: 500, color: "#0F1A2E", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", margin: "2px 0 0" }}>
         {name}
       </p>

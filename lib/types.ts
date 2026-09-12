@@ -193,6 +193,12 @@ export type Appointment = {
   updated_at: string;
   patients?: Pick<Patient, "id" | "full_name" | "email" | "phone" | "status"> | null;
   session_types?: Pick<SessionType, "id" | "name" | "duration_minutes" | "price_cents"> | null;
+  /**
+   * Dados visuais da agenda (cor da categoria + selos de estado/pagamento + online),
+   * resolvidos em lote por `appointment-visual-service` e anexados na página /schedule.
+   * Opcional e apenas em memória — nunca é coluna do banco.
+   */
+  visual?: import("@/modules/schedule/appointment-visuals").AppointmentVisual | null;
 };
 
 export type IntakeQuestionType = "short_text" | "long_text" | "number" | "date" | "yes_no" | "body_map";

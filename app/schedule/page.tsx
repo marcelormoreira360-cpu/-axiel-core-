@@ -7,6 +7,7 @@ import { ScheduleContainer } from "@/components/schedule-container";
 import { buildPatientSnapshot } from "@/modules/patient-journey/snapshot-builder";
 import type { ScheduleSession } from "@/components/session-card";
 import { getAppointments, getAppointmentsByPatients, getAppointmentById, createAppointment, createPendingAppointmentWithToken, updateAppointment, softDeleteAppointment, getSessionTypes, hasAppointmentConflict } from "@/services/appointment-service";
+import { resolveAppointmentVisuals, getSessionTypeCategories } from "@/services/appointment-visual-service";
 import { listTimeBlocks, createTimeBlock, softDeleteTimeBlock } from "@/services/time-block-service";
 import { sendWhatsAppText } from "@/services/whatsapp-service";
 import { sendSimpleEmail } from "@/services/email-service";
@@ -47,6 +48,17 @@ export default async function SchedulePage() {
   const blocksFromISO = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const timeBlocks = clinicId ? await listTimeBlocks(clinicId, { fromISO: blocksFromISO }) : [];
 
+  // CORES/SELOS da agenda (modelo híbrido): resolve em lote a cor da categoria +
+  // selos de estado/pagamento + online de cada agendamento, e as categorias para a
+  // legenda. Anexa `visual` a cada agendamento (spreads downstream preservam o campo).
+  const [visualsMap, sessionCategories] = clinicId
+    ? await Promise.all([
+        resolveAppointmentVisuals(clinicId, appointments),
+        getSessionTypeCategories(clinicId),
+      ])
+    : [{} as Record<string, NonNullable<(typeof appointments)[number]["visual"]>>, []];
+  const appointmentsWithVisual = appointments.map((a) => ({ ...a, visual: visualsMap[a.id] ?? null }));
+
   // Practitioners available for the filter dropdown (owners/admins only)
   const practitionerOptions = practitionerId
     ? undefined
@@ -55,7 +67,7 @@ export default async function SchedulePage() {
         .map((m) => ({ id: m.id, name: (m as { full_name?: string }).full_name ?? m.email ?? m.id }))
         .filter((m) => m.name);
 
-  const todayAppointments = getAppointmentsForDay(appointments, new Date());
+  const todayAppointments = getAppointmentsForDay(appointmentsWithVisual, new Date());
   const nextSession = todayAppointments.find(
     (a) => new Date(a.starts_at).getTime() >= Date.now()
   );
@@ -283,8 +295,11 @@ export default async function SchedulePage() {
         : latestInsight?.output;
     const tSnap = await getTranslations("patientSnapshot");
 
+    const visuals = await resolveAppointmentVisuals(profile.clinic_id, [appointment]);
+
     return {
       ...appointment,
+      visual: visuals[appointment.id] ?? null,
       latestInsightStatus: latestInsight?.review_status === "final" ? "final" : "review",
       previousSessions: patientAppointments.filter((a) => a.id !== appointment.id),
       snapshot: buildPatientSnapshot({
@@ -494,7 +509,8 @@ export default async function SchedulePage() {
         <>
           <ScheduleContainer
             sessions={sessions}
-            allAppointments={appointments}
+            allAppointments={appointmentsWithVisual}
+            legendCategories={sessionCategories}
             patients={patients}
             sessionTypes={sessionTypes}
             createSessionAction={createSessionAction}

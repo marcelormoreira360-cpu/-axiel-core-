@@ -228,5 +228,27 @@
     "emailHelper": "Ideal for full details.",
     "smsTitle": "SMS reminder",
     "smsHelper": "Quick and direct."
+  },
+  "badges": {
+    "legendTitle": "Colors and badges legend",
+    "categoriesTitle": "Categories",
+    "statusTitle": "Status",
+    "paymentTitle": "Payment",
+    "online": "Online",
+    "status": {
+      "pending": "Awaiting",
+      "scheduled": "Scheduled",
+      "confirmed": "Confirmed",
+      "checked_in": "Checked in",
+      "completed": "Completed",
+      "cancelled": "Cancelled",
+      "no_show": "No show"
+    },
+    "payment": {
+      "paid": "Paid",
+      "partial": "Partial",
+      "refunded": "Refunded",
+      "pending": "Pending"
+    }
   }
 }
