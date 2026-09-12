@@ -43,31 +43,33 @@ export const IFWC_DEFAULT_CONFIG: WhatsAppBotConfigFields = {
 • Acompanhamento inicial por até 60 dias`,
   locations: [
     {
+      // FALLBACK apenas. A fonte da verdade é a tabela clara_city_pricing (banco),
+      // hidratada nos canais ao vivo (services/whatsapp-bot-service). Mantido igual
+      // ao banco só para não cotar preço velho num raro erro de leitura.
       city: "Orlando / EUA",
       plans: [
-        { name: "Avaliação Inicial", price: "$200", description: "Avaliação completa com relatório funcional" },
-        { name: "Sessão de Microfisioterapia", price: "$300", description: "Sessão completa de microfisioterapia" },
-        { name: "Sessão de Terapia Manual", price: "$150", description: "Sessão de terapia manual" },
-        { name: "Avaliação + Sessão de Microfisioterapia", price: "$500", description: "Avaliação completa + sessão de microfisioterapia (opção mais indicada)", recommended: true },
-        { name: "Exames Funcionais (Neurometria SNA / Biorressonância / Hipersensibilidade Alimentar)", price: "a partir de $150", description: "Realizados à parte (análise e retorno online incluídos)" },
+        { name: "Programa Neuro ID", price: "$200", description: "avaliação + atendimento + relatório funcional + acompanhamento", recommended: true },
+        { name: "Programa Neuro ID Premium", price: "$400+", description: "Programa Neuro ID + exame complementar" },
+        { name: "Microphysiotherapy, a gentle manual soft tissue therapy approach", price: "$300", description: "sessão" },
+        { name: "Sessão de Terapia Manual", price: "$150", description: "sessão" },
+        { name: "Pacote de tratamento (4 sessões)", price: "$400", description: "4 sessões" },
+        { name: "Exames Funcionais", price: "$200+", description: "Neurometria SNA / Biorressonância / Hipersensibilidade Alimentar / Cabelo (análise + retorno online)" },
       ],
     },
     {
       city: "São Paulo",
       plans: [
-        { name: "Avaliação Essencial", price: "US$500", description: "Avaliação completa e relatório" },
-        { name: "Programa Integrativo Inicial (60 dias)", price: "US$650", description: "Programa completo recomendado", recommended: true },
-        { name: "Programa Premium Neurofuncional", price: "US$950", description: "Programa avançado com exames complementares" },
-        { name: "Exame complementar (cabelo/hipersensibilidade)", price: "US$250", description: "À parte, com análise e retorno online incluídos" },
+        { name: "Programa Neuro ID", price: "US$500", description: "avaliação completa + relatório", recommended: true },
+        { name: "Programa Neuro ID Premium", price: "US$700", description: "Programa Neuro ID + exame complementar" },
+        { name: "Exame complementar", price: "US$200", description: "cabelo/hipersensibilidade (análise + retorno online)" },
       ],
     },
     {
       city: "Maringá",
       plans: [
-        { name: "Avaliação Essencial", price: "US$315", description: "Avaliação completa e relatório" },
-        { name: "Programa Integrativo Inicial (60 dias)", price: "US$450", description: "Programa completo recomendado", recommended: true },
-        { name: "Programa Premium Neurofuncional", price: "US$700", description: "Programa avançado com exames complementares" },
-        { name: "Exame complementar (cabelo/hipersensibilidade)", price: "US$250", description: "À parte, com análise e retorno online incluídos" },
+        { name: "Programa Neuro ID", price: "US$400", description: "avaliação completa + relatório", recommended: true },
+        { name: "Programa Neuro ID Premium", price: "US$550", description: "Programa Neuro ID + exame complementar" },
+        { name: "Exame complementar", price: "US$150", description: "cabelo/hipersensibilidade (análise + retorno online)" },
       ],
     },
   ],

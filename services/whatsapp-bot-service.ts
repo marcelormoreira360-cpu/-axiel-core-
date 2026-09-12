@@ -22,6 +22,19 @@ export type WhatsAppBotConfig = WhatsAppBotConfigFields & {
   clinic_slug: string | null;
 };
 
+// Consolidação da verdade única: hidrata as `locations` (vitrine de preço) a
+// partir de clara_city_pricing (banco = fonte da verdade). Cai no fallback (a
+// tabela cravada na config) quando a clínica ainda não tem preços no banco.
+async function resolveCityPricing(
+  clinicId: string | null | undefined,
+  fallback: PricingLocation[],
+): Promise<PricingLocation[]> {
+  if (!clinicId) return fallback;
+  const { getClaraCityPricing } = await import("@/services/clara-pricing-service");
+  const fromDb = await getClaraCityPricing(clinicId);
+  return fromDb.length > 0 ? fromDb : fallback;
+}
+
 export async function getWhatsAppBotConfig(clinicId: string): Promise<WhatsAppBotConfig | null> {
   const { createSupabaseServerClient } = await import("@/lib/supabase-server");
 
@@ -48,7 +61,7 @@ export async function getWhatsAppBotConfigByNumber(twilioNumber: string): Promis
     .maybeSingle();
   if (!data) return null;
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+  return { ...data, locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []), clinic_slug: clinicSlug };
 }
 
 // SEC-02: lookup by Meta phone_number_id — used by the Meta webhook to resolve clinic_id.
@@ -70,7 +83,7 @@ export async function getWhatsAppBotConfigByMetaPhoneId(metaPhoneNumberId: strin
   // se a migration ainda não rodou no ambiente).
   return {
     ...data,
-    locations: (data.locations as PricingLocation[]) ?? [],
+    locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []),
     clinic_slug: clinicSlug,
     booking_enabled: (data as { booking_enabled?: boolean }).booking_enabled ?? false,
   };
@@ -92,7 +105,7 @@ export async function getWhatsAppBotConfigByInstagramId(metaInstagramId: string)
     .maybeSingle();
   if (!data) return null;
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+  return { ...data, locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []), clinic_slug: clinicSlug };
 }
 
 // Lookup por clinic_id para webhooks que atendem PELA clínica e não por um
@@ -112,7 +125,7 @@ export async function getWhatsAppBotConfigByClinicId(clinicId: string): Promise<
     .maybeSingle();
   if (!data) return null;
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+  return { ...data, locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []), clinic_slug: clinicSlug };
 }
 
 // SEC-01 (Facebook): lookup pela PÁGINA do Facebook (entry.id do webhook). Usado
@@ -131,7 +144,7 @@ export async function getWhatsAppBotConfigByFacebookPageId(metaFacebookPageId: s
     .maybeSingle();
   if (!data) return null;
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
-  return { ...data, locations: (data.locations as PricingLocation[]) ?? [], clinic_slug: clinicSlug };
+  return { ...data, locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []), clinic_slug: clinicSlug };
 }
 
 export async function upsertWhatsAppBotConfig(
@@ -180,7 +193,7 @@ export async function upsertWhatsAppBotConfig(
   const clinicSlug = await fetchClinicSlug(supabase, data.clinic_id as string);
   return {
     ...data,
-    locations: (data.locations as PricingLocation[]) ?? [],
+    locations: await resolveCityPricing(data.clinic_id as string, (data.locations as PricingLocation[]) ?? []),
     clinic_slug: clinicSlug,
   };
 }
