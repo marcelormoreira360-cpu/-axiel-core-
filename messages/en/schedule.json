@@ -252,6 +252,10 @@
       "partial": "Partial",
       "refunded": "Refunded",
       "pending": "Pending"
-    }
+    },
+    "renew": "Renew",
+    "packageAria": "Package: {used} of {total}",
+    "packageRenewAria": "Package: renew, {used} of {total}",
+    "packageLegend": "Package (sessions)"
   }
 }

@@ -11,8 +11,10 @@ import { createLogger } from "@/lib/logger";
 import {
   computePaymentBadge,
   resolveCategoryColor,
+  pickPackageBadge,
   type AppointmentVisual,
   type PaymentLike,
+  type PackageLike,
 } from "@/modules/schedule/appointment-visuals";
 
 const log = createLogger("appointment-visual-service");
@@ -48,6 +50,7 @@ export async function getSessionTypeCategories(
 type AppointmentForVisual = Pick<
   Appointment,
   | "id"
+  | "patient_id"
   | "session_type_id"
   | "patient_offer_id"
   | "source"
@@ -152,6 +155,33 @@ export async function resolveAppointmentVisuals(
     }
   }
 
+  // 2b) Pacotes ativos dos pacientes com sessão coberta (batch) → selo "X/Y · Renovar".
+  const isCovered = (a: (typeof appointments)[number]) =>
+    !!a.patient_offer_id || a.source === "package" || offerCoveredByPayment.has(a.id);
+  const coveredPatientIds = [...new Set(appointments.filter(isCovered).map((a) => a.patient_id))];
+  const packagesByPatient = new Map<string, PackageLike[]>();
+  if (coveredPatientIds.length > 0) {
+    const CHUNK = 300;
+    for (let i = 0; i < coveredPatientIds.length; i += CHUNK) {
+      const chunk = coveredPatientIds.slice(i, i + CHUNK);
+      const { data: pkgData, error: pkgErr } = await supabase
+        .from("patient_packages")
+        .select("patient_id, sessions_used, sessions_total, start_date")
+        .eq("clinic_id", clinicId)
+        .eq("is_active", true)
+        .in("patient_id", chunk);
+      if (pkgErr) {
+        log.error("Falha ao carregar pacotes (visual)", pkgErr);
+        continue;
+      }
+      for (const p of (pkgData ?? []) as Array<{ patient_id: string; sessions_used: number | null; sessions_total: number; start_date: string }>) {
+        const list = packagesByPatient.get(p.patient_id) ?? [];
+        list.push({ sessions_used: p.sessions_used, sessions_total: p.sessions_total, start_date: p.start_date });
+        packagesByPatient.set(p.patient_id, list);
+      }
+    }
+  }
+
   // 3) Monta o visual de cada agendamento.
   for (const appt of appointments) {
     const st = appt.session_type_id ? stMap.get(appt.session_type_id) : undefined;
@@ -175,11 +205,16 @@ export async function resolveAppointmentVisuals(
       payments: paymentsByAppt.get(appt.id) ?? [],
     });
 
+    const packageBadge = coveredByPackage
+      ? pickPackageBadge(packagesByPatient.get(appt.patient_id) ?? [])
+      : null;
+
     out[appt.id] = {
       categoryColor,
       categoryIcon,
       status: appt.status ?? "scheduled",
       paymentBadge,
+      packageBadge,
       isOnline,
     };
   }

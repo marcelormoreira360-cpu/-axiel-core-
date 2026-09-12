@@ -252,6 +252,10 @@
       "partial": "Parcial",
       "refunded": "Reembolsado",
       "pending": "Pendente"
-    }
+    },
+    "renew": "Renovar",
+    "packageAria": "Pacote: {used} de {total}",
+    "packageRenewAria": "Pacote: renovar, {used} de {total}",
+    "packageLegend": "Pacote (sessões)"
   }
 }

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computePaymentBadge,
   resolveCategoryColor,
+  pickPackageBadge,
   DEFAULT_CATEGORY_COLOR,
   type PaymentLike,
 } from "@/modules/schedule/appointment-visuals";
@@ -93,5 +94,36 @@ describe("computePaymentBadge", () => {
         payments: [partiallyRefunded(20000, 2000)],
       }),
     ).toBe("paid");
+  });
+});
+
+describe("pickPackageBadge", () => {
+  it("lista vazia devolve null", () => {
+    expect(pickPackageBadge([])).toBeNull();
+  });
+
+  it("mostra usadas/total e não sinaliza renovar longe do fim", () => {
+    expect(pickPackageBadge([{ sessions_used: 1, sessions_total: 4, start_date: "2026-01-01" }])).toEqual({
+      used: 1,
+      total: 4,
+      renew: false,
+    });
+  });
+
+  it("sinaliza renovar na última sessão (resta 1) e no esgotado", () => {
+    expect(pickPackageBadge([{ sessions_used: 3, sessions_total: 4, start_date: "2026-01-01" }])?.renew).toBe(true);
+    expect(pickPackageBadge([{ sessions_used: 4, sessions_total: 4, start_date: "2026-01-01" }])).toEqual({
+      used: 4,
+      total: 4,
+      renew: true,
+    });
+  });
+
+  it("prefere o pacote com sessão sobrando (mais antigo primeiro)", () => {
+    const badge = pickPackageBadge([
+      { sessions_used: 4, sessions_total: 4, start_date: "2026-01-01" }, // esgotado
+      { sessions_used: 1, sessions_total: 5, start_date: "2026-03-01" }, // com sobra
+    ]);
+    expect(badge).toEqual({ used: 1, total: 5, renew: false });
   });
 });

@@ -16,6 +16,13 @@ export type AppointmentStatusKind = NonNullable<Appointment["status"]>;
 /** Selo de pagamento calculado. `null` = não exibir (grátis ou coberto por pacote). */
 export type PaymentBadgeKind = "paid" | "partial" | "refunded" | "pending";
 
+/** Selo de PACOTE: sessões usadas/total do pacote que cobre a sessão. `renew` =
+ *  está na última sessão (ou esgotado) → destacar em laranja "Renovar". */
+export type PackageBadge = { used: number; total: number; renew: boolean };
+
+/** Pacote do paciente (mínimo p/ o selo). Espelha patient_packages. */
+export type PackageLike = { sessions_used: number | null; sessions_total: number; start_date: string };
+
 /**
  * Pacote de dados VISUAIS de um agendamento, já resolvido e SERIALIZÁVEL (só
  * primitivos) para atravessar a fronteira server -> client component. O render
@@ -31,9 +38,28 @@ export type AppointmentVisual = {
   status: AppointmentStatusKind;
   /** Selo de pagamento (ou null quando não se aplica). */
   paymentBadge: PaymentBadgeKind | null;
+  /** Selo de pacote (sessões usadas/total + renovar) ou null quando não é pacote. */
+  packageBadge: PackageBadge | null;
   /** Sessão online (tipo online ou já com link de vídeo/zoom). */
   isOnline: boolean;
 };
+
+/**
+ * Escolhe o pacote mais relevante do paciente e monta o selo. Prefere um pacote
+ * com sessão sobrando (mais antigo primeiro, consome-se primeiro); se todos
+ * estiverem esgotados, pega o mais recente para sinalizar "renovar". null se vazio.
+ * `renew` quando resta 1 ou 0 sessão (última sessão / esgotado).
+ */
+export function pickPackageBadge(packages: PackageLike[]): PackageBadge | null {
+  if (!packages.length) return null;
+  const withRoom = packages
+    .filter((p) => (p.sessions_used ?? 0) < p.sessions_total)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const chosen = withRoom[0] ?? [...packages].sort((a, b) => b.start_date.localeCompare(a.start_date))[0];
+  const used = Math.min(Math.max(chosen.sessions_used ?? 0, 0), chosen.sessions_total);
+  const total = chosen.sessions_total;
+  return { used, total, renew: total - used <= 1 };
+}
 
 /** Linha de pagamento mínima necessária para o cálculo do selo. */
 export type PaymentLike = {

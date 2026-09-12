@@ -18,6 +18,7 @@ import {
   DollarSign,
   Undo2,
   CircleAlert,
+  RefreshCw,
   Video,
   Stethoscope,
   Activity,
@@ -175,6 +176,47 @@ export function PaymentBadge({
   return <IconBadge Icon={meta.Icon} tone={meta.tone} label={t(meta.labelKey)} size={size} />;
 }
 
+/** Selo de PACOTE (pill de texto "usadas/total"; laranja + "Renovar" na última). */
+export function PackageBadge({
+  badge,
+  size = 12,
+}: {
+  badge: { used: number; total: number; renew: boolean };
+  size?: number;
+}) {
+  const t = useTranslations("schedule.badges");
+  const c = badge.renew ? TONE.amber : TONE.neutral;
+  const aria = t(badge.renew ? "packageRenewAria" : "packageAria", { used: badge.used, total: badge.total });
+  return (
+    <span
+      role="img"
+      aria-label={aria}
+      title={aria}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 3,
+        background: c.bg,
+        color: c.fg,
+        borderRadius: 999,
+        padding: "1px 6px",
+        fontSize: size - 2,
+        fontWeight: 500,
+        lineHeight: 1.4,
+        flexShrink: 0,
+      }}
+    >
+      {badge.renew ? (
+        <RefreshCw style={{ width: size - 3, height: size - 3 }} aria-hidden="true" />
+      ) : (
+        <Package style={{ width: size - 3, height: size - 3 }} aria-hidden="true" />
+      )}
+      {badge.used}/{badge.total}
+      {badge.renew ? ` ${t("renew")}` : ""}
+    </span>
+  );
+}
+
 /** Ícone de sessão ONLINE (compacto) para os cards. */
 export function OnlineBadge({ size = 12 }: { size?: number }) {
   const t = useTranslations("schedule.badges");
@@ -193,6 +235,7 @@ export function CardBadges({
     | {
         status: AppointmentStatusKind;
         paymentBadge: PaymentBadgeKind | null;
+        packageBadge: { used: number; total: number; renew: boolean } | null;
         isOnline: boolean;
       }
     | null
@@ -204,6 +247,7 @@ export function CardBadges({
     <span style={{ display: "inline-flex", alignItems: "center", gap: 2 }}>
       {visual.isOnline && <OnlineBadge size={size} />}
       {visual.paymentBadge && <PaymentBadge kind={visual.paymentBadge} size={size} />}
+      {visual.packageBadge && <PackageBadge badge={visual.packageBadge} size={size} />}
       <StatusBadge status={visual.status} size={size} />
     </span>
   );
@@ -325,6 +369,8 @@ export function ScheduleLegend({ categories }: { categories: LegendCategory[] })
                 />
               );
             })}
+            <LegendItem Icon={Package} color={TONE.neutral.fg} bg={TONE.neutral.bg} label={t("packageLegend")} />
+            <LegendItem Icon={RefreshCw} color={TONE.amber.fg} bg={TONE.amber.bg} label={t("renew")} />
             <LegendItem Icon={Video} color={TONE.blue.fg} bg={TONE.blue.bg} label={t("online")} />
           </div>
         </div>
