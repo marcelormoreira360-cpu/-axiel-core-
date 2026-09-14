@@ -51,10 +51,22 @@ describe("computeNeuroId", () => {
     expect(r.indiceGeral).not.toBeNull();
   });
 
-  it("overlap Q-SNA: qsna_total tem peso 0.5 na média do Bioquímico", () => {
+  it("pilar = média dos SUBDOMÍNIOS (não dos itens)", () => {
+    // intestino → subdomínio "gi" (40); qsna_total → subdomínio "geral_qsna" (80).
+    // Cada um sozinho no seu subdomínio → pilar = média dos 2 subdomínios = 60.
     const r = computeNeuroId(items, { intestino: 4, qsna_total: 8 });
-    // (40*1 + 80*0.5) / (1 + 0.5) = 80 / 1.5 = 53.33…
-    expect(Math.round(r.pillars.bioquimico.dysfunction! * 100) / 100).toBe(53.33);
+    expect(Math.round(r.pillars.bioquimico.dysfunction!)).toBe(60);
+  });
+
+  it("subdomínio grave NÃO é diluído por área com muitos itens", () => {
+    // 4 itens GI = 0 (subdomínio "gi" = 0) + 1 item de sono grave (subdomínio
+    // "sono_ritmos" = 100). Média dos 2 subdomínios = 50 (antes seria 20, a média
+    // achatada dos 5 itens). É o ponto da normalização por subdomínio.
+    const r = computeNeuroId(items, {
+      bf_refluxo: 0, bf_intestino: 0, bf_inchaco: 0, bf_dor_abdominal_estresse: 0,
+      bf_sono_manter: 10,
+    });
+    expect(Math.round(r.pillars.bioquimico.dysfunction!)).toBe(50);
   });
 
   it("dado faltando não quebra e marca parcial + CTA", () => {
