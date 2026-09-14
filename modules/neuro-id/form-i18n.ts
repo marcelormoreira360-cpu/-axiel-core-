@@ -105,7 +105,7 @@ const CHROME_PT: FormChrome = {
   freq: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
   imp: ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"],
   freq3: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
-  sev: ["Nunca", "Leve", "Moderado", "Forte", "Muito forte"],
+  sev: ["Ausente", "Leve", "Moderado", "Intenso", "Muito intenso"],
 };
 
 const CHROME_EN: FormChrome = {
@@ -147,7 +147,7 @@ const CHROME_EN: FormChrome = {
   freq: ["Never", "A few days", "More than half the days", "Nearly every day"],
   imp: ["Doesn't interfere", "Interferes a little", "Interferes quite a bit", "Interferes a lot"],
   freq3: ["Never", "A few days", "More than half the days", "Nearly every day"],
-  sev: ["None", "Mild", "Moderate", "Strong", "Very strong"],
+  sev: ["Absent", "Mild", "Moderate", "Intense", "Very intense"],
 };
 
 export function formChrome(locale: FormLocale): FormChrome {
@@ -159,12 +159,15 @@ export function formChrome(locale: FormLocale): FormChrome {
 // anchors = âncoras por nível; note = observação. Falta -> cai no PT do template.
 type QEN = { label?: string; optionLabels?: string[]; anchors?: Record<number, string>; note?: string };
 
+const SEV_INTRO_EN =
+  "Thinking about how often and how much it affected you over the last 30 days, rate the overall severity of each symptom.";
+
 const EN_BLOCK: Record<string, { title: string; intro?: string }> = {
   A: { title: "Profile and safety", intro: "These questions help our team get to know you and prepare your care." },
-  B: { title: "Body and movement" },
-  C: { title: "Heart, breathing and regulation" },
-  D: { title: "Digestion, metabolism and whole-body" },
-  E: { title: "Sleep, energy and cognition" },
+  B: { title: "Body and movement", intro: SEV_INTRO_EN },
+  C: { title: "Heart, breathing and regulation", intro: SEV_INTRO_EN },
+  D: { title: "Digestion, metabolism and whole-body", intro: SEV_INTRO_EN },
+  E: { title: "Sleep, energy and cognition", intro: SEV_INTRO_EN },
   F: { title: "How you've been feeling in the last 30 days" },
   G: { title: "To complete your picture (optional)" },
   H: { title: "Medications", intro: "Therapeutic complexity index (for professional use, separate from the score)." },

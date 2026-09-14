@@ -7,8 +7,8 @@ const items = asScorable(DEFAULT_CATALOG);
 
 describe("unifiedScaleKind", () => {
   it("classifica pelo prefixo", () => {
-    expect(unifiedScaleKind("bm_dor")).toBe("sev4");
-    expect(unifiedScaleKind("bf_palpitacoes")).toBe("sev4");
+    expect(unifiedScaleKind("bm_dor")).toBe("bio3_severity");
+    expect(unifiedScaleKind("bf_palpitacoes")).toBe("bio3_severity");
     expect(unifiedScaleKind("bf_apneia")).toBe("scale3"); // exceção: rastreio 0–3
     expect(unifiedScaleKind("be_mood_humor")).toBe("mood6");
     expect(unifiedScaleKind("be_anx_nervosismo")).toBe("scale3");
