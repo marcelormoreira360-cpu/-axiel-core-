@@ -8,6 +8,7 @@
 
 import type { CatalogItemDef, NeuroPillar, ItemDirection, ItemInputType, ScoringRule } from "./catalog";
 import { examMetricContributions, type PillarContribution } from "./exam-metrics";
+import { subdomainFor } from "./subdomains";
 
 /** Subconjunto necessário do item (compatível com CatalogItemDef e com a linha do banco). */
 export type ScorableItem = {
@@ -142,8 +143,17 @@ export function computeNeuroId(
     pillars[p] = { pillar: p, dysfunction: null, itemsUsed: 0, itemsMissing: 0, missingCtaCodes: [], examItemsUsed: 0 };
   }
 
-  const byPillar: Record<NeuroPillar, { value: number; weight: number }[]> = {
-    fisico: [], bioquimico: [], emocional: [],
+  // Média em 2 NÍVEIS (normalização por subdomínio): item → subdomínio (média
+  // PONDERADA, preserva pesos como medicacao_carga 0.5) → pilar (média SIMPLES dos
+  // subdomínios com dado). Impede que uma área com muitos itens dilua um sintoma
+  // grave de uma área pequena (ex.: Sono). Ver subdomains.ts / _SPEC_FORMULARIO_MESTRE.md §4.
+  const bySub: Record<NeuroPillar, Map<string, { value: number; weight: number }[]>> = {
+    fisico: new Map(), bioquimico: new Map(), emocional: new Map(),
+  };
+  const pushSub = (pillar: NeuroPillar, sub: string, value: number, weight: number) => {
+    const arr = bySub[pillar].get(sub) ?? [];
+    arr.push({ value, weight });
+    bySub[pillar].set(sub, arr);
   };
 
   for (const item of items) {
@@ -155,22 +165,26 @@ export function computeNeuroId(
       if (item.partial) ps.missingCtaCodes.push(item.code);
     } else {
       ps.itemsUsed += 1;
-      byPillar[item.pillar].push({ value: ds, weight: item.weight > 0 ? item.weight : 1 });
+      pushSub(item.pillar, subdomainFor(item.code, item.pillar), ds, item.weight > 0 ? item.weight : 1);
     }
   }
 
-  // Fusão de exames: as métricas medidas entram na média ponderada do pilar,
-  // com peso efetivo (instrumento × roteamento × itemWeight). Só métricas
-  // presentes/finitas entram (filtro em examMetricContributions).
+  // Fusão de exames: cada métrica medida é seu PRÓPRIO subdomínio (não dilui nem é
+  // diluída pelos itens de questionário). Só métricas presentes/finitas entram.
   const examContributions = examValues ? examMetricContributions(examValues) : [];
   for (const c of examContributions) {
     if (c.weight <= 0) continue;
     pillars[c.pillar].examItemsUsed += 1;
-    byPillar[c.pillar].push({ value: c.dysfunction, weight: c.weight });
+    pushSub(c.pillar, `exame:${c.code}`, c.dysfunction, c.weight);
   }
 
   for (const p of PILLARS) {
-    pillars[p].dysfunction = weightedAvg(byPillar[p]);
+    const subLoads: number[] = [];
+    for (const arr of bySub[p].values()) {
+      const load = weightedAvg(arr);
+      if (load !== null) subLoads.push(load);
+    }
+    pillars[p].dysfunction = subLoads.length ? subLoads.reduce((s, v) => s + v, 0) / subLoads.length : null;
   }
 
   // Índice geral = média (igual) dos pilares calculáveis.
