@@ -59,6 +59,7 @@ export function DayView({
   onReschedule,
   onRescheduleRequest,
   onResizeDuration,
+  onActionError,
   timeBlocks = [],
   blockAction,
   onDeleteBlock,
@@ -74,11 +75,13 @@ export function DayView({
   onOpenSession: (s: ScheduleSession) => void;
   setSelectedSlot: (s: TimeSlot | null) => void;
   selectedSlot: TimeSlot | null;
-  onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  onReschedule?: (id: string, newStartsAt: string) => Promise<{ error?: string }>;
   /** Se presente, pede confirmação ao container (diálogo "Notificar paciente")
    *  em vez de persistir direto; `revert` desfaz o movimento otimista. */
   onRescheduleRequest?: (id: string, newStartsAt: string, revert: () => void) => void;
-  onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
+  onResizeDuration?: (id: string, newDuration: number) => Promise<{ error?: string }>;
+  /** Mostra um aviso (toast) quando a ação retorna erro esperado, ex.: conflito. */
+  onActionError?: (message: string) => void;
   timeBlocks?: BlockView[];
   blockAction?: (formData: FormData) => Promise<void>;
   onDeleteBlock?: (id: string) => Promise<void>;
@@ -133,12 +136,17 @@ export function DayView({
     setLocalSessions((prev) =>
       prev.map((x) => x.id === id ? { ...x, duration_minutes: newDuration } : x)
     );
-    onResizeDuration?.(id, newDuration).catch(() => {
+    const revertResize = () =>
       setLocalSessions((prev) =>
         prev.map((x) => x.id === id ? { ...x, duration_minutes: s.duration_minutes } : x)
       );
-    });
-  }, [localSessions, onResizeDuration]);
+    onResizeDuration?.(id, newDuration)
+      .then((res) => {
+        // Conflito (alongar por cima de outra sessão) volta como { error }, não throw.
+        if (res?.error) { revertResize(); onActionError?.(res.error); }
+      })
+      .catch(revertResize);
+  }, [localSessions, onResizeDuration, onActionError]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!onDelete) return;
@@ -187,8 +195,10 @@ export function DayView({
       onRescheduleRequest(sessionId, newStartsAt, revert);
       return;
     }
-    onReschedule?.(sessionId, newStartsAt).catch(revert);
-  }, [localSessions, navDate, onReschedule, onRescheduleRequest]);
+    onReschedule?.(sessionId, newStartsAt)
+      .then((res) => { if (res?.error) { revert(); onActionError?.(res.error); } })
+      .catch(revert);
+  }, [localSessions, navDate, onReschedule, onRescheduleRequest, onActionError]);
 
   const activeSession = activeId ? localSessions.find((x) => x.id === activeId) : null;
 

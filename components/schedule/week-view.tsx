@@ -52,6 +52,7 @@ export function WeekView({
   onReschedule,
   onRescheduleRequest,
   onResizeDuration,
+  onActionError,
   onOpenAppointment,
 }: {
   appointments: Appointment[];
@@ -63,11 +64,13 @@ export function WeekView({
   confirmLinkAction?: ConfirmLinkAction;
   emailLinkAction?: EmailLinkAction;
   onDelete?: (id: string) => Promise<void>;
-  onReschedule?: (id: string, newStartsAt: string) => Promise<void>;
+  onReschedule?: (id: string, newStartsAt: string) => Promise<{ error?: string }>;
   /** Se presente, em vez de persistir direto, pede confirmação ao container
    *  (diálogo com "Notificar paciente"). `revert` desfaz o movimento otimista. */
   onRescheduleRequest?: (id: string, newStartsAt: string, revert: () => void) => void;
-  onResizeDuration?: (id: string, newDuration: number) => Promise<void>;
+  onResizeDuration?: (id: string, newDuration: number) => Promise<{ error?: string }>;
+  /** Mostra um aviso (toast) quando a ação retorna erro esperado, ex.: conflito. */
+  onActionError?: (message: string) => void;
   /** Clique limpo no bloco abre o drawer da sessão (em vez de navegar ao perfil). */
   onOpenAppointment?: (appt: Appointment) => void;
 }) {
@@ -98,10 +101,15 @@ export function WeekView({
     const appt = localAppts.find((a) => a.id === id);
     if (!appt) return;
     setLocalAppts((prev) => prev.map((a) => a.id === id ? { ...a, duration_minutes: newDuration } : a));
-    onResizeDuration?.(id, newDuration).catch(() => {
+    const revertResize = () =>
       setLocalAppts((prev) => prev.map((a) => a.id === id ? { ...a, duration_minutes: appt.duration_minutes } : a));
-    });
-  }, [localAppts, onResizeDuration]);
+    onResizeDuration?.(id, newDuration)
+      .then((res) => {
+        // Conflito (alongar por cima de outra sessão) volta como { error }, não throw.
+        if (res?.error) { revertResize(); onActionError?.(res.error); }
+      })
+      .catch(revertResize);
+  }, [localAppts, onResizeDuration, onActionError]);
 
   const handleDelete = useCallback(async (id: string) => {
     if (!onDelete) return;
@@ -153,8 +161,10 @@ export function WeekView({
       onRescheduleRequest(apptId, newStartsAt, revert);
       return;
     }
-    onReschedule?.(apptId, newStartsAt).catch(revert);
-  }, [localAppts, onReschedule, onRescheduleRequest]);
+    onReschedule?.(apptId, newStartsAt)
+      .then((res) => { if (res?.error) { revert(); onActionError?.(res.error); } })
+      .catch(revert);
+  }, [localAppts, onReschedule, onRescheduleRequest, onActionError]);
 
   const activeAppt = activeId ? localAppts.find((a) => a.id === activeId) : null;
 
