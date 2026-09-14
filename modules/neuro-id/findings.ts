@@ -46,6 +46,9 @@ function bandLabel(g: FindingGroup): string | null {
 /** Cabeçalho do bloco condensado do intake do paciente (relato livre). */
 export const INTAKE_FINDINGS_HEAD = "Relato do paciente (intake)";
 
+/** Cabeçalho do bloco de pontos de atenção do formulário Bio³ (por gravidade). */
+export const BIO3_FINDINGS_HEAD = "Pontos de atenção (formulário Bio³)";
+
 /** Cabeçalho do bloco de sínteses dos exames funcionais (resumo gerado pela IA). */
 export const EXAM_FINDINGS_HEAD = "Sínteses de exames (IA)";
 
@@ -56,7 +59,7 @@ export const EXAM_FINDINGS_HEAD = "Sínteses de exames (IA)";
  * Mantenha em sincronia com os instrumentos roteados em neuro-id-service
  * (QRM, Q-SNA, Estilo de vida e ambiente, História familiar) + o bloco do intake.
  */
-const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar|Relato do paciente|Sínteses de exames)(?:[:=]| \()/;
+const FINDINGS_BLOCK_RE = /(?:^|\n)(?:QRM|Q-SNA|Estilo de vida e ambiente|História familiar|Relato do paciente|Sínteses de exames|Pontos de atenção)(?:[:=]| \()/;
 
 /** Frase de introdução legada, removida ao reimportar caso tenha ficado salva. */
 const LEGACY_INTRO_RE = /^\s*ACHADOS DOS QUESTION[ÁA]RIOS[^\n]*\n?/i;
@@ -165,4 +168,47 @@ export function formatExamFindings(
     });
   if (lines.length === 0) return "";
   return [EXAM_FINDINGS_HEAD, ...lines].join("\n");
+}
+
+// ── Pontos de atenção do formulário Bio³ (por gravidade, em camadas) ────────────
+export type Bio3FindingItem = { pillarLabel: string; label: string; dysfunction: number };
+
+/** Rótulo de gravidade a partir da disfunção 0–100 (coerente com a escala 0–4). */
+function severityWord(dys: number): string {
+  if (dys >= 88) return "muito intenso";
+  if (dys >= 63) return "intenso";
+  return "moderado";
+}
+
+/**
+ * Bloco em camadas dos sintomas do formulário Bio³ para a Anamnese: só entram os
+ * de gravidade Moderado+ (disfunção ≥ 50); os mais graves aparecem primeiro (o
+ * terapeuta prioriza). Agrupa por pilar. Cabeçalho BIO3_FINDINGS_HEAD (deduplicável
+ * pelo FINDINGS_BLOCK_RE ao reimportar). Sem travessão. "" quando não há item.
+ *
+ * NÃO apaga o leve: sintomas leves seguem no histórico da avaliação (Mapa Bio³);
+ * aqui é só o resumo de atenção para a nota clínica, que o terapeuta valida.
+ */
+export function formatBio3Findings(
+  items: Bio3FindingItem[],
+  opts: { minDysfunction?: number; maxItems?: number } = {},
+): string {
+  const min = opts.minDysfunction ?? 50;   // Moderado+ (gravidade ≥ 2 na escala 0–4)
+  const maxItems = opts.maxItems ?? 20;
+  const kept = items
+    .filter((i) => Number.isFinite(i.dysfunction) && i.dysfunction >= min && (i.label ?? "").trim())
+    .sort((a, b) => b.dysfunction - a.dysfunction)
+    .slice(0, maxItems);
+  if (kept.length === 0) return "";
+  const byPillar: { pillar: string; items: Bio3FindingItem[] }[] = [];
+  for (const it of kept) {
+    let b = byPillar.find((x) => x.pillar === it.pillarLabel);
+    if (!b) { b = { pillar: it.pillarLabel, items: [] }; byPillar.push(b); }
+    b.items.push(it);
+  }
+  const lines = byPillar.map((b) => {
+    const txt = b.items.map((i) => `${i.label} (${severityWord(i.dysfunction)})`).join("; ");
+    return `- ${b.pillar}: ${txt}`;
+  });
+  return [BIO3_FINDINGS_HEAD, ...lines].join("\n");
 }

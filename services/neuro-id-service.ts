@@ -7,11 +7,11 @@
  * Armazena DISFUNÇÃO (0–100); a conversão para EQUILÍBRIO é feita na exibição.
  */
 
-import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
+import { DEFAULT_CATALOG, PILLAR_LABELS, type NeuroPillar } from "@/modules/neuro-id/catalog";
 import { computeNeuroId, asScorable, type ScorableItem, type NeuroIdResult } from "@/modules/neuro-id/scoring";
 import { mergeConfirmedMetrics, EXAM_METRIC_META, type PillarContribution } from "@/modules/neuro-id/exam-metrics";
 import { DEFAULT_QUESTION_MAP, QUESTIONNAIRE_LABELS, normalizeToDysfunction10, type QuestionMapEntry } from "@/modules/neuro-id/question-map";
-import { formatFindingsSummary, type FindingGroup, type FindingItem } from "@/modules/neuro-id/findings";
+import { formatFindingsSummary, type FindingGroup, type FindingItem, type Bio3FindingItem } from "@/modules/neuro-id/findings";
 import { confirmedMedicationLoad } from "@/services/medication-load-service";
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 
@@ -742,4 +742,44 @@ export async function extractQuestionnaireFindings(
   const anamnese = formatFindingsSummary(anamneseGroups, threshold);
   const antecedents = formatFindingsSummary(antecedentesGroups, threshold);
   return { anamnese, antecedents, hasData: anamnese.length > 0 || antecedents.length > 0 };
+}
+
+// ── Achados do FORMULÁRIO UNIFICADO (Bio³) → itens p/ a Anamnese ───────────────
+/**
+ * Lê a última avaliação do formulário unificado (`source = 'unified_form'`) e
+ * devolve os itens com sua disfunção (0–100) + rótulo + pilar, para o formatador
+ * em camadas (formatBio3Findings) montar os "Pontos de atenção". É o que faz o
+ * formulário do paciente alimentar a Anamnese — o caminho antigo só lia QRM/Q-SNA.
+ * NÃO grava; o corte/priorização fica no formatador. Escopo por clínica.
+ */
+export async function getUnifiedBio3Findings(
+  patientId: string,
+  clinicId: string,
+  client?: Db,
+): Promise<Bio3FindingItem[]> {
+  const supabase = await getDb(client);
+  const { data: a } = await supabase
+    .from("patient_assessments")
+    .select("id")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .eq("source", "unified_form")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!a?.id) return [];
+  const { data: vals } = await supabase
+    .from("patient_assessment_values")
+    .select("item_code, dysfunction_score")
+    .eq("assessment_id", a.id as string);
+  const byCode = new Map(DEFAULT_CATALOG.map((d) => [d.code, d]));
+  const out: Bio3FindingItem[] = [];
+  for (const r of (vals ?? []) as { item_code: string; dysfunction_score: number | null }[]) {
+    const def = byCode.get(r.item_code);
+    if (!def || r.dysfunction_score == null) continue;
+    const dys = Number(r.dysfunction_score);
+    if (!Number.isFinite(dys)) continue;
+    out.push({ pillarLabel: PILLAR_LABELS[def.pillar], label: def.label, dysfunction: Math.round(dys) });
+  }
+  return out;
 }

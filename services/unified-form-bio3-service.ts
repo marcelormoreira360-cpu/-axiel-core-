@@ -1,5 +1,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { bio3FromAnswerRows, type AnswerRow } from "@/modules/neuro-id/unified-form-result";
+import { CATALOG_BY_CODE, PILLAR_LABELS } from "@/modules/neuro-id/catalog";
+import { formatBio3Findings, type Bio3FindingItem } from "@/modules/neuro-id/findings";
 import type { MedicationComplexityInput } from "@/lib/medication-complexity";
 import type { SafetyFlags } from "@/lib/safety-flags";
 import { createLogger } from "@/lib/logger";
@@ -89,6 +91,45 @@ export async function saveUnifiedFormResult(
   if (sErr) throw sErr;
 
   log.info("Bio³ do formulário unificado salvo", { patient_id: patientId, assessment_id: assessmentId });
+
+  // ── Anamnese automática (RASCUNHO em camadas) ────────────────────────────────
+  // Faz os sintomas do formulário chegarem à Anamnese sem digitação: monta os
+  // "Pontos de atenção" (Moderado+, pior primeiro) a partir do que o motor já
+  // pontuou. Só grava quando a Anamnese está VAZIA, para nunca sobrescrever o texto
+  // do terapeuta; com conteúdo existente, ele usa o botão "Importar achados" (que
+  // agora também inclui o formulário). Best-effort: não derruba o Mapa já salvo.
+  try {
+    const findingItems: Bio3FindingItem[] = result.scoredItems
+      .filter((s) => s.dysfunction != null && CATALOG_BY_CODE[s.code])
+      .map((s) => ({
+        pillarLabel: PILLAR_LABELS[s.pillar],
+        label: CATALOG_BY_CODE[s.code].label,
+        dysfunction: Math.round(s.dysfunction as number),
+      }));
+    const bio3Block = formatBio3Findings(findingItems);
+    if (bio3Block) {
+      const { data: pat } = await supabase
+        .from("patients")
+        .select("assessment_data")
+        .eq("id", patientId)
+        .eq("clinic_id", clinicId)
+        .maybeSingle();
+      const ad = (pat?.assessment_data ?? {}) as Record<string, unknown>;
+      const currentAnamnese = typeof ad.anamnese === "string" ? ad.anamnese : "";
+      if (currentAnamnese.trim() === "") {
+        await supabase
+          .from("patients")
+          .update({ assessment_data: { ...ad, anamnese: bio3Block } })
+          .eq("id", patientId)
+          .eq("clinic_id", clinicId);
+      }
+    }
+  } catch (e) {
+    log.warn("rascunho de anamnese (unificado) falhou", {
+      patient_id: patientId,
+      err: e instanceof Error ? e.message : String(e),
+    });
+  }
 
   // Snapshot em assessment_responses (lista de Questionários + tela de detalhe +
   // preservação das respostas de texto/escolha). Best-effort: uma falha aqui não

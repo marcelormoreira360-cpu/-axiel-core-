@@ -5,10 +5,10 @@ import { resolveLocale } from "@/i18n/get-locale";
 import { getPatientById, updatePatient } from "@/services/patient-service";
 import { getCurrentClinic } from "@/services/clinic-service";
 import { getClinicAssessmentFields, LEGACY_ASSESSMENT_COLUMNS } from "@/services/clinic-assessment-service";
-import { extractQuestionnaireFindings, autoUpsertNeuroIdDraft } from "@/services/neuro-id-service";
+import { extractQuestionnaireFindings, getUnifiedBio3Findings, autoUpsertNeuroIdDraft } from "@/services/neuro-id-service";
 import { getPatientIntakeResponses } from "@/services/intake-service";
 import { getPatientFunctionalExams } from "@/services/functional-exams-service";
-import { formatIntakeFindings, formatExamFindings } from "@/modules/neuro-id/findings";
+import { formatIntakeFindings, formatExamFindings, formatBio3Findings } from "@/modules/neuro-id/findings";
 import { formatIntakeAnswerSummary } from "@/lib/intake-answer";
 import { suggestAtmIntegration } from "@/services/ai-insight-service";
 import { suggestMedicationLoad, saveMedicationLoad, type MedicationSuggestion } from "@/services/medication-load-service";
@@ -80,6 +80,11 @@ export async function importQuestionnaireFindingsAction(
     // intake do paciente, anexado à Anamnese num bloco próprio (deduplicável ao
     // reimportar pelo cabeçalho "Relato do paciente"). Tenant via RLS + guard acima.
     const findings = await extractQuestionnaireFindings(patientId, clinic.id, 3);
+    // Achados do FORMULÁRIO UNIFICADO (Bio³): antes o "Importar achados" só via
+    // QRM/Q-SNA legados; agora inclui o formulário que o paciente respondeu.
+    const bio3Block = formatBio3Findings(
+      await getUnifiedBio3Findings(patientId, clinic.id).catch(() => []),
+    );
     const intakeResponses = await getPatientIntakeResponses(patientId).catch(() => []);
     const intakeBlock = formatIntakeFindings(
       intakeResponses.map((r) => ({
@@ -97,7 +102,7 @@ export async function importQuestionnaireFindingsAction(
         summary: e.summary ?? e.ai_analysis ?? "",
       })),
     );
-    const anamnese = [findings.anamnese, intakeBlock, examBlock].filter(Boolean).join("\n\n");
+    const anamnese = [findings.anamnese, bio3Block, intakeBlock, examBlock].filter(Boolean).join("\n\n");
     return {
       anamnese,
       antecedents: findings.antecedents,
