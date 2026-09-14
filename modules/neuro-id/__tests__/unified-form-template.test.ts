@@ -6,10 +6,10 @@ import { unifiedScaleKind } from "../unified-form-import";
 const allQuestions = UNIFIED_FORM.blocks.flatMap((b) => b.questions.map((q) => ({ ...q, block: b })));
 
 describe("coerência template ↔ catálogo ↔ fiação", () => {
-  it("todo item pontuado (freqimp/scale, exceto crise) existe no catálogo, no pilar do bloco", () => {
+  it("todo item pontuado (scale, exceto crise) existe no catálogo, no pilar do bloco", () => {
     for (const q of allQuestions) {
       if (!q.block.scored) continue;
-      if (q.type !== "freqimp" && q.type !== "scale") continue;
+      if (q.type !== "scale") continue;
       const def = CATALOG_BY_CODE[q.code];
       expect(def, `catálogo faltando ${q.code}`).toBeTruthy();
       if (q.block.pillar) expect(def.pillar, q.code).toBe(q.block.pillar);
@@ -24,7 +24,7 @@ describe("coerência template ↔ catálogo ↔ fiação", () => {
 
   it("todo item pontuado é reconhecido pela fiação de import", () => {
     for (const q of allQuestions) {
-      if (!q.block.scored || (q.type !== "freqimp" && q.type !== "scale")) continue;
+      if (!q.block.scored || q.type !== "scale") continue;
       expect(unifiedScaleKind(q.code), `fiação não reconhece ${q.code}`).not.toBeNull();
     }
   });

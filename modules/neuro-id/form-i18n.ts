@@ -62,6 +62,8 @@ export type FormChrome = {
   freq: string[];
   imp: string[];
   freq3: string[];
+  /** Gravidade 0–4 dos sintomas físicos/biofuncionais (5 níveis). */
+  sev: string[];
 };
 
 const CHROME_PT: FormChrome = {
@@ -103,6 +105,7 @@ const CHROME_PT: FormChrome = {
   freq: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
   imp: ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"],
   freq3: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
+  sev: ["Nunca", "Leve", "Moderado", "Forte", "Muito forte"],
 };
 
 const CHROME_EN: FormChrome = {
@@ -144,6 +147,7 @@ const CHROME_EN: FormChrome = {
   freq: ["Never", "A few days", "More than half the days", "Nearly every day"],
   imp: ["Doesn't interfere", "Interferes a little", "Interferes quite a bit", "Interferes a lot"],
   freq3: ["Never", "A few days", "More than half the days", "Nearly every day"],
+  sev: ["None", "Mild", "Moderate", "Strong", "Very strong"],
 };
 
 export function formChrome(locale: FormLocale): FormChrome {
@@ -310,7 +314,9 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
           label: en?.label ?? q.label,
           optionLabels: q.options ? en?.optionLabels ?? q.options : undefined,
           anchors: q.anchors ? en?.anchors ?? q.anchors : q.anchors,
-          scaleLabels: q.scaleLabels ? chrome.freq3 : q.scaleLabels,
+          // Gravidade 0–4 (sintoma físico/biofuncional) usa `sev` (5 níveis);
+          // as demais escalas com rótulos (ansiedade/regulação, apneia) são 0–3 → `freq3`.
+          scaleLabels: q.scaleLabels ? (q.max === 4 ? chrome.sev : chrome.freq3) : q.scaleLabels,
           note: en?.note ?? q.note,
         };
       }),

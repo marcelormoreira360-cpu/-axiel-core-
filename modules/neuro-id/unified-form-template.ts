@@ -61,8 +61,17 @@ export type UnifiedFormTemplate = {
 const FREQ_LABELS = ["Nunca ou quase nunca", "Poucos dias no mês", "Vários dias", "Quase todos os dias"];
 const IMP_LABELS = ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"];
 
-// helper compacto para item de sintoma comum (freq×impacto)
-const s = (code: string, label: string): UnifiedQuestion => ({ code, label, type: "freqimp" });
+// Escala de GRAVIDADE 0–4 para sintomas físicos/biofuncionais (decisão híbrida
+// de Marcelo, 14/09/2026). Substitui o antigo freq×impacto: uma pergunta só, sem
+// impacto condicional. Motivo: no modelo antigo, marcar o sintoma (freq≥1) e não
+// responder o impacto descartava o item (virava `null`), zerando o pilar em
+// silêncio. Com escala única, "presente" sempre pontua. O emocional (be_*)
+// segue com suas escalas próprias (humor 0–6 e ansiedade/regulação 0–3).
+const SEV_LABELS = ["Nunca", "Leve", "Moderado", "Forte", "Muito forte"];
+
+// helper compacto para item de sintoma físico/biofuncional (gravidade 0–4)
+const s = (code: string, label: string): UnifiedQuestion =>
+  ({ code, label, type: "scale", max: 4, scaleLabels: SEV_LABELS });
 
 // escala de frequência 0–3 (ansiedade/regulação e itens simples), com rótulos.
 const FREQ3 = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"];
@@ -218,4 +227,4 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
   ],
 };
 
-export { FREQ_LABELS, IMP_LABELS };
+export { FREQ_LABELS, IMP_LABELS, SEV_LABELS };

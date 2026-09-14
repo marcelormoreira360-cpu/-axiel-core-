@@ -11,16 +11,24 @@
  * booleano, nunca um "nível de risco".
  */
 
-/** Frequência mínima (0–3) que dispara precaução cardiorrespiratória por freq isolada. */
+/**
+ * Gravidade mínima que dispara precaução cardiorrespiratória.
+ * A escala do sintoma passou a ser gravidade 0–4 (antes freq 0–3); o limiar 2
+ * ("Moderado" ou pior) mantém a mesma sensibilidade nas duas escalas.
+ */
 export const CARDIORESP_FREQ_THRESHOLD = 2;
 /** Nível mínimo (0–6) do item de gosto pela vida que dispara o encaminhamento de crise. */
 export const CRISIS_THRESHOLD = 3;
 
-/** Códigos cardiorrespiratórios que disparam precaução pela FREQUÊNCIA sozinha. */
+/**
+ * Códigos cardiorrespiratórios que disparam precaução pela gravidade do sintoma.
+ * Lidos no código único (formato atual); o fallback `<code>_freq` cobre respostas
+ * antigas em freq×impacto.
+ */
 export const CARDIORESP_FREQ_CODES = [
-  "bf_desconforto_toracico_freq",
-  "bf_falta_ar_freq",
-  "bf_palpitacoes_freq",
+  "bf_desconforto_toracico",
+  "bf_falta_ar",
+  "bf_palpitacoes",
 ] as const;
 
 export const CRISIS_CODE = "be_crisis_gosto_vida" as const;
@@ -37,10 +45,11 @@ function toNum(v: unknown): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** True se qualquer código cardiorrespiratório tem frequência ≥ limiar (impacto ignorado). */
+/** True se qualquer sintoma cardiorrespiratório atinge a gravidade ≥ limiar. */
 export function cardiorespFlag(values: Record<string, unknown>): boolean {
   return CARDIORESP_FREQ_CODES.some((c) => {
-    const n = toNum(values[c]);
+    // Formato atual: gravidade no próprio código; fallback ao `<code>_freq` legado.
+    const n = toNum(values[c] ?? values[`${c}_freq`]);
     return n !== null && n >= CARDIORESP_FREQ_THRESHOLD;
   });
 }

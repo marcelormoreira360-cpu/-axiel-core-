@@ -44,19 +44,16 @@ describe("round-trip: seed → resposta por código → Bio³ (motor)", () => {
     for (const c of Object.keys(CATALOG_BY_CODE)) {
       const kind = unifiedScaleKind(c);
       if (!kind) continue;
-      if (kind === "freqimp") {
-        expect(codes.has(`${c}_freq`), `${c}_freq`).toBe(true);
-        expect(codes.has(`${c}_imp`), `${c}_imp`).toBe(true);
-      } else {
-        expect(codes.has(c), c).toBe(true);
-      }
+      // Todos os tipos (gravidade 0–4, humor 0–6, escala 0–3) semeiam UMA pergunta
+      // com o próprio código; a chave de resposta bate 1:1 com a fiação de import.
+      expect(codes.has(c), c).toBe(true);
     }
   });
 
   it("respostas por código alimentam os pilares via processUnifiedForm", () => {
     const answers = {
-      bm_dor_freq: 3, bm_dor_imp: 2,
-      bf_palpitacoes_freq: 2, bf_palpitacoes_imp: 3,
+      bm_dor: 3,            // gravidade 0–4
+      bf_palpitacoes: 2,    // gravidade 0–4
       be_mood_humor: 4, be_anx_nervosismo: 2,
     };
     const r = processUnifiedForm(answers);
