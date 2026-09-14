@@ -21,6 +21,18 @@ import { isPractitioner, getTeamMembers } from "@/services/team-service";
 import { getAppointmentsForDay } from "@/modules/schedule/schedule-view";
 import { formatTime } from "@/modules/schedule/date-utils";
 
+/**
+ * Mensagem amigável e localizada para uma falha de reagendar/editar/redimensionar.
+ * `updateAppointment`/`createAppointment` fazem throw com a mensagem crua
+ * "Conflito de horário: ..." quando o alvo está ocupado; aqui traduzimos esse caso
+ * para o texto da clínica (pt/en/pt-PT). Qualquer outro erro cai no genérico.
+ */
+function rescheduleErrorMessage(e: unknown, ts: (key: string) => string): string {
+  const msg = e instanceof Error ? e.message : "";
+  if (msg.startsWith("Conflito de horário")) return ts("blockConflict");
+  return ts("rescheduleError");
+}
+
 export default async function SchedulePage() {
   const profile = await getCurrentUserProfile();
   const clinicId = profile?.clinic_id ?? undefined;
@@ -385,10 +397,25 @@ export default async function SchedulePage() {
     revalidatePath("/schedule");
   }
 
-  async function rescheduleAction(id: string, newStartsAt: string, notify: boolean = true) {
+  async function rescheduleAction(
+    id: string,
+    newStartsAt: string,
+    notify: boolean = true,
+  ): Promise<{ error?: string }> {
     "use server";
-    await updateAppointment(id, { starts_at: newStartsAt }, { notifyPatient: notify });
-    revalidatePath("/schedule");
+    // Conflito de horário é resultado ESPERADO (não exceção): `updateAppointment`
+    // faz throw quando o alvo está ocupado. Se deixarmos o throw subir a partir de um
+    // Server Action, o Next renderiza a tela de erro cheia ("Algo deu errado"). Por
+    // isso capturamos e devolvemos `{ error }` para o cliente reverter o arrastar e
+    // mostrar um aviso, igual ao `rescheduleSmartAction`.
+    const ts = await getTranslations("schedule.actions");
+    try {
+      await updateAppointment(id, { starts_at: newStartsAt }, { notifyPatient: notify });
+      revalidatePath("/schedule");
+      return {};
+    } catch (e) {
+      return { error: rescheduleErrorMessage(e, ts) };
+    }
   }
 
   // Reagendamento inteligente a partir do painel do paciente.
@@ -449,14 +476,26 @@ export default async function SchedulePage() {
       revalidatePath("/schedule");
       return { created: false };
     } catch (e) {
-      return { error: e instanceof Error ? e.message : ts("rescheduleError") };
+      return { error: rescheduleErrorMessage(e, ts) };
     }
   }
 
-  async function resizeDurationAction(id: string, newDuration: number) {
+  async function resizeDurationAction(
+    id: string,
+    newDuration: number,
+  ): Promise<{ error?: string }> {
     "use server";
-    await updateAppointment(id, { duration_minutes: newDuration });
-    revalidatePath("/schedule");
+    // Redimensionar (alongar) uma sessão por cima de outra também dispara o conflito
+    // no `updateAppointment`. Devolve `{ error }` em vez de deixar o throw derrubar a
+    // página.
+    const ts = await getTranslations("schedule.actions");
+    try {
+      await updateAppointment(id, { duration_minutes: newDuration });
+      revalidatePath("/schedule");
+      return {};
+    } catch (e) {
+      return { error: rescheduleErrorMessage(e, ts) };
+    }
   }
 
   const t = await getTranslations("schedule.page");

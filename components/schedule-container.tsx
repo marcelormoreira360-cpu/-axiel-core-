@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useTransition } from "react";
+import { toast } from "sonner";
 import type { PatientLite } from "@/services/patient-service";
 import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -67,10 +68,10 @@ export function ScheduleContainer({
   /** Enriquece um agendamento leve (visão Semana) para o ScheduleSession do drawer. */
   enrichSessionAction?: (appointmentId: string) => Promise<ScheduleSession | null>;
   deleteSessionAction?: (id: string) => Promise<void>;
-  rescheduleAction?: (id: string, newStartsAt: string, notify?: boolean) => Promise<void>;
+  rescheduleAction?: (id: string, newStartsAt: string, notify?: boolean) => Promise<{ error?: string }>;
   /** Reagendamento inteligente (move futuro / cria novo se passado/no-show). */
   rescheduleSmartAction?: (id: string, dateStr: string, timeStr: string, notify?: boolean) => Promise<{ error?: string; created?: boolean }>;
-  resizeDurationAction?: (id: string, newDuration: number) => Promise<void>;
+  resizeDurationAction?: (id: string, newDuration: number) => Promise<{ error?: string }>;
   practitioners?: { id: string; name: string }[];
   cancellationWindowHours?: number;
   /** Fuso IANA da clínica — pré-preenche o reagendamento no wall-clock certo. */
@@ -123,8 +124,15 @@ export function ScheduleContainer({
     const { id, newStartsAt, revert } = pendingMove;
     startConfirmMove(async () => {
       try {
-        await rescheduleAction(id, newStartsAt, notifyOnMove);
+        // A ação NÃO faz throw em conflito (isso derrubaria a página inteira);
+        // devolve { error }. Reverte o card e avisa com toast quando houver erro.
+        const res = await rescheduleAction(id, newStartsAt, notifyOnMove);
+        if (res?.error) {
+          revert();
+          toast.error(res.error);
+        }
       } catch {
+        // Falha inesperada (ex.: rede): desfaz o movimento otimista.
         revert();
       }
       setPendingMove(null);
@@ -320,6 +328,7 @@ export function ScheduleContainer({
           onReschedule={rescheduleAction}
           onRescheduleRequest={requestReschedule}
           onResizeDuration={resizeDurationAction}
+          onActionError={(msg) => toast.error(msg)}
           timeBlocks={timeBlocks}
           blockAction={createBlockAction}
           onDeleteBlock={deleteBlockAction}
@@ -341,6 +350,7 @@ export function ScheduleContainer({
           onReschedule={rescheduleAction}
           onRescheduleRequest={requestReschedule}
           onResizeDuration={resizeDurationAction}
+          onActionError={(msg) => toast.error(msg)}
           onOpenAppointment={openAppointment}
         />
       )}
