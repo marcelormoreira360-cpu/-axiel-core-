@@ -62,6 +62,8 @@ export type FormChrome = {
   freq: string[];
   imp: string[];
   freq3: string[];
+  /** Gravidade 0–4 dos sintomas físicos/biofuncionais (5 níveis). */
+  sev: string[];
 };
 
 const CHROME_PT: FormChrome = {
@@ -103,6 +105,7 @@ const CHROME_PT: FormChrome = {
   freq: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
   imp: ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"],
   freq3: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
+  sev: ["Ausente", "Leve", "Moderado", "Intenso", "Muito intenso"],
 };
 
 const CHROME_EN: FormChrome = {
@@ -144,6 +147,7 @@ const CHROME_EN: FormChrome = {
   freq: ["Never", "A few days", "More than half the days", "Nearly every day"],
   imp: ["Doesn't interfere", "Interferes a little", "Interferes quite a bit", "Interferes a lot"],
   freq3: ["Never", "A few days", "More than half the days", "Nearly every day"],
+  sev: ["Absent", "Mild", "Moderate", "Intense", "Very intense"],
 };
 
 export function formChrome(locale: FormLocale): FormChrome {
@@ -155,12 +159,15 @@ export function formChrome(locale: FormLocale): FormChrome {
 // anchors = âncoras por nível; note = observação. Falta -> cai no PT do template.
 type QEN = { label?: string; optionLabels?: string[]; anchors?: Record<number, string>; note?: string };
 
+const SEV_INTRO_EN =
+  "Thinking about how often and how much it affected you over the last 30 days, rate the overall severity of each symptom.";
+
 const EN_BLOCK: Record<string, { title: string; intro?: string }> = {
   A: { title: "Profile and safety", intro: "These questions help our team get to know you and prepare your care." },
-  B: { title: "Body and movement" },
-  C: { title: "Heart, breathing and regulation" },
-  D: { title: "Digestion, metabolism and whole-body" },
-  E: { title: "Sleep, energy and cognition" },
+  B: { title: "Body and movement", intro: SEV_INTRO_EN },
+  C: { title: "Heart, breathing and regulation", intro: SEV_INTRO_EN },
+  D: { title: "Digestion, metabolism and whole-body", intro: SEV_INTRO_EN },
+  E: { title: "Sleep, energy and cognition", intro: SEV_INTRO_EN },
   F: { title: "How you've been feeling in the last 30 days" },
   G: { title: "To complete your picture (optional)" },
   H: { title: "Medications", intro: "Therapeutic complexity index (for professional use, separate from the score)." },
@@ -310,7 +317,9 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
           label: en?.label ?? q.label,
           optionLabels: q.options ? en?.optionLabels ?? q.options : undefined,
           anchors: q.anchors ? en?.anchors ?? q.anchors : q.anchors,
-          scaleLabels: q.scaleLabels ? chrome.freq3 : q.scaleLabels,
+          // Gravidade 0–4 (sintoma físico/biofuncional) usa `sev` (5 níveis);
+          // as demais escalas com rótulos (ansiedade/regulação, apneia) são 0–3 → `freq3`.
+          scaleLabels: q.scaleLabels ? (q.max === 4 ? chrome.sev : chrome.freq3) : q.scaleLabels,
           note: en?.note ?? q.note,
         };
       }),

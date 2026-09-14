@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest";
 import { cardiorespFlag, crisisFlag, evaluateSafetyFlags } from "../safety-flags";
 
-describe("cardiorespFlag (freq isolada ≥ 2, impacto ignorado)", () => {
-  it("dispara com desconforto torácico frequente mesmo sem impacto", () => {
+describe("cardiorespFlag (gravidade ≥ 2)", () => {
+  it("dispara pela gravidade do sintoma no formato atual (código único)", () => {
+    expect(cardiorespFlag({ bf_desconforto_toracico: 2 })).toBe(true);
+    expect(cardiorespFlag({ bf_falta_ar: 4 })).toBe(true);
+    expect(cardiorespFlag({ bf_palpitacoes: 1 })).toBe(false); // "Leve" não dispara
+  });
+  it("RETROCOMPAT: ainda dispara pelo `_freq` das respostas antigas", () => {
     expect(cardiorespFlag({ bf_desconforto_toracico_freq: 2 })).toBe(true);
     expect(cardiorespFlag({ bf_desconforto_toracico_freq: 3, bf_desconforto_toracico_imp: 0 })).toBe(true);
   });

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Activity, Plus, Pencil, X, FileText, AlertCircle, CheckCircle2, AlertTriangle, Ban, Download, ShieldAlert, Send, Check } from "lucide-react";
 import { DEFAULT_CATALOG, type NeuroPillar } from "@/modules/neuro-id/catalog";
+import { coverageFromAnswers, type PillarCoverageState } from "@/modules/neuro-id/coverage";
 import { RAW_MAX_BY_CODE, rawToNormalized, normalizedToRaw } from "@/modules/neuro-id/questionnaire-scale";
 import {
   bandForDysfunction, bandForItem, severityColor, priorityPillars, dysfunctionToBalance,
@@ -185,6 +186,18 @@ export function PatientNeuroIdPanel({
     bioquimico: map?.bioquimico_pct ?? null,
     emocional: map?.emocional_pct ?? null,
   };
+  // Cobertura por pilar: evita mostrar "100% Solto" quando o pilar está vazio ou
+  // (no físico) o exame presencial ainda não foi lançado. Deriva dos valores da
+  // avaliação que a página já carregou (initialValues). Só aplica quando temos
+  // respostas; sem elas, cai no comportamento antigo (mostra a banda) p/ não
+  // regredir avaliações legadas sem linhas de valor.
+  const answeredCodes = useMemo(() => new Set(Object.keys(initialValues)), [initialValues]);
+  const coverage = useMemo(() => coverageFromAnswers(answeredCodes), [answeredCodes]);
+  const haveAnswers = answeredCodes.size > 0;
+  function coverageFor(p: NeuroPillar): PillarCoverageState | null {
+    if (!haveAnswers) return null; // fallback legado: sem valores, não sobrepõe
+    return coverage[p];
+  }
   // Camada do paciente: EQUILÍBRIO (100 − disfunção). Motor interno segue em disfunção;
   // cor/estado/prioridade continuam saindo da disfunção crua, nunca do número exibido.
   const generalDys = round(map?.indice_geral ?? null);
@@ -197,9 +210,18 @@ export function PatientNeuroIdPanel({
   // Anel Bio³: ordem [fisico, bioquimico, emocional]. Preenchimento por equilíbrio,
   // cor pela disfunção crua. label = nome do eixo (tooltip nativo do segmento).
   const RING_ICON = { fisico: "person", bioquimico: "atom", emocional: "brain" } as const;
-  const ringData: Bio3RingDatum[] = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => ({
-    dys: pillarDys[p], balance: dysfunctionToBalance(pillarDys[p]), isPriority: prioritySet.has(p), label: t(`pillar.${p}`), icon: RING_ICON[p],
-  }));
+  const ringData: Bio3RingDatum[] = (["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
+    // Leitura não confiável (vazio ou físico aguardando exame) → segmento neutro
+    // "—" no anel, nunca um "100%" verde falso. Coerente com o card do pilar.
+    const cov = coverageFor(p);
+    const unreliable = cov === "sem_dados" || cov === "aguardando_exame";
+    return {
+      dys: unreliable ? null : pillarDys[p],
+      balance: unreliable ? null : dysfunctionToBalance(pillarDys[p]),
+      isPriority: prioritySet.has(p) && !unreliable,
+      label: t(`pillar.${p}`), icon: RING_ICON[p],
+    };
+  });
   const ringAria = `${t("title")}: ${(["fisico", "bioquimico", "emocional"] as NeuroPillar[])
     .map((p) => { const b = dysfunctionToBalance(pillarDys[p]); return `${t(`pillar.${p}`)} ${b === null ? "—" : `${b}%`}`; })
     .join(", ")}.`;
@@ -292,22 +314,36 @@ export function PatientNeuroIdPanel({
           {/* 3 cards dos pilares: disfunção absoluta · cor contínua por gravidade · ★ no(s) prioritário(s) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-[8px]">
             {(["fisico", "bioquimico", "emocional"] as NeuroPillar[]).map((p) => {
+              const cov = coverageFor(p);
+              const noData = cov === "sem_dados";
+              // "Parcial": pilar não é leitura confiável (vazio, exame pendente, ou
+              // exame incompleto). NUNCA mostrar banda "Solto" reassegurando nesses casos.
+              const partial = cov === "aguardando_exame" || cov === "parcial";
+              const AMBER = { fill: "#F4E4C8", fillStrong: "#EACB92", stroke: "#C98A3C", text: "#8A5A14" };
+              const GRAY = { fill: "#E9E7E0", fillStrong: "#E9E7E0", stroke: "#D3D1C7", text: "#A09E98" };
               const band = bandForDysfunction(pillarDys[p]);
-              const c = severityColor(pillarDys[p]);
+              const c = noData ? GRAY : partial ? AMBER : severityColor(pillarDys[p]);
               const bal = dysfunctionToBalance(pillarDys[p]);
-              const isPriority = prioritySet.has(p);
+              const isPriority = prioritySet.has(p) && !noData;
+              const subtitle = cov === "aguardando_exame" ? t("coverage.awaitingExam") : t("cardSubtitle");
               return (
                 <div key={p} className="rounded-[10px] border px-[12px] py-[10px]"
-                  title={bal === null ? undefined : t("dysfunctionTooltip", { value: 100 - bal })}
+                  title={noData ? undefined : bal === null ? undefined : t("dysfunctionTooltip", { value: 100 - bal })}
                   style={{ background: c.fill, borderColor: isPriority ? c.stroke : "transparent", borderWidth: isPriority ? 2 : 1 }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-[11px] font-medium" style={{ color: c.text }}>{t(`pillar.${p}`)}</span>
-                    {band && <BandPill band={band} label={bandLabel(band, "axis")} />}
+                    {noData ? (
+                      <span className="text-[10px] font-medium px-[8px] py-[2px] rounded-full" style={{ background: "#00000010", color: c.text }}>{t("coverage.noData")}</span>
+                    ) : partial ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-medium px-[8px] py-[2px] rounded-full" style={{ background: AMBER.fillStrong, color: AMBER.text }}><AlertCircle className="h-3 w-3 shrink-0" /> {t("coverage.partial")}</span>
+                    ) : (
+                      band && <BandPill band={band} label={bandLabel(band, "axis")} />
+                    )}
                   </div>
                   <p className="text-[26px] font-semibold leading-none mt-[6px]" style={{ color: c.text }}>
-                    {bal === null ? "—" : `${bal}%`}
+                    {noData || bal === null ? "—" : `${bal}%`}
                   </p>
-                  <p className="text-[9px] mt-[2px] opacity-70" style={{ color: c.text }}>{t("cardSubtitle")}</p>
+                  <p className="text-[9px] mt-[2px] opacity-70" style={{ color: c.text }}>{subtitle}</p>
                   {isPriority && (
                     <p className="text-[10px] font-semibold mt-[4px] flex items-center gap-1" style={{ color: c.text }}>★ {t("startHere")}</p>
                   )}

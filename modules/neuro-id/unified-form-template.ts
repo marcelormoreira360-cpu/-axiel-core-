@@ -61,8 +61,26 @@ export type UnifiedFormTemplate = {
 const FREQ_LABELS = ["Nunca ou quase nunca", "Poucos dias no mês", "Vários dias", "Quase todos os dias"];
 const IMP_LABELS = ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"];
 
-// helper compacto para item de sintoma comum (freq×impacto)
-const s = (code: string, label: string): UnifiedQuestion => ({ code, label, type: "freqimp" });
+// Escala de GRAVIDADE GERAL 0–4 do Mapa Bio³ (`bio3_severity`), para sintomas
+// físicos/biofuncionais (decisão híbrida de Marcelo, 14/09/2026). Substitui o
+// antigo freq×impacto: uma pergunta só, sem impacto condicional. Motivo: no modelo
+// antigo, marcar o sintoma (freq≥1) e não responder o impacto descartava o item
+// (virava `null`), zerando o pilar em silêncio. Com escala única, "presente"
+// sempre pontua. O emocional (be_*) segue com suas escalas próprias (humor 0–6 e
+// ansiedade/regulação 0–3).
+//
+// IMPORTANTE: esta é uma escala PROPRIETÁRIA do Mapa Bio³, que combina frequência
+// e impacto numa única nota de gravidade. NÃO reproduz a matriz freq×severidade do
+// QRM e NÃO deve ser apresentada/comparada como "escore QRM".
+const SEV_LABELS = ["Ausente", "Leve", "Moderado", "Intenso", "Muito intenso"];
+
+// Instrução dos blocos de sintoma: deixa explícito que a nota é gravidade geral
+// (frequência + impacto juntos), evitando a confusão entre frequência e intensidade.
+const SEV_INTRO = "Considerando a frequência e o quanto atrapalhou nos últimos 30 dias, marque a gravidade geral de cada sintoma.";
+
+// helper compacto para item de sintoma físico/biofuncional (gravidade 0–4)
+const s = (code: string, label: string): UnifiedQuestion =>
+  ({ code, label, type: "scale", max: 4, scaleLabels: SEV_LABELS });
 
 // escala de frequência 0–3 (ansiedade/regulação e itens simples), com rótulos.
 const FREQ3 = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"];
@@ -93,6 +111,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
     {
       key: "B",
       title: "Corpo e movimento",
+      intro: SEV_INTRO,
       pillar: "fisico",
       scored: true,
       questions: [
@@ -107,6 +126,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
     {
       key: "C",
       title: "Regulação e cardiorrespiratório",
+      intro: SEV_INTRO,
       pillar: "bioquimico",
       scored: true,
       questions: [
@@ -122,6 +142,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
     {
       key: "D",
       title: "Digestivo, metabólico e sistêmico",
+      intro: SEV_INTRO,
       pillar: "bioquimico",
       scored: true,
       questions: [
@@ -146,6 +167,7 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
     {
       key: "E",
       title: "Sono, energia e cognição",
+      intro: SEV_INTRO,
       pillar: "bioquimico",
       scored: true,
       questions: [
@@ -218,4 +240,4 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
   ],
 };
 
-export { FREQ_LABELS, IMP_LABELS };
+export { FREQ_LABELS, IMP_LABELS, SEV_LABELS };

@@ -18,12 +18,14 @@ import {
   type MedicationComplexityResult,
 } from "@/lib/medication-complexity";
 
-type ScaleKind = "freqimp" | "mood6" | "scale3";
+// "bio3_severity" = escala PROPRIETÁRIA de gravidade 0–4 do Mapa Bio³ (combina
+// frequência+impacto numa nota única). NÃO é um escore QRM.
+type ScaleKind = "bio3_severity" | "mood6" | "scale3";
 
 /** Escala de um código do formulário unificado, pelo prefixo. null = não é do form novo. */
 export function unifiedScaleKind(code: string): ScaleKind | null {
-  if (code === "bf_apneia") return "scale3"; // exceção: escala única (não é freq×impacto)
-  if (code.startsWith("bm_") || code.startsWith("bf_")) return "freqimp";
+  if (code === "bf_apneia") return "scale3"; // exceção: rastreio 0–3 (não é gravidade 0–4)
+  if (code.startsWith("bm_") || code.startsWith("bf_")) return "bio3_severity"; // sintoma: gravidade 0–4
   if (code.startsWith("be_mood_")) return "mood6";
   if (code.startsWith("be_anx_") || code.startsWith("be_reg_")) return "scale3";
   return null;
@@ -55,8 +57,15 @@ export function buildUnifiedBio3Values(answers: Record<string, unknown>): Record
     const kind = unifiedScaleKind(code);
     if (!kind) continue;
     let v: number | null = null;
-    if (kind === "freqimp") {
-      v = freqImpToScale10(answers[`${code}_freq`], answers[`${code}_imp`]);
+    if (kind === "bio3_severity") {
+      // Formato atual: uma escala de gravidade 0–4 no próprio código.
+      v = rawToScale10(answers[code], 4);
+      // RETROCOMPAT: respostas antigas guardaram freq×impacto em `<code>_freq`/`_imp`.
+      // Se não veio a gravidade nova mas veio o par antigo, mapeia pelo caminho legado
+      // para não perder respostas já coletadas.
+      if (v === null && (answers[`${code}_freq`] !== undefined || answers[`${code}_imp`] !== undefined)) {
+        v = freqImpToScale10(answers[`${code}_freq`], answers[`${code}_imp`]);
+      }
     } else if (kind === "mood6") {
       v = rawToScale10(answers[code], 6);
     } else {

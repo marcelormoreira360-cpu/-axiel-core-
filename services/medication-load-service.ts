@@ -153,10 +153,34 @@ export async function extractMedicationLoad(text: string): Promise<MedicationExt
   return { medications, supplements, medication_count };
 }
 
-/** Junta leitura do QRM + extração por IA (para o terapeuta revisar). */
+// ── Fallback: resposta de medicação do FORMULÁRIO UNIFICADO (Bloco H) ─────────
+// O form unificado guarda a medicação em `assessment_responses.raw_answers`
+// (med_lista/med_suplementos), não como assessment_answers do QRM. Sem isto, o
+// "Extrair medicação" não via nada para quem respondeu o formulário novo.
+async function getUnifiedMedicationText(patientId: string, clinicId: string): Promise<string | null> {
+  const { createSupabaseServerClient } = await import("@/lib/supabase-server");
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase
+    .from("assessment_responses")
+    .select("raw_answers, assessment_templates!inner(name)")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .ilike("assessment_templates.name", "%Perfil Cl%nico Integrado%")
+    .order("filled_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const ra = (data as { raw_answers?: Record<string, unknown> } | null)?.raw_answers;
+  if (!ra) return null;
+  const lista = String(ra.med_lista ?? "").trim();
+  const supl = String(ra.med_suplementos ?? "").trim();
+  const text = [lista, supl].filter(Boolean).join("\n").trim();
+  return text || null;
+}
+
+/** Junta leitura do QRM (ou do formulário unificado) + extração por IA. */
 export async function suggestMedicationLoad(patientId: string, clinicId: string): Promise<MedicationSuggestion> {
-  const text = await getMedicationAnswerText(patientId, clinicId);
-  if (!text) return { error: "Sem resposta de medicação no QRM para extrair." };
+  const text = (await getMedicationAnswerText(patientId, clinicId)) ?? (await getUnifiedMedicationText(patientId, clinicId));
+  if (!text) return { error: "Sem resposta de medicação para extrair." };
   const extraction = await extractMedicationLoad(text);
   return { sourceText: text, ...extraction };
 }

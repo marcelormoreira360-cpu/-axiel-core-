@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, stripPreviousFindings, formatExamFindings, EXAM_FINDINGS_HEAD, type FindingGroup } from "../findings";
+import { formatFindingsSummary, qrmTotalLabel, qsnaTotalLabel, stripPreviousFindings, formatExamFindings, formatBio3Findings, BIO3_FINDINGS_HEAD, EXAM_FINDINGS_HEAD, type FindingGroup } from "../findings";
 
 describe("findings", () => {
   it("faixas do QRM", () => {
@@ -80,6 +80,32 @@ describe("findings", () => {
     const prev = "Anotação do terapeuta.\n\nQRM: acima de 40 (hipersensibilidade provável)\n- Mente: Memória ruim (3)";
     expect(stripPreviousFindings(prev)).toBe("Anotação do terapeuta.");
     expect(stripPreviousFindings("Só texto humano, sem achados.")).toBe("Só texto humano, sem achados.");
+  });
+
+  it("formatBio3Findings: só Moderado+ (>=50), pior primeiro, agrupado por pilar", () => {
+    const txt = formatBio3Findings([
+      { pillarLabel: "Biofuncional", label: "Acordar várias vezes", dysfunction: 100 },
+      { pillarLabel: "Biofuncional", label: "Concentração", dysfunction: 50 },
+      { pillarLabel: "Bioemocional", label: "Humor rebaixado", dysfunction: 60 },
+      { pillarLabel: "Biomecânico", label: "Dor leve", dysfunction: 25 }, // abaixo do corte, sai
+    ]);
+    expect(txt).toContain(BIO3_FINDINGS_HEAD);
+    expect(txt).toContain("Acordar várias vezes (muito intenso)");
+    expect(txt).toContain("Concentração (moderado)");
+    expect(txt).toContain("Humor rebaixado (moderado)");
+    expect(txt).not.toContain("Dor leve"); // leve não entra nos pontos de atenção
+    // pior primeiro dentro do pilar: "Acordar" (100) antes de "Concentração" (50)
+    expect(txt.indexOf("Acordar")).toBeLessThan(txt.indexOf("Concentração"));
+  });
+
+  it("formatBio3Findings vazio quando nada atinge o corte", () => {
+    expect(formatBio3Findings([{ pillarLabel: "Biofuncional", label: "x", dysfunction: 20 }])).toBe("");
+    expect(formatBio3Findings([])).toBe("");
+  });
+
+  it("stripPreviousFindings deduplica também o bloco Bio³ (Pontos de atenção)", () => {
+    const prev = `Nota do terapeuta.\n\n${BIO3_FINDINGS_HEAD}\n- Biofuncional: x (moderado)`;
+    expect(stripPreviousFindings(prev)).toBe("Nota do terapeuta.");
   });
 
   it("stripPreviousFindings limpa o formato novo (QRM=) e a intro legada", () => {
