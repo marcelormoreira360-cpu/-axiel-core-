@@ -64,6 +64,8 @@ export type FormChrome = {
   freq3: string[];
   /** Gravidade 0–4 dos sintomas físicos/biofuncionais (5 níveis). */
   sev: string[];
+  /** Resposta 0–3 oficial do PHQ-9/GAD-7 (últimas 2 semanas). */
+  phq: string[];
 };
 
 const CHROME_PT: FormChrome = {
@@ -106,6 +108,7 @@ const CHROME_PT: FormChrome = {
   imp: ["Não atrapalha", "Atrapalha um pouco", "Atrapalha bastante", "Atrapalha muito"],
   freq3: ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"],
   sev: ["Ausente", "Leve", "Moderado", "Intenso", "Muito intenso"],
+  phq: ["Nenhuma vez", "Vários dias", "Mais da metade dos dias", "Quase todo dia"],
 };
 
 const CHROME_EN: FormChrome = {
@@ -148,6 +151,7 @@ const CHROME_EN: FormChrome = {
   imp: ["Doesn't interfere", "Interferes a little", "Interferes quite a bit", "Interferes a lot"],
   freq3: ["Never", "A few days", "More than half the days", "Nearly every day"],
   sev: ["Absent", "Mild", "Moderate", "Intense", "Very intense"],
+  phq: ["Not at all", "Several days", "More than half the days", "Nearly every day"],
 };
 
 export function formChrome(locale: FormLocale): FormChrome {
@@ -161,6 +165,8 @@ type QEN = { label?: string; optionLabels?: string[]; anchors?: Record<number, s
 
 const SEV_INTRO_EN =
   "Thinking about how often and how much it affected you over the last 30 days, rate the overall severity of each symptom.";
+const PHQ_GAD_INTRO_EN =
+  "Over the LAST 2 WEEKS, how often have you been bothered by:";
 
 const EN_BLOCK: Record<string, { title: string; intro?: string }> = {
   A: { title: "Profile and safety", intro: "These questions help our team get to know you and prepare your care." },
@@ -168,7 +174,7 @@ const EN_BLOCK: Record<string, { title: string; intro?: string }> = {
   C: { title: "Heart, breathing and regulation", intro: SEV_INTRO_EN },
   D: { title: "Digestion, metabolism and whole-body", intro: SEV_INTRO_EN },
   E: { title: "Sleep, energy and cognition", intro: SEV_INTRO_EN },
-  F: { title: "How you've been feeling in the last 30 days" },
+  F: { title: "How you've been feeling", intro: PHQ_GAD_INTRO_EN },
   G: { title: "To complete your picture (optional)" },
   H: { title: "Medications", intro: "Therapeutic complexity index (for professional use, separate from the score)." },
 };
@@ -230,27 +236,26 @@ const EN_Q: Record<string, QEN> = {
   bf_brain_fog: { label: "Foggy mind or feeling stuck when thinking/deciding" },
   bf_apneia: { label: "Has anyone said you snore loudly or stop breathing while asleep?" },
 
-  // Bloco F — Como você tem se sentido (humor / ansiedade / regulação)
-  be_mood_humor: { label: "How have your mood and spirits been?", anchors: { 0: "Fine, as usual", 2: "A bit down at times", 4: "Down most days", 6: "Heavy sadness almost all the time" } },
-  be_mood_tensao: { label: "Have you felt tense or on edge, hard to unwind?", anchors: { 0: "Calm", 2: "Mild restlessness at times", 4: "Tension most days", 6: "Almost unbearable tension" } },
-  be_mood_sono: { label: "How has your sleep been?", anchors: { 0: "I sleep well", 2: "Slightly worse", 4: "Much worse", 6: "I sleep very little" } },
-  be_mood_apetite: { label: "And your appetite?", anchors: { 0: "Normal", 2: "A bit lower", 4: "Much reduced", 6: "Almost no appetite" } },
-  be_mood_concentracao: { label: "Can you concentrate and gather your thoughts?", anchors: { 0: "No difficulty", 2: "Takes some effort", 4: "Hard most of the time", 6: "Almost impossible" } },
-  be_mood_iniciativa: { label: "How is your energy to get things started?", anchors: { 0: "I do everything normally", 2: "Hard to get going", 4: "I have to force myself", 6: "I can barely take the first step" } },
-  be_mood_envolvimento: { label: "How is your interest and enjoyment in the things you usually like?", anchors: { 0: "Yes, as always", 2: "A little less", 4: "Much less", 6: "I've lost interest in almost everything" } },
-  be_mood_pessimismo: { label: "How have you been seeing the future and yourself?", anchors: { 0: "With hope", 2: "Sometimes I'm hard on myself", 4: "A sense of failure or guilt", 6: "A future with no way out, constant guilt" } },
-  be_crisis_gosto_vida: { label: "How is your will to live and to keep going?", anchors: { 0: "I enjoy life", 2: "Sometimes it feels dull", 3: "I think it would be better not to be here", 4: "I think I'd rather not wake up", 6: "I've been thinking about hurting myself" }, note: "Referral item (not scored)." },
-  be_anx_intro: { label: "How often, in the last 30 days, have you felt:" },
-  be_anx_nervosismo: { label: "Nervousness, anxiety or feeling on edge" },
-  be_anx_preocupacao_control: { label: "Difficulty stopping or controlling worries" },
-  be_anx_preocupacao_demais: { label: "Worrying too much about different things" },
-  be_anx_relaxar: { label: "Difficulty relaxing" },
-  be_anx_inquietacao: { label: "Restlessness, hard to sit still" },
-  be_anx_medo_ruim: { label: "Fear that something bad might happen" },
-  be_anx_sobressalto: { label: "Feeling jumpy or easily startled" },
-  be_reg_irritabilidade: { label: "Losing patience or getting irritated easily" },
-  be_reg_hipervigilancia: { label: "Feeling constantly on alert, never letting your guard down" },
-  be_reg_culpa: { label: "Guilt or self-blame over everyday things" },
+  // Bloco F — PHQ-9 + GAD-7 oficiais (2 semanas) + complemento Bio³
+  phq9_1: { label: "Little interest or pleasure in doing things" },
+  phq9_2: { label: "Feeling down, depressed, or hopeless" },
+  phq9_3: { label: "Trouble falling or staying asleep, or sleeping too much" },
+  phq9_4: { label: "Feeling tired or having little energy" },
+  phq9_5: { label: "Poor appetite or overeating" },
+  phq9_6: { label: "Feeling bad about yourself, or that you are a failure or have let yourself or your family down" },
+  phq9_7: { label: "Trouble concentrating on things (reading, watching TV)" },
+  phq9_8: { label: "Moving or speaking so slowly that others noticed, or being so fidgety/restless that you moved around a lot more than usual" },
+  phq9_9: { label: "Thoughts that you would be better off dead, or of hurting yourself in some way", note: "Triggers the support referral." },
+  gad7_intro: { label: "Still over the last 2 weeks, how often:" },
+  gad7_1: { label: "Feeling nervous, anxious or on edge" },
+  gad7_2: { label: "Not being able to stop or control worrying" },
+  gad7_3: { label: "Worrying too much about different things" },
+  gad7_4: { label: "Trouble relaxing" },
+  gad7_5: { label: "Being so restless that it's hard to sit still" },
+  gad7_6: { label: "Becoming easily annoyed or irritable" },
+  gad7_7: { label: "Feeling afraid, as if something awful might happen" },
+  be_reg_intro: { label: "Finally, still over the last 2 weeks:" },
+  be_reg_hipervigilancia: { label: "Feeling constantly on alert, unable to let your guard down" },
   be_reg_recuperar_estresse: { label: "Difficulty returning to normal after stress" },
 
   // Bloco G — Para completar o quadro (opcional)
@@ -317,9 +322,15 @@ export function localizeForm(locale: FormLocale): LocalizedForm {
           label: en?.label ?? q.label,
           optionLabels: q.options ? en?.optionLabels ?? q.options : undefined,
           anchors: q.anchors ? en?.anchors ?? q.anchors : q.anchors,
-          // Gravidade 0–4 (sintoma físico/biofuncional) usa `sev` (5 níveis);
-          // as demais escalas com rótulos (ansiedade/regulação, apneia) são 0–3 → `freq3`.
-          scaleLabels: q.scaleLabels ? (q.max === 4 ? chrome.sev : chrome.freq3) : q.scaleLabels,
+          // Rótulos de escala em EN: gravidade 0–4 → `sev`; PHQ-9/GAD-7 e complemento
+          // (0–3, 2 semanas) → `phq`; demais 0–3 (apneia/legado) → `freq3`.
+          scaleLabels: q.scaleLabels
+            ? (q.max === 4
+                ? chrome.sev
+                : (q.code.startsWith("phq9_") || q.code.startsWith("gad7_") || q.code.startsWith("be_reg_"))
+                  ? chrome.phq
+                  : chrome.freq3)
+            : q.scaleLabels,
           note: en?.note ?? q.note,
         };
       }),

@@ -433,10 +433,15 @@ export function PatientNeuroIdPanel({
                   .filter((it) => {
                     if (it.pillar !== pillar) return false;
                     const hasValue = (vals[it.code] ?? "") !== "";
-                    // Itens AUTO (importados) e LEGADOS (QRM/Q-SNA separados) só aparecem
-                    // se preenchidos: pra clínica que usa o formulário unificado, esses
-                    // campos não poluem a tela com "não respondido".
-                    const hideWhenEmpty = it.auto || it.code.startsWith("qrm_") || it.code.startsWith("qsna_");
+                    // Itens AUTO (importados) e LEGADOS só aparecem se preenchidos, pra
+                    // não poluir a tela com "não respondido": QRM/Q-SNA separados e o bloco
+                    // emocional antigo (be_mood_/be_anx_ e os be_reg_ que saíram do form,
+                    // hoje substituídos por PHQ-9/GAD-7 oficiais).
+                    const legacyEmotional =
+                      it.code.startsWith("be_mood_") || it.code.startsWith("be_anx_") ||
+                      it.code === "be_reg_irritabilidade" || it.code === "be_reg_culpa";
+                    const hideWhenEmpty =
+                      it.auto || it.code.startsWith("qrm_") || it.code.startsWith("qsna_") || legacyEmotional;
                     return hasValue || !hideWhenEmpty;
                   })
                   .map((it) => {

@@ -2,6 +2,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase-admin";
 import { bio3FromAnswerRows, type AnswerRow } from "@/modules/neuro-id/unified-form-result";
 import { CATALOG_BY_CODE, PILLAR_LABELS } from "@/modules/neuro-id/catalog";
 import { formatBio3Findings, type Bio3FindingItem } from "@/modules/neuro-id/findings";
+import { computeOfficialScores } from "@/modules/neuro-id/official-scores";
 import type { MedicationComplexityInput } from "@/lib/medication-complexity";
 import type { SafetyFlags } from "@/lib/safety-flags";
 import { createLogger } from "@/lib/logger";
@@ -137,11 +138,20 @@ export async function saveUnifiedFormResult(
   if (opts?.templateId && opts?.rawAnswers) {
     try {
       const round0 = (v: number | null) => (v == null ? 0 : Math.round(v));
-      const sectionScores = {
+      // Escores OFICIAIS (PHQ-9/GAD-7) a partir das respostas cruas do bloco de 2
+      // semanas. Só entram no snapshot se o instrumento foi respondido (answered>0).
+      const official = computeOfficialScores(opts.rawAnswers);
+      const sectionScores: Record<string, { title: string; score: number; max: number; band?: string; complete?: boolean }> = {
         fisico: { title: "Corpo e movimento (físico)", score: round0(result.pillars.fisico.dysfunction), max: 100 },
         bioquimico: { title: "Regulação e sistêmico (biofuncional)", score: round0(result.pillars.bioquimico.dysfunction), max: 100 },
         emocional: { title: "Como você tem se sentido (emocional)", score: round0(result.pillars.emocional.dysfunction), max: 100 },
       };
+      if (official.phq9.answered > 0) {
+        sectionScores.phq9 = { title: "PHQ-9 · depressão (2 semanas)", score: official.phq9.total, max: 27, band: official.phq9.band, complete: official.phq9.complete };
+      }
+      if (official.gad7.answered > 0) {
+        sectionScores.gad7 = { title: "GAD-7 · ansiedade (2 semanas)", score: official.gad7.total, max: 21, band: official.gad7.band, complete: official.gad7.complete };
+      }
       const { error: rErr } = await supabase.from("assessment_responses").insert({
         template_id: opts.templateId,
         patient_id: patientId,

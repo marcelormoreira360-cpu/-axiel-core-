@@ -109,6 +109,7 @@ export default async function ViewResponsePage({ params }: Props) {
                   <div className="flex items-baseline gap-[3px] shrink-0">
                     <span className="text-[12px] font-medium" style={{ color: sBand?.colors.text ?? "#0F1A2E" }}>{ss.score}</span>
                     <span className="text-[10px] text-[#A09E98]">/{ss.max}</span>
+                    {(ss as { band?: string }).band && <span className="text-[10px] text-[#A09E98] ml-[4px]">· {(ss as { band?: string }).band}</span>}
                   </div>
                 </div>
               );
