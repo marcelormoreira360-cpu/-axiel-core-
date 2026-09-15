@@ -25,7 +25,7 @@ export type Coverage = Record<NeuroPillar, PillarCoverageState>;
 // Itens de EXAME PRESENCIAL do Biomecânico: físico, não-autorrelato (não `bm_`),
 // não derivado de questionário (`auto`) e não laboratorial (`lab`). São os testes
 // manuais/mobilidade que só o terapeuta gradua.
-const FISICO_PRO_EXAM = DEFAULT_CATALOG
+export const FISICO_PRO_EXAM = DEFAULT_CATALOG
   .filter((i) => i.pillar === "fisico" && !i.code.startsWith("bm_") && !i.auto && i.input_type !== "lab")
   .map((i) => i.code);
 

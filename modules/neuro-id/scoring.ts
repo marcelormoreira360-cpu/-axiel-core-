@@ -9,6 +9,7 @@
 import type { CatalogItemDef, NeuroPillar, ItemDirection, ItemInputType, ScoringRule } from "./catalog";
 import { examMetricContributions, type PillarContribution } from "./exam-metrics";
 import { subdomainFor } from "./subdomains";
+import { FISICO_PRO_EXAM } from "./coverage";
 
 /** Subconjunto necessário do item (compatível com CatalogItemDef e com a linha do banco). */
 export type ScorableItem = {
@@ -187,9 +188,20 @@ export function computeNeuroId(
     pillars[p].dysfunction = subLoads.length ? subLoads.reduce((s, v) => s + v, 0) / subLoads.length : null;
   }
 
-  // Índice geral = média (igual) dos pilares calculáveis.
   const available = PILLARS.map((p) => pillars[p].dysfunction).filter((v): v is number => v !== null);
-  const indiceGeral = available.length ? available.reduce((s, v) => s + v, 0) / available.length : null;
+
+  // Índice geral = média das disfunções dos pilares CONFIÁVEIS (índice honesto). Um
+  // pilar não confiável não infla o índice: o Biomecânico só com autorrelato (sem
+  // exame presencial nem métrica de exame fundida) fica FORA da conta, para o número
+  // geral não parecer melhor do que é. Ver coverage.ts / _SPEC_FORMULARIO_MESTRE.md §7.
+  const answeredCodes = new Set(scoredItems.filter((s) => s.dysfunction !== null).map((s) => s.code));
+  const isReliablePillar = (p: NeuroPillar): boolean => {
+    if (pillars[p].dysfunction === null) return false;
+    if (p === "fisico") return pillars.fisico.examItemsUsed > 0 || FISICO_PRO_EXAM.some((c) => answeredCodes.has(c));
+    return true;
+  };
+  const reliable = PILLARS.filter(isReliablePillar).map((p) => pillars[p].dysfunction as number);
+  const indiceGeral = reliable.length ? reliable.reduce((s, v) => s + v, 0) / reliable.length : null;
 
   // Prioridade = pilar de maior disfunção.
   let priorityPillar: NeuroPillar | null = null;
