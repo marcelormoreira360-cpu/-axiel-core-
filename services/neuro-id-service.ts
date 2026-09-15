@@ -52,6 +52,8 @@ export type NeuroIdMap = {
   status: string | null;
   /** clínica dona da avaliação de origem (defense-in-depth de tenant nas rotas). */
   clinic_id: string | null;
+  /** origem da avaliação: 'unified_form' | 'questionnaire' | 'manual' | ... */
+  source: string | null;
 };
 
 // ── Catálogo ─────────────────────────────────────────────────────────────────
@@ -182,7 +184,7 @@ export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promi
   const supabase = await getDb(client);
   const { data, error } = await supabase
     .from("patient_neuro_id_scores")
-    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status, clinic_id)")
+    .select("assessment_id, patient_id, fisico_pct, bioquimico_pct, emocional_pct, indice_geral, priority_pillar, is_partial, computed_at, patient_assessments(status, clinic_id, source)")
     .eq("patient_id", patientId)
     .order("computed_at", { ascending: false })
     .limit(5);
@@ -195,12 +197,13 @@ export async function getLatestNeuroIdMap(patientId: string, client?: Db): Promi
   const hasData = (r: Record<string, unknown>) =>
     r.fisico_pct != null || r.bioquimico_pct != null || r.emocional_pct != null;
   const data0 = rows.find(hasData) ?? rows[0];
-  const a = (data0 as { patient_assessments?: { status?: string; clinic_id?: string } | { status?: string; clinic_id?: string }[] | null }).patient_assessments;
+  const a = (data0 as { patient_assessments?: { status?: string; clinic_id?: string; source?: string } | { status?: string; clinic_id?: string; source?: string }[] | null }).patient_assessments;
   const assessment = Array.isArray(a) ? a[0] : a;
   return {
     ...(data0 as unknown as NeuroIdMap),
     status: assessment?.status ?? null,
     clinic_id: assessment?.clinic_id ?? null,
+    source: assessment?.source ?? null,
   };
 }
 

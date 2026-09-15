@@ -21,6 +21,7 @@ export type NeuroIdMapView = {
   priority_pillar: NeuroPillar | null;
   is_partial: boolean;
   status?: string | null;
+  source?: string | null;
 } | null;
 
 const PILLARS: NeuroPillar[] = ["fisico", "bioquimico", "emocional"];
@@ -92,6 +93,12 @@ export function PatientNeuroIdPanel({
 }) {
   const t = useTranslations("neuroId");
   const tCommon = useTranslations("common.actions");
+  // Clínica que já usa o formulário unificado (Neuro ID) tem o mapa gravado direto
+  // por ele. A caixa "Importar respostas" é legado (só puxa QRM/Q-SNA/PHQ/GAD/MSQ/HPA
+  // por NOME de template) e não reconhece o unificado → esconder para não falsear
+  // "questionário não respondido" quando na verdade já foi respondido. Ver diagnóstico
+  // do caso Priscilla (14/09/2026).
+  const cameFromUnifiedForm = map?.source === "unified_form";
   const [assessing, setAssessing] = useState(false);
   const [sending, startSending] = useTransition();
   const [sendState, setSendState] = useState<"idle" | "sent" | "error">("idle");
@@ -281,7 +288,10 @@ export function PatientNeuroIdPanel({
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-[1px]" />
                 {t("autoDraftBanner")}
               </p>
-              <button type="button" onClick={() => { startNew(); handleImport(); }}
+              {/* Unificado: os valores já estão gravados → editar em cima (não blanka
+                  nem re-importa legado). Legado: reabre em branco e reconstrói a partir
+                  das respostas do questionário. */}
+              <button type="button" onClick={() => { if (cameFromUnifiedForm) { startEdit(); } else { startNew(); handleImport(); } }}
                 className="w-full sm:w-auto min-h-[44px] sm:min-h-0 text-[11px] font-medium text-white bg-[#C77D17] hover:bg-[#A8650F] rounded-[8px] px-[12px] py-[6px] transition shrink-0">
                 {t("reviewComplete")}
               </button>
@@ -400,7 +410,10 @@ export function PatientNeuroIdPanel({
             </p>
           )}
 
-          {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA) */}
+          {/* §8: importar respostas de questionário (MSQ, PHQ-9, GAD-7, HPA).
+              Legado — some quando o mapa já veio do formulário unificado (que grava
+              direto e não é reconhecido por este importador por-nome). */}
+          {!cameFromUnifiedForm && (
           <div className="rounded-[8px] border border-[#0F6E56]/20 bg-white p-[10px] space-y-[8px]">
             <p className="text-[11px] font-semibold text-[#0F1A2E] flex items-center gap-1"><Download className="h-3 w-3 text-[#0F6E56] dark:text-[#9FE1CB]" /> {t("importTitle")}</p>
             <p className="text-[10px] text-[#A09E98]">{t("importHint")}</p>
@@ -422,6 +435,7 @@ export function PatientNeuroIdPanel({
               </p>
             )}
           </div>
+          )}
 
           <p className="text-[11px] text-[#A09E98]">{t("formHint")}</p>
 
