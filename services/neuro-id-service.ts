@@ -69,27 +69,45 @@ export async function getNeuroIdCatalog(clinicId: string, client?: Db): Promise<
   return (data ?? []) as CatalogRow[];
 }
 
-/** Garante o catálogo default para a clínica (idempotente). Requer contexto de escrita. */
+/**
+ * Garante o catálogo default para a clínica (idempotente) e o mantém em dia.
+ *
+ * ADITIVO: semeia os códigos do DEFAULT_CATALOG que a clínica ainda NÃO tem. Antes
+ * só semeava quando a clínica tinha ZERO linhas — clínicas antigas ficavam defasadas
+ * quando o método ganhava itens novos (be_/bf_/bm_/PHQ-9/GAD-7 item a item), e o
+ * recálculo manual (Rever/editar, Nova avaliação) pontuava só os códigos velhos,
+ * perdendo pilares inteiros (ex.: Bioemocional virava null). Agora completa o que
+ * falta. Confere contra TODOS os códigos da clínica (ativos OU inativos) para não
+ * duplicar (unique clinic_id+code) nem reativar itens que a clínica desativou de
+ * propósito. Requer contexto de escrita.
+ */
 export async function ensureClinicCatalog(clinicId: string, client?: Db): Promise<CatalogRow[]> {
-  const existing = await getNeuroIdCatalog(clinicId, client);
-  if (existing.length > 0) return existing;
-
   const supabase = await getDb(client);
-  const rows = DEFAULT_CATALOG.map((d) => ({
-    clinic_id: clinicId,
-    code: d.code,
-    label: d.label,
-    pillar: d.pillar,
-    direction: d.direction,
-    input_type: d.input_type,
-    scoring_rule: d.scoring_rule,
-    weight: d.weight,
-    sort_order: d.sort_order,
-    active: true,
-  }));
-  const { error } = await supabase.from("assessment_items_catalog").insert(rows);
-  if (error) throw error;
-  return getNeuroIdCatalog(clinicId);
+  const { data: existingRows, error: exErr } = await supabase
+    .from("assessment_items_catalog")
+    .select("code")
+    .eq("clinic_id", clinicId);
+  if (exErr) throw exErr;
+  const have = new Set((existingRows ?? []).map((r) => (r as { code: string }).code));
+
+  const missing = DEFAULT_CATALOG.filter((d) => !have.has(d.code));
+  if (missing.length > 0) {
+    const rows = missing.map((d) => ({
+      clinic_id: clinicId,
+      code: d.code,
+      label: d.label,
+      pillar: d.pillar,
+      direction: d.direction,
+      input_type: d.input_type,
+      scoring_rule: d.scoring_rule,
+      weight: d.weight,
+      sort_order: d.sort_order,
+      active: true,
+    }));
+    const { error } = await supabase.from("assessment_items_catalog").insert(rows);
+    if (error) throw error;
+  }
+  return getNeuroIdCatalog(clinicId, client);
 }
 
 /** Itens para o motor: catálogo da clínica se houver, senão os defaults. */
