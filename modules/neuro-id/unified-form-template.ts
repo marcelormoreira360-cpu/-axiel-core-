@@ -38,6 +38,9 @@ export type UnifiedQuestion = {
   conditionalOn?: string;
   /** valor/opção da porta que revela esta pergunta (ex.: "Olhos", "Sim"). */
   showIfValue?: string;
+  /** escala normal que TAMBÉM mostra a caixa de apoio em crise quando valor ≥ 1
+   *  (usado no item 9 do PHQ-9: pontua o total oficial e dispara o encaminhamento). */
+  crisisIfPositive?: boolean;
   note?: string;
 };
 
@@ -86,6 +89,13 @@ const s = (code: string, label: string): UnifiedQuestion =>
 const FREQ3 = ["Nunca", "Poucos dias", "Mais da metade dos dias", "Quase todos os dias"];
 const af = (code: string, label: string): UnifiedQuestion =>
   ({ code, label, type: "scale", max: 3, scaleLabels: FREQ3 });
+
+// Escala de resposta OFICIAL do PHQ-9/GAD-7 (0–3, últimas 2 semanas).
+const PHQ_LABELS = ["Nenhuma vez", "Vários dias", "Mais da metade dos dias", "Quase todo dia"];
+const q3 = (code: string, label: string): UnifiedQuestion =>
+  ({ code, label, type: "scale", max: 3, scaleLabels: PHQ_LABELS });
+const PHQ_GAD_INTRO =
+  "Nas ÚLTIMAS 2 SEMANAS, com que frequência você foi incomodado(a) por:";
 
 export const UNIFIED_FORM: UnifiedFormTemplate = {
   name: "Neuro ID — Perfil Clínico Integrado de 30 Dias",
@@ -185,31 +195,36 @@ export const UNIFIED_FORM: UnifiedFormTemplate = {
     },
     {
       key: "F",
-      title: "Como você tem se sentido nos últimos 30 dias",
+      title: "Como você tem se sentido",
+      intro: PHQ_GAD_INTRO,
       pillar: "emocional",
       scored: true,
       questions: [
-        { code: "be_mood_humor", label: "Como tem estado o seu ânimo e a sua disposição?", type: "scale", max: 6, anchors: { 0: "Bem, como de costume", 2: "Um pouco para baixo às vezes", 4: "Para baixo na maior parte dos dias", 6: "Tristeza pesada quase o tempo todo" } },
-        { code: "be_mood_tensao", label: "Tem sentido tensão ou aflição por dentro, difícil de relaxar?", type: "scale", max: 6, anchors: { 0: "Tranquilidade", 2: "Inquietação leve às vezes", 4: "Tensão na maioria dos dias", 6: "Aflição quase insuportável" } },
-        { code: "be_mood_sono", label: "Como tem sido o seu sono?", type: "scale", max: 6, anchors: { 0: "Durmo bem", 2: "Levemente pior", 4: "Bem pior", 6: "Durmo muito pouco" } },
-        { code: "be_mood_apetite", label: "E o seu apetite?", type: "scale", max: 6, anchors: { 0: "Normal", 2: "Um pouco menor", 4: "Bem reduzido", 6: "Quase sem vontade" } },
-        { code: "be_mood_concentracao", label: "Consegue se concentrar e reunir os pensamentos?", type: "scale", max: 6, anchors: { 0: "Sem dificuldade", 2: "Custa um pouco", 4: "Difícil na maioria", 6: "Quase não consigo" } },
-        { code: "be_mood_iniciativa", label: "Como está a sua energia para começar as coisas?", type: "scale", max: 6, anchors: { 0: "Faço tudo normalmente", 2: "Custa começar", 4: "Preciso me forçar", 6: "Quase não dou o primeiro passo" } },
-        { code: "be_mood_envolvimento", label: "Ainda sente interesse e prazer nas coisas de que gosta?", type: "scale", max: 6, anchors: { 0: "Sim, como sempre", 2: "Um pouco menos", 4: "Bem menos", 6: "Perdi o interesse por quase tudo" } },
-        { code: "be_mood_pessimismo", label: "Como tem enxergado o futuro e a si?", type: "scale", max: 6, anchors: { 0: "Com esperança", 2: "Às vezes me cobro", 4: "Sensação de fracasso/culpa", 6: "Futuro sem saída, culpa constante" } },
-        { code: "be_crisis_gosto_vida", label: "Como está a sua vontade de viver e de seguir em frente?", type: "crisis", max: 6, anchors: { 0: "Aproveito a vida", 2: "Às vezes parece sem graça", 3: "Penso que seria melhor não estar aqui", 4: "Penso que preferiria não acordar", 6: "Tenho pensado em me machucar" }, note: "Item de encaminhamento (não pontua)." },
-        { code: "be_anx_intro", label: "Com que frequência você sentiu, nos últimos 30 dias:", type: "info" },
-        af("be_anx_nervosismo", "Nervosismo, ansiedade ou sensação de estar no limite"),
-        af("be_anx_preocupacao_control", "Dificuldade de parar ou controlar as preocupações"),
-        af("be_anx_preocupacao_demais", "Preocupação demais com coisas diferentes"),
-        af("be_anx_relaxar", "Dificuldade de relaxar"),
-        af("be_anx_inquietacao", "Inquietação, difícil ficar parado"),
-        af("be_anx_medo_ruim", "Medo de que algo ruim fosse acontecer"),
-        af("be_anx_sobressalto", "Assustar-se ou ficar em alerta com facilidade"),
-        af("be_reg_irritabilidade", "Perder a paciência ou irritação com facilidade"),
-        af("be_reg_hipervigilancia", "Sentir-se em alerta constante, sem baixar a guarda"),
-        af("be_reg_culpa", "Culpa ou autocobrança por coisas do dia a dia"),
-        af("be_reg_recuperar_estresse", "Dificuldade de voltar ao normal após um estresse"),
+        // PHQ-9 oficial (depressão, últimas 2 semanas, 0–3). Itens 1–8 pontuam o pilar.
+        q3("phq9_1", "Pouco interesse ou pouco prazer em fazer as coisas"),
+        q3("phq9_2", "Sentir-se para baixo, deprimido(a) ou sem esperança"),
+        q3("phq9_3", "Dificuldade para dormir, sono agitado ou dormir demais"),
+        q3("phq9_4", "Sentir-se cansado(a) ou com pouca energia"),
+        q3("phq9_5", "Falta de apetite ou comer demais"),
+        q3("phq9_6", "Sentir-se mal consigo mesmo(a), um fracasso, ou que decepcionou a si ou à família"),
+        q3("phq9_7", "Dificuldade de se concentrar (ler, ver TV)"),
+        q3("phq9_8", "Lentidão para se mover/falar, ou o contrário, muito agitado(a), a ponto de outros notarem"),
+        // Item 9 (ideação): pontua o total oficial e dispara o encaminhamento (não entra no pilar).
+        { ...q3("phq9_9", "Pensar que seria melhor estar morto(a) ou em se machucar de algum jeito"), crisisIfPositive: true, note: "Dispara o encaminhamento de apoio." },
+        // GAD-7 oficial (ansiedade, últimas 2 semanas, 0–3). Os 7 pontuam o pilar.
+        { code: "gad7_intro", label: "Ainda nas últimas 2 semanas, com que frequência:", type: "info" },
+        q3("gad7_1", "Sentir-se nervoso(a), ansioso(a) ou no limite"),
+        q3("gad7_2", "Não conseguir parar ou controlar as preocupações"),
+        q3("gad7_3", "Preocupar-se demais com coisas diferentes"),
+        q3("gad7_4", "Dificuldade para relaxar"),
+        q3("gad7_5", "Ficar tão inquieto(a) que é difícil ficar parado(a)"),
+        q3("gad7_6", "Ficar facilmente irritado(a) ou aborrecido(a)"),
+        q3("gad7_7", "Sentir medo, como se algo terrível fosse acontecer"),
+        // Complemento Bio³ (não faz parte do escore oficial; soma ao pilar). Só o que
+        // ACRESCENTA além do PHQ-9/GAD-7 (irritabilidade já é GAD-7 nº6; culpa ≈ PHQ-9 nº6).
+        { code: "be_reg_intro", label: "Por fim, ainda nas últimas 2 semanas:", type: "info" },
+        q3("be_reg_hipervigilancia", "Sentir-se em alerta constante, sem conseguir baixar a guarda"),
+        q3("be_reg_recuperar_estresse", "Dificuldade de voltar ao normal depois de um estresse"),
       ],
     },
     {

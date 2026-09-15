@@ -17,8 +17,10 @@
  * ("Moderado" ou pior) mantém a mesma sensibilidade nas duas escalas.
  */
 export const CARDIORESP_FREQ_THRESHOLD = 2;
-/** Nível mínimo (0–6) do item de gosto pela vida que dispara o encaminhamento de crise. */
+/** Nível mínimo (0–6) do item LEGADO de gosto pela vida que dispara o encaminhamento. */
 export const CRISIS_THRESHOLD = 3;
+/** Item 9 do PHQ-9 (ideação): QUALQUER marcação (≥1) dispara o encaminhamento. */
+export const PHQ9_ITEM9_CODE = "phq9_9" as const;
 
 /**
  * Códigos cardiorrespiratórios que disparam precaução pela gravidade do sintoma.
@@ -54,10 +56,16 @@ export function cardiorespFlag(values: Record<string, unknown>): boolean {
   });
 }
 
-/** True se o item de gosto pela vida atinge o limiar de crise (gatilho binário, não nível). */
+/**
+ * True se há sinal de ideação → encaminhamento (gatilho binário, não nível de risco).
+ * Formato atual: PHQ-9 item 9 com QUALQUER marcação (≥1). Fallback: item legado
+ * be_crisis_gosto_vida ≥ limiar (escala antiga 0–6).
+ */
 export function crisisFlag(values: Record<string, unknown>): boolean {
-  const n = toNum(values[CRISIS_CODE]);
-  return n !== null && n >= CRISIS_THRESHOLD;
+  const phq9item9 = toNum(values[PHQ9_ITEM9_CODE]);
+  if (phq9item9 !== null && phq9item9 >= 1) return true;
+  const legacy = toNum(values[CRISIS_CODE]);
+  return legacy !== null && legacy >= CRISIS_THRESHOLD;
 }
 
 /** Avalia todos os sinais de segurança de uma vez. */

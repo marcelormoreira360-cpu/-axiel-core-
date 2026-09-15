@@ -229,13 +229,26 @@ function QuestionInput({ q, answers, set, chrome }: { q: LocalizedQuestion; answ
   }
   if (q.type === "scale") {
     const labels = q.scaleLabels;
+    const cur = answers[q.code];
+    const showCrisis = q.crisisIfPositive && typeof cur === "number" && cur >= 1;
     return (
-      <div className="flex flex-wrap gap-1.5">
-        {Array.from({ length: max + 1 }, (_, v) => (
-          <OptButton key={v} active={answers[q.code] === v} onClick={() => set(q.code, v)}>
-            {labels && labels[v] != null ? `${v} · ${labels[v]}` : v}
-          </OptButton>
-        ))}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: max + 1 }, (_, v) => (
+            <OptButton key={v} active={cur === v} onClick={() => set(q.code, v)}>
+              {labels && labels[v] != null ? `${v} · ${labels[v]}` : v}
+            </OptButton>
+          ))}
+        </div>
+        {showCrisis && (
+          <div className="rounded-xl border border-rose-500 bg-rose-50 p-3 text-[13px] dark:bg-rose-950/30">
+            <b className="text-rose-700 dark:text-rose-300">{chrome.crisis.title}</b> {chrome.crisis.body}
+            <div className="mt-1.5 flex flex-wrap gap-3 font-mono text-xs">
+              <span>{chrome.crisis.us}</span><span>{chrome.crisis.br}</span><span>{chrome.crisis.emergency}</span>
+            </div>
+            <div className="mt-1.5 text-[11px] text-neutral-500">{chrome.crisis.note}</div>
+          </div>
+        )}
       </div>
     );
   }

@@ -85,6 +85,13 @@ export const SUBDOMAIN_BY_CODE: Record<string, string> = {
   exame_cabelo: "laboratorial",
 
   // ── EMOCIONAL / Bioemocional ─────────────────────────────────────────────────
+  // PHQ-9 oficial (itens 1–8; o 9 de ideação não entra no pilar) → depressão.
+  phq9_1: "humor_depressao", phq9_2: "humor_depressao", phq9_3: "humor_depressao",
+  phq9_4: "humor_depressao", phq9_5: "humor_depressao", phq9_6: "humor_depressao",
+  phq9_7: "humor_depressao", phq9_8: "humor_depressao",
+  // GAD-7 oficial (7 itens) → ansiedade.
+  gad7_1: "ansiedade", gad7_2: "ansiedade", gad7_3: "ansiedade", gad7_4: "ansiedade",
+  gad7_5: "ansiedade", gad7_6: "ansiedade", gad7_7: "ansiedade",
   phq9_depressao: "humor_depressao",
   be_mood_humor: "humor_depressao",
   be_mood_apetite: "humor_depressao",

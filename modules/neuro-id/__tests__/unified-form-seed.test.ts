@@ -41,11 +41,14 @@ describe("buildUnifiedSeed", () => {
 describe("round-trip: seed → resposta por código → Bio³ (motor)", () => {
   it("todo código pontuável do catálogo tem as respostas que a fiação espera", () => {
     const codes = new Set(unifiedSeedCodes());
+    // Códigos LEGADO do catálogo (bloco emocional antigo) NÃO estão no formulário novo
+    // — ele usa PHQ-9/GAD-7 oficiais. Ficam no catálogo só p/ dados históricos.
+    const isLegacy = (c: string) =>
+      c.startsWith("be_mood_") || c.startsWith("be_anx_") || c === "be_reg_irritabilidade" || c === "be_reg_culpa";
     for (const c of Object.keys(CATALOG_BY_CODE)) {
       const kind = unifiedScaleKind(c);
-      if (!kind) continue;
-      // Todos os tipos (gravidade 0–4, humor 0–6, escala 0–3) semeiam UMA pergunta
-      // com o próprio código; a chave de resposta bate 1:1 com a fiação de import.
+      if (!kind || isLegacy(c)) continue;
+      // Cada tipo semeia UMA pergunta com o próprio código; a chave bate 1:1 com o import.
       expect(codes.has(c), c).toBe(true);
     }
   });

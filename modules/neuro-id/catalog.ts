@@ -183,7 +183,29 @@ export const DEFAULT_CATALOG: CatalogItemDef[] = [
   scale("bf_brain_fog", "Mente enevoada", "bioquimico", "symptom", 1490),
   scale("bf_apneia", "Ronco / apneia referida", "bioquimico", "symptom", 1500),
 
-  // ── Bloco F → Bioemocional (LIMPO: humor, ansiedade, regulação) ──
+  // ── Bloco F → Bioemocional: INSTRUMENTOS OFICIAIS (PHQ-9 + GAD-7, 2 semanas) ──
+  // PHQ-9 (depressão): itens 1–8 pontuam o pilar. O item 9 (ideação) NÃO entra no
+  // pilar (decisão de Marcelo: ideação só dispara encaminhamento, não gradua a nota);
+  // ele existe só nas respostas cruas, para o total oficial PHQ-9 (0–27) e o alerta.
+  scale("phq9_1", "Pouco interesse ou prazer em fazer as coisas", "emocional", "symptom", 1500),
+  scale("phq9_2", "Sentir-se para baixo, deprimido(a) ou sem esperança", "emocional", "symptom", 1510),
+  scale("phq9_3", "Dificuldade para dormir, sono agitado ou dormir demais", "emocional", "symptom", 1520),
+  scale("phq9_4", "Sentir-se cansado(a) ou com pouca energia", "emocional", "symptom", 1530),
+  scale("phq9_5", "Falta de apetite ou comer demais", "emocional", "symptom", 1540),
+  scale("phq9_6", "Sentir-se mal consigo mesmo(a), um fracasso, ou que decepcionou a si/à família", "emocional", "symptom", 1550),
+  scale("phq9_7", "Dificuldade de concentração (ler, ver TV)", "emocional", "symptom", 1560),
+  scale("phq9_8", "Lentidão ou inquietação percebida por outros", "emocional", "symptom", 1570),
+  // GAD-7 (ansiedade): 7 itens, todos pontuam o pilar.
+  scale("gad7_1", "Sentir-se nervoso(a), ansioso(a) ou no limite", "emocional", "symptom", 1580),
+  scale("gad7_2", "Não conseguir parar ou controlar as preocupações", "emocional", "symptom", 1590),
+  scale("gad7_3", "Preocupar-se demais com coisas diferentes", "emocional", "symptom", 1600),
+  scale("gad7_4", "Dificuldade para relaxar", "emocional", "symptom", 1601),
+  scale("gad7_5", "Ficar tão inquieto(a) que é difícil ficar parado(a)", "emocional", "symptom", 1602),
+  scale("gad7_6", "Ficar facilmente irritado(a) ou aborrecido(a)", "emocional", "symptom", 1603),
+  scale("gad7_7", "Sentir medo como se algo terrível fosse acontecer", "emocional", "symptom", 1604),
+
+  // ── LEGADO Bio³ (humor/ansiedade estilo-PHQ/GAD): mantido só p/ dados antigos;
+  //    o formulário novo usa PHQ-9/GAD-7 oficiais acima. Escondido quando vazio. ──
   scale("be_mood_humor", "Humor / disposição", "emocional", "symptom", 1610),
   scale("be_mood_tensao", "Tensão interna", "emocional", "symptom", 1620),
   scale("be_mood_sono", "Sono (humor)", "emocional", "symptom", 1630),

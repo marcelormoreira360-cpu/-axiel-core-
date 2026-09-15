@@ -26,6 +26,7 @@ type ScaleKind = "bio3_severity" | "mood6" | "scale3";
 export function unifiedScaleKind(code: string): ScaleKind | null {
   if (code === "bf_apneia") return "scale3"; // exceção: rastreio 0–3 (não é gravidade 0–4)
   if (code.startsWith("bm_") || code.startsWith("bf_")) return "bio3_severity"; // sintoma: gravidade 0–4
+  if (/^(phq9|gad7)_\d/.test(code)) return "scale3"; // oficiais granulares (phq9_1..9, gad7_1..7): 0–3
   if (code.startsWith("be_mood_")) return "mood6";
   if (code.startsWith("be_anx_") || code.startsWith("be_reg_")) return "scale3";
   return null;
