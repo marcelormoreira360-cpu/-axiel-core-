@@ -41,26 +41,30 @@
     "alto": "Alteração alta"
   },
   "band": {
-    "legend": "solto · tenso · bloqueado",
+    "legend": "equilibrado · atenção · prioridade · elevada",
     "mobility": {
-      "solto": "Solto",
-      "tenso": "Tenso",
-      "bloqueado": "Bloqueado"
+      "equilibrado": "Livre",
+      "atencao": "Leve restrição",
+      "prioridade": "Restrito",
+      "elevada": "Bloqueado"
     },
     "pain": {
-      "solto": "Leve",
-      "tenso": "Moderada",
-      "bloqueado": "Intensa"
+      "equilibrado": "Leve",
+      "atencao": "Moderada",
+      "prioridade": "Forte",
+      "elevada": "Intensa"
     },
     "symptom": {
-      "solto": "Baixo",
-      "tenso": "Moderado",
-      "bloqueado": "Alto"
+      "equilibrado": "Baixo",
+      "atencao": "Moderado",
+      "prioridade": "Alto",
+      "elevada": "Muito alto"
     },
     "axis": {
-      "solto": "Solto",
-      "tenso": "Tenso",
-      "bloqueado": "Bloqueado"
+      "equilibrado": "Equilibrado",
+      "atencao": "Merece atenção",
+      "prioridade": "Prioridade de cuidado",
+      "elevada": "Prioridade elevada"
     }
   },
   "detailLabel": "Por eixo",
