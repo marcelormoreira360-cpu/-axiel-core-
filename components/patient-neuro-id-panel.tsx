@@ -430,7 +430,15 @@ export function PatientNeuroIdPanel({
               <p className="text-[11px] font-semibold text-[#0F1A2E] mb-[6px]">{t(`pillar.${pillar}`)}</p>
               <div className="grid grid-cols-1 gap-[8px] sm:grid-cols-2">
                 {DEFAULT_CATALOG
-                  .filter((it) => it.pillar === pillar && (!it.auto || (vals[it.code] ?? "") !== ""))
+                  .filter((it) => {
+                    if (it.pillar !== pillar) return false;
+                    const hasValue = (vals[it.code] ?? "") !== "";
+                    // Itens AUTO (importados) e LEGADOS (QRM/Q-SNA separados) só aparecem
+                    // se preenchidos: pra clínica que usa o formulário unificado, esses
+                    // campos não poluem a tela com "não respondido".
+                    const hideWhenEmpty = it.auto || it.code.startsWith("qrm_") || it.code.startsWith("qsna_");
+                    return hasValue || !hideWhenEmpty;
+                  })
                   .map((it) => {
                   const raw = vals[it.code] ?? "";
                   const band = it.input_type === "lab"

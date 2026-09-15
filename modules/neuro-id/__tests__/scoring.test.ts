@@ -69,6 +69,16 @@ describe("computeNeuroId", () => {
     expect(Math.round(r.pillars.bioquimico.dysfunction!)).toBe(50);
   });
 
+  it("índice honesto: Biomecânico só com autorrelato (sem exame) fica FORA do índice", () => {
+    // bm_dor (autorrelato, 80) + intestino (bioq 40) + be_mood_humor (emo 60). Sem exame físico.
+    const semExame = computeNeuroId(items, { bm_dor: 8, intestino: 4, be_mood_humor: 6 });
+    expect(semExame.pillars.fisico.dysfunction).not.toBeNull(); // pilar existe
+    expect(Math.round(semExame.indiceGeral!)).toBe(50); // média só de bioq(40)+emo(60)
+    // Com um item de EXAME presencial (dor), o físico passa a contar no índice.
+    const comExame = computeNeuroId(items, { bm_dor: 8, dor: 8, intestino: 4, be_mood_humor: 6 });
+    expect(Math.round(comExame.indiceGeral!)).toBe(60); // (80+40+60)/3
+  });
+
   it("dado faltando não quebra e marca parcial + CTA", () => {
     const r = computeNeuroId(items, { dor: 5 });
     expect(r.pillars.fisico.dysfunction).not.toBeNull();
