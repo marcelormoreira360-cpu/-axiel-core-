@@ -168,10 +168,24 @@ Depois das suas respostas, eu quebro em PRs pequenos (começando pela normaliza�
    Bandas internas, não diagnósticas. Toca bands.ts + cores + i18n (3 locales) + painel + PDF + anel + semáforo dos questionários. PR próprio.
 5. **Esconder itens legados QRM/Q-SNA/MSQ por padrão** nas clínicas que usam o mestre (reativáveis por clínica).
 
-### Ordem de execução (PRs pequenos)
-1. Normalização por subdomínio (scoring + tag de subdomínio no catálogo + testes) — MAIOR ganho.
-2. Bandas de 4 níveis (bands.ts + i18n + consumidores).
-3. Esconder legados por padrão + índice geral honesto (exclui pilar não-confiável).
-4. Módulo GAD-7 oficial (2 semanas) no formulário.
-5. Módulo depressão: MADRS-S se Lex liberar licença; senão PHQ-9. + MADRS-S como módulo opcional enviável.
+### Ordem de execução (PRs pequenos) — STATUS
+1. ✅ Normalização por subdomínio (#202, NO AR).
+2. ✅ Bandas de 4 níveis (#203, NO AR).
+3. ✅ Esconder legados + índice geral honesto (#204, NO AR).
+4. ✅ PHQ-9 + GAD-7 oficiais no bloco emocional (#205, NO AR).
+5. 🔒 MADRS-S: SLOT construído (scoring + flag), **desligado por licença** — ver abaixo.
+
+## 10. MADRS-S — como ativar (slot desligado por licença)
+
+Por copyright (parecer do Lex), **o texto dos 9 itens do MADRS-S NÃO fica no repositório** (distribuiria conteúdo protegido a todos os tenants do SaaS = alto risco). O que foi construído:
+- `modules/neuro-id/madrs-s.ts`: só a MATEMÁTICA (total 0–54) e as FAIXAS (0–12 mínima / 13–19 leve / 20–34 moderada / ≥35 grave). Códigos `madrs_s_1..madrs_s_9`.
+- `isMadrsSEnabled(clinicId)` (clinic-service): flag por clínica em `clinic_settings.settings.madrs_s_enabled`, **default OFF**.
+
+**Passos para ligar (por clínica, com direito de uso):**
+1. Obter a licença/permissão (e-mail-modelo pronto do Lex → Prof. Stuart Montgomery `stuart@samontgomery.co.uk` + Royal College). Para a **IFWC (uso próprio)** o risco é baixo, com versão reconstruída da fonte de 1979 (NÃO o PDF de marca da Flow) + citação.
+2. Ligar o flag da clínica: `clinic_settings.settings.madrs_s_enabled = true` (SQL/painel).
+3. A clínica licenciada cadastra o questionário MADRS-S no construtor de formulários com os 9 itens (0–6, recall dos últimos dias) usando os códigos `madrs_s_1..madrs_s_9`. Como é conteúdo inserido pela clínica que tem o direito, não há distribuição no código do SaaS.
+4. As respostas são pontuadas por `computeMadrsS` (0–54 + faixa), a exibir junto aos escores oficiais.
+
+**Revenda a outras clínicas** no SaaS: só com licença comercial assinada (Termo faz a minuta; Selo cuida do PHI). Enquanto isso, a rotina de depressão do produto é o **PHQ-9** (livre).
 

@@ -196,6 +196,27 @@ export async function getClinicSettings(clinicId: string): Promise<{
   };
 }
 
+/**
+ * Feature-flag POR CLÍNICA do MADRS-S (instrumento licenciado). Default OFF: só
+ * acende quando houver licença (clinic_settings.settings.madrs_s_enabled = true).
+ * A IFWC pode ligar p/ uso próprio; revenda a outras clínicas exige licença
+ * comercial assinada (ver parecer do Lex). Sem coluna/registro → OFF.
+ */
+export async function isMadrsSEnabled(clinicId: string): Promise<boolean> {
+  try {
+    const { createSupabaseAdminClient } = await import("@/lib/supabase-admin");
+    const supabase = createSupabaseAdminClient();
+    const { data } = await supabase
+      .from("clinic_settings")
+      .select("settings")
+      .eq("clinic_id", clinicId)
+      .maybeSingle();
+    return ((data?.settings as Record<string, unknown> | null)?.madrs_s_enabled) === true;
+  } catch {
+    return false;
+  }
+}
+
 // Moeda da ASSINATURA SaaS da clínica (clínica → Oxiel), coluna
 // clinics.billing_currency (migration 138). Defensivo de propósito: se a coluna
 // ainda não existir (migration não aplicada) ou vier vazia, retorna "BRL" — o
