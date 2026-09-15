@@ -481,9 +481,10 @@ function bio3PortraitPtText(descricao: string | null | undefined, priorityPillar
 function balanceStatePt(dysfunction: number | null): string {
   const bd = bandForDysfunction(dysfunction);
   if (!bd) return "";
-  if (bd.key === "solto") return "Bom equilíbrio";
-  if (bd.key === "tenso") return "Requer atenção";
-  return "Prioridade de cuidado";
+  if (bd.key === "equilibrado") return "Bom equilíbrio";
+  if (bd.key === "atencao") return "Merece atenção";
+  if (bd.key === "prioridade") return "Prioridade de cuidado";
+  return "Prioridade elevada";
 }
 
 /**

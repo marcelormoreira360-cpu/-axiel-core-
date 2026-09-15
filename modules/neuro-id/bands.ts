@@ -1,14 +1,19 @@
 /**
- * bands.ts — Mapa Bio³ · sistema de cores semáforo (solto/tenso/bloqueado).
+ * bands.ts — Mapa Bio³ · sistema de cores semáforo de 4 NÍVEIS.
  *
- * Banda definida pela DISFUNÇÃO (0–100). O display ao paciente = disfunção
- * (maior = pior; meta = baixar); a banda reflete isso (solto = pouca disfunção).
- * Acessibilidade: SEMPRE cor + rótulo + ícone (nunca só cor).
+ * Banda definida pela DISFUNÇÃO (0–100). Decisão de Marcelo (14/09/2026):
+ *   0–25 disfunção  (75–100% equilíbrio) → Equilibrado          🟢
+ *   26–50 disfunção (50–74% equilíbrio)  → Merece atenção        🟡
+ *   51–75 disfunção (25–49% equilíbrio)  → Prioridade de cuidado 🟠
+ *   76–100 disfunção (0–24% equilíbrio)  → Prioridade elevada    🔴
+ * O display ao paciente = equilíbrio (100 − disfunção); cor/estado saem SEMPRE da
+ * disfunção crua. Acessibilidade: SEMPRE cor + rótulo + ícone (nunca só cor).
+ * Faixas internas, não diagnósticas.
  *
  * Util puro (sem React) — usado pelo painel, pelo PDF e pelos testes.
  */
 
-export type BandKey = "solto" | "tenso" | "bloqueado";
+export type BandKey = "equilibrado" | "atencao" | "prioridade" | "elevada";
 export type BandItemType = "mobility" | "pain" | "symptom" | "axis";
 export type BandIcon = "check" | "alert" | "ban";
 
@@ -22,9 +27,10 @@ export type Band = {
 
 // Cores (light) do _BRIEF_BIO3_VISUAL.md. Terracota = cor de marca.
 const BANDS: Record<BandKey, Band> = {
-  solto:      { key: "solto",      icon: "check", colors: { fill: "#DCEBE0", fillStrong: "#B7D8C0", stroke: "#5E8C6A", text: "#3E6B4E" } },
-  tenso:      { key: "tenso",      icon: "alert", colors: { fill: "#F4E4C8", fillStrong: "#EACB92", stroke: "#C98A3C", text: "#8A5A14" } },
-  bloqueado:  { key: "bloqueado",  icon: "ban",   colors: { fill: "#EFD7CC", fillStrong: "#E2B09A", stroke: "#C2643C", text: "#8A3216" } },
+  equilibrado: { key: "equilibrado", icon: "check", colors: { fill: "#DCEBE0", fillStrong: "#B7D8C0", stroke: "#5E8C6A", text: "#3E6B4E" } },
+  atencao:     { key: "atencao",     icon: "alert", colors: { fill: "#F6EBCE", fillStrong: "#ECD199", stroke: "#C99A2E", text: "#7E5E10" } },
+  prioridade:  { key: "prioridade",  icon: "alert", colors: { fill: "#F3DBC2", fillStrong: "#E6B185", stroke: "#C56E2A", text: "#8A420E" } },
+  elevada:     { key: "elevada",     icon: "ban",   colors: { fill: "#EFD3C9", fillStrong: "#E0A18C", stroke: "#B23A1E", text: "#7A1E0C" } },
 };
 
 /**
@@ -41,15 +47,16 @@ export function dysfunctionToBalance(dysfunction: number | null): number | null 
   return Math.round(100 - Math.max(0, Math.min(100, dysfunction)));
 }
 
-/** Banda a partir da DISFUNÇÃO 0–100 (0–30 solto · 31–69 tenso · 70–100 bloqueado). */
+/** Banda a partir da DISFUNÇÃO 0–100 (4 níveis: 0–25 / 26–50 / 51–75 / 76–100). */
 export function bandForDysfunction(dysfunction: number | null): Band | null {
   if (dysfunction === null || !Number.isFinite(dysfunction)) return null;
-  if (dysfunction <= 30) return BANDS.solto;
-  if (dysfunction <= 69) return BANDS.tenso;
-  return BANDS.bloqueado;
+  if (dysfunction <= 25) return BANDS.equilibrado;
+  if (dysfunction <= 50) return BANDS.atencao;
+  if (dysfunction <= 75) return BANDS.prioridade;
+  return BANDS.elevada;
 }
 
-/** Banda a partir de um item 0–10 (×10 → disfunção). ≤3 solto · 4–6 tenso · ≥7 bloqueado. */
+/** Banda a partir de um item 0–10 (×10 → disfunção). ≤2.5 / ≤5 / ≤7.5 / >7.5. */
 export function bandForItem(value0to10: number | null): Band | null {
   if (value0to10 === null || !Number.isFinite(value0to10)) return null;
   return bandForDysfunction(value0to10 * 10);
@@ -119,10 +126,10 @@ export function priorityPillars<T extends string>(
 
 // Rótulo por tipo de item (a banda/cor é a mesma; muda só a palavra). PT.
 const LABELS: Record<BandItemType, Record<BandKey, string>> = {
-  mobility: { solto: "Solto", tenso: "Tenso", bloqueado: "Bloqueado" },
-  pain:     { solto: "Leve", tenso: "Moderada", bloqueado: "Intensa" },
-  symptom:  { solto: "Baixo", tenso: "Moderado", bloqueado: "Alto" },
-  axis:     { solto: "Solto", tenso: "Tenso", bloqueado: "Bloqueado" },
+  mobility: { equilibrado: "Livre", atencao: "Leve restrição", prioridade: "Restrito", elevada: "Bloqueado" },
+  pain:     { equilibrado: "Leve", atencao: "Moderada", prioridade: "Forte", elevada: "Intensa" },
+  symptom:  { equilibrado: "Baixo", atencao: "Moderado", prioridade: "Alto", elevada: "Muito alto" },
+  axis:     { equilibrado: "Equilibrado", atencao: "Merece atenção", prioridade: "Prioridade de cuidado", elevada: "Prioridade elevada" },
 };
 
 export function labelFor(key: BandKey, itemType: BandItemType = "axis"): string {

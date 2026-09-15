@@ -122,22 +122,26 @@ describe("computeNeuroId — fusão de exames (incremento 2)", () => {
 });
 
 describe("bands (semáforo)", () => {
-  it("item 0–10: ≤3 solto · 4–6 tenso · ≥7 bloqueado", () => {
-    expect(bandForItem(2)?.key).toBe("solto");
-    expect(bandForItem(5)?.key).toBe("tenso");
-    expect(bandForItem(8)?.key).toBe("bloqueado");
+  it("item 0–10 (4 níveis): ≤2.5 / ≤5 / ≤7.5 / >7.5", () => {
+    expect(bandForItem(2)?.key).toBe("equilibrado");
+    expect(bandForItem(4)?.key).toBe("atencao");
+    expect(bandForItem(7)?.key).toBe("prioridade");
+    expect(bandForItem(9)?.key).toBe("elevada");
   });
-  it("disfunção 0–100: 0–30 solto · 31–69 tenso · 70–100 bloqueado (limites)", () => {
-    expect(bandForDysfunction(30)?.key).toBe("solto");
-    expect(bandForDysfunction(31)?.key).toBe("tenso");
-    expect(bandForDysfunction(69)?.key).toBe("tenso");
-    expect(bandForDysfunction(70)?.key).toBe("bloqueado");
+  it("disfunção 0–100 (4 níveis): 0–25 / 26–50 / 51–75 / 76–100 (limites)", () => {
+    expect(bandForDysfunction(25)?.key).toBe("equilibrado");
+    expect(bandForDysfunction(26)?.key).toBe("atencao");
+    expect(bandForDysfunction(50)?.key).toBe("atencao");
+    expect(bandForDysfunction(51)?.key).toBe("prioridade");
+    expect(bandForDysfunction(75)?.key).toBe("prioridade");
+    expect(bandForDysfunction(76)?.key).toBe("elevada");
     expect(bandForDysfunction(null)).toBeNull();
   });
   it("labelFor muda a palavra por tipo de item", () => {
-    expect(labelFor("bloqueado", "mobility")).toBe("Bloqueado");
-    expect(labelFor("tenso", "pain")).toBe("Moderada");
-    expect(labelFor("solto", "symptom")).toBe("Baixo");
+    expect(labelFor("elevada", "mobility")).toBe("Bloqueado");
+    expect(labelFor("atencao", "pain")).toBe("Moderada");
+    expect(labelFor("equilibrado", "symptom")).toBe("Baixo");
+    expect(labelFor("prioridade", "axis")).toBe("Prioridade de cuidado");
   });
 });
 
